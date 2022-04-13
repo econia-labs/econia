@@ -1,0 +1,10 @@
+# LaTeX tempfiles
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+
+# Do not track LaTeX PDF output, just sourcefile and assets
+doc/litepaper/main.pdf

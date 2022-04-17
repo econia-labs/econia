@@ -1,0 +1,4 @@
+``connect``
+###########
+
+.. automodule:: chain.connect

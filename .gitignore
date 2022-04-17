@@ -6,5 +6,12 @@
 *.out
 *.synctex.gz
 
+# Python tempfiles
+*.pyc
+*.egg-info
+
+# Sphinx tempfiles
+doc/sphinx/build/*
+
 # Do not track LaTeX PDF output, just sourcefile and assets
 doc/litepaper/main.pdf

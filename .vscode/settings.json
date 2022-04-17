@@ -1,0 +1,18 @@
+{
+    "cSpell.words": [
+        "Aptos",
+        "autobuild",
+        "automodule",
+        "bysource",
+        "conda",
+        "devnet",
+        "genindex",
+        "linkcheck",
+        "miniconda",
+        "modindex",
+        "nacl",
+        "tempfiles",
+        "toctree"
+    ],
+    "esbonio.sphinx.confDir": ""
+}

@@ -6,6 +6,9 @@ then # Initiate sphinx-autobuild
 elif [ $1 = lc ]
 then # Run Sphinx linkcheck
     make -C doc/sphinx linkcheck
+elif [ $1 = nb ]
+then # Start a Jupyter notebook server
+    jupyter notebook --no-browser
 else
     echo Invalid option
 fi

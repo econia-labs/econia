@@ -38,6 +38,11 @@ prefix: /Users/user/opt/miniconda3/envs/ultima
 
 ## Documentation
 
+### Python
+
+* Source code contains Numpy style docstrings and PEP484-style type annotations
+* Sphinx documentation uses autodoc
+
 ### Sphinx
 
 #### Static build

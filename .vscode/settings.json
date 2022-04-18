@@ -2,15 +2,18 @@
     "cSpell.words": [
         "Aptos",
         "autobuild",
+        "autodoc",
         "automodule",
         "bysource",
         "conda",
         "devnet",
+        "docstrings",
         "genindex",
         "linkcheck",
         "miniconda",
         "modindex",
         "nacl",
+        "Numpy",
         "tempfiles",
         "toctree"
     ],

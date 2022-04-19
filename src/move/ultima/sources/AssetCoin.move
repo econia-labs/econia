@@ -1,3 +1,9 @@
+/*
+Adapted from official Move tutorial:
+https://github.com/move-language/move/tree/main/language/documentation/tutorial
+Follows steps 1 through 5, substituting `AssetCoin` for `Coin`
+*/
+
 module Ultima::AssetCoin {
     use Std::Errors;
     use Std::Signer;

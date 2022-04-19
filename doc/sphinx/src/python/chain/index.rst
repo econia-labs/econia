@@ -2,7 +2,7 @@
 #########
 
 .. toctree::
-  :caption: ultima.chain
+  :caption: members
 
   account
   connect

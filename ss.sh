@@ -8,7 +8,7 @@ then # Run Sphinx linkcheck
     make -C doc/sphinx linkcheck
 elif [ $1 = nb ]
 then # Start a Jupyter notebook server
-    jupyter notebook --no-browser
+    jupyter notebook
 else
     echo Invalid option
 fi

@@ -181,7 +181,7 @@ class RestClient:
 
         Returns
         -------
-        int
+        str
             Sequence number of transaction
         """
         payload = {

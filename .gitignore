@@ -13,6 +13,9 @@
 # Temporary Jupyter notebooks
 *test*.ipynb
 
+# Move tempfiles
+src/move/ultima/build/*
+
 # Sphinx tempfiles
 doc/sphinx/build/*
 

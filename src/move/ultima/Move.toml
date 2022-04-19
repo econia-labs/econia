@@ -1,0 +1,12 @@
+[package]
+name = 'ultima'
+version = '0.0.0'
+
+[addresses]
+AssetCoin = '0xCAFE'
+
+[dependencies.MoveStdlib]
+git = 'https://github.com/move-language/move.git'
+subdir='language/move-stdlib'
+rev = '87e5ad795d83c1595538aa8146574db7c624747a'
+addr_subst = { Std = '0x1' }

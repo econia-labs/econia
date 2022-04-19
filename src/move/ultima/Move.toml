@@ -1,12 +1,18 @@
 [package]
-name = 'ultima'
+name = 'Ultima'
 version = '0.0.0'
 
 [addresses]
-AssetCoin = '0xCAFE'
+AptosFramework = '0x1'
+Std = '0x1'
+Ultima = '0xf00cafe'
+
+[dependencies.AptosFramework]
+git = 'https://github.com/aptos-labs/aptos-core.git'
+subdir= 'aptos-move/framework/aptos-framework'
+rev = '90630cd2c2295b569778c8a459cab824565c7620'
 
 [dependencies.MoveStdlib]
 git = 'https://github.com/move-language/move.git'
 subdir='language/move-stdlib'
 rev = '87e5ad795d83c1595538aa8146574db7c624747a'
-addr_subst = { Std = '0x1' }

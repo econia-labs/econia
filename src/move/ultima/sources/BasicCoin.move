@@ -13,6 +13,8 @@ module Ultima::BasicCoin {
     const E_NOT_MODULE_OWNER: u64 = 0;
     const E_INSUFFICIENT_BALANCE: u64 = 1;
     const E_ALREADY_HAS_BALANCE: u64 = 2;
+    const E_ALREADY_INITIALIZED: u64 = 3;
+    const E_EQUAL_ADDR: u64 = 4;
 
     struct Coin<phantom CoinType> has store {
         value: u64
@@ -35,19 +37,60 @@ module Ultima::BasicCoin {
         move_to(account, Balance<CoinType> { coin: empty_coin });
     }
 
+    spec schema Schema_publish<CoinType> {
+        addr: address;
+        amount: u64;
+
+        aborts_if exists<Balance<CoinType>>(addr);
+
+        ensures exists<Balance<CoinType>>(addr);
+        let post balance_post = global<Balance<CoinType>>(addr).coin.value;
+
+        ensures balance_post == amount;
+    }
+
+    spec publish_balance {
+        include Schema_publish<CoinType>
+            {addr: Signer::address_of(account), amount: 0};
+    }
+
     /*
     Mint `amount` tokens to `mint_addr`. Requires witness with
     `CoinType` so that modules that owns `CoinType` can decide minting
     policy
     */
     public fun mint<CoinType: drop>(
-        mint_addr: address, amount: u64, _witness: CoinType) acquires
-        Balance {
+        mint_addr: address,
+        amount: u64,
+        _witness: CoinType
+    ) acquires Balance {
         deposit(mint_addr, Coin<CoinType> { value: amount });
+    }
+
+    spec schema DepositSchema<CoinType> {
+        addr: address;
+        amount: u64;
+        let balance = global<Balance<CoinType>>(addr).coin.value;
+
+        aborts_if !exists<Balance<CoinType>>(addr);
+        aborts_if balance + amount > MAX_U64;
+
+        let post balance_post = global<Balance<CoinType>>(addr).coin.value;
+        ensures balance_post == balance + amount;
+    }
+
+    spec mint {
+        include DepositSchema<CoinType> {addr: mint_addr, amount};
     }
 
     public fun balance_of<CoinType>(owner: address): u64 acquires Balance {
         borrow_global<Balance<CoinType>>(owner).coin.value
+    }
+
+    // Formal specification for Move prover
+    spec balance_of {
+        pragma aborts_if_is_strict;
+        aborts_if !exists<Balance<CoinType>>(owner);
     }
 
     /*
@@ -61,8 +104,30 @@ module Ultima::BasicCoin {
         amount: u64,
         _witness: CoinType
     ) acquires Balance {
-        let check = withdraw<CoinType>(Signer::address_of(from), amount);
+        let from_addr = Signer::address_of(from);
+        assert!(from_addr != to, E_EQUAL_ADDR);
+        let check = withdraw<CoinType>(from_addr, amount);
         deposit<CoinType>(to, check);
+    }
+
+    // Formal specification for Move prover
+    spec transfer {
+        let addr_from = Signer::address_of(from);
+
+        let balance_from = global<Balance<CoinType>>(addr_from).coin.value;
+        let balance_to = global<Balance<CoinType>>(to).coin.value;
+        let post balance_from_post =
+            global<Balance<CoinType>>(addr_from).coin.value;
+        let post balance_to_post = global<Balance<CoinType>>(to).coin.value;
+
+        aborts_if !exists<Balance<CoinType>>(addr_from);
+        aborts_if !exists<Balance<CoinType>>(to);
+        aborts_if balance_from < amount;
+        aborts_if balance_to + amount > MAX_U64;
+        aborts_if addr_from == to;
+
+        ensures balance_from_post == balance_from - amount;
+        ensures balance_to_post == balance_to + amount;
     }
 
     fun withdraw<CoinType>(
@@ -78,6 +143,18 @@ module Ultima::BasicCoin {
         Coin<CoinType> { value: amount }
     }
 
+    // Formal specification for Move prover
+    spec withdraw {
+        let balance = global<Balance<CoinType>>(addr).coin.value;
+
+        aborts_if !exists<Balance<CoinType>>(addr);
+        aborts_if balance < amount;
+
+        let post balance_post = global<Balance<CoinType>>(addr).coin.value;
+        ensures result == Coin<CoinType> { value: amount };
+        ensures balance_post == balance - amount;
+    }
+
     fun deposit<CoinType>(
         addr: address,
         check: Coin<CoinType>
@@ -87,5 +164,17 @@ module Ultima::BasicCoin {
             &mut borrow_global_mut<Balance<CoinType>>(addr).coin.value;
         let Coin { value } = check;
         *balance_ref = balance + value;
+    }
+
+    // Formal specification for Move prover
+    spec deposit {
+        let balance = global<Balance<CoinType>>(addr).coin.value;
+        let check_value = check.value;
+
+        aborts_if !exists<Balance<CoinType>>(addr);
+        aborts_if balance + check_value > MAX_U64;
+
+        let post balance_post = global<Balance<CoinType>>(addr).coin.value;
+        ensures balance_post == balance + check_value;
     }
 }

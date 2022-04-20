@@ -1,4 +1,7 @@
-"""Account interface functionality"""
+"""Account interface functionality
+
+Per https://aptos.dev/tutorials/your-first-transaction
+"""
 
 import hashlib
 

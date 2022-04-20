@@ -6,6 +6,7 @@ version = '0.0.0'
 AptosFramework = '0x1'
 Std = '0x1'
 Ultima = '0xf00cafe'
+HelloBlockchain = "0x1238967664312"
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core.git'

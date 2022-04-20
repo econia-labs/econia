@@ -1,4 +1,7 @@
-"""Aptos network connection functionality"""
+"""Aptos network connection functionality
+
+Per https://aptos.dev/tutorials/your-first-transaction
+"""
 
 import time
 import requests

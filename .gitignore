@@ -19,6 +19,7 @@ doc/litepaper/main.pdf
 # Move tempfiles
 src/move/ultima/build/*
 src/move/ultima/*.trace
+src/move/ultima/*.bpl
 *.mvcov
 
 # Sphinx tempfiles

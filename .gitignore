@@ -13,8 +13,9 @@ doc/litepaper/main.pdf
 *.pyc
 *.egg-info
 
-# Temporary Jupyter notebooks
-*test*.ipynb
+# Jupyter tempfiles
+*.ipynb_checkpoints/*
+*-checkpoint.ipynb*
 
 # Move tempfiles
 src/move/ultima/build/*

@@ -1,7 +1,7 @@
 /*
 Per https://aptos.dev/tutorials/your-first-move-module
 */
-module HelloBlockchain::Message {
+module Art::Message {
     use Std::ASCII;
     use Std::Errors;
     use Std::Event;

@@ -6,14 +6,14 @@ version = '0.0.0'
 AptosFramework = '0x1'
 Std = '0x1'
 Ultima = '0xf00cafe'
-HelloBlockchain = '0xf0000000000000000'
+Art = '0xde5a31ee54e6db638a8e1ccf5aaeba86'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core.git'
-subdir= 'aptos-move/framework/aptos-framework'
-rev = '90630cd2c2295b569778c8a459cab824565c7620'
+subdir = 'aptos-move/framework/aptos-framework'
+rev = 'a4e8c42b61fcc963ad229c03408f045401d8f7e5'
 
 [dependencies.MoveStdlib]
 git = 'https://github.com/move-language/move.git'
-subdir='language/move-stdlib'
-rev = '87e5ad795d83c1595538aa8146574db7c624747a'
+subdir = 'language/move-stdlib'
+rev = '2ab0b168c28504a3a586e64f9ae10f97f4b40b69'

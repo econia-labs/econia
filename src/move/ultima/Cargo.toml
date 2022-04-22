@@ -18,23 +18,23 @@ rev = 'refs/remotes/origin/HEAD'
 
 [dependencies.move-compiler]
 git = 'https://github.com/move-language/move'
-rev = 'refs/remotes/origin/HEAD'
+rev = '476305d239ce6afafce15a297c8c3839dd8465b6'
 
 [dependencies.move-package]
 git = 'https://github.com/move-language/move'
-rev = 'refs/remotes/origin/HEAD'
+rev = '476305d239ce6afafce15a297c8c3839dd8465b6'
 
 [dependencies.move-stdlib]
 git = 'https://github.com/move-language/move'
-rev = 'refs/remotes/origin/HEAD'
+rev = '476305d239ce6afafce15a297c8c3839dd8465b6'
 
 [dependencies.move-unit-test]
 git = 'https://github.com/move-language/move'
-rev = 'refs/remotes/origin/HEAD'
+rev = '476305d239ce6afafce15a297c8c3839dd8465b6'
 
 [dev-dependencies]
 tempfile = '3.2.0'
 
 [dev-dependencies.move-cli]
 git = 'https://github.com/move-language/move'
-rev = 'refs/remotes/origin/HEAD'
+rev = '476305d239ce6afafce15a297c8c3839dd8465b6'

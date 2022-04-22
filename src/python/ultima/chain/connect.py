@@ -16,12 +16,22 @@ network_urls = SimpleNamespace(
 )
 """URLs for connecting to various Aptos network elements"""
 
+default_max_gas_amount = 2000
+"""Per Aptos official transaction tutorial"""
+
+default_gas_unit_price = 1
+"""Per Aptos official transaction tutorial"""
+
+default_timeout_in_s = 600
+"""Per Aptos official transaction tutorial"""
+
 fields = SimpleNamespace(
     accounts = 'accounts',
     arguments = 'arguments',
     amount = 'amount',
     application_json = 'application/json',
     auth_key = 'auth_key',
+    bytecode = 'bytecode',
     coin = 'coin',
     Content_Type = 'Content-Type',
     data = 'data',
@@ -34,6 +44,8 @@ fields = SimpleNamespace(
     max_gas_amount = 'max_gas_amount',
     message = 'message',
     mint = 'mint',
+    module_bundle_payload = 'module_bundle_payload',
+    modules = 'modules',
     payload = 'payload',
     pending_transaction = 'pending transaction',
     public_key = 'public_key',
@@ -45,12 +57,16 @@ fields = SimpleNamespace(
     signing_message = 'signing_message',
     testcoin_balance = '0x1::TestCoin::Balance',
     testcoin_transfer = '0x1::TestCoin::transfer',
+    message_messageholder = 'Message::MessageHolder',
+    message_set_message = 'Message::set_message',
     timeout = 'timeout',
     transaction = 'transaction',
     transactions = 'transactions',
     type = 'type',
     type_arguments = 'type_arguments',
-    value = 'value'
+    utf_8 = 'utf-8',
+    value = 'value',
+    XUS = 'XUS'
 )
 """
 Common field names, specified via callable attributes (to reduce typos)
@@ -94,8 +110,13 @@ class RestClient:
         return response.json()
 
     def generate_tx(
-        self, sender: str, payload: Dict[str, Any], max_gas_amount: int,
-        gas_unit_price: int, gas_currency_code: str, timeout_in_s: int
+        self,
+        sender: str,
+        payload: Dict[str, Any],
+        max_gas_amount: int = default_max_gas_amount,
+        gas_unit_price: int = default_gas_unit_price,
+        gas_currency_code: str = fields.XUS,
+        timeout_in_s: int = default_timeout_in_s,
     ) -> Dict[str, Any]:
         """Generates request for a raw transaction
 
@@ -228,3 +249,58 @@ class FaucetClient:
             f'{fields.auth_key}={auth_key}'
         )
         assert txs.status_code == codes.success, txs.text
+
+class HelloBlockchainClient(RestClient):
+    """Client for interacting with Hello Blockchain program
+
+    Per Aptos official tutorial "Your first Move module"
+    """
+    def publish_module(self, account_from: Account, module_hex:str) -> str:
+        """Publish new module to blockchain within specified account"""
+
+        payload = {
+            fields.type: fields.module_bundle_payload,
+            fields.modules: [
+                {fields.bytecode: f'0x{module_hex}'},
+            ]
+        }
+        tx_request = self.generate_tx(account_from.address(), payload)
+        signed_tx = self.sign_tx(account_from, tx_request)
+        result = self.submit_tx(signed_tx)
+        return str(result[fields.hash])
+
+    def get_message(self, contract_address: str, account_address:str) -> \
+        Optional[str]:
+        """Retrieve resource `Message::MessageHolder::message`"""
+        resources = self.account_resources(account_address)
+        for resource in resources:
+            if resource[fields.type] == \
+                f'0x{contract_address}::{fields.message_messageholder}':
+                return resource[fields.data][fields.message]
+        return None
+
+    def set_message(
+        self, contract_address: str, account_from: Account, message:str
+    ) -> str:
+        """
+        Optionally initialize, and set resource
+        `Message::MessageHolder::message`
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        payload = {
+            fields.type: fields.script_function_payload,
+            fields.function:
+                f'0x{contract_address}::{fields.message_set_message}',
+            fields.type_arguments: [],
+            fields.arguments: [
+                message.encode(fields.utf_8).hex(),
+            ]
+        }
+        tx_request = self.generate_tx(account_from.address(), payload=payload)
+        signed_tx = self.sign_tx(account_from, tx_request)
+        result = self.submit_tx(signed_tx)
+        return str(result[fields.hash])

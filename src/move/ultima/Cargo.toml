@@ -1,12 +1,40 @@
+# Largely modeled off of aptos-core/aptos-move/move-examples/Cargo.toml
+
+[package]
+name = 'ultima'
+version = '0.0.0' # Should use SemVer
+edition = '2018'
+
 [dependencies]
-aptos-vm = { path = "../aptos-vm" }
-aptos-workspace-hack = { path = "../../crates/aptos-workspace-hack" }
-structopt = "0.3.21"
-move-compiler = { git = "https://github.com/diem/move", rev = "3fe033b112eae7df2d15ab3467624165ae510caa" }
-move-package = { git = "https://github.com/diem/move", rev = "3fe033b112eae7df2d15ab3467624165ae510caa" }
-move-stdlib = { git = "https://github.com/diem/move", rev = "3fe033b112eae7df2d15ab3467624165ae510caa" }
-move-unit-test = { git = "https://github.com/diem/move", rev = "3fe033b112eae7df2d15ab3467624165ae510caa" }
+structopt = '0.3.21'
+
+[dependencies.aptos-vm]
+git = 'https://github.com/aptos-labs/aptos-core'
+rev = 'refs/remotes/origin/HEAD'
+
+[dependencies.aptos-workspace-hack]
+git = 'https://github.com/aptos-labs/aptos-core'
+rev = 'refs/remotes/origin/HEAD'
+
+[dependencies.move-compiler]
+git = 'https://github.com/move-language/move'
+rev = 'refs/remotes/origin/HEAD'
+
+[dependencies.move-package]
+git = 'https://github.com/move-language/move'
+rev = 'refs/remotes/origin/HEAD'
+
+[dependencies.move-stdlib]
+git = 'https://github.com/move-language/move'
+rev = 'refs/remotes/origin/HEAD'
+
+[dependencies.move-unit-test]
+git = 'https://github.com/move-language/move'
+rev = 'refs/remotes/origin/HEAD'
 
 [dev-dependencies]
-move-cli = { git = "https://github.com/diem/move", rev = "3fe033b112eae7df2d15ab3467624165ae510caa" }
-tempfile = "3.2.0"
+tempfile = '3.2.0'
+
+[dev-dependencies.move-cli]
+git = 'https://github.com/move-language/move'
+rev = 'refs/remotes/origin/HEAD'

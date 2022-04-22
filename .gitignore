@@ -1,4 +1,4 @@
-# LaTeX tempfiles
+# LaTeX
 *.aux
 *.fdb_latexmk
 *.fls
@@ -9,19 +9,23 @@
 # Do not track LaTeX PDF output, just sourcefile and assets
 doc/litepaper/main.pdf
 
-# Python tempfiles
+# Python
 *.pyc
 *.egg-info
 
-# Jupyter tempfiles
+# Jupyter
 *.ipynb_checkpoints/*
 *-checkpoint.ipynb*
 
-# Move tempfiles
+# Move
 src/move/ultima/build/*
 src/move/ultima/*.trace
 src/move/ultima/*.bpl
 *.mvcov
 
-# Sphinx tempfiles
+# Cargo
+src/move/ultima/target/*
+*Cargo.lock
+
+# Sphinx
 doc/sphinx/build/*

@@ -1,6 +1,6 @@
 [package]
 name = 'ultima'
-version = '0.0.0'
+version = '0.0.0' # Should use SemVer
 
 [addresses]
 AptosFramework = '0x1'
@@ -9,11 +9,11 @@ Ultima = '0xf00cafe'
 Art = '0xde5a31ee54e6db638a8e1ccf5aaeba86'
 
 [dependencies.AptosFramework]
-git = 'https://github.com/aptos-labs/aptos-core.git'
+git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = 'a4e8c42b61fcc963ad229c03408f045401d8f7e5'
+rev = 'HEAD'
 
 [dependencies.MoveStdlib]
-git = 'https://github.com/move-language/move.git'
+git = 'https://github.com/move-language/move'
 subdir = 'language/move-stdlib'
-rev = '2ab0b168c28504a3a586e64f9ae10f97f4b40b69'
+rev = 'HEAD'

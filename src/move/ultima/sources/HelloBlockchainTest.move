@@ -2,13 +2,13 @@
 Per https://aptos.dev/tutorials/your-first-move-module
 */
 #[test_only]
-module HelloBlockchain::MessageTests {
+module Art::MessageTests {
     use Std::Signer;
     use Std::UnitTest;
     use Std::Vector;
     use Std::ASCII;
 
-    use HelloBlockchain::Message;
+    use Art::Message;
 
     fun get_account(): signer {
         Vector::pop_back(&mut UnitTest::create_signers_for_testing(1))

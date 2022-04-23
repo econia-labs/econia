@@ -2,6 +2,10 @@
 
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
+## Developer scripts
+
+* See `ss.sh` for shortcuts for common developer commands
+
 ## Environment management
 
 ### Python
@@ -43,6 +47,10 @@ prefix: /Users/user/opt/miniconda3/envs/ultima
 * Source code contains Numpy style docstrings and PEP484-style type annotations
 * Sphinx documentation uses autodoc
 
+### Jupyter
+
+* Interactive examples from tutorials at `src/jupyter`
+
 ### Sphinx
 
 #### Static build
@@ -71,4 +79,10 @@ make -C doc/sphinx clean
 
 ```
 make -C doc/sphinx linkcheck
+```
+
+#### Running doctest
+
+```
+make -C doc/sphinx doctest
 ```

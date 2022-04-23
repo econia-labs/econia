@@ -9,6 +9,9 @@ then # Run Sphinx linkcheck
 elif [ $1 = nb ]
 then # Start a Jupyter notebook server
     jupyter notebook
+elif [ $1 = dt ]
+then # Run Sphinx doctest
+    make -C doc/sphinx doctest
 else
     echo Invalid option
 fi

@@ -8,6 +8,7 @@
         "conda",
         "devnet",
         "docstrings",
+        "doctest",
         "genindex",
         "linkcheck",
         "miniconda",

@@ -50,6 +50,8 @@ prefix: /Users/user/opt/miniconda3/envs/ultima
 ### Jupyter
 
 * Interactive examples from tutorials at `src/jupyter`
+* Jupyter notebook content may be subject to breaking changes
+    * If so, check out the git commit when broken notebook was last modified
 
 ### Sphinx
 

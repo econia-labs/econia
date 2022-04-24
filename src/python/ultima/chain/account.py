@@ -6,8 +6,8 @@ import os
 from pathlib import Path
 from nacl.signing import SigningKey
 
-e_msg_different_seed: str = 'Different seed already exists at provided path'
-"""str: Error message for saving to path with existing different seed"""
+e_msg_different_val: str = 'Different value already exists at provided path'
+"""str: Error message for saving to path with different value"""
 
 class Account:
     """Representation of account and keypair
@@ -56,23 +56,42 @@ class Account:
             if path is None:
                 self.signing_key = SigningKey.generate()
             else:
+                abs_path = os.path.abspath(Path(os.getcwd()) / path)
                 self.signing_key = \
-                    SigningKey(bytes.fromhex(Path(path).read_text()))
+                    SigningKey(bytes.fromhex(Path(abs_path).read_text()))
         else:
             self.signing_key = SigningKey(seed)
 
     def auth_key(self) -> str:
-        """Return account authentication key"""
+        """Return account authentication key
+
+        Returns
+        -------
+        str
+            Account authentication key
+        """
         hasher = hashlib.sha3_256()
         hasher.update(self.signing_key.verify_key.encode() + b'\x00')
         return hasher.hexdigest()
 
     def address(self) -> str:
-        """Return account address"""
+        """Return account address
+
+        Returns
+        -------
+        str
+            Account address
+        """
         return self.auth_key()
 
     def pub_key(self) -> str:
-        """Return account public key"""
+        """Return account public key
+
+        Returns
+        -------
+        str
+            Account public key
+        """
         return self.signing_key.verify_key.encode().hex()
 
     def save_seed_to_disk(self, path: str):
@@ -101,16 +120,17 @@ class Account:
         ...     Account().save_seed_to_disk(path)
         ... except ValueError as e:
         ...     print(e)
-        Different seed already exists at provided path
+        Different value already exists at provided path
         >>> shutil.rmtree(Path(path).parts[0]) # Clean up tmp dir
         """
+        abs_path = os.path.abspath(Path(os.getcwd()) / path)
         hex_seed = self.signing_key._seed.hex()
-        if os.path.exists(path):
-            if Path(path).read_text() != hex_seed:
-                raise ValueError(e_msg_different_seed)
+        if os.path.exists(abs_path):
+            if Path(abs_path).read_text() != hex_seed:
+                raise ValueError(e_msg_different_val)
             return # Seed already exists at path
         # If path does not already exist, create directories as needed
-        dirname = os.path.dirname(path) # Cointaining directory
+        dirname = os.path.dirname(abs_path) # Cointaining directory
         if not os.path.exists(dirname):
             Path(dirname).mkdir(parents=True)
-        Path(path).write_text(hex_seed)
+        Path(abs_path).write_text(hex_seed)

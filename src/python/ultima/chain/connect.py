@@ -67,6 +67,7 @@ fields = SimpleNamespace(
     testcoin_balance = '0x1::TestCoin::Balance',
     testcoin_transfer = '0x1::TestCoin::transfer',
     token_collections = '0x1::Token::Collections',
+    tokens = 'tokens',
     message_messageholder = 'Message::MessageHolder',
     message_set_message = 'Message::set_message',
     timeout = 'timeout',
@@ -346,8 +347,8 @@ class TokenClient(RestClient):
             fields.type_arguments: [],
             fields.arguments: [
                 description.encode(fields.utf_8).hex(),
-                name.encode(fields.utf_8),hex(),
-                uri.encode(fields.utf_8),hex()
+                name.encode(fields.utf_8).hex(),
+                uri.encode(fields.utf_8).hex()
             ]
         }
         self.submit_tx_helper(account, payload)

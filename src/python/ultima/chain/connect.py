@@ -1,6 +1,6 @@
 """Aptos network connection functionality
 
-Per https://aptos.dev/tutorials/your-first-transaction
+Per Aptos tutorials: https://aptos.dev/tutorials/getting-started/
 """
 
 import time
@@ -32,20 +32,29 @@ fields = SimpleNamespace(
     application_json = 'application/json',
     auth_key = 'auth_key',
     bytecode = 'bytecode',
+    claim_script = '0x1::TokenTransfers::claim_script',
     coin = 'coin',
+    collections = 'collections',
     Content_Type = 'Content-Type',
+    create_token_script = '0x1::Token::create_token_script',
+    create_unlimited_collection_script = \
+        '0x1::Token::create_unlimited_collection_script',
+    creation_num = 'creation_num',
     data = 'data',
     ed25519_signature = 'ed25519_signature',
     expiration_timestamp_secs = 'expiration_timestamp_secs',
     function = 'function',
     gas_currency_code = 'gas_currency_code',
     gas_unit_price = 'gas_unit_price',
+    id = 'id',
+    key = 'key',
     hash = 'hash',
     max_gas_amount = 'max_gas_amount',
     message = 'message',
     mint = 'mint',
     module_bundle_payload = 'module_bundle_payload',
     modules = 'modules',
+    offer_script = '0x1::TokenTransfers::offer_script',
     payload = 'payload',
     pending_transaction = 'pending transaction',
     public_key = 'public_key',
@@ -57,6 +66,7 @@ fields = SimpleNamespace(
     signing_message = 'signing_message',
     testcoin_balance = '0x1::TestCoin::Balance',
     testcoin_transfer = '0x1::TestCoin::transfer',
+    token_collections = '0x1::Token::Collections',
     message_messageholder = 'Message::MessageHolder',
     message_set_message = 'Message::set_message',
     timeout = 'timeout',
@@ -179,7 +189,11 @@ class RestClient:
             f'{response.text} - {tx_hash}'
         return response.json()[fields.type] == fields.pending_transaction
 
-    def wait_for_tx(self, tx_hash: str, time_in_s: int) -> None:
+    def wait_for_tx(
+        self,
+        tx_hash: str,
+        time_in_s: int = default_timeout_in_s
+    ) -> None:
         """Wait for specified amount of time for transaction to clear"""
         count = 0
         while self.tx_pending(tx_hash):
@@ -304,3 +318,124 @@ class HelloBlockchainClient(RestClient):
         signed_tx = self.sign_tx(account_from, tx_request)
         result = self.submit_tx(signed_tx)
         return str(result[fields.hash])
+
+class TokenClient(RestClient):
+
+    def submit_tx_helper(
+        self,
+        account: Account,
+        payload: Dict[str, Any]
+    ):
+        """Submit and wait for a transaction"""
+        tx_request = self.generate_tx(account.address(), payload)
+        signed_tx = self.sign_tx(account, tx_request)
+        res = self.submit_tx(signed_tx)
+        self.wait_for_tx(res[fields.hash])
+
+    def create_collection(
+        self,
+        account: Account,
+        description: str,
+        name: str,
+        uri: str,
+    ):
+        """Create new collection within specified account"""
+        payload = {
+            fields.type: fields.script_function_payload,
+            fields.function: fields.create_unlimited_collection_script,
+            fields.type_arguments: [],
+            fields.arguments: [
+                description.encode(fields.utf_8).hex(),
+                name.encode(fields.utf_8),hex(),
+                uri.encode(fields.utf_8),hex()
+            ]
+        }
+        self.submit_tx_helper(account, payload)
+
+    def create_token(
+        self,
+        account: Account,
+        collection_name: str,
+        description: str,
+        name: str,
+        supply: int,
+        uri: str,
+    ):
+        """Create a new token"""
+        payload = {
+            fields.type: fields.script_function_payload,
+            fields.function: fields.create_token_script,
+            fields.type_arguments: [],
+            fields.arguments: [
+                collection_name.encode(fields.utf_8).hex(),
+                description.encode(fields.utf_8).hex(),
+                name.encode(fields.utf_8).hex(),
+                str(supply),
+                uri.encode(fields.utf_8).hex()
+            ]
+        }
+        self.submit_tx_helper(account, payload)
+
+    def get_token_id(
+        self,
+        creator: str,
+        collection_name: str,
+        token_name: str
+    ) -> int:
+        """Retrieve token's creation_num"""
+        resources = self.account_resources(creator)
+        collections = []
+        tokens = []
+        for resource in resources:
+            if resource[fields.type] == fields.token_collections:
+                collections = \
+                    resource[fields.data][fields.collections][fields.data]
+        for collection in collections:
+            if collection[fields.key] == collection_name:
+                tokens = collection[fields.value][fields.tokens][fields.data]
+        for token in tokens:
+            if token[fields.key] == token_name:
+                return int(token[fields.value][fields.id][fields.creation_num])
+        assert False
+
+    def offer_token(
+        self,
+        account: Account,
+        receiver: str,
+        creator: str,
+        token_creation_num: int,
+        amount: int
+    ):
+        """Register that another account may claim token"""
+        payload = {
+            fields.type: fields.script_function_payload,
+            fields.function: fields.offer_script,
+            fields.type_arguments: [],
+            fields.arguments: [
+                receiver,
+                creator,
+                str(token_creation_num),
+                str(amount),
+            ]
+        }
+        self.submit_tx_helper(account, payload)
+
+    def claim_token(
+        self,
+        account: Account,
+        sender: str,
+        creator: str,
+        token_creation_num: int,
+    ):
+        """Claim a token that has been offered"""
+        payload = {
+            fields.type: fields.script_function_payload,
+            fields.function: fields.claim_script,
+            fields.type_arguments: [],
+            fields.arguments: [
+                sender,
+                creator,
+                str(token_creation_num)
+            ]
+        }
+        self.submit_tx_helper(account, payload)

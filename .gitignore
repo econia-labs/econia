@@ -21,10 +21,11 @@ doc/litepaper/main.pdf
 *-checkpoint.ipynb*
 
 # Move
-src/move/ultima/build/*
-src/move/ultima/*.trace
-src/move/ultima/*.bpl
+src/move/*/build/*
+src/move/*/*.trace
+src/move/*/*.bpl
 *.mvcov
+*.mv
 
 # Cargo
 src/move/ultima/target/*

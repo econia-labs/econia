@@ -1,5 +1,5 @@
-// From https://github.com/magnum6actual/move-baseline/blob/master/src/move_unit_tests.rs
-// Based off `aptos-core/aptos-move/framework/move_unit_test.rs`
+// Per `magnum6actual/move-baseline/blob/master/src/move_unit_tests.rs`
+// Per `aptos-core/aptos-move/framework/move_unit_test.rs`
 
 use aptos_vm::natives::aptos_natives;
 use move_cli::package::cli;

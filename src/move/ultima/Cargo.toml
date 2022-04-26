@@ -1,8 +1,8 @@
-# Largely modeled off of aptos-core/aptos-move/move-examples/Cargo.toml
+# Modeled off `aptos-core/aptos-move/move-examples/Cargo.toml`
 
 [package]
 name = 'ultima'
-version = '0.0.0' # Should use SemVer
+version = '0.1.0' # Per SemVer
 edition = '2018'
 
 [dependencies]

@@ -1,4 +1,4 @@
-// Taken from aptos-core `aptos-move/move-examples/src/main.rs`
+// Per `aptos-core/aptos-move/move-examples/src/main.rs`
 
 use structopt::StructOpt;
 

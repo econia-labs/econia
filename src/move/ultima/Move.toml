@@ -7,6 +7,7 @@ AptosFramework = '0x1'
 Std = '0x1'
 Ultima = '0xf00cafe'
 Art = '0xf5e60e8206deff83ec7ca686a00245fa13ac8a52d43f14d0034f46e10ef5c937'
+TicketTutorial = '0xf00'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

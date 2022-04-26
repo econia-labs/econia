@@ -9,9 +9,6 @@ Ultima = '0xf00cafe'
 Art = '0xf5e60e8206deff83ec7ca686a00245fa13ac8a52d43f14d0034f46e10ef5c937'
 TicketTutorial = '0xf00'
 
-[dev-addresses]
-Art = "0xface"
-
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'

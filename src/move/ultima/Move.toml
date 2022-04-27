@@ -7,6 +7,7 @@ AptosFramework = '0x1'
 Std = '0x1'
 Ultima = '0xd00dbabe'
 TestUser1 = '0xace'
+TestUser2 = '0xbed'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

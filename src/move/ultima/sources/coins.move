@@ -82,16 +82,16 @@ module Ultima::Coins {
     // Mint AptCoin and UsdCoin amount to the Ultima module address
     // Can only be invoked by the Ultima module address
     public(script) fun mint(
-        ultima_signer: signer, // The Ultima account
+        ultima_signer: &signer, // The Ultima account
         apt_subunits: u64, // Amount AptCoin subunits to mint
         usd_subunits: u64 // Amount of UsdCoin subunits to mint
     ) acquires UltimaHoldings {
         assert!(
-            Signer::address_of(&ultima_signer) == @Ultima,
+            Signer::address_of(ultima_signer) == @Ultima,
             E_NOT_ULTIMA_SIGNER
         );
         deposit(
-            Signer::address_of(&ultima_signer),
+            Signer::address_of(ultima_signer),
             Coin<AptCoin>{subunits: apt_subunits},
             Coin<UsdCoin>{subunits: usd_subunits}
         );
@@ -137,6 +137,72 @@ module Ultima::Coins {
         deposit(to, apt_coin, usd_coin);
     }
 
+    // Verify error for checking balance when no holdings resource
+    #[test]
+    #[expected_failure]
+    fun balance_of_dne() acquires UltimaHoldings {
+        balance_of(@TestUser1);
+    }
+
+    // Verify Ultima address can mint circulating supply
+    #[test(
+        user1 = @TestUser1,
+        user2 = @TestUser2,
+        ultima = @Ultima
+    )]
+    public(script) fun mint_and_transfer(
+        user1: signer, // Address that is not Ultima address
+        user2: signer, // Address that is not Ultima address, nor user1
+        ultima: signer, // Ultima address
+    ) acquires UltimaHoldings {
+        // Initialize addresses to empty holdings
+        publish_ultima_holdings(&user1);
+        publish_ultima_holdings(&user2);
+        publish_ultima_holdings(&ultima);
+
+        // Get addresses
+        let user1_addr = Signer::address_of(&user1);
+        let user2_addr = Signer::address_of(&user2);
+        let ult_addr = Signer::address_of(&ultima);
+
+        // Mint to Ultima address and transfer to user1
+        mint(&ultima, 250, 1275);
+        transfer(&ultima, user1_addr, 100, 1000);
+        let (user1_apt, user1_usd) = balance_of(user1_addr);
+        let (ult_apt, ult_usd) = balance_of(ult_addr);
+
+        // Verify amounts
+        assert!(user1_apt == 100, E_WRONG_TRANSFER_AMOUNT);
+        assert!(user1_usd == 1000, E_WRONG_TRANSFER_AMOUNT);
+        assert!(ult_apt == 150, E_WRONG_TRANSFER_AMOUNT);
+        assert!(ult_usd == 275, E_WRONG_TRANSFER_AMOUNT);
+
+        // Transfer again from user1 to user2
+        transfer(&user1, user2_addr, 25, 750);
+        let (user1_apt, user1_usd) = balance_of(user1_addr);
+        let (user2_apt, user2_usd) = balance_of(user2_addr);
+
+        // Verify amounts
+        assert!(user1_apt == 75, E_WRONG_TRANSFER_AMOUNT);
+        assert!(user1_usd == 250, E_WRONG_TRANSFER_AMOUNT);
+        assert!(user2_apt == 25, E_WRONG_TRANSFER_AMOUNT);
+        assert!(user2_usd == 750, E_WRONG_TRANSFER_AMOUNT);
+    }
+
+    // Verify Ultima address can mint AptCoin and UsdCoin to itself
+    #[test(ultima_signer = @Ultima)]
+    public(script) fun mint_ultima(
+        ultima_signer: signer // The Ultima account
+    ) acquires UltimaHoldings {
+        let ultima_addr = Signer::address_of(&ultima_signer);
+        publish_ultima_holdings(&ultima_signer);
+        mint(&ultima_signer, 123, 456);
+        let(apt_subunits, usd_subunits) = balance_of(ultima_addr);
+        // Assert correct balance minted
+        assert!(apt_subunits == 123, E_WRONG_MINT_BALANCE);
+        assert!(usd_subunits == 456, E_WRONG_MINT_BALANCE);
+    }
+
     // Verify arbitrary user can properly initialize UltimaHoldings
     #[test(account = @TestUser1)]
     fun publish_balance_has_zero(
@@ -153,63 +219,61 @@ module Ultima::Coins {
     // Verify error asserted when UltimaHoldings published twice
     #[test(account = @TestUser1)]
     #[expected_failure(abort_code = 0)]
-    fun publish_holdings_twice_error(
+    fun publish_holdings_twice(
         account: signer // Account trying to publish holdings resource
     ) {
         publish_ultima_holdings(&account);
         publish_ultima_holdings(&account);
     }
 
-    // Verify Ultima address can mint AptCoin and UsdCoin to itself
-    #[test(ultima_signer = @Ultima)]
-    public(script) fun mint_ultima(
-        ultima_signer: signer // The Ultima account
+    // Verify account cannot transfer funds to self
+    #[test(ultima = @Ultima)]
+    #[expected_failure(abort_code = 5)]
+    public(script) fun self_transfer
+        ultima: signer // Ultima account
     ) acquires UltimaHoldings {
-        let ultima_addr = Signer::address_of(&ultima_signer);
-        publish_ultima_holdings(&ultima_signer);
-        mint(ultima_signer, 123, 456);
-        let(apt_subunits, usd_subunits) = balance_of(ultima_addr);
-        // Assert correct balance minted
-        assert!(apt_subunits == 123, E_WRONG_MINT_BALANCE);
-        assert!(usd_subunits == 456, E_WRONG_MINT_BALANCE);
+        publish_ultima_holdings(&ultima);
+        mint(&ultima, 123, 456);
+        transfer(&ultima, Signer::address_of(&ultima), 5, 10);
     }
 
     // Verify unauthorized user cannot mint coins
     #[test(not_ultima = @TestUser1)]
     #[expected_failure(abort_code = 2)]
     public(script) fun unauthorized_minter(
-        not_ultima: signer // Signer that is not Ultima address
+        not_ultima: signer // Signer that is not Ultima account
     ) acquires UltimaHoldings {
-        mint(not_ultima, 0, 0);
+        mint(&not_ultima, 0, 0);
     }
 
-    // Verify Ultima address can mint and transfer to arbitrary user
-    #[test(
-        not_ultima = @TestUser1, // Address that is not Ultima address
-        ultima_mint = @Ultima, // Ultima signer for mint tx
-        ultima_transfer = @Ultima // Ultima signer for transfer tx
-    )]
-    public(script) fun mint_and_transfer(
-        not_ultima: signer,
-        ultima_mint: signer,
-        ultima_transfer: signer
+    // Verify error for withdrawing when no holdings resource
+    #[test]
+    #[expected_failure]
+    fun withdraw_dne() acquires UltimaHoldings {
+        (Coin<AptCoin>{subunits: _}, Coin<UsdCoin>{subunits: _}) =
+            withdraw(@TestUser1, 0, 0);
+    }
+
+    // Verify error for trying to withdraw too much AptCoin
+    #[test(account = @TestUser1)]
+    #[expected_failure(abort_code = 4)]
+    fun withdraw_too_much_apt(
+        account: signer, // Account trying to over-withdraw
     ) acquires UltimaHoldings {
-        // Initialize both addresses to empty holdings
-        publish_ultima_holdings(&not_ultima);
-        publish_ultima_holdings(&ultima_mint);
+        publish_ultima_holdings(&account);
+        (Coin<AptCoin>{subunits: _}, Coin<UsdCoin>{subunits: _}) =
+            withdraw(Signer::address_of(&account), 1, 0);
+    }
 
-        // Mint to Ultima address and transfer over
-        let not_addr = Signer::address_of(&not_ultima);
-        let ult_addr = Signer::address_of(&ultima_mint);
-        mint(ultima_mint, 250, 1275);
-        transfer(&ultima_transfer, not_addr, 100, 1000);
-        let (not_apt, not_usd) = balance_of(not_addr);
-        let (ult_apt, ult_usd) = balance_of(ult_addr);
-
-        // Verify amounts
-        assert!(not_apt == 100, E_WRONG_TRANSFER_AMOUNT);
-        assert!(not_usd == 1000, E_WRONG_TRANSFER_AMOUNT);
-        assert!(ult_apt == 150, E_WRONG_TRANSFER_AMOUNT);
-        assert!(ult_usd == 275, E_WRONG_TRANSFER_AMOUNT);
+    // Verify error for trying to withdraw too much UsdCoin
+    // Near-duplicate of withdraw_too_much_apt() to assure 100% coverage
+    #[test(account = @TestUser1)]
+    #[expected_failure(abort_code = 4)]
+    fun withdraw_too_much_usd(
+        account: signer, // Account trying to over-withdraw
+    ) acquires UltimaHoldings {
+        publish_ultima_holdings(&account);
+        (Coin<AptCoin>{subunits: _}, Coin<UsdCoin>{subunits: _}) =
+            withdraw(Signer::address_of(&account), 0, 1);
     }
 }

@@ -6,6 +6,7 @@ version = '0.1.0' # Per SemVer
 AptosFramework = '0x1'
 Std = '0x1'
 Ultima = '0xd00dbabe'
+TestUser1 = '0xace'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

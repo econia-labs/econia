@@ -33,20 +33,17 @@ module Ultima::Coins {
     }
 
     // Publish an empty UltimaHoldings resource under an account address
-    // Must be called before minting/transferring to the account
-    public fun publish_ultima_holdings(
-        account_ref: &signer // Account to publish under
+    // Must be called before transferring to the account
+    public(script) fun publish_ultima_holdings(
+        account: &signer // Account to publish under
     ) {
         let empty_apt = Coin<AptCoin>{subunits: 0};
         let empty_usd = Coin<UsdCoin>{subunits: 0};
         assert!(
-            !exists<UltimaHoldings>(Signer::address_of(account_ref)),
+            !exists<UltimaHoldings>(Signer::address_of(account)),
             E_ALREADY_HAS_HOLDINGS
         );
-        move_to(
-            account_ref,
-            UltimaHoldings{apt: empty_apt, usd: empty_usd}
-        );
+        move_to(account, UltimaHoldings{apt: empty_apt, usd: empty_usd});
     }
 
     // Return total holdings under an account address
@@ -123,7 +120,7 @@ module Ultima::Coins {
     }
 
     // Transfer AptCoin and UsdCoin between addresses
-    public fun transfer(
+    public(script) fun transfer(
         from: &signer, // Sender of coins
         to: address, // Recipient of coins
         apt_subunits: u64, // AptCoin subunits to transfer (can be 0)
@@ -205,7 +202,7 @@ module Ultima::Coins {
 
     // Verify arbitrary user can properly initialize UltimaHoldings
     #[test(account = @TestUser1)]
-    fun publish_balance_has_zero(
+    public(script) fun publish_balance_has_zero(
         account: signer // Account to publish holdings resource to
     ) acquires UltimaHoldings {
         let addr = Signer::address_of(&account);
@@ -219,7 +216,7 @@ module Ultima::Coins {
     // Verify error asserted when UltimaHoldings published twice
     #[test(account = @TestUser1)]
     #[expected_failure(abort_code = 0)]
-    fun publish_holdings_twice(
+    public(script) fun publish_holdings_twice(
         account: signer // Account trying to publish holdings resource
     ) {
         publish_ultima_holdings(&account);
@@ -229,7 +226,7 @@ module Ultima::Coins {
     // Verify account cannot transfer funds to self
     #[test(ultima = @Ultima)]
     #[expected_failure(abort_code = 5)]
-    public(script) fun self_transfer
+    public(script) fun self_transfer (
         ultima: signer // Ultima account
     ) acquires UltimaHoldings {
         publish_ultima_holdings(&ultima);
@@ -257,7 +254,7 @@ module Ultima::Coins {
     // Verify error for trying to withdraw too much AptCoin
     #[test(account = @TestUser1)]
     #[expected_failure(abort_code = 4)]
-    fun withdraw_too_much_apt(
+    public(script) fun withdraw_too_much_apt(
         account: signer, // Account trying to over-withdraw
     ) acquires UltimaHoldings {
         publish_ultima_holdings(&account);
@@ -269,7 +266,7 @@ module Ultima::Coins {
     // Near-duplicate of withdraw_too_much_apt() to assure 100% coverage
     #[test(account = @TestUser1)]
     #[expected_failure(abort_code = 4)]
-    fun withdraw_too_much_usd(
+    public(script) fun withdraw_too_much_usd(
         account: signer, // Account trying to over-withdraw
     ) acquires UltimaHoldings {
         publish_ultima_holdings(&account);

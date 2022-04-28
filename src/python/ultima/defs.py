@@ -24,9 +24,16 @@ e_msgs = SimpleNamespace(
 """Error messages"""
 
 file_extensions = SimpleNamespace(
-    mv = 'mv'
+    mv = 'mv',
+    toml = 'toml'
 )
 """Extensions for common filetypes"""
+
+max_address_length = SimpleNamespace(
+    aptos = 32,
+    move_cli = 16,
+)
+"""Max address length in bytes"""
 
 member_names = SimpleNamespace(
     Balance = 'Balance',
@@ -122,16 +129,27 @@ rest_urls = {
 seps = SimpleNamespace(
     amp = '&',
     colon = '-',
+    dot = '.',
     equal = '=',
     hex = '0x',
-    dot = '.',
+    lsb = '[',
+    nl = '\n',
+    pound = '#',
     q_mark = '?',
-    slash = '/'
+    rsb = ']',
+    s_q = "'",
+    slash = '/',
+    sp = ' '
 )
 """Separators"""
 
 single_sig_id = b'\x00'
 """1-byte signature scheme identifier, indicating single signature"""
+
+toml_section_names = SimpleNamespace(
+    addresses = 'addresses'
+)
+"""Section names in Move.toml file"""
 
 tx_defaults = SimpleNamespace(
     gas_currency_code = 'XUS',
@@ -176,6 +194,8 @@ ultima_paths = SimpleNamespace(
     # Relative to Move package root directory
     bytecode_dir = 'build/ultima/bytecode_modules',
     # Relative to Ultima repository root directory
-    move_package_root = 'src/move/ultima'
+    move_package_root = 'src/move/ultima',
+    # Relative to Move package root
+    toml_path = 'Move'
 )
 """Ultima Move code paths"""

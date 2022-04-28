@@ -5,5 +5,6 @@ Ultima Python package
   :caption: Modules
 
   account
+  build
   defs
   rest

@@ -14,7 +14,7 @@ from ultima.chain.defs import (
     msg_sig_start_byte as start_byte,
     named_addrs as n_addrs,
     resource_fields,
-    script_payload_fields as p_fields,
+    payload_fields as p_fields,
     rest_codes,
     rest_path_elems,
     rest_post_headers as h_fields,
@@ -537,3 +537,53 @@ class Client:
             faucet=True
         )
         assert response.status_code == rest_codes.success, response.text
+
+    def publish_modules(
+        self,
+        signer: Account,
+        module_bcs: list[str]
+    ) -> str:
+        """Publish module bytecode to blockchain account
+
+        Parameters
+        ----------
+        signer : ultima.chain.account.Account
+            Signing account
+        module_bcs : list of str
+            List of bytecode hexstrings without leading hex specifier
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        payload = {
+            p_fields.type: p_fields.module_bundle_payload,
+            p_fields.modules : [
+                {p_fields.bytecode: hex_leader(bc)} for bc in module_bcs
+            ]
+        }
+        return self.submit_to_completion(signer, payload)
+
+    def publish_ultima_holdings(
+        self,
+        signer: Account,
+        ultima_address: str
+    ) -> str:
+        """Publish UltimaHoldings struct to an account
+
+        Parameters
+        ----------
+        signer : ultima.chain.account.Account
+            Signing account to publish under
+        ultima_address: str
+            Address of account where Coins module is published
+        """
+        payload = construct_script_payload(
+            move_trio(
+                ultima_address,
+                modules.Coins,
+                members.publish_ultima_holdings
+            )
+        )
+        return self.submit_to_completion(signer, payload)

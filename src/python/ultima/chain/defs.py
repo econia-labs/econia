@@ -17,6 +17,9 @@ api_url_types = SimpleNamespace(
 )
 """Types of REST API base urls"""
 
+module_bytecode_dir = 'src/move/ultima/build/ultima/bytecode_modules'
+"""Module bytecode directory, relative to ultima repository root"""
+
 e_msgs = SimpleNamespace(
     path_val_collision = 'Different value already exists at provided path',
     tx_timeout = 'Transaction timeout'
@@ -25,12 +28,14 @@ e_msgs = SimpleNamespace(
 
 member_names = SimpleNamespace(
     Balance = 'Balance',
+    publish_ultima_holdings = 'publish_ultima_holdings',
     transfer = 'transfer'
 )
 """Move module member names"""
 
 module_names = SimpleNamespace(
-    TestCoin = 'TestCoin'
+    Coins = 'Coins',
+    TestCoin = 'TestCoin',
 )
 """Move module names"""
 
@@ -49,6 +54,18 @@ networks = SimpleNamespace(
     devnet = 'devnet'
 )
 """Aptos cluster networks"""
+
+payload_fields = SimpleNamespace(
+    arguments = 'arguments',
+    bytecode = 'bytecode',
+    function = 'function',
+    module_bundle_payload = 'module_bundle_payload',
+    modules = 'modules',
+    script_function_payload = 'script_function_payload',
+    type = 'type',
+    type_arguments = 'type_arguments'
+)
+"""Transaction payload fields"""
 
 resource_fields = SimpleNamespace(
     coin = 'coin',
@@ -101,15 +118,6 @@ rest_urls = {
     }
 }
 """REST API urls"""
-
-script_payload_fields = SimpleNamespace(
-    arguments = 'arguments',
-    function = 'function',
-    script_function_payload = 'script_function_payload',
-    type = 'type',
-    type_arguments = 'type_arguments'
-)
-"""Script function payload fields"""
 
 seps = SimpleNamespace(
     amp = '&',

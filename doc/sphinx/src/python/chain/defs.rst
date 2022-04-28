@@ -1,4 +1,0 @@
-``defs``
-########
-
-.. automodule:: chain.defs

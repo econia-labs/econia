@@ -5,7 +5,7 @@ import os
 
 from pathlib import Path
 from nacl.signing import SigningKey
-from ultima.chain.defs import (
+from ultima.defs import (
     e_msgs,
     single_sig_id,
     seps
@@ -32,7 +32,7 @@ class Account:
     >>> import random
     >>> import shutil
     >>> from pathlib import Path
-    >>> from ultima.chain.account import Account
+    >>> from ultima.account import Account
     >>> random.seed('Ultima')
     >>> art = Account(random.randbytes(32))
     >>> art.address()
@@ -116,7 +116,7 @@ class Account:
         Example
         -------
         >>> import shutil
-        >>> from ultima.chain.account import Account
+        >>> from ultima.account import Account
         >>> path = 'tmp/.secrets/acct.key'
         >>> # Account generation makes new random seed each time
         >>> Account().save_seed_to_disk(path)
@@ -156,7 +156,7 @@ def hex_leader(
 
     Example
     -------
-    >>> from ultima.chain.account import hex_leader
+    >>> from ultima.account import hex_leader
     >>> hex_leader('f00cafe')
     '0xf00cafe'
     """

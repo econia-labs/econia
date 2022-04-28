@@ -2,6 +2,8 @@ Ultima Python package
 #####################
 
 .. toctree::
-  :caption: Members
+  :caption: Modules
 
-  chain/index
+  account
+  defs
+  rest

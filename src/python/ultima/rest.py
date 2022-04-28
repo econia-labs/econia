@@ -4,8 +4,8 @@ import requests
 import time
 
 from typing import Any, Dict, Optional
-from ultima.chain.account import Account, hex_leader
-from ultima.chain.defs import (
+from ultima.account import Account, hex_leader
+from ultima.defs import (
     account_fields,
     api_url_types,
     e_msgs,
@@ -51,7 +51,7 @@ def move_trio(
 
     Example
     -------
-    >>> from ultima.chain.rest import move_trio
+    >>> from ultima.rest import move_trio
     >>> move_trio('1', 'TestCoin', 'Balance')
     '0x1::TestCoin::Balance'
     """
@@ -67,7 +67,7 @@ def construct_script_payload(
     Parameters
     ----------
     function : str
-        A Move identifier per :func:`~chain.rest.move_trio`
+        A Move identifier per :func:`~rest.move_trio`
     arguments : list of str, optional
         Script arguments
     type_arguments : list of str, optional
@@ -80,7 +80,7 @@ def construct_script_payload(
 
     Example
     -------
-    >>> from ultima.chain.rest import construct_script_payload as c
+    >>> from ultima.rest import construct_script_payload as c
     >>> c('0x1::TestCoin::transfer', [f'0xf00', '123']) \
     # doctest: +NORMALIZE_WHITESPACE
     {'type': 'script_function_payload',
@@ -101,7 +101,7 @@ class Client:
     Parameters
     ----------
     network : str
-        As specified in :data:`~chain.defs.networks`
+        As specified in :data:`~defs.networks`
 
     Attributes
     ----------
@@ -112,8 +112,8 @@ class Client:
 
     Example
     -------
-    >>> from ultima.chain.defs import networks
-    >>> from ultima.chain.rest import Client
+    >>> from ultima.defs import networks
+    >>> from ultima.rest import Client
     >>> client = Client(networks.devnet)
     >>> client.fullnode_url
     'https://fullnode.devnet.aptoslabs.com'
@@ -152,8 +152,8 @@ class Client:
 
         Example
         -------
-        >>> from ultima.chain.defs import networks
-        >>> from ultima.chain.rest import Client
+        >>> from ultima.defs import networks
+        >>> from ultima.rest import Client
         >>> client = Client(networks.devnet)
         >>> client.construct_request_url(
         ...     ['foo', 'bar'],
@@ -355,11 +355,11 @@ class Client:
 
         Parameters
         ----------
-        account_from : ultima.chain.account.Account
+        account_from : ultima.account.Account
             Signing account
         tx_request : dict from str to Any
             Transaction request per
-            :meth:`~chain.rest.Client.generate_tx`
+            :meth:`~rest.Client.generate_tx`
 
         Returns
         -------
@@ -459,7 +459,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.chain.account.Account
+        signer : ultima.account.Account
             Signing account
         payload : dict from str to Any
             Transaction payload data
@@ -487,10 +487,10 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.chain.account.Account
+        signer : ultima.account.Account
             Signing account
         trio : str
-            A Move identifier per :func:`~chain.rest.move_trio`
+            A Move identifier per :func:`~rest.move_trio`
         arguments : list of str, optional
             Script arguments
         type_arguments : list of str, optional
@@ -513,7 +513,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.chain.account.Account
+        signer : ultima.account.Account
             Signing account
         module_bcs : list of str
             List of bytecode hexstrings without leading hex specifier
@@ -673,7 +673,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.chain.account.Account
+        signer : ultima.account.Account
             Signing account of sender
         recipient : str
             Receiving address

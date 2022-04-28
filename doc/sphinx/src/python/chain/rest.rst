@@ -1,4 +1,0 @@
-``rest``
-########
-
-.. automodule:: chain.rest

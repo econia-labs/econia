@@ -153,7 +153,7 @@ class Client:
         Example
         -------
         >>> from ultima.chain.defs import networks
-        >>> from ultima.chain.client import Client
+        >>> from ultima.chain.rest import Client
         >>> client = Client(networks.devnet)
         >>> client.construct_request_url(
         ...     ['foo', 'bar'],
@@ -180,7 +180,7 @@ class Client:
         path_elems: list[str],
         query_pairs: dict[str, str] = None,
         faucet: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> object:
         """Construct and submit REST request, returning response
 
         Parameters
@@ -201,6 +201,32 @@ class Client:
             self.construct_request_url(path_elems, query_pairs, faucet)
         )
 
+    def run_request(
+        self,
+        path_elems: list[str],
+        query_pairs: dict[str, str] = None,
+        faucet: bool = False,
+    ) -> Dict[str, Any]:
+        """Submit REST request, assert success, return response
+
+        Parameters
+        ----------
+        path_elems : list of str
+            Path elements to include in REST URL
+        query_pairs : dict from str to str, optional
+            Map from REST query string keys to values
+        faucet : bool, optional
+            Submit to faucet if True, otherwise to fullnode
+
+        Returns
+        -------
+        dict from str to Any
+            REST request response JSON
+        """
+        response = self.get_request_response(path_elems, query_pairs, faucet)
+        assert response.status_code == rest_codes.success, response.text
+        return response.json()
+
     def get_post_response(
         self,
         path_elems: list[str],
@@ -208,7 +234,7 @@ class Client:
         faucet: bool = False,
         json: Dict[str, Any] = None,
         headers: Dict[str, str] = None,
-    ) -> Dict[str, Any]:
+    ) -> object:
         """Construct and submit REST post, returning response
 
         Parameters
@@ -235,50 +261,45 @@ class Client:
             headers=headers
         )
 
-    def account(
+    def run_post(
         self,
-        account_address: str
-    ) -> Dict[str, str]:
-        """Return account sequence number and authentication key
-
-        Parameters
-        ----------
-        account_address : str
-            Account address
-
-        Returns
-        -------
-        dict from str to str
-            Account info
-        """
-        response = self.get_request_response(
-            [rest_path_elems.accounts, account_address]
-        )
-        assert response.status_code == rest_codes.success , response.text
-        return response.json()
-
-    def account_resources(
-        self,
-        account_address: str
+        path_elems: list[str],
+        query_pairs: dict[str, str] = None,
+        faucet: bool = False,
+        json: Dict[str, Any] = None,
+        headers: Dict[str, str] = None,
+        status_code: int = rest_codes.success,
     ) -> Dict[str, Any]:
-        """Return all account resources
+        """Submit REST post, assert given code, return response
 
         Parameters
         ----------
-        account_address : str
-            Account address
+        path_elems : list of str
+            Path elements to include in REST URL
+        query_pairs : dict from str to str, optional
+            Map from REST query string keys to values
+        faucet : bool, optional
+            Submit to faucet if True, otherwise to fullnode
+        json : dict from str to Any, optional
+            JSON data
+        headers : dict from str to str, optional
+            Header values
+        code : str, optional
+            Rest status code to assert
 
         Returns
         -------
         dict from str to Any
-            Account resources
+            REST post response JSON
         """
-        response = self.get_request_response([
-            rest_path_elems.accounts,
-            account_address,
-            rest_path_elems.resources
-        ])
-        assert response.status_code == rest_codes.success , response.text
+        response = self.get_post_response(
+            path_elems,
+            query_pairs,
+            faucet,
+            json,
+            headers
+        )
+        assert response.status_code == status_code, response.text
         return response.json()
 
     def generate_tx(
@@ -345,13 +366,12 @@ class Client:
         dict from str to Any
             Signed transaction request
         """
-        response = self.get_post_response(
+        response_json = self.run_post(
             [rest_path_elems.transactions, rest_path_elems.signing_message],
             json=tx_request
         )
-        assert response.status_code == rest_codes.success, response.text
         to_sign = bytes.fromhex(
-            response.json()[rest_response_fields.message][start_byte:]
+            response_json[rest_response_fields.message][start_byte:]
         )
         signature = account_from.signing_key.sign(to_sign).signature
         tx_request[tx_fields.signature] = {
@@ -377,14 +397,12 @@ class Client:
         dict from str to Any
             REST post response JSON
         """
-        headers = {h_fields.content_type: h_fields.application_json}
-        response = self.get_post_response(
+        return self.run_post(
             [rest_path_elems.transactions],
-            headers=headers,
+            headers={h_fields.content_type: h_fields.application_json},
             json=tx,
+            status_code=rest_codes.processing
         )
-        assert response.status_code == rest_codes.processing, response.text
-        return response.json()
 
     def tx_pending(
         self,
@@ -437,7 +455,7 @@ class Client:
         signer: Account,
         payload: Dict[str, Any]
     ) -> str:
-        """Submit signed transaction, wait until no longer pending
+        """Construct and send transaction, wait until no longer pending
 
         Parameters
         ----------
@@ -457,6 +475,137 @@ class Client:
         tx_hash = str(result[rest_response_fields.hash])
         self.wait_for_tx(tx_hash)
         return tx_hash
+
+    def run_script(
+        self,
+        signer: Account,
+        trio: str,
+        arguments: list[str] = [],
+        type_arguments: list[str] = [],
+    ) -> str:
+        """Run script transaction and return transaction hash
+
+        Parameters
+        ----------
+        signer : ultima.chain.account.Account
+            Signing account
+        trio : str
+            A Move identifier per :func:`~chain.rest.move_trio`
+        arguments : list of str, optional
+            Script arguments
+        type_arguments : list of str, optional
+            Script type arguments
+
+        Returns
+        -------
+        str
+            Completed transaction hash
+        """
+        payload = construct_script_payload(trio, arguments, type_arguments)
+        return self.submit_to_completion(signer, payload)
+
+    def publish_modules(
+        self,
+        signer: Account,
+        module_bcs: list[str]
+    ) -> str:
+        """Publish module bytecode to blockchain account
+
+        Parameters
+        ----------
+        signer : ultima.chain.account.Account
+            Signing account
+        module_bcs : list of str
+            List of bytecode hexstrings without leading hex specifier
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        payload = {
+            p_fields.type: p_fields.module_bundle_payload,
+            p_fields.modules : [
+                {p_fields.bytecode: hex_leader(bc)} for bc in module_bcs
+            ]
+        }
+        return self.submit_to_completion(signer, payload)
+
+    def account(
+        self,
+        account_address: str
+    ) -> Dict[str, str]:
+        """Return account sequence number and authentication key
+
+        Parameters
+        ----------
+        account_address : str
+            Account address
+
+        Returns
+        -------
+        dict from str to str
+            Account info
+        """
+        return self.run_request([rest_path_elems.accounts, account_address])
+
+    def account_resources(
+        self,
+        account_address: str
+    ) -> Dict[str, Any]:
+        """Return all account resources
+
+        Parameters
+        ----------
+        account_address : str
+            Account address
+
+        Returns
+        -------
+        dict from str to Any
+            Account resources
+        """
+        return self.run_request([
+            rest_path_elems.accounts,
+            account_address,
+            rest_path_elems.resources
+        ])
+
+    def tx_meta(
+        self,
+        tx_hash: str
+    ) -> Dict[str, Any]:
+        """Return transaction metadata
+
+        Parameters
+        ----------
+        tx_hash : str
+            The hash of the transaction to check
+
+        Returns
+        -------
+        dict from str to Any
+            Transaction metadata
+        """
+        return self.run_request([rest_path_elems.transactions, tx_hash])
+
+    def tx_successful(
+        self,
+        tx_hash: str
+    ) -> bool:
+        """Return if transaction was successful
+
+        Parameters
+        ----------
+        tx_hash : str
+            Transaction hash
+
+        Returns
+        -------
+        bool
+            True if successful, false if not
+        """
+        return self.tx_meta(tx_hash)[tx_fields.success] == True
 
     def testcoin_balance(
         self,
@@ -486,6 +635,34 @@ class Client:
                     [resource_fields.coin][resource_fields.value])
         return None
 
+    def mint_testcoin(
+        self,
+        auth_key: str,
+        amount: int
+    ) -> str:
+        """Create account if necessary, fund with TestCoin
+
+        Parameters
+        ----------
+        auth_key : str
+            Account authentication key
+        amount : int
+            Amount of TestCoin to request from faucet
+
+        Returns
+        -------
+        str
+            Minting transaction hash
+        """
+        response_json = self.run_post(
+            [rest_path_elems.mint],
+            {q_fields.amount: str(amount), q_fields.auth_key: auth_key},
+            faucet=True
+        )
+        tx_hash = response_json[0]
+        self.wait_for_tx(tx_hash)
+        return tx_hash
+
     def transfer_testcoin(
         self,
         signer: Account,
@@ -497,9 +674,9 @@ class Client:
         Parameters
         ----------
         signer : ultima.chain.account.Account
-            Signing account
+            Signing account of sender
         recipient : str
-            Receiving account
+            Receiving address
         amount : int
             Amount of TestCoin to transfer
 
@@ -508,82 +685,8 @@ class Client:
         str
             Transaction hash
         """
-        payload = construct_script_payload(
+        return self.run_script(
+            signer,
             move_trio(n_addrs.Std, modules.TestCoin, members.transfer),
             [hex_leader(recipient), str(amount)]
         )
-        return self.submit_to_completion(signer, payload)
-
-    def fund_account(
-        self,
-        auth_key: str,
-        amount: int
-    ) -> None:
-        """Create account if necessary, fund with TestCoin
-
-        Parameters
-        ----------
-        auth_key : str
-            Account authentication key
-        amount : int
-            Amount of TestCoin to request from faucet
-        """
-        response = self.get_post_response(
-            [rest_path_elems.mint],
-            {
-                q_fields.amount: str(amount),
-                q_fields.auth_key: auth_key
-            },
-            faucet=True
-        )
-        assert response.status_code == rest_codes.success, response.text
-
-    def publish_modules(
-        self,
-        signer: Account,
-        module_bcs: list[str]
-    ) -> str:
-        """Publish module bytecode to blockchain account
-
-        Parameters
-        ----------
-        signer : ultima.chain.account.Account
-            Signing account
-        module_bcs : list of str
-            List of bytecode hexstrings without leading hex specifier
-
-        Returns
-        -------
-        str
-            Transaction hash
-        """
-        payload = {
-            p_fields.type: p_fields.module_bundle_payload,
-            p_fields.modules : [
-                {p_fields.bytecode: hex_leader(bc)} for bc in module_bcs
-            ]
-        }
-        return self.submit_to_completion(signer, payload)
-
-    def publish_ultima_holdings(
-        self,
-        signer: Account,
-        ultima_address: str
-    ) -> str:
-        """Publish UltimaHoldings struct to an account
-
-        Parameters
-        ----------
-        signer : ultima.chain.account.Account
-            Signing account to publish under
-        ultima_address: str
-            Address of account where Coins module is published
-        """
-        payload = construct_script_payload(
-            move_trio(
-                ultima_address,
-                modules.Coins,
-                members.publish_ultima_holdings
-            )
-        )
-        return self.submit_to_completion(signer, payload)

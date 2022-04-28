@@ -12,6 +12,9 @@ then # Start a Jupyter notebook server
 elif [ $1 = dt ]
 then # Run Sphinx doctest
     make -C doc/sphinx doctest
+elif [ $1 = cm ]
+then # Change directory to move package
+    cd src/move/ultima
 else
     echo Invalid option
 fi

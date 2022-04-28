@@ -17,24 +17,24 @@ api_url_types = SimpleNamespace(
 )
 """Types of REST API base urls"""
 
-module_bytecode_dir = 'src/move/ultima/build/ultima/bytecode_modules'
-"""Module bytecode directory, relative to ultima repository root"""
-
 e_msgs = SimpleNamespace(
     path_val_collision = 'Different value already exists at provided path',
     tx_timeout = 'Transaction timeout'
 )
 """Error messages"""
 
+file_extensions = SimpleNamespace(
+    mv = 'mv'
+)
+"""Extensions for common filetypes"""
+
 member_names = SimpleNamespace(
     Balance = 'Balance',
-    publish_ultima_holdings = 'publish_ultima_holdings',
     transfer = 'transfer'
 )
 """Move module member names"""
 
 module_names = SimpleNamespace(
-    Coins = 'Coins',
     TestCoin = 'TestCoin',
 )
 """Move module names"""
@@ -124,6 +124,7 @@ seps = SimpleNamespace(
     colon = '-',
     equal = '=',
     hex = '0x',
+    dot = '.',
     q_mark = '?',
     slash = '/'
 )
@@ -148,7 +149,8 @@ tx_fields = SimpleNamespace(
     payload = 'payload',
     sender = 'sender',
     sequence_number = 'sequence_number',
-    signature = 'signature'
+    signature = 'signature',
+    success = 'success'
 )
 """Transaction fields"""
 
@@ -162,3 +164,18 @@ tx_sig_fields = SimpleNamespace(
 
 tx_timeout_granularity = 0.1
 """How long to wait between querying REST API for transaction status"""
+
+ultima_modules = SimpleNamespace(
+    Coin = SimpleNamespace(
+        name = 'Coin',
+    )
+)
+"""Ultima Move modules with nested member specifiers"""
+
+ultima_paths = SimpleNamespace(
+    # Relative to Move package root directory
+    bytecode_dir = 'build/ultima/bytecode_modules',
+    # Relative to Ultima repository root directory
+    move_package_root = 'src/move/ultima'
+)
+"""Ultima Move code paths"""

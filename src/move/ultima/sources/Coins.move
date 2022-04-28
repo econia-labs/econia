@@ -79,16 +79,14 @@ module Ultima::Coins {
     // Mint APT and USD amount to the Ultima module address
     // Can only be invoked by the Ultima module address
     public(script) fun mint(
-        ultima_signer: &signer, // The Ultima account
+        account: signer, // Signing acount
         apt_subunits: u64, // Amount APT subunits to mint
         usd_subunits: u64 // Amount of USD subunits to mint
     ) acquires UltimaHoldings {
-        assert!(
-            Signer::address_of(ultima_signer) == @Ultima,
-            E_NOT_ULTIMA_SIGNER
-        );
+        let account_addr = Signer::address_of(&account);
+        assert!(account_addr == @Ultima, E_NOT_ULTIMA_SIGNER);
         deposit(
-            Signer::address_of(ultima_signer),
+            account_addr,
             Coin<APT>{subunits: apt_subunits},
             Coin<USD>{subunits: usd_subunits}
         );
@@ -121,12 +119,12 @@ module Ultima::Coins {
 
     // Transfer APT and USD between addresses
     public(script) fun transfer(
-        from: &signer, // Sender of coins
+        from: signer, // Sender of coins
         to: address, // Recipient of coins
         apt_subunits: u64, // APT subunits to transfer (can be 0)
         usd_subunits: u64, // USD subunits to transfer (can be 0)
     ) acquires UltimaHoldings {
-        let from_addr = Signer::address_of(from);
+        let from_addr = Signer::address_of(&from);
         // Assert sender and recipient are not same account
         assert!(from_addr != to, E_SAME_ADDRESS);
         let (apt_coin, usd_coin) =
@@ -144,19 +142,23 @@ module Ultima::Coins {
     // Verify Ultima address can mint circulating supply
     #[test(
         user1_tx1 = @TestUser1,
-        user2_tx1 = @TestUser2,
         user1_tx2 = @TestUser1,
+        user1_tx3 = @TestUser1,
+        user2_tx1 = @TestUser2,
         user2_tx2 = @TestUser2,
         ultima_tx1 = @Ultima,
         ultima_tx2 = @Ultima,
+        ultima_tx3 = @Ultima
     )]
     public(script) fun mint_and_transfer(
         user1_tx1: signer, // Non-Ultima address, signer for 1st tx
-        user2_tx1: signer, // Another non-Ultima address, for 1st tx
         user1_tx2: signer, // Non-Ultima address, signer for 2nd tx
+        user1_tx3: signer, // Non-Ultima address, signer for 3rd tx
+        user2_tx1: signer, // Another non-Ultima address, for 1st tx
         user2_tx2: signer, // Another non-Ultima address, for 2nd tx
         ultima_tx1: signer, // Ultima address, signer for 1st tx
         ultima_tx2: signer, // Ultima address, signer for 2nd tx
+        ultima_tx3: signer, // Ultima address, signer for 3rd tx
     ) acquires UltimaHoldings {
         // Initialize addresses to empty holdings
         publish_ultima_holdings(user1_tx1);
@@ -169,8 +171,8 @@ module Ultima::Coins {
         let ult_addr = Signer::address_of(&ultima_tx2);
 
         // Mint to Ultima address and transfer to user1
-        mint(&ultima_tx2, 250, 1275);
-        transfer(&ultima_tx2, user1_addr, 100, 1000);
+        mint(ultima_tx2, 250, 1275);
+        transfer(ultima_tx3, user1_addr, 100, 1000);
         let (user1_apt, user1_usd) = balance_of(user1_addr);
         let (ult_apt, ult_usd) = balance_of(ult_addr);
 
@@ -181,7 +183,7 @@ module Ultima::Coins {
         assert!(ult_usd == 275, E_WRONG_TRANSFER_AMOUNT);
 
         // Transfer again from user1 to user2
-        transfer(&user1_tx2, user2_addr, 25, 750);
+        transfer(user1_tx3, user2_addr, 25, 750);
         let (user1_apt, user1_usd) = balance_of(user1_addr);
         let (user2_apt, user2_usd) = balance_of(user2_addr);
 
@@ -203,7 +205,7 @@ module Ultima::Coins {
     ) acquires UltimaHoldings {
         publish_ultima_holdings(ultima_signer_tx1);
         let ultima_addr = Signer::address_of(&ultima_signer_tx2);
-        mint(&ultima_signer_tx2, 123, 456);
+        mint(ultima_signer_tx2, 123, 456);
         let(apt_subunits, usd_subunits) = balance_of(ultima_addr);
         // Assert correct balance minted
         assert!(apt_subunits == 123, E_WRONG_MINT_BALANCE);
@@ -240,16 +242,19 @@ module Ultima::Coins {
     // Verify account cannot transfer funds to self
     #[test(
         ultima_tx1 = @Ultima,
-        ultima_tx2 = @Ultima
+        ultima_tx2 = @Ultima,
+        ultima_tx3 = @Ultima
     )]
     #[expected_failure(abort_code = 5)]
     public(script) fun self_transfer (
         ultima_tx1: signer, // Ultima account signer, 1st tx
-        ultima_tx2: signer // Ultima account signer, 2nd tx
+        ultima_tx2: signer, // Ultima account signer, 2nd tx
+        ultima_tx3: signer // Ultima account signer, 3rd tx
     ) acquires UltimaHoldings {
         publish_ultima_holdings(ultima_tx1);
-        mint(&ultima_tx2, 123, 456);
-        transfer(&ultima_tx2, Signer::address_of(&ultima_tx2), 5, 10);
+        mint(ultima_tx2, 123, 456);
+        let ultima_tx3_addr = Signer::address_of(&ultima_tx3);
+        transfer(ultima_tx3, ultima_tx3_addr, 5, 10);
     }
 
     // Verify unauthorized user cannot mint coins
@@ -258,7 +263,7 @@ module Ultima::Coins {
     public(script) fun unauthorized_minter(
         not_ultima: signer // Signer that is not Ultima account
     ) acquires UltimaHoldings {
-        mint(&not_ultima, 0, 0);
+        mint(not_ultima, 0, 0);
     }
 
     // Verify error for withdrawing when no holdings resource

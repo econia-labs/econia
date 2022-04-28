@@ -5,4 +5,5 @@
   :caption: members
 
   account
-  connect
+  client
+  defs

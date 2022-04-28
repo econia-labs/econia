@@ -5,9 +5,11 @@ import os
 
 from pathlib import Path
 from nacl.signing import SigningKey
-
-e_msg_different_val: str = 'Different value already exists at provided path'
-"""str: Error message for saving to path with different value"""
+from ultima.chain.defs import (
+    e_msgs,
+    single_sig_id,
+    seps
+)
 
 class Account:
     """Representation of account and keypair
@@ -71,7 +73,9 @@ class Account:
             Account authentication key
         """
         hasher = hashlib.sha3_256()
-        hasher.update(self.signing_key.verify_key.encode() + b'\x00')
+        hasher.update(
+            self.signing_key.verify_key.encode() + single_sig_id
+        )
         return hasher.hexdigest()
 
     def address(self) -> str:
@@ -127,10 +131,33 @@ class Account:
         hex_seed = self.signing_key._seed.hex()
         if os.path.exists(abs_path):
             if Path(abs_path).read_text() != hex_seed:
-                raise ValueError(e_msg_different_val)
+                raise ValueError(e_msgs.path_val_collision)
             return # Seed already exists at path
         # If path does not already exist, create directories as needed
         dirname = os.path.dirname(abs_path) # Cointaining directory
         if not os.path.exists(dirname):
             Path(dirname).mkdir(parents=True)
         Path(abs_path).write_text(hex_seed)
+
+def hex_leader(
+    addr: str
+) -> str:
+    """Return address with '0x' appended
+
+    Parameters
+    ----------
+    addr : str
+        Hex address without leading '0x'
+
+    Returns
+    -------
+    str
+        Address with leading '0x'
+
+    Example
+    -------
+    >>> from ultima.chain.account import hex_leader
+    >>> hex_leader('f00cafe')
+    '0xf00cafe'
+    """
+    return seps.hex + f'{addr}'

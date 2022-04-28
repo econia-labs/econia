@@ -1,4 +1,4 @@
-// AptCoin and UsdCoin mint/transfer implementations
+// APT and USD coin model mint/transfer implementations
 
 module Ultima::Coins {
     use Std::Signer;
@@ -13,8 +13,8 @@ module Ultima::Coins {
     const E_WRONG_TRANSFER_AMOUNT: u64 = 6;
 
     // Coin type specifiers
-    struct AptCoin {}
-    struct UsdCoin {}
+    struct APT {}
+    struct USD {}
 
     // Generic coin type
     struct Coin<phantom CoinType> has store {
@@ -23,13 +23,13 @@ module Ultima::Coins {
 
     // Scale for converting subunits to decimal (base-10 exponent)
     // With a scale of 3, for example, 1 subunit = 0.001 base unit
-    const E_APT_COIN_SCALE: u8 = 6;
-    const E_USD_COIN_SCALE: u8 = 6;
+    const APT_COIN_SCALE: u8 = 6;
+    const USD_COIN_SCALE: u8 = 6;
 
     // Total holdings for a given user
     struct UltimaHoldings has key {
-        apt: Coin<AptCoin>,
-        usd: Coin<UsdCoin>
+        apt: Coin<APT>,
+        usd: Coin<USD>
     }
 
     // Publish an empty UltimaHoldings resource under an account address
@@ -37,8 +37,8 @@ module Ultima::Coins {
     public(script) fun publish_ultima_holdings(
         account: &signer // Account to publish under
     ) {
-        let empty_apt = Coin<AptCoin>{subunits: 0};
-        let empty_usd = Coin<UsdCoin>{subunits: 0};
+        let empty_apt = Coin<APT>{subunits: 0};
+        let empty_usd = Coin<USD>{subunits: 0};
         assert!(
             !exists<UltimaHoldings>(Signer::address_of(account)),
             E_ALREADY_HAS_HOLDINGS
@@ -50,20 +50,20 @@ module Ultima::Coins {
     public fun balance_of(
         owner: address // Account to check holdings of
     ) : (
-        u64, // AptCoin subunits
-        u64 // UsdCoin subunits
+        u64, // APT subunits
+        u64 // USD subunits
     ) acquires UltimaHoldings {
         let apt_subunits = borrow_global<UltimaHoldings>(owner).apt.subunits;
         let usd_subunits = borrow_global<UltimaHoldings>(owner).usd.subunits;
         (apt_subunits, usd_subunits)
     }
 
-    // Deposit AptCoin and UsdCoin to given address
+    // Deposit APT and USD to given address
     // Does not account for u64 overflow errors
     fun deposit(
         addr: address, // Address to deposit to
-        apt_coin: Coin<AptCoin>, // AptCoin to deposit
-        usd_coin: Coin<UsdCoin> // UsdCoin to desposit
+        apt_coin: Coin<APT>, // APT to deposit
+        usd_coin: Coin<USD> // USD to desposit
     ) acquires UltimaHoldings {
         let (apt_balance, usd_balance) = balance_of(addr);
         let apt_balance_ref_mut =
@@ -76,12 +76,12 @@ module Ultima::Coins {
         *usd_balance_ref_mut = usd_balance + usd_subunits;
     }
 
-    // Mint AptCoin and UsdCoin amount to the Ultima module address
+    // Mint APT and USD amount to the Ultima module address
     // Can only be invoked by the Ultima module address
     public(script) fun mint(
         ultima_signer: &signer, // The Ultima account
-        apt_subunits: u64, // Amount AptCoin subunits to mint
-        usd_subunits: u64 // Amount of UsdCoin subunits to mint
+        apt_subunits: u64, // Amount APT subunits to mint
+        usd_subunits: u64 // Amount of USD subunits to mint
     ) acquires UltimaHoldings {
         assert!(
             Signer::address_of(ultima_signer) == @Ultima,
@@ -89,19 +89,19 @@ module Ultima::Coins {
         );
         deposit(
             Signer::address_of(ultima_signer),
-            Coin<AptCoin>{subunits: apt_subunits},
-            Coin<UsdCoin>{subunits: usd_subunits}
+            Coin<APT>{subunits: apt_subunits},
+            Coin<USD>{subunits: usd_subunits}
         );
     }
 
-    // Withdraw AptCoin and UsdCoin from given address
+    // Withdraw APT and USD from given address
     fun withdraw(
         addr: address, // Address to withdraw from
-        apt_subunits: u64, // AptCoin subunits to withdraw
-        usd_subunits: u64 // UsdCoin subunits to withdraw
+        apt_subunits: u64, // APT subunits to withdraw
+        usd_subunits: u64 // USD subunits to withdraw
     ) : (
-        Coin<AptCoin>, // AptCoin with specified subunits
-        Coin<UsdCoin> // UsdCoin with specified subunits
+        Coin<APT>, // APT with specified subunits
+        Coin<USD> // USD with specified subunits
     ) acquires UltimaHoldings {
         let (apt_balance, usd_balance) = balance_of(addr);
         // Assert balance is actually available
@@ -114,17 +114,17 @@ module Ultima::Coins {
             &mut borrow_global_mut<UltimaHoldings>(addr).usd.subunits;
         *usd_balance_ref_m = usd_balance - usd_subunits;
         (
-            Coin<AptCoin>{subunits: apt_subunits},
-            Coin<UsdCoin>{subunits: usd_subunits}
+            Coin<APT>{subunits: apt_subunits},
+            Coin<USD>{subunits: usd_subunits}
         )
     }
 
-    // Transfer AptCoin and UsdCoin between addresses
+    // Transfer APT and USD between addresses
     public(script) fun transfer(
         from: &signer, // Sender of coins
         to: address, // Recipient of coins
-        apt_subunits: u64, // AptCoin subunits to transfer (can be 0)
-        usd_subunits: u64, // UsdCoin subunits to transfer (can be 0)
+        apt_subunits: u64, // APT subunits to transfer (can be 0)
+        usd_subunits: u64, // USD subunits to transfer (can be 0)
     ) acquires UltimaHoldings {
         let from_addr = Signer::address_of(from);
         // Assert sender and recipient are not same account
@@ -186,7 +186,7 @@ module Ultima::Coins {
         assert!(user2_usd == 750, E_WRONG_TRANSFER_AMOUNT);
     }
 
-    // Verify Ultima address can mint AptCoin and UsdCoin to itself
+    // Verify Ultima address can mint APT and USD to itself
     #[test(ultima_signer = @Ultima)]
     public(script) fun mint_ultima(
         ultima_signer: signer // The Ultima account
@@ -247,22 +247,22 @@ module Ultima::Coins {
     #[test]
     #[expected_failure]
     fun withdraw_dne() acquires UltimaHoldings {
-        (Coin<AptCoin>{subunits: _}, Coin<UsdCoin>{subunits: _}) =
+        (Coin<APT>{subunits: _}, Coin<USD>{subunits: _}) =
             withdraw(@TestUser1, 0, 0);
     }
 
-    // Verify error for trying to withdraw too much AptCoin
+    // Verify error for trying to withdraw too much APT
     #[test(account = @TestUser1)]
     #[expected_failure(abort_code = 4)]
     public(script) fun withdraw_too_much_apt(
         account: signer, // Account trying to over-withdraw
     ) acquires UltimaHoldings {
         publish_ultima_holdings(&account);
-        (Coin<AptCoin>{subunits: _}, Coin<UsdCoin>{subunits: _}) =
+        (Coin<APT>{subunits: _}, Coin<USD>{subunits: _}) =
             withdraw(Signer::address_of(&account), 1, 0);
     }
 
-    // Verify error for trying to withdraw too much UsdCoin
+    // Verify error for trying to withdraw too much USD
     // Near-duplicate of withdraw_too_much_apt() to assure 100% coverage
     #[test(account = @TestUser1)]
     #[expected_failure(abort_code = 4)]
@@ -270,7 +270,7 @@ module Ultima::Coins {
         account: signer, // Account trying to over-withdraw
     ) acquires UltimaHoldings {
         publish_ultima_holdings(&account);
-        (Coin<AptCoin>{subunits: _}, Coin<UsdCoin>{subunits: _}) =
+        (Coin<APT>{subunits: _}, Coin<USD>{subunits: _}) =
             withdraw(Signer::address_of(&account), 0, 1);
     }
 }

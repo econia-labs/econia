@@ -5,5 +5,5 @@
   :caption: members
 
   account
-  client
   defs
+  rest

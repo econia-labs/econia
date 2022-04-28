@@ -1,4 +1,0 @@
-``client``
-##########
-
-.. automodule:: chain.client

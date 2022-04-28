@@ -23,10 +23,40 @@ e_msgs = SimpleNamespace(
 )
 """Error messages"""
 
+member_names = SimpleNamespace(
+    Balance = 'Balance',
+    transfer = 'transfer'
+)
+"""Move module member names"""
+
+module_names = SimpleNamespace(
+    TestCoin = 'TestCoin'
+)
+"""Move module names"""
+
+msg_sig_start_byte = 2
+"""
+Byte within message from transaction request post response, after which
+data should be signed. Per official Aptos transaction tutorial
+"""
+
+named_addrs = SimpleNamespace(
+    Std = '1'
+)
+"""Named addresses (without leading hex specifier)"""
+
 networks = SimpleNamespace(
     devnet = 'devnet'
 )
 """Aptos cluster networks"""
+
+resource_fields = SimpleNamespace(
+    coin = 'coin',
+    data = 'data',
+    type = 'type',
+    value = 'value'
+)
+"""Move resource fields"""
 
 rest_codes = SimpleNamespace(
     not_found = 404,
@@ -37,6 +67,7 @@ rest_codes = SimpleNamespace(
 
 rest_path_elems = SimpleNamespace(
     accounts = 'accounts',
+    mint = 'mint',
     resources = 'resources',
     signing_message = 'signing_message',
     transactions = 'transactions'
@@ -47,8 +78,16 @@ rest_post_headers = SimpleNamespace(
     content_type = 'Content-Type',
     application_json = 'application/json'
 )
+"""Rest post headers"""
+
+rest_query_fields = SimpleNamespace(
+    amount = 'amount',
+    auth_key = 'auth_key'
+)
+"""Rest API URL query string fields"""
 
 rest_response_fields = SimpleNamespace(
+    hash = 'hash',
     message = 'message',
     pending_transaction = 'pending_transaction',
     type = 'type'
@@ -63,11 +102,14 @@ rest_urls = {
 }
 """REST API urls"""
 
-msg_sig_start_byte = 2
-"""
-Byte within message from transaction request post response, after which
-data should be signed. Per official Aptos transaction tutorial
-"""
+script_payload_fields = SimpleNamespace(
+    arguments = 'arguments',
+    function = 'function',
+    script_function_payload = 'script_function_payload',
+    type = 'type',
+    type_arguments = 'type_arguments'
+)
+"""Script function payload fields"""
 
 seps = SimpleNamespace(
     amp = '&',
@@ -81,14 +123,6 @@ seps = SimpleNamespace(
 
 single_sig_id = b'\x00'
 """1-byte signature scheme identifier, indicating single signature"""
-
-tx_sig_fields = SimpleNamespace(
-    type = 'type',
-    public_key = 'public_key',
-    signature = 'signature',
-    ed25519_signature = 'ed25519_signature',
-)
-"""Transaction signature fields"""
 
 tx_defaults = SimpleNamespace(
     gas_currency_code = 'XUS',
@@ -109,3 +143,14 @@ tx_fields = SimpleNamespace(
     signature = 'signature'
 )
 """Transaction fields"""
+
+tx_sig_fields = SimpleNamespace(
+    type = 'type',
+    public_key = 'public_key',
+    signature = 'signature',
+    ed25519_signature = 'ed25519_signature',
+)
+"""Transaction signature fields"""
+
+tx_timeout_granularity = 0.1
+"""How long to wait between querying REST API for transaction status"""

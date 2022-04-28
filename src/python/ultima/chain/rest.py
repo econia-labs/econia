@@ -1,26 +1,101 @@
-"""Blockchain interface client"""
+"""Aptos REST interface functionality"""
+
 import requests
 import time
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from ultima.chain.account import Account, hex_leader
 from ultima.chain.defs import (
     account_fields,
     api_url_types,
     e_msgs,
+    member_names as members,
+    module_names as modules,
     msg_sig_start_byte as start_byte,
+    named_addrs as n_addrs,
+    resource_fields,
+    script_payload_fields as p_fields,
     rest_codes,
     rest_path_elems,
     rest_post_headers as h_fields,
+    rest_query_fields as q_fields,
     rest_response_fields,
     rest_urls,
     seps,
     tx_defaults,
     tx_fields,
-    tx_sig_fields
+    tx_sig_fields,
+    tx_timeout_granularity
 )
 
-class RestClient:
+def move_trio(
+    address: str,
+    module: str,
+    member: str
+) -> str:
+    """Return a fully-specified, formatted Move identifier
+
+    Parameters
+    ----------
+    address : str
+        Account address without leading hex specifier
+    module : str
+        Move Module
+    member : str
+        Module member
+
+    Returns
+    -------
+    str
+        Formatted Move identifier
+
+    Example
+    -------
+    >>> from ultima.chain.rest import move_trio
+    >>> move_trio('1', 'TestCoin', 'Balance')
+    '0x1::TestCoin::Balance'
+    """
+    return f'{hex_leader(address)}::{module}::{member}'
+
+def construct_script_payload(
+    function: str,
+    arguments: list[str] = [],
+    type_arguments: list[str] = [],
+) -> Dict[str, Any]:
+    """Return a constructed script function payload
+
+    Parameters
+    ----------
+    function : str
+        A Move identifier per :func:`~chain.rest.move_trio`
+    arguments : list of str, optional
+        Script arguments
+    type_arguments : list of str, optional
+        Script type arguments
+
+    Returns
+    -------
+    dict from str to Any
+        Constructed script payload
+
+    Example
+    -------
+    >>> from ultima.chain.rest import construct_script_payload as c
+    >>> c('0x1::TestCoin::transfer', [f'0xf00', '123']) \
+    # doctest: +NORMALIZE_WHITESPACE
+    {'type': 'script_function_payload',
+     'function': '0x1::TestCoin::transfer',
+     'type_arguments': [],
+     'arguments': ['0xf00', '123']}
+    """
+    return {
+        p_fields.type: p_fields.script_function_payload,
+        p_fields.function: function,
+        p_fields.type_arguments: type_arguments,
+        p_fields.arguments: arguments
+    }
+
+class Client:
     """Interface to Aptos blockchain REST API
 
     Parameters
@@ -38,8 +113,8 @@ class RestClient:
     Example
     -------
     >>> from ultima.chain.defs import networks
-    >>> from ultima.chain.client import RestClient
-    >>> client = RestClient(networks.devnet)
+    >>> from ultima.chain.rest import Client
+    >>> client = Client(networks.devnet)
     >>> client.fullnode_url
     'https://fullnode.devnet.aptoslabs.com'
     >>> client.faucet_url
@@ -78,8 +153,8 @@ class RestClient:
         Example
         -------
         >>> from ultima.chain.defs import networks
-        >>> from ultima.chain.client import RestClient
-        >>> client = RestClient(networks.devnet)
+        >>> from ultima.chain.client import Client
+        >>> client = Client(networks.devnet)
         >>> client.construct_request_url(
         ...     ['foo', 'bar'],
         ...     query_pairs={'do_it': 'yes', 'say_it': 'no'},
@@ -263,7 +338,7 @@ class RestClient:
             Signing account
         tx_request : dict from str to Any
             Transaction request per
-            :meth:`~chain.client.RestClient.generate_tx`
+            :meth:`~chain.rest.Client.generate_tx`
 
         Returns
         -------
@@ -274,7 +349,7 @@ class RestClient:
             [rest_path_elems.transactions, rest_path_elems.signing_message],
             json=tx_request
         )
-        assert response.status_code == rest_codes.success. response.text
+        assert response.status_code == rest_codes.success, response.text
         to_sign = bytes.fromhex(
             response.json()[rest_response_fields.message][start_byte:]
         )
@@ -302,11 +377,11 @@ class RestClient:
         dict from str to Any
             REST post response JSON
         """
-        headers = {h_fields.content_type, h_fields.application_json}
+        headers = {h_fields.content_type: h_fields.application_json}
         response = self.get_post_response(
-            rest_path_elems.transactions,
+            [rest_path_elems.transactions],
             headers=headers,
-            json=tx
+            json=tx,
         )
         assert response.status_code == rest_codes.processing, response.text
         return response.json()
@@ -325,7 +400,7 @@ class RestClient:
         Returns
         -------
         True
-            If transaction is not found or pending
+            If transaction is not found or is pending
         """
         response = self.get_request_response([
             rest_path_elems.transactions,
@@ -354,5 +429,111 @@ class RestClient:
         count = 0
         while self.tx_pending(tx_hash):
             assert count < time_in_s, e_msgs.tx_timeout
-            time.sleep(1)
-            count += 1
+            time.sleep(tx_timeout_granularity)
+            count += tx_timeout_granularity
+
+    def submit_to_completion(
+        self,
+        signer: Account,
+        payload: Dict[str, Any]
+    ) -> str:
+        """Submit signed transaction, wait until no longer pending
+
+        Parameters
+        ----------
+        signer : ultima.chain.account.Account
+            Signing account
+        payload : dict from str to Any
+            Transaction payload data
+
+        Returns
+        -------
+        str
+            Completed transaction hash
+        """
+        tx_request = self.generate_tx(signer.address(), payload)
+        signed_tx = self.sign_tx(signer, tx_request)
+        result = self.submit_tx(signed_tx)
+        tx_hash = str(result[rest_response_fields.hash])
+        self.wait_for_tx(tx_hash)
+        return tx_hash
+
+    def testcoin_balance(
+        self,
+        account_address: str
+    ) -> Optional[int]:
+        """Return TestCoin balance associated with account
+
+        Parameters
+        ----------
+        account_address : str
+            Address to check TestCoin balance of
+
+        Returns
+        -------
+        int or None
+            Amount of TestCoin if address has balance, None if not
+        """
+        resources = self.account_resources(account_address)
+        balance_trio = move_trio(
+                n_addrs.Std,
+                modules.TestCoin,
+                members.Balance
+        )
+        for resource in resources:
+            if resource[resource_fields.type] == balance_trio:
+                return int(resource[resource_fields.data]\
+                    [resource_fields.coin][resource_fields.value])
+        return None
+
+    def transfer_testcoin(
+        self,
+        signer: Account,
+        recipient: str,
+        amount: int
+    ) -> str:
+        """Transfer TestCoin between accounts
+
+        Parameters
+        ----------
+        signer : ultima.chain.account.Account
+            Signing account
+        recipient : str
+            Receiving account
+        amount : int
+            Amount of TestCoin to transfer
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        payload = construct_script_payload(
+            move_trio(n_addrs.Std, modules.TestCoin, members.transfer),
+            [hex_leader(recipient), str(amount)]
+        )
+        return self.submit_to_completion(signer, payload)
+
+    def fund_account(
+        self,
+        auth_key: str,
+        amount: int
+    ) -> None:
+        """Create account if necessary, fund with TestCoin
+
+        Parameters
+        ----------
+        auth_key : str
+            Account authentication key
+        amount : int
+            Amount of TestCoin to request from faucet
+        """
+        response = self.get_post_response(
+            [rest_path_elems.mint],
+            {
+                q_fields.amount: str(amount),
+                q_fields.auth_key: auth_key
+            },
+            faucet=True
+        )
+        assert response.status_code == rest_codes.success, response.text

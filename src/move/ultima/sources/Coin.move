@@ -16,13 +16,13 @@ module Ultima::Coin {
     const USD_SCALE: u8 = 6;
 
     // Generic coin type
-    struct UltimaCoin<phantom CoinType> has store {
+    struct Coin<phantom CoinType> has store {
         subunits: u64 // Indivisible subunits (e.g. Satoshi for BTC)
     }
 
-    // Represents balance of each address
+    // Represents balance of given Coin Type
     struct Balance<phantom CoinType> has key {
-        coin: UltimaCoin<CoinType>
+        coin: Coin<CoinType>
     }
 
     // Publish empty balance resource under signer's account
@@ -30,7 +30,7 @@ module Ultima::Coin {
     public(script) fun publish_balance<CoinType>(
         account: &signer
     ) {
-        let empty_coin = UltimaCoin<CoinType>{subunits: 0};
+        let empty_coin = Coin<CoinType>{subunits: 0};
         assert!(
             !exists<Balance<CoinType>>(Signer::address_of(account)),
             E_ALREADY_HAS_BALANCE
@@ -57,13 +57,13 @@ module Ultima::Coin {
     // Deposit moved coin amount to a given address
     fun deposit<CoinType>(
         addr: address,
-        coin: UltimaCoin<CoinType>
+        coin: Coin<CoinType>
     ) acquires Balance {
         let balance_ref =
             &mut borrow_global_mut<Balance<CoinType>>(addr).coin.subunits;
         let balance = *balance_ref;
         // Destruct moved coin amount
-        let UltimaCoin{subunits} = coin;
+        let Coin{subunits} = coin;
         *balance_ref = balance + subunits;
     }
 
@@ -72,10 +72,10 @@ module Ultima::Coin {
         addr: address,
         subunits: u64
     ) acquires Balance {
-        deposit<CoinType>(addr, UltimaCoin<CoinType>{subunits});
+        deposit<CoinType>(addr, Coin<CoinType>{subunits});
     }
 
-    // Mint APT and USD UltimaCoin to a given address
+    // Mint APT and USD to a given address
     // May only be invoked by Ultima account
     public(script) fun airdrop(
         account: &signer,

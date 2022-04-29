@@ -139,8 +139,10 @@ seps = SimpleNamespace(
     colon = '-',
     dot = '.',
     equal = '=',
+    gt = '>',
     hex = '0x',
     lsb = '[',
+    lt = '<',
     nl = '\n',
     pound = '#',
     q_mark = '?',
@@ -194,6 +196,17 @@ tx_timeout_granularity = 0.1
 ultima_modules = SimpleNamespace(
     Coin = SimpleNamespace(
         name = 'Coin',
+        members = SimpleNamespace(
+            airdrop = 'airdrop',
+            APT = 'APT',
+            Balance = 'Balance',
+            publish_balances = 'publish_balances',
+            USD = 'USD'
+        ),
+        fields = SimpleNamespace(
+            coin = 'coin',
+            subunits = 'subunits'
+        )
     )
 )
 """Ultima Move modules with nested member specifiers"""

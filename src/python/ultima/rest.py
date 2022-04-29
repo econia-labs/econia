@@ -25,7 +25,8 @@ from ultima.defs import (
     tx_defaults,
     tx_fields,
     tx_sig_fields,
-    tx_timeout_granularity
+    tx_timeout_granularity,
+    ultima_modules
 )
 
 def move_trio(
@@ -56,6 +57,32 @@ def move_trio(
     '0x1::TestCoin::Balance'
     """
     return f'{hex_leader(address)}::{module}::{member}'
+
+def typed_trio(
+    trio: str,
+    type: str
+) -> str:
+    """Return a Move trio with type specifier
+
+    Parameters
+    ----------
+    trio : str
+        A Move trio per :func:`~rest.move_trio`
+    type : str
+        Type specifier
+
+    Returns
+    -------
+    str
+        Move trio with type specifier
+
+    Example
+    -------
+    >>> from ultima.rest import typed_trio
+    >>> typed_trio('0x123::Module::member', 'type_specifier')
+    '0x123::Module::member<type_specifier>'
+    """
+    return trio + seps.lt + type + seps.gt
 
 def construct_script_payload(
     function: str,
@@ -689,4 +716,112 @@ class Client:
             signer,
             move_trio(n_addrs.Std, modules.TestCoin, members.transfer),
             [hex_leader(recipient), str(amount)]
+        )
+
+class UltimaClient(Client):
+    """Aptos REST API interface with Ultima-specific functionality"""
+
+    def publish_ultima_balances(
+        self,
+        signer: Account,
+        ultima_addr: str
+    ) -> str:
+        """Publish empty APT and USD balance resources to an account
+
+        Parameters
+        ----------
+        signer : ultima.account.Account
+            Signing account to publish under
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        return self.run_script(
+            signer,
+            move_trio(
+                ultima_addr,
+                ultima_modules.Coin.name,
+                ultima_modules.Coin.members.publish_balances
+            )
+        )
+
+    def account_ultima_coin_balances(
+        self,
+        addr: str,
+        ultima_addr: str
+    ) -> Dict[str, Any]:
+        """Return APT and USD UltimaCoin holdings at given address
+
+        Parameters
+        ----------
+        addr : str
+            Address to check balances of
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+
+        Returns
+        -------
+        dict from str to Any
+            Holdings, in subunits, for each UltimaCoin, if a Balance has
+            been initialized for the account
+        """
+        APT = ultima_modules.Coin.members.APT
+        USD = ultima_modules.Coin.members.USD
+        [Balance_trio, APT_trio, USD_trio] = [
+            move_trio(ultima_addr, ultima_modules.Coin.name, member) for \
+                member in [ultima_modules.Coin.members.Balance, APT, USD]
+        ]
+        [APT_balance_trio, USD_balance_trio] = \
+            [typed_trio(Balance_trio, coin_trio) for coin_trio in \
+                [APT_trio, USD_trio]]
+        holdings = {APT: None, USD: None}
+        for resource in self.account_resources(addr):
+            to_update = None
+            if resource[resource_fields.type] == APT_balance_trio:
+                to_update = APT
+            elif resource[resource_fields.type] == USD_balance_trio:
+                to_update = USD
+            if to_update is not None:
+                holdings[to_update] = int(resource[resource_fields.data]\
+                    [ultima_modules.Coin.fields.coin]\
+                    [ultima_modules.Coin.fields.subunits])
+        return holdings
+
+    def airdrop_ultima_coins(
+        self,
+        ultima_signer: Account,
+        addr: str,
+        apt_subunits: int = 0,
+        usd_subunits: int = 0
+    ) -> str:
+        """Mint APT and USD UltimaCoins to given address
+
+        Parameters
+        ----------
+        ultima_signer : ultima.account.Account
+            Airdrop authority, which should be Ultima address
+        addr : str
+            Address to mint to
+        apt : int, optional
+            Subunits of APT UltimaCoin to mint
+        usd : int, optional
+            Subunits of USD UltimaCoin to mint
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        return self.run_script(
+            ultima_signer,
+            move_trio(
+                ultima_signer.address(),
+                ultima_modules.Coin.name,
+                ultima_modules.Coin.members.airdrop
+            ),
+            [addr, str(apt_subunits), str(usd_subunits)]
         )

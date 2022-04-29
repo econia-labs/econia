@@ -193,13 +193,13 @@ class Client:
         if faucet:
             url = f'{self.faucet_url}'
         for elem in path_elems:
-            url = url + seps.slash + elem
+            url = url + seps.sls + elem
         if query_pairs is not None:
-            url = url + seps.q_mark
+            url = url + seps.qm
             for key in query_pairs:
-                if not url.endswith(seps.q_mark):
+                if not url.endswith(seps.qm):
                     url = url + seps.amp
-                url = url + key + seps.equal + query_pairs[key]
+                url = url + key + seps.eq + query_pairs[key]
         return url
 
     def get_request_response(

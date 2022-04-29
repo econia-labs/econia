@@ -18,6 +18,14 @@ Some functionality abstracted to be run from the command line, see below
     # From Ultima repository root directory
     % python src/python/ultima/build.py publish .secrets/ultima.key
     Success, tx hash: 0x9322adcaacbcd499b35d16b5d24c4521f65f30da27b1efd127319d24c916820e
+
+.. code-block:: zsh
+    :caption: Generating a new dev account (when bytecode loader gets stuck)
+
+    # From Ultima repository root directory
+    % python src/python/ultima/build.py gen
+    New account: 767f55126ad35ac6acaa130a2a18ba38d721fd42e5fa4bfe10885216ee307706
+
 """
 
 import os
@@ -31,11 +39,44 @@ from ultima.defs import (
     file_extensions,
     max_address_length,
     networks,
+    regex_trio_group_ids as r_i,
     seps,
     toml_section_names,
-    ultima_paths as ps
+    tx_defaults,
+    Ultima,
+    ultima_paths as ps,
+    util_paths
 )
 from ultima.rest import Client
+
+def get_move_util_path(
+    filename: str,
+    file_extension: str,
+    ultima_root: str = seps.dot,
+) -> str:
+    """Return absolute path of file in Move package directory
+
+    Parameters
+    ----------
+    filename : str
+        The file name, without extension
+    file_extension : str
+        File extension
+    ultima_root : str, optional
+        Relative path to Ultima repository root directory
+
+    Returns
+    -------
+    str
+        Absolute path to given file
+    """
+    abs_path = os.path.join(
+        os.path.abspath(ultima_root),
+        ps.move_package_root,
+        filename + seps.dot + file_extension
+    )
+    assert os.path.isfile(abs_path), abs_path
+    return abs_path
 
 def get_toml_path(
     ultima_root: str = seps.dot
@@ -52,13 +93,24 @@ def get_toml_path(
     str
         Absolute path to Move.toml file
     """
-    abs_path = os.path.join(
-        os.path.abspath(ultima_root),
-        ps.move_package_root,
-        ps.toml_path + seps.dot + file_extensions.toml
-    )
-    assert os.path.isfile(abs_path), abs_path
-    return abs_path
+    return get_move_util_path(ps.toml_path, file_extensions.toml, ultima_root)
+
+def get_sh_path(
+    ultima_root: str = seps.dot
+) -> str:
+    """Return absolute path of Move package .sh file
+
+    Parameters
+    ----------
+    ultima_root : str, optional
+        Relative path to Ultima repository root directory
+
+    Returns
+    -------
+    str
+        Absolute path to ss.sh file
+    """
+    return get_move_util_path(ps.ss_path, file_extensions.sh, ultima_root)
 
 def get_toml_lines(
     abs_path: str
@@ -122,12 +174,12 @@ def get_addr_elems(
     ('Bar', '987cbd', None)
     """
     comment = None
-    match = re.search(r'(?<=#\s)\w+', line)
+    match = re.search(r'(?<=' + seps.pnd + r'\s)\w+' , line)
     if match:
         comment = match.group(0)
     return (
         re.search(r'^\w+', line).group(0),
-        re.search(r'(?<=0x)\w+', line).group(0),
+        re.search(r'(?<=' + seps.hex + r')\w+', line).group(0),
         comment
     )
 
@@ -231,10 +283,10 @@ def format_addr(
                 comment = addr[max_address_length.move_cli:]
                 addr = addr[0:max_address_length.move_cli]
         assert len(addr) <= max_address_length.move_cli
-    line = f'{name}' +  seps.sp + seps.equal + seps.sp + seps.s_q + \
-        hex_leader(normalized_hex(addr)) + seps.s_q
+    line = f'{name}' +  seps.sp + seps.eq + seps.sp + seps.sq + \
+        hex_leader(normalized_hex(addr)) + seps.sq
     if comment is not None:
-        line = line + seps.sp + seps.pound + seps.sp + normalized_hex(comment)
+        line = line + seps.sp + seps.pnd + seps.sp + normalized_hex(comment)
     return line
 
 def format_addrs(
@@ -331,17 +383,156 @@ def publish_bytecode(
     assert client.tx_successful(tx_hash), tx_hash
     return tx_hash
 
+def sub_middle_group_file(
+    abs_path: str,
+    pattern: str,
+    sub: str
+) -> str:
+    """Loop over lines in a file and replace middle RegEx group at match
+
+    Parameters
+    ----------
+    abs_path : str
+        Absolute path of file
+    pattern : str
+        RegEx pattern
+    sub : str
+        Value to substitute for middle RegEx group
+
+    Returns
+    -------
+    str
+        The value that was replaced
+    """
+    lines = Path(abs_path).read_text().splitlines()
+    for i, line in enumerate(lines):
+        m = re.search(pattern, line)
+        if m: # If RegEx matched, substitute middle value
+            lines[i] = m.group(r_i.start) + sub + m.group(r_i.end)
+            old = m.group(r_i.middle)
+            break
+    Path(abs_path).write_text(seps.nl.join(lines))
+    return old
+
+def get_key_path(
+    address = str,
+    ultima_root: str = seps.dot
+) -> str:
+    """Return absolute path keyfile at `.secrets/<address>.key`
+
+    Parameters
+    ----------
+    address : str
+        Account address
+    ultima_root : str, optional
+        relative path to ultima repository root directory
+
+    Returns
+    -------
+    str
+        Absolute path of keyfile
+    """
+    return os.path.join(
+        os.path.abspath(ultima_root),
+        util_paths.secrets_dir,
+        address + seps.dot + file_extensions.key
+    )
+
+def sub_address_in_build_files(
+    address = str,
+    ultima_root: str = seps.dot
+) -> str:
+    """Substitute new address into relevant build files
+
+    Parameters
+    ----------
+    address : str
+        Account address
+    ultima_root : str, optional
+        relative path to ultima repository root directory
+
+    Returns
+    -------
+    str
+        Previous build address
+    """
+    check = None
+    for path, pattern in [
+        (
+            get_toml_path(ultima_root),
+            r'(' + Ultima + r'.+' + seps.hex + r')(\w+)(' + seps.sq + r')',
+        ),
+        (
+            get_sh_path(ultima_root),
+            r'(.+' + util_paths.secrets_dir + seps.sls + r')(\w+)(.+)'
+        )
+    ]:
+        old_address = sub_middle_group_file(path, pattern, address)
+        if check is None:
+            check = old_address
+        else:
+            assert old_address == check
+    return old_address
+
+def archive_keyfile(
+    abs_path: str
+) -> None:
+    """Move keyfile with given address into `.secrets/old_keys`
+
+    Parameters
+    ----------
+    abs_path : str
+        Absolute path of keyfile to archive
+    """
+    Path(abs_path).replace(os.path.join(
+        os.path.dirname(abs_path),
+        util_paths.old_keys,
+        os.path.basename(abs_path)
+    ))
+
+def gen_new_ultima_dev_account(
+    ultima_root: str = seps.dot
+) -> str:
+    """Generate new Ultima account, fund from faucet, update build files
+
+    For when bytecode loader gets stuck and will not upload valid code
+    without changing the Move module or Ultima named address account
+
+    Parameters
+    ----------
+    ultima_root : str, optional
+        relative path to ultima repository root directory
+
+    Returns
+    -------
+    str
+        The address of the new account
+    """
+    account = Account()
+    address = account.address()
+    account.save_seed_to_disk(get_key_path(address, ultima_root))
+    Client(networks.devnet).mint_testcoin(address, tx_defaults.faucet_mint_val)
+    prep_toml(ultima_root, long=True)
+    old_address = sub_address_in_build_files(address, ultima_root)
+    archive_keyfile(get_key_path(old_address, ultima_root))
+    return(address)
+
 if __name__ == '__main__':
     """See module docstring for examples"""
-    ultima_root = seps.dot
+    ultima_root = seps.dot # Assume running from within Ultima root dir
     if len(sys.argv) == 4:
         ultima_root = sys.argv[3]
     action = sys.argv[1]
-    if action == build_command_fields.prep:
+    if action == build_command_fields.prep: # Prepare Move.Toml file
         long = sys.argv[2] == build_command_fields.long
         prep_toml(ultima_root, long)
-    if action == build_command_fields.publish:
+    if action == build_command_fields.publish: # Cargo build and publish
         keyfile = sys.argv[2]
         account = Account(path=keyfile)
         tx_hash = publish_bytecode(account, ultima_root)
-        print(build_command_fields.success_msg, tx_hash)
+        print(build_command_fields.success_tx_msg, tx_hash)
+    if action == build_command_fields.gen: # Generate new dev account
+        if len (sys.argv) == 3:
+            ultima_root = sys.argv[2]
+        new_address = gen_new_ultima_dev_account(ultima_root)
+        print(build_command_fields.account_msg, new_address)

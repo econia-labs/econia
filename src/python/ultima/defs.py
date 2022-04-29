@@ -18,10 +18,12 @@ api_url_types = SimpleNamespace(
 """Types of REST API base urls"""
 
 build_command_fields = SimpleNamespace(
+    account_msg = 'New account:',
+    gen = 'gen',
     long = 'long',
     prep = 'prep',
     publish = 'publish',
-    success_msg = 'Success, tx hash:'
+    success_tx_msg = 'Success, tx hash:'
 )
 """Command line fields for automated building process"""
 
@@ -32,7 +34,9 @@ e_msgs = SimpleNamespace(
 """Error messages"""
 
 file_extensions = SimpleNamespace(
+    key = 'key',
     mv = 'mv',
+    sh = 'sh',
     toml = 'toml'
 )
 """Extensions for common filetypes"""
@@ -81,6 +85,13 @@ payload_fields = SimpleNamespace(
     type_arguments = 'type_arguments'
 )
 """Transaction payload fields"""
+
+regex_trio_group_ids = SimpleNamespace(
+    start = 1,
+    middle = 2,
+    end = 3
+)
+"""For RegEx search yielding 3 group matches"""
 
 resource_fields = SimpleNamespace(
     coin = 'coin',
@@ -136,19 +147,18 @@ rest_urls = {
 
 seps = SimpleNamespace(
     amp = '&',
-    colon = '-',
     dot = '.',
-    equal = '=',
+    eq = '=',
     gt = '>',
     hex = '0x',
     lsb = '[',
     lt = '<',
     nl = '\n',
-    pound = '#',
-    q_mark = '?',
+    pnd = '#',
+    qm = '?',
     rsb = ']',
-    s_q = "'",
-    slash = '/',
+    sq = "'",
+    sls = '/',
     sp = ' '
 )
 """Separators"""
@@ -162,6 +172,7 @@ toml_section_names = SimpleNamespace(
 """Section names in Move.toml file"""
 
 tx_defaults = SimpleNamespace(
+    faucet_mint_val = 1_000_000,
     gas_currency_code = 'XUS',
     gas_unit_price = 1,
     max_gas_amount = 2000,
@@ -193,6 +204,9 @@ tx_sig_fields = SimpleNamespace(
 tx_timeout_granularity = 0.1
 """How long to wait between querying REST API for transaction status"""
 
+Ultima = 'Ultima'
+"""Project name"""
+
 ultima_modules = SimpleNamespace(
     Coin = SimpleNamespace(
         name = 'Coin',
@@ -217,6 +231,16 @@ ultima_paths = SimpleNamespace(
     # Relative to Ultima repository root directory
     move_package_root = 'src/move/ultima',
     # Relative to Move package root
-    toml_path = 'Move'
+    ss_path = 'ss',
+    # Relative to Move package root
+    toml_path = 'Move',
 )
 """Ultima Move code paths"""
+
+util_paths = SimpleNamespace(
+    # Relative to Ultima repository root
+    secrets_dir = '.secrets',
+    # Relative to secrets directory
+    old_keys = 'old'
+)
+"""Paths to developer utility resources"""

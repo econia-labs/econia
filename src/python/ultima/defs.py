@@ -17,6 +17,14 @@ api_url_types = SimpleNamespace(
 )
 """Types of REST API base urls"""
 
+build_command_fields = SimpleNamespace(
+    long = 'long',
+    prep = 'prep',
+    publish = 'publish',
+    success_msg = 'Success, tx hash:'
+)
+"""Command line fields for automated building process"""
+
 e_msgs = SimpleNamespace(
     path_val_collision = 'Different value already exists at provided path',
     tx_timeout = 'Transaction timeout'

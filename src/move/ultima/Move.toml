@@ -5,7 +5,7 @@ version = '0.1.0' # Per SemVer
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Ultima = '0x7a9095088d3653498a35fa6bf1c6efae7e2a0f70002795d106a52f9ab946cfda'
+Ultima = '0x7a9095088d3653498a35fa6bf1c6efae' # 7e2a0f70002795d106a52f9ab946cfda
 TestUser1 = '0xace'
 TestUser2 = '0xbed'
 

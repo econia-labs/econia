@@ -1,17 +1,41 @@
-"""Move package building functionality"""
+"""Move package building functionality
+
+Some functionality abstracted to be run from the command line, see below
+
+.. code-block:: zsh
+    :caption: Prepping Move.toml file
+
+    # From within Ultima repository root
+    % python src/python/ultima/build.py prep long
+    % python src/python/ultima/build.py prep short
+    # From elsewhere
+    % cd src
+    python ../src/python/ultima/build.py prep long '../'
+
+.. code-block:: zsh
+    :caption: Publishing all module bytecode
+
+    # From Ultima repository root directory
+    % python src/python/ultima/build.py publish .secrets/ultima.key
+    Success, tx hash: 0x9322adcaacbcd499b35d16b5d24c4521f65f30da27b1efd127319d24c916820e
+"""
 
 import os
 import re
+import sys
 
 from pathlib import Path
-from ultima.account import hex_leader
+from ultima.account import Account, hex_leader
 from ultima.defs import (
+    build_command_fields,
     file_extensions,
     max_address_length,
+    networks,
     seps,
     toml_section_names,
     ultima_paths as ps
 )
+from ultima.rest import Client
 
 def get_toml_path(
     ultima_root: str = seps.dot
@@ -249,7 +273,7 @@ def prep_toml(
     ----------
     ultima_root : str, optional
         Relative path to Ultima repository root directory
-    long: bool
+    long: bool, optional
         If True, format as Aptos addresses, otherwise Move CLI addresses
     """
     toml_path = get_toml_path(ultima_root)
@@ -257,3 +281,67 @@ def prep_toml(
     format_addrs(lines, long)
     Path(toml_path).write_text(seps.nl.join(lines))
 
+def get_bytecode_files(
+    ultima_root: str = seps.dot
+) -> list[str]:
+    """Return list of module bytecode strings
+
+    Parameters
+    ----------
+    ultima_root : str, optional
+        relative path to ultima repository root directory
+
+    Returns
+    -------
+    list of str
+        Module bytecode hex strings
+    """
+    abs_path = os.path.join(
+        os.path.abspath(ultima_root),
+        ps.move_package_root,
+        ps.bytecode_dir
+    )
+    bcs = []
+    for path in Path(abs_path).iterdir():
+        bcs.append(path.read_bytes().hex())
+    return bcs
+
+def publish_bytecode(
+    signer: Account,
+    ultima_root: str = seps.dot
+) -> str:
+    """Publish bytecode modules and return transaction hash
+
+    Assumes devnet
+
+    Parameters
+    ----------
+    signer : ultima.account.Account
+        Signing account
+    ultima_root : str, optional
+        relative path to ultima repository root directory
+
+    Returns
+    -------
+    str
+        Transaction hash of module upload transaction
+    """
+    client = Client(networks.devnet)
+    tx_hash = client.publish_modules(signer, get_bytecode_files(ultima_root))
+    assert client.tx_successful(tx_hash), tx_hash
+    return tx_hash
+
+if __name__ == '__main__':
+    """See module docstring for examples"""
+    ultima_root = seps.dot
+    if len(sys.argv) == 4:
+        ultima_root = sys.argv[3]
+    action = sys.argv[1]
+    if action == build_command_fields.prep:
+        long = sys.argv[2] == build_command_fields.long
+        prep_toml(ultima_root, long)
+    if action == build_command_fields.publish:
+        keyfile = sys.argv[2]
+        account = Account(path=keyfile)
+        tx_hash = publish_bytecode(account, ultima_root)
+        print(build_command_fields.success_msg, tx_hash)

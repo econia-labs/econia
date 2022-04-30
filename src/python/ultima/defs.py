@@ -215,6 +215,7 @@ ultima_modules = SimpleNamespace(
             APT = 'APT',
             Balance = 'Balance',
             publish_balances = 'publish_balances',
+            transfer_both_coins = 'transfer_both_coins',
             USD = 'USD'
         ),
         fields = SimpleNamespace(

@@ -754,7 +754,7 @@ class UltimaClient(Client):
         addr: str,
         ultima_addr: str
     ) -> Dict[str, Any]:
-        """Return APT and USD UltimaCoin holdings at given address
+        """Return APT and USD coin holdings at given address
 
         Parameters
         ----------
@@ -798,18 +798,18 @@ class UltimaClient(Client):
         apt_subunits: int = 0,
         usd_subunits: int = 0
     ) -> str:
-        """Mint APT and USD UltimaCoins to given address
+        """Airdrop APT and USD coins to given address
 
         Parameters
         ----------
         ultima_signer : ultima.account.Account
-            Airdrop authority, which should be Ultima address
+            Airdrop authority, which should be Ultima account
         addr : str
             Address to mint to
-        apt : int, optional
-            Subunits of APT UltimaCoin to mint
-        usd : int, optional
-            Subunits of USD UltimaCoin to mint
+        apt_subunits : int, optional
+            Subunits of APT to mint
+        usd_subunits : int, optional
+            Subunits of USD to mint
 
         Returns
         -------
@@ -824,4 +824,42 @@ class UltimaClient(Client):
                 ultima_modules.Coin.members.airdrop
             ),
             [addr, str(apt_subunits), str(usd_subunits)]
+        )
+
+    def transfer_ultima_coins(
+        self,
+        sender: Account,
+        recipient: str,
+        ultima_addr: str,
+        apt_subunits: int = 0,
+        usd_subunits: int = 0
+    ) -> str :
+        """Transfer APT and USD
+
+        Parameters
+        ----------
+        sender : ultima.account.Account
+            Account sending coins
+        recipient : str
+            Address to send to
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+        apt_subunits : int, optional
+            Subunits of APT to mint
+        usd_subunits : int, optional
+            Subunits of USD to mint
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        return self.run_script(
+            sender,
+            move_trio(
+                ultima_addr,
+                ultima_modules.Coin.name,
+                ultima_modules.Coin.members.transfer_both_coins
+            ),
+            [recipient, str(apt_subunits), str(usd_subunits)]
         )

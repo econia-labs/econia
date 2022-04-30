@@ -11,6 +11,9 @@ module Ultima::Coin {
     const E_USD_AIRDROP_VAL: u64 = 5;
     const E_INSUFFICIENT_BALANCE: u64 = 6;
     const E_FAILED_TRANSFER: u64 = 7;
+    const E_NOT_EMPTY: u64 = 8;
+    const E_INVALID_REPORT: u64 = 9;
+    const E_MODIFIED_VALUE: u64 = 10;
 
     // Coin type specifiers
     struct APT {}
@@ -65,6 +68,12 @@ module Ultima::Coin {
         *balance_ref = balance + subunits;
     }
 
+    // Return coin with 0 subunits, useful for initialization elsewhere
+    public fun get_empty_coin<CoinType>():
+    Coin<CoinType> {
+        Coin<CoinType>{subunits: 0}
+    }
+
     // Mint amount of given coin, in subunits, to address
     fun mint<CoinType>(
         addr: address,
@@ -92,6 +101,13 @@ module Ultima::Coin {
     ) {
         publish_balance<APT>(account);
         publish_balance<USD>(account);
+    }
+
+    // Report number of subunits inside a coin
+    public fun report_subunits<CoinType>(
+        coin_ref: &Coin<CoinType>
+    ): u64 {
+        coin_ref.subunits
     }
 
     // Transfer specified amount from sender to recipient
@@ -133,7 +149,7 @@ module Ultima::Coin {
 
     // Verify airdrop deposits processed correctly
     #[test(
-        user = @TestUser1,
+        user = @TestUser,
         authority = @Ultima
     )]
     public(script) fun airdrop_deposit_amounts(
@@ -148,7 +164,7 @@ module Ultima::Coin {
     }
 
     // Verify airdrop fails when signer is not Ultima
-    #[test(user = @TestUser1)]
+    #[test(user = @TestUser)]
     #[expected_failure(abort_code = 1)]
     public(script) fun airdrop_invalid_authority(
         user: signer
@@ -161,7 +177,7 @@ module Ultima::Coin {
     #[expected_failure]
     fun balance_of_dne<CoinType>()
     acquires Balance {
-        balance_of<APT>(@TestUser1);
+        balance_of<APT>(@TestUser);
     }
 
     // Verify can not deposit if Balance resource unpublished
@@ -169,11 +185,18 @@ module Ultima::Coin {
     #[expected_failure]
     fun deposit_dne<CoinType>()
     acquires Balance {
-        deposit(@TestUser1, Coin<APT>{subunits: 1});
+        deposit(@TestUser, Coin<APT>{subunits: 1});
+    }
+
+    // Verify empty coin return value
+    #[test]
+    fun empty_coin_return() {
+        let Coin<APT>{subunits} = get_empty_coin<APT>();
+        assert!(subunits == 0, E_NOT_EMPTY);
     }
 
     // Verify 0 holdings after publishing balance
-    #[test(account = @TestUser1)]
+    #[test(account = @TestUser)]
     public(script) fun publish_balances_zero(
         account: signer
     ) acquires Balance {
@@ -184,7 +207,7 @@ module Ultima::Coin {
     }
 
     // Verify abort for publishing balances twice
-    #[test(account = @TestUser1)]
+    #[test(account = @TestUser)]
     #[expected_failure(abort_code = 0)]
     public(script) fun publish_twice_aborts(
         account: signer
@@ -193,9 +216,26 @@ module Ultima::Coin {
         publish_balance<APT>(&account);
     }
 
+    // Verify successful reporting of subunits, without modification
+    #[test(account = @Ultima)]
+    public(script) fun report_subunits_success(
+        account: signer
+    ) acquires Balance {
+        publish_balance<APT>(&account);
+        let addr = Signer::address_of(&account);
+        mint<APT>(addr, 100); // Mint 100
+        assert!( // Assert 100 subunits reported
+            report_subunits<APT>(
+                &borrow_global<Balance<APT>>(addr).coin) == 100,
+            E_INVALID_REPORT
+        );
+        // Assert balance unmodified
+        assert!(balance_of<APT>(addr) == 100, E_MODIFIED_VALUE);
+    }
+
     // Verify successful transfer between accounts
     #[test(
-        user = @TestUser1,
+        user = @TestUser,
         ultima = @Ultima
     )]
     public(script) fun transfer_success(
@@ -225,7 +265,7 @@ module Ultima::Coin {
     #[test]
     #[expected_failure]
     fun withdraw_dne() acquires Balance {
-        Coin<APT>{subunits: _} = withdraw(@TestUser1, 0);
+        Coin<APT>{subunits: _} = withdraw(@TestUser, 0);
     }
 
     // Verify can properly withdraw
@@ -241,7 +281,7 @@ module Ultima::Coin {
     }
 
     // Verify error raised when withdrawing too much
-    #[test(account = @TestUser1)]
+    #[test(account = @TestUser)]
     #[expected_failure(abort_code = 6)]
     public(script) fun withdraw_too_much(
         account: signer

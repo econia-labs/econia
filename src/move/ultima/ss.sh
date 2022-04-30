@@ -4,11 +4,11 @@ if [ $1 = cl ]
 then # Clean up for sandbox development
     move sandbox clean
     python ../../python/ultima/build.py prep short ../../..
-elif [ $1 = cp ]
+elif [ $1 = pb ]
 then # Cargo build and publish bytecode for all modules
     python ../../python/ultima/build.py prep long ../../..
     cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/2ed5db5c34b6bdac8236285b3f281f40f22d1a59c25be39e94dd67922c7cba02.key ../../../
+    python ../../python/ultima/build.py publish ../../../.secrets/116ca02847a9ef95f6a9437152936ab242b4d00f4846e0f760ced2c497c6a4f9.key ../../../
 elif [ $1 = na ]
 then # Generate new dev account
     python ../../python/ultima/build.py gen  ../../..

@@ -1,13 +1,12 @@
 [package]
-name = 'ultima'
+name = 'Ultima'
 version = '0.1.0' # Per SemVer
 
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Ultima = '0x2ed5db5c34b6bdac8236285b3f281f40f22d1a59c25be39e94dd67922c7cba02'
-TestUser1 = '0xace'
-TestUser2 = '0xbed'
+Ultima = '0x116ca02847a9ef95f6a9437152936ab242b4d00f4846e0f760ced2c497c6a4f9'
+TestUser = '0xace'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

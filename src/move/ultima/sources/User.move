@@ -1,5 +1,5 @@
-// Order submission/history functionality
-module Ultima::Order {
+// User ordering and history functionality
+module Ultima::User {
     //use AptosFramework::Table;
     //use AptosFramework::Timestamp;
     use Std::Signer;

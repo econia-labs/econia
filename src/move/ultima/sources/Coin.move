@@ -14,6 +14,12 @@ module Ultima::Coin {
     const E_NOT_EMPTY: u64 = 8;
     const E_INVALID_REPORT: u64 = 9;
     const E_MODIFIED_VALUE: u64 = 10;
+    const E_WITHDRAW_NOT_YIELD: u64 = 11;
+    const E_WITHDRAW_WRONG_BALANCE: u64 = 12;
+    const E_COIN_MERGE_FAILURE: u64 = 13;
+    const E_NOT_ENOUGH_TO_SPLIT: u64 = 14;
+    const E_SPLIT_FAILURE: u64 = 15;
+    const E_MERGE_TO_TARGET_FAILURE: u64 = 16;
 
     // Coin type specifiers
     struct APT {}
@@ -62,10 +68,9 @@ module Ultima::Coin {
     ) acquires Balance {
         let balance_ref =
             &mut borrow_global_mut<Balance<CoinType>>(addr).coin.subunits;
-        let balance = *balance_ref;
         // Destruct moved coin amount
         let Coin{subunits} = coin;
-        *balance_ref = balance + subunits;
+        *balance_ref = *balance_ref + subunits;
     }
 
     // Return coin with 0 subunits, useful for initialization elsewhere
@@ -80,6 +85,34 @@ module Ultima::Coin {
         subunits: u64
     ) acquires Balance {
         deposit<CoinType>(addr, Coin<CoinType>{subunits});
+    }
+
+    // Merge two coin resources into one with appropriate balance
+    public fun merge_coins<CoinType>(
+        c1: Coin<CoinType>,
+        c2: Coin<CoinType>
+    ): Coin<CoinType> {
+        let Coin<CoinType>{subunits: subs1} = c1;
+        let Coin<CoinType>{subunits: subs2} = c2;
+        Coin<CoinType>{subunits: subs1 + subs2}
+    }
+
+    // Merge inbound coin to a target coin at a mutable reference
+    public fun merge_coin_to_target<CoinType>(
+        inbound: Coin<CoinType>, // Inbound coin
+        // Mutable reference to target coin
+        target_coin_ref: &mut Coin<CoinType>
+    ): (
+        u64, // Inbound subunits
+        u64, // Subunits in target coin pre-merge
+        u64, // Subunits in target coin post-merge
+    )
+    {
+        let Coin<CoinType>{subunits: in} = inbound;
+        let subunits_ref = &mut target_coin_ref.subunits;
+        let pre = *subunits_ref;
+        *subunits_ref = pre + in;
+        (in, pre, *subunits_ref)
     }
 
     // Publish empty balance resource under signer's account
@@ -110,6 +143,20 @@ module Ultima::Coin {
         coin_ref.subunits
     }
 
+    // Split a coin resource into two, conserving total subunit count
+    public fun split_coin<CoinType>(
+        coin: Coin<CoinType>,
+        amount: u64,
+    ): (
+        Coin<CoinType>, // Requested amount
+        Coin<CoinType>, // Remainder
+    ) {
+        let Coin<CoinType>{subunits: available} = coin;
+        assert!(amount <= available, E_NOT_ENOUGH_TO_SPLIT);
+        let remainder = available - amount;
+        (Coin<CoinType>{subunits: amount}, Coin<CoinType>{subunits: remainder})
+    }
+
     // Transfer specified amount from sender to recipient
     public(script) fun transfer<CoinType>(
         sender: &signer,
@@ -133,7 +180,7 @@ module Ultima::Coin {
         transfer<USD>(sender, recipient, usd_subunits);
     }
 
-    // Withdraw specified subunits of given coin type from address
+    // Withdraw specified subunits of given coin from address balance
     fun withdraw<CoinType>(
         addr: address,
         amount: u64
@@ -145,6 +192,19 @@ module Ultima::Coin {
             &mut borrow_global_mut<Balance<CoinType>>(addr).coin.subunits;
         *balance_ref = balance - amount;
         Coin<CoinType>{subunits: amount}
+    }
+
+    // Return coins withdrawn from balance
+    public fun withdraw_coins(
+        account: &signer,
+        apt_subunits: u64,
+        usd_subunits: u64
+    ): (
+        Coin<APT>,
+        Coin<USD>
+    ) acquires Balance {
+        let addr = Signer::address_of(account);
+        (withdraw<APT>(addr, apt_subunits), withdraw<USD>(addr, usd_subunits))
     }
 
     // Verify airdrop deposits processed correctly
@@ -195,6 +255,27 @@ module Ultima::Coin {
         assert!(subunits == 0, E_NOT_EMPTY);
     }
 
+    // Verify coins merge correctly
+    #[test]
+    fun merge_coins_success() {
+        let Coin<APT>{subunits: result} =
+            merge_coins(Coin<APT>{subunits: 1}, Coin<APT>{subunits: 2});
+        assert!(result == 3, E_COIN_MERGE_FAILURE);
+    }
+
+    // Verify proper coin merge to target
+    #[test]
+    public fun merge_coin_to_target_success() {
+        let target = Coin<APT>{subunits: 100};
+        let (in, pre, post) =
+           merge_coin_to_target(Coin<APT>{subunits: 50}, &mut target);
+        let Coin<APT>{subunits: result} = target;
+        assert!(result == 150, E_MERGE_TO_TARGET_FAILURE);
+        assert!(in == 50, E_MERGE_TO_TARGET_FAILURE);
+        assert!(pre == 100, E_MERGE_TO_TARGET_FAILURE);
+        assert!(post == 150, E_MERGE_TO_TARGET_FAILURE);
+    }
+
     // Verify 0 holdings after publishing balance
     #[test(account = @TestUser)]
     public(script) fun publish_balances_zero(
@@ -233,6 +314,23 @@ module Ultima::Coin {
         assert!(balance_of<APT>(addr) == 100, E_MODIFIED_VALUE);
     }
 
+    // Verify successful splitting of coin into two
+    #[test]
+    fun split_coin_success() {
+        let (Coin<APT>{subunits: amount}, Coin<APT>{subunits: remainder}) =
+            split_coin<APT>(Coin<APT>{subunits: 100}, 25);
+        assert!(amount == 25, E_SPLIT_FAILURE);
+        assert!(remainder == 75, E_SPLIT_FAILURE);
+    }
+
+    // Verify unable to split coin when too much requested
+    #[test]
+    #[expected_failure(abort_code = 14)]
+    fun split_coin_failure() {
+        let (Coin<USD>{subunits: _}, Coin<USD>{subunits: _}) =
+            split_coin<USD>(Coin<USD>{subunits: 1}, 10);
+    }
+
     // Verify successful transfer between accounts
     #[test(
         user = @TestUser,
@@ -266,6 +364,29 @@ module Ultima::Coin {
     #[expected_failure]
     fun withdraw_dne() acquires Balance {
         Coin<APT>{subunits: _} = withdraw(@TestUser, 0);
+    }
+
+    // Verify successful return of coins and post-withdraw balance
+    #[test(account = @TestUser)]
+    public(script) fun withdraw_coins_success(
+        account: signer
+    ) acquires Balance {
+
+        // Initialize account
+        let addr = Signer::address_of(&account);
+        publish_balances(&account);
+        mint<APT>(addr, 100);
+        mint<USD>(addr, 1000);
+
+        // Verify withdrawn coins returned correctly by destructing
+        let (Coin<APT>{subunits: apt_subs}, Coin<USD>{subunits: usd_subs}) =
+            withdraw_coins(&account, 2, 300);
+        assert!(apt_subs == 2, E_WITHDRAW_NOT_YIELD);
+        assert!(usd_subs == 300, E_WITHDRAW_NOT_YIELD);
+
+        // Verify balance updated appropriately
+        assert!(balance_of<APT>(addr) == 98, E_WITHDRAW_WRONG_BALANCE);
+        assert!(balance_of<USD>(addr) == 700, E_WITHDRAW_WRONG_BALANCE);
     }
 
     // Verify can properly withdraw

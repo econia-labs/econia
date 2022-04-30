@@ -16,6 +16,7 @@ module Ultima::User {
     const E_ALREADY_HAS_ORDERS: u64 = 2;
     const E_ORDERS_NOT_EMPTY: u64 = 3;
     const E_DEPOSIT_FAILURE: u64 = 4;
+    const E_INSUFFICIENT_COLLATERAL: u64 = 5;
 
     // Order side definitions
     const BUY: bool = true;
@@ -151,13 +152,26 @@ module Ultima::User {
         move_to(account, Orders{history: Vector::empty<Order>()});
     }
 
-    /*
-    // Withdraw given coin type from collateral container
-    fun withdraw<CoinType> (
+    // Withdraw requested amount from collateral container at address
+    fun withdraw<CoinType>(
         addr: address,
         amount: u64 // Number of subunits to withdraw
-    ) acquires Collateral {
-    */
+    ): Coin<CoinType>
+    acquires Collateral {
+        // Verify amount available, decrement marker accordingly
+        let available_ref =
+            &mut borrow_global_mut<Collateral<CoinType>>(addr).available;
+        let available = *available_ref;
+        assert!(amount <= available, E_INSUFFICIENT_COLLATERAL);
+        *available_ref = *available_ref - amount;
+
+        // Split off return coin from holdings
+        let target =
+            &mut borrow_global_mut<Collateral<CoinType>>(addr).holdings;
+        let (result, _, _) =
+            Coin::split_coin_from_target<CoinType>(amount, target);
+        result
+    }
 
     // Verify successful deposits to user account
     #[test(

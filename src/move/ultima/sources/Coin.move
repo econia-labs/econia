@@ -20,6 +20,8 @@ module Ultima::Coin {
     const E_NOT_ENOUGH_TO_SPLIT: u64 = 14;
     const E_SPLIT_FAILURE: u64 = 15;
     const E_MERGE_TO_TARGET_FAILURE: u64 = 16;
+    const E_SPLIT_AMOUNT_TOO_HIGH: u64 = 17;
+    const E_SPLIT_FROM_TARGET_FAILURE: u64 = 18;
 
     // Coin type specifiers
     struct APT {}
@@ -106,8 +108,7 @@ module Ultima::Coin {
         u64, // Inbound subunits
         u64, // Subunits in target coin pre-merge
         u64, // Subunits in target coin post-merge
-    )
-    {
+    ) {
         let Coin<CoinType>{subunits: in} = inbound;
         let subunits_ref = &mut target_coin_ref.subunits;
         let pre = *subunits_ref;
@@ -155,6 +156,27 @@ module Ultima::Coin {
         assert!(amount <= available, E_NOT_ENOUGH_TO_SPLIT);
         let remainder = available - amount;
         (Coin<CoinType>{subunits: amount}, Coin<CoinType>{subunits: remainder})
+    }
+
+    // Split off coin resource from a target coin at a mutable reference
+    public fun split_coin_from_target<CoinType>(
+        amount: u64, // Amount to split off
+        target_coin_ref: &mut Coin<CoinType>
+    ): (
+        Coin<CoinType>, // New coin resource containing requested amount
+        u64, // Subunits in target coin pre-merge
+        u64, // Subunits in target coin post-merge
+    ) {
+        let subunits_ref = &mut target_coin_ref.subunits;
+        let pre = *subunits_ref;
+        assert!(amount <= pre, E_SPLIT_AMOUNT_TOO_HIGH);
+        let post = pre - amount;
+        *subunits_ref = post;
+        (
+            Coin<CoinType>{subunits: amount},
+            pre,
+            post
+        )
     }
 
     // Transfer specified amount from sender to recipient
@@ -321,6 +343,35 @@ module Ultima::Coin {
             split_coin<APT>(Coin<APT>{subunits: 100}, 25);
         assert!(amount == 25, E_SPLIT_FAILURE);
         assert!(remainder == 75, E_SPLIT_FAILURE);
+    }
+
+    // Verify aborts when trying to split off too much from target
+    #[test]
+    #[expected_failure(abort_code = 17)]
+    fun split_coin_from_target_failure() {
+        let too_small = Coin<APT>{subunits: 1};
+        let (Coin<APT>{subunits: _}, _, _) =
+            split_coin_from_target(2, &mut too_small);
+        let Coin<APT>{subunits: _} = too_small;
+    }
+
+    // Verify successful coin split from target
+    #[test]
+    fun split_coin_from_target_success() {
+        // Init target coin and split off from it
+        let target = Coin<APT>{subunits: 100};
+        let (out, pre, post_reported) =
+           split_coin_from_target(25, &mut target);
+
+        // Destruct coins to test subunits in each
+        let Coin<APT>{subunits: split} = out;
+        let Coin<APT>{subunits: post_actual} = target;
+
+        // Verify counts
+        assert!(split == 25, E_SPLIT_FROM_TARGET_FAILURE);
+        assert!(pre == 100, E_SPLIT_FROM_TARGET_FAILURE);
+        assert!(post_reported == 75, E_SPLIT_FROM_TARGET_FAILURE);
+        assert!(post_actual == 75, E_SPLIT_FROM_TARGET_FAILURE);
     }
 
     // Verify unable to split coin when too much requested

@@ -26,7 +26,7 @@ from ultima.defs import (
     tx_fields,
     tx_sig_fields,
     tx_timeout_granularity,
-    ultima_modules
+    ultima_modules as ums
 )
 
 def move_trio(
@@ -506,9 +506,9 @@ class Client:
     def run_script(
         self,
         signer: Account,
-        trio: str,
-        arguments: list[str] = [],
-        type_arguments: list[str] = [],
+        trio_list: list[str],
+        args: list[str] = [],
+        type_args: list[str] = [],
     ) -> str:
         """Run script transaction and return transaction hash
 
@@ -516,11 +516,11 @@ class Client:
         ----------
         signer : ultima.account.Account
             Signing account
-        trio : str
-            A Move identifier per :func:`~rest.move_trio`
-        arguments : list of str, optional
+        trio_list : list of str
+            A list of identifiers to submit to :func:`~rest.move_trio`
+        args : list of str, optional
             Script arguments
-        type_arguments : list of str, optional
+        type_args : list of str, optional
             Script type arguments
 
         Returns
@@ -528,7 +528,8 @@ class Client:
         str
             Completed transaction hash
         """
-        payload = construct_script_payload(trio, arguments, type_arguments)
+        trio = move_trio(*trio_list)
+        payload = construct_script_payload(trio, args, type_args)
         return self.submit_to_completion(signer, payload)
 
     def publish_modules(
@@ -714,7 +715,7 @@ class Client:
         """
         return self.run_script(
             signer,
-            move_trio(n_addrs.Std, modules.TestCoin, members.transfer),
+            [n_addrs.Std, modules.TestCoin, members.transfer],
             [hex_leader(recipient), str(amount)]
         )
 
@@ -742,11 +743,7 @@ class UltimaClient(Client):
         """
         return self.run_script(
             signer,
-            move_trio(
-                ultima_addr,
-                ultima_modules.Coin.name,
-                ultima_modules.Coin.members.publish_balances
-            )
+            [ultima_addr, ums.Coin.name, ums.Coin.members.publish_balances]
         )
 
     def account_ultima_coin_balances(
@@ -766,14 +763,14 @@ class UltimaClient(Client):
         Returns
         -------
         dict from str to Any
-            Holdings, in subunits, for each UltimaCoin, if a Balance has
-            been initialized for the account
+            Holdings, in subunits, for each coin, if a balance has been
+            initialized for the account
         """
-        APT = ultima_modules.Coin.members.APT
-        USD = ultima_modules.Coin.members.USD
+        APT = ums.Coin.members.APT
+        USD = ums.Coin.members.USD
         [Balance_trio, APT_trio, USD_trio] = [
-            move_trio(ultima_addr, ultima_modules.Coin.name, member) for \
-                member in [ultima_modules.Coin.members.Balance, APT, USD]
+            move_trio(ultima_addr, ums.Coin.name, member) for \
+                member in [ums.Coin.members.Balance, APT, USD]
         ]
         [APT_balance_trio, USD_balance_trio] = \
             [typed_trio(Balance_trio, coin_trio) for coin_trio in \
@@ -787,8 +784,7 @@ class UltimaClient(Client):
                 to_update = USD
             if to_update is not None:
                 holdings[to_update] = int(resource[resource_fields.data]\
-                    [ultima_modules.Coin.fields.coin]\
-                    [ultima_modules.Coin.fields.subunits])
+                    [ums.Coin.fields.coin][ums.Coin.fields.subunits])
         return holdings
 
     def airdrop_ultima_coins(
@@ -818,11 +814,7 @@ class UltimaClient(Client):
         """
         return self.run_script(
             ultima_signer,
-            move_trio(
-                ultima_signer.address(),
-                ultima_modules.Coin.name,
-                ultima_modules.Coin.members.airdrop
-            ),
+            [ultima_signer.address(), ums.Coin.name, ums.Coin.members.airdrop],
             [addr, str(apt_subunits), str(usd_subunits)]
         )
 
@@ -856,10 +848,6 @@ class UltimaClient(Client):
         """
         return self.run_script(
             sender,
-            move_trio(
-                ultima_addr,
-                ultima_modules.Coin.name,
-                ultima_modules.Coin.members.transfer_both_coins
-            ),
+            [ultima_addr, ums.Coin.name, ums.Coin.members.transfer_both_coins],
             [recipient, str(apt_subunits), str(usd_subunits)]
         )

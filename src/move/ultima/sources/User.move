@@ -103,6 +103,7 @@ module Ultima::User {
     }
 
     // Deposit specified amounts to corresponding collateral containers
+    // Withdraws from Coin::Balance
     public(script) fun deposit_coins(
         account: &signer,
         apt_subunits: u64,
@@ -173,6 +174,19 @@ module Ultima::User {
         result
     }
 
+    // Withdraw specified amounts from collateral containers into
+    // Coin::Balance
+    public(script) fun withdraw_coins(
+        account: &signer,
+        apt_subunits: u64,
+        usd_subunits: u64
+    ) acquires Collateral {
+        let addr = Signer::address_of(account);
+        let apt = withdraw<APT>(addr, apt_subunits);
+        let usd = withdraw<USD>(addr, usd_subunits);
+        Coin::deposit_coins(addr, apt, usd);
+    }
+
     // Verify successful deposits to user account
     #[test(
         user = @TestUser,
@@ -183,15 +197,15 @@ module Ultima::User {
         ultima: signer
     ) acquires Collateral {
         // Airdrop coins
+        let addr = Signer::address_of(&user);
         Coin::publish_balances(&user);
-        Coin::airdrop(&ultima, Signer::address_of(&user), 10, 1000);
+        Coin::airdrop(&ultima, addr, 10, 1000);
 
         // Move into collateral containers
         init_account(&user);
         deposit_coins(&user, 2, 300);
 
         // Verify holdings
-        let addr = Signer::address_of(&user);
         let (apt_holdings, apt_available) = collateral_balances<APT>(addr);
         assert!(apt_holdings == 2, E_DEPOSIT_FAILURE);
         assert!(apt_available == 2, E_DEPOSIT_FAILURE);
@@ -240,5 +254,59 @@ module Ultima::User {
     ) {
         publish_orders(&account);
         publish_orders(&account);
+    }
+
+    // Verify unable to withdraw more than available balance
+    #[test(
+        user = @TestUser,
+        ultima = @Ultima
+    )]
+    #[expected_failure(abort_code = 5)]
+    public(script) fun withdraw_failure(
+        user: signer,
+        ultima: signer
+    ): Coin<APT> // Return since unable to destruct
+     acquires Collateral {
+        // Airdrop coins
+        let addr = Signer::address_of(&user);
+        Coin::publish_balances(&user);
+        Coin::airdrop(&ultima, addr, 10, 0);
+
+        // Move into collateral containers
+        init_account(&user);
+        deposit_coins(&user, 10, 0);
+
+        // Attempt to withdraw too much
+        withdraw<APT>(addr, 11)
+    }
+
+    // Verify successful withdraw of coins from collateral
+    #[test(
+        user = @TestUser,
+        ultima = @Ultima
+    )]
+    public(script) fun withdraw_coins_success(
+        user: signer,
+        ultima: signer
+    ) acquires Collateral {
+        // Airdrop coins
+        let addr = Signer::address_of(&user);
+        Coin::publish_balances(&user);
+        Coin::airdrop(&ultima, addr, 10, 1000);
+
+        // Move into collateral containers
+        init_account(&user);
+        deposit_coins(&user, 10, 1000);
+
+        // Withdraw from collateral
+        withdraw_coins(&user, 2, 300);
+
+        // Verify collateral balances
+        let (apt_holdings, apt_available) = collateral_balances<APT>(addr);
+        assert!(apt_holdings == 8, E_DEPOSIT_FAILURE);
+        assert!(apt_available == 8, E_DEPOSIT_FAILURE);
+        let (usd_holdings, usd_available) = collateral_balances<USD>(addr);
+        assert!(usd_holdings == 700, E_DEPOSIT_FAILURE);
+        assert!(usd_available == 700, E_DEPOSIT_FAILURE);
     }
 }

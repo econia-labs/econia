@@ -22,6 +22,7 @@ module Ultima::Coin {
     const E_MERGE_TO_TARGET_FAILURE: u64 = 16;
     const E_SPLIT_AMOUNT_TOO_HIGH: u64 = 17;
     const E_SPLIT_FROM_TARGET_FAILURE: u64 = 18;
+    const E_DEPOSIT_COINS_FAILURE: u64 = 19;
 
     // Coin type specifiers
     struct APT {}
@@ -73,6 +74,16 @@ module Ultima::Coin {
         // Destruct moved coin amount
         let Coin{subunits} = coin;
         *balance_ref = *balance_ref + subunits;
+    }
+
+    // Deposit coins into balance
+    public fun deposit_coins(
+        addr: address,
+        apt: Coin<APT>,
+        usd: Coin<USD>,
+    ) acquires Balance {
+        deposit(addr, apt);
+        deposit(addr, usd);
     }
 
     // Return coin with 0 subunits, useful for initialization elsewhere
@@ -268,6 +279,18 @@ module Ultima::Coin {
     fun deposit_dne<CoinType>()
     acquires Balance {
         deposit(@TestUser, Coin<APT>{subunits: 1});
+    }
+
+    // Verify depositing moved coins
+    #[test(account = @TestUser)]
+    public(script) fun deposit_coins_success(
+        account: signer
+    ) acquires Balance {
+        let addr = Signer::address_of(&account);
+        publish_balances(&account);
+        deposit_coins(addr, Coin<APT>{subunits: 1}, Coin<USD>{subunits: 2});
+        assert!(balance_of<APT>(addr) == 1, E_DEPOSIT_COINS_FAILURE);
+        assert!(balance_of<USD>(addr) == 2, E_DEPOSIT_COINS_FAILURE);
     }
 
     // Verify empty coin return value

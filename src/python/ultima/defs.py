@@ -222,6 +222,19 @@ ultima_modules = SimpleNamespace(
             coin = 'coin',
             subunits = 'subunits'
         )
+    ),
+    User = SimpleNamespace(
+        name = 'User',
+        members = SimpleNamespace(
+            Collateral = 'Collateral',
+            deposit_coins = 'deposit_coins',
+            init_account = 'init_account',
+            withdraw_coins = 'withdraw_coins',
+        ),
+        fields = SimpleNamespace(
+            available = 'available',
+            holdings = 'holdings'
+        )
     )
 )
 """Ultima Move modules with nested member specifiers"""

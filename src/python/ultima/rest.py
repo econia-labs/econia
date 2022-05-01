@@ -3,7 +3,7 @@
 import requests
 import time
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 from ultima.account import Account, hex_leader
 from ultima.defs import (
     account_fields,
@@ -13,8 +13,9 @@ from ultima.defs import (
     module_names as modules,
     msg_sig_start_byte as start_byte,
     named_addrs as n_addrs,
-    resource_fields,
+    networks,
     payload_fields as p_fields,
+    resource_fields as r_fields,
     rest_codes,
     rest_path_elems,
     rest_post_headers as h_fields,
@@ -28,6 +29,12 @@ from ultima.defs import (
     tx_timeout_granularity,
     ultima_modules as ums
 )
+
+APT = ums.Coin.members.APT
+"""APT coin symbol"""
+
+USD = ums.Coin.members.USD
+"""USD coin symbol"""
 
 def move_trio(
     address: str,
@@ -83,6 +90,41 @@ def typed_trio(
     '0x123::Module::member<type_specifier>'
     """
     return trio + seps.lt + type + seps.gt
+
+def coin_typed_trios(
+    ultima_addr: str,
+    module: str,
+    member: str
+) -> list[str]:
+    """Return APT and USD typed trios for the specified module member
+
+    Parameters
+    ----------
+    ultima_addr: str
+        Ultima account address, without leading hex specifier
+    module : str
+        An Ultima module per :data:`~defs.ultima_modules`
+    member : str
+        An Ultima module member per :data:`~defs.ultima_modules`
+
+    Returns
+    -------
+    list of str
+        A typed trio for each coin
+
+    Example
+    -------
+    >>> from ultima.rest import coin_typed_trios
+    >>> coin_typed_trios('1a2b3c', 'Foo', 'bar') \
+    # doctest: +NORMALIZE_WHITESPACE
+    ['0x1a2b3c::Foo::bar<0x1a2b3c::Coin::APT>',
+     '0x1a2b3c::Foo::bar<0x1a2b3c::Coin::USD>']
+    """
+    untyped = move_trio(ultima_addr, module, member)
+    [apt_t, usd_t] = [
+        move_trio(ultima_addr, ums.Coin.name, coin) for coin in [APT, USD]
+    ]
+    return [typed_trio(untyped, coin_trio) for coin_trio in [apt_t, usd_t]]
 
 def construct_script_payload(
     function: str,
@@ -150,7 +192,7 @@ class Client:
 
     def __init__(
         self,
-        network: str
+        network: str = networks.devnet
     ) -> None:
         self.fullnode_url = rest_urls[network][api_url_types.fullnode]
         self.faucet_url = rest_urls[network][api_url_types.faucet]
@@ -652,15 +694,12 @@ class Client:
             Amount of TestCoin if address has balance, None if not
         """
         resources = self.account_resources(account_address)
-        balance_trio = move_trio(
-                n_addrs.Std,
-                modules.TestCoin,
-                members.Balance
-        )
+        balance_trio = \
+            move_trio(n_addrs.Std, modules.TestCoin, members.Balance)
         for resource in resources:
-            if resource[resource_fields.type] == balance_trio:
-                return int(resource[resource_fields.data]\
-                    [resource_fields.coin][resource_fields.value])
+            if resource[r_fields.type] == balance_trio:
+                return int(resource[r_fields.data][r_fields.coin]\
+                    [r_fields.value])
         return None
 
     def mint_testcoin(
@@ -722,6 +761,44 @@ class Client:
 class UltimaClient(Client):
     """Aptos REST API interface with Ultima-specific functionality"""
 
+    def get_typed_resource_data(
+        self,
+        addr: str,
+        ultima_addr: str,
+        module: str,
+        member: str
+    ) -> Tuple[
+        Union[Dict[str, Any], None],
+        Union[Dict[str, Any], None],
+    ]:
+        """Return date of typed account resource for member specifier
+
+        Parameters
+        ----------
+        addr: str
+            Address to check resources at
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+        module : str
+            An Ultima module per :data:`~defs.ultima_modules`
+        member : str
+            An Ultima module member per :data:`~defs.ultima_modules`
+
+        Returns
+        -------
+        dict from str to Any or None
+            APT resource data
+        dict from str to Any or None
+            USD resource data
+        """
+        [APT_tt, USD_tt] = coin_typed_trios(ultima_addr, module, member)
+        result  = {APT: None, USD: None}
+        for resource in self.account_resources(addr):
+            for (key, tt) in [(APT, APT_tt), (USD, USD_tt)]:
+                if resource[r_fields.type] == tt:
+                    result[key] = resource[r_fields.data]
+        return result[APT], result[USD]
+
     def publish_ultima_balances(
         self,
         signer: Account,
@@ -766,26 +843,19 @@ class UltimaClient(Client):
             Holdings, in subunits, for each coin, if a balance has been
             initialized for the account
         """
-        APT = ums.Coin.members.APT
-        USD = ums.Coin.members.USD
-        [Balance_trio, APT_trio, USD_trio] = [
-            move_trio(ultima_addr, ums.Coin.name, member) for \
-                member in [ums.Coin.members.Balance, APT, USD]
-        ]
-        [APT_balance_trio, USD_balance_trio] = \
-            [typed_trio(Balance_trio, coin_trio) for coin_trio in \
-                [APT_trio, USD_trio]]
-        holdings = {APT: None, USD: None}
-        for resource in self.account_resources(addr):
-            to_update = None
-            if resource[resource_fields.type] == APT_balance_trio:
-                to_update = APT
-            elif resource[resource_fields.type] == USD_balance_trio:
-                to_update = USD
-            if to_update is not None:
-                holdings[to_update] = int(resource[resource_fields.data]\
-                    [ums.Coin.fields.coin][ums.Coin.fields.subunits])
-        return holdings
+        result = {APT: None, USD: None}
+        APT_d, USD_d = self.get_typed_resource_data(
+            addr,
+            ultima_addr,
+            ums.Coin.name,
+            ums.Coin.members.Balance
+        )
+        coin = ums.Coin.fields.coin
+        subunits = ums.Coin.fields.subunits
+        for key, data in [(APT, APT_d), (USD, USD_d)]:
+            if data is not None:
+                result[key] = data[coin][subunits]
+        return result
 
     def airdrop_ultima_coins(
         self,
@@ -851,3 +921,128 @@ class UltimaClient(Client):
             [ultima_addr, ums.Coin.name, ums.Coin.members.transfer_both_coins],
             [recipient, str(apt_subunits), str(usd_subunits)]
         )
+
+    def init_account(
+        self,
+        signer: Account,
+        ultima_addr: str,
+    ) -> str:
+        """Initialize user account
+
+        Parameters
+        ----------
+        signer: ultima.account.Account
+            Account initializing an Ultima-specific Ultima::User::Account
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        return self.run_script(
+            signer,
+            [ultima_addr, ums.User.name, ums.User.members.init_account],
+        )
+
+    def deposit_coins(
+        self,
+        signer: Account,
+        ultima_addr: str,
+        apt_subunits: int,
+        usd_subunits: int
+    ) -> str:
+        """Deposit coins from `Ultima::Coin::Balance` into collateral
+
+        Parameters
+        ----------
+        signer: ultima.account.Account
+            Account initializing an Ultima-specific Ultima::User::Account
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+        apt_subunits : int
+            Subunits of APT to deposit
+        usd_subunits : int, optional
+            Subunits of USD to deposit
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        return self.run_script(
+            signer,
+            [ultima_addr, ums.User.name, ums.User.members.deposit_coins],
+            [str(apt_subunits), str(usd_subunits)]
+        )
+
+    def withdraw_coins(
+        self,
+        signer: Account,
+        ultima_addr: str,
+        apt_subunits: int,
+        usd_subunits: int
+    ) -> str:
+        """Withdraw coins from collateral into `Ultima::Coin::Balance`
+
+        Parameters
+        ----------
+        signer: ultima.account.Account
+            Account initializing an Ultima-specific Ultima::User::Account
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+        apt_subunits : int
+            Subunits of APT to deposit
+        usd_subunits : int, optional
+            Subunits of USD to deposit
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        return self.run_script(
+            signer,
+            [ultima_addr, ums.User.name, ums.User.members.withdraw_coins],
+            [str(apt_subunits), str(usd_subunits)]
+        )
+
+    def collateral_balances(
+        self,
+        addr: str,
+        ultima_addr: str
+    ) -> Dict[str, Any]:
+        """Return APT and USD collateral balances
+
+        Parameters
+        ----------
+        addr : str
+            Address to check balances of
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+
+        Returns
+        -------
+        dict from str to Any
+            Holdings and available amount, in subunits, for each coin,
+            if a collateral resource has been initialized for the
+            account
+        """
+        result = {APT: None, USD: None}
+        APT_d, USD_d = self.get_typed_resource_data(
+            addr,
+            ultima_addr,
+            ums.User.name,
+            ums.User.members.Collateral
+        )
+        available = ums.User.fields.available
+        holdings = ums.User.fields.holdings
+        subunits = ums.Coin.fields.subunits
+        for key, data in [(APT, APT_d), (USD, USD_d)]:
+            if data is not None:
+                result[key] = {
+                    holdings: data[holdings][subunits],
+                    available: data[available]
+                }
+        return result

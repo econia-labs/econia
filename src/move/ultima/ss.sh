@@ -17,9 +17,9 @@ then # Clean up and run move package build
     python ../../python/ultima/build.py prep short ../../..
     move package build
 elif [ $1 = tc ]
-then # Move package test with coverage
+then # Move package test with coverage, passing optional arguments
     python ../../python/ultima/build.py prep short ../../..
-    move package test --coverage
+    move package test --coverage $2 $3
 elif [ $1 = cs ]
 then # Move package coverage summary
     move package coverage summary

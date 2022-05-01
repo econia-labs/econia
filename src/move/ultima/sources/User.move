@@ -17,6 +17,8 @@ module Ultima::User {
     const E_ORDERS_NOT_EMPTY: u64 = 3;
     const E_DEPOSIT_FAILURE: u64 = 4;
     const E_INSUFFICIENT_COLLATERAL: u64 = 5;
+    const E_RECORD_ORDER_INVALID: u64 = 6;
+    const E_INVALID_RECORDER: u64 = 7;
 
     // Order side definitions
     const BUY: bool = true;
@@ -153,6 +155,48 @@ module Ultima::User {
         move_to(account, Orders{history: Vector::empty<Order>()});
     }
 
+    // Append an order to a user's order history
+    // Does not do perform data validity checks
+    fun record_order(
+        addr: address,
+        order: Order
+    ) acquires Orders {
+        let history = &mut borrow_global_mut<Orders>(addr).history;
+        Vector::push_back<Order>(history, order);
+    }
+
+    // Record a mock order to a user's order history
+    // Useful for testing, can only be called by Ultima account
+    public(script) fun record_mock_order(
+        account: &signer,
+        addr: address,
+        id: u64,
+        time: u64,
+        liq: bool,
+        side: bool,
+        price: u64,
+        amount: u64,
+        filled: u64,
+        open: bool,
+        cancelled: bool,
+        cancel_time: u64,
+    ) acquires Orders {
+        assert!(Signer::address_of(account) == @Ultima, E_INVALID_RECORDER);
+        record_order(addr, Order{
+            id,
+            time, // Have this be a timestamp
+            liq,
+            side,
+            price,
+            amount,
+            filled,
+            open,
+            cancelled,
+            cancel_time,
+            fills: Vector::empty<Fill>()
+        });
+    }
+
     // Withdraw requested amount from collateral container at address
     fun withdraw<CoinType>(
         addr: address,
@@ -254,6 +298,132 @@ module Ultima::User {
     ) {
         publish_orders(&account);
         publish_orders(&account);
+    }
+
+    // Verify mock order cannot be placed unless by Ultima account
+    #[test(account = @TestUser)]
+    #[expected_failure(abort_code = 7)]
+    public(script) fun record_mock_order_failure(
+        account: signer
+    ) acquires Orders {
+        record_mock_order(
+            &account,
+            Signer::address_of(&account),
+            1,
+            2,
+            false,
+            false,
+            3,
+            4,
+            5,
+            false,
+            false,
+            6
+        );
+    }
+
+    // Verify history updated when mock order placed
+    #[test(account = @Ultima)]
+    public(script) fun record_mock_order_success(
+        account: signer
+    ) acquires Orders {
+        // Initialize account
+        let addr = Signer::address_of(&account);
+        publish_orders(&account);
+        record_mock_order(
+            &account,
+            addr,
+            1,
+            2,
+            false,
+            false,
+            3,
+            4,
+            5,
+            false,
+            false,
+            6
+        );
+        // Verify proper history length
+        let history = &borrow_global<Orders>(addr).history;
+        assert!(Vector::length(history) == 1, E_RECORD_ORDER_INVALID);
+    }
+
+    // Verify order data recorded to history in proper order
+    // Does not perform data value validity checks
+    #[test(account = @TestUser)]
+    fun record_order_success(
+        account: signer
+    ) acquires Orders {
+        // Init account
+        let addr = Signer::address_of(&account);
+        publish_orders(&account);
+        // Record orders
+        record_order(addr, Order{
+            id: 1,
+            time: 2,
+            liq: false,
+            side: true,
+            price: 3,
+            amount: 4,
+            filled: 5,
+            open: true,
+            cancelled: false,
+            cancel_time: 6,
+            fills: Vector::empty<Fill>()
+        });
+        record_order(addr, Order{
+            id: 10,
+            time: 20,
+            liq: true,
+            side: false,
+            price: 30,
+            amount: 40,
+            filled: 50,
+            open: false,
+            cancelled: true,
+            cancel_time: 60,
+            fills: Vector::empty<Fill>()
+        });
+
+        // Verify proper history length
+        let history = &borrow_global<Orders>(addr).history;
+        assert!(Vector::length(history) == 2, E_RECORD_ORDER_INVALID);
+
+        // Verify contents of first order
+        let first_order = Vector::borrow(history, 0);
+        assert!(first_order.id == 1, E_RECORD_ORDER_INVALID);
+        assert!(first_order.id == 1, E_RECORD_ORDER_INVALID);
+        assert!(first_order.time == 2, E_RECORD_ORDER_INVALID);
+        assert!(first_order.liq == false, E_RECORD_ORDER_INVALID);
+        assert!(first_order.side == true, E_RECORD_ORDER_INVALID);
+        assert!(first_order.price == 3, E_RECORD_ORDER_INVALID);
+        assert!(first_order.amount == 4, E_RECORD_ORDER_INVALID);
+        assert!(first_order.filled == 5, E_RECORD_ORDER_INVALID);
+        assert!(first_order.open == true, E_RECORD_ORDER_INVALID);
+        assert!(first_order.cancelled == false, E_RECORD_ORDER_INVALID);
+        assert!(first_order.cancel_time == 6, E_RECORD_ORDER_INVALID);
+        assert!(
+            Vector::is_empty<Fill>(&first_order.fills),
+            E_RECORD_ORDER_INVALID
+        );
+
+        // Verify contents of second order
+        let second_order = Vector::borrow(history, 1);
+        assert!(second_order.id == 10, E_RECORD_ORDER_INVALID);
+        assert!(second_order.time == 20, E_RECORD_ORDER_INVALID);
+        assert!(second_order.liq == true, E_RECORD_ORDER_INVALID);
+        assert!(second_order.side == false, E_RECORD_ORDER_INVALID);
+        assert!(second_order.price == 30, E_RECORD_ORDER_INVALID);
+        assert!(second_order.amount == 40, E_RECORD_ORDER_INVALID);
+        assert!(second_order.filled == 50, E_RECORD_ORDER_INVALID);
+        assert!(second_order.open == false, E_RECORD_ORDER_INVALID);
+        assert!(second_order.cancelled == true, E_RECORD_ORDER_INVALID);
+        assert!(second_order.cancel_time == 60, E_RECORD_ORDER_INVALID);
+        assert!(
+            Vector::is_empty<Fill>(&second_order.fills),
+            E_RECORD_ORDER_INVALID
+        );
     }
 
     // Verify unable to withdraw more than available balance

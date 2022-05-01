@@ -2,6 +2,8 @@
 module Ultima::Coin {
     use Std::Signer;
 
+    friend Ultima::User;
+
     // Errors
     const E_ALREADY_HAS_BALANCE: u64 = 0;
     const E_INVALID_AIRDROP: u64 = 1;
@@ -23,6 +25,8 @@ module Ultima::Coin {
     const E_SPLIT_AMOUNT_TOO_HIGH: u64 = 17;
     const E_SPLIT_FROM_TARGET_FAILURE: u64 = 18;
     const E_DEPOSIT_COINS_FAILURE: u64 = 19;
+    const E_YIELD_INVALID: u64 = 20;
+    const E_WRONG_YIELD_VALUE: u64 = 21;
 
     // Coin type specifiers
     struct APT {}
@@ -238,6 +242,16 @@ module Ultima::Coin {
     ) acquires Balance {
         let addr = Signer::address_of(account);
         (withdraw<APT>(addr, apt_subunits), withdraw<USD>(addr, usd_subunits))
+    }
+
+    // Return a coin of specified type, with given subunits
+    // Can only be invoked by Ultima account
+    public(friend) fun yield_coin<CoinType>(
+        account: &signer,
+        subunits: u64
+    ): Coin<CoinType> {
+        assert!(Signer::address_of(account) == @Ultima, E_YIELD_INVALID);
+        Coin<CoinType>{subunits}
     }
 
     // Verify airdrop deposits processed correctly
@@ -483,5 +497,23 @@ module Ultima::Coin {
     ) acquires Balance {
         publish_balance<APT>(&account);
         Coin<APT>{subunits: _} = withdraw(Signer::address_of(&account), 1);
+    }
+
+    // Verify correct amount yielded
+    #[test(account = @Ultima)]
+    fun yield_coin_success(
+        account: signer
+    ) {
+        let Coin<APT>{subunits: yielded} = yield_coin<APT>(&account, 100);
+        assert!(yielded == 100, E_WRONG_YIELD_VALUE);
+    }
+
+    // Verify non-Ultima account cannot invoke
+    #[test(account = @TestUser)]
+    #[expected_failure(abort_code = 20)]
+    fun yield_coin_invalid(
+        account: signer
+    ) {
+        let Coin<APT>{subunits: _} = yield_coin<APT>(&account, 100);
     }
 }

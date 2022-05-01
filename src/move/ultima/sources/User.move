@@ -49,15 +49,18 @@ module Ultima::User {
     // Colloquially, "one APT costs $120"
     struct Order has store {
         id: u64, // From order book counter
-        time: u64, // Time in microseconds of order placement
+        time: u64, // Unix time in microseconds of order placement
         liq: bool, // true for maker, false for taker
         side: bool, // true for buy APT, false for sell APT
         price: u64, // In USD subunits, if maker order
-        amount: u64, // Number of APT subunits when placed
-        filled: u64, // Number of APT subunits already filled
+        // If maker order or taker sell, number of APT subunits
+        amount_apt: u64,
+        // If taker buy, number of USD subunits
+        amount_usd: u64,
+        filled: u64, // If maker order, APT subunits already filled
         open: bool, // true if still open, false if closed
         cancelled: bool, // true if was cancelled
-        cancel_time: u64, // Time in microseconds of cancellation
+        cancel_time: u64, // Unix time in microseconds of cancellation
         /*
         Fills are appended to the vector as they are made, hence earlier
         fills have a lower index. If `liq` is `true` (if maker AKA
@@ -175,7 +178,8 @@ module Ultima::User {
         liq: bool,
         side: bool,
         price: u64,
-        amount: u64,
+        amount_apt: u64,
+        amount_usd: u64,
         filled: u64,
         open: bool,
         cancelled: bool,
@@ -188,7 +192,8 @@ module Ultima::User {
             liq,
             side,
             price,
-            amount,
+            amount_apt,
+            amount_usd,
             filled,
             open,
             cancelled,
@@ -316,9 +321,10 @@ module Ultima::User {
             3,
             4,
             5,
+            6,
             false,
             false,
-            6
+            7
         );
     }
 
@@ -340,9 +346,10 @@ module Ultima::User {
             3,
             4,
             5,
+            6,
             false,
             false,
-            6
+            7
         );
         // Verify proper history length
         let history = &borrow_global<Orders>(addr).history;
@@ -365,11 +372,12 @@ module Ultima::User {
             liq: false,
             side: true,
             price: 3,
-            amount: 4,
-            filled: 5,
+            amount_apt: 4,
+            amount_usd: 5,
+            filled: 6,
             open: true,
             cancelled: false,
-            cancel_time: 6,
+            cancel_time: 7,
             fills: Vector::empty<Fill>()
         });
         record_order(addr, Order{
@@ -378,11 +386,12 @@ module Ultima::User {
             liq: true,
             side: false,
             price: 30,
-            amount: 40,
-            filled: 50,
+            amount_apt: 40,
+            amount_usd: 50,
+            filled: 60,
             open: false,
             cancelled: true,
-            cancel_time: 60,
+            cancel_time: 70,
             fills: Vector::empty<Fill>()
         });
 
@@ -398,11 +407,12 @@ module Ultima::User {
         assert!(first_order.liq == false, E_RECORD_ORDER_INVALID);
         assert!(first_order.side == true, E_RECORD_ORDER_INVALID);
         assert!(first_order.price == 3, E_RECORD_ORDER_INVALID);
-        assert!(first_order.amount == 4, E_RECORD_ORDER_INVALID);
-        assert!(first_order.filled == 5, E_RECORD_ORDER_INVALID);
+        assert!(first_order.amount_apt == 4, E_RECORD_ORDER_INVALID);
+        assert!(first_order.amount_usd == 5, E_RECORD_ORDER_INVALID);
+        assert!(first_order.filled == 6, E_RECORD_ORDER_INVALID);
         assert!(first_order.open == true, E_RECORD_ORDER_INVALID);
         assert!(first_order.cancelled == false, E_RECORD_ORDER_INVALID);
-        assert!(first_order.cancel_time == 6, E_RECORD_ORDER_INVALID);
+        assert!(first_order.cancel_time == 7, E_RECORD_ORDER_INVALID);
         assert!(
             Vector::is_empty<Fill>(&first_order.fills),
             E_RECORD_ORDER_INVALID
@@ -415,11 +425,12 @@ module Ultima::User {
         assert!(second_order.liq == true, E_RECORD_ORDER_INVALID);
         assert!(second_order.side == false, E_RECORD_ORDER_INVALID);
         assert!(second_order.price == 30, E_RECORD_ORDER_INVALID);
-        assert!(second_order.amount == 40, E_RECORD_ORDER_INVALID);
-        assert!(second_order.filled == 50, E_RECORD_ORDER_INVALID);
+        assert!(second_order.amount_apt == 40, E_RECORD_ORDER_INVALID);
+        assert!(second_order.amount_usd == 50, E_RECORD_ORDER_INVALID);
+        assert!(second_order.filled == 60, E_RECORD_ORDER_INVALID);
         assert!(second_order.open == false, E_RECORD_ORDER_INVALID);
         assert!(second_order.cancelled == true, E_RECORD_ORDER_INVALID);
-        assert!(second_order.cancel_time == 60, E_RECORD_ORDER_INVALID);
+        assert!(second_order.cancel_time == 70, E_RECORD_ORDER_INVALID);
         assert!(
             Vector::is_empty<Fill>(&second_order.fills),
             E_RECORD_ORDER_INVALID

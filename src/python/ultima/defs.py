@@ -27,6 +27,12 @@ build_command_fields = SimpleNamespace(
 )
 """Command line fields for automated building process"""
 
+coin_scales = SimpleNamespace(
+    APT = 8,
+    USD = 6
+)
+"""Decimal scalars for each coin"""
+
 e_msgs = SimpleNamespace(
     path_val_collision = 'Different value already exists at provided path',
     tx_timeout = 'Transaction timeout'
@@ -52,6 +58,9 @@ member_names = SimpleNamespace(
     transfer = 'transfer'
 )
 """Move module member names"""
+
+timecode_us = 'us'
+"""Denotes microseconds"""
 
 module_names = SimpleNamespace(
     TestCoin = 'TestCoin',
@@ -207,6 +216,12 @@ tx_timeout_granularity = 0.1
 Ultima = 'Ultima'
 """Project name"""
 
+ultima_bool_maps = SimpleNamespace(
+    liq = {True: 'Maker', False: 'Taker'},
+    side  = {True: 'Buy', False: 'Sell'},
+)
+"""Mapping from boolean values onto corresponding string"""
+
 ultima_modules = SimpleNamespace(
     Coin = SimpleNamespace(
         name = 'Coin',
@@ -229,11 +244,26 @@ ultima_modules = SimpleNamespace(
             Collateral = 'Collateral',
             deposit_coins = 'deposit_coins',
             init_account = 'init_account',
+            Orders = 'Orders',
+            record_mock_order = 'record_mock_order',
             withdraw_coins = 'withdraw_coins',
         ),
         fields = SimpleNamespace(
             available = 'available',
-            holdings = 'holdings'
+            amount_apt = 'amount_apt',
+            amount_usd = 'amount_usd',
+            cancel_time = 'cancel_time',
+            cancelled = 'cancelled',
+            filled = 'filled',
+            fills = 'fills',
+            holdings = 'holdings',
+            history = 'history',
+            id = 'id',
+            liq = 'liq',
+            open = 'open',
+            price = 'price',
+            side = 'side',
+            time = 'time',
         )
     )
 )

@@ -1,5 +1,7 @@
 """Aptos REST interface functionality"""
 
+from numpy import record
+import pandas as pd
 import requests
 import time
 
@@ -8,6 +10,7 @@ from ultima.account import Account, hex_leader
 from ultima.defs import (
     account_fields,
     api_url_types,
+    coin_scales,
     e_msgs,
     member_names as members,
     module_names as modules,
@@ -23,10 +26,12 @@ from ultima.defs import (
     rest_response_fields,
     rest_urls,
     seps,
+    timecode_us as us,
     tx_defaults,
     tx_fields,
     tx_sig_fields,
     tx_timeout_granularity,
+    ultima_bool_maps as ubms,
     ultima_modules as ums
 )
 
@@ -110,7 +115,7 @@ def coin_typed_trios(
     Returns
     -------
     list of str
-        A typed trio for each coin
+        A typed trio for each coin, APT first
 
     Example
     -------
@@ -761,6 +766,57 @@ class Client:
 class UltimaClient(Client):
     """Aptos REST API interface with Ultima-specific functionality"""
 
+    def get_trio_data(
+        self,
+        trio: str,
+        addr: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Get resource data at the address for given trio
+
+        Parameters
+        ----------
+        trio : str
+            A Move trio per :func:`~rest.move_trio`
+        addr: str
+            Address to check resources at
+
+        Returns
+        -------
+        dict from str to Any, or None
+            Resource data for given trio
+        """
+        for resource in self.account_resources(addr):
+            if resource[r_fields.type] == trio:
+                return resource[r_fields.data]
+        return None
+
+    def get_resource_data(
+        self,
+        addr: str,
+        ultima_addr: str,
+        module: str,
+        member: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get resource data at the address for given specifiers
+
+        Parameters
+        ----------
+        addr: str
+            Address to check resources at
+        ultima_addr: str
+            Ultima account address, without leading hex specifier
+        module : str
+            An Ultima module per :data:`~defs.ultima_modules`
+        member : str
+            An Ultima module member per :data:`~defs.ultima_modules`
+
+        Returns
+        -------
+        dict from str to Any, or None
+            Resource data for given member specifiers
+        """
+        return self.get_trio_data(move_trio(ultima_addr, module, member), addr)
+
     def get_typed_resource_data(
         self,
         addr: str,
@@ -793,11 +849,8 @@ class UltimaClient(Client):
         """
         [APT_tt, USD_tt] = coin_typed_trios(ultima_addr, module, member)
         result  = {APT: None, USD: None}
-        for resource in self.account_resources(addr):
-            for (key, tt) in [(APT, APT_tt), (USD, USD_tt)]:
-                if resource[r_fields.type] == tt:
-                    result[key] = resource[r_fields.data]
-        return result[APT], result[USD]
+        return \
+            self.get_trio_data(APT_tt, addr), self.get_trio_data(USD_tt, addr)
 
     def publish_ultima_balances(
         self,
@@ -1018,7 +1071,7 @@ class UltimaClient(Client):
         Parameters
         ----------
         addr : str
-            Address to check balances of
+            Address to check balances of, without leading hex specifier
         ultima_addr: str
             Ultima account address, without leading hex specifier
 
@@ -1046,3 +1099,139 @@ class UltimaClient(Client):
                     available: data[available]
                 }
         return result
+
+    def record_mock_order(
+        self,
+        ultima: Account,
+        addr: str,
+        id: int,
+        time: int,
+        liq: bool,
+        side: bool,
+        price: int,
+        amount_apt: int,
+        amount_usd: int,
+        filled: int,
+        open: bool,
+        cancelled: bool,
+        cancel_time: int
+    ) -> str:
+        """Record a mock order to a user's order history
+
+        Parameters
+        ----------
+        ultima : ultima.account.Account
+            The Ultima account
+        addr : str
+            Address to record order at
+        id : int
+            Order id number
+        time : int
+            Unix timestamp for time in microseconds
+        liq : bool
+            True for maker, false for taker
+        side : bool
+            True for buy APT, False for sell APT,
+        price : int
+            In USD subunits, if maker order
+        amount_apt : int
+            If maker order or taker sell, number of APT subunits
+        amount_usd : int
+            If taker buy, number of USD subunits
+        filled : int
+            If maker order, APT subunits already filled
+        open : bool
+            True if still open, False if closed
+        cancelled : bool
+            True if maker order and was cancelled
+        cancel_time : int
+            Unix time in microseconds of cancellation
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        record_mock_order = ums.User.members.record_mock_order
+        return self.run_script(
+            ultima,
+            [ultima.address(), ums.User.name, record_mock_order],
+            [
+                addr,
+                str(id),
+                str(time),
+                liq,
+                side,
+                str(price),
+                str(amount_apt),
+                str(amount_usd),
+                str(filled),
+                open,
+                cancelled,
+                str(cancel_time)
+            ]
+        )
+
+    def order_history(
+        self,
+        addr: str,
+        ultima_addr: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get order history, excluding fills, for an address
+
+        Parameters
+        ----------
+        addr : str
+            Address to check history of, without leading hex specifier
+        """
+        User = ums.User.name
+        Orders = ums.User.members.Orders
+        history = ums.User.fields.history
+        data = self.get_resource_data(addr, ultima_addr, User, Orders)[history]
+
+        fills = ums.User.fields.fills
+        # Remove fills, then put data into DataFrame
+        data = [{k: v for k, v in d.items() if k != fills} for d in data]
+        df = pd.DataFrame.from_dict(data)
+
+        # Sort columns to match original data structure
+        df = df[[
+            ums.User.fields.id,
+            ums.User.fields.time,
+            ums.User.fields.liq,
+            ums.User.fields.side,
+            ums.User.fields.price,
+            ums.User.fields.amount_apt,
+            ums.User.fields.amount_usd,
+            ums.User.fields.filled,
+            ums.User.fields.open,
+            ums.User.fields.cancelled,
+            ums.User.fields.cancel_time,
+        ]]
+
+        # Map boolean values as needed
+        liq = ums.User.fields.liq
+        side = ums.User.fields.side
+        for (field, map) in [(liq, ubms.liq), (side, ubms.side)]:
+            df[field] = df[field].map(map)
+
+        # Convert from Unix microseconds to datetime format
+        time = ums.User.fields.time
+        cancel_time = ums.User.fields.cancel_time
+        for field in [time, cancel_time]:
+            df[field] = pd.to_datetime(df[field], unit=us)
+
+        # Convert string representation of ints to floats, then scale
+        price = ums.User.fields.price
+        amount_apt = ums.User.fields.amount_apt
+        amount_usd = ums.User.fields.amount_usd
+        filled = ums.User.fields.filled
+        df = df.astype(
+            {price: float, amount_apt: float, amount_usd: float, filled: float}
+        )
+        df[price] = df[price] / int(10 ** coin_scales.USD)
+        df[amount_apt] = df[amount_apt] / int(10 ** coin_scales.APT)
+        df[amount_usd] = df[amount_usd] / int(10 ** coin_scales.USD)
+        df[filled] = df[filled] / int(10 ** coin_scales.APT)
+
+        return df

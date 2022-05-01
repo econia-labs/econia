@@ -34,7 +34,7 @@ module Ultima::Coin {
 
     // Scale for converting subunits to decimal (base-10 exponent)
     // With a scale of 3, for example, 1 subunit = 0.001 base unit
-    const APT_SCALE: u8 = 6;
+    const APT_SCALE: u8 = 8;
     const USD_SCALE: u8 = 6;
 
     // Generic coin type

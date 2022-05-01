@@ -2,6 +2,7 @@
     "cSpell.words": [
         "addrs",
         "Aptos",
+        "astype",
         "autobuild",
         "autodoc",
         "automodule",
@@ -20,7 +21,8 @@
         "seps",
         "structopt",
         "tempfiles",
-        "toctree"
+        "toctree",
+        "ubms"
     ],
     "esbonio.sphinx.confDir": ""
 }

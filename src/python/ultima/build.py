@@ -1,6 +1,9 @@
 """Move package building functionality
 
-Some functionality abstracted to be run from the command line, see below
+Relies on a ``.secrets`` folder inside Ultima project root directory,
+which contains a directory ``old``, hence ``ultima/.secrets/old``
+
+Some functionality abstracted to be run from the command line:
 
 .. code-block:: zsh
     :caption: Prepping Move.toml file
@@ -25,7 +28,6 @@ Some functionality abstracted to be run from the command line, see below
     # From Ultima repository root directory
     % python src/python/ultima/build.py gen
     New account: 767f55126ad35ac6acaa130a2a18ba38d721fd42e5fa4bfe10885216ee307706
-
 """
 
 import os
@@ -414,18 +416,35 @@ def sub_middle_group_file(
     Path(abs_path).write_text(seps.nl.join(lines))
     return old
 
+def get_secrets_dir(
+    ultima_root: str
+) -> str:
+    """Return absolute path of `ultima/.secrets`
+
+    Parameters
+    ----------
+    ultima_root : str, optional
+        relative path to Ultima repository root directory
+
+    Returns
+    -------
+    str
+        Absolute path of `ultima/.secrets`
+    """
+    return os.path.join(os.path.abspath(ultima_root), util_paths.secrets_dir)
+
 def get_key_path(
     address = str,
     ultima_root: str = seps.dot
 ) -> str:
-    """Return absolute path keyfile at `.secrets/<address>.key`
+    """Return absolute path keyfile at `ultima/.secrets/<address>.key`
 
     Parameters
     ----------
     address : str
         Account address
     ultima_root : str, optional
-        relative path to ultima repository root directory
+        relative path to Ultima repository root directory
 
     Returns
     -------
@@ -433,8 +452,7 @@ def get_key_path(
         Absolute path of keyfile
     """
     return os.path.join(
-        os.path.abspath(ultima_root),
-        util_paths.secrets_dir,
+        get_secrets_dir(ultima_root),
         address + seps.dot + file_extensions.key
     )
 
@@ -477,7 +495,7 @@ def sub_address_in_build_files(
 def archive_keyfile(
     abs_path: str
 ) -> None:
-    """Move keyfile with given address into `.secrets/old_keys`
+    """Move keyfile with given address into `.secrets/old`
 
     Parameters
     ----------

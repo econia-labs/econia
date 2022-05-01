@@ -8,7 +8,7 @@ elif [ $1 = pb ]
 then # Cargo build and publish bytecode for all modules
     python ../../python/ultima/build.py prep long ../../..
     cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/a03d8a97a108f9e1a76aede4af1272f15dd2c0f0f6787da707fde858c01d8131.key ../../../
+    python ../../python/ultima/build.py publish ../../../.secrets/2787bd52d62a5171f68b8c0dd1326efc94aa34109883f214496e5cd1556312da.key ../../../
 elif [ $1 = na ]
 then # Generate new dev account
     python ../../python/ultima/build.py gen  ../../..

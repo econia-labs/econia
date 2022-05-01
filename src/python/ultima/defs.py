@@ -59,9 +59,6 @@ member_names = SimpleNamespace(
 )
 """Move module member names"""
 
-timecode_us = 'us'
-"""Denotes microseconds"""
-
 module_names = SimpleNamespace(
     TestCoin = 'TestCoin',
 )
@@ -217,7 +214,6 @@ Ultima = 'Ultima'
 """Project name"""
 
 ultima_bool_maps = SimpleNamespace(
-    liq = {True: 'Maker', False: 'Taker'},
     side  = {True: 'Buy', False: 'Sell'},
 )
 """Mapping from boolean values onto corresponding string"""
@@ -250,20 +246,12 @@ ultima_modules = SimpleNamespace(
         ),
         fields = SimpleNamespace(
             available = 'available',
-            amount_apt = 'amount_apt',
-            amount_usd = 'amount_usd',
-            cancel_time = 'cancel_time',
-            cancelled = 'cancelled',
-            filled = 'filled',
-            fills = 'fills',
             holdings = 'holdings',
-            history = 'history',
             id = 'id',
-            liq = 'liq',
             open = 'open',
             price = 'price',
             side = 'side',
-            time = 'time',
+            unfilled = 'unfilled'
         )
     )
 )
@@ -285,6 +273,8 @@ util_paths = SimpleNamespace(
     # Relative to Ultima repository root
     secrets_dir = '.secrets',
     # Relative to secrets directory
-    old_keys = 'old'
+    old_keys = 'old',
+    # Ultima repository root relative to `src/jupyter`
+    ultima_root_rel_jupyter = '../..'
 )
 """Paths to developer utility resources"""

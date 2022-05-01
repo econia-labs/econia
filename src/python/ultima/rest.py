@@ -1,6 +1,5 @@
 """Aptos REST interface functionality"""
 
-from numpy import record
 import pandas as pd
 import requests
 import time
@@ -26,7 +25,6 @@ from ultima.defs import (
     rest_response_fields,
     rest_urls,
     seps,
-    timecode_us as us,
     tx_defaults,
     tx_fields,
     tx_sig_fields,
@@ -1105,16 +1103,9 @@ class UltimaClient(Client):
         ultima: Account,
         addr: str,
         id: int,
-        time: int,
-        liq: bool,
         side: bool,
         price: int,
-        amount_apt: int,
-        amount_usd: int,
-        filled: int,
-        open: bool,
-        cancelled: bool,
-        cancel_time: int
+        unfilled: int,
     ) -> str:
         """Record a mock order to a user's order history
 
@@ -1126,26 +1117,12 @@ class UltimaClient(Client):
             Address to record order at
         id : int
             Order id number
-        time : int
-            Unix timestamp for time in microseconds
-        liq : bool
-            True for maker, false for taker
         side : bool
             True for buy APT, False for sell APT,
         price : int
             In USD subunits, if maker order
-        amount_apt : int
-            If maker order or taker sell, number of APT subunits
-        amount_usd : int
-            If taker buy, number of USD subunits
-        filled : int
-            If maker order, APT subunits already filled
-        open : bool
-            True if still open, False if closed
-        cancelled : bool
-            True if maker order and was cancelled
-        cancel_time : int
-            Unix time in microseconds of cancellation
+        unfilled : int
+            Amount remaining to match, in APT subunits
 
         Returns
         -------
@@ -1156,82 +1133,45 @@ class UltimaClient(Client):
         return self.run_script(
             ultima,
             [ultima.address(), ums.User.name, record_mock_order],
-            [
-                addr,
-                str(id),
-                str(time),
-                liq,
-                side,
-                str(price),
-                str(amount_apt),
-                str(amount_usd),
-                str(filled),
-                open,
-                cancelled,
-                str(cancel_time)
-            ]
+            [addr, str(int(id)), side, str(int(price)), str(int(unfilled))]
         )
 
-    def order_history(
+    def open_orders(
         self,
         addr: str,
         ultima_addr: str
-    ) -> Optional[Dict[str, Any]]:
-        """Get order history, excluding fills, for an address
+    ) -> pd.DataFrame:
+        """Get open orders for an address
 
         Parameters
         ----------
         addr : str
-            Address to check history of, without leading hex specifier
+            Address to check, without leading hex specifier
+
+        Returns
+        -------
+        pandas.DataFrame
+            A cleaned ledger showing open orders in readable format
         """
+        # Get data, store in pandas.DataFrame
         User = ums.User.name
         Orders = ums.User.members.Orders
-        history = ums.User.fields.history
-        data = self.get_resource_data(addr, ultima_addr, User, Orders)[history]
-
-        fills = ums.User.fields.fills
-        # Remove fills, then put data into DataFrame
-        data = [{k: v for k, v in d.items() if k != fills} for d in data]
+        open = ums.User.fields.open
+        data = self.get_resource_data(addr, ultima_addr, User, Orders)[open]
         df = pd.DataFrame.from_dict(data)
 
         # Sort columns to match original data structure
-        df = df[[
-            ums.User.fields.id,
-            ums.User.fields.time,
-            ums.User.fields.liq,
-            ums.User.fields.side,
-            ums.User.fields.price,
-            ums.User.fields.amount_apt,
-            ums.User.fields.amount_usd,
-            ums.User.fields.filled,
-            ums.User.fields.open,
-            ums.User.fields.cancelled,
-            ums.User.fields.cancel_time,
-        ]]
-
-        # Map boolean values as needed
-        liq = ums.User.fields.liq
+        price = ums.User.fields.price
         side = ums.User.fields.side
-        for (field, map) in [(liq, ubms.liq), (side, ubms.side)]:
-            df[field] = df[field].map(map)
+        unfilled = ums.User.fields.unfilled
+        df = df[[ums.User.fields.id, side, price, unfilled]]
 
-        # Convert from Unix microseconds to datetime format
-        time = ums.User.fields.time
-        cancel_time = ums.User.fields.cancel_time
-        for field in [time, cancel_time]:
-            df[field] = pd.to_datetime(df[field], unit=us)
+        # Map side boolean values onto readable string
+        df[side] = df[side].map(ubms.side)
 
         # Convert string representation of ints to floats, then scale
-        price = ums.User.fields.price
-        amount_apt = ums.User.fields.amount_apt
-        amount_usd = ums.User.fields.amount_usd
-        filled = ums.User.fields.filled
-        df = df.astype(
-            {price: float, amount_apt: float, amount_usd: float, filled: float}
-        )
+        df = df.astype({price: float, unfilled: float})
         df[price] = df[price] / int(10 ** coin_scales.USD)
-        df[amount_apt] = df[amount_apt] / int(10 ** coin_scales.APT)
-        df[amount_usd] = df[amount_usd] / int(10 ** coin_scales.USD)
-        df[filled] = df[filled] / int(10 ** coin_scales.APT)
+        df[unfilled] = df[unfilled] / int(10 ** coin_scales.APT)
 
         return df

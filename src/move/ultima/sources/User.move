@@ -24,59 +24,25 @@ module Ultima::User {
     const BUY: bool = true;
     const SELL: bool = false;
 
-    // Order liquidity provision definitions
-    const MAKER: bool = true;
-    const TAKER: bool = false;
-
-    // Coin definition for order field
-    const APT_BOOL: bool = true;
-    const USD_BOOL: bool = false;
-
     // Collateral cointainer
     struct Collateral<phantom CoinType> has key {
         holdings: Coin<CoinType>,
         available: u64 // Subunits available to withdraw
     }
 
-    // Represents a taker (market) fill against a maker (limit) order
-    struct Fill has store {
-        time: u64, // Time in microseconds of fill
-        amount: u64, // Amount filled (in APT subunits)
-        price: u64, // Price of fill (in USD subunits)
-    }
-
-    // Represents a single order, always USD-denominated APT (APT/USDC)
+    // A single limit order, always USD-denominated APT (APT/USDC)
     // Colloquially, "one APT costs $120"
     struct Order has store {
         id: u64, // From order book counter
-        time: u64, // Unix time in microseconds of order placement
-        liq: bool, // true for maker, false for taker
         side: bool, // true for buy APT, false for sell APT
-        price: u64, // In USD subunits, if maker order
-        // If maker order or taker sell, number of APT subunits
-        amount_apt: u64,
-        // If taker buy, number of USD subunits
-        amount_usd: u64,
-        filled: u64, // If maker order, APT subunits already filled
-        open: bool, // true if still open, false if closed
-        cancelled: bool, // true if was cancelled
-        cancel_time: u64, // Unix time in microseconds of cancellation
-        /*
-        Fills are appended to the vector as they are made, hence earlier
-        fills have a lower index. If `liq` is `true` (if maker AKA
-        limit order), then `fills` will represent fills made against
-        this order. If `liq` is `false`, (if taker AKA market order),
-        then `fills` will represent fills that this order made against
-        the book.
-        */
-        fills: vector<Fill>
+        price: u64, // Limit price In USD subunits
+        unfilled: u64, // Amount remaining to match, in APT subunits
     }
 
-    // Resource container for user order history
+    // Resource container for open limit orders
     struct Orders has key {
-        // Appended as they are made, hence earlier orders have lower
-        // indices
-        history: vector<Order>
+        // Appended as they are made, and removed once filled
+        open: vector<Order>
     }
 
     // Get holdings and available amount for given coin type
@@ -121,16 +87,16 @@ module Ultima::User {
         deposit<USD>(addr, usd);
     }
 
-    // Return number of orders for given address
+    // Return number of open orders for given address
     public fun num_orders(
         addr: address
     ): u64
      acquires Orders {
-        let history = & borrow_global<Orders>(addr).history;
-        Vector::length<Order>(history)
+        let open = & borrow_global<Orders>(addr).open;
+        Vector::length<Order>(open)
     }
 
-    // Initialize user collateral containers and order history
+    // Initialize user collateral containers and open orders resource
     public(script) fun init_account(
         account: &signer,
     ) {
@@ -149,57 +115,36 @@ module Ultima::User {
         move_to(account, Collateral<CoinType>{holdings: empty, available: 0});
     }
 
-    // Publish empty order history at account
+    // Publish empty open orders resource at account
     fun publish_orders(
         account: &signer
     ) {
         let addr = Signer::address_of(account);
         assert!(!exists<Orders>(addr), E_ALREADY_HAS_ORDERS);
-        move_to(account, Orders{history: Vector::empty<Order>()});
+        move_to(account, Orders{open: Vector::empty<Order>()});
     }
 
-    // Append an order to a user's order history
-    // Does not do perform data validity checks
+    // Append an order to a user's open orders resource
     fun record_order(
         addr: address,
         order: Order
     ) acquires Orders {
-        let history = &mut borrow_global_mut<Orders>(addr).history;
-        Vector::push_back<Order>(history, order);
+        let open = &mut borrow_global_mut<Orders>(addr).open;
+        Vector::push_back<Order>(open, order);
     }
 
-    // Record a mock order to a user's order history
-    // Useful for testing, can only be called by Ultima account
+    // Record a mock order to a user's open orders resource
+    // Designed for testing, can only be called by Ultima account
     public(script) fun record_mock_order(
         account: &signer,
         addr: address,
         id: u64,
-        time: u64,
-        liq: bool,
         side: bool,
         price: u64,
-        amount_apt: u64,
-        amount_usd: u64,
-        filled: u64,
-        open: bool,
-        cancelled: bool,
-        cancel_time: u64,
+        unfilled: u64,
     ) acquires Orders {
         assert!(Signer::address_of(account) == @Ultima, E_INVALID_RECORDER);
-        record_order(addr, Order{
-            id,
-            time, // Have this be a timestamp
-            liq,
-            side,
-            price,
-            amount_apt,
-            amount_usd,
-            filled,
-            open,
-            cancelled,
-            cancel_time,
-            fills: Vector::empty<Fill>()
-        });
+        record_order(addr, Order{id, side, price, unfilled});
     }
 
     // Withdraw requested amount from collateral container at address
@@ -223,8 +168,7 @@ module Ultima::User {
         result
     }
 
-    // Withdraw specified amounts from collateral containers into
-    // Coin::Balance
+    // Withdraw specified amounts from collateral into Coin::Balance
     public(script) fun withdraw_coins(
         account: &signer,
         apt_subunits: u64,
@@ -315,16 +259,9 @@ module Ultima::User {
             &account,
             Signer::address_of(&account),
             1,
+            false,
             2,
-            false,
-            false,
             3,
-            4,
-            5,
-            6,
-            false,
-            false,
-            7
         );
     }
 
@@ -338,25 +275,18 @@ module Ultima::User {
         publish_orders(&account);
         record_mock_order(
             &account,
-            addr,
+            Signer::address_of(&account),
             1,
+            false,
             2,
-            false,
-            false,
             3,
-            4,
-            5,
-            6,
-            false,
-            false,
-            7
         );
-        // Verify proper history length
-        let history = &borrow_global<Orders>(addr).history;
-        assert!(Vector::length(history) == 1, E_RECORD_ORDER_INVALID);
+        // Verify proper open orders vector length
+        let open = &borrow_global<Orders>(addr).open;
+        assert!(Vector::length(open) == 1, E_RECORD_ORDER_INVALID);
     }
 
-    // Verify order data recorded to history in proper order
+    // Verify order data recorded to open orders vector in proper order
     // Does not perform data value validity checks
     #[test(account = @TestUser)]
     fun record_order_success(
@@ -368,73 +298,34 @@ module Ultima::User {
         // Record orders
         record_order(addr, Order{
             id: 1,
-            time: 2,
-            liq: false,
             side: true,
-            price: 3,
-            amount_apt: 4,
-            amount_usd: 5,
-            filled: 6,
-            open: true,
-            cancelled: false,
-            cancel_time: 7,
-            fills: Vector::empty<Fill>()
+            price: 2,
+            unfilled: 3,
         });
         record_order(addr, Order{
             id: 10,
-            time: 20,
-            liq: true,
             side: false,
-            price: 30,
-            amount_apt: 40,
-            amount_usd: 50,
-            filled: 60,
-            open: false,
-            cancelled: true,
-            cancel_time: 70,
-            fills: Vector::empty<Fill>()
+            price: 20,
+            unfilled: 30,
         });
 
-        // Verify proper history length
-        let history = &borrow_global<Orders>(addr).history;
-        assert!(Vector::length(history) == 2, E_RECORD_ORDER_INVALID);
+        // Verify proper open orders vector length
+        let open = &borrow_global<Orders>(addr).open;
+        assert!(Vector::length(open) == 2, E_RECORD_ORDER_INVALID);
 
         // Verify contents of first order
-        let first_order = Vector::borrow(history, 0);
+        let first_order = Vector::borrow(open, 0);
         assert!(first_order.id == 1, E_RECORD_ORDER_INVALID);
-        assert!(first_order.id == 1, E_RECORD_ORDER_INVALID);
-        assert!(first_order.time == 2, E_RECORD_ORDER_INVALID);
-        assert!(first_order.liq == false, E_RECORD_ORDER_INVALID);
         assert!(first_order.side == true, E_RECORD_ORDER_INVALID);
-        assert!(first_order.price == 3, E_RECORD_ORDER_INVALID);
-        assert!(first_order.amount_apt == 4, E_RECORD_ORDER_INVALID);
-        assert!(first_order.amount_usd == 5, E_RECORD_ORDER_INVALID);
-        assert!(first_order.filled == 6, E_RECORD_ORDER_INVALID);
-        assert!(first_order.open == true, E_RECORD_ORDER_INVALID);
-        assert!(first_order.cancelled == false, E_RECORD_ORDER_INVALID);
-        assert!(first_order.cancel_time == 7, E_RECORD_ORDER_INVALID);
-        assert!(
-            Vector::is_empty<Fill>(&first_order.fills),
-            E_RECORD_ORDER_INVALID
-        );
+        assert!(first_order.price == 2, E_RECORD_ORDER_INVALID);
+        assert!(first_order.unfilled == 3, E_RECORD_ORDER_INVALID);
 
         // Verify contents of second order
-        let second_order = Vector::borrow(history, 1);
+        let second_order = Vector::borrow(open, 1);
         assert!(second_order.id == 10, E_RECORD_ORDER_INVALID);
-        assert!(second_order.time == 20, E_RECORD_ORDER_INVALID);
-        assert!(second_order.liq == true, E_RECORD_ORDER_INVALID);
         assert!(second_order.side == false, E_RECORD_ORDER_INVALID);
-        assert!(second_order.price == 30, E_RECORD_ORDER_INVALID);
-        assert!(second_order.amount_apt == 40, E_RECORD_ORDER_INVALID);
-        assert!(second_order.amount_usd == 50, E_RECORD_ORDER_INVALID);
-        assert!(second_order.filled == 60, E_RECORD_ORDER_INVALID);
-        assert!(second_order.open == false, E_RECORD_ORDER_INVALID);
-        assert!(second_order.cancelled == true, E_RECORD_ORDER_INVALID);
-        assert!(second_order.cancel_time == 70, E_RECORD_ORDER_INVALID);
-        assert!(
-            Vector::is_empty<Fill>(&second_order.fills),
-            E_RECORD_ORDER_INVALID
-        );
+        assert!(second_order.price == 20, E_RECORD_ORDER_INVALID);
+        assert!(second_order.unfilled == 30, E_RECORD_ORDER_INVALID);
     }
 
     // Verify unable to withdraw more than available balance

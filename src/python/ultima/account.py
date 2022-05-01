@@ -7,8 +7,10 @@ from pathlib import Path
 from nacl.signing import SigningKey
 from ultima.defs import (
     e_msgs,
+    file_extensions as exts,
     single_sig_id,
-    seps
+    seps,
+    util_paths
 )
 
 class Account:
@@ -21,6 +23,10 @@ class Account:
     path : str, optional
         Relative path to file containing 32-byte random seed value,
         stored as human readable hex string
+    dev_nb : bool, optional
+        If True, initialize using key generated per
+        :func:`build.gen_new_ultima_dev_account`, assuming there is only
+        one such key in the provided directory
 
     Attributes
     ----------
@@ -52,14 +58,24 @@ class Account:
     def __init__(
         self,
         seed: bytes = None,
-        path: str = None
+        path: str = None,
+        dev_nb: bool = False,
     ) -> None:
         if seed is None:
-            if path is None:
+            if dev_nb:
+                # Assume only one keyfile in `ultima/.secrets`
+                rrj = util_paths.ultima_root_rel_jupyter
+                secrets = util_paths.secrets_dir
+                s_dir = os.path.join(os.path.abspath(rrj), secrets)
+                keyfile_name = \
+                    [p for p in os.listdir(s_dir) if p.endswith(exts.key)][0]
+                abs_path = Path(s_dir) / keyfile_name
+            elif path is None:
                 self.signing_key = SigningKey.generate()
+                return
             else:
                 abs_path = os.path.abspath(Path(os.getcwd()) / path)
-                self.signing_key = \
+            self.signing_key = \
                     SigningKey(bytes.fromhex(Path(abs_path).read_text()))
         else:
             self.signing_key = SigningKey(seed)

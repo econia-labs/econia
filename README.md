@@ -2,7 +2,16 @@
 
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
-## Developer Setup
+* [Developer setup](#developer-setup)
+    * [Shell scripts](#shell-scripts)
+    * [Installing dependencies](#installing-dependencies)
+    * [Conda](#conda)
+* [Major filetypes](#major-filetypes)
+    * [Python](#python)
+    * [Jupyter](#jupyter)
+    * [Move](#move)
+
+## Developer setup
 
 ### Shell scripts
 

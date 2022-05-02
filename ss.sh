@@ -52,15 +52,15 @@ elif test $1 = ab; then
     python -mwebbrowser http://127.0.0.1:8000/
     sphinx-autobuild doc/sphinx/src doc/sphinx/build --watch src/python
 
+# Run Sphinx doctest
+elif test $1 = dt; then
+    make -C doc/sphinx doctest
+
 # Go to Move package folder
 elif test $1 = mp; then
     python src/python/ultima/build.py prep short
     cd src/move/ultima
     move sandbox clean
-
-# Run Sphinx doctest
-elif test $1 = dt; then
-    make -C doc/sphinx doctest
 
 # If no corresponding option
 else

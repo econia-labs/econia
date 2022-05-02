@@ -21,7 +21,7 @@ elif test $1 = ur; then
 elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
     cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/f3c1e3aab6b0e48b25c2f7ef425e738e612ad853489752721a6094daae7c24d7.key ../../../
+    python ../../python/ultima/build.py publish ../../../.secrets/d5c9f830927dfd67fcfe55769a25988d5bd6656b418bbcbf6f0d797d1ff37a64.key ../../../
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then
@@ -38,6 +38,7 @@ elif test $1 = mb; then
     move package build
 
 # Run tests with coverage, passing optional argument
+# For example `s tc -f coin`
 elif test $1 = tc; then
     python ../../python/ultima/build.py prep short ../../..
     move package test --coverage $2 $3
@@ -47,6 +48,7 @@ elif test $1 = cs; then
     move package coverage summary
 
 # Run test coverage summary against a module
+# For instance, `s cm Coin`
 elif test $1 = cm; then
     move package coverage source --module $2
 

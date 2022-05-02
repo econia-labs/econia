@@ -2,7 +2,6 @@
 name = 'Ultima'
 version = '0.1.0' # Per SemVer
 
-[addresses]
 # Named addresses should be in one of two forms, `long` or `short`.
 # The Aptos blockchain uses long (32-byte) addresses, which are not
 # compatible the Move command line tools, which only accept up to 16
@@ -19,9 +18,10 @@ version = '0.1.0' # Per SemVer
 # 32 characters following the hex specifier, followed by a space, a
 # pound, a space, then the remaining address string. Additionally, they
 # can be listed for even shorter forms, like those in AptosFramework
+[addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Ultima = '0xd5c9f830927dfd67fcfe55769a25988d5bd6656b418bbcbf6f0d797d1ff37a64'
+Ultima = '0xd5c9f830927dfd67fcfe55769a25988d' # 5bd6656b418bbcbf6f0d797d1ff37a64
 TestUser = '0xace'
 
 [dependencies.AptosFramework]

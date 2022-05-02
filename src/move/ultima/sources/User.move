@@ -2,12 +2,24 @@
 module Ultima::User {
     use Std::Signer;
     use Std::Vector;
+    // Identifier Coin::<member> sometimes used for disambiguation:
+    // for instance, Coin::deposit_coins versus User::deposit_coins.
+    // Additionally, if a member is only used in test code, coverage
+    // reporting will raise warnings about unused aliases. Hence
+    // test-only calls to members of Coin may have the redundant
+    // Coin::<member> specifier even there is no name collision with a
+    // member of User
     use Ultima::Coin;
     use Ultima::Coin::{
         APT,
         Coin,
+        get_empty_coin,
+        merge_coin_to_target,
+        merge_coins,
         report_subunits,
-        USD
+        split_coin,
+        split_coin_from_target,
+        USD,
     };
 
     // Error codes
@@ -19,6 +31,8 @@ module Ultima::User {
     const E_INSUFFICIENT_COLLATERAL: u64 = 5;
     const E_RECORD_ORDER_INVALID: u64 = 6;
     const E_INVALID_RECORDER: u64 = 7;
+    const E_NO_ORDERS: u64 = 8;
+    const E_MATCH_ERROR: u64 = 9;
 
     // Order side definitions
     const BUY: bool = true;
@@ -67,7 +81,7 @@ module Ultima::User {
     ) acquires Collateral {
         let target =
             &mut borrow_global_mut<Collateral<CoinType>>(addr).holdings;
-        let (added, _, _) = Coin::merge_coin_to_target(coin, target);
+        let (added, _, _) = merge_coin_to_target(coin, target);
         let available_ref =
             &mut borrow_global_mut<Collateral<CoinType>>(addr).available;
         *available_ref = *available_ref + added;
@@ -85,6 +99,73 @@ module Ultima::User {
         let addr = Signer::address_of(account);
         deposit<APT>(addr, apt);
         deposit<USD>(addr, usd);
+    }
+
+    // Match order for given address and order id
+    // Should pass only APT or USD depending on the order side
+    // If passed APT returns USD, and if passed USD returns APT
+    fun match_order(
+        addr: address,
+        id: u64,
+        apt: Coin<APT>, // Can have 0 subunits
+        usd: Coin<USD> // Can have 0 subunits
+    ): (
+        Coin<APT>, // Can have 0 subunits
+        Coin<USD> // Can have 0 subunits
+    ) acquires Collateral, Orders {
+        let open_orders = &mut borrow_global_mut<Orders>(addr).open;
+        // Since Vector::borrow_mut<Order> will abort for invalid
+        // indices, skip checks on length of vector/loop count
+        // Similarly ignore integer underflow range checks
+        let i = 0;
+        loop {
+            let order = Vector::borrow_mut<Order>(open_orders, i);
+            if (order.id == id) { // Found the order to match
+                // Empty placeholders to return later
+                let apt_final = get_empty_coin<APT>();
+                let usd_final = get_empty_coin<USD>();
+                if (order.side == BUY) {
+                    // Calculate amounts to disperse to user and book
+                    let apt_for_user = report_subunits<APT>(&apt);
+                    let usd_for_book = order.price * apt_for_user;
+                    // Update order fill amount
+                    order.unfilled = order.unfilled - apt_for_user;
+                    // Split inbound APT, deposit to user
+                    let (apt_to_deposit, apt_to_return) =
+                        split_coin<APT>(apt, apt_for_user);
+                    deposit<APT>(addr, apt_to_deposit);
+                    // Withdraw USD from user collateral for book
+                    let withdrawn_usd = withdraw<USD>(addr, usd_for_book);
+                    let usd_to_return = merge_coins(usd, withdrawn_usd);
+                    // Merge final APT and USD into placeholders
+                    merge_coin_to_target(apt_to_return, &mut apt_final);
+                    merge_coin_to_target(usd_to_return, &mut usd_final);
+                } else { // If a SELL
+                    // Calculate amounts to disperse to user and book
+                    let usd_for_user = report_subunits<USD>(&usd);
+                    let apt_for_book = usd_for_user / order.price;
+                    // Update order fill amount
+                    order.unfilled = order.unfilled - apt_for_book;
+                    // Split inbound USD, deposit to user
+                    let (usd_to_deposit, usd_to_return) =
+                        split_coin<USD>(usd, usd_for_user);
+                    deposit<USD>(addr, usd_to_deposit);
+                    // Withdraw APT from user collateral for book
+                    let withdrawn_apt = withdraw<APT>(addr, apt_for_book);
+                    let apt_to_return = merge_coins(apt, withdrawn_apt);
+                    // Merge final APT and USD into placeholders
+                    merge_coin_to_target(apt_to_return, &mut apt_final);
+                    merge_coin_to_target(usd_to_return, &mut usd_final);
+                };
+                // If order fully matched, remove from orders resource
+                if (order.unfilled == 0) {
+                    let Order{id: _, side: _, price: _, unfilled: _} =
+                        Vector::remove<Order>(open_orders, i);
+                };
+                return(apt_final, usd_final)
+            };
+            i = i + 1;
+        }
     }
 
     // Return number of open orders for given address
@@ -111,7 +192,7 @@ module Ultima::User {
     ) {
         let addr = Signer::address_of(account);
         assert!(!exists<Collateral<CoinType>>(addr), E_ALREADY_HAS_COLLATERAL);
-        let empty = Coin::get_empty_coin<CoinType>();
+        let empty = get_empty_coin<CoinType>();
         move_to(account, Collateral<CoinType>{holdings: empty, available: 0});
     }
 
@@ -164,7 +245,7 @@ module Ultima::User {
         let target =
             &mut borrow_global_mut<Collateral<CoinType>>(addr).holdings;
         let (result, _, _) =
-            Coin::split_coin_from_target<CoinType>(amount, target);
+            split_coin_from_target<CoinType>(amount, target);
         result
     }
 
@@ -205,6 +286,82 @@ module Ultima::User {
         let (usd_holdings, usd_available) = collateral_balances<USD>(addr);
         assert!(usd_holdings == 300, E_DEPOSIT_FAILURE);
         assert!(usd_available == 300, E_DEPOSIT_FAILURE);
+    }
+
+    // Verify limit orders matched correctly
+    #[test(
+        user = @TestUser,
+        ultima = @Ultima
+    )]
+    public(script) fun match_order_success(
+        user: signer,
+        ultima: signer,
+    ): ( // Easier to return than destroy
+        Coin<APT>,
+        Coin<USD>,
+        Coin<APT>,
+        Coin<USD>,
+    )
+    acquires Collateral, Orders {
+        // Init and fund account
+        let addr = Signer::address_of(&user);
+        init_account(&user);
+        deposit<APT>(addr, Coin::yield_coin<APT>(&ultima, 1000));
+        deposit<USD>(addr, Coin::yield_coin<USD>(&ultima, 2000));
+        // Record orders
+        record_order(addr, Order{
+            id: 1,
+            side: BUY,
+            price: 15,
+            unfilled: 8,
+        });
+        record_order(addr, Order{
+            id: 2,
+            side: SELL,
+            price: 20,
+            unfilled: 9,
+        });
+        // Partially match the buy order
+        let (apt1, usd1) = match_order(
+            addr,
+            1,
+            Coin::yield_coin<APT>(&ultima, 3),
+            get_empty_coin<USD>()
+        );
+        // Verify results
+        assert!(report_subunits(&apt1) == 0, E_MATCH_ERROR);
+        assert!(report_subunits(&usd1) == 45, E_MATCH_ERROR);
+        let open_orders = &borrow_global<Orders>(addr).open;
+        let order1 = Vector::borrow<Order>(open_orders, 0);
+        assert!(order1.unfilled == 5, E_MATCH_ERROR);
+        let (apt_holdings, apt_available) = collateral_balances<APT>(addr);
+        assert!(apt_holdings == 1000 + 3, E_MATCH_ERROR);
+        assert!(apt_available == 1000 + 3, E_MATCH_ERROR);
+        let (usd_holdings, usd_available) = collateral_balances<USD>(addr);
+        assert!(usd_holdings == 2000 - 45, E_MATCH_ERROR);
+        assert!(usd_available == 2000 - 45, E_MATCH_ERROR);
+
+        // Fully match the sell order
+        let (apt2, usd2) = match_order(
+            addr,
+            2,
+            get_empty_coin<APT>(),
+            Coin::yield_coin<USD>(&ultima, 180)
+        );
+        // Verify results
+        assert!(report_subunits(&apt2) == 9, E_MATCH_ERROR);
+        assert!(report_subunits(&usd2) == 0, E_MATCH_ERROR);
+        let open_os = &borrow_global<Orders>(addr).open;
+        assert!(Vector::length<Order>(open_os) == 1, E_MATCH_ERROR);
+        let (apt_h, apt_a) = collateral_balances<APT>(addr);
+        assert!(apt_h == 1000 + 3 - 9, E_MATCH_ERROR);
+        assert!(apt_a == 1000 + 3 - 9, E_MATCH_ERROR);
+        let (usd_h, usd_a) = collateral_balances<USD>(addr);
+        assert!(usd_h == 2000 - 45 + 180, E_MATCH_ERROR);
+        assert!(usd_a == 2000 - 45 + 180, E_MATCH_ERROR);
+
+        // Return unconsumed resources
+        (apt1, usd1, apt2, usd2)
     }
 
     // Verify collateral container initialized empty

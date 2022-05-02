@@ -1,37 +1,63 @@
-# Shell scripts for common developer workflows
+# References to "short" and "long" addresses refer to named addresses in
+# the Move.toml file. The Move command line takes 16-byte addresses,
+# while the Aptos blockchain takes 32-byte addresses, so scripting
+# utilities are provided to quickly shift between the two formats
 
-if [ $1 = cl ]
-then # Clean up for sandbox development
-    move sandbox clean
-    python ../../python/ultima/build.py prep short ../../..
-elif [ $1 = pb ]
-then # Cargo build and publish bytecode for all modules
+# Return if no arguments passed
+if test "$#" = 0; then
+    return
+fi
+
+# Verify that this script can be invoked
+if test $1 = hello; then
+    echo Hello, Ultima developer
+
+# Go back to Ultima project repository root
+elif test $1 = ur; then
+    cd ../../../
+
+# Cargo build and publish bytecode for all modules
+# Other scripts automatically update the specified keyfile
+elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
     cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/bb1b49b362bc1679fa6b3edfb96353b8545aefd4f6c4663515099cea4430e7df.key ../../../
-elif [ $1 = na ]
-then # Generate new dev account
+    python ../../python/ultima/build.py publish ../../../.secrets/f3c1e3aab6b0e48b25c2f7ef425e738e612ad853489752721a6094daae7c24d7.key ../../../
+
+# Clean up temp files and format addresses in short form
+elif test $1 = cl; then
+    move sandbox clean
+    python ../../python/ultima/build.py prep short ../../..
+
+# Gerenate a new dev account keyfile
+elif test $1 = na; then
     python ../../python/ultima/build.py gen  ../../..
-elif [ $1 = mb ]
-then # Clean up and run move package build
+
+# Build package via Move command line
+elif test $1 = mb; then
     python ../../python/ultima/build.py prep short ../../..
     move package build
-elif [ $1 = tc ]
-then # Move package test with coverage, passing optional arguments
+
+# Run tests with coverage, passing optional argument
+elif test $1 = tc; then
     python ../../python/ultima/build.py prep short ../../..
     move package test --coverage $2 $3
-elif [ $1 = cs ]
-then # Move package coverage summary
+
+# Output test coverage summary
+elif test $1 = cs; then
     move package coverage summary
-elif [ $1 = cm ]
-then # Move package coverage summary against module
+
+# Run test coverage summary against a module
+elif test $1 = cm; then
     move package coverage source --module $2
-elif [ $1 = sa ]
-then # Switch Move.toml to use short addresses
+
+# Format short address form
+elif test $1 = sa; then
     python ../../python/ultima/build.py prep short ../../..
-elif [ $1 = ur ]
-then # Change directory to Ultima project respository root
-    cd ../../../
+
+# Format long address form
+elif test $1 = la; then
+    python ../../python/ultima/build.py prep long ../../..
+
 else
     echo Invalid option
 fi

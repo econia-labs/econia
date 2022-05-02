@@ -2,89 +2,87 @@
 
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
-## Developer scripts
+## Developer Setup
 
-* See `ss.sh` for shortcuts for common developer commands
+### Shell scripts
 
-## Environment management
+The easiest way to develop with Ultima is through the provided shell scripts, and the fastest way to run these scripts is by adding the following function to your runtime configuration file (``~/.zshrc``, ``~/.bash_profile``, etc):
+
+```zsh
+# Shell script wrapper: pass all commands to ./ss.sh
+s() {source ss.sh "$@"}
+```
+
+Now you will be able to run the provided ``ss.sh`` script file in whatever directory you are in by simply typing ``s``:
+
+```
+% git clone https://github.com/ultima-exchange/ultima.git
+% cd ultima
+% s hello
+Hello, Ultima developer
+```
+
+See ``ss.sh`` within a given directory for its available options
+
+### Installing dependencies
+
+From within the Ultima root directory, run ``s setup``:
+
+```
+% s setup
+The package dependency installer will now ask for your password
+...
+...<Press "enter" as needed>
+...
+Setup complete
+```
+
+### Conda
+
+The setup script installs ``conda``, a command line tool for managing Python environments, then installs the ``ultima`` conda environment, and finally installs the Ultima Python package to the ``ultima`` conda environment.
+If using VS Code, select ``ultima`` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
+
+```zsh
+# To activate
+(base) % conda activate ultima
+# To deactivate
+(ultima) ultima % conda deactivate
+```
+
+With the ``ultima`` conda environment active, you can then build the documentation, explore the provided interactive Jupyter notebook archive, and run Move command line tools:
+
+```zsh
+# Autobuild Sphinx documentation with realtime updates
+(ultima) % s ab
+```
+
+```zsh
+# Open Jupyter notebook gallery
+# Earliest notebooks subject to breaking changes
+(ultima) % s nb
+```
+
+```zsh
+# Change directory to the Ultima Move package
+# Move package has its own utility shell scripts
+(ultima) % s mp
+```
+
+## Major filetypes
 
 ### Python
 
-* Python environments are managed via the ``env/conda.yml`` conda environment
-* The `ultima` Python package is in development and must be installed from source
-
-#### Installation
-
-```
-conda env create -f env/conda.yml
-```
-
-* Pip install the ``ultima`` Python package from source, in editable mode:
-
-```
-conda activate ultima
-pip install -e src/python
-```
-
-#### Exporting
-
-* If you install a new conda package, update the environment specification:
-
-```
-conda env export > env/conda.yml
-```
-
-* Delete the last line of the file, which will look something like:
-
-```
-prefix: /Users/user/opt/miniconda3/envs/ultima
-```
-
-## Documentation
-
-### Python
-
-* Source code contains Numpy style docstrings and PEP484-style type annotations
-* Sphinx documentation uses autodoc
+The Ultima Python package source code is at ``src/python/ultima``.
+Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into the documentation website via Sphinx.
+Sphinx documentation source files are at ``doc/sphinx``.
 
 ### Jupyter
 
-* Interactive examples from tutorials at `src/jupyter`
-* Jupyter notebook content may be subject to breaking changes
-    * If so, check out the git commit when broken notebook was last modified
+Interactive Jupyter notebook examples are at ``src/jupyter``, listed in increasing order of creation number.
+The earliest notebooks are subject to breaking changes at the most recent commit, but they have been archived so as to be functional at the commit when they where finalized.
+Hence, older commits can be checked out and experimented with, but mostly they are useful for harvesting old code patterns.
 
-### Sphinx
+### Move
 
-#### Static build
-
-```
-make -C doc/sphinx/ html
-```
-
-* Then point a browser to ``doc/sphinx/build/html/index.html``
-
-#### Auto build
-
-```
-sphinx-autobuild doc/sphinx/src doc/sphinx/build --watch src/python
-```
-
-* Then point a browser to ``http://127.0.0.1:8000/``
-
-#### Clearing tempfiles
-
-```
-make -C doc/sphinx clean
-```
-
-#### Checking links
-
-```
-make -C doc/sphinx linkcheck
-```
-
-#### Running doctest
-
-```
-make -C doc/sphinx doctest
-```
+Move source code is at ``src/move/ultima``.
+In the absence of a formal style guide, Move code is formatted similarly to PEP8-style Python code.

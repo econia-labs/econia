@@ -129,7 +129,12 @@ def get_toml_lines(
     list of str
         All lines in file
     """
-    return Path(abs_path).read_text().splitlines()
+    lines = Path(abs_path).read_text().splitlines()
+    not_comment_lines = []
+    for i, line in enumerate(lines):
+        if not line.startswith(seps.pnd):
+            not_comment_lines.append(line)
+    return not_comment_lines
 
 def is_address_line(
     line: str

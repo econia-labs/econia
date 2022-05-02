@@ -27,6 +27,7 @@ module Ultima::Coin {
     const E_DEPOSIT_COINS_FAILURE: u64 = 19;
     const E_YIELD_INVALID: u64 = 20;
     const E_WRONG_YIELD_VALUE: u64 = 21;
+    const E_INVALID_BURN: u64 = 22;
 
     // Coin type specifiers
     struct APT {}
@@ -34,8 +35,8 @@ module Ultima::Coin {
 
     // Scale for converting subunits to decimal (base-10 exponent)
     // With a scale of 3, for example, 1 subunit = 0.001 base unit
-    const APT_SCALE: u8 = 8;
-    const USD_SCALE: u8 = 6;
+    const APT_SCALE: u8 = 6;
+    const USD_SCALE: u8 = 12;
 
     // Generic coin type
     struct Coin<phantom CoinType> has store {
@@ -66,6 +67,15 @@ module Ultima::Coin {
     ): u64
     acquires Balance {
         borrow_global<Balance<CoinType>>(addr).coin.subunits
+    }
+
+    // Burn passed coin, can only be invoked by Ultima account
+    public fun burn<CoinType>(
+        account: &signer,
+        coin: Coin<CoinType>
+    ) {
+        assert!(Signer::address_of(account) == @Ultima, E_INVALID_BURN);
+        let Coin<CoinType>{subunits: _} = coin;
     }
 
     // Deposit moved coin amount to a given address
@@ -285,6 +295,24 @@ module Ultima::Coin {
     fun balance_of_dne<CoinType>()
     acquires Balance {
         balance_of<APT>(@TestUser);
+    }
+
+    // Verify successful destruction of passed coin
+    #[test(account = @Ultima)]
+    public fun burn_success(
+        account: signer
+    ) {
+        let coin = Coin<APT>{subunits: 10};
+        burn<APT>(&account, coin);
+    }
+
+    // Verify arbitrary user cannot burn
+    #[test(account = @TestUser)]
+    #[expected_failure(abort_code = 22)]
+    public fun burn_failure(
+        account: signer
+    ) {
+        burn<USD>(&account, Coin<USD>{subunits: 1});
     }
 
     // Verify can not deposit if Balance resource unpublished

@@ -36,10 +36,16 @@ from ultima.defs import (
 )
 
 APT = ums.Coin.members.APT
-"""APT coin symbol"""
+"""str: APT coin symbol"""
 
 USD = ums.Coin.members.USD
-"""USD coin symbol"""
+"""str: USD coin symbol"""
+
+Buy = ubms.side[True]
+"""str: Order side buy indicator"""
+
+Sell = ubms.side[False]
+"""str: Order side sell indicator"""
 
 scale_map = {APT: coin_scales.APT, USD: coin_scales.USD}
 """Map from coin symbol to scale"""
@@ -190,7 +196,7 @@ def construct_script_payload(
     }
 
 def subs(
-    units: Union[str, int, float],
+    units: Union[str, int],
     coin: str
 ) -> int:
     """Get integer subunits for specified amount of given coin
@@ -198,7 +204,7 @@ def subs(
     Parameters
     ----------
     units : str or int
-        Amount, in regular units
+        Amount, in base units
     coin : str
         USD or APT
 
@@ -212,16 +218,97 @@ def subs(
     >>> from ultima.rest import subs
     >>> # Input as decimal str
     >>> subs('1.123', 'USD')
-    1123000
+    1123000000000
     >>> # Input as int
-    >>> subs(1500, 'USD')
-    1500000000
+    >>> subs(109, 'APT')
+    109000000
     >>> # Truncating excess digits
-    >>> subs('1.1234567', 'USD')
+    >>> subs('1.12345678', 'APT')
     1123456
     """
     assert type(units) == str or type(units) == int
     return trunc(int(dec(units) * 10 ** scale_map[coin]))
+
+def units(
+    subunits: int,
+    coin: str
+) -> dec:
+    """Return base units corresponding to int subunits for given coin
+
+    Parameters
+    ----------
+    subunits : int
+        Number of subunits
+    coin : str
+        'APT' or 'USD'
+
+    Returns
+    -------
+    decimal.Decimal
+        Corresponding number of base units
+
+    Example
+    -------
+    >>> from ultima.rest import units
+    >>> units(1234567, 'USD')
+    Decimal('0.000001234567')
+    >>> units(123456789, 'APT')
+    Decimal('123.456789')
+    """
+    return dec(subunits) / (10 ** scale_map[coin])
+
+def base_price(
+    subunit_price: int
+) -> dec:
+    """Covert subunit price (USD subunits per APT subunit) to base price
+
+    Parameters
+    ----------
+    subunit_price : int
+        Limit price, in USD subunits, for one subunit of APT
+
+    Returns
+    -------
+    decimal.Decimal
+        Base price, quoted in USD per APT
+
+    Example
+    -------
+    >>> from ultima.rest import base_price
+    >>> base_price(12345678)
+    Decimal('12.345678')
+    >>> base_price(150000000)
+    Decimal('150')
+    """
+    return dec(subunit_price) * dec(10 ** scale_map[APT]) / \
+        dec(10 ** scale_map[USD])
+
+def subunit_price(
+    base_price: Union[str, int],
+) -> int:
+    """Convert base price (USD per APT) to subunit price
+
+    Parameters
+    ----------
+    base_price : str or int
+        Amount of base units of USD per base unit of APT
+
+    Returns
+    -------
+    subunit_price : int
+        Price, in USD subunits per APT subunit
+
+    Example
+    -------
+    >>> from ultima.rest import subunit_price
+    >>> subunit_price(123)
+    123000000
+    >>> subunit_price('4565.78023')
+    4565780230
+    """
+    assert type(base_price) == str or type(base_price) == int
+    return int(trunc(dec(base_price) * dec(10 ** scale_map[USD]) / \
+        dec(10 ** scale_map[APT])))
 
 class Client:
     """Interface to Aptos blockchain REST API
@@ -700,6 +787,30 @@ class Client:
             rest_path_elems.resources
         ])
 
+    def get_trio_data(
+        self,
+        trio: str,
+        addr: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Get resource data at the address for given trio
+
+        Parameters
+        ----------
+        trio : str
+            A Move trio per :func:`~rest.move_trio`
+        addr: str
+            Address to check resources at
+
+        Returns
+        -------
+        dict from str to Any, or None
+            Resource data for given trio
+        """
+        for resource in self.account_resources(addr):
+            if resource[r_fields.type] == trio:
+                return resource[r_fields.data]
+        return None
+
     def tx_meta(
         self,
         tx_hash: str
@@ -820,30 +931,6 @@ class Client:
 class UltimaClient(Client):
     """Aptos REST API interface with Ultima-specific functionality"""
 
-    def get_trio_data(
-        self,
-        trio: str,
-        addr: str,
-    ) -> Optional[Dict[str, Any]]:
-        """Get resource data at the address for given trio
-
-        Parameters
-        ----------
-        trio : str
-            A Move trio per :func:`~rest.move_trio`
-        addr: str
-            Address to check resources at
-
-        Returns
-        -------
-        dict from str to Any, or None
-            Resource data for given trio
-        """
-        for resource in self.account_resources(addr):
-            if resource[r_fields.type] == trio:
-                return resource[r_fields.data]
-        return None
-
     def get_resource_data(
         self,
         addr: str,
@@ -947,8 +1034,8 @@ class UltimaClient(Client):
         Returns
         -------
         dict from str to Any
-            Holdings, in subunits, for each coin, if a balance has been
-            initialized for the account
+            Holdings, in base units, for each coin, if a balance has
+            been initialized for the account
         """
         result = {APT: None, USD: None}
         APT_d, USD_d = self.get_typed_resource_data(
@@ -961,15 +1048,15 @@ class UltimaClient(Client):
         subunits = ums.Coin.fields.subunits
         for key, data in [(APT, APT_d), (USD, USD_d)]:
             if data is not None:
-                result[key] = data[coin][subunits]
+                result[key] = units(data[coin][subunits], key)
         return result
 
     def airdrop_ultima_coins(
         self,
         ultima_signer: Account,
         addr: str,
-        apt_subunits: int = 0,
-        usd_subunits: int = 0
+        apt: Union[str, int],
+        usd: Union[str, int]
     ) -> str:
         """Airdrop APT and USD coins to given address
 
@@ -979,10 +1066,10 @@ class UltimaClient(Client):
             Airdrop authority, which should be Ultima account
         addr : str
             Address to mint to
-        apt_subunits : int, optional
-            Subunits of APT to mint
-        usd_subunits : int, optional
-            Subunits of USD to mint
+        apt : str or int
+            Amount of APT to mint, in base units
+        usd : str or int
+            Amount of USD to mint, in base units
 
         Returns
         -------
@@ -992,7 +1079,7 @@ class UltimaClient(Client):
         return self.run_script(
             ultima_signer,
             [ultima_signer.address(), ums.Coin.name, ums.Coin.members.airdrop],
-            [addr, str(apt_subunits), str(usd_subunits)]
+            [addr, str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
     def transfer_ultima_coins(
@@ -1000,8 +1087,8 @@ class UltimaClient(Client):
         sender: Account,
         recipient: str,
         ultima_addr: str,
-        apt_subunits: int = 0,
-        usd_subunits: int = 0
+        apt: Union[str, int] = 0,
+        usd: Union[str, int] = 0,
     ) -> str :
         """Transfer APT and USD
 
@@ -1013,10 +1100,10 @@ class UltimaClient(Client):
             Address to send to
         ultima_addr: str
             Ultima account address, without leading hex specifier
-        apt_subunits : int, optional
-            Subunits of APT to mint
-        usd_subunits : int, optional
-            Subunits of USD to mint
+        apt : str or int
+            Base units of APT to transfer
+        usd : int, optional
+            Base units of USD to transfer
 
         Returns
         -------
@@ -1026,7 +1113,7 @@ class UltimaClient(Client):
         return self.run_script(
             sender,
             [ultima_addr, ums.Coin.name, ums.Coin.members.transfer_both_coins],
-            [recipient, str(apt_subunits), str(usd_subunits)]
+            [recipient, str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
     def init_account(
@@ -1057,8 +1144,8 @@ class UltimaClient(Client):
         self,
         signer: Account,
         ultima_addr: str,
-        apt_subunits: int,
-        usd_subunits: int
+        apt: Union[str, int],
+        usd: Union[str, int],
     ) -> str:
         """Deposit coins from `Ultima::Coin::Balance` into collateral
 
@@ -1068,10 +1155,10 @@ class UltimaClient(Client):
             Account initializing an Ultima-specific Ultima::User::Account
         ultima_addr: str
             Ultima account address, without leading hex specifier
-        apt_subunits : int
-            Subunits of APT to deposit
-        usd_subunits : int, optional
-            Subunits of USD to deposit
+        apt : str or int
+            Amount of APT to deposit, in base units
+        usd : str or int
+            Amount of USD to deposit, in base units
 
         Returns
         -------
@@ -1081,15 +1168,15 @@ class UltimaClient(Client):
         return self.run_script(
             signer,
             [ultima_addr, ums.User.name, ums.User.members.deposit_coins],
-            [str(apt_subunits), str(usd_subunits)]
+            [str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
     def withdraw_coins(
         self,
         signer: Account,
         ultima_addr: str,
-        apt_subunits: int,
-        usd_subunits: int
+        apt: Union[str, int],
+        usd: Union[str, int],
     ) -> str:
         """Withdraw coins from collateral into `Ultima::Coin::Balance`
 
@@ -1099,10 +1186,10 @@ class UltimaClient(Client):
             Account initializing an Ultima-specific Ultima::User::Account
         ultima_addr: str
             Ultima account address, without leading hex specifier
-        apt_subunits : int
-            Subunits of APT to deposit
-        usd_subunits : int, optional
-            Subunits of USD to deposit
+        apt : str or int
+            Amount of APT to withdraw, in base units
+        usd : str or int
+            Amount of USD to withdraw, in base units
 
         Returns
         -------
@@ -1112,7 +1199,7 @@ class UltimaClient(Client):
         return self.run_script(
             signer,
             [ultima_addr, ums.User.name, ums.User.members.withdraw_coins],
-            [str(apt_subunits), str(usd_subunits)]
+            [str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
     def collateral_balances(
@@ -1132,7 +1219,7 @@ class UltimaClient(Client):
         Returns
         -------
         dict from str to Any
-            Holdings and available amount, in subunits, for each coin,
+            Holdings and available amount, in base units, for each coin,
             if a collateral resource has been initialized for the
             account
         """
@@ -1149,8 +1236,8 @@ class UltimaClient(Client):
         for key, data in [(APT, APT_d), (USD, USD_d)]:
             if data is not None:
                 result[key] = {
-                    holdings: data[holdings][subunits],
-                    available: data[available]
+                    holdings: units(data[holdings][subunits], key),
+                    available: units(data[available], key)
                 }
         return result
 
@@ -1176,9 +1263,9 @@ class UltimaClient(Client):
         side : str
             `Buy` if buying APT, `Sell` if selling APT
         price : str or int
-            In regular USD units
+            In base USD units per base unit of APT
         unfilled : str or int
-            Amount remaining to match, in regular APT units
+            Amount remaining to match, in base APT units
 
         Returns
         -------
@@ -1187,7 +1274,7 @@ class UltimaClient(Client):
         """
         record_mock_order = ums.User.members.record_mock_order
         side_bool = get_side_bool(side)
-        price = str(subs(price, USD))
+        price = str(subunit_price(price))
         unfilled = str(subs(unfilled, APT))
         return self.run_script(
             ultima,
@@ -1217,20 +1304,60 @@ class UltimaClient(Client):
         Orders = ums.User.members.Orders
         open = ums.User.fields.open
         data = self.get_resource_data(addr, ultima_addr, User, Orders)[open]
+        if len(data) == 0: return None
         df = pd.DataFrame.from_dict(data)
 
         # Sort columns to match original data structure
+        id = ums.User.fields.id
         price = ums.User.fields.price
         side = ums.User.fields.side
         unfilled = ums.User.fields.unfilled
-        df = df[[ums.User.fields.id, side, price, unfilled]]
+        df = df[[id, side, price, unfilled]]
+        df.set_index(id, inplace=True)
 
         # Map side boolean values onto readable string
         df[side] = df[side].map(ubms.side)
 
         # Convert string representation of ints to floats, then scale
         df = df.astype({price: float, unfilled: float})
-        df[price] = df[price] / (10 ** scale_map[USD])
+        df[price] = df[price] * (10 ** scale_map[APT]) / (10 ** scale_map[USD])
         df[unfilled] = df[unfilled] / (10 ** scale_map[APT])
 
         return df
+
+    def trigger_match_order(
+        self,
+        ultima: Account,
+        addr: str,
+        id: int,
+        apt: Union[str, int],
+        usd: Union[str, int]
+    ) -> str:
+        """Trigger a user-side order match
+
+        Parameters
+        ----------
+        ultima : ultima.account.Account
+            The Ultima account
+        addr : str
+            Address to match at
+        id : int
+            Order id number
+        apt : str or int
+            In base APT units
+        usd : str or int
+            In base USD units
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        trigger = ums.User.members.trigger_match_order
+        apt = str(subs(apt, APT))
+        usd = str(subs(usd, USD))
+        return self.run_script(
+            ultima,
+            [ultima.address(), ums.User.name, trigger],
+            [addr, str(id), apt, usd]
+        )

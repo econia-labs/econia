@@ -28,8 +28,8 @@ build_command_fields = SimpleNamespace(
 """Command line fields for automated building process"""
 
 coin_scales = SimpleNamespace(
-    APT = 8,
-    USD = 6
+    APT = 6,
+    USD = 12,
 )
 """Decimal scalars for each coin"""
 
@@ -242,6 +242,7 @@ ultima_modules = SimpleNamespace(
             init_account = 'init_account',
             Orders = 'Orders',
             record_mock_order = 'record_mock_order',
+            trigger_match_order = 'trigger_match_order',
             withdraw_coins = 'withdraw_coins',
         ),
         fields = SimpleNamespace(

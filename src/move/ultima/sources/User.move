@@ -12,6 +12,7 @@ module Ultima::User {
     use Ultima::Coin;
     use Ultima::Coin::{
         APT,
+        burn,
         Coin,
         get_empty_coin,
         merge_coin_to_target,
@@ -20,6 +21,7 @@ module Ultima::User {
         split_coin,
         split_coin_from_target,
         USD,
+        yield_coin
     };
 
     // Error codes
@@ -33,6 +35,7 @@ module Ultima::User {
     const E_INVALID_RECORDER: u64 = 7;
     const E_NO_ORDERS: u64 = 8;
     const E_MATCH_ERROR: u64 = 9;
+    const E_INVALID_TRIGGER: u64 = 10;
 
     // Order side definitions
     const BUY: bool = true;
@@ -49,7 +52,8 @@ module Ultima::User {
     struct Order has store {
         id: u64, // From order book counter
         side: bool, // true for buy APT, false for sell APT
-        price: u64, // Limit price In USD subunits
+        // Limit price, in USD subunits, for one subunit of APT
+        price: u64,
         unfilled: u64, // Amount remaining to match, in APT subunits
     }
 
@@ -228,6 +232,24 @@ module Ultima::User {
         record_order(addr, Order{id, side, price, unfilled});
     }
 
+    // Directly match an order against a user's open orders
+    // Designed for testing, can only be called by Ultima account
+    public(script) fun trigger_match_order(
+        account: &signer,
+        addr: address,
+        id: u64,
+        apt_subunits: u64,
+        usd_subunits: u64,
+    ) acquires Collateral, Orders {
+        assert!(Signer::address_of(account) == @Ultima, E_INVALID_TRIGGER);
+        let apt_yielded = yield_coin<APT>(account, apt_subunits);
+        let usd_yielded = yield_coin<USD>(account, usd_subunits);
+        let (apt_match, usd_match) =
+            match_order(addr, id, apt_yielded, usd_yielded);
+        burn<APT>(account, apt_match);
+        burn<USD>(account, usd_match);
+    }
+
     // Withdraw requested amount from collateral container at address
     fun withdraw<CoinType>(
         addr: address,
@@ -296,18 +318,12 @@ module Ultima::User {
     public(script) fun match_order_success(
         user: signer,
         ultima: signer,
-    ): ( // Easier to return than destroy
-        Coin<APT>,
-        Coin<USD>,
-        Coin<APT>,
-        Coin<USD>,
-    )
-    acquires Collateral, Orders {
+    ) acquires Collateral, Orders {
         // Init and fund account
         let addr = Signer::address_of(&user);
         init_account(&user);
-        deposit<APT>(addr, Coin::yield_coin<APT>(&ultima, 1000));
-        deposit<USD>(addr, Coin::yield_coin<USD>(&ultima, 2000));
+        deposit<APT>(addr, yield_coin<APT>(&ultima, 1000));
+        deposit<USD>(addr, yield_coin<USD>(&ultima, 2000));
         // Record orders
         record_order(addr, Order{
             id: 1,
@@ -325,7 +341,7 @@ module Ultima::User {
         let (apt1, usd1) = match_order(
             addr,
             1,
-            Coin::yield_coin<APT>(&ultima, 3),
+            yield_coin<APT>(&ultima, 3),
             get_empty_coin<USD>()
         );
         // Verify results
@@ -346,7 +362,7 @@ module Ultima::User {
             addr,
             2,
             get_empty_coin<APT>(),
-            Coin::yield_coin<USD>(&ultima, 180)
+            yield_coin<USD>(&ultima, 180)
         );
         // Verify results
         assert!(report_subunits(&apt2) == 9, E_MATCH_ERROR);
@@ -360,8 +376,11 @@ module Ultima::User {
         assert!(usd_h == 2000 - 45 + 180, E_MATCH_ERROR);
         assert!(usd_a == 2000 - 45 + 180, E_MATCH_ERROR);
 
-        // Return unconsumed resources
-        (apt1, usd1, apt2, usd2)
+        // Burn unconsumed resources
+        burn<APT>(&ultima, apt1);
+        burn<APT>(&ultima, apt2);
+        burn<USD>(&ultima, usd1);
+        burn<USD>(&ultima, usd2);
     }
 
     // Verify collateral container initialized empty
@@ -483,6 +502,35 @@ module Ultima::User {
         assert!(second_order.side == false, E_RECORD_ORDER_INVALID);
         assert!(second_order.price == 20, E_RECORD_ORDER_INVALID);
         assert!(second_order.unfilled == 30, E_RECORD_ORDER_INVALID);
+    }
+
+    // Verify matching cannot be directly triggered unless by Ultima
+    #[test(account = @TestUser)]
+    #[expected_failure(abort_code = 10)]
+    public(script) fun trigger_match_order_failure(
+        account: signer
+    ) acquires Collateral, Orders {
+        trigger_match_order(&account, Signer::address_of(&account), 1, 1, 1);
+    }
+
+    // Verify order matching invocation when triggered by Ultima
+    #[test(account = @Ultima)]
+    public(script) fun trigger_match_order_invocation(
+        account: signer
+    ) acquires Collateral, Orders {
+        // Perform minimum initialization so matching does not abort
+        // Init and fund account
+        let addr = Signer::address_of(&account);
+        init_account(&account);
+        deposit<APT>(addr, yield_coin<APT>(&account, 1));
+        // Record orders
+        record_order(addr, Order{
+            id: 1,
+            side: SELL,
+            price: 1,
+            unfilled: 1,
+        });
+        trigger_match_order(&account, addr, 1, 0, 1);
     }
 
     // Verify unable to withdraw more than available balance

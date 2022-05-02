@@ -13,6 +13,7 @@
         "doctest",
         "elems",
         "genindex",
+        "inplace",
         "linkcheck",
         "miniconda",
         "modindex",

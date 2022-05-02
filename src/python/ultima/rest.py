@@ -4,6 +4,8 @@ import pandas as pd
 import requests
 import time
 
+from decimal import Decimal as dec
+from math import trunc
 from typing import Any, Dict, Optional, Tuple, Union
 from ultima.account import Account, hex_leader
 from ultima.defs import (
@@ -38,6 +40,26 @@ APT = ums.Coin.members.APT
 
 USD = ums.Coin.members.USD
 """USD coin symbol"""
+
+scale_map = {APT: coin_scales.APT, USD: coin_scales.USD}
+"""Map from coin symbol to scale"""
+
+def get_side_bool(
+    text: str,
+) -> bool:
+    """Return bool corresponding to 'Buy' or 'Sell'
+
+    Parameters
+    ----------
+    text : str
+        'Buy' or 'Sell'
+
+    Returns
+    -------
+    bool
+        True for 'Buy', False, for 'Sell'
+    """
+    return [k for k in ubms.side.keys() if ubms.side[k] == text][0]
 
 def move_trio(
     address: str,
@@ -166,6 +188,40 @@ def construct_script_payload(
         p_fields.type_arguments: type_arguments,
         p_fields.arguments: arguments
     }
+
+def subs(
+    units: Union[str, int, float],
+    coin: str
+) -> int:
+    """Get integer subunits for specified amount of given coin
+
+    Parameters
+    ----------
+    units : str or int
+        Amount, in regular units
+    coin : str
+        USD or APT
+
+    Returns
+    -------
+    int
+        Corresponding number of subunits
+
+    Example
+    -------
+    >>> from ultima.rest import subs
+    >>> # Input as decimal str
+    >>> subs('1.123', 'USD')
+    1123000
+    >>> # Input as int
+    >>> subs(1500, 'USD')
+    1500000000
+    >>> # Truncating excess digits
+    >>> subs('1.1234567', 'USD')
+    1123456
+    """
+    assert type(units) == str or type(units) == int
+    return trunc(int(dec(units) * 10 ** scale_map[coin]))
 
 class Client:
     """Interface to Aptos blockchain REST API
@@ -708,7 +764,7 @@ class Client:
     def mint_testcoin(
         self,
         auth_key: str,
-        amount: int
+        amount: int = tx_defaults.faucet_mint_val
     ) -> str:
         """Create account if necessary, fund with TestCoin
 
@@ -1103,9 +1159,9 @@ class UltimaClient(Client):
         ultima: Account,
         addr: str,
         id: int,
-        side: bool,
-        price: int,
-        unfilled: int,
+        side: str,
+        price: Union[str, int],
+        unfilled: Union[str, int],
     ) -> str:
         """Record a mock order to a user's order history
 
@@ -1117,12 +1173,12 @@ class UltimaClient(Client):
             Address to record order at
         id : int
             Order id number
-        side : bool
-            True for buy APT, False for sell APT,
-        price : int
-            In USD subunits, if maker order
-        unfilled : int
-            Amount remaining to match, in APT subunits
+        side : str
+            `Buy` if buying APT, `Sell` if selling APT
+        price : str or int
+            In regular USD units
+        unfilled : str or int
+            Amount remaining to match, in regular APT units
 
         Returns
         -------
@@ -1130,10 +1186,13 @@ class UltimaClient(Client):
             Transaction hash
         """
         record_mock_order = ums.User.members.record_mock_order
+        side_bool = get_side_bool(side)
+        price = str(subs(price, USD))
+        unfilled = str(subs(unfilled, APT))
         return self.run_script(
             ultima,
             [ultima.address(), ums.User.name, record_mock_order],
-            [addr, str(int(id)), side, str(int(price)), str(int(unfilled))]
+            [addr, str(int(id)), side_bool, price, unfilled]
         )
 
     def open_orders(
@@ -1171,7 +1230,7 @@ class UltimaClient(Client):
 
         # Convert string representation of ints to floats, then scale
         df = df.astype({price: float, unfilled: float})
-        df[price] = df[price] / int(10 ** coin_scales.USD)
-        df[unfilled] = df[unfilled] / int(10 ** coin_scales.APT)
+        df[price] = df[price] / (10 ** scale_map[USD])
+        df[unfilled] = df[unfilled] / (10 ** scale_map[APT])
 
         return df

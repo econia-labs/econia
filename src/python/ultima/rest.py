@@ -226,7 +226,7 @@ def subs(
     >>> subs('1.12345678', 'APT')
     1123456
     """
-    assert type(units) == str or type(units) == int
+    assert type(units) == str or type(units) == int, e_msgs.decimal
     return trunc(int(dec(units) * 10 ** scale_map[coin]))
 
 def units(
@@ -306,7 +306,7 @@ def subunit_price(
     >>> subunit_price('4565.78023')
     4565780230
     """
-    assert type(base_price) == str or type(base_price) == int
+    assert type(base_price) == str or type(base_price) == int, e_msgs.decimal
     return int(trunc(dec(base_price) * dec(10 ** scale_map[USD]) / \
         dec(10 ** scale_map[APT])))
 

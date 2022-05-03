@@ -37,6 +37,7 @@ e_msgs = SimpleNamespace(
     path_val_collision = 'Different value already exists at provided path',
     tx_timeout = 'Transaction timeout',
     failed = 'failed',
+    decimal = "Decimal values must be reported as str ('123.45') or int (123)"
 )
 """Error messages"""
 

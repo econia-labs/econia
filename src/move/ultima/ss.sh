@@ -28,7 +28,7 @@ elif test $1 = cl; then
     move sandbox clean
     python ../../python/ultima/build.py prep short ../../..
 
-# Gerenate a new dev account keyfile
+# Generate a new dev account keyfile
 elif test $1 = na; then
     python ../../python/ultima/build.py gen  ../../..
 

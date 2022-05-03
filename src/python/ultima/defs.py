@@ -12,6 +12,7 @@ account_fields = SimpleNamespace(
 """Account fields"""
 
 api_url_types = SimpleNamespace(
+    explorer = 'explorer',
     fullnode = 'fullnode',
     faucet = 'faucet'
 )
@@ -23,7 +24,6 @@ build_command_fields = SimpleNamespace(
     long = 'long',
     prep = 'prep',
     publish = 'publish',
-    success_tx_msg = 'Success, tx hash:'
 )
 """Command line fields for automated building process"""
 
@@ -35,7 +35,8 @@ coin_scales = SimpleNamespace(
 
 e_msgs = SimpleNamespace(
     path_val_collision = 'Different value already exists at provided path',
-    tx_timeout = 'Transaction timeout'
+    tx_timeout = 'Transaction timeout',
+    failed = 'failed',
 )
 """Error messages"""
 
@@ -119,7 +120,8 @@ rest_path_elems = SimpleNamespace(
     mint = 'mint',
     resources = 'resources',
     signing_message = 'signing_message',
-    transactions = 'transactions'
+    transactions = 'transactions',
+    txn = 'txn'
 )
 """Rest API path elements"""
 
@@ -131,7 +133,7 @@ rest_post_headers = SimpleNamespace(
 
 rest_query_fields = SimpleNamespace(
     amount = 'amount',
-    auth_key = 'auth_key'
+    auth_key = 'auth_key',
 )
 """Rest API URL query string fields"""
 
@@ -147,6 +149,7 @@ rest_urls = {
     networks.devnet: {
         api_url_types.fullnode: 'https://fullnode.devnet.aptoslabs.com',
         api_url_types.faucet: 'https://faucet.devnet.aptoslabs.com',
+        api_url_types.explorer: 'https://aptos-explorer.netlify.app'
     }
 }
 """REST API urls"""
@@ -195,7 +198,8 @@ tx_fields = SimpleNamespace(
     sender = 'sender',
     sequence_number = 'sequence_number',
     signature = 'signature',
-    success = 'success'
+    success = 'success',
+    version = 'version'
 )
 """Transaction fields"""
 

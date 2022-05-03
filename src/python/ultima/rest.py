@@ -720,12 +720,37 @@ class Client:
         payload = construct_script_payload(trio, args, type_args)
         return self.submit_to_completion(signer, payload)
 
+    def publish_module(
+        self,
+        signer: Account,
+        module_bc: str,
+    ) -> str:
+        """Publish module bytecode to blockchain account
+
+        Parameters
+        ----------
+        signer : ultima.account.Account
+            Signing account
+        module_bcs : list of str
+            Bytecode hexstring without leading hex specifier
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        payload = {
+            p_fields.type: p_fields.module_bundle_payload,
+            p_fields.modules : [{p_fields.bytecode: hex_leader(module_bc)}]
+        }
+        return self.submit_to_completion(signer, payload)
+
     def publish_modules(
         self,
         signer: Account,
         module_bcs: list[str]
-    ) -> str:
-        """Publish module bytecode to blockchain account
+    ) -> list[str]:
+        """Publish multiple modules' bytecode to blockchain account
 
         Parameters
         ----------
@@ -736,16 +761,10 @@ class Client:
 
         Returns
         -------
-        str
-            Transaction hash
+        list of str
+            Transaction hashes for serialized loading
         """
-        payload = {
-            p_fields.type: p_fields.module_bundle_payload,
-            p_fields.modules : [
-                {p_fields.bytecode: hex_leader(bc)} for bc in module_bcs
-            ]
-        }
-        return self.submit_to_completion(signer, payload)
+        return [self.publish_module(signer, bc) for bc in module_bcs]
 
     def account(
         self,
@@ -820,7 +839,7 @@ class Client:
         Parameters
         ----------
         tx_hash : str
-            The hash of the transaction to check
+            Transaction hash, with leading hex specifier
 
         Returns
         -------
@@ -838,7 +857,7 @@ class Client:
         Parameters
         ----------
         tx_hash : str
-            Transaction hash
+            Transaction hash, with leading hex specifier
 
         Returns
         -------
@@ -846,6 +865,45 @@ class Client:
             True if successful, false if not
         """
         return self.tx_meta(tx_hash)[tx_fields.success] == True
+
+    def tx_version_number(
+        self,
+        tx_hash: str
+    ) -> int:
+        """Return transaction version number
+
+        Parameters
+        ----------
+        tx_hash : str
+            Transaction hash, with leading hex specifier
+
+        Returns
+        -------
+        int
+            Transaction version number
+        """
+        return int(self.tx_meta(tx_hash)[tx_fields.version])
+
+    def tx_vn_url(
+        self,
+        tx_hash: str
+    ) -> int:
+        """Return link to transaction version number on explorer
+
+        Parameters
+        ----------
+        tx_hash : str
+            transaction hash, with leading hex specifier
+
+        Returns
+        -------
+        str
+            Compact URL to explorer for given tx
+        """
+        version_number = self.tx_version_number(tx_hash)
+        tx_explorer_base = rest_urls[networks.devnet][api_url_types.explorer] \
+            + seps.sls + rest_path_elems.txn + seps.sls
+        return tx_explorer_base + str(version_number)
 
     def testcoin_balance(
         self,

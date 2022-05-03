@@ -33,11 +33,13 @@ Some functionality abstracted to be run from the command line:
 import os
 import re
 import sys
+import time
 
 from pathlib import Path
 from ultima.account import Account, hex_leader
 from ultima.defs import (
     build_command_fields,
+    e_msgs,
     file_extensions,
     max_address_length,
     networks,
@@ -45,6 +47,8 @@ from ultima.defs import (
     seps,
     toml_section_names,
     tx_defaults,
+    tx_fields,
+    tx_timeout_granularity,
     Ultima,
     ultima_paths as ps,
     util_paths
@@ -337,7 +341,7 @@ def prep_toml(
 
 def get_bytecode_files(
     ultima_root: str = seps.dot
-) -> list[str]:
+) -> dict[str: str]:
     """Return list of module bytecode strings
 
     Parameters
@@ -347,24 +351,24 @@ def get_bytecode_files(
 
     Returns
     -------
-    list of str
-        Module bytecode hex strings
+    dict from str to str
+        Map from module name to bytecode hexstring
     """
     abs_path = os.path.join(
         os.path.abspath(ultima_root),
         ps.move_package_root,
         ps.bytecode_dir
     )
-    bcs = []
+    bcs = {}
     for path in Path(abs_path).iterdir():
-        bcs.append(path.read_bytes().hex())
+        bcs[path.stem] = path.read_bytes().hex()
     return bcs
 
 def publish_bytecode(
     signer: Account,
     ultima_root: str = seps.dot
 ) -> str:
-    """Publish bytecode modules and return transaction hash
+    """Publish bytecode modules with diagnostic printouts
 
     Assumes devnet
 
@@ -381,9 +385,15 @@ def publish_bytecode(
         Transaction hash of module upload transaction
     """
     client = Client(networks.devnet)
-    tx_hash = client.publish_modules(signer, get_bytecode_files(ultima_root))
-    assert client.tx_successful(tx_hash), tx_hash
-    return tx_hash
+    bcs = get_bytecode_files(ultima_root)
+    modules = bcs.keys()
+    for module in modules:
+        tx_hash = client.publish_module(signer, bcs[module])
+        time.sleep(tx_timeout_granularity)
+        status = tx_fields.success
+        if not client.tx_successful(tx_hash):
+            status = e_msgs.failed
+        print(f'{module}: {status} ({client.tx_vn_url(tx_hash)})')
 
 def sub_middle_group_file(
     abs_path: str,
@@ -547,8 +557,7 @@ if __name__ == '__main__':
     if action == build_command_fields.publish: # Cargo build and publish
         keyfile = sys.argv[2]
         account = Account(path=keyfile)
-        tx_hash = publish_bytecode(account, ultima_root)
-        print(build_command_fields.success_tx_msg, tx_hash)
+        publish_bytecode(account, ultima_root)
     if action == build_command_fields.gen: # Generate new dev account
         if len (sys.argv) == 3:
             ultima_root = sys.argv[2]

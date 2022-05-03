@@ -1,4 +1,4 @@
-// User ordering and history functionality
+// User account and order functionality
 module Ultima::User {
     use Std::Signer;
     use Std::Vector;

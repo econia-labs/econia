@@ -2,10 +2,10 @@
 name = 'Ultima'
 version = '0.1.0' # Per SemVer
 
-# Named addresses should be in one of two forms, `long` or `short`.
-# The Aptos blockchain uses long (32-byte) addresses, which are not
-# compatible the Move command line tools, which only accept up to 16
-# bytes in a single address
+# Named addresses should be in one of two forms, `long` or `short`,
+# depending on the context. The Aptos blockchain accepts long (32-byte)
+# addresses, while the Move command line tools only accept short
+# (16-byte) bytes addresses.
 #
 # Long form:
 # Name = '0x1234567890123456789012345678901234567890123456789012345678901234'
@@ -13,15 +13,16 @@ version = '0.1.0' # Per SemVer
 # Up to 64 characters following the hex specifier (for Aptos)
 #
 # Short form:
-# Name = '0x12345678901234567890123456789012' # '345678990123456789012345678901234'
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Name = '0x12345678901234567890123456789012' # 345678990123456789012345678901234
+#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # 32 characters following the hex specifier, followed by a space, a
-# pound, a space, then the remaining address string. Additionally, they
-# can be listed for even shorter forms, like those in AptosFramework
+# pound, a space, then the remaining address string without quotes. The
+# trailing comment is not strictly necessary, since addresses can be
+# listed for even shorter forms, like 0x1 for the AptosFramework
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Ultima = '0xd5c9f830927dfd67fcfe55769a25988d' # 5bd6656b418bbcbf6f0d797d1ff37a64
+Ultima = '0x72afb63ed3b84ade0c0ebe3f85f2ebd1' # 47cb44e3a56cbea97319f0b5901f87f3
 TestUser = '0xace'
 
 [dependencies.AptosFramework]

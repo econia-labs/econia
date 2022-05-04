@@ -1,8 +1,12 @@
 /// Red-black binary search tree
 module Ultima::BST {
     use Std::Vector;
+    use Std::Vector::{
+        borrow_mut as v_b_m,
+        borrow as v_b
+    };
 
-// Constants -----------------------------------------------------------
+// Constants ------------------------------------------------------------------
 
     // Error codes
     const E_ROOT_INIT: u64 = 0;
@@ -25,9 +29,9 @@ module Ultima::BST {
     /// Flag for red node
     const RED: bool = false;
 
-// Constants -----------------------------------------------------------
+// Constants ------------------------------------------------------------------
 
-// Structs -------------------------------------------------------------
+// Structs --------------------------------------------------------------------
 
     /// Contains a vector of `Node`, each with a `key` field, such that
     /// each `Node` is stored at an index in `nodes` identical to the
@@ -72,9 +76,9 @@ module Ultima::BST {
         values: vector<MockValueType>
     }
 
-// Structs -------------------------------------------------------------
+// Structs --------------------------------------------------------------------
 
-// Initialization ------------------------------------------------------
+// Initialization -------------------------------------------------------------
 
     /// Return an empty `Keys` resource
     public fun new_keys(): Keys {
@@ -105,9 +109,10 @@ module Ultima::BST {
         mock_bst
 
     }
-// Initialization ------------------------------------------------------
 
-// Destruction ---------------------------------------------------------
+// Initialization -------------------------------------------------------------
+
+// Destruction ----------------------------------------------------------------
 
     /// Destroy a `Keys` resource, assuming it has null `root` and empty
     /// `nodes` vector
@@ -188,9 +193,9 @@ module Ultima::BST {
         destroy_empty_mock_bst(mock_bst);
     }
 
-// Destruction ---------------------------------------------------------
+// Destruction ----------------------------------------------------------------
 
-/* Left rotation -------------------------------------------------------
+/* Left rotation --------------------------------------------------------------
 
            10                                 10
            / \                                / \
@@ -199,27 +204,58 @@ module Ultima::BST {
         2   7 (y)        on 5          (x) 5   8
            / \         -------->          / \
           6   8                          2   6
-*/
 
-/*
+*/
 
     /// Left rotate on the given node
     fun left_rotate(
+        x_i: u64, // Index of node to left rotate on (5 above)
         keys: &mut Keys,
-        x: &mut Node // Node to left rotate on (5 above)
     ) {
-        // Assert has a right child
-        assert!(x.right != NULL, E_L_ROTATE_NO_R_CHILD);
-        // Right child becomes new root of subtree (7 in above diagram)
-        let y = Vector::borrow_mut<Node>(keys.nodes, x.right);
-        let x_i = y.parent;
-        *x.right = y.left;
-        if (y.left != NULL) {
-            *Vector::borrow_mut<Node>(keys.nodes, y.left).parent = x_i;
-        }
+        // Get index of x's right child (7 above), as specified by x
+        let y_i = v_b<Node>(&keys.nodes, x_i).right; // Can be NULL
+        // Assert x actually has a right child
+        assert!(y_i != NULL, E_L_ROTATE_NO_R_CHILD);
+        // Get index of y's left child (6 above) as specified by y
+        let y_l_child_i = v_b<Node>(&keys.nodes, y_i).left;
+        // Set x's right child as y's left child (which may be NULL)
+        v_b_m<Node>(&mut keys.nodes, x_i).right = y_l_child_i;
+        if (y_l_child_i != NULL) { // If y has a left child
+            // Set the child's parent to be x
+            v_b_m<Node>(&mut keys.nodes, y_l_child_i).parent = x_i;
+        };
+        // Flip x to be y's child and y to be x's parent
+        flip_parent_child(x_i, y_i, keys);
+        // Set y's left child as x
+        v_b_m<Node>(&mut keys.nodes, y_i).left = x_i;
+        // Set x's parent as y
+        v_b_m<Node>(&mut keys.nodes, x_i).parent = y_i;
     }
-*/
 
-// Rotation ------------------------------------------------------------
+    /// Flip from x as y's parent to y as x's parent, updating x's old
+    /// parent to be y's new parent
+    fun flip_parent_child(
+        x_i: u64,
+        y_i: u64,
+        keys: &mut Keys,
+    ) {
+        // Get index of x's parent (10 above) as specified by x
+        let x_parent_i = v_b<Node>(&keys.nodes, x_i).parent;
+        // Set y's parent as x's parent (which may be NULL)
+        v_b_m<Node>(&mut keys.nodes, y_i).parent = x_parent_i;
+        if (x_parent_i == NULL) { // If x is the root node
+            keys.root = y_i; // Set y as the new root node
+        } else { // If x is not the root node
+            // Get mutable reference to x's parent
+            let x_parent = v_b_m<Node>(&mut keys.nodes, x_parent_i);
+            if (x_parent.left == x_i) { // If x is a left child
+                x_parent.left = y_i; // Set the parent's new child as y
+            } else { // If x is a right child
+                x_parent.right = y_i; // Set the parent's new child as y
+            }
+        };
+    }
+
+// Left rotation --------------------------------------------------------------
 
 }

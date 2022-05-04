@@ -25,4 +25,5 @@
         "toctree",
         "ubms"
     ],
+    "esbonio.sphinx.confDir": "",
 }

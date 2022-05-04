@@ -20,7 +20,6 @@ api_url_types = SimpleNamespace(
 
 build_print_outputs = SimpleNamespace(
     account_msg = 'New account:',
-    all_modules = 'All modules'
 )
 
 build_command_fields = SimpleNamespace(
@@ -28,7 +27,7 @@ build_command_fields = SimpleNamespace(
     long = 'long',
     prep = 'prep',
     publish = 'publish',
-    batch = 'batch'
+    serial = 'serial'
 )
 """Command line fields for automated building process"""
 
@@ -39,10 +38,11 @@ coin_scales = SimpleNamespace(
 """Decimal scalars for each coin"""
 
 e_msgs = SimpleNamespace(
+    decimal = "Decimal values must be reported as str ('123.45') or int (123)",
+    failed = 'failed',
+    faucet = 'Faucet funding failed',
     path_val_collision = 'Different value already exists at provided path',
     tx_timeout = 'Transaction timeout',
-    failed = 'failed',
-    decimal = "Decimal values must be reported as str ('123.45') or int (123)",
     tx_submission = 'Transaction submission failed'
 )
 """Error messages"""
@@ -164,6 +164,7 @@ rest_urls = {
 seps = SimpleNamespace(
     amp = '&',
     cln = ':',
+    cma = ',',
     dot = '.',
     eq = '=',
     gt = '>',
@@ -236,6 +237,9 @@ ultima_modules = SimpleNamespace(
     Book = SimpleNamespace(
         name = 'Book',
     ),
+    BST = SimpleNamespace(
+        name = 'BST',
+    ),
     Coin = SimpleNamespace(
         name = 'Coin',
         members = SimpleNamespace(
@@ -276,11 +280,16 @@ ultima_modules = SimpleNamespace(
 """Ultima Move modules with nested member specifiers"""
 
 ultima_module_publish_order = [
-    ultima_modules.Coin.name,
-    ultima_modules.User.name,
-    ultima_modules.Book.name,
+    [ultima_modules.Coin.name, ultima_modules.User.name],
+    [ultima_modules.Book.name],
+    [ultima_modules.BST.name]
 ]
-"""Order to publish Move modules bytecode in"""
+"""
+Order to publish Move modules bytecode in, with sublists indicating
+batched modules that should be loaded together. Individual modules
+should be defined as the sole element in a list. If order within
+sub-batches is changed, loading may break
+"""
 
 ultima_paths = SimpleNamespace(
     # Relative to Move package root directory

@@ -342,7 +342,7 @@ def prep_toml(
 
 def get_bytecode_files(
     ultima_root: str = seps.dot
-) -> dict[str: str]:
+) -> dict[str, str]:
     """Return dict from module name to module bytecode string
 
     Parameters
@@ -411,7 +411,7 @@ def print_bc_diagnostics(
 def publish_bytecode(
     s: Account,
     ultima_root: str = seps.dot,
-    serialized: bool = True
+    serialized: bool = False
 ) -> str:
     """Publish bytecode modules with diagnostic printouts
 
@@ -424,7 +424,8 @@ def publish_bytecode(
     ultima_root : str, optional
         Relative path to ultima repository root directory
     serialized : bool, optional
-        If True, publish modules in separate transactions
+        If True, publish all modules in separate transactions. If False,
+        batch as specified at :data:`~defs.ultima_module_publish_order`
 
     Returns
     -------
@@ -434,14 +435,24 @@ def publish_bytecode(
     c = Client(networks.devnet)
     bc_map = get_bytecode_files(ultima_root)
     # Only load modules specified for publication
-    to_load = {module: bc_map[module] for module in u_m_p_o}
+    loadable_modules = [module for batch in u_m_p_o for module in batch]
     if serialized: # Loop over modules
+        to_load = {module: bc_map[module] for module in loadable_modules}
         for m in to_load.keys():
             print_bc_diagnostics(c, s, m, to_load[m], serialized=True)
-    else: # Publish all modules at once
-        leader = build_print_outputs.all_modules
-        bc_list = list(to_load.values())
-        print_bc_diagnostics(c, s, leader, bc_list, serialized=False)
+    else: # Publish modules in batches
+        for batch in u_m_p_o:
+            first = True # First module in batch
+            leader = '' # Initialize diagnostic printout message
+            to_load = [] # List of bytecode hexstrings to load
+            for module in batch:
+                if first:
+                    leader = leader + module
+                    first = False
+                else:
+                    leader = leader + seps.cma + seps.sp + module
+                to_load.append(bc_map[module])
+            print_bc_diagnostics(c, s, leader, to_load, serialized=False)
 
 def sub_middle_group_file(
     abs_path: str,
@@ -578,27 +589,27 @@ def gen_new_ultima_dev_account(
     ----------
     ultima_root : str, optional
         Relative path to ultima repository root directory
-
-    Returns
-    -------
-    str
-        The address of the new account
     """
     account = Account()
     address = account.address()
+    mint_val = tx_defaults.faucet_mint_val
+    try:
+        Client(networks.devnet).mint_testcoin(address, mint_val)
+    except Exception as c:
+        print(e_msgs.faucet)
+        return
+    print(build_print_outputs.account_msg, address)
     account.save_seed_to_disk(get_key_path(address, ultima_root))
-    Client(networks.devnet).mint_testcoin(address, tx_defaults.faucet_mint_val)
     prep_toml(ultima_root, long=True)
     old_address = sub_address_in_build_files(address, ultima_root)
     archive_keyfile(get_key_path(old_address, ultima_root))
-    return(address)
 
 if __name__ == '__main__':
     """See module docstring for examples"""
 
     # Aliases
     publish = build_command_fields.publish
-    batch = build_command_fields.batch
+    serial = build_command_fields.serial
     action = sys.argv[1]
 
     if action == build_command_fields.prep: # Prepare Move.Toml file
@@ -608,11 +619,10 @@ if __name__ == '__main__':
     if action == publish: # Cargo build and publish
         keyfile = sys.argv[2]
         ultima_root = sys.argv[3]
-        serialized = not ((len(sys.argv) == 5) and (sys.argv[4] == batch))
+        serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
         account = Account(path=keyfile)
         publish_bytecode(account, ultima_root, serialized)
     if action == build_command_fields.gen: # Generate new dev account
         if len (sys.argv) == 3:
             ultima_root = sys.argv[2]
-        new_address = gen_new_ultima_dev_account(ultima_root)
-        print(build_print_outputs.account_msg, new_address)
+        gen_new_ultima_dev_account(ultima_root)

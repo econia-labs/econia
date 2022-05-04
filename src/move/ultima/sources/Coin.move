@@ -2,6 +2,8 @@
 module Ultima::Coin {
     use Std::Signer;
 
+    friend Ultima::User;
+
     // Errors
     const E_ALREADY_HAS_BALANCE: u64 = 0;
     const E_INVALID_AIRDROP: u64 = 1;
@@ -254,7 +256,7 @@ module Ultima::Coin {
 
     // Return a coin of specified type, with given subunits
     // Can only be invoked by Ultima account
-    public fun yield_coin<CoinType>(
+    public(friend) fun yield_coin<CoinType>(
         account: &signer,
         subunits: u64
     ): Coin<CoinType> {

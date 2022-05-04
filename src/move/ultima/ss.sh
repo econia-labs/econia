@@ -21,7 +21,7 @@ elif test $1 = ur; then
 elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
     cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/ce364355bd5f84bd772764451ca5ef2d01f333a114903ca6fae93770b9fc042a.key ../../../ $2
+    python ../../python/ultima/build.py publish ../../../.secrets/09d3ccaf5195be57d8904b1c54af475cc818650c17f68eccc72ead252d695fed.key ../../../ $2
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

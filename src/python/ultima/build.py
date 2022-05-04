@@ -50,7 +50,7 @@ from ultima.defs import (
     tx_defaults,
     tx_fields,
     Ultima,
-    ultima_module_publish_order,
+    ultima_module_publish_order as u_m_p_o,
     ultima_paths as ps,
     util_paths
 )
@@ -433,13 +433,15 @@ def publish_bytecode(
     """
     c = Client(networks.devnet)
     bc_map = get_bytecode_files(ultima_root)
+    # Only load modules specified for publication
+    to_load = {module: bc_map[module] for module in u_m_p_o}
     if serialized: # Loop over modules
-        for m in ultima_module_publish_order:
-            print_bc_diagnostics(c, s, m, bc_map[m], serialized=True)
+        for m in to_load.keys():
+            print_bc_diagnostics(c, s, m, to_load[m], serialized=True)
     else: # Publish all modules at once
-        bcs = list(bc_map.values())
         leader = build_print_outputs.all_modules
-        print_bc_diagnostics(c, s, leader, bcs, serialized=False)
+        bc_list = list(to_load.values())
+        print_bc_diagnostics(c, s, leader, bc_list, serialized=False)
 
 def sub_middle_group_file(
     abs_path: str,

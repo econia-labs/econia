@@ -2,6 +2,8 @@
 module Ultima::BST {
     use Std::Vector;
 
+// Constants -----------------------------------------------------------
+
     // Error codes
     const E_ROOT_INIT: u64 = 0;
     const E_KEYS_INIT: u64 = 1;
@@ -9,6 +11,7 @@ module Ultima::BST {
     const E_DESTROY_KEYS_EMPTY: u64 = 3;
     const E_DESTROY_KEYS_NULL: u64 = 4;
     const E_DESTROY_VALS_EMPTY: u64 = 5;
+    const E_L_ROTATE_NO_R_CHILD: u64 = 6;
 
     /// Flag to indicate that there is no connected node for the given
     /// relationship field (`parent`, `left`, or `right`), analagous to
@@ -21,6 +24,10 @@ module Ultima::BST {
     const BLACK: bool = true;
     /// Flag for red node
     const RED: bool = false;
+
+// Constants -----------------------------------------------------------
+
+// Structs -------------------------------------------------------------
 
     /// Contains a vector of `Node`, each with a `key` field, such that
     /// each `Node` is stored at an index in `nodes` identical to the
@@ -65,6 +72,10 @@ module Ultima::BST {
         values: vector<MockValueType>
     }
 
+// Structs -------------------------------------------------------------
+
+// Initialization ------------------------------------------------------
+
     /// Return an empty `Keys` resource
     public fun new_keys(): Keys {
         Keys{root: NULL, nodes: Vector::empty<Node>()}
@@ -83,24 +94,20 @@ module Ultima::BST {
         MockBST{keys: new_keys(), values: new_values<MockValueType>()}
     }
 
-    /// Destroy keys and values in an empty BST
-    public fun destroy_empty_bst<ValueType>(
-        keys: Keys,
-        values: vector<ValueType>
-    ) {
-        destroy_empty_keys(keys);
-        destroy_empty_values(values);
-    }
+    #[test]
+    /// Verify that a Mock BST is initialized empty
+    fun new_keys_success(): MockBST {
+        let mock_bst = new_mock_bst();
+        assert!(mock_bst.keys.root == NULL, E_ROOT_INIT);
+        assert!(Vector::is_empty<Node>(&mock_bst.keys.nodes), E_KEYS_INIT);
+        let v = &mock_bst.values;
+        assert!(Vector::is_empty<MockValueType>(v), E_VALS_INIT);
+        mock_bst
 
-    /// Destroy empty BST per recommended destruct pattern:
-    /// `let YourBST{keys, values} = your_bst;
-    /// destroy_empty_bst<YourValueType>(keys, values);`
-    fun destroy_empty_mock_bst(
-        mock_bst: MockBST,
-    ) {
-        let MockBST{keys, values} = mock_bst;
-        destroy_empty_bst<MockValueType>(keys, values);
     }
+// Initialization ------------------------------------------------------
+
+// Destruction ---------------------------------------------------------
 
     /// Destroy a `Keys` resource, assuming it has null `root` and empty
     /// `nodes` vector
@@ -121,15 +128,23 @@ module Ultima::BST {
         Vector::destroy_empty<ValueType>(values);
     }
 
-    #[test]
-    /// Verify that a Mock BST is initialized empty
-    fun new_keys_success(): MockBST {
-        let mock_bst = new_mock_bst();
-        assert!(mock_bst.keys.root == NULL, E_ROOT_INIT);
-        assert!(Vector::is_empty<Node>(&mock_bst.keys.nodes), E_KEYS_INIT);
-        let v = &mock_bst.values;
-        assert!(Vector::is_empty<MockValueType>(v), E_VALS_INIT);
-        mock_bst
+    /// Destroy keys and values in an empty BST
+    public fun destroy_empty_bst<ValueType>(
+        keys: Keys,
+        values: vector<ValueType>
+    ) {
+        destroy_empty_keys(keys);
+        destroy_empty_values(values);
+    }
+
+    /// Destroy empty BST per recommended destruct pattern:
+    /// `let YourBST{keys, values} = your_bst;
+    /// destroy_empty_bst<YourValueType>(keys, values);`
+    fun destroy_empty_mock_bst(
+        mock_bst: MockBST,
+    ) {
+        let MockBST{keys, values} = mock_bst;
+        destroy_empty_bst<MockValueType>(keys, values);
     }
 
     #[test]
@@ -172,4 +187,39 @@ module Ultima::BST {
         let mock_bst = new_mock_bst();
         destroy_empty_mock_bst(mock_bst);
     }
+
+// Destruction ---------------------------------------------------------
+
+/* Left rotation -------------------------------------------------------
+
+           10                                 10
+           / \                                / \
+      (x) 5  15                          (y) 7  15
+         / \          Left rotate           / \
+        2   7 (y)        on 5          (x) 5   8
+           / \         -------->          / \
+          6   8                          2   6
+*/
+
+/*
+
+    /// Left rotate on the given node
+    fun left_rotate(
+        keys: &mut Keys,
+        x: &mut Node // Node to left rotate on (5 above)
+    ) {
+        // Assert has a right child
+        assert!(x.right != NULL, E_L_ROTATE_NO_R_CHILD);
+        // Right child becomes new root of subtree (7 in above diagram)
+        let y = Vector::borrow_mut<Node>(keys.nodes, x.right);
+        let x_i = y.parent;
+        *x.right = y.left;
+        if (y.left != NULL) {
+            *Vector::borrow_mut<Node>(keys.nodes, y.left).parent = x_i;
+        }
+    }
+*/
+
+// Rotation ------------------------------------------------------------
+
 }

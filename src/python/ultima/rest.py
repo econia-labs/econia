@@ -750,7 +750,7 @@ class Client:
         signer: Account,
         module_bcs: list[str]
     ) -> list[str]:
-        """Publish multiple modules' bytecode to blockchain account
+        """Publish multiple modules' bytecode as a single transaction
 
         Parameters
         ----------
@@ -764,7 +764,13 @@ class Client:
         list of str
             Transaction hashes for serialized loading
         """
-        return [self.publish_module(signer, bc) for bc in module_bcs]
+        payload = {
+            p_fields.type: p_fields.module_bundle_payload,
+            p_fields.modules : [
+                {p_fields.bytecode: hex_leader(bc)} for bc in module_bcs
+            ]
+        }
+        return self.submit_to_completion(signer, payload)
 
     def account(
         self,

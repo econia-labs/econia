@@ -58,7 +58,6 @@ elif test $1 = dt; then
 
 # Go to Move package folder
 elif test $1 = mp; then
-    python src/python/ultima/build.py prep short
     cd src/move/ultima
     move sandbox clean
 

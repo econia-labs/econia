@@ -16,12 +16,12 @@ if test $1 = hello; then
 elif test $1 = ur; then
     cd ../../../
 
-# Cargo build and publish bytecode for all modules
+# Cargo build and publish bytecode for all modules, passing arguments
 # Other scripts automatically update the specified keyfile
 elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
     cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/72afb63ed3b84ade0c0ebe3f85f2ebd147cb44e3a56cbea97319f0b5901f87f3.key ../../../
+    python ../../python/ultima/build.py publish ../../../.secrets/ce364355bd5f84bd772764451ca5ef2d01f333a114903ca6fae93770b9fc042a.key ../../../ $2
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

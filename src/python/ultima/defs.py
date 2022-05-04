@@ -18,12 +18,17 @@ api_url_types = SimpleNamespace(
 )
 """Types of REST API base urls"""
 
-build_command_fields = SimpleNamespace(
+build_print_outputs = SimpleNamespace(
     account_msg = 'New account:',
+    all_modules = 'All modules'
+)
+
+build_command_fields = SimpleNamespace(
     gen = 'gen',
     long = 'long',
     prep = 'prep',
     publish = 'publish',
+    batch = 'batch'
 )
 """Command line fields for automated building process"""
 
@@ -37,7 +42,8 @@ e_msgs = SimpleNamespace(
     path_val_collision = 'Different value already exists at provided path',
     tx_timeout = 'Transaction timeout',
     failed = 'failed',
-    decimal = "Decimal values must be reported as str ('123.45') or int (123)"
+    decimal = "Decimal values must be reported as str ('123.45') or int (123)",
+    tx_submission = 'Transaction submission failed'
 )
 """Error messages"""
 
@@ -157,15 +163,18 @@ rest_urls = {
 
 seps = SimpleNamespace(
     amp = '&',
+    cln = ':',
     dot = '.',
     eq = '=',
     gt = '>',
     hex = '0x',
     lsb = '[',
     lt = '<',
+    lp = '(',
     nl = '\n',
     pnd = '#',
     qm = '?',
+    rp = ')',
     rsb = ']',
     sq = "'",
     sls = '/',
@@ -224,6 +233,9 @@ ultima_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 ultima_modules = SimpleNamespace(
+    Book = SimpleNamespace(
+        name = 'Book',
+    ),
     Coin = SimpleNamespace(
         name = 'Coin',
         members = SimpleNamespace(
@@ -262,6 +274,13 @@ ultima_modules = SimpleNamespace(
     )
 )
 """Ultima Move modules with nested member specifiers"""
+
+ultima_module_publish_order = [
+    ultima_modules.Coin.name,
+    ultima_modules.User.name,
+    ultima_modules.Book.name,
+]
+"""Order to publish Move modules bytecode in"""
 
 ultima_paths = SimpleNamespace(
     # Relative to Move package root directory

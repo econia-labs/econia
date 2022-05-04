@@ -19,7 +19,7 @@ Some functionality abstracted to be run from the command line:
     :caption: Publishing all module bytecode
 
     # From Ultima repository root directory
-    % python src/python/ultima/build.py publish .secrets/ultima.key
+    % python src/python/ultima/build.py publish .secrets/ultima.key batch
     Success, tx hash: 0x9322adcaacbcd499b35d16b5d24c4521f65f30da27b1efd127319d24c916820e
 
 .. code-block:: zsh
@@ -33,12 +33,13 @@ Some functionality abstracted to be run from the command line:
 import os
 import re
 import sys
-import time
 
 from pathlib import Path
+from typing import Union
 from ultima.account import Account, hex_leader
 from ultima.defs import (
     build_command_fields,
+    build_print_outputs,
     e_msgs,
     file_extensions,
     max_address_length,
@@ -48,8 +49,8 @@ from ultima.defs import (
     toml_section_names,
     tx_defaults,
     tx_fields,
-    tx_timeout_granularity,
     Ultima,
+    ultima_module_publish_order,
     ultima_paths as ps,
     util_paths
 )
@@ -342,12 +343,12 @@ def prep_toml(
 def get_bytecode_files(
     ultima_root: str = seps.dot
 ) -> dict[str: str]:
-    """Return list of module bytecode strings
+    """Return dict from module name to module bytecode string
 
     Parameters
     ----------
     ultima_root : str, optional
-        relative path to ultima repository root directory
+        Relative path to ultima repository root directory
 
     Returns
     -------
@@ -364,9 +365,53 @@ def get_bytecode_files(
         bcs[path.stem] = path.read_bytes().hex()
     return bcs
 
-def publish_bytecode(
+def print_bc_diagnostics(
+    client: Client,
     signer: Account,
-    ultima_root: str = seps.dot
+    leader: str,
+    bc: Union[list[str], str],
+    serialized: bool
+) -> None:
+    """Print bytecode publication diagnostic message
+
+    Parameters
+    ----------
+    client : ultima.rest.Client
+        An instantiated REST client
+    signer : ultima.account.Account
+        Signing account
+    leader : str
+        First token to print
+    bc : list of str or str
+        List of bytecode modules to publish, or a single bytecode module
+    serialized : bool
+        If True, publish all modules in serial
+    """
+    tx_hash = None
+    if serialized:
+        try:
+            tx_hash = client.publish_module(signer, bc) # bc is str
+        except AssertionError as e:
+            print(e_msgs.tx_submission + seps.cln, e)
+    else:
+        try:
+            tx_hash = client.publish_modules(signer, bc) # bc is list of str
+        except AssertionError as e:
+            print(e_msgs.tx_submission + seps.cln, e)
+    if tx_hash is not None: # If tx actually published
+        status = tx_fields.success
+        if not client.tx_successful(tx_hash):
+            status = e_msgs.failed
+        print(
+            leader + seps.cln,
+            status,
+            seps.lp + client.tx_vn_url(tx_hash) + seps.rp
+        )
+
+def publish_bytecode(
+    s: Account,
+    ultima_root: str = seps.dot,
+    serialized: bool = True
 ) -> str:
     """Publish bytecode modules with diagnostic printouts
 
@@ -374,26 +419,27 @@ def publish_bytecode(
 
     Parameters
     ----------
-    signer : ultima.account.Account
+    s : ultima.account.Account
         Signing account
     ultima_root : str, optional
-        relative path to ultima repository root directory
+        Relative path to ultima repository root directory
+    serialized : bool, optional
+        If True, publish modules in separate transactions
 
     Returns
     -------
     str
         Transaction hash of module upload transaction
     """
-    client = Client(networks.devnet)
-    bcs = get_bytecode_files(ultima_root)
-    modules = bcs.keys()
-    for module in modules:
-        tx_hash = client.publish_module(signer, bcs[module])
-        time.sleep(tx_timeout_granularity)
-        status = tx_fields.success
-        if not client.tx_successful(tx_hash):
-            status = e_msgs.failed
-        print(f'{module}: {status} ({client.tx_vn_url(tx_hash)})')
+    c = Client(networks.devnet)
+    bc_map = get_bytecode_files(ultima_root)
+    if serialized: # Loop over modules
+        for m in ultima_module_publish_order:
+            print_bc_diagnostics(c, s, m, bc_map[m], serialized=True)
+    else: # Publish all modules at once
+        bcs = list(bc_map.values())
+        leader = build_print_outputs.all_modules
+        print_bc_diagnostics(c, s, leader, bcs, serialized=False)
 
 def sub_middle_group_file(
     abs_path: str,
@@ -434,7 +480,7 @@ def get_secrets_dir(
     Parameters
     ----------
     ultima_root : str, optional
-        relative path to Ultima repository root directory
+        Relative path to Ultima repository root directory
 
     Returns
     -------
@@ -454,7 +500,7 @@ def get_key_path(
     address : str
         Account address
     ultima_root : str, optional
-        relative path to Ultima repository root directory
+        Relative path to Ultima repository root directory
 
     Returns
     -------
@@ -477,7 +523,7 @@ def sub_address_in_build_files(
     address : str
         Account address
     ultima_root : str, optional
-        relative path to ultima repository root directory
+        Relative path to ultima repository root directory
 
     Returns
     -------
@@ -529,7 +575,7 @@ def gen_new_ultima_dev_account(
     Parameters
     ----------
     ultima_root : str, optional
-        relative path to ultima repository root directory
+        Relative path to ultima repository root directory
 
     Returns
     -------
@@ -547,19 +593,24 @@ def gen_new_ultima_dev_account(
 
 if __name__ == '__main__':
     """See module docstring for examples"""
-    ultima_root = seps.dot # Assume running from within Ultima root dir
-    if len(sys.argv) == 4:
-        ultima_root = sys.argv[3]
+
+    # Aliases
+    publish = build_command_fields.publish
+    batch = build_command_fields.batch
     action = sys.argv[1]
+
     if action == build_command_fields.prep: # Prepare Move.Toml file
         long = sys.argv[2] == build_command_fields.long
+        ultima_root = sys.argv[3]
         prep_toml(ultima_root, long)
-    if action == build_command_fields.publish: # Cargo build and publish
+    if action == publish: # Cargo build and publish
         keyfile = sys.argv[2]
+        ultima_root = sys.argv[3]
+        serialized = not ((len(sys.argv) == 5) and (sys.argv[4] == batch))
         account = Account(path=keyfile)
-        publish_bytecode(account, ultima_root)
+        publish_bytecode(account, ultima_root, serialized)
     if action == build_command_fields.gen: # Generate new dev account
         if len (sys.argv) == 3:
             ultima_root = sys.argv[2]
         new_address = gen_new_ultima_dev_account(ultima_root)
-        print(build_command_fields.account_msg, new_address)
+        print(build_print_outputs.account_msg, new_address)

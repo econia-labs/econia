@@ -604,8 +604,8 @@ def gen_new_ultima_dev_account(
     except Exception:
         print(e_msgs.faucet)
         return
-    # Strip leading 0 off address for recording on disk
-    address = normalized_hex(account.address())
+    # Strip off potential leading 0 for recording on disk
+    address = normalized_hex(get_addr_bytes(account.address()))
     print(build_print_outputs.account_msg, address)
     account.save_seed_to_disk(get_key_path(address, ultima_root))
     prep_toml(ultima_root, long=True)

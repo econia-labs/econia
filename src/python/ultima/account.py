@@ -100,7 +100,7 @@ class Account:
         Returns
         -------
         str
-            Account address
+            Account address, which may include leading 0
         """
         return self.auth_key()
 

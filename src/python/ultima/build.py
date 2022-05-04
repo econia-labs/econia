@@ -275,6 +275,9 @@ def format_addr(
     "C = '0x1234abcd1234abcd1234abcd1234abcd' # 1234abcd"
     >>> format_addr('D', '87654321' * 4, 'abcd' , False)
     "D = '0x87654321876543218765432187654321' # abcd"
+    >>> # Preserves leading zeroes in comment but not at start
+    >>> format_addr('E', '00123456' * 4, '00123456' , True)
+    "E = '0x12345600123456001234560012345600123456'"
     """
     addr = get_addr_bytes(addr)
     if comment is not None:
@@ -293,7 +296,7 @@ def format_addr(
     line = f'{name}' +  seps.sp + seps.eq + seps.sp + seps.sq + \
         hex_leader(normalized_hex(addr)) + seps.sq
     if comment is not None:
-        line = line + seps.sp + seps.pnd + seps.sp + normalized_hex(comment)
+        line = line + seps.sp + seps.pnd + seps.sp + comment.hex()
     return line
 
 def format_addrs(
@@ -534,7 +537,7 @@ def sub_address_in_build_files(
     Parameters
     ----------
     address : str
-        Account address
+        Account address without leading hex specifier
     ultima_root : str, optional
         Relative path to ultima repository root directory
 
@@ -571,11 +574,14 @@ def archive_keyfile(
     abs_path : str
         Absolute path of keyfile to archive
     """
-    Path(abs_path).replace(os.path.join(
-        os.path.dirname(abs_path),
-        util_paths.old_keys,
-        os.path.basename(abs_path)
-    ))
+    try:
+        Path(abs_path).replace(os.path.join(
+            os.path.dirname(abs_path),
+            util_paths.old_keys,
+            os.path.basename(abs_path)
+        ))
+    except FileNotFoundError: # Keyfile likely already deleted manually
+        pass
 
 def gen_new_ultima_dev_account(
     ultima_root: str = seps.dot
@@ -595,9 +601,11 @@ def gen_new_ultima_dev_account(
     mint_val = tx_defaults.faucet_mint_val
     try:
         Client(networks.devnet).mint_testcoin(address, mint_val)
-    except Exception as c:
+    except Exception:
         print(e_msgs.faucet)
         return
+    # Strip leading 0 off address for recording on disk
+    address = normalized_hex(account.address())
     print(build_print_outputs.account_msg, address)
     account.save_seed_to_disk(get_key_path(address, ultima_root))
     prep_toml(ultima_root, long=True)

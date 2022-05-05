@@ -1,4 +1,4 @@
-// Order book functionality
+/// Order book functionality
 module Ultima::Book {
 
     use Std::Signer;
@@ -12,15 +12,15 @@ module Ultima::Book {
     const BID: bool = true;
     const ASK: bool = false;
 
-    // Represents a single unfilled ask or bid at a given price
+    /// Represents a single unfilled ask or bid at a given price
     struct Order has store {
         id: u64, // From counter
         user: address, // Address of user who placed the order
         unfilled: u64 // Amount remaining to match, in APT subunits
     }
 
-    // Represents a single price level for either asks or bids
-    // Implemented as a binary search tree node
+    /// Represents a single price level for either asks or bids.
+    /// Implemented as a binary search tree node
     struct Price has store {
         // Limit price, in USD subunits, for one subunit of APT
         price: u64,
@@ -28,7 +28,7 @@ module Ultima::Book {
         orders: vector<Order> // Unfilled orders having this price
     }
 
-    // Order book container
+    /// Order book container
     struct Book has key {
         counter: u64, // Incrementing counter that tracks order id
         // Lowest price at start of vector, highest price at end
@@ -37,7 +37,7 @@ module Ultima::Book {
         asks: vector<Price>
     }
 
-    // Publish an order book at the Ultima account
+    /// Publish an order book at the Ultima account
     public(script) fun publish_book(
         account: &signer
     ) {

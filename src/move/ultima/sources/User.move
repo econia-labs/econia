@@ -1,4 +1,4 @@
-// User account and order functionality
+/// User account and order functionality
 module Ultima::User {
     use Std::Signer;
     use Std::Vector;
@@ -41,14 +41,14 @@ module Ultima::User {
     const BUY: bool = true;
     const SELL: bool = false;
 
-    // Collateral cointainer
+    /// Collateral cointainer
     struct Collateral<phantom CoinType> has key {
         holdings: Coin<CoinType>,
         available: u64 // Subunits available to withdraw
     }
 
-    // A single limit order, always USD-denominated APT (APT/USDC)
-    // Colloquially, "one APT costs $120"
+    /// A single limit order, always USD-denominated APT (APT/USDC).
+    /// Colloquially, "one APT costs $120"
     struct Order has store {
         id: u64, // From order book counter
         side: bool, // true for buy APT, false for sell APT
@@ -57,13 +57,13 @@ module Ultima::User {
         unfilled: u64, // Amount remaining to match, in APT subunits
     }
 
-    // Resource container for open limit orders
+    /// Resource container for open limit orders
     struct Orders has key {
         // Appended as they are made, and removed once filled
         open: vector<Order>
     }
 
-    // Get holdings and available amount for given coin type
+    /// Get holdings and available amount for given coin type
     public fun collateral_balances<CoinType>(
         addr: address
     ): (
@@ -78,7 +78,7 @@ module Ultima::User {
         )
     }
 
-    // Deposit given coin to collateral container
+    /// Deposit given coin to collateral container
     fun deposit<CoinType>(
         addr: address,
         coin: Coin<CoinType>
@@ -91,8 +91,8 @@ module Ultima::User {
         *available_ref = *available_ref + added;
     }
 
-    // Deposit specified amounts to corresponding collateral containers
-    // Withdraws from Coin::Balance
+    /// Deposit specified amounts to corresponding collateral
+    /// containers, withdrawing from Coin::Balance
     public(script) fun deposit_coins(
         account: &signer,
         apt_subunits: u64,
@@ -105,9 +105,9 @@ module Ultima::User {
         deposit<USD>(addr, usd);
     }
 
-    // Match order for given address and order id
-    // Should pass only APT or USD depending on the order side
-    // If passed APT returns USD, and if passed USD returns APT
+    /// Match order for given address and order id. Should pass only APT
+    /// or USD depending on the order side. If passed APT returns USD,
+    /// and if passed USD returns APT
     fun match_order(
         addr: address,
         id: u64,
@@ -172,7 +172,7 @@ module Ultima::User {
         }
     }
 
-    // Return number of open orders for given address
+    /// Return number of open orders for given address
     public fun num_orders(
         addr: address
     ): u64
@@ -181,7 +181,7 @@ module Ultima::User {
         Vector::length<Order>(open)
     }
 
-    // Initialize user collateral containers and open orders resource
+    /// Initialize user collateral containers and open orders resource
     public(script) fun init_account(
         account: &signer,
     ) {
@@ -190,7 +190,7 @@ module Ultima::User {
         publish_orders(account);
     }
 
-    // Publish empty collateral container for given coin type at account
+    /// Publish empty collateral container for given CoinType at account
     fun publish_collateral<CoinType>(
         account: &signer
     ) {
@@ -200,7 +200,7 @@ module Ultima::User {
         move_to(account, Collateral<CoinType>{holdings: empty, available: 0});
     }
 
-    // Publish empty open orders resource at account
+    /// Publish empty open orders resource at account
     fun publish_orders(
         account: &signer
     ) {
@@ -209,7 +209,7 @@ module Ultima::User {
         move_to(account, Orders{open: Vector::empty<Order>()});
     }
 
-    // Append an order to a user's open orders resource
+    /// Append an order to a user's open orders resource
     fun record_order(
         addr: address,
         order: Order
@@ -218,8 +218,8 @@ module Ultima::User {
         Vector::push_back<Order>(open, order);
     }
 
-    // Record a mock order to a user's open orders resource
-    // Designed for testing, can only be called by Ultima account
+    /// Record a mock order to a user's open orders resource. Designed
+    /// for testing, can only be called by Ultima account
     public(script) fun record_mock_order(
         account: &signer,
         addr: address,
@@ -232,8 +232,8 @@ module Ultima::User {
         record_order(addr, Order{id, side, price, unfilled});
     }
 
-    // Directly match an order against a user's open orders
-    // Designed for testing, can only be called by Ultima account
+    /// Directly match an order against a user's open orders. Designed
+    /// for testing, can only be called by Ultima account
     public(script) fun trigger_match_order(
         account: &signer,
         addr: address,
@@ -250,7 +250,7 @@ module Ultima::User {
         burn<USD>(account, usd_match);
     }
 
-    // Withdraw requested amount from collateral container at address
+    /// Withdraw requested amount from collateral container at address
     fun withdraw<CoinType>(
         addr: address,
         amount: u64 // Number of subunits to withdraw
@@ -271,7 +271,7 @@ module Ultima::User {
         result
     }
 
-    // Withdraw specified amounts from collateral into Coin::Balance
+    /// Withdraw specified amounts from collateral into Coin::Balance
     public(script) fun withdraw_coins(
         account: &signer,
         apt_subunits: u64,

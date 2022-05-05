@@ -1,4 +1,4 @@
-// APT and USD coin minting/transfer functionality
+/// APT and USD coin functionality w/ custom token standard
 module Ultima::Coin {
     use Std::Signer;
 
@@ -33,23 +33,23 @@ module Ultima::Coin {
     struct APT {}
     struct USD {}
 
-    // Scale for converting subunits to decimal (base-10 exponent)
-    // With a scale of 3, for example, 1 subunit = 0.001 base unit
+    /// Scale for converting subunits to decimal (base-10 exponent).
+    /// With a scale of 3, for example, 1 subunit = 0.001 base unit
     const APT_SCALE: u8 = 6;
     const USD_SCALE: u8 = 12;
 
-    // Generic coin type
+    /// Generic coin type
     struct Coin<phantom CoinType> has store {
         subunits: u64 // Indivisible subunits (e.g. Satoshi for BTC)
     }
 
-    // Represents balance of given Coin Type
+    /// Represents balance of given Coin Type
     struct Balance<phantom CoinType> has key {
         coin: Coin<CoinType>
     }
 
-    // Mint APT and USD to a given address
-    // May only be invoked by Ultima account
+    /// Mint APT and USD to a given address. May only be invoked by
+    /// Ultima account
     public(script) fun airdrop(
         authority: &signer,
         addr: address,
@@ -61,7 +61,7 @@ module Ultima::Coin {
         mint<USD>(addr, usd_subunits);
     }
 
-    // Get balance of given coin type, in subunits, at an address
+    /// Get balance of given coin type, in subunits, at an address
     public fun balance_of<CoinType>(
         addr: address
     ): u64
@@ -69,7 +69,7 @@ module Ultima::Coin {
         borrow_global<Balance<CoinType>>(addr).coin.subunits
     }
 
-    // Burn passed coin, can only be invoked by Ultima account
+    /// Burn passed coin, can only be invoked by Ultima account
     public fun burn<CoinType>(
         account: &signer,
         coin: Coin<CoinType>
@@ -78,7 +78,7 @@ module Ultima::Coin {
         let Coin<CoinType>{subunits: _} = coin;
     }
 
-    // Deposit moved coin amount to a given address
+    /// Deposit moved coin amount to a given address
     fun deposit<CoinType>(
         addr: address,
         coin: Coin<CoinType>
@@ -90,7 +90,7 @@ module Ultima::Coin {
         *balance_ref = *balance_ref + subunits;
     }
 
-    // Deposit coins into balance
+    /// Deposit coins into balance
     public fun deposit_coins(
         addr: address,
         apt: Coin<APT>,
@@ -100,13 +100,13 @@ module Ultima::Coin {
         deposit(addr, usd);
     }
 
-    // Return coin with 0 subunits, useful for initialization elsewhere
+    /// Return coin with 0 subunits, useful for initialization elsewhere
     public fun get_empty_coin<CoinType>():
     Coin<CoinType> {
         Coin<CoinType>{subunits: 0}
     }
 
-    // Mint amount of given coin, in subunits, to address
+    /// Mint amount of given coin, in subunits, to address
     fun mint<CoinType>(
         addr: address,
         subunits: u64
@@ -114,7 +114,7 @@ module Ultima::Coin {
         deposit<CoinType>(addr, Coin<CoinType>{subunits});
     }
 
-    // Merge two coin resources into one with appropriate balance
+    /// Merge two coin resources into one with appropriate balance
     public fun merge_coins<CoinType>(
         c1: Coin<CoinType>,
         c2: Coin<CoinType>
@@ -124,7 +124,7 @@ module Ultima::Coin {
         Coin<CoinType>{subunits: subs1 + subs2}
     }
 
-    // Merge inbound coin to a target coin at a mutable reference
+    /// Merge inbound coin to a target coin at a mutable reference
     public fun merge_coin_to_target<CoinType>(
         inbound: Coin<CoinType>, // Inbound coin
         // Mutable reference to target coin
@@ -141,8 +141,8 @@ module Ultima::Coin {
         (in, pre, *subunits_ref)
     }
 
-    // Publish empty balance resource under signer's account
-    // Must be called before minting/transferring to the account
+    /// Publish empty balance resource under signer's account. Must
+    /// be called before minting/transferring to the account
     public(script) fun publish_balance<CoinType>(
         account: &signer
     ) {
@@ -154,7 +154,7 @@ module Ultima::Coin {
         move_to(account, Balance<CoinType>{coin: empty_coin});
     }
 
-    // Publish both APT and USD balances under the signer's account
+    /// Publish both APT and USD balances under the signer's account
     public(script) fun publish_balances(
         account: &signer
     ) {
@@ -162,14 +162,14 @@ module Ultima::Coin {
         publish_balance<USD>(account);
     }
 
-    // Report number of subunits inside a coin
+    /// Report number of subunits inside a coin
     public fun report_subunits<CoinType>(
         coin_ref: &Coin<CoinType>
     ): u64 {
         coin_ref.subunits
     }
 
-    // Split a coin resource into two, conserving total subunit count
+    /// Split a coin resource into two, conserving total subunit count
     public fun split_coin<CoinType>(
         coin: Coin<CoinType>,
         amount: u64,
@@ -183,7 +183,7 @@ module Ultima::Coin {
         (Coin<CoinType>{subunits: amount}, Coin<CoinType>{subunits: remainder})
     }
 
-    // Split off coin resource from a target coin at a mutable reference
+    /// Split off coin resource from target coin at a mutable reference
     public fun split_coin_from_target<CoinType>(
         amount: u64, // Amount to split off
         target_coin_ref: &mut Coin<CoinType>
@@ -204,7 +204,7 @@ module Ultima::Coin {
         )
     }
 
-    // Transfer specified amount from sender to recipient
+    /// Transfer specified amount from sender to recipient
     public(script) fun transfer<CoinType>(
         sender: &signer,
         recipient: address,
@@ -216,7 +216,7 @@ module Ultima::Coin {
         );
     }
 
-    // Wrapper to send both coin types in one transaction
+    /// Wrapper to send both coin types in one transaction
     public(script) fun transfer_both_coins(
         sender: &signer,
         recipient: address,
@@ -227,7 +227,7 @@ module Ultima::Coin {
         transfer<USD>(sender, recipient, usd_subunits);
     }
 
-    // Withdraw specified subunits of given coin from address balance
+    /// Withdraw specified subunits of given coin from address balance
     fun withdraw<CoinType>(
         addr: address,
         amount: u64
@@ -241,7 +241,7 @@ module Ultima::Coin {
         Coin<CoinType>{subunits: amount}
     }
 
-    // Return coins withdrawn from balance
+    /// Return coins withdrawn from balance
     public fun withdraw_coins(
         account: &signer,
         apt_subunits: u64,
@@ -254,8 +254,8 @@ module Ultima::Coin {
         (withdraw<APT>(addr, apt_subunits), withdraw<USD>(addr, usd_subunits))
     }
 
-    // Return a coin of specified type, with given subunits
-    // Can only be invoked by Ultima account
+    /// Return a coin of specified type, with given subunits. Can only
+    /// be invoked by Ultima account
     public(friend) fun yield_coin<CoinType>(
         account: &signer,
         subunits: u64

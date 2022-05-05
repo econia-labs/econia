@@ -20,12 +20,12 @@ elif test $1 = c; then
 elif test $1 = ur; then
     cd ../../../
 
-# Cargo build and publish bytecode for all modules, passing arguments
+# Aptos build and publish bytecode for all modules, passing arguments
 # Other scripts automatically update the specified keyfile
 elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
-    cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/d03473127d4f37e01472a01d85e7c23d1fe66f3171d300fd9a4d854aabad74c2.key ../../../ $2
+    aptos move compile
+    python ../../python/ultima/build.py publish ../../../.secrets/a955618565951bc63bf3801046bb4a04db9f706c77649d3630797d15a538865b.key ../../../ $2
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

@@ -285,12 +285,10 @@ ultima_module_publish_order = [
         ultima_modules.Coin.name,
         ultima_modules.User.name,
     ],
-    # Book cannot be batched with Coin and User without breaking
+    # Neither Book nor BST can be batched into above without exceeding
+    # a max filesize warning
     [
         ultima_modules.Book.name,
-    ],
-    # But BST can be batched with Coin and User
-    [
         ultima_modules.BST.name,
     ],
 ]
@@ -298,7 +296,7 @@ ultima_module_publish_order = [
 Order to publish Move modules bytecode in, with sublists indicating
 batched modules that should be loaded together. Individual modules
 should be defined as the sole element in a list. If order within
-sub-batches is changed, loading may break
+sub-batches is changed, loading may break, for instance among friends
 """
 
 ultima_paths = SimpleNamespace(

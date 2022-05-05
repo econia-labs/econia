@@ -280,15 +280,7 @@ ultima_modules = SimpleNamespace(
 """Ultima Move modules with nested member specifiers"""
 
 ultima_module_publish_order = [
-    # Coin declares User as a friend
     [
-        ultima_modules.Coin.name,
-        ultima_modules.User.name,
-    ],
-    # Neither Book nor BST can be batched into above without exceeding
-    # a max filesize warning
-    [
-        ultima_modules.Book.name,
         ultima_modules.BST.name,
     ],
 ]

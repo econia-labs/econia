@@ -25,7 +25,7 @@ elif test $1 = ur; then
 elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
     aptos move compile
-    python ../../python/ultima/build.py publish ../../../.secrets/a955618565951bc63bf3801046bb4a04db9f706c77649d3630797d15a538865b.key ../../../ $2
+    python ../../python/ultima/build.py publish ../../../.secrets/e6d77e11c84fbc9c54913b98c704231842f7367520ec21e72a1ec4bf53e3eded.key ../../../ $2
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

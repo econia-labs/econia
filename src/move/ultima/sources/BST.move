@@ -1,9 +1,20 @@
-/// Red-black binary search tree
+/// Red-black binary search tree, designed for key-value lookup,
+/// insertion, and deletion. Keys are `u64`, and values can be any
+/// arbitrary data structure. Ideally, values would be nested inside
+/// each node on the tree, but due to Move's typing constraints, only
+/// keys are stored in nodes, as discussed below. Values are stored in a
+/// corresponding vector such that the key and value from a key value
+/// pair have the same index within their respective vectors. See
+/// `new_mock_bst()` and `destroy_empty_mock_bst()` for canonical
+/// packing and unpacking syntax.
 module Ultima::BST {
     use Std::Vector;
     use Std::Vector::{
         borrow_mut as v_b_m,
-        borrow as v_b
+        borrow as v_b,
+        empty as v_e,
+        destroy_empty as v_d_e,
+        is_empty as v_i_e,
     };
 
 // Constants ------------------------------------------------------------------
@@ -36,7 +47,7 @@ module Ultima::BST {
     /// Contains a vector of `Node`, each with a `key` field, such that
     /// each `Node` is stored at an index in `nodes` identical to the
     /// storage index of its `key`'s corresponding value, per the
-    /// recommended data structure template in `MockBST`.
+    /// recommended data structure outlined in `MockBST`.
     struct Keys has store {
         root: u64, // Index of root node
         nodes: vector<Node>, // Nodes
@@ -47,8 +58,8 @@ module Ultima::BST {
     /// would simply be stored in a `Node.value` field of `ValueType`,
     /// with `Node` taking the generically-typed form
     /// `Node<phantom ValueType>`. But this kind of dynamic typing
-    /// is forbidden in Move, so values must be stored per a data
-    /// structure like that specified by `MockBST`.
+    /// is forbidden in Move, so values must be stored per the canonical
+    /// data structure outlined specified in `MockBST`.
     struct Node has store {
         key: u64, // Key
         color: bool, // Black or red
@@ -64,12 +75,12 @@ module Ultima::BST {
     }
 
     /// A mock instantiation of a binary search tree containing
-    /// key-value pairs, where each `Node` in `keys` corresponds to the
+    /// key-value pairs, where each `Node` in `keys` corresponds to a
     /// `MockValueType` in `values` at the same vector index.
     /// Ideally, values would more simply be stored as fields within
     /// each `Node`, but Move's typing constraints prohibit this data
-    /// structure. See `new_mock_bst()` for recommended initialization
-    /// pattern, and `destroy_empty_mock_bst()` for recommended destruct
+    /// structure. See `new_mock_bst()` for canonical packing syntax,
+    /// pattern, and `destroy_empty_mock_bst()` for canonical unpacking
     /// pattern
     struct MockBST has store {
         keys: Keys,
@@ -82,16 +93,16 @@ module Ultima::BST {
 
     /// Return an empty `Keys` resource
     public fun new_keys(): Keys {
-        Keys{root: NULL, nodes: Vector::empty<Node>()}
+        Keys{root: NULL, nodes: v_e<Node>()}
     }
 
     /// Return an empty vector of `ValueType`
     public fun new_values<ValueType: store>():
     vector<ValueType> {
-        Vector::empty<ValueType>()
+        v_e<ValueType>()
     }
 
-    /// Return initialized BST per recommended initialization pattern:
+    /// Return initialized BST per canonical packing syntax:
     /// `YourBST{keys: new_keys(), values: new_values<YourValueType>()}`
     fun new_mock_bst():
     MockBST {
@@ -103,9 +114,9 @@ module Ultima::BST {
     fun new_keys_success(): MockBST {
         let mock_bst = new_mock_bst();
         assert!(mock_bst.keys.root == NULL, E_ROOT_INIT);
-        assert!(Vector::is_empty<Node>(&mock_bst.keys.nodes), E_KEYS_INIT);
+        assert!(v_i_e<Node>(&mock_bst.keys.nodes), E_KEYS_INIT);
         let v = &mock_bst.values;
-        assert!(Vector::is_empty<MockValueType>(v), E_VALS_INIT);
+        assert!(v_i_e<MockValueType>(v), E_VALS_INIT);
         mock_bst
 
     }
@@ -129,8 +140,8 @@ module Ultima::BST {
     fun destroy_empty_values<ValueType>(
         values: vector<ValueType>
     ) {
-        assert!(Vector::is_empty(&values), E_DESTROY_VALS_EMPTY);
-        Vector::destroy_empty<ValueType>(values);
+        assert!(v_i_e(&values), E_DESTROY_VALS_EMPTY);
+        v_d_e<ValueType>(values);
     }
 
     /// Destroy keys and values in an empty BST
@@ -142,7 +153,7 @@ module Ultima::BST {
         destroy_empty_values(values);
     }
 
-    /// Destroy empty BST per recommended destruct pattern:
+    /// Destroy empty BST per canonical unpacking syntax:
     /// `let YourBST{keys, values} = your_bst;
     /// destroy_empty_bst<YourValueType>(keys, values);`
     fun destroy_empty_mock_bst(
@@ -164,7 +175,7 @@ module Ultima::BST {
             left: NULL,
             right: NULL
         };
-        Vector::push_back(&mut keys.nodes, node);
+        v_p_b(&mut keys.nodes, node);
         destroy_empty_keys(keys);
     }
 
@@ -182,7 +193,7 @@ module Ultima::BST {
     /// Verify failure for attempting to destroy non-empty values vector
     fun destroy_vals_not_empty() {
         let values = new_values<MockValueType>();
-        Vector::push_back<MockValueType>(&mut values, MockValueType{field: 0});
+        v_p_b<MockValueType>(&mut values, MockValueType{field: 0});
         destroy_empty_values(values);
     }
 

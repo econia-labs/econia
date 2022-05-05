@@ -911,6 +911,19 @@ class Client:
             + seps.sls + rest_path_elems.txn + seps.sls
         return tx_explorer_base + str(version_number)
 
+    def tx_vn_url_print(
+        self,
+        tx_hash: str
+    ) -> None:
+        """Print link to transaction version number on explorer
+
+        Parameters
+        ----------
+        tx_hash : str
+            transaction hash, with leading hex specifier
+        """
+        print(self.tx_vn_url(tx_hash))
+
     def testcoin_balance(
         self,
         account_address: str

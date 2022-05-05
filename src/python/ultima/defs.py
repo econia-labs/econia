@@ -280,9 +280,19 @@ ultima_modules = SimpleNamespace(
 """Ultima Move modules with nested member specifiers"""
 
 ultima_module_publish_order = [
-    [ultima_modules.Coin.name, ultima_modules.User.name],
-    [ultima_modules.Book.name],
-    [ultima_modules.BST.name]
+    # Coin declares User as a friend
+    [
+        ultima_modules.Coin.name,
+        ultima_modules.User.name,
+    ],
+    # Book cannot be batched with Coin and User without breaking
+    [
+        ultima_modules.Book.name,
+    ],
+    # But BST can be batched with Coin and User
+    [
+        ultima_modules.BST.name,
+    ],
 ]
 """
 Order to publish Move modules bytecode in, with sublists indicating

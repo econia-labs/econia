@@ -7,6 +7,9 @@ fi
 if test $1 = hello; then
     echo Hello, Ultima developer
 
+elif test $1 = c; then
+    clear
+
 # Install dependencies and generate relevant files
 # Designed so can be re-run without overwriting/throwing errors
 elif test $1 = setup; then

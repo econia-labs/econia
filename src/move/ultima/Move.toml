@@ -22,7 +22,7 @@ version = '0.1.0' # Per SemVer
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Ultima = '0x5d2c54806c7f3bb4df91d483df3df8c935775569155772cc30977b05ebcbe0f4'
+Ultima = '0xd03473127d4f37e01472a01d85e7c23d1fe66f3171d300fd9a4d854aabad74c2'
 TestUser = '0xace'
 
 [dependencies.AptosFramework]

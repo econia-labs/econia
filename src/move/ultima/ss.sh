@@ -12,6 +12,10 @@ fi
 if test $1 = hello; then
     echo Hello, Ultima developer
 
+# Clear the terminal
+elif test $1 = c; then
+    clear
+
 # Go back to Ultima project repository root
 elif test $1 = ur; then
     cd ../../../
@@ -21,7 +25,7 @@ elif test $1 = ur; then
 elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
     cargo run -- sources
-    python ../../python/ultima/build.py publish ../../../.secrets/5d2c54806c7f3bb4df91d483df3df8c935775569155772cc30977b05ebcbe0f4.key ../../../ $2
+    python ../../python/ultima/build.py publish ../../../.secrets/d03473127d4f37e01472a01d85e7c23d1fe66f3171d300fd9a4d854aabad74c2.key ../../../ $2
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

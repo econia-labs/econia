@@ -24,8 +24,8 @@ elif test $1 = ur; then
 # Other scripts automatically update the specified keyfile
 elif test $1 = pb; then
     python ../../python/ultima/build.py prep long ../../..
-    aptos move compile
-    python ../../python/ultima/build.py publish ../../../.secrets/e6d77e11c84fbc9c54913b98c704231842f7367520ec21e72a1ec4bf53e3eded.key ../../../ $2
+    aptos move compile > /dev/null
+    python ../../python/ultima/build.py publish ../../../.secrets/413a11a30e1fcf36247980a0e9393aa9f7dbfc83d610230a491995cc33c1b3f2.key ../../../ $2
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

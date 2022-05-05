@@ -43,6 +43,12 @@ elif test $1 = tc; then
     python ../../python/ultima/build.py prep short ../../..
     move package test --coverage $2 $3
 
+# Run tests in standard form , passing optional argument
+# For example `s ts -f coin`
+elif test $1 = ts; then
+    python ../../python/ultima/build.py prep short ../../..
+    move package test $2 $3
+
 # Output test coverage summary
 elif test $1 = cs; then
     move package coverage summary

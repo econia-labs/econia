@@ -624,7 +624,7 @@ if __name__ == '__main__':
         long = sys.argv[2] == build_command_fields.long
         ultima_root = sys.argv[3]
         prep_toml(ultima_root, long)
-    if action == publish: # Cargo build and publish
+    if action == publish: # Aptos build and publish
         keyfile = sys.argv[2]
         ultima_root = sys.argv[3]
         serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))

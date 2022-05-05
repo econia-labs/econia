@@ -21,11 +21,22 @@ doc/litepaper/main.pdf
 *-checkpoint.ipynb*
 
 # Move
-src/move/*/build/*
-src/move/*/*.trace
-src/move/*/*.bpl
+*.trace
+*.bpl
 *.mvcov
 *.mv
+*.mvsm
+
+# Sample Move projects
+src/move/move-cli-readme/*
+src/move/TestExample/*
+src/move/tutorials/*
+
+# Ultima Move project ignores
+src/move/ultima/build/AptosFramework/*
+src/move/ultima/build/MoveStdlib/*
+src/move/ultima/build/Ultima/sources/*
+src/move/ultima/build/Ultima/*.yaml
 
 # Cargo
 src/move/ultima/target/*

@@ -280,7 +280,7 @@ module Ultima::BST {
 
     #[test]
     /// Verify rotation per abridged version of diagram
-    fun left_rotate_simple()
+    fun left_rotate_simple():
     MockBST {
         // Define aliases for brevity
         let x = NULL;

@@ -51,6 +51,9 @@ module Ultima::BST {
     const E_L_ROTATE_NO_R_CHILD: u64 = 5;
     const E_L_ROTATE_RELATIONSHIP: u64 = 6;
     const E_L_ROTATE_ROOT: u64 = 7;
+    const E_R_ROTATE_NO_L_CHILD: u64 = 8;
+    const E_R_ROTATE_RELATIONSHIP: u64 = 9;
+    const E_R_ROTATE_ROOT: u64 = 10;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -179,40 +182,39 @@ module Ultima::BST {
     fun destroy_empty_fail() {
         destroy_empty<u8>(singleton<u8>(1, 2));
     }
+
 // Destruction <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-/* Left rotation --------------------------------------------------------------
+/* Left rotation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-         10                                10
+     (z) 10                            (z) 10
          / \                               / \
     (x) 5  15                         (y) 7  15
        / \         Left rotate           / \
-      2   7 (y)       on 5          (x) 5   8
+      2   7 (y)       on x          (x) 5   8
          / \        -------->          / \
-        6   8                         2   6
+    (w) 6   8                         2   6 (w)
 
 */
 
     /// Left rotate on the node with the given vector index
-    fun left_rotate<V>(
-        x_i: u64, // Index of node to left rotate on (node 5 above)
+    fun l_rotate<V>(
+        x_i: u64, // Index of node to left rotate on
         b: &mut BST<V>
     ) {
-        // Get index of x's right child (node 7 above)
-        let y_i = v_b<N<V>>(&b.t, x_i).r; // Can be X
+        // Get index of x's right child (y)
+        let y_i = v_b<N<V>>(&b.t, x_i).r;
         // Assert x actually has a right child
         assert!(y_i != X, E_L_ROTATE_NO_R_CHILD);
-        // Get index of y's left child, as specified by y (node 6 above)
-        let y_l_i = v_b<N<V>>(&b.t, y_i).l;
-        // Set x's right child as y's left child
-        v_b_m<N<V>>(&mut b.t, x_i).r = y_l_i;
-        if (y_l_i != X) { // If y has a left child
-            // Set the child's parent to be x
-            v_b_m<N<V>>(&mut b.t, y_l_i).p = x_i;
+        // Get index of y's left child (w)
+        let w_i = v_b<N<V>>(&b.t, y_i).l;
+        // Set x's right child as w
+        v_b_m<N<V>>(&mut b.t, x_i).r = w_i;
+        if (w_i != X) { // If y has a left child (if w is not null)
+            // Set w's parent to be x
+            v_b_m<N<V>>(&mut b.t, w_i).p = x_i;
         };
-        // Set x's parent to have y as child where x used to be,
-        // updating y to recognize the new parent, and updating x to
-        // recognize y as its new parent
+        // Swap the parent relationship between x and z to y
         parent_child_swap(x_i, y_i, b);
         // Set y's left child as x
         v_b_m<N<V>>(&mut b.t, y_i).l = x_i;
@@ -226,19 +228,19 @@ module Ultima::BST {
         y_i: u64,
         b: &mut BST<V>
     ) {
-        // Get index of x's parent as specified by x
-        let x_p_i = v_b<N<V>>(&b.t, x_i).p;
-        // Set y's parent as x's parent
-        v_b_m<N<V>>(&mut b.t, y_i).p = x_p_i;
-        if (x_p_i == X) { // If x is the root node
+        // Get index of x's parent (z)
+        let z_i = v_b<N<V>>(&b.t, x_i).p;
+        // Set y's parent as z
+        v_b_m<N<V>>(&mut b.t, y_i).p = z_i;
+        if (z_i == X) { // If x is the root node
             b.r = y_i; // Set y as the new root node
         } else { // If x is not the root node
-            // Get mutable reference to x's parent
-            let x_p = v_b_m<N<V>>(&mut b.t, x_p_i);
-            if (x_p.l == x_i) { // If x is a left child
-                x_p.l = y_i; // Set the parent's new left child as y
+            // Get mutable reference to z
+            let z = v_b_m<N<V>>(&mut b.t, z_i);
+            if (z.l == x_i) { // If x is a left child
+                z.l = y_i; // Set z's new left child as y
             } else { // If x is a right child
-                x_p.r = y_i; // Set the parent's new right child as y
+                z.r = y_i; // Set z's new right child as y
             }
         };
         // Set x's parent as y
@@ -248,51 +250,254 @@ module Ultima::BST {
 /*
        (z) 10                             (z) 10
            /         Left rotate             /
-      (x) 5              on 5           (y) 7
+      (x) 5              on x           (y) 7
            \          -------->            /
-           7 (y)                     (x) 5
+            7 (y)                     (x) 5
+           /                               \
+          6 (w)                             6 (w)
 */
 
     #[test]
-    /// Verify left rotation for simple case
-    fun left_rotate_simple():
+    /// Verify successful left rotation
+    fun l_rotate_success():
     BST<u8> {
         // Initialize an empty BST with u8 values
         let b = empty<u8>();
         // Define nodes in the following (key, index, symbol) schema per
         // the pre-rotation tree above, ignoring color and value fields:
-        // (10, 0, z), (5, 1, x), (7, 2, y)
-        let z = N<u8>{k: 10, c: B, p: X, l: 1, r: X, v: 0};
+        // (10, 0, z), (5, 1, x), (7, 2, y), (6, 3, w)
         let z_i = 0;
-        let x = N<u8>{k:  5, c: B, p: 0, l: X, r: 2, v: 0};
         let x_i = 1;
-        let y = N<u8>{k:  7, c: B, p: 1, l: X, r: X, v: 0};
         let y_i = 2;
+        let w_i = 3;
+        let z = N<u8>{k: 10, c: B, p:   X, l: x_i, r:   X, v: 0};
+        let x = N<u8>{k:  5, c: B, p: z_i, l:   X, r: y_i, v: 0};
+        let y = N<u8>{k:  7, c: B, p: x_i, l: w_i, r:   X, v: 0};
+        let w = N<u8>{k:  6, c: B, p: y_i, l:   X, r:   X, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, z);
         v_pu_b<N<u8>>(&mut b.t, x);
         v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, w);
         // Perform a left rotation on x
-        left_rotate<u8>(x_i, &mut b);
+        l_rotate<u8>(x_i, &mut b);
         // Verify root unchanged
         assert!(b.r == z_i, E_L_ROTATE_ROOT);
-        // Verify z's left child is now y
+        // Verify z's l child is now y
         assert!(v_b<N<u8>>(&b.t, z_i).l == y_i, E_L_ROTATE_RELATIONSHIP);
         // Verify z has no other relationships
         assert!(v_b<N<u8>>(&b.t, z_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
         assert!(v_b<N<u8>>(&b.t, z_i).p ==   X, E_L_ROTATE_RELATIONSHIP);
-        // Verify y has left child x and parent z
+        // Verify y has l child x and parent z
         assert!(v_b<N<u8>>(&b.t, y_i).l == x_i, E_L_ROTATE_RELATIONSHIP);
         assert!(v_b<N<u8>>(&b.t, y_i).p == z_i, E_L_ROTATE_RELATIONSHIP);
-        // Verify y has no right child
+        // Verify y has no r child
         assert!(v_b<N<u8>>(&b.t, y_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
-        // Verify x has parent y
+        // Verify x has parent y and r child w
         assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, x_i).r == w_i, E_L_ROTATE_RELATIONSHIP);
         // Verify x has no other relationships
-        assert!(v_b<N<u8>>(&b.t, x_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
         assert!(v_b<N<u8>>(&b.t, x_i).l ==   X, E_L_ROTATE_RELATIONSHIP);
+        // Verify w has parent x
+        assert!(v_b<N<u8>>(&b.t, w_i).p == x_i, E_L_ROTATE_RELATIONSHIP);
+        // Verify w has no other relationships
+        assert!(v_b<N<u8>>(&b.t, w_i).l ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, w_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
         // Return rather than unpack
         b
     }
 
+/*
+      (x) 5          Left rotate        (y) 7
+           \             on x              /
+            7 (y)     -------->       (x) 5
+*/
+
+    #[test]
+    /// Verify successful left rotation for simple case
+    fun l_rotate_simple():
+    BST<u8> {
+        // Initialize empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes, ignoring color and value fields
+        let x_i = 0;
+        let y_i = 1;
+        let x = N<u8>{k:  5, c: B, p:   X, l:   X, r: y_i, v: 0};
+        let y = N<u8>{k:  7, c: B, p: x_i, l:   X, r:   X, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, x);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        // Perform a left rotation on x
+        l_rotate<u8>(x_i, &mut b);
+        // Verify root updated
+        assert!(b.r == y_i, E_L_ROTATE_ROOT);
+        // Verify x has parent y
+        assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_L_ROTATE_RELATIONSHIP);
+        // Verify x has no other relationships
+        assert!(v_b<N<u8>>(&b.t, x_i).l ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, x_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
+        // Verify y has l child x
+        assert!(v_b<N<u8>>(&b.t, y_i).l == x_i, E_L_ROTATE_RELATIONSHIP);
+        // Verify y has no other relationships
+        assert!(v_b<N<u8>>(&b.t, y_i).p ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, y_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
+        // Return rather than unpack
+        b
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify left rotation aborts without node having right child
+    fun l_rotate_fail(): BST<u8> {
+        // Create solo node at vector index 0, having key 1 and value 2
+        let b = singleton<u8>(1, 2);
+        // Attempt invalid rotation about the node
+        l_rotate<u8>(0, &mut b);
+        b
+    }
+
+
+/* Right rotation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+         (z) 10                        (z) 10
+             / \                           / \
+        (x) 7  15     Right rotate    (y) 5  15
+           / \            on x           / \
+      (y) 5   8        -------->        2   7 (x)
+         / \                               / \
+        2   6 (w)                         6   8 (w)
+
+*/
+
+// Right rotation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    /// Right rotate on the node with the given vector index
+    fun r_rotate<V>(
+        x_i: u64, // Index of node to right rotate on
+        b: &mut BST<V>
+    ) {
+        // Get index of x's left child (y)
+        let y_i = v_b<N<V>>(&b.t, x_i).l;
+        // Assert x actually has a left child
+        assert!(y_i != X, E_R_ROTATE_NO_L_CHILD);
+        // Get index of y's right child (w)
+        let w_i = v_b<N<V>>(&b.t, y_i).r;
+        // Set x's left child as w
+        v_b_m<N<V>>(&mut b.t, x_i).l = w_i;
+        if (w_i != X) { // If y has a right child (if w is not null)
+            // Set w's parent to be x
+            v_b_m<N<V>>(&mut b.t, w_i).p = x_i;
+        };
+        // Swap the parent relationship between x and its parent to y
+        parent_child_swap(x_i, y_i, b);
+        // Set y's right child as x
+        v_b_m<N<V>>(&mut b.t, y_i).r = x_i;
+    }
+
+/*
+         (z) 5                      (z) 5
+              \                          \
+           (x) 9     Right rotate     (y) 7
+              /          on x              \
+         (y) 7         ------->         (x) 9
+              \                            /
+           (w) 8                      (w) 8
+*/
+
+    #[test]
+    /// Verify successful right rotation
+    fun r_rotate_success():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes, ignoring color and value fields
+        let z_i = 0;
+        let x_i = 1;
+        let y_i = 2;
+        let w_i = 3;
+        let z = N<u8>{k: 5, c: B, p:   X, l:   X, r: x_i, v: 0};
+        let x = N<u8>{k: 9, c: B, p: z_i, l: y_i, r:   X, v: 0};
+        let y = N<u8>{k: 7, c: B, p: x_i, l:   X, r: w_i, v: 0};
+        let w = N<u8>{k: 8, c: B, p: y_i, l:   X, r:   X, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, z);
+        v_pu_b<N<u8>>(&mut b.t, x);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, w);
+        // Perform a right rotation on x
+        r_rotate<u8>(x_i, &mut b);
+        // Verify root unchanged
+        assert!(b.r == z_i, E_R_ROTATE_ROOT);
+        // Verify z's r child is now y
+        assert!(v_b<N<u8>>(&b.t, z_i).r == y_i, E_R_ROTATE_RELATIONSHIP);
+        // Verify z has no other relationships
+        assert!(v_b<N<u8>>(&b.t, z_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, z_i).p ==   X, E_R_ROTATE_RELATIONSHIP);
+        // Verify y has r child x and parent z
+        assert!(v_b<N<u8>>(&b.t, y_i).r == x_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, y_i).p == z_i, E_R_ROTATE_RELATIONSHIP);
+        // Verify y has no left child
+        assert!(v_b<N<u8>>(&b.t, y_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
+        // Verify x has parent y and l child w
+        assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, x_i).l == w_i, E_R_ROTATE_RELATIONSHIP);
+        // Verify x has no other relationships
+        assert!(v_b<N<u8>>(&b.t, x_i).r ==   X, E_R_ROTATE_RELATIONSHIP);
+        // Verify w has parent x
+        assert!(v_b<N<u8>>(&b.t, w_i).p == x_i, E_R_ROTATE_RELATIONSHIP);
+        // Verify w has no other relationships
+        assert!(v_b<N<u8>>(&b.t, w_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, w_i).r ==   X, E_R_ROTATE_RELATIONSHIP);
+        // Return rather than unpack
+        b
+    }
+
+/*
+        (x) 7     Right rotate    (y) 5
+           /          on x             \
+      (y) 5         -------->      (x)  7
+*/
+
+    #[test]
+    /// Verify successful left rotation for simple case
+    fun r_rotate_simple():
+    BST<u8> {
+        // Initialize empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes, ignoring color and value fields
+        let x_i = 0;
+        let y_i = 1;
+        let x = N<u8>{k:  7, c: B, p:   X, l: y_i, r:   X, v: 0};
+        let y = N<u8>{k:  5, c: B, p: x_i, l:   X, r:   X, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, x);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        // Perform a right rotation on x
+        r_rotate<u8>(x_i, &mut b);
+        // Verify root updated
+        assert!(b.r == y_i, E_R_ROTATE_ROOT);
+        // Verify x has parent y
+        assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_R_ROTATE_RELATIONSHIP);
+        // Verify x has no other relationships
+        assert!(v_b<N<u8>>(&b.t, x_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, x_i).r ==   X, E_R_ROTATE_RELATIONSHIP);
+        // Verify y has r child x
+        assert!(v_b<N<u8>>(&b.t, y_i).r == x_i, E_R_ROTATE_RELATIONSHIP);
+        // Verify y has no other relationships
+        assert!(v_b<N<u8>>(&b.t, y_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(v_b<N<u8>>(&b.t, y_i).p ==   X, E_R_ROTATE_RELATIONSHIP);
+        // Return rather than unpack
+        b
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify right rotation aborts without node having left child
+    fun r_rotate_fail(): BST<u8> {
+        // Create solo node at vector index 0, having key 1 and value 2
+        let b = singleton<u8>(1, 2);
+        // Attempt invalid rotation about the node
+        r_rotate<u8>(0, &mut b);
+        b
+    }
 }

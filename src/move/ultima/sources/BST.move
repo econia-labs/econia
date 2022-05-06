@@ -15,6 +15,7 @@ module Ultima::BST {
         empty as v_e,
         destroy_empty as v_d_e,
         is_empty as v_i_e,
+        // push_back as v_p_b, Add when no longer in just tests
     };
 
 // Constants ------------------------------------------------------------------
@@ -27,6 +28,8 @@ module Ultima::BST {
     const E_DESTROY_KEYS_NULL: u64 = 4;
     const E_DESTROY_VALS_EMPTY: u64 = 5;
     const E_L_ROTATE_NO_R_CHILD: u64 = 6;
+    const E_L_ROTATE_RELATIONSHIP: u64 = 7;
+    const E_L_ROTATE_ROOT: u64 = 7;
 
     /// Flag to indicate that there is no connected node for the given
     /// relationship field (`parent`, `left`, or `right`), analagous to
@@ -175,7 +178,7 @@ module Ultima::BST {
             left: NULL,
             right: NULL
         };
-        v_p_b(&mut keys.nodes, node);
+        Vector::push_back(&mut keys.nodes, node);
         destroy_empty_keys(keys);
     }
 
@@ -193,7 +196,7 @@ module Ultima::BST {
     /// Verify failure for attempting to destroy non-empty values vector
     fun destroy_vals_not_empty() {
         let values = new_values<MockValueType>();
-        v_p_b<MockValueType>(&mut values, MockValueType{field: 0});
+        Vector::push_back<MockValueType>(&mut values, MockValueType{field: 0});
         destroy_empty_values(values);
     }
 
@@ -265,6 +268,58 @@ module Ultima::BST {
                 x_parent.right = y_i; // Set the parent's new child as y
             }
         };
+    }
+
+/*
+           10                                 10
+           /         Left rotate             /
+      (x) 5              on 5           (y) 7
+           \          -------->            /
+           7 (y)                     (x) 5
+*/
+
+    #[test]
+    /// Verify rotation per abridged version of diagram
+    fun left_rotate_simple()
+    MockBST {
+        // Define aliases for brevity
+        let x = NULL;
+        let c = RED; // Have to pick one
+        let eLRR = E_L_ROTATE_RELATIONSHIP;
+        // Initialize a mock BST per canonical packing syntax
+        let mock_bst = new_mock_bst();
+        mock_bst.keys.root = 0; // Put 10 as the root in index 0
+        // Define the nodes in the following positions (key, index) per
+        // the pre-rotation tree above, ignoring color
+        // (10, 0), (5, 1), (7, 2)
+        let n_10 = Node{key: 10, color: c, parent: x, left: 1, right: x};
+        let n_5  = Node{key:  5, color: c, parent: 0, left: x, right: 2};
+        let n_7  = Node{key:  7, color: c, parent: 1, left: x, right: x};
+        // Append to vector
+        Vector::push_back<Node>(&mut mock_bst.keys.nodes, n_10);
+        Vector::push_back<Node>(&mut mock_bst.keys.nodes, n_5 );
+        Vector::push_back<Node>(&mut mock_bst.keys.nodes, n_7 );
+        // Perform a left rotation on (5, 1)
+        left_rotate(1, &mut mock_bst.keys);
+        // Verify root unchanged
+        assert!(mock_bst.keys.root == 0, E_L_ROTATE_ROOT);
+        // Verify (10, 0)'s left child is now (7, 2)
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 0).left == 2, eLRR);
+        // Verify (10, 0)'s has no other relationships
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 0).right == x, eLRR);
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 0).parent == x, eLRR);
+        // Verify (7, 2) has left child (5, 1) and parent (10, 0)
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 2).left == 1, eLRR);
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 2).parent == 0, eLRR);
+        // Verify (7, 2) has no right child
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 2).right == x, eLRR);
+        // Verify (5, 1) has parent (7, 2)
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 1).parent == 2, eLRR);
+        // Verify (5, 1) has no other relationships
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 1).right == x, eLRR);
+        assert!(v_b<Node>(&mock_bst.keys.nodes, 1).left == x, eLRR);
+        // Return rather than unpack
+        mock_bst
     }
 
 // Left rotation --------------------------------------------------------------

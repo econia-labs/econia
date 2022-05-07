@@ -78,6 +78,7 @@ module Ultima::BST {
     const E_L_UNCLE_N_P_L_C: u64 = 27;
     const E_L_UNCLE_INVALID: u64 = 28;
     const E_EMPTY_NOT_NIL_MIN: u64 = 29;
+    const E_MIN_INVALID: u64 = 30;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1686,16 +1687,11 @@ module Ultima::BST {
     ) {
         // Append key-value pair as pre-cleanup red leaf
         let n_i = add_red_leaf<V>(b, k, v);
-        // Check to make sure BST didn't overflow by querying immutable
-        // reference to an element one index beyond the last element in
-        // the vector of nodes, since the max possible index value is
-        // reserved for NIL. This will abort if attempting to add too
-        // many elements which would rendering the NIL flag unusable
-
-        /*
-        //let _check = v_b<N<V>>(&b.t, n_i + 1);
-        */
-
+        // Check to make sure BST didn't overflow by adding one to the
+        // count of nodes in the nodes vector, since the max possible
+        // index value is reserved for NIL. This will trigger a u64
+        // overflow error if attempting to add more than MAX_NODES
+        let _check: u64 = count<V>(b) + 1;
         insertion_cleanup<V>(b, n_i); // Cleanup (rebalance) tree
     }
 
@@ -1736,11 +1732,12 @@ module Ultima::BST {
         insert(&mut b,  4, 0);
         insert(&mut b,  8, 0);
         insert(&mut b, 25, 0);
-        insert(&mut b,  1, 0); // <------------------ min key of 1
+        insert(&mut b,  2, 0); // <------------------ min key
         insert(&mut b, 64, 0);
         insert(&mut b, 13, 0);
         insert(&mut b, 12, 0);
         insert(&mut b, 17, 0);
+        assert!(min<u8>(&b) == 2, E_MIN_INVALID);
         b // Return rather than dropping
     }
 

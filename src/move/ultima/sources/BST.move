@@ -81,6 +81,9 @@ module Ultima::BST {
     const E_MIN_INVALID: u64 = 30;
     const E_MAX_INVALID: u64 = 31;
     const E_GET_I_ERROR: u64 = 32;
+    const E_NIL_KEY_LOOKUP: u64 = 33;
+    const E_HAS_KEY_ERROR: u64 = 34;
+    const E_KEY_ALREADY_EXISTS: u64 = 35;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1686,6 +1689,8 @@ module Ultima::BST {
         k: u64,
         v: V
     ) {
+        // Assert key is not already in BST
+        assert!(!has_key(b, k), E_KEY_ALREADY_EXISTS);
         // Append key-value pair as pre-cleanup red leaf
         let n_i = add_red_leaf<V>(b, k, v);
         // Check to make sure BST didn't overflow by adding one to the
@@ -1733,6 +1738,8 @@ module Ultima::BST {
         b: &BST<V>,
         k: u64
     ): u64 {
+        // Assert key to search is not NIL flag
+        assert!(k != NIL, E_NIL_KEY_LOOKUP);
         if (is_empty<V>(b)) return NIL; // Return NIL flag if no keys
         let s_i = b.r; // Initialize search index to root node index
         // While match not found, keep searching
@@ -1745,6 +1752,26 @@ module Ultima::BST {
             // Return NIL if no next node to search
             if (s_i == NIL) return NIL;
         }
+    }
+
+    /// Return true if BST `b` has a node with key `k`
+    public fun has_key<V>(
+        b: &BST<V>,
+        k: u64
+    ): bool {
+        // Return true if non-NIL index returned by search for key
+        get_i<V>(b, k) != NIL
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 35)]
+    /// Verify aborts for trying to insert same key twice
+    public(script) fun insert_double():
+    BST<u8> {
+        // Init singleton BST with node having (1, 2) key-value pair
+        let b = singleton<u8>(1, 2); // Init singleton
+        insert<u8>(&mut b, 1, 3); // Attempt to overwrite value for key
+        b // Return rather than unpack (or signal to compiler as much)
     }
 
     #[test]
@@ -1832,8 +1859,32 @@ module Ultima::BST {
         b // Return rather than unpack
     }
 
-// Insertion and querying <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    #[test]
+    #[expected_failure(abort_code = 33)]
+    /// Verify abort for NIL key lookup
+    fun has_key_nil():
+    BST<u8> {
+        let b = empty<u8>(); // Initialize empty BST
+        let _ = has_key<u8>(&b, NIL); // Lookup NIL key
+        b // Return rather than unpack (or signal to compiler as much)
+    }
 
-    // Update insert so cannot overwrite - quiet error?
+    #[test]
+    /// Verify successful key lookup
+    public(script) fun has_key_success():
+    BST<u8> {
+        let b = empty<u8>(); // Initialize empty BST
+        assert!(has_key<u8>(&b, 0) == false, E_HAS_KEY_ERROR);
+        insert(&mut b, 30, 0); // Add element
+        insert(&mut b, 31, 0); // Add element
+        insert(&mut b, 32, 0); // Add element
+        insert(&mut b, 33, 0); // Add element
+        insert(&mut b, 37, 0); // Add element
+        assert!(has_key<u8>(&b, 30) == true, E_HAS_KEY_ERROR);
+        assert!(has_key<u8>(&b, 35) == false, E_HAS_KEY_ERROR);
+        b // Return rather than unpack (or signal to compiler as much)
+    }
+
+// Insertion and querying <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

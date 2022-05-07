@@ -330,10 +330,10 @@ module Ultima::BST {
 
 */
 
-    /// Left rotate on the node with the given vector index
+    /// Left rotate on the node with vector index `n_i` in BST `b`
     fun l_rotate<V>(
+        b: &mut BST<V>,
         x_i: u64, // Index of node to left rotate on
-        b: &mut BST<V>
     ) {
         // Get index of x's right child (y)
         let y_i = get_r<V>(b, x_i);
@@ -415,7 +415,7 @@ module Ultima::BST {
         // Update root to index of first added node
         b.r = z_i;
         // Perform a left rotation on x
-        l_rotate<u8>(x_i, &mut b);
+        l_rotate<u8>(&mut b, x_i);
         // Verify root unchanged
         assert!(b.r == z_i, E_L_ROTATE_ROOT);
         // Verify z's l child is now y
@@ -462,7 +462,7 @@ module Ultima::BST {
         v_pu_b<N<u8>>(&mut b.t, x);
         v_pu_b<N<u8>>(&mut b.t, y);
         // Perform a left rotation on x
-        l_rotate<u8>(x_i, &mut b);
+        l_rotate<u8>(&mut b, x_i);
         // Verify root updated
         assert!(b.r == y_i, E_L_ROTATE_ROOT);
         // Verify x has parent y
@@ -485,7 +485,7 @@ module Ultima::BST {
         // Create solo node at vector index 0, having key 1 and value 2
         let b = singleton<u8>(1, 2);
         // Attempt invalid rotation about the node
-        l_rotate<u8>(0, &mut b);
+        l_rotate<u8>(&mut b, 0);
         b
     }
 
@@ -503,10 +503,10 @@ module Ultima::BST {
 
 */
 
-    /// Right rotate on the node with the given vector index
+    /// Right rotate on node with vector index `n_i` in BST `b`
     fun r_rotate<V>(
-        x_i: u64, // Index of node to right rotate on
-        b: &mut BST<V>
+        b: &mut BST<V>,
+        x_i: u64 // Index of node to right rotate on
     ) {
         // Get index of x's left child (y)
         let y_i = get_l<V>(b, x_i);
@@ -559,7 +559,7 @@ module Ultima::BST {
         // Update root to index of first added node
         b.r = z_i;
         // Perform a right rotation on x
-        r_rotate<u8>(x_i, &mut b);
+        r_rotate<u8>(&mut b, x_i);
         // Verify root unchanged
         assert!(b.r == z_i, E_R_ROTATE_ROOT);
         // Verify z's r child is now y
@@ -606,7 +606,7 @@ module Ultima::BST {
         v_pu_b<N<u8>>(&mut b.t, x);
         v_pu_b<N<u8>>(&mut b.t, y);
         // Perform a right rotation on x
-        r_rotate<u8>(x_i, &mut b);
+        r_rotate<u8>(&mut b, x_i);
         // Verify root updated
         assert!(b.r == y_i, E_R_ROTATE_ROOT);
         // Verify x has parent y
@@ -629,7 +629,7 @@ module Ultima::BST {
         // Create solo node at vector index 0, having key 1 and value 2
         let b = singleton<u8>(1, 2);
         // Attempt invalid rotation about the node
-        r_rotate<u8>(0, &mut b);
+        r_rotate<u8>(&mut b, 0);
         b
     }
 
@@ -1047,18 +1047,41 @@ module Ultima::BST {
 
 // Insertion cleanup loop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-/*
     /// Starting at node `n_i`, cleanup property violations from
     /// `add_red_leaf()``
-    fun insertion_cleanup(
+    fun insertion_cleanup<V>(
         b: &mut BST<V>,
-        n_i: u64,
+        n_i: u64
     ) {
-        while (has_red_parent<V>(b, n_i)) {
-
-        }
+        while (has_red_parent<V>(b, n_i)) { // While node has red parent
+            if (parent_is_l_child<V>(b, n_i)) { // If parent is l child
+                let r_u_i = right_uncle<V>(b, n_i); // Right uncle index
+                let p_i = get_p<V>(b, n_i); // Index of parent
+                let g_p_i = get_p<V>(b, p_i); // Grandparent index
+                if (get_c<V>(b, r_u_i) == R) { // If right uncle is red
+                    // Shift red up a level, conserving black height
+                    set_c<V>(b, p_i, B); // Set parent to black
+                    set_c<V>(b, r_u_i, B); // Set right uncle to black
+                    set_c<V>(b, g_p_i, R); // Set grandparent to red
+                    // Repeat cleanup with newly-red grandparent
+                    n_i = g_p_i;
+                } else { // If node does not have red right uncle
+                    if (get_r<V>(b, p_i) == n_i) { // If node is r child
+                        n_i = p_i; // Mark parent node for new cleanup
+                        l_rotate(b, n_i); // Left rotate on cleanup node
+                        p_i = get_p<V>(b, n_i); // Get new parent
+                        g_p_i = get_p<V>(b, p_i); // Get new grandparent
+                        // Passes onto case of node as l child
+                    }; // If node is l child
+                    set_c<V>(b, p_i, B); // Set parent color to black
+                    set_c<V>(b, g_p_i, R); // Set grandparent to red
+                    r_rotate(b, g_p_i); // Right rotate on grandparent
+                };
+            };
+        };
+        let r_i = b.r; // Index of root
+        set_c<V>(b, r_i, B); // Set root node as black
     }
-*/
 
 // Insertion cleanup loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

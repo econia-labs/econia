@@ -79,6 +79,7 @@ module Ultima::BST {
     const E_L_UNCLE_INVALID: u64 = 28;
     const E_EMPTY_NOT_NIL_MIN: u64 = 29;
     const E_MIN_INVALID: u64 = 30;
+    const E_MAX_INVALID: u64 = 31;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1710,6 +1711,21 @@ module Ultima::BST {
         get_k<V>(b, s_i) // Return key of final node from left search
     }
 
+    /// Return maximum key in BST `b`
+    public fun max<V>(
+        b: &BST<V>
+    ): u64 {
+        if (is_empty<V>(b)) return NIL; // Return NIL flag if no keys
+        let s_i = b.r; // Initialize search index to root node index
+        // While there is another right child to search for
+        loop {
+            let next = get_r<V>(b, s_i); // Index of next search node
+            if (next == NIL) break; // If no next node to search
+            s_i = next; // Update search index to next node
+        };
+        get_k<V>(b, s_i) // Return key of final node from left search
+    }
+
     #[test]
     /// Verify NIL return when searching empty BST
     fun min_empty_nil():
@@ -1738,6 +1754,28 @@ module Ultima::BST {
         insert(&mut b, 12, 0);
         insert(&mut b, 17, 0);
         assert!(min<u8>(&b) == 2, E_MIN_INVALID);
+        b // Return rather than dropping
+    }
+
+    #[test]
+    /// Verify successful reporting of max after various insertions
+    public(script) fun max_success():
+    BST<u8> {
+        // Append assorted keys out of order and verify maximum
+        let b = singleton<u8>(3, 0); // Start with singleton
+        // Ignore values, only consider keys
+        insert(&mut b, 10, 0);
+        insert(&mut b, 23, 0);
+        insert(&mut b, 99, 0); // <------------------ max key
+        insert(&mut b,  4, 0);
+        insert(&mut b,  8, 0);
+        insert(&mut b, 25, 0);
+        insert(&mut b,  2, 0);
+        insert(&mut b, 64, 0);
+        insert(&mut b, 13, 0);
+        insert(&mut b, 12, 0);
+        insert(&mut b, 17, 0);
+        assert!(max<u8>(&b) == 99, E_MAX_INVALID);
         b // Return rather than dropping
     }
 

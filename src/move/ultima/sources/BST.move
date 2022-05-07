@@ -1283,11 +1283,11 @@ module Ultima::BST {
         while (has_red_parent<V>(b, n_i)) { // While node has red parent
             // If node's parent is a left child
             if (parent_is_l_child<V>(b, n_i)) { // I
-                n_i = fix_violation_cases(b, n_i, LEFT);
-            // If node's parent has parent, then parent is r child
+                n_i = fix_violation_cases<V>(b, n_i, LEFT);
+            // If node's parent is a right child
             } else if (parent_is_r_child<V>(b, n_i)) {
                 n_i = fix_violation_cases(b, n_i, RIGHT);
-            } else { // Node's parent is root
+            } else {
                 break
             };
         };
@@ -1345,11 +1345,11 @@ module Ultima::BST {
       (z, R)  8                          (z, R) 8
 */
 
-   #[test]
-   /// Test insertion cleanup for red right uncle case, where red is
-   /// shifted up one level in the tree (after which root is blackened)
-   fun insertion_cleanup_r_uncle_shift_up_r():
-   BST<u8> {
+    #[test]
+    /// Test insertion cleanup for red right uncle case, where red is
+    /// shifted up one level in the tree (after which root is blackened)
+    fun insertion_cleanup_r_uncle_shift_up_r():
+    BST<u8> {
         // Initialize an empty BST with u8 values
         let b = empty<u8>();
         // Define nodes in the following (index, key, symbol, color)
@@ -1387,11 +1387,11 @@ module Ultima::BST {
                        \                                 \
                         16 (z, R)                         16 (z, R)
 */
-   #[test]
-   /// Test insertion cleanup for red left uncle case, where red is
-   /// shifted up one level in the tree (after which root is blackened)
-   fun insertion_cleanup_l_uncle_shift_up_r():
-   BST<u8> {
+    #[test]
+    /// Test insertion cleanup for red left uncle case, where red is
+    /// shifted up one level in the tree (after which root is blackened)
+    fun insertion_cleanup_l_uncle_shift_up_r():
+    BST<u8> {
         // Initialize an empty BST with u8 values
         let b = empty<u8>();
         // Define nodes in the following (index, key, symbol, color)
@@ -1437,12 +1437,12 @@ module Ultima::BST {
                                       15 (u, B)
 */
 
-   #[test]
-   /// Test insertion cleanup for case where node has red parent that is
-   /// left child, node does not have a red right uncle, and node is a
-   /// right child
-   fun insertion_cleanup_complex_1():
-   BST<u8> {
+    #[test]
+    /// Test insertion cleanup for case where node has red parent that is
+    /// left child, node does not have a red right uncle, and node is a
+    /// right child
+    fun insertion_cleanup_complex_1():
+    BST<u8> {
         // Initialize an empty BST with u8 values
         let b = empty<u8>();
         // Define nodes in the following (index, key, symbol, color)
@@ -1503,12 +1503,12 @@ module Ultima::BST {
                       (u, B) 10
 */
 
-   #[test]
-   /// Test insertion cleanup for case where node has red parent that is
-   /// right child, node does not have a red left uncle, and node is a
-   /// left child
-   fun insertion_cleanup_complex_2():
-   BST<u8> {
+    #[test]
+    /// Test insertion cleanup for case where node has red parent that is
+    /// right child, node does not have a red left uncle, and node is a
+    /// left child
+    fun insertion_cleanup_complex_2():
+    BST<u8> {
         // Initialize an empty BST with u8 values
         let b = empty<u8>();
         // Define nodes in the following (index, key, symbol, color)
@@ -1558,16 +1558,16 @@ module Ultima::BST {
     /// Test insertion cleanup for case where node has red parent that
     /// is neither a left nor a right child, and where node is left
     /// child to its parent
-   fun insertion_cleanup_red_root_l_c():
-   BST<u8> {
-       // Initialize empty BST with u8 values
-       let b = empty<u8>();
-       // Define nodes w/ following (index, key, symbol, color) schema:
-       // (0, 1, z, R), (1, 5, x, B), with x as l child of z, ignoring
-       // value fields
-       let (z_i, x_i) = (0, 1);
-       let z = N<u8>{k: 1, c: R, p: NIL, l: x_i, r: NIL, v: 0};
-       let x = N<u8>{k: 5, c: B, p: z_i, l: NIL, r: NIL, v: 0};
+    fun insertion_cleanup_red_root_l_c():
+    BST<u8> {
+        // Initialize empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes w/ following (index, key, symbol, color) schema:
+        // (0, 1, z, R), (1, 5, x, B), with x as l child of z, ignoring
+        // value fields
+        let (z_i, x_i) = (0, 1);
+        let z = N<u8>{k: 1, c: R, p: NIL, l: x_i, r: NIL, v: 0};
+        let x = N<u8>{k: 5, c: B, p: z_i, l: NIL, r: NIL, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, z);
         v_pu_b<N<u8>>(&mut b.t, x);
@@ -1592,16 +1592,16 @@ module Ultima::BST {
     /// Test insertion cleanup for case where node has red parent that
     /// is neither a left nor a right child, and where node is right
     /// child to its parent
-   fun insertion_cleanup_red_root_r_c():
-   BST<u8> {
-       // Initialize empty BST with u8 values
-       let b = empty<u8>();
-       // Define nodes w/ following (index, key, symbol, color) schema:
-       // (0, 1, z, R), (1, 5, x, B), with x as r child of z, ignoring
-       // value fields
-       let (z_i, x_i) = (0, 1);
-       let z = N<u8>{k: 1, c: R, p: NIL, l: NIL, r: x_i, v: 0};
-       let x = N<u8>{k: 5, c: B, p: z_i, l: NIL, r: NIL, v: 0};
+    fun insertion_cleanup_red_root_r_c():
+    BST<u8> {
+        // Initialize empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes w/ following (index, key, symbol, color) schema:
+        // (0, 1, z, R), (1, 5, x, B), with x as r child of z, ignoring
+        // value fields
+        let (z_i, x_i) = (0, 1);
+        let z = N<u8>{k: 1, c: R, p: NIL, l: NIL, r: x_i, v: 0};
+        let x = N<u8>{k: 5, c: B, p: z_i, l: NIL, r: NIL, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, z);
         v_pu_b<N<u8>>(&mut b.t, x);
@@ -1620,7 +1620,7 @@ module Ultima::BST {
         assert!(get_l<u8>(&b, x_i) == NIL, E_CLEANUP_RELATION_ERROR);
         assert!(get_r<u8>(&b, x_i) == NIL, E_CLEANUP_RELATION_ERROR);
         b // Return rather than unpack
-   }
+    }
 
 /*
             5 (w, B)
@@ -1629,21 +1629,21 @@ module Ultima::BST {
                \           left on w     (w, R) 5   9 (z, R)
          (z, R) 9           ------->
 */
-   #[test]
-   /// Test insertion cleanup for case where parent is red right child,
-   /// node is child on side same as that of parent (right), and no
-   /// red uncle
-   fun insertion_cleanup_right_p_r_r_c_simple():
-   BST<u8> {
-       // Initialize empty BST with u8 values
-       let b = empty<u8>();
-       // Define nodes w/ following (index, key, symbol, color) schema
-       // per above diagram, ignoring value fields:
-       // (0, 5, w, B), (1, 7, x, R), (2, 9, z, R)
-       let (w_i, x_i, z_i) = (0, 1, 2);
-       let w = N<u8>{k: 5, c: B, p: NIL, l: NIL, r: x_i, v: 0};
-       let x = N<u8>{k: 7, c: R, p: w_i, l: NIL, r: z_i, v: 0};
-       let z = N<u8>{k: 9, c: R, p: x_i, l: NIL, r: NIL, v: 0};
+    #[test]
+    /// Test insertion cleanup for case where parent is red right child,
+    /// node is child on side same as that of parent (right), and no
+    /// red uncle
+    fun insertion_cleanup_right_p_r_r_c_simple():
+    BST<u8> {
+        // Initialize empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes w/ following (index, key, symbol, color) schema
+        // per above diagram, ignoring value fields:
+        // (0, 5, w, B), (1, 7, x, R), (2, 9, z, R)
+        let (w_i, x_i, z_i) = (0, 1, 2);
+        let w = N<u8>{k: 5, c: B, p: NIL, l: NIL, r: x_i, v: 0};
+        let x = N<u8>{k: 7, c: R, p: w_i, l: NIL, r: z_i, v: 0};
+        let z = N<u8>{k: 9, c: R, p: x_i, l: NIL, r: NIL, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, w);
         v_pu_b<N<u8>>(&mut b.t, x);
@@ -1668,7 +1668,7 @@ module Ultima::BST {
         assert!(get_l<u8>(&b, z_i) == NIL, E_CLEANUP_RELATION_ERROR);
         assert!(get_r<u8>(&b, z_i) == NIL, E_CLEANUP_RELATION_ERROR);
         b // Return rather than unpack
-   }
+    }
 
 // Insertion cleanup loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

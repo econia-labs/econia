@@ -234,6 +234,17 @@ ultima_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 ultima_modules = SimpleNamespace(
+    AlnokiBST = SimpleNamespace(
+        name = 'AlnokiBST',
+        members = SimpleNamespace(
+            alnoki_get = 'alnoki_get',
+            alnoki_has_key = 'alnoki_has',
+            alnoki_insert = 'alnoki_insert',
+            alnoki_max = 'alnoki_max',
+            alnoki_min = 'alnoki_min',
+            alnoki_publish = 'alnoki_publish'
+        )
+    ),
     Book = SimpleNamespace(
         name = 'Book',
     ),
@@ -282,6 +293,9 @@ ultima_modules = SimpleNamespace(
 ultima_module_publish_order = [
     [
         ultima_modules.BST.name,
+    ],
+    [
+        ultima_modules.AlnokiBST.name
     ],
 ]
 """

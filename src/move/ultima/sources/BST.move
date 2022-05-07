@@ -65,6 +65,7 @@ module Ultima::BST {
     const E_RED_LEAF_R: u64 = 19;
     const E_RED_LEAF_V: u64 = 19;
     const E_RED_PARENT_INVALID: u64 = 20;
+    const E_PARENT_L_C_INVALID: u64 = 21;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -799,32 +800,35 @@ module Ultima::BST {
 
 // Red leaf insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-// Insertion cleanup >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Insertion cleanup helper functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-/*
-    /// Starting at node `n_i`, cleanup property violations from
-    /// `add_red_leaf()``
-    fun insertion_cleanup(
-        b: &mut BST<V>,
-        n_i: u64,
-    ) {
-        while ((get_p<V>(b, n_i) != NIL)
-        if (is_red<V>(b, get_p<V>(b, n_i)) != NIL) { // If
-
-        }
-    }
-
-*/
-    /// Return true if node at vector index `n_i` within BST `b`
-    /// has a red parent
+    /// Return true if node at vector index `n_i` within BST `b` has a
+    /// red parent
     fun has_red_parent<V>(
-        b: & BST<V>,
-        n_i: u64,
+        b: &BST<V>,
+        n_i: u64
     ): bool {
         let p_i = get_p<V>(b, n_i); // Index of parent
         // Short-circuit logic will not try to check parent color if no
         // parent
         (p_i != NIL && is_red<V>(b, p_i))
+    }
+
+    /// Return true if node at vector index `n_i` within BST `b` has a
+    /// a parent that is a left child
+    fun parent_is_l_child<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): bool {
+        let p_i = get_p<V>(b, n_i); // Index of parent
+        if (p_i != NIL) { // If n has a parent
+            let g_p_i = get_p<V>(b, p_i); // Index of grandparent
+            if (g_p_i != NIL) { // If n has a grandparent
+                // Return true if grandparent's l child is parent
+                if (get_l<V>(b, g_p_i) == p_i) return true
+            }
+        };
+        false
     }
 
     #[test]
@@ -870,6 +874,110 @@ module Ultima::BST {
         assert!(!has_red_parent<u8>(&b, 0), E_RED_PARENT_INVALID);
         b // Return rather than unpack
     }
-// Insertion cleanup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    #[test]
+    /// Verify return of false for root node
+    fun parent_is_l_child_root():
+    BST<u8> {
+        // Create singleton BST with key-value pair (1, 2)
+        let b = singleton<u8>(1, 2);
+        // Assert root node does not register as having parent that is
+        // left child
+        assert!(!parent_is_l_child<u8>(&b, 0), E_PARENT_L_C_INVALID);
+        b // Return rather than unpack
+    }
+
+/*
+      6 (y)
+       \
+        7 (z)
+*/
+
+    #[test]
+    /// Verify return of false for no grandparent
+    fun parent_is_l_child_no_gp():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (key, index, symbol) schema per
+        // the tree above, ignoring color and value fields:
+        // (6, 0, y), (7, 1, z)
+        let y_i = 0;
+        let z_i = 1;
+        let y = N<u8>{k: 6, c: B, p: NIL, l: NIL, r: z_i, v: 0};
+        let z = N<u8>{k: 7, c: B, p: y_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        // Assert node does not register as having parent that is left
+        // child
+        assert!(!parent_is_l_child<u8>(&b, z_i), E_PARENT_L_C_INVALID);
+        b // Return rather than unpack
+    }
+
+/*
+    5 (w)
+     \
+      6 (y)
+       \
+        7 (z)
+*/
+    #[test]
+    /// Verify return of false for parent as right child
+    fun parent_is_l_child_r():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (key, index, symbol) schema per
+        // the tree above, ignoring color and value fields:
+        // (5, 0, w), (6, 1, y), (7, 2, z)
+        let w_i = 0;
+        let y_i = 1;
+        let z_i = 2;
+        let w = N<u8>{k: 5, c: B, p: NIL, l: NIL, r: y_i, v: 0};
+        let y = N<u8>{k: 6, c: B, p: w_i, l: NIL, r: z_i, v: 0};
+        let z = N<u8>{k: 7, c: B, p: y_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, w);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        // Assert node does not register as having parent that is left
+        // child
+        assert!(!parent_is_l_child<u8>(&b, z_i), E_PARENT_L_C_INVALID);
+        b // Return rather than unpack
+    }
+
+/*
+        5 (w)
+       /
+      6 (y)
+       \
+        7 (z)
+*/
+    #[test]
+    /// Verify return of true for parent as left child
+    fun parent_is_l_child_success():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (key, index, symbol) schema per
+        // the tree above, ignoring color and value fields:
+        // (5, 0, w), (6, 1, y), (7, 2, z)
+        let w_i = 0;
+        let y_i = 1;
+        let z_i = 2;
+        let w = N<u8>{k: 5, c: B, p: NIL, l: y_i, r: NIL, v: 0};
+        let y = N<u8>{k: 6, c: B, p: w_i, l: NIL, r: z_i, v: 0};
+        let z = N<u8>{k: 7, c: B, p: y_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, w);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        // Assert node registers as having parent that is left child
+        assert!(parent_is_l_child<u8>(&b, z_i), E_PARENT_L_C_INVALID);
+        b // Return rather than unpack
+    }
+
+// Insertion cleanup helper functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

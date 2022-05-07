@@ -66,6 +66,9 @@ module Ultima::BST {
     const E_RED_LEAF_V: u64 = 19;
     const E_RED_PARENT_INVALID: u64 = 20;
     const E_PARENT_L_C_INVALID: u64 = 21;
+    const E_R_UNCLE_N_P_L_C: u64 = 22;
+    const E_R_UNCLE_INVALID: u64 = 23;
+
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -831,6 +834,20 @@ module Ultima::BST {
         false
     }
 
+    /// Return node vector index of right child of grandparent to node
+    /// `n_i` in BST `b`. Should only be called if node has parent that
+    /// is a left
+    fun right_uncle<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): u64 {
+        assert!(parent_is_l_child<V>(b, n_i), E_R_UNCLE_N_P_L_C);
+        let p_i = get_p<V>(b, n_i); // Index of parent
+        let g_p_i = get_p<V>(b, p_i); // Index of grandparent
+        // Return grandparent's right child
+        get_r<V>(b, g_p_i)
+    }
+
     #[test]
     /// Verify return of true when node has a red parent
     fun has_red_parent_true():
@@ -853,7 +870,7 @@ module Ultima::BST {
     fun has_red_parent_false():
     BST<u8> {
         // Create singleton BST with key-value pair (1, 2)
-        let b = singleton<u8>(1, 2);
+        let b = singleton<u8>(1, 2); // Color defaults to black
         // Set r child as next node
         set_l<u8>(&mut b, 0, 1);
         // Append red leaf node with first node as parent
@@ -922,6 +939,7 @@ module Ultima::BST {
        \
         7 (z)
 */
+
     #[test]
     /// Verify return of false for parent as right child
     fun parent_is_l_child_r():
@@ -978,6 +996,70 @@ module Ultima::BST {
         b // Return rather than unpack
     }
 
+/*
+            5 (w)
+           / \
+      (y) 3   7 (x)
+         /
+    (z) 2
+*/
+    #[test]
+    /// Verify right uncle returned correctly
+    fun right_uncle_success():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (key, index, symbol) schema per
+        // the tree above, ignoring color and value fields:
+        // (5, 0, w), (3, 1, y), (7, 2, x), (2, 3, z)
+        let w_i = 0;
+        let y_i = 1;
+        let x_i = 2;
+        let z_i = 3;
+        let w = N<u8>{k: 5, c: B, p: NIL, l: y_i, r: x_i, v: 0};
+        let y = N<u8>{k: 3, c: B, p: w_i, l: z_i, r: NIL, v: 0};
+        let x = N<u8>{k: 7, c: B, p: w_i, l: NIL, r: NIL, v: 0};
+        let z = N<u8>{k: 2, c: B, p: y_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, w);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, x);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        // Assert z's right uncle is returned as index of x
+        assert!(right_uncle<u8>(&b, z_i) == x_i, E_R_UNCLE_INVALID);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 22)]
+    /// Verify right uncle check fails if node does does not have parent
+    /// that is a left child
+    fun right_uncle_p_n_l_c():
+    BST<u8> {
+        // Initialize a BST singleton with key value pair (1, 2)
+        let b = singleton<u8>(1, 2);
+        // Query the right uncle of the resultant root node
+        right_uncle<u8>(&b, 0);
+        b // Return rather than unpack (or signal to compiler as much)
+    }
+
 // Insertion cleanup helper functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// Insertion cleanup loop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+/*
+    /// Starting at node `n_i`, cleanup property violations from
+    /// `add_red_leaf()``
+    fun insertion_cleanup(
+        b: &mut BST<V>,
+        n_i: u64,
+    ) {
+        while (has_red_parent<V>(b, n_i)) {
+
+        }
+    }
+*/
+
+// Insertion cleanup loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

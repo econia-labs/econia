@@ -1284,11 +1284,13 @@ module Ultima::BST {
             // If node's parent is a left child
             if (parent_is_l_child<V>(b, n_i)) { // I
                 n_i = fix_violation_cases<V>(b, n_i, LEFT);
-            // If node's parent is a right child
-            } else if (parent_is_r_child<V>(b, n_i)) {
-                n_i = fix_violation_cases<V>(b, n_i, RIGHT);
+            // If node's parent is neither a left child nor a right
+            // child, can be flagged as being a right child, since
+            // mutation logic in `fix_violation_cases()` will not
+            // execute in this case. Hence, if node's parent is not a
+            // left child, simply flag as being a right child
             } else {
-                break
+                n_i = fix_violation_cases<V>(b, n_i, RIGHT);
             };
         };
         let r_i = b.r; // Index of root

@@ -185,6 +185,67 @@ module Ultima::BST {
 
 // Destruction <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+// Helper functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return vector index of parent to node at index `n_i`, within
+    /// BST `b``
+    fun get_p<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): u64 {
+        v_b<N<V>>(&b.t, n_i).p
+    }
+
+    /// Return vector index of left child to node at index `n_i`, within
+    /// BST `b`
+    fun get_l<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): u64 {
+        v_b<N<V>>(&b.t, n_i).l
+    }
+
+    /// Return vector index of right child to node at index `n_i`,
+    /// within BST `b`
+    fun get_r<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): u64 {
+        v_b<N<V>>(&b.t, n_i).r
+    }
+
+    /// Set node at index `n_i` to have parent at index `p_i`, within
+    /// BST `b`
+    fun set_p<V>(
+        b: &mut BST<V>,
+        n_i: u64,
+        p_i: u64
+    ) {
+        v_b_m<N<V>>(&mut b.t, n_i).p = p_i;
+    }
+
+    /// Set node at index `n_i` to have left child at index `l_i`,
+    /// within BST `b`
+    fun set_l<V>(
+        b: &mut BST<V>,
+        n_i: u64,
+        l_i: u64
+    ) {
+        v_b_m<N<V>>(&mut b.t, n_i).l = l_i;
+    }
+
+    /// Set node at index `n_i` to have right child at index `l_i`,
+    /// within BST `b`
+    fun set_r<V>(
+        b: &mut BST<V>,
+        n_i: u64,
+        r_i: u64
+    ) {
+        v_b_m<N<V>>(&mut b.t, n_i).r = r_i;
+    }
+
+// Helper functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 /* Left rotation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
      (z) 10                            (z) 10

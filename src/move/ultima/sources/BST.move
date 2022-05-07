@@ -1719,14 +1719,14 @@ module Ultima::BST {
     }
 
     /// Return minimum key in BST `b`
-    public fun min<V>(
+    public(script) fun min<V>(
         b: &BST<V>
     ): u64 {
         limit<V>(b, LEFT)
     }
 
     /// Return maximum key in BST `b`
-    public fun max<V>(
+    public(script) fun max<V>(
         b: &BST<V>
     ): u64 {
         limit<V>(b, RIGHT)
@@ -1734,7 +1734,7 @@ module Ultima::BST {
 
     /// Return node vector index of key `k`, if is in BST `b`, otherwise
     /// return NIL
-    public fun get_i<V>(
+    fun get_i<V>(
         b: &BST<V>,
         k: u64
     ): u64 {
@@ -1755,7 +1755,7 @@ module Ultima::BST {
     }
 
     /// Return true if BST `b` has a node with key `k`
-    public fun has_key<V>(
+    public(script) fun has_key<V>(
         b: &BST<V>,
         k: u64
     ): bool {
@@ -1776,7 +1776,7 @@ module Ultima::BST {
 
     #[test]
     /// Verify NIL return when searching empty BST
-    fun min_empty_nil():
+    public(script) fun min_empty_nil():
     BST<u8> {
         let b = empty<u8>();
         assert!(min<u8>(&b) == NIL, E_EMPTY_NOT_NIL_MIN);
@@ -1862,7 +1862,7 @@ module Ultima::BST {
     #[test]
     #[expected_failure(abort_code = 33)]
     /// Verify abort for NIL key lookup
-    fun has_key_nil():
+    public(script) fun has_key_nil():
     BST<u8> {
         let b = empty<u8>(); // Initialize empty BST
         let _ = has_key<u8>(&b, NIL); // Lookup NIL key

@@ -1286,7 +1286,7 @@ module Ultima::BST {
                 n_i = fix_violation_cases<V>(b, n_i, LEFT);
             // If node's parent is a right child
             } else if (parent_is_r_child<V>(b, n_i)) {
-                n_i = fix_violation_cases(b, n_i, RIGHT);
+                n_i = fix_violation_cases<V>(b, n_i, RIGHT);
             } else {
                 break
             };

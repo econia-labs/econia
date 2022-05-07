@@ -68,6 +68,7 @@ module Ultima::BST {
     const E_PARENT_L_C_INVALID: u64 = 21;
     const E_R_UNCLE_N_P_L_C: u64 = 22;
     const E_R_UNCLE_INVALID: u64 = 23;
+    const E_CLEANUP_COLOR_INVALID: u64 = 24;
 
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1077,11 +1078,54 @@ module Ultima::BST {
                     set_c<V>(b, g_p_i, R); // Set grandparent to red
                     r_rotate(b, g_p_i); // Right rotate on grandparent
                 };
-            };
+            }; // Can do an else since already said has parent
         };
         let r_i = b.r; // Index of root
-        set_c<V>(b, r_i, B); // Set root node as black
+        set_c<V>(b, r_i, B); // Set root node to be black
     }
+
+/*
+                  12 (g, B)                         12 (g, B)
+                 /  \           Cleanup            /  \
+        (p, R) 10    15 (u, R)  ------>   (p, B) 10    15 (u, B)
+               /                                 /
+      (z, R)  8                          (z, R) 8
+*/
+
+   #[test]
+   /// Test insertion cleanup per case in diagram
+   fun insertion_cleanup_r_uncle_shift_up_r():
+   BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (index, key, symbol, color)
+        // schema per the above tree:, ignoring value fields
+        // (0, 12, g, B), (1, 10, p, R), (2, 8, z, R), (3, 15, u, R)
+        let g_i = 0;
+        let p_i = 1;
+        let z_i = 2;
+        let u_i = 3;
+        let g = N<u8>{k: 12, c: B, p: NIL, l: p_i, r: u_i, v: 0};
+        let p = N<u8>{k: 10, c: R, p: g_i, l: z_i, r: NIL, v: 0};
+        let z = N<u8>{k:  8, c: R, p: p_i, l: NIL, r: NIL, v: 0};
+        let u = N<u8>{k: 15, c: R, p: g_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, g);
+        v_pu_b<N<u8>>(&mut b.t, p);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        v_pu_b<N<u8>>(&mut b.t, u);
+        // Update root node to be node g
+        b.r = g_i;
+        // Run post-insertion cleanup starting at z
+        insertion_cleanup<u8>(&mut b, z_i);
+        // Assert post-shift colors for each node
+        assert!(get_c<u8>(&b, g_i) == B, E_CLEANUP_COLOR_INVALID);
+        assert!(get_c<u8>(&b, p_i) == B, E_CLEANUP_COLOR_INVALID);
+        assert!(get_c<u8>(&b, z_i) == R, E_CLEANUP_COLOR_INVALID);
+        assert!(get_c<u8>(&b, u_i) == B, E_CLEANUP_COLOR_INVALID);
+        b // Return rather than unpack
+   }
+
 
 // Insertion cleanup loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

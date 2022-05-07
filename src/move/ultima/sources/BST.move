@@ -1259,8 +1259,31 @@ module Ultima::BST {
                     set_c<V>(b, g_p_i, R); // Set grandparent to red
                     r_rotate(b, g_p_i); // Right rotate on grandparent
                 };
-            } else { // If red parent is a right child
-                1; // Included for checking coverage spec
+            // If cleanup node's red parent is a right child
+            } else if (parent_is_r_child<V>(b, n_i)) {
+                let l_u_i = left_uncle<V>(b, n_i); // Left uncle index
+                let p_i = get_p<V>(b, n_i); // Index of parent
+                let g_p_i = get_p<V>(b, p_i); // Grandparent index
+                if (get_c<V>(b, l_u_i) == R) { // If left uncle is red
+                    // Shift red up a level, conserving black height
+                    set_c<V>(b, p_i, B); // Set parent to black
+                    set_c<V>(b, l_u_i, B); // Set left uncle to black
+                    set_c<V>(b, g_p_i, R); // Set grandparent to red
+                    // Repeat cleanup with newly-red grandparent
+                    n_i = g_p_i;
+                } else { // If node does not have red left uncle
+                    if (get_l<V>(b, p_i) == n_i) { // If node is l child
+                        n_i = p_i; // Mark parent node for new cleanup
+                        // Right rotate on cleanup node
+                        r_rotate(b, n_i);
+                        p_i = get_p<V>(b, n_i); // Get new parent
+                        g_p_i = get_p<V>(b, p_i); // Get new grandparent
+                        // Passes onto case of node as r child
+                    }; // If node is r child
+                    set_c<V>(b, p_i, B); // Set parent color to black
+                    set_c<V>(b, g_p_i, R); // Set grandparent to red
+                    l_rotate(b, g_p_i); // Left rotate on grandparent
+                };
             };
         };
         let r_i = b.r; // Index of root

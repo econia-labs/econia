@@ -30,9 +30,9 @@ module Ultima::BST {
     /// Flag to indicate that there is no connected node for the given
     /// relationship field (`parent`, `left`, or `right`), analagous to
     /// a null pointer
-    const X: u64 = 0xffffffffffffffff;
+    const NIL: u64 = 0xffffffffffffffff;
     /// Maximum number of nodes that can be kept in the tree, equivalent
-    /// to `X` - 1
+    /// to `NIL` - 1
     const MAX_NODES: u64 = 0xfffffffffffffffe;
     /// Flag for black node
     const B: bool = true;
@@ -108,29 +108,29 @@ module Ultima::BST {
     ):
     BST<V> {
         // Initialize first node to black, without parent or children
-        BST{r: 0, t: v_s<N<V>>(N<V>{k, c: B, p: X, l: X, r: X, v})}
+        BST{r: 0, t: v_s<N<V>>(N<V>{k, c: B, p: NIL, l: NIL, r: NIL, v})}
     }
 
     #[test]
     /// Verify singleton initialized with correct values
     fun singleton_success():
-    vector<N<u64>> {
+    vector<N<u8>> {
         // Initialize singleton BST with key 1 and value 2
-        let s = singleton<u64>(1, 2);
+        let s = singleton<u8>(1, 2);
         // Assert singleton has length 1
-        assert!(length<u64>(&s) == 1, E_SINGLETON_NOT_EMPTY);
+        assert!(length<u8>(&s) == 1, E_SINGLETON_NOT_EMPTY);
         // Unpack the BST root value and nodes vector
         let BST{r, t} = s;
         // Assert index of root node is 0
         assert!(r == 0, E_SINGLETON_R_VAL);
         // Pop and unpack last node from the tree's vector of nodes
-        let N{k, c, p, l, r, v} = v_po_b<N<u64>>(&mut t);
+        let N{k, c, p, l, r, v} = v_po_b<N<u8>>(&mut t);
         // Assert values in the node are as expected
         assert!(k == 1, E_SINGLETON_N_VAL);
         assert!(c == B, E_SINGLETON_N_VAL);
-        assert!(p == X, E_SINGLETON_N_VAL);
-        assert!(l == X, E_SINGLETON_N_VAL);
-        assert!(r == X, E_SINGLETON_N_VAL);
+        assert!(p == NIL, E_SINGLETON_N_VAL);
+        assert!(l == NIL, E_SINGLETON_N_VAL);
+        assert!(r == NIL, E_SINGLETON_N_VAL);
         assert!(v == 2, E_SINGLETON_N_VAL);
         // Return tree's vector of nodes rather than unpack
         t
@@ -214,8 +214,17 @@ module Ultima::BST {
         v_b<N<V>>(&b.t, n_i).r
     }
 
-    /// Set node at index `n_i` to have parent at index `p_i`, within
-    /// BST `b`
+    /// Return mutable reference to node at vector index `n_i` in BST
+    /// `b`
+    fun get_m<V>(
+        b: &mut BST<V>,
+        n_i: u64
+    ): &mut N<V> {
+        v_b_m<N<V>>(&mut b.t, n_i)
+    }
+
+    /// Set node at vector index `n_i` to have parent at index `p_i`,
+    /// within BST `b`
     fun set_p<V>(
         b: &mut BST<V>,
         n_i: u64,
@@ -224,8 +233,8 @@ module Ultima::BST {
         v_b_m<N<V>>(&mut b.t, n_i).p = p_i;
     }
 
-    /// Set node at index `n_i` to have left child at index `l_i`,
-    /// within BST `b`
+    /// Set node at vector index `n_i` to have left child at index
+    /// `l_i`, within BST `b`
     fun set_l<V>(
         b: &mut BST<V>,
         n_i: u64,
@@ -234,8 +243,8 @@ module Ultima::BST {
         v_b_m<N<V>>(&mut b.t, n_i).l = l_i;
     }
 
-    /// Set node at index `n_i` to have right child at index `l_i`,
-    /// within BST `b`
+    /// Set node at vector index `n_i` to have right child at index
+    /// `l_i`, within BST `b`
     fun set_r<V>(
         b: &mut BST<V>,
         n_i: u64,
@@ -264,21 +273,21 @@ module Ultima::BST {
         b: &mut BST<V>
     ) {
         // Get index of x's right child (y)
-        let y_i = v_b<N<V>>(&b.t, x_i).r;
+        let y_i = get_r<V>(b, x_i);
         // Assert x actually has a right child
-        assert!(y_i != X, E_L_ROTATE_NO_R_CHILD);
+        assert!(y_i != NIL, E_L_ROTATE_NO_R_CHILD);
         // Get index of y's left child (w)
-        let w_i = v_b<N<V>>(&b.t, y_i).l;
+        let w_i = get_l<V>(b, y_i);
         // Set x's right child as w
-        v_b_m<N<V>>(&mut b.t, x_i).r = w_i;
-        if (w_i != X) { // If y has a left child (if w is not null)
+        set_r<V>(b, x_i, w_i);
+        if (w_i != NIL) { // If y has a left child (if w is not null)
             // Set w's parent to be x
-            v_b_m<N<V>>(&mut b.t, w_i).p = x_i;
+            set_p<V>(b, w_i, x_i);
         };
         // Swap the parent relationship between x and z to y
         parent_child_swap(x_i, y_i, b);
         // Set y's left child as x
-        v_b_m<N<V>>(&mut b.t, y_i).l = x_i;
+        set_l<V>(b, y_i, x_i);
     }
 
     /// Replace the bidirectional relationship between `x` and its
@@ -290,14 +299,14 @@ module Ultima::BST {
         b: &mut BST<V>
     ) {
         // Get index of x's parent (z)
-        let z_i = v_b<N<V>>(&b.t, x_i).p;
+        let z_i = get_p<V>(b, x_i);
         // Set y's parent as z
-        v_b_m<N<V>>(&mut b.t, y_i).p = z_i;
-        if (z_i == X) { // If x is the root node
+        set_p<V>(b, y_i, z_i);
+        if (z_i == NIL) { // If x is the root node
             b.r = y_i; // Set y as the new root node
         } else { // If x is not the root node
             // Get mutable reference to z
-            let z = v_b_m<N<V>>(&mut b.t, z_i);
+            let z = get_m<V>(b, z_i);
             if (z.l == x_i) { // If x is a left child
                 z.l = y_i; // Set z's new left child as y
             } else { // If x is a right child
@@ -305,7 +314,7 @@ module Ultima::BST {
             }
         };
         // Set x's parent as y
-        v_b_m<N<V>>(&mut b.t, x_i).p = y_i;
+        set_p<V>(b, x_i, y_i);
     }
 
 /*
@@ -331,10 +340,10 @@ module Ultima::BST {
         let x_i = 1;
         let y_i = 2;
         let w_i = 3;
-        let z = N<u8>{k: 10, c: B, p:   X, l: x_i, r:   X, v: 0};
-        let x = N<u8>{k:  5, c: B, p: z_i, l:   X, r: y_i, v: 0};
-        let y = N<u8>{k:  7, c: B, p: x_i, l: w_i, r:   X, v: 0};
-        let w = N<u8>{k:  6, c: B, p: y_i, l:   X, r:   X, v: 0};
+        let z = N<u8>{k: 10, c: B, p: NIL, l: x_i, r: NIL, v: 0};
+        let x = N<u8>{k:  5, c: B, p: z_i, l: NIL, r: y_i, v: 0};
+        let y = N<u8>{k:  7, c: B, p: x_i, l: w_i, r: NIL, v: 0};
+        let w = N<u8>{k:  6, c: B, p: y_i, l: NIL, r: NIL, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, z);
         v_pu_b<N<u8>>(&mut b.t, x);
@@ -345,25 +354,25 @@ module Ultima::BST {
         // Verify root unchanged
         assert!(b.r == z_i, E_L_ROTATE_ROOT);
         // Verify z's l child is now y
-        assert!(v_b<N<u8>>(&b.t, z_i).l == y_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, z_i) == y_i, E_L_ROTATE_RELATIONSHIP);
         // Verify z has no other relationships
-        assert!(v_b<N<u8>>(&b.t, z_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, z_i).p ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, z_i) == NIL, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, z_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         // Verify y has l child x and parent z
-        assert!(v_b<N<u8>>(&b.t, y_i).l == x_i, E_L_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, y_i).p == z_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, y_i) == x_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, y_i) == z_i, E_L_ROTATE_RELATIONSHIP);
         // Verify y has no r child
-        assert!(v_b<N<u8>>(&b.t, y_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, y_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         // Verify x has parent y and r child w
-        assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_L_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, x_i).r == w_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, x_i) == y_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, x_i) == w_i, E_L_ROTATE_RELATIONSHIP);
         // Verify x has no other relationships
-        assert!(v_b<N<u8>>(&b.t, x_i).l ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, x_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         // Verify w has parent x
-        assert!(v_b<N<u8>>(&b.t, w_i).p == x_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, w_i) == x_i, E_L_ROTATE_RELATIONSHIP);
         // Verify w has no other relationships
-        assert!(v_b<N<u8>>(&b.t, w_i).l ==   X, E_L_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, w_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, w_i) == NIL, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, w_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         // Return rather than unpack
         b
     }
@@ -383,8 +392,8 @@ module Ultima::BST {
         // Define nodes, ignoring color and value fields
         let x_i = 0;
         let y_i = 1;
-        let x = N<u8>{k:  5, c: B, p:   X, l:   X, r: y_i, v: 0};
-        let y = N<u8>{k:  7, c: B, p: x_i, l:   X, r:   X, v: 0};
+        let x = N<u8>{k: 5, c: B, p: NIL, l: NIL, r: y_i, v: 0};
+        let y = N<u8>{k: 7, c: B, p: x_i, l: NIL, r: NIL, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, x);
         v_pu_b<N<u8>>(&mut b.t, y);
@@ -393,15 +402,15 @@ module Ultima::BST {
         // Verify root updated
         assert!(b.r == y_i, E_L_ROTATE_ROOT);
         // Verify x has parent y
-        assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, x_i) == y_i, E_L_ROTATE_RELATIONSHIP);
         // Verify x has no other relationships
-        assert!(v_b<N<u8>>(&b.t, x_i).l ==   X, E_L_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, x_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, x_i) == NIL, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, x_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         // Verify y has l child x
-        assert!(v_b<N<u8>>(&b.t, y_i).l == x_i, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, y_i) == x_i, E_L_ROTATE_RELATIONSHIP);
         // Verify y has no other relationships
-        assert!(v_b<N<u8>>(&b.t, y_i).p ==   X, E_L_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, y_i).r ==   X, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, y_i) == NIL, E_L_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, y_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         // Return rather than unpack
         b
     }
@@ -438,21 +447,21 @@ module Ultima::BST {
         b: &mut BST<V>
     ) {
         // Get index of x's left child (y)
-        let y_i = v_b<N<V>>(&b.t, x_i).l;
+        let y_i = get_l<V>(b, x_i);
         // Assert x actually has a left child
-        assert!(y_i != X, E_R_ROTATE_NO_L_CHILD);
+        assert!(y_i != NIL, E_R_ROTATE_NO_L_CHILD);
         // Get index of y's right child (w)
-        let w_i = v_b<N<V>>(&b.t, y_i).r;
+        let w_i = get_r<V>(b, y_i);
         // Set x's left child as w
-        v_b_m<N<V>>(&mut b.t, x_i).l = w_i;
-        if (w_i != X) { // If y has a right child (if w is not null)
+        set_l<V>(b, x_i, w_i);
+        if (w_i != NIL) { // If y has a right child (if w is not null)
             // Set w's parent to be x
-            v_b_m<N<V>>(&mut b.t, w_i).p = x_i;
+            set_p<V>(b, w_i, x_i);
         };
         // Swap the parent relationship between x and its parent to y
         parent_child_swap(x_i, y_i, b);
         // Set y's right child as x
-        v_b_m<N<V>>(&mut b.t, y_i).r = x_i;
+        set_r<V>(b, y_i, x_i);
     }
 
 /*
@@ -476,10 +485,10 @@ module Ultima::BST {
         let x_i = 1;
         let y_i = 2;
         let w_i = 3;
-        let z = N<u8>{k: 5, c: B, p:   X, l:   X, r: x_i, v: 0};
-        let x = N<u8>{k: 9, c: B, p: z_i, l: y_i, r:   X, v: 0};
-        let y = N<u8>{k: 7, c: B, p: x_i, l:   X, r: w_i, v: 0};
-        let w = N<u8>{k: 8, c: B, p: y_i, l:   X, r:   X, v: 0};
+        let z = N<u8>{k: 5, c: B, p: NIL, l: NIL, r: x_i, v: 0};
+        let x = N<u8>{k: 9, c: B, p: z_i, l: y_i, r: NIL, v: 0};
+        let y = N<u8>{k: 7, c: B, p: x_i, l: NIL, r: w_i, v: 0};
+        let w = N<u8>{k: 8, c: B, p: y_i, l: NIL, r: NIL, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, z);
         v_pu_b<N<u8>>(&mut b.t, x);
@@ -490,25 +499,25 @@ module Ultima::BST {
         // Verify root unchanged
         assert!(b.r == z_i, E_R_ROTATE_ROOT);
         // Verify z's r child is now y
-        assert!(v_b<N<u8>>(&b.t, z_i).r == y_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, z_i) == y_i, E_R_ROTATE_RELATIONSHIP);
         // Verify z has no other relationships
-        assert!(v_b<N<u8>>(&b.t, z_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, z_i).p ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, z_i) == NIL, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, z_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         // Verify y has r child x and parent z
-        assert!(v_b<N<u8>>(&b.t, y_i).r == x_i, E_R_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, y_i).p == z_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, y_i) == x_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, y_i) == z_i, E_R_ROTATE_RELATIONSHIP);
         // Verify y has no left child
-        assert!(v_b<N<u8>>(&b.t, y_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, y_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         // Verify x has parent y and l child w
-        assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_R_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, x_i).l == w_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, x_i) == y_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, x_i) == w_i, E_R_ROTATE_RELATIONSHIP);
         // Verify x has no other relationships
-        assert!(v_b<N<u8>>(&b.t, x_i).r ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, x_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         // Verify w has parent x
-        assert!(v_b<N<u8>>(&b.t, w_i).p == x_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, w_i) == x_i, E_R_ROTATE_RELATIONSHIP);
         // Verify w has no other relationships
-        assert!(v_b<N<u8>>(&b.t, w_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, w_i).r ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, w_i) == NIL, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, w_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         // Return rather than unpack
         b
     }
@@ -528,8 +537,8 @@ module Ultima::BST {
         // Define nodes, ignoring color and value fields
         let x_i = 0;
         let y_i = 1;
-        let x = N<u8>{k:  7, c: B, p:   X, l: y_i, r:   X, v: 0};
-        let y = N<u8>{k:  5, c: B, p: x_i, l:   X, r:   X, v: 0};
+        let x = N<u8>{k:  7, c: B, p: NIL, l: y_i, r: NIL, v: 0};
+        let y = N<u8>{k:  5, c: B, p: x_i, l: NIL, r: NIL, v: 0};
         // Append nodes to the BST's tree node vector t
         v_pu_b<N<u8>>(&mut b.t, x);
         v_pu_b<N<u8>>(&mut b.t, y);
@@ -538,15 +547,15 @@ module Ultima::BST {
         // Verify root updated
         assert!(b.r == y_i, E_R_ROTATE_ROOT);
         // Verify x has parent y
-        assert!(v_b<N<u8>>(&b.t, x_i).p == y_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, x_i) == y_i, E_R_ROTATE_RELATIONSHIP);
         // Verify x has no other relationships
-        assert!(v_b<N<u8>>(&b.t, x_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, x_i).r ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, x_i) == NIL, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, x_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         // Verify y has r child x
-        assert!(v_b<N<u8>>(&b.t, y_i).r == x_i, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_r<u8>(&b, y_i) == x_i, E_R_ROTATE_RELATIONSHIP);
         // Verify y has no other relationships
-        assert!(v_b<N<u8>>(&b.t, y_i).l ==   X, E_R_ROTATE_RELATIONSHIP);
-        assert!(v_b<N<u8>>(&b.t, y_i).p ==   X, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_l<u8>(&b, y_i) == NIL, E_R_ROTATE_RELATIONSHIP);
+        assert!(get_p<u8>(&b, y_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         // Return rather than unpack
         b
     }

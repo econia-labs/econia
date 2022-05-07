@@ -77,6 +77,7 @@ module Ultima::BST {
     const E_PARENT_R_C_INVALID: u64 = 26;
     const E_L_UNCLE_N_P_L_C: u64 = 27;
     const E_L_UNCLE_INVALID: u64 = 28;
+    const E_EMPTY_NOT_NIL_MIN: u64 = 29;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -645,12 +646,13 @@ module Ultima::BST {
 
 // Red leaf insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Insert key `k` and value `v` into BST `b` as a read leaf
+    /// Insert key `k` and value `v` into BST `b` as a read leaf,
+    /// returning vector index of inserted node
     fun add_red_leaf<V>(
         b: &mut BST<V>,
         k: u64,
         v: V
-    ) {
+    ): u64 {
         // Index of node that would have as a leaf a node with key `k`
         let p_i = search_parent_index<V>(b, k);
         // Set index of insertion node to length of nodes vector, since
@@ -674,6 +676,7 @@ module Ultima::BST {
         };
         // Append red leaf to tree's nodes vector
         v_pu_b<N<V>>(&mut b.t, N<V>{k, c: R, p: p_i, l: NIL, r: NIL, v});
+        n_i
     }
 
     /// Search nodes from root of BST `b`, returning index of parent
@@ -704,7 +707,8 @@ module Ultima::BST {
     fun add_red_leaf_root():
     BST<u8> {
         let b = empty<u8>(); // Initialize empty BST
-        add_red_leaf<u8>(&mut b, 2, 3); // Add node w/ key 2, value 3
+        // Add node w/ key 2, value 3
+        let _ = add_red_leaf<u8>(&mut b, 2, 3);
         let n_i = 0; // Assume node index of 0
         // Assert BST has a count of 1
         assert!(count<u8>(&b) == 1, E_RED_LEAF_LENGTH);
@@ -731,7 +735,7 @@ module Ultima::BST {
         // Create BST with single key-value pair of (1, 2)
         let b = singleton<u8>(1, 2);
         // Try to add a red leaf with key 1
-        add_red_leaf<u8>(&mut b, 1, 3);
+        let _ = add_red_leaf<u8>(&mut b, 1, 3);
         b // Return rather than unpack (or signal to compiler as much)
     }
 
@@ -742,7 +746,7 @@ module Ultima::BST {
         // Create BST with single key-value pair of (2, 3)
         let b = singleton<u8>(2, 3);
         // Add a red leaf with key-value pair (1, 4)
-        add_red_leaf<u8>(&mut b, 1, 4);
+        let _ = add_red_leaf<u8>(&mut b, 1, 4);
         // Assert BST has a count of 2
         assert!(count<u8>(&b) == 2, E_RED_LEAF_LENGTH);
         // Assert BST root set to proper node index
@@ -771,7 +775,7 @@ module Ultima::BST {
         // Create BST with single key-value pair of (2, 3)
         let b = singleton<u8>(2, 3);
         // Add a red leaf with key-value pair (4, 5)
-        add_red_leaf<u8>(&mut b, 4, 5);
+        let _ = add_red_leaf<u8>(&mut b, 4, 5);
         // Assert BST has a count of 2
         assert!(count<u8>(&b) == 2, E_RED_LEAF_LENGTH);
         // Assert BST root set to proper node index
@@ -803,11 +807,9 @@ module Ultima::BST {
         let n = N<u8>{k:1, c: B, p: NIL, l: NIL, r: NIL, v: 0};
         v_pu_b<N<u8>>(&mut b.t, n);
         // Try to add red leaf
-        add_red_leaf<u8>(&mut b, 1, 2);
+        let _ = add_red_leaf<u8>(&mut b, 1, 2);
         b // Return rather than unpack (or signal to compiler as much)
     }
-
-
 
 // Red leaf insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1673,5 +1675,75 @@ module Ultima::BST {
     }
 
 // Insertion cleanup loop <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// Insertion and querying >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Insert key-value pair with key `k` and value `v` into BST `b`
+    public(script) fun insert<V>(
+        b: &mut BST<V>,
+        k: u64,
+        v: V
+    ) {
+        // Append key-value pair as pre-cleanup red leaf
+        let n_i = add_red_leaf<V>(b, k, v);
+        // Check to make sure BST didn't overflow by querying immutable
+        // reference to an element one index beyond the last element in
+        // the vector of nodes, since the max possible index value is
+        // reserved for NIL. This will abort if attempting to add too
+        // many elements which would rendering the NIL flag unusable
+
+        /*
+        //let _check = v_b<N<V>>(&b.t, n_i + 1);
+        */
+
+        insertion_cleanup<V>(b, n_i); // Cleanup (rebalance) tree
+    }
+
+    /// Return minimum key in BST `b`
+    public fun min<V>(
+        b: &BST<V>
+    ): u64 {
+        if (is_empty<V>(b)) return NIL; // Return NIL flag if no keys
+        let s_i = b.r; // Initialize search index to root node index
+        // While there is another left child to search for
+        loop {
+            let next = get_l<V>(b, s_i); // Index of next search node
+            if (next == NIL) break; // If no next node to search
+            s_i = next; // Update search index to next node
+        };
+        get_k<V>(b, s_i) // Return key of final node from left search
+    }
+
+    #[test]
+    /// Verify NIL return when searching empty BST
+    fun min_empty_nil():
+    BST<u8> {
+        let b = empty<u8>();
+        assert!(min<u8>(&b) == NIL, E_EMPTY_NOT_NIL_MIN);
+        b // Return rather than dropping
+    }
+
+    #[test]
+    /// Verify successful reporting of min after various insertions
+    public(script) fun min_success():
+    BST<u8> {
+        // Append assorted keys out of order and verify minimum
+        let b = singleton<u8>(3, 0); // Start with singleton
+        // Ignore values, only consider keys
+        insert(&mut b, 10, 0);
+        insert(&mut b, 23, 0);
+        insert(&mut b, 99, 0);
+        insert(&mut b,  4, 0);
+        insert(&mut b,  8, 0);
+        insert(&mut b, 25, 0);
+        insert(&mut b,  1, 0); // <------------------ min key of 1
+        insert(&mut b, 64, 0);
+        insert(&mut b, 13, 0);
+        insert(&mut b, 12, 0);
+        insert(&mut b, 17, 0);
+        b // Return rather than dropping
+    }
+
+// Insertion and querying <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

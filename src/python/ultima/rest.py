@@ -1438,3 +1438,43 @@ class UltimaClient(Client):
             [ultima.address(), ums.User.name, trigger],
             [addr, str(id), apt, usd]
         )
+
+class AlnokiClient(UltimaClient):
+
+    def alnoki_publish(
+        self,
+        user: Account, # User publishing resource
+        ultima: str # Smart contract address
+    ):
+        """Publish AlnokiBST resource to account"""
+        tx_hash = self.run_script(
+            user,
+            [ultima, ums.AlnokiBST.name, 'alnoki_publish'],
+            []
+        )
+        self.tx_vn_url_print(tx_hash)
+
+    def bst_data(
+        self,
+        addr: str,
+    ):
+        """Get the data in the AlnokiBST resource"""
+        resources =  self.account_resources(addr)
+        for resource in resources:
+            if 'AlnokiBST' in resource['type']:
+                return resource['data']['bst']
+
+    def alnoki_insert(
+        self,
+        user: Account, # User modifying resource
+        ultima: str, # Smart contract address
+        k: int,
+        v: int,
+    ):
+        tx_hash = self.run_script(
+            user,
+            [ultima, ums.AlnokiBST.name, 'alnoki_insert'],
+            [str(k), str(v)]
+        )
+        self.tx_vn_url_print(tx_hash)
+

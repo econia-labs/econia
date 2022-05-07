@@ -70,7 +70,7 @@ module Ultima::BST {
     const E_R_UNCLE_INVALID: u64 = 23;
     const E_CLEANUP_COLOR_INVALID: u64 = 24;
     const E_CLEANUP_RELATION_ERROR: u64 = 25;
-
+    const E_PARENT_R_C_INVALID: u64 = 26;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -836,6 +836,23 @@ module Ultima::BST {
         false
     }
 
+    /// Return true if node at vector index `n_i` within BST `b` has a
+    /// a parent that is a right child
+    fun parent_is_r_child<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): bool {
+        let p_i = get_p<V>(b, n_i); // Index of parent
+        if (p_i != NIL) { // If n has a parent
+            let g_p_i = get_p<V>(b, p_i); // Index of grandparent
+            if (g_p_i != NIL) { // If n has a grandparent
+                // Return true if grandparent's r child is parent
+                if (get_r<V>(b, g_p_i) == p_i) return true
+            }
+        };
+        false
+    }
+
     /// Return node vector index of right child of grandparent to node
     /// `n_i` in BST `b`. Should only be called if node has parent that
     /// is a left
@@ -906,6 +923,18 @@ module Ultima::BST {
         b // Return rather than unpack
     }
 
+    #[test]
+    /// Verify return of false for root node
+    fun parent_is_r_child_root():
+    BST<u8> {
+        // Create singleton BST with key-value pair (1, 2)
+        let b = singleton<u8>(1, 2);
+        // Assert root node does not register as having parent that is
+        // right child
+        assert!(!parent_is_r_child<u8>(&b, 0), E_PARENT_R_C_INVALID);
+        b // Return rather than unpack
+    }
+
 /*
       6 (y)
        \
@@ -931,6 +960,29 @@ module Ultima::BST {
         // Assert node does not register as having parent that is left
         // child
         assert!(!parent_is_l_child<u8>(&b, z_i), E_PARENT_L_C_INVALID);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify return of false for no grandparent, same diagram as for
+    /// left case
+    fun parent_is_r_child_no_gp():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (key, index, symbol) schema per
+        // the tree above, ignoring color and value fields:
+        // (6, 0, y), (7, 1, z)
+        let y_i = 0;
+        let z_i = 1;
+        let y = N<u8>{k: 6, c: B, p: NIL, l: NIL, r: z_i, v: 0};
+        let z = N<u8>{k: 7, c: B, p: y_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        // Assert node does not register as having parent that is right
+        // child
+        assert!(!parent_is_r_child<u8>(&b, z_i), E_PARENT_R_C_INVALID);
         b // Return rather than unpack
     }
 
@@ -961,9 +1013,42 @@ module Ultima::BST {
         v_pu_b<N<u8>>(&mut b.t, w);
         v_pu_b<N<u8>>(&mut b.t, y);
         v_pu_b<N<u8>>(&mut b.t, z);
-        // Assert node does not register as having parent that is left
+        // Assert z does not register as having parent that is left
         // child
         assert!(!parent_is_l_child<u8>(&b, z_i), E_PARENT_L_C_INVALID);
+        b // Return rather than unpack
+    }
+
+/*
+       5 (w)
+      /
+      6 (y)
+       \
+        7 (z)
+*/
+
+    #[test]
+    /// Verify return of false for parent as left child
+    fun parent_is_r_child_l():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (key, index, symbol) schema per
+        // the tree above, ignoring color and value fields:
+        // (5, 0, w), (6, 1, y), (7, 2, z)
+        let w_i = 0;
+        let y_i = 1;
+        let z_i = 2;
+        let w = N<u8>{k: 5, c: B, p: NIL, l: y_i, r: NIL, v: 0};
+        let y = N<u8>{k: 6, c: B, p: w_i, l: NIL, r: z_i, v: 0};
+        let z = N<u8>{k: 7, c: B, p: y_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, w);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        // Assert z does not register as having parent that is right
+        // child
+        assert!(!parent_is_r_child<u8>(&b, z_i), E_PARENT_R_C_INVALID);
         b // Return rather than unpack
     }
 
@@ -993,8 +1078,40 @@ module Ultima::BST {
         v_pu_b<N<u8>>(&mut b.t, w);
         v_pu_b<N<u8>>(&mut b.t, y);
         v_pu_b<N<u8>>(&mut b.t, z);
-        // Assert node registers as having parent that is left child
+        // Assert z registers as having parent that is left child
         assert!(parent_is_l_child<u8>(&b, z_i), E_PARENT_L_C_INVALID);
+        b // Return rather than unpack
+    }
+
+/*
+    5 (w)
+     \
+      6 (y)
+       \
+        7 (z)
+*/
+
+    #[test]
+    /// Verify return of true for parent as right child
+    fun parent_is_r_child_success():
+    BST<u8> {
+        // Initialize an empty BST with u8 values
+        let b = empty<u8>();
+        // Define nodes in the following (key, index, symbol) schema per
+        // the tree above, ignoring color and value fields:
+        // (5, 0, w), (6, 1, y), (7, 2, z)
+        let w_i = 0;
+        let y_i = 1;
+        let z_i = 2;
+        let w = N<u8>{k: 5, c: B, p: NIL, l: NIL, r: y_i, v: 0};
+        let y = N<u8>{k: 6, c: B, p: w_i, l: NIL, r: z_i, v: 0};
+        let z = N<u8>{k: 7, c: B, p: y_i, l: NIL, r: NIL, v: 0};
+        // Append nodes to the BST's tree node vector t
+        v_pu_b<N<u8>>(&mut b.t, w);
+        v_pu_b<N<u8>>(&mut b.t, y);
+        v_pu_b<N<u8>>(&mut b.t, z);
+        // Assert z registers as having parent that is right child
+        assert!(parent_is_r_child<u8>(&b, z_i), E_PARENT_R_C_INVALID);
         b // Return rather than unpack
     }
 

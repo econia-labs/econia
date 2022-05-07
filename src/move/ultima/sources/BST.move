@@ -13,14 +13,14 @@ module Ultima::BST {
         singleton as v_s,
     };
 
-    /// So move builder doesn't raise error in non-test mode
+    /// So Move doesn't raise unused member error in non-test mode
     fun use_v_funcs() {
         v_i_e(&v_s<u8>(1));
         v_po_b<u8>(&mut v_s<u8>(1));
-        v_pu_b<u8>(&mut v_s<u8>(1), 1);
     }
 
     #[test]
+    /// So above solution doesn't inihibt code coverage
     fun invoke_use_v_funcs() {
         use_v_funcs();
     }
@@ -84,6 +84,7 @@ module Ultima::BST {
     const E_NIL_KEY_LOOKUP: u64 = 33;
     const E_HAS_KEY_ERROR: u64 = 34;
     const E_KEY_ALREADY_EXISTS: u64 = 35;
+    const E_GET_REF_ERROR: u64 = 36;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1754,6 +1755,15 @@ module Ultima::BST {
         }
     }
 
+    /// Return reference to value in key-value pair having key `k`
+    public fun get_ref<V>(
+        b: &BST<V>,
+        k: u64
+    ): &V {
+        let n_i = get_i<V>(b, k); // Get node index of key `k`
+        &borrow<V>(b, n_i).v // Return reference to node's `v` field
+    }
+
     /// Return true if BST `b` has a node with key `k`
     public(script) fun has_key<V>(
         b: &BST<V>,
@@ -1883,6 +1893,17 @@ module Ultima::BST {
         assert!(has_key<u8>(&b, 30) == true, E_HAS_KEY_ERROR);
         assert!(has_key<u8>(&b, 35) == false, E_HAS_KEY_ERROR);
         b // Return rather than unpack (or signal to compiler as much)
+    }
+
+    #[test]
+    /// Verify successful value query
+    public(script) fun get_ref_success():
+    BST<u8> {
+        let b = singleton<u8>(1, 2); // Insert key-value pair (1, 2)
+        insert<u8>(&mut b, 3, 4); // Insert key-value pair (3, 4)
+        assert!(*get_ref<u8>(&b, 1) == 2, E_GET_REF_ERROR);
+        assert!(*get_ref<u8>(&b, 3) == 4, E_GET_REF_ERROR);
+        b // Return rather than unpack
     }
 
 // Insertion and querying <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -64,6 +64,7 @@ module Ultima::BST {
     const E_RED_LEAF_L: u64 = 18;
     const E_RED_LEAF_R: u64 = 19;
     const E_RED_LEAF_V: u64 = 19;
+    const E_RED_PARENT_INVALID: u64 = 20;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -270,6 +271,15 @@ module Ultima::BST {
         n_i: u64
     ): u64 {
         v_b<N<V>>(&b.t, n_i).r
+    }
+
+    /// Set node at vector index `n_i` within BST `b` to have color `c`
+    fun set_c<V>(
+        b: &mut BST<V>,
+        n_i: u64,
+        c: bool
+    ) {
+        v_b_m<N<V>>(&mut b.t, n_i).c = c;
     }
 
     /// Set node at vector index `n_i` to have parent at index `p_i`,
@@ -621,7 +631,7 @@ module Ultima::BST {
 
 // Right rotation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-// Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Red leaf insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Insert key `k` and value `v` into BST `b` as a read leaf
     fun add_red_leaf<V>(
@@ -787,5 +797,79 @@ module Ultima::BST {
 
 
 
-// Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// Red leaf insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// Insertion cleanup >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+/*
+    /// Starting at node `n_i`, cleanup property violations from
+    /// `add_red_leaf()``
+    fun insertion_cleanup(
+        b: &mut BST<V>,
+        n_i: u64,
+    ) {
+        while ((get_p<V>(b, n_i) != NIL)
+        if (is_red<V>(b, get_p<V>(b, n_i)) != NIL) { // If
+
+        }
+    }
+
+*/
+    /// Return true if node at vector index `n_i` within BST `b`
+    /// has a red parent
+    fun has_red_parent<V>(
+        b: & BST<V>,
+        n_i: u64,
+    ): bool {
+        let p_i = get_p<V>(b, n_i); // Index of parent
+        // Short-circuit logic will not try to check parent color if no
+        // parent
+        (p_i != NIL && is_red<V>(b, p_i))
+    }
+
+    #[test]
+    /// Verify return of true when node has a red parent
+    fun has_red_parent_true():
+    BST<u8> {
+        // Create singleton BST with key-value pair (1, 2)
+        let b = singleton<u8>(1, 2);
+        // Set color of singleton node as red, and l child as next node
+        set_c<u8>(&mut b, 0, R);
+        set_l<u8>(&mut b, 0, 1);
+        // Append red leaf node with first node as parent
+        let l = N<u8>{k: 10, c: R, p: 0, l: NIL, r: NIL, v: 0};
+        v_pu_b<N<u8>>(&mut b.t, l);
+        // Assert appended red leaf registers as having red parent
+        assert!(has_red_parent<u8>(&b, 1), E_RED_PARENT_INVALID);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify return of false when node does not have a red parent
+    fun has_red_parent_false():
+    BST<u8> {
+        // Create singleton BST with key-value pair (1, 2)
+        let b = singleton<u8>(1, 2);
+        // Set r child as next node
+        set_l<u8>(&mut b, 0, 1);
+        // Append red leaf node with first node as parent
+        let l = N<u8>{k: 10, c: R, p: 0, l: NIL, r: NIL, v: 0};
+        v_pu_b<N<u8>>(&mut b.t, l);
+        // Assert appended red leaf registers as not having red parent
+        assert!(!has_red_parent<u8>(&b, 1), E_RED_PARENT_INVALID);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify return of false when node does not have a red parent
+    fun has_red_parent_short_circuit():
+    BST<u8> {
+        // Create singleton BST with key-value pair (1, 2)
+        let b = singleton<u8>(1, 2);
+        // Assert singleton root node registers as not having red parent
+        assert!(!has_red_parent<u8>(&b, 0), E_RED_PARENT_INVALID);
+        b // Return rather than unpack
+    }
+// Insertion cleanup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 }

@@ -54,6 +54,16 @@ module Ultima::BST {
     const E_R_ROTATE_NO_L_CHILD: u64 = 8;
     const E_R_ROTATE_RELATIONSHIP: u64 = 9;
     const E_R_ROTATE_ROOT: u64 = 10;
+    const E_INSERTION_DUPLICATE: u64 = 11;
+    const E_INSERT_ROOT_NOT_EMPTY: u64 = 12;
+    const E_RED_LEAF_LENGTH: u64 = 13;
+    const E_RED_LEAF_ROOT_INDEX: u64 = 14;
+    const E_RED_LEAF_KEY: u64 = 15;
+    const E_RED_LEAF_COLOR: u64 = 16;
+    const E_RED_LEAF_P: u64 = 17;
+    const E_RED_LEAF_L: u64 = 18;
+    const E_RED_LEAF_R: u64 = 19;
+    const E_RED_LEAF_V: u64 = 19;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -79,13 +89,12 @@ module Ultima::BST {
 
 // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-
 // Initialization >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return an empty BST with key-value pair values of type `V`
     public fun empty<V>():
     BST<V> {
-        BST{r: 0, t: v_e<N<V>>()}
+        BST{r: NIL, t: v_e<N<V>>()}
     }
 
     #[test]
@@ -93,8 +102,8 @@ module Ultima::BST {
     fun empty_success():
     vector<N<u8>> {
         let BST{r, t} = empty<u8>();
-        // Assert root set to 0
-        assert!(r == 0, E_NEW_NOT_EMPTY);
+        // Assert root set to NIL
+        assert!(r == NIL, E_NEW_NOT_EMPTY);
         // Assert vector of nodes is empty
         assert!(v_i_e<N<u8>>(&t), E_NEW_NOT_EMPTY);
         // Return vector of nodes rather than destroy
@@ -117,8 +126,8 @@ module Ultima::BST {
     vector<N<u8>> {
         // Initialize singleton BST with key 1 and value 2
         let s = singleton<u8>(1, 2);
-        // Assert singleton has length 1
-        assert!(length<u8>(&s) == 1, E_SINGLETON_NOT_EMPTY);
+        // Assert singleton has count 1
+        assert!(count<u8>(&s) == 1, E_SINGLETON_NOT_EMPTY);
         // Unpack the BST root value and nodes vector
         let BST{r, t} = s;
         // Assert index of root node is 0
@@ -132,8 +141,7 @@ module Ultima::BST {
         assert!(l == NIL, E_SINGLETON_N_VAL);
         assert!(r == NIL, E_SINGLETON_N_VAL);
         assert!(v == 2, E_SINGLETON_N_VAL);
-        // Return tree's vector of nodes rather than unpack
-        t
+        t // Return tree's vector of nodes rather than unpack
     }
 
 // Initialization <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -141,18 +149,17 @@ module Ultima::BST {
 // Checking size >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return number of nodes in the BST
-    public fun length<V>(
+    public fun count<V>(
         b: &BST<V>
     ): u64 {
-        // Get vector length of the BST's vector of nodes
-        v_l<N<V>>(&b.t)
+        v_l<N<V>>(&b.t) // Return length of the BST's vector of nodes
     }
 
     /// Return true if the BST has no elements
     public fun is_empty<V>(
         b: &BST<V>
     ): bool {
-        length(b) == 0
+        count(b) == 0
     }
 
 
@@ -187,6 +194,57 @@ module Ultima::BST {
 
 // Helper functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    // Return immutable reference to node at vector index `n_i` within
+    // BST `b`
+    fun borrow<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): &N<V> {
+        v_b<N<V>>(&b.t, n_i)
+    }
+
+    /// Return mutable reference to node at vector index `n_i` in BST
+    /// `b`
+    fun borrow_mut<V>(
+        b: &mut BST<V>,
+        n_i: u64
+    ): &mut N<V> {
+        v_b_m<N<V>>(&mut b.t, n_i)
+    }
+
+    // Return color of node at vector index `n_i` within BST `b``
+    fun get_c<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): bool {
+        v_b<N<V>>(&b.t, n_i).c
+    }
+
+    // Return true if node at vector index `n_i` within BST `b`` is red
+    fun is_red<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): bool {
+        get_c<V>(b, n_i) == R
+    }
+
+    // Return true if node at vector index `n_i` within BST `b`` is
+    // black
+    fun is_black<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): bool {
+        get_c<V>(b, n_i) == B
+    }
+
+    /// Return key of node at vector index `n_i` within BST `b`
+    fun get_k<V>(
+        b: &BST<V>,
+        n_i: u64
+    ): u64 {
+        v_b<N<V>>(&b.t, n_i).k
+    }
+
     /// Return vector index of parent to node at index `n_i`, within
     /// BST `b``
     fun get_p<V>(
@@ -212,15 +270,6 @@ module Ultima::BST {
         n_i: u64
     ): u64 {
         v_b<N<V>>(&b.t, n_i).r
-    }
-
-    /// Return mutable reference to node at vector index `n_i` in BST
-    /// `b`
-    fun get_m<V>(
-        b: &mut BST<V>,
-        n_i: u64
-    ): &mut N<V> {
-        v_b_m<N<V>>(&mut b.t, n_i)
     }
 
     /// Set node at vector index `n_i` to have parent at index `p_i`,
@@ -306,7 +355,7 @@ module Ultima::BST {
             b.r = y_i; // Set y as the new root node
         } else { // If x is not the root node
             // Get mutable reference to z
-            let z = get_m<V>(b, z_i);
+            let z = borrow_mut<V>(b, z_i);
             if (z.l == x_i) { // If x is a left child
                 z.l = y_i; // Set z's new left child as y
             } else { // If x is a right child
@@ -349,6 +398,8 @@ module Ultima::BST {
         v_pu_b<N<u8>>(&mut b.t, x);
         v_pu_b<N<u8>>(&mut b.t, y);
         v_pu_b<N<u8>>(&mut b.t, w);
+        // Update root to index of first added node
+        b.r = z_i;
         // Perform a left rotation on x
         l_rotate<u8>(x_i, &mut b);
         // Verify root unchanged
@@ -373,8 +424,7 @@ module Ultima::BST {
         // Verify w has no other relationships
         assert!(get_l<u8>(&b, w_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         assert!(get_r<u8>(&b, w_i) == NIL, E_L_ROTATE_RELATIONSHIP);
-        // Return rather than unpack
-        b
+        b // Return rather than unpack
     }
 
 /*
@@ -411,8 +461,7 @@ module Ultima::BST {
         // Verify y has no other relationships
         assert!(get_p<u8>(&b, y_i) == NIL, E_L_ROTATE_RELATIONSHIP);
         assert!(get_r<u8>(&b, y_i) == NIL, E_L_ROTATE_RELATIONSHIP);
-        // Return rather than unpack
-        b
+        b // Return rather than unpack
     }
 
     #[test]
@@ -426,8 +475,9 @@ module Ultima::BST {
         b
     }
 
+// Left rotation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-/* Right rotation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+/* Right rotation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
          (z) 10                        (z) 10
              / \                           / \
@@ -438,8 +488,6 @@ module Ultima::BST {
         2   6 (w)                         6   8 (w)
 
 */
-
-// Right rotation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     /// Right rotate on the node with the given vector index
     fun r_rotate<V>(
@@ -494,6 +542,8 @@ module Ultima::BST {
         v_pu_b<N<u8>>(&mut b.t, x);
         v_pu_b<N<u8>>(&mut b.t, y);
         v_pu_b<N<u8>>(&mut b.t, w);
+        // Update root to index of first added node
+        b.r = z_i;
         // Perform a right rotation on x
         r_rotate<u8>(x_i, &mut b);
         // Verify root unchanged
@@ -518,8 +568,7 @@ module Ultima::BST {
         // Verify w has no other relationships
         assert!(get_l<u8>(&b, w_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         assert!(get_r<u8>(&b, w_i) == NIL, E_R_ROTATE_RELATIONSHIP);
-        // Return rather than unpack
-        b
+        b // Return rather than unpack
     }
 
 /*
@@ -556,8 +605,7 @@ module Ultima::BST {
         // Verify y has no other relationships
         assert!(get_l<u8>(&b, y_i) == NIL, E_R_ROTATE_RELATIONSHIP);
         assert!(get_p<u8>(&b, y_i) == NIL, E_R_ROTATE_RELATIONSHIP);
-        // Return rather than unpack
-        b
+        b // Return rather than unpack
     }
 
     #[test]
@@ -570,4 +618,174 @@ module Ultima::BST {
         r_rotate<u8>(0, &mut b);
         b
     }
+
+// Right rotation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Insert key `k` and value `v` into BST `b` as a read leaf
+    fun add_red_leaf<V>(
+        b: &mut BST<V>,
+        k: u64,
+        v: V
+    ) {
+        // Index of node that would have as a leaf a node with key `k`
+        let p_i = search_parent_index<V>(b, k);
+        // Set index of insertion node to length of nodes vector, since
+        // appending to the end of it
+        let n_i = count<V>(b);
+        if (p_i == NIL) { // If inserting at root
+            // Assert vector of nodes in tree is empty
+            assert!(is_empty<V>(b), E_INSERT_ROOT_NOT_EMPTY);
+            b.r = n_i; // Set tree root to index of node (which is 0)
+        } else { // If not inserting at root
+            let p_k = get_k<V>(b, p_i); // Get key of parent node
+            if (k < p_k) { // If insertion key less than parent key
+                // Set parent's left child to insertion node
+                set_l(b, p_i, n_i);
+            // Since parent index search aborts for equality, only other
+            // option is that insertion key is greater than parent key
+            } else { // If insertion key is greater than parent key
+                // Set parent's right child to insertion node
+                set_r(b, p_i, n_i);
+            }
+        };
+        // Append red leaf to tree's nodes vector
+        v_pu_b<N<V>>(&mut b.t, N<V>{k, c: R, p: p_i, l: NIL, r: NIL, v});
+    }
+
+    /// Search nodes from root of BST `b`, returning index of parent
+    /// node that would have as a leaf a node with key `k`
+    fun search_parent_index<V>(
+        b: &BST<V>,
+        k: u64
+    ): u64 {
+        let p_i = NIL; // Assume inserting at root, without a parent
+        let s_i = b.r; // Index of search node, starting from root
+        while (s_i != NIL) { // While search inspects an actual node
+            p_i = s_i; // Set parent index to search index
+            let s_k = get_k(b, s_i); // Get key of search node
+            // Abort if insertion key equals search key
+            if (k == s_k) { abort E_INSERTION_DUPLICATE
+            // If insertion key less than search key
+            } else if (k < s_k) {
+                s_i = get_l(b, s_i); // Run next search to left
+            } else { // If insertion key greater than search key
+                s_i = get_r(b, s_i); // Run next search to right
+            }
+        };
+        p_i
+    }
+
+    #[test]
+    /// Verify read leaf added at root
+    fun add_red_leaf_root():
+    BST<u8> {
+        let b = empty<u8>(); // Initialize empty BST
+        add_red_leaf<u8>(&mut b, 2, 3); // Add node w/ key 2, value 3
+        let n_i = 0; // Assume node index of 0
+        // Assert BST has a count of 1
+        assert!(count<u8>(&b) == 1, E_RED_LEAF_LENGTH);
+        // Assert BST root set to proper node index
+        assert!(b.r == n_i, E_RED_LEAF_ROOT_INDEX);
+        // Assert node inserted with key 2
+        assert!(get_k<u8>(&b, n_i) == 2, E_RED_LEAF_KEY);
+        // Assert node inserted with color red
+        assert!(is_red<u8>(&b, n_i), E_RED_LEAF_COLOR);
+        // Assert inserted without parent or children
+        assert!(get_p<u8>(&b, n_i) == NIL, E_RED_LEAF_P);
+        assert!(get_l<u8>(&b, n_i) == NIL, E_RED_LEAF_L);
+        assert!(get_r<u8>(&b, n_i) == NIL, E_RED_LEAF_R);
+        // Assert inserted with correct value
+        assert!(borrow<u8>(&b, n_i).v == 3, E_RED_LEAF_V);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify insertion aborted for duplicate values
+    fun add_red_leaf_duplicate():
+    BST<u8> {
+        // Create BST with single key-value pair of (1, 2)
+        let b = singleton<u8>(1, 2);
+        // Try to add a red leaf with key 1
+        add_red_leaf<u8>(&mut b, 1, 3);
+        b // Return rather than unpack (or signal to compiler as much)
+    }
+
+    #[test]
+    /// Verify adding red leaf during left branching search
+    fun add_red_leaf_left():
+    BST<u8> {
+        // Create BST with single key-value pair of (2, 3)
+        let b = singleton<u8>(2, 3);
+        // Add a red leaf with key-value pair (1, 4)
+        add_red_leaf<u8>(&mut b, 1, 4);
+        // Assert BST has a count of 2
+        assert!(count<u8>(&b) == 2, E_RED_LEAF_LENGTH);
+        // Assert BST root set to proper node index
+        assert!(b.r == 0, E_RED_LEAF_ROOT_INDEX);
+        // Assert fields for first inserted node
+        assert!(get_k<u8>(&b, 0) == 2, E_RED_LEAF_KEY);
+        assert!(is_black<u8>(&b, 0), E_RED_LEAF_COLOR);
+        assert!(get_p<u8>(&b, 0) == NIL, E_RED_LEAF_P);
+        assert!(get_l<u8>(&b, 0) == 1, E_RED_LEAF_L);
+        assert!(get_r<u8>(&b, 0) == NIL, E_RED_LEAF_R);
+        assert!(borrow<u8>(&b, 0).v == 3, E_RED_LEAF_V);
+        // Assert fields for red leaf added to left
+        assert!(get_k<u8>(&b, 1) == 1, E_RED_LEAF_KEY);
+        assert!(is_red<u8>(&b, 1), E_RED_LEAF_COLOR);
+        assert!(get_p<u8>(&b, 1) == 0, E_RED_LEAF_P);
+        assert!(get_l<u8>(&b, 1) == NIL, E_RED_LEAF_L);
+        assert!(get_r<u8>(&b, 1) == NIL, E_RED_LEAF_R);
+        assert!(borrow<u8>(&b, 1).v == 4, E_RED_LEAF_V);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify adding red leaf during right branching search
+    fun add_red_leaf_right():
+    BST<u8> {
+        // Create BST with single key-value pair of (2, 3)
+        let b = singleton<u8>(2, 3);
+        // Add a red leaf with key-value pair (4, 5)
+        add_red_leaf<u8>(&mut b, 4, 5);
+        // Assert BST has a count of 2
+        assert!(count<u8>(&b) == 2, E_RED_LEAF_LENGTH);
+        // Assert BST root set to proper node index
+        assert!(b.r == 0, E_RED_LEAF_ROOT_INDEX);
+        // Assert fields for first inserted node
+        assert!(get_k<u8>(&b, 0) == 2, E_RED_LEAF_KEY);
+        assert!(is_black<u8>(&b, 0), E_RED_LEAF_COLOR);
+        assert!(get_p<u8>(&b, 0) == NIL, E_RED_LEAF_P);
+        assert!(get_l<u8>(&b, 0) == NIL, E_RED_LEAF_L);
+        assert!(get_r<u8>(&b, 0) == 1, E_RED_LEAF_R);
+        assert!(borrow<u8>(&b, 0).v == 3, E_RED_LEAF_V);
+        // Assert fields for red leaf added to left
+        assert!(get_k<u8>(&b, 1) == 4, E_RED_LEAF_KEY);
+        assert!(is_red<u8>(&b, 1), E_RED_LEAF_COLOR);
+        assert!(get_p<u8>(&b, 1) == 0, E_RED_LEAF_P);
+        assert!(get_l<u8>(&b, 1) == NIL, E_RED_LEAF_L);
+        assert!(get_r<u8>(&b, 1) == NIL, E_RED_LEAF_R);
+        assert!(borrow<u8>(&b, 1).v == 5, E_RED_LEAF_V);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    // Verify unable to insert as root when vector of nodes is empty
+    fun add_red_leaf_not_empty():
+    BST<u8> {
+        let b = empty<u8>(); // Create empty BST
+        // Add invalid node without updating root
+        let n = N<u8>{k:1, c: B, p: NIL, l: NIL, r: NIL, v: 0};
+        v_pu_b<N<u8>>(&mut b.t, n);
+        // Try to add red leaf
+        add_red_leaf<u8>(&mut b, 1, 2);
+        b // Return rather than unpack (or signal to compiler as much)
+    }
+
+
+
+// Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }

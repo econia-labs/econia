@@ -266,7 +266,7 @@ module Ultima::BST {
     }
 
     /// Return vector index of parent to node at index `n_i`, within
-    /// BST `b``
+    /// BST `b`
     fun get_p<V>(
         b: &BST<V>,
         n_i: u64
@@ -1283,7 +1283,7 @@ module Ultima::BST {
 // Insertion cleanup loop >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Starting at node `n_i`, cleanup property violations from
-    /// `add_red_leaf()``
+    /// `add_red_leaf()`
     fun insertion_cleanup<V>(
         b: &mut BST<V>,
         n_i: u64

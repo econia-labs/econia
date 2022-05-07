@@ -1478,3 +1478,68 @@ class AlnokiClient(UltimaClient):
         )
         self.tx_vn_url_print(tx_hash)
 
+    def query_result(
+        self,
+        addr: str,
+    ):
+        """Get the result field in the AlnokiBST resource"""
+        resources =  self.account_resources(addr)
+        for resource in resources:
+            if 'AlnokiBST' in resource['type']:
+                return resource['data']['result']
+
+    def alnoki_min(
+        self,
+        user: Account, # Account with resource
+        ultima: str, # Smart contract address
+    ):
+        tx_hash = self.run_script(
+            user,
+            [ultima, ums.AlnokiBST.name, 'alnoki_min'],
+            []
+        )
+        self.tx_vn_url_print(tx_hash)
+        return int(self.query_result(user.address()))
+
+    def alnoki_max(
+        self,
+        user: Account, # Account with resource
+        ultima: str, # Smart contract address
+    ):
+        tx_hash = self.run_script(
+            user,
+            [ultima, ums.AlnokiBST.name, 'alnoki_max'],
+            []
+        )
+        self.tx_vn_url_print(tx_hash)
+        return int(self.query_result(user.address()))
+
+    def alnoki_has_key(
+        self,
+        user: Account,
+        ultima: str,
+        k: int
+    ):
+        tx_hash = self.run_script(
+            user,
+            [ultima, ums.AlnokiBST.name, 'alnoki_has_key'],
+            [str(k)]
+        )
+        self.tx_vn_url_print(tx_hash)
+        # Result field flagged as 1 if has key
+        return self.query_result(user.address()) == '1'
+
+    def alnoki_get(
+        self,
+        user: Account, # Account with resource
+        ultima: str, # Smart contract address
+        k: int
+    ):
+        tx_hash = self.run_script(
+            user,
+            [ultima, ums.AlnokiBST.name, 'alnoki_get'],
+            [str(k)]
+        )
+        self.tx_vn_url_print(tx_hash)
+        return int(self.query_result(user.address()))
+

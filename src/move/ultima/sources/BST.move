@@ -80,6 +80,7 @@ module Ultima::BST {
     const E_EMPTY_NOT_NIL_MIN: u64 = 29;
     const E_MIN_INVALID: u64 = 30;
     const E_MAX_INVALID: u64 = 31;
+    const E_GET_I_ERROR: u64 = 32;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -122,8 +123,7 @@ module Ultima::BST {
         assert!(r == NIL, E_NEW_NOT_EMPTY);
         // Assert vector of nodes is empty
         assert!(v_i_e<N<u8>>(&t), E_NEW_NOT_EMPTY);
-        // Return vector of nodes rather than destroy
-        t
+        t // Return rather than unpack
     }
 
     /// Return a BST with one node having key `k` and value `v`
@@ -1727,13 +1727,33 @@ module Ultima::BST {
         limit<V>(b, RIGHT)
     }
 
+    /// Return node vector index of key `k`, if is in BST `b`, otherwise
+    /// return NIL
+    public fun get_i<V>(
+        b: &BST<V>,
+        k: u64
+    ): u64 {
+        if (is_empty<V>(b)) return NIL; // Return NIL flag if no keys
+        let s_i = b.r; // Initialize search index to root node index
+        // While match not found, keep searching
+        loop {
+            let s_k = get_k<V>(b, s_i); // Get key of search node
+            // Return search index if node has same key as `k`
+            if (k == s_k) return s_i;
+            // If key less than key of searched node look to L, else R
+            s_i = if (k < s_k) get_l<V>(b, s_i) else get_r<V>(b, s_i);
+            // Return NIL if no next node to search
+            if (s_i == NIL) return NIL;
+        }
+    }
+
     #[test]
     /// Verify NIL return when searching empty BST
     fun min_empty_nil():
     BST<u8> {
         let b = empty<u8>();
         assert!(min<u8>(&b) == NIL, E_EMPTY_NOT_NIL_MIN);
-        b // Return rather than dropping
+        b // Return rather than unpack
     }
 
     #[test]
@@ -1755,7 +1775,7 @@ module Ultima::BST {
         insert(&mut b, 12, 0);
         insert(&mut b, 17, 0);
         assert!(min<u8>(&b) == 2, E_MIN_INVALID);
-        b // Return rather than dropping
+        b // Return rather than unpack
     }
 
     #[test]
@@ -1777,9 +1797,43 @@ module Ultima::BST {
         insert(&mut b, 12, 0);
         insert(&mut b, 17, 0);
         assert!(max<u8>(&b) == 99, E_MAX_INVALID);
-        b // Return rather than dropping
+        b // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify min and max reported as same value for singleton
+    public(script) fun singleton_same():
+    BST<u8> {
+        let b = singleton<u8>(3, 0); // Start with singleton
+        // Assert min and max for the BST yield same value
+        assert!(min<u8>(&b) == 3, E_MIN_INVALID);
+        assert!(max<u8>(&b) == 3, E_MAX_INVALID);
+        b // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify correct index matches for various BST states
+    public(script) fun get_i_success():
+    BST<u8> {
+        let b = empty<u8>(); // Start with empty BST
+        // Assert NIL flag since empty
+        assert!(get_i<u8>(&b, 0) == NIL, E_GET_I_ERROR); // Assert NIL flag
+        insert(&mut b, 10, 0); // Add single element
+        // Assert NIL flag for no match
+        assert!(get_i<u8>(&b, 0) == NIL, E_GET_I_ERROR);
+        // Assert index of 0 for match on first appended key
+        assert!(get_i<u8>(&b, 10) == 0, E_GET_I_ERROR);
+        insert(&mut b, 30, 0); // Add another element
+        // Assert index of 1 for match on second appended key
+        assert!(get_i<u8>(&b, 30) == 1, E_GET_I_ERROR);
+        insert(&mut b, 5, 0); // Add another smaller element
+        // Assert index of 2 for match on third appended key
+        assert!(get_i<u8>(&b, 5) == 2, E_GET_I_ERROR);
+        b // Return rather than unpack
     }
 
 // Insertion and querying <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Update insert so cannot overwrite - quiet error?
 
 }

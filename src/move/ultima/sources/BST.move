@@ -1696,34 +1696,35 @@ module Ultima::BST {
         insertion_cleanup<V>(b, n_i); // Cleanup (rebalance) tree
     }
 
+    /// Retern key at outermost position from search to either l or r
+    fun limit<V>(
+        b: &BST<V>,
+        d: bool, // Direction to search
+    ): u64 {
+        if (is_empty<V>(b)) return NIL; // Return NIL flag if no keys
+        let s_i = b.r; // Initialize search index to root node index
+        // While there is another child to search for in given direction
+        loop {
+            // Get index of next node in given direction
+            let next = if (d == LEFT) get_l<V>(b, s_i) else get_r<V>(b, s_i);
+            if (next == NIL) break;
+            s_i = next;
+        };
+        get_k<V>(b, s_i) // Return key of final node from search
+    }
+
     /// Return minimum key in BST `b`
     public fun min<V>(
         b: &BST<V>
     ): u64 {
-        if (is_empty<V>(b)) return NIL; // Return NIL flag if no keys
-        let s_i = b.r; // Initialize search index to root node index
-        // While there is another left child to search for
-        loop {
-            let next = get_l<V>(b, s_i); // Index of next search node
-            if (next == NIL) break; // If no next node to search
-            s_i = next; // Update search index to next node
-        };
-        get_k<V>(b, s_i) // Return key of final node from left search
+        limit<V>(b, LEFT)
     }
 
     /// Return maximum key in BST `b`
     public fun max<V>(
         b: &BST<V>
     ): u64 {
-        if (is_empty<V>(b)) return NIL; // Return NIL flag if no keys
-        let s_i = b.r; // Initialize search index to root node index
-        // While there is another right child to search for
-        loop {
-            let next = get_r<V>(b, s_i); // Index of next search node
-            if (next == NIL) break; // If no next node to search
-            s_i = next; // Update search index to next node
-        };
-        get_k<V>(b, s_i) // Return key of final node from left search
+        limit<V>(b, RIGHT)
     }
 
     #[test]

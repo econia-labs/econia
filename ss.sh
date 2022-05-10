@@ -10,8 +10,28 @@ if test $1 = hello; then
 elif test $1 = c; then
     clear
 
+# Start a Jupyter notebook server
+elif test $1 = nb; then
+    cd src/jupyter
+    jupyter notebook
+
+# Initiate sphinx-autobuild
+elif test $1 = ab; then
+    python -mwebbrowser http://127.0.0.1:8000/
+    sphinx-autobuild doc/sphinx/src doc/sphinx/build --watch src/python
+
+# Run Sphinx doctest
+elif test $1 = dt; then
+    make -C doc/sphinx doctest
+
+# Go to Move package folder
+elif test $1 = mp; then
+    cd src/move/ultima
+    move sandbox clean
+
 # Install dependencies and generate relevant files
 # Designed so can be re-run without overwriting/throwing errors
+# Does not fully work, manual setup is easier
 elif test $1 = setup; then
 
     # Install homebrew, a package manager
@@ -44,25 +64,6 @@ elif test $1 = setup; then
     python src/python/ultima/build.py gen
 
     echo Setup complete
-
-# Start a Jupyter notebook server
-elif test $1 = nb; then
-    cd src/jupyter
-    jupyter notebook
-
-# Initiate sphinx-autobuild
-elif test $1 = ab; then
-    python -mwebbrowser http://127.0.0.1:8000/
-    sphinx-autobuild doc/sphinx/src doc/sphinx/build --watch src/python
-
-# Run Sphinx doctest
-elif test $1 = dt; then
-    make -C doc/sphinx doctest
-
-# Go to Move package folder
-elif test $1 = mp; then
-    cd src/move/ultima
-    move sandbox clean
 
 # If no corresponding option
 else

@@ -35,20 +35,16 @@ See `ss.sh` within a given directory for its available options
 
 ### Installing dependencies
 
-1. First install Homebrew
+1. First install Homebrew:
 
     ```zsh
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     ```
 
-1. Then `brew install` the following dependencies:
+1. Then `brew install` Miniconda:
 
     ```zsh
     brew install miniconda # Python package management
-    ```
-
-    ```zsh
-    brew install rust # Move is built on rust
     ```
 
 1. Create the `ultima` conda environment with the `Ultima` Python package inside:
@@ -75,10 +71,44 @@ See `ss.sh` within a given directory for its available options
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
     ```
 
-1. Install the Aptos CLI:
+1. In the future, you may be able to get away with only installing the `aptos` CLI and the `move` CLI:
 
     ```zsh
     cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
+    cargo install --git https://github.com/diem/move move-cli --branch main
+    ```
+
+    But at the time of the writing of this guide, the potentially-unnecessary steps below were performed too
+
+1. Install `aptos-core` and the `aptos` command line tool per the [official instructions](https://aptos.dev/tutorials/your-first-move-module#step-11-download-aptos-core):
+
+    ```zsh
+    # In a different directory
+    git clone https://github.com/aptos-labs/aptos-core.git
+    cd aptos-core
+    ./scripts/dev_setup.sh
+    source ~/.cargo/env
+    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
+    ```
+
+1. Install `diem` and `move` per the [official instructions](https://github.com/move-language/move/tree/main/language/documentation/tutorial#step-0-installation) (though the next step will install the `move` CLI and this can probably be skipped):
+
+    ```zsh
+    # In a different directory
+    git clone https://github.com/diem/diem.git
+    git clone https://github.com/diem/move.git
+    cd diem
+    ./scripts/dev_setup.sh -ypt
+    source ~/.profile
+    cd ..
+    cargo install --path diem/diem-move/df-cli
+    cargo install --path move/language/move-analyzer
+    ```
+
+1. Install the `move` command line tool per the [official instructions](https://github.com/diem/move/tree/main/language/tools/move-cli#installation):
+
+    ```zsh
+    cargo install --git https://github.com/diem/move move-cli --branch main
     ```
 
 ### Conda

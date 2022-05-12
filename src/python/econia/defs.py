@@ -225,15 +225,15 @@ tx_sig_fields = SimpleNamespace(
 tx_timeout_granularity = 0.1
 """How long to wait between querying REST API for transaction status"""
 
-Ultima = 'Ultima'
+Econia = 'Econia'
 """Project name"""
 
-ultima_bool_maps = SimpleNamespace(
+econia_bool_maps = SimpleNamespace(
     side  = {True: 'Buy', False: 'Sell'},
 )
 """Mapping from boolean values onto corresponding string"""
 
-ultima_modules = SimpleNamespace(
+econia_modules = SimpleNamespace(
     AlnokiBST = SimpleNamespace(
         name = 'AlnokiBST',
         members = SimpleNamespace(
@@ -288,14 +288,14 @@ ultima_modules = SimpleNamespace(
         )
     )
 )
-"""Ultima Move modules with nested member specifiers"""
+"""Econia Move modules with nested member specifiers"""
 
-ultima_module_publish_order = [
+econia_module_publish_order = [
     [
-        ultima_modules.BST.name,
+        econia_modules.BST.name,
     ],
     [
-        ultima_modules.AlnokiBST.name
+        econia_modules.AlnokiBST.name
     ],
 ]
 """
@@ -305,24 +305,24 @@ should be defined as the sole element in a list. If order within
 sub-batches is changed, loading may break, for instance among friends
 """
 
-ultima_paths = SimpleNamespace(
+econia_paths = SimpleNamespace(
     # Relative to Move package root directory
-    bytecode_dir = 'build/ultima/bytecode_modules',
-    # Relative to Ultima repository root directory
-    move_package_root = 'src/move/ultima',
+    bytecode_dir = 'build/econia/bytecode_modules',
+    # Relative to Econia repository root directory
+    move_package_root = 'src/move/econia',
     # Relative to Move package root
     ss_path = 'ss',
     # Relative to Move package root
     toml_path = 'Move',
 )
-"""Ultima Move code paths"""
+"""Econia Move code paths"""
 
 util_paths = SimpleNamespace(
-    # Relative to Ultima repository root
+    # Relative to Econia repository root
     secrets_dir = '.secrets',
     # Relative to secrets directory
     old_keys = 'old',
-    # Ultima repository root relative to `src/jupyter`
-    ultima_root_rel_jupyter = '../..'
+    # Econia repository root relative to `src/jupyter`
+    econia_root_rel_jupyter = '../..'
 )
 """Paths to developer utility resources"""

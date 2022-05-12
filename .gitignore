@@ -32,14 +32,14 @@ src/move/move-cli-readme/*
 src/move/TestExample/*
 src/move/tutorials/*
 
-# Ultima Move project ignores
-src/move/ultima/build/AptosFramework/*
-src/move/ultima/build/MoveStdlib/*
-src/move/ultima/build/Ultima/sources/*
-src/move/ultima/build/Ultima/*.yaml
+# Econia Move project ignores
+src/move/econia/build/AptosFramework/*
+src/move/econia/build/MoveStdlib/*
+src/move/econia/build/Econia/sources/*
+src/move/econia/build/Econia/*.yaml
 
 # Cargo
-src/move/ultima/target/*
+src/move/econia/target/*
 *Cargo.lock
 
 # Sphinx

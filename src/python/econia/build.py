@@ -1,32 +1,32 @@
 """Move package building functionality
 
-Relies on a ``.secrets`` folder inside Ultima project root directory,
-which contains a directory ``old``, hence ``ultima/.secrets/old``
+Relies on a ``.secrets`` folder inside Econia project root directory,
+which contains a directory ``old``, hence ``econia/.secrets/old``
 
 Some functionality abstracted to be run from the command line:
 
 .. code-block:: zsh
     :caption: Prepping Move.toml file
 
-    # From within Ultima repository root
-    % python src/python/ultima/build.py prep long
-    % python src/python/ultima/build.py prep short
+    # From within Econia repository root
+    % python src/python/econia/build.py prep long
+    % python src/python/econia/build.py prep short
     # From elsewhere
     % cd src
-    python ../src/python/ultima/build.py prep long '../'
+    python ../src/python/econia/build.py prep long '../'
 
 .. code-block:: zsh
     :caption: Publishing all module bytecode
 
-    # From Ultima repository root directory
-    % python src/python/ultima/build.py publish .secrets/ultima.key batch
+    # From Econia repository root directory
+    % python src/python/econia/build.py publish .secrets/econia.key batch
     Success, tx hash: 0x9322adcaacbcd499b35d16b5d24c4521f65f30da27b1efd127319d24c916820e
 
 .. code-block:: zsh
     :caption: Generating a new dev account (when bytecode loader gets stuck)
 
-    # From Ultima repository root directory
-    % python src/python/ultima/build.py gen
+    # From Econia repository root directory
+    % python src/python/econia/build.py gen
     New account: 767f55126ad35ac6acaa130a2a18ba38d721fd42e5fa4bfe10885216ee307706
 """
 
@@ -36,11 +36,14 @@ import sys
 
 from pathlib import Path
 from typing import Union
-from ultima.account import Account, hex_leader
-from ultima.defs import (
+from econia.account import Account, hex_leader
+from econia.defs import (
     build_command_fields,
     build_print_outputs,
     e_msgs,
+    econia_module_publish_order as e_m_p_o,
+    econia_paths as ps,
+    Econia,
     file_extensions,
     max_address_length,
     networks,
@@ -49,17 +52,14 @@ from ultima.defs import (
     toml_section_names,
     tx_defaults,
     tx_fields,
-    Ultima,
-    ultima_module_publish_order as u_m_p_o,
-    ultima_paths as ps,
     util_paths
 )
-from ultima.rest import Client
+from econia.rest import Client
 
 def get_move_util_path(
     filename: str,
     file_extension: str,
-    ultima_root: str = seps.dot,
+    econia_root: str = seps.dot,
 ) -> str:
     """Return absolute path of file in Move package directory
 
@@ -69,8 +69,8 @@ def get_move_util_path(
         The file name, without extension
     file_extension : str
         File extension
-    ultima_root : str, optional
-        Relative path to Ultima repository root directory
+    econia_root : str, optional
+        Relative path to Econia repository root directory
 
     Returns
     -------
@@ -78,7 +78,7 @@ def get_move_util_path(
         Absolute path to given file
     """
     abs_path = os.path.join(
-        os.path.abspath(ultima_root),
+        os.path.abspath(econia_root),
         ps.move_package_root,
         filename + seps.dot + file_extension
     )
@@ -86,38 +86,38 @@ def get_move_util_path(
     return abs_path
 
 def get_toml_path(
-    ultima_root: str = seps.dot
+    econia_root: str = seps.dot
 ) -> str:
     """Return absolute path of Move.toml file
 
     Parameters
     ----------
-    ultima_root : str, optional
-        Relative path to Ultima repository root directory
+    econia_root : str, optional
+        Relative path to Econia repository root directory
 
     Returns
     -------
     str
         Absolute path to Move.toml file
     """
-    return get_move_util_path(ps.toml_path, file_extensions.toml, ultima_root)
+    return get_move_util_path(ps.toml_path, file_extensions.toml, econia_root)
 
 def get_sh_path(
-    ultima_root: str = seps.dot
+    econia_root: str = seps.dot
 ) -> str:
     """Return absolute path of Move package .sh file
 
     Parameters
     ----------
-    ultima_root : str, optional
-        Relative path to Ultima repository root directory
+    econia_root : str, optional
+        Relative path to Econia repository root directory
 
     Returns
     -------
     str
         Absolute path to ss.sh file
     """
-    return get_move_util_path(ps.ss_path, file_extensions.sh, ultima_root)
+    return get_move_util_path(ps.ss_path, file_extensions.sh, econia_root)
 
 def get_toml_lines(
     abs_path: str
@@ -174,7 +174,7 @@ def get_addr_elems(
 
     Example
     -------
-    >>> from ultima.build import get_addr_elems
+    >>> from econia.build import get_addr_elems
     >>> get_addr_elems("Foo = '0x123abc' # 123abc")
     ('Foo', '123abc', '123abc')
     >>> get_addr_elems("Bar = '0x987cbd'")
@@ -207,7 +207,7 @@ def get_addr_bytes(
 
     Example
     -------
-    >>> from ultima.build import get_addr_bytes
+    >>> from econia.build import get_addr_bytes
     >>> get_addr_bytes('1')
     b'\\x01'
     >>> get_addr_bytes('01')
@@ -234,7 +234,7 @@ def normalized_hex(
 
     Example
     -------
-    >>> from ultima.build import normalized_hex
+    >>> from econia.build import normalized_hex
     >>> normalized_hex(b'\\x00\\x01')
     '1'
     """
@@ -266,7 +266,7 @@ def format_addr(
 
     Example
     -------
-    >>> from ultima.build import format_addr
+    >>> from econia.build import format_addr
     >>> format_addr('A', '1234567890abcdef' * 3, None, True)
     "A = '0x1234567890abcdef1234567890abcdef1234567890abcdef'"
     >>> format_addr('B', '4321abcd' * 4, '7890' , True)
@@ -322,7 +322,7 @@ def format_addrs(
             in_addrs = True
 
 def prep_toml(
-    ultima_root: str = seps.dot,
+    econia_root: str = seps.dot,
     long: bool = True,
 ) -> None:
     """Prepare Move.toml file with either long/short address variants
@@ -333,25 +333,25 @@ def prep_toml(
 
     Parameters
     ----------
-    ultima_root : str, optional
-        Relative path to Ultima repository root directory
+    econia_root : str, optional
+        Relative path to Econia repository root directory
     long: bool, optional
         If True, format as Aptos addresses, otherwise Move CLI addresses
     """
-    toml_path = get_toml_path(ultima_root)
+    toml_path = get_toml_path(econia_root)
     lines = get_toml_lines(toml_path)
     format_addrs(lines, long)
     Path(toml_path).write_text(seps.nl.join(lines))
 
 def get_bytecode_files(
-    ultima_root: str = seps.dot
+    econia_root: str = seps.dot
 ) -> dict[str, str]:
     """Return dict from module name to module bytecode string
 
     Parameters
     ----------
-    ultima_root : str, optional
-        Relative path to ultima repository root directory
+    econia_root : str, optional
+        Relative path to econia repository root directory
 
     Returns
     -------
@@ -359,7 +359,7 @@ def get_bytecode_files(
         Map from module name to bytecode hexstring
     """
     abs_path = os.path.join(
-        os.path.abspath(ultima_root),
+        os.path.abspath(econia_root),
         ps.move_package_root,
         ps.bytecode_dir
     )
@@ -379,9 +379,9 @@ def print_bc_diagnostics(
 
     Parameters
     ----------
-    client : ultima.rest.Client
+    client : econia.rest.Client
         An instantiated REST client
-    signer : ultima.account.Account
+    signer : econia.account.Account
         Signing account
     leader : str
         First token to print
@@ -413,7 +413,7 @@ def print_bc_diagnostics(
 
 def publish_bytecode(
     s: Account,
-    ultima_root: str = seps.dot,
+    econia_root: str = seps.dot,
     serialized: bool = False
 ) -> str:
     """Publish bytecode modules with diagnostic printouts
@@ -422,13 +422,13 @@ def publish_bytecode(
 
     Parameters
     ----------
-    s : ultima.account.Account
+    s : econia.account.Account
         Signing account
-    ultima_root : str, optional
-        Relative path to ultima repository root directory
+    econia_root : str, optional
+        Relative path to econia repository root directory
     serialized : bool, optional
         If True, publish all modules in separate transactions. If False,
-        batch as specified at :data:`~defs.ultima_module_publish_order`
+        batch as specified at :data:`~defs.econia_module_publish_order`
 
     Returns
     -------
@@ -436,15 +436,15 @@ def publish_bytecode(
         Transaction hash of module upload transaction
     """
     c = Client(networks.devnet)
-    bc_map = get_bytecode_files(ultima_root)
+    bc_map = get_bytecode_files(econia_root)
     # Only load modules specified for publication
-    loadable_modules = [module for batch in u_m_p_o for module in batch]
+    loadable_modules = [module for batch in e_m_p_o for module in batch]
     if serialized: # Loop over modules
         to_load = {module: bc_map[module] for module in loadable_modules}
         for m in to_load.keys():
             print_bc_diagnostics(c, s, m, to_load[m], serialized=True)
     else: # Publish modules in batches
-        for batch in u_m_p_o:
+        for batch in e_m_p_o:
             first = True # First module in batch
             leader = '' # Initialize diagnostic printout message
             to_load = [] # List of bytecode hexstrings to load
@@ -489,34 +489,34 @@ def sub_middle_group_file(
     return old
 
 def get_secrets_dir(
-    ultima_root: str
+    econia_root: str
 ) -> str:
-    """Return absolute path of `ultima/.secrets`
+    """Return absolute path of `econia/.secrets`
 
     Parameters
     ----------
-    ultima_root : str, optional
-        Relative path to Ultima repository root directory
+    econia_root : str, optional
+        Relative path to Econia repository root directory
 
     Returns
     -------
     str
-        Absolute path of `ultima/.secrets`
+        Absolute path of `econia/.secrets`
     """
-    return os.path.join(os.path.abspath(ultima_root), util_paths.secrets_dir)
+    return os.path.join(os.path.abspath(econia_root), util_paths.secrets_dir)
 
 def get_key_path(
     address = str,
-    ultima_root: str = seps.dot
+    econia_root: str = seps.dot
 ) -> str:
-    """Return absolute path keyfile at `ultima/.secrets/<address>.key`
+    """Return absolute path keyfile at `econia/.secrets/<address>.key`
 
     Parameters
     ----------
     address : str
         Account address
-    ultima_root : str, optional
-        Relative path to Ultima repository root directory
+    econia_root : str, optional
+        Relative path to Econia repository root directory
 
     Returns
     -------
@@ -524,13 +524,13 @@ def get_key_path(
         Absolute path of keyfile
     """
     return os.path.join(
-        get_secrets_dir(ultima_root),
+        get_secrets_dir(econia_root),
         address + seps.dot + file_extensions.key
     )
 
 def sub_address_in_build_files(
     address = str,
-    ultima_root: str = seps.dot
+    econia_root: str = seps.dot
 ) -> str:
     """Substitute new address into relevant build files
 
@@ -538,8 +538,8 @@ def sub_address_in_build_files(
     ----------
     address : str
         Account address without leading hex specifier
-    ultima_root : str, optional
-        Relative path to ultima repository root directory
+    econia_root : str, optional
+        Relative path to econia repository root directory
 
     Returns
     -------
@@ -549,11 +549,11 @@ def sub_address_in_build_files(
     check = None
     for path, pattern in [
         (
-            get_toml_path(ultima_root),
-            r'(' + Ultima + r'.+' + seps.hex + r')(\w+)(' + seps.sq + r')',
+            get_toml_path(econia_root),
+            r'(' + Econia + r'.+' + seps.hex + r')(\w+)(' + seps.sq + r')',
         ),
         (
-            get_sh_path(ultima_root),
+            get_sh_path(econia_root),
             r'(.+' + util_paths.secrets_dir + seps.sls + r')(\w+)(.+)'
         )
     ]:
@@ -583,18 +583,18 @@ def archive_keyfile(
     except FileNotFoundError: # Keyfile likely already deleted manually
         pass
 
-def gen_new_ultima_dev_account(
-    ultima_root: str = seps.dot
+def gen_new_econia_dev_account(
+    econia_root: str = seps.dot
 ) -> str:
-    """Generate new Ultima account, fund from faucet, update build files
+    """Generate new Econia account, fund from faucet, update build files
 
     For when bytecode loader gets stuck and will not upload valid code
-    without changing the Move module or Ultima named address account
+    without changing the Move module or Econia named address account
 
     Parameters
     ----------
-    ultima_root : str, optional
-        Relative path to ultima repository root directory
+    econia_root : str, optional
+        Relative path to econia repository root directory
     """
     account = Account()
     address = account.address()
@@ -607,10 +607,10 @@ def gen_new_ultima_dev_account(
     # Strip off potential leading 0 for recording on disk
     address = normalized_hex(get_addr_bytes(account.address()))
     print(build_print_outputs.account_msg, address)
-    account.save_seed_to_disk(get_key_path(address, ultima_root))
-    prep_toml(ultima_root, long=True)
-    old_address = sub_address_in_build_files(address, ultima_root)
-    archive_keyfile(get_key_path(old_address, ultima_root))
+    account.save_seed_to_disk(get_key_path(address, econia_root))
+    prep_toml(econia_root, long=True)
+    old_address = sub_address_in_build_files(address, econia_root)
+    archive_keyfile(get_key_path(old_address, econia_root))
 
 if __name__ == '__main__':
     """See module docstring for examples"""
@@ -622,15 +622,15 @@ if __name__ == '__main__':
 
     if action == build_command_fields.prep: # Prepare Move.Toml file
         long = sys.argv[2] == build_command_fields.long
-        ultima_root = sys.argv[3]
-        prep_toml(ultima_root, long)
+        econia_root = sys.argv[3]
+        prep_toml(econia_root, long)
     if action == publish: # Aptos build and publish
         keyfile = sys.argv[2]
-        ultima_root = sys.argv[3]
+        econia_root = sys.argv[3]
         serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
         account = Account(path=keyfile)
-        publish_bytecode(account, ultima_root, serialized)
+        publish_bytecode(account, econia_root, serialized)
     if action == build_command_fields.gen: # Generate new dev account
         if len (sys.argv) == 3:
-            ultima_root = sys.argv[2]
-        gen_new_ultima_dev_account(ultima_root)
+            econia_root = sys.argv[2]
+        gen_new_econia_dev_account(econia_root)

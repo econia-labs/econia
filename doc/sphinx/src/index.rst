@@ -1,4 +1,4 @@
-Ultima
+Econia
 ######
 
 *Hyper-parallelized on-chain order book for the Aptos blockchain*

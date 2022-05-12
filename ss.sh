@@ -5,7 +5,7 @@ fi
 
 # Verify that this script can be invoked
 if test $1 = hello; then
-    echo Hello, Ultima developer
+    echo Hello, Econia developer
 
 elif test $1 = c; then
     clear
@@ -26,7 +26,7 @@ elif test $1 = dt; then
 
 # Go to Move package folder
 elif test $1 = mp; then
-    cd src/move/ultima
+    cd src/move/econia
     move sandbox clean
 
 # Install dependencies and generate relevant files
@@ -45,12 +45,12 @@ elif test $1 = setup; then
 
     # Install conda environment if it doesn't exist
     # Included because attempted re-install throws errors
-    if ! conda info -e | grep -q 'ultima '; then
+    if ! conda info -e | grep -q 'econia '; then
         conda env create -f env/conda.yml
     fi
-    conda activate ultima
+    conda activate econia
 
-    # Pip install the Ultima python package to ultima conda environment
+    # Pip install the Econia python package to econia conda environment
     # Install in editable mode so can update Python source in real time
     pip install -e src/python
 
@@ -61,7 +61,7 @@ elif test $1 = setup; then
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
 
     # Generate a random keyfile for publishing bytecode
-    python src/python/ultima/build.py gen
+    python src/python/econia/build.py gen
 
     echo Setup complete
 

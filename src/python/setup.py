@@ -1,8 +1,8 @@
 from distutils.core import setup
 
 setup(
-    name='ultima',
+    name='econia',
     version='0.1.0',
-    packages=['ultima'],
+    packages=['econia'],
     package_dir={'': './'}
 )

@@ -8,7 +8,7 @@ import requests
 
 from types import SimpleNamespace
 from typing import Any, Dict, Optional
-from ultima.account import Account
+from econia.account import Account
 
 network_urls = SimpleNamespace(
     devnet = 'https://fullnode.devnet.aptoslabs.com',

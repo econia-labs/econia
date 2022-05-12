@@ -1,5 +1,5 @@
 /// Red-black binary search tree
-module Ultima::BST {
+module Econia::BST {
 
     use Std::Vector::{
         borrow as v_b,

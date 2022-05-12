@@ -1,7 +1,7 @@
 /// Hackathon BST demo
-module Ultima::AlnokiBST {
+module Econia::AlnokiBST {
     use Std::Signer;
-    use Ultima::BST::{
+    use Econia::BST::{
         BST,
         has_key,
         empty,

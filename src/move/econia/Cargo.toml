@@ -1,7 +1,7 @@
 # Modeled off `aptos-core/aptos-move/move-examples/Cargo.toml`
 
 [package]
-name = 'ultima'
+name = 'econia'
 version = '0.1.0' # Per SemVer
 edition = '2018'
 

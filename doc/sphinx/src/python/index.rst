@@ -1,4 +1,4 @@
-Ultima Python package
+Econia Python package
 #####################
 
 .. toctree::

@@ -1,4 +1,4 @@
-name: ultima
+name: econia
 channels:
   - conda-forge
   - defaults

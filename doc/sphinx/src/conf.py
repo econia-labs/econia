@@ -18,13 +18,13 @@ from datetime import datetime
 #
 
 # Python source code
-sys.path.insert(0, os.path.abspath('../../../src/python/ultima'))
+sys.path.insert(0, os.path.abspath('../../../src/python/econia'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Ultima'
-copyright = f'{datetime.now().year}, Team Ultima'
-author = 'Team Ultima'
+project = 'Econia'
+copyright = f'{datetime.now().year}, Team Econia'
+author = 'Team Econia'
 
 # -- General configuration ---------------------------------------------------
 

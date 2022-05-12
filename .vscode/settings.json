@@ -12,6 +12,7 @@
         "devnet",
         "docstrings",
         "doctest",
+        "Econia",
         "elems",
         "genindex",
         "inplace",
@@ -23,8 +24,7 @@
         "seps",
         "structopt",
         "tempfiles",
-        "toctree",
-        "ubms"
+        "toctree"
     ],
     "esbonio.sphinx.confDir": "",
 }

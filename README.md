@@ -1,4 +1,4 @@
-# Ultima
+# Econia
 
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
@@ -15,7 +15,7 @@
 
 ### Shell scripts
 
-The easiest way to develop with Ultima is through the provided shell scripts, and the fastest way to run these scripts is by adding the following function to your runtime configuration file (`~/.zshrc`, `~/.bash_profile`, etc):
+The easiest way to develop with Econia is through the provided shell scripts, and the fastest way to run these scripts is by adding the following function to your runtime configuration file (`~/.zshrc`, `~/.bash_profile`, etc):
 
 ```zsh
 # Shell script wrapper: pass all commands to ./ss.sh
@@ -25,10 +25,10 @@ s() {source ss.sh "$@"}
 Now you will be able to run the provided `ss.sh` script file in whatever directory you are in by simply typing `s`:
 
 ```
-% git clone https://github.com/ultima-exchange/ultima.git
-% cd ultima
+% git clone https://github.com/econia-exchange/econia.git
+% cd econia
 % s hello
-Hello, Ultima developer
+Hello, Econia developer
 ```
 
 See `ss.sh` within a given directory for its available options
@@ -47,14 +47,14 @@ See `ss.sh` within a given directory for its available options
     brew install miniconda # Python package management
     ```
 
-1. Create the `ultima` conda environment with the `Ultima` Python package inside:
+1. Create the `econia` conda environment with the `Econia` Python package inside:
 
     ```zsh
     conda env create -f env/conda.yml
     ```
 
     ```zsh
-    conda activate ultima
+    conda activate econia
     ```
 
     ```zsh
@@ -113,40 +113,40 @@ See `ss.sh` within a given directory for its available options
 
 ### Conda
 
-Ultima uses `conda` (a command line tool for managing Python environments), the `ultima` conda environment, and the Ultima Python package within the `ultima` conda environment.
-If using VS Code, select `ultima` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
+Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
+If using VS Code, select `econia` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
 
 ```zsh
 # To activate
-(base) % conda activate ultima
+(base) % conda activate econia
 # To deactivate
-(ultima) ultima % conda deactivate
+(econia) econia % conda deactivate
 ```
 
-With the `ultima` conda environment active, you can then build the documentation, explore the provided interactive Jupyter notebook archive, and run Move command line tools:
+With the `econia` conda environment active, you can then build the documentation, explore the provided interactive Jupyter notebook archive, and run Move command line tools:
 
 ```zsh
 # Autobuild Sphinx documentation with realtime updates
-(ultima) % s ab
+(econia) % s ab
 ```
 
 ```zsh
 # Open Jupyter notebook gallery
 # Earliest notebooks subject to breaking changes
-(ultima) % s nb
+(econia) % s nb
 ```
 
 ```zsh
-# Change directory to the Ultima Move package
+# Change directory to the Econia Move package
 # Move package has its own utility shell scripts
-(ultima) % s mp
+(econia) % s mp
 ```
 
 ## Major filetypes
 
 ### Python
 
-The Ultima Python package source code is at `src/python/ultima`.
+The Econia Python package source code is at `src/python/econia`.
 Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into the documentation website via Sphinx.
 Sphinx documentation source files are at `doc/sphinx`.
 
@@ -158,5 +158,5 @@ Hence, older commits can be checked out and experimented with, but mostly they a
 
 ### Move
 
-Move source code is at `src/move/ultima`.
+Move source code is at `src/move/econia`.
 In the absence of a formal style guide, Move code is formatted similarly to PEP8-style Python code.

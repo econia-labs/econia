@@ -7,12 +7,14 @@ import time
 from decimal import Decimal as dec
 from math import trunc
 from typing import Any, Dict, Optional, Tuple, Union
-from ultima.account import Account, hex_leader
-from ultima.defs import (
+from econia.account import Account, hex_leader
+from econia.defs import (
     account_fields,
     api_url_types,
     coin_scales,
     e_msgs,
+    econia_bool_maps as ebms,
+    econia_modules as ems,
     member_names as members,
     module_names as modules,
     msg_sig_start_byte as start_byte,
@@ -30,21 +32,19 @@ from ultima.defs import (
     tx_defaults,
     tx_fields,
     tx_sig_fields,
-    tx_timeout_granularity,
-    ultima_bool_maps as ubms,
-    ultima_modules as ums
+    tx_timeout_granularity
 )
 
-APT = ums.Coin.members.APT
+APT = ems.Coin.members.APT
 """str: APT coin symbol"""
 
-USD = ums.Coin.members.USD
+USD = ems.Coin.members.USD
 """str: USD coin symbol"""
 
-Buy = ubms.side[True]
+Buy = ebms.side[True]
 """str: Order side buy indicator"""
 
-Sell = ubms.side[False]
+Sell = ebms.side[False]
 """str: Order side sell indicator"""
 
 scale_map = {APT: coin_scales.APT, USD: coin_scales.USD}
@@ -65,7 +65,7 @@ def get_side_bool(
     bool
         True for 'Buy', False, for 'Sell'
     """
-    return [k for k in ubms.side.keys() if ubms.side[k] == text][0]
+    return [k for k in ebms.side.keys() if ebms.side[k] == text][0]
 
 def move_trio(
     address: str,
@@ -90,7 +90,7 @@ def move_trio(
 
     Example
     -------
-    >>> from ultima.rest import move_trio
+    >>> from econia.rest import move_trio
     >>> move_trio('1', 'TestCoin', 'Balance')
     '0x1::TestCoin::Balance'
     """
@@ -116,14 +116,14 @@ def typed_trio(
 
     Example
     -------
-    >>> from ultima.rest import typed_trio
+    >>> from econia.rest import typed_trio
     >>> typed_trio('0x123::Module::member', 'type_specifier')
     '0x123::Module::member<type_specifier>'
     """
     return trio + seps.lt + type + seps.gt
 
 def coin_typed_trios(
-    ultima_addr: str,
+    econia_addr: str,
     module: str,
     member: str
 ) -> list[str]:
@@ -131,12 +131,12 @@ def coin_typed_trios(
 
     Parameters
     ----------
-    ultima_addr: str
-        Ultima account address, without leading hex specifier
+    econia_addr: str
+        Econia account address, without leading hex specifier
     module : str
-        An Ultima module per :data:`~defs.ultima_modules`
+        An Econia module per :data:`~defs.econia_modules`
     member : str
-        An Ultima module member per :data:`~defs.ultima_modules`
+        An Econia module member per :data:`~defs.econia_modules`
 
     Returns
     -------
@@ -145,15 +145,15 @@ def coin_typed_trios(
 
     Example
     -------
-    >>> from ultima.rest import coin_typed_trios
+    >>> from econia.rest import coin_typed_trios
     >>> coin_typed_trios('1a2b3c', 'Foo', 'bar') \
     # doctest: +NORMALIZE_WHITESPACE
     ['0x1a2b3c::Foo::bar<0x1a2b3c::Coin::APT>',
      '0x1a2b3c::Foo::bar<0x1a2b3c::Coin::USD>']
     """
-    untyped = move_trio(ultima_addr, module, member)
+    untyped = move_trio(econia_addr, module, member)
     [apt_t, usd_t] = [
-        move_trio(ultima_addr, ums.Coin.name, coin) for coin in [APT, USD]
+        move_trio(econia_addr, ems.Coin.name, coin) for coin in [APT, USD]
     ]
     return [typed_trio(untyped, coin_trio) for coin_trio in [apt_t, usd_t]]
 
@@ -180,7 +180,7 @@ def construct_script_payload(
 
     Example
     -------
-    >>> from ultima.rest import construct_script_payload as c
+    >>> from econia.rest import construct_script_payload as c
     >>> c('0x1::TestCoin::transfer', [f'0xf00', '123']) \
     # doctest: +NORMALIZE_WHITESPACE
     {'type': 'script_function_payload',
@@ -215,7 +215,7 @@ def subs(
 
     Example
     -------
-    >>> from ultima.rest import subs
+    >>> from econia.rest import subs
     >>> # Input as decimal str
     >>> subs('1.123', 'USD')
     1123000000000
@@ -249,7 +249,7 @@ def units(
 
     Example
     -------
-    >>> from ultima.rest import units
+    >>> from econia.rest import units
     >>> units(1234567, 'USD')
     Decimal('0.000001234567')
     >>> units(123456789, 'APT')
@@ -274,7 +274,7 @@ def base_price(
 
     Example
     -------
-    >>> from ultima.rest import base_price
+    >>> from econia.rest import base_price
     >>> base_price(12345678)
     Decimal('12.345678')
     >>> base_price(150000000)
@@ -300,7 +300,7 @@ def subunit_price(
 
     Example
     -------
-    >>> from ultima.rest import subunit_price
+    >>> from econia.rest import subunit_price
     >>> subunit_price(123)
     123000000
     >>> subunit_price('4565.78023')
@@ -327,8 +327,8 @@ class Client:
 
     Example
     -------
-    >>> from ultima.defs import networks
-    >>> from ultima.rest import Client
+    >>> from econia.defs import networks
+    >>> from econia.rest import Client
     >>> client = Client(networks.devnet)
     >>> client.fullnode_url
     'https://fullnode.devnet.aptoslabs.com'
@@ -367,8 +367,8 @@ class Client:
 
         Example
         -------
-        >>> from ultima.defs import networks
-        >>> from ultima.rest import Client
+        >>> from econia.defs import networks
+        >>> from econia.rest import Client
         >>> client = Client(networks.devnet)
         >>> client.construct_request_url(
         ...     ['foo', 'bar'],
@@ -570,7 +570,7 @@ class Client:
 
         Parameters
         ----------
-        account_from : ultima.account.Account
+        account_from : econia.account.Account
             Signing account
         tx_request : dict from str to Any
             Transaction request per
@@ -674,7 +674,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.account.Account
+        signer : econia.account.Account
             Signing account
         payload : dict from str to Any
             Transaction payload data
@@ -702,7 +702,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.account.Account
+        signer : econia.account.Account
             Signing account
         trio_list : list of str
             A list of identifiers to submit to :func:`~rest.move_trio`
@@ -729,7 +729,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.account.Account
+        signer : econia.account.Account
             Signing account
         module_bcs : list of str
             Bytecode hexstring without leading hex specifier
@@ -754,7 +754,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.account.Account
+        signer : econia.account.Account
             Signing account
         module_bcs : list of str
             List of bytecode hexstrings without leading hex specifier
@@ -987,7 +987,7 @@ class Client:
 
         Parameters
         ----------
-        signer : ultima.account.Account
+        signer : econia.account.Account
             Signing account of sender
         recipient : str
             Receiving address
@@ -1005,13 +1005,13 @@ class Client:
             [hex_leader(recipient), str(amount)]
         )
 
-class UltimaClient(Client):
-    """Aptos REST API interface with Ultima-specific functionality"""
+class EconiaClient(Client):
+    """Aptos REST API interface with Econia-specific functionality"""
 
     def get_resource_data(
         self,
         addr: str,
-        ultima_addr: str,
+        econia_addr: str,
         module: str,
         member: str
     ) -> Optional[Dict[str, Any]]:
@@ -1021,24 +1021,24 @@ class UltimaClient(Client):
         ----------
         addr: str
             Address to check resources at
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        econia_addr: str
+            Econia account address, without leading hex specifier
         module : str
-            An Ultima module per :data:`~defs.ultima_modules`
+            An Econia module per :data:`~defs.econia_modules`
         member : str
-            An Ultima module member per :data:`~defs.ultima_modules`
+            An Econia module member per :data:`~defs.econia_modules`
 
         Returns
         -------
         dict from str to Any, or None
             Resource data for given member specifiers
         """
-        return self.get_trio_data(move_trio(ultima_addr, module, member), addr)
+        return self.get_trio_data(move_trio(econia_addr, module, member), addr)
 
     def get_typed_resource_data(
         self,
         addr: str,
-        ultima_addr: str,
+        econia_addr: str,
         module: str,
         member: str
     ) -> Tuple[
@@ -1051,12 +1051,12 @@ class UltimaClient(Client):
         ----------
         addr: str
             Address to check resources at
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        econia_addr: str
+            Econia account address, without leading hex specifier
         module : str
-            An Ultima module per :data:`~defs.ultima_modules`
+            An Econia module per :data:`~defs.econia_modules`
         member : str
-            An Ultima module member per :data:`~defs.ultima_modules`
+            An Econia module member per :data:`~defs.econia_modules`
 
         Returns
         -------
@@ -1065,24 +1065,24 @@ class UltimaClient(Client):
         dict from str to Any or None
             USD resource data
         """
-        [APT_tt, USD_tt] = coin_typed_trios(ultima_addr, module, member)
+        [APT_tt, USD_tt] = coin_typed_trios(econia_addr, module, member)
         result  = {APT: None, USD: None}
         return \
             self.get_trio_data(APT_tt, addr), self.get_trio_data(USD_tt, addr)
 
-    def publish_ultima_balances(
+    def publish_econia_balances(
         self,
         signer: Account,
-        ultima_addr: str
+        econia_addr: str
     ) -> str:
         """Publish empty APT and USD balance resources to an account
 
         Parameters
         ----------
-        signer : ultima.account.Account
+        signer : econia.account.Account
             Signing account to publish under
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        econia_addr: str
+            Econia account address, without leading hex specifier
 
         Returns
         -------
@@ -1091,13 +1091,13 @@ class UltimaClient(Client):
         """
         return self.run_script(
             signer,
-            [ultima_addr, ums.Coin.name, ums.Coin.members.publish_balances]
+            [econia_addr, ems.Coin.name, ems.Coin.members.publish_balances]
         )
 
-    def account_ultima_coin_balances(
+    def account_econia_coin_balances(
         self,
         addr: str,
-        ultima_addr: str
+        econia_addr: str
     ) -> Dict[str, Any]:
         """Return APT and USD coin holdings at given address
 
@@ -1105,8 +1105,8 @@ class UltimaClient(Client):
         ----------
         addr : str
             Address to check balances of
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        econia_addr: str
+            Econia account address, without leading hex specifier
 
         Returns
         -------
@@ -1117,20 +1117,20 @@ class UltimaClient(Client):
         result = {APT: None, USD: None}
         APT_d, USD_d = self.get_typed_resource_data(
             addr,
-            ultima_addr,
-            ums.Coin.name,
-            ums.Coin.members.Balance
+            econia_addr,
+            ems.Coin.name,
+            ems.Coin.members.Balance
         )
-        coin = ums.Coin.fields.coin
-        subunits = ums.Coin.fields.subunits
+        coin = ems.Coin.fields.coin
+        subunits = ems.Coin.fields.subunits
         for key, data in [(APT, APT_d), (USD, USD_d)]:
             if data is not None:
                 result[key] = units(data[coin][subunits], key)
         return result
 
-    def airdrop_ultima_coins(
+    def airdrop_econia_coins(
         self,
-        ultima_signer: Account,
+        econia_signer: Account,
         addr: str,
         apt: Union[str, int],
         usd: Union[str, int]
@@ -1139,8 +1139,8 @@ class UltimaClient(Client):
 
         Parameters
         ----------
-        ultima_signer : ultima.account.Account
-            Airdrop authority, which should be Ultima account
+        econia_signer : econia.account.Account
+            Airdrop authority, which should be Econia account
         addr : str
             Address to mint to
         apt : str or int
@@ -1154,16 +1154,16 @@ class UltimaClient(Client):
             Transaction hash
         """
         return self.run_script(
-            ultima_signer,
-            [ultima_signer.address(), ums.Coin.name, ums.Coin.members.airdrop],
+            econia_signer,
+            [econia_signer.address(), ems.Coin.name, ems.Coin.members.airdrop],
             [addr, str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
-    def transfer_ultima_coins(
+    def transfer_econia_coins(
         self,
         sender: Account,
         recipient: str,
-        ultima_addr: str,
+        econia_addr: str,
         apt: Union[str, int] = 0,
         usd: Union[str, int] = 0,
     ) -> str :
@@ -1171,12 +1171,12 @@ class UltimaClient(Client):
 
         Parameters
         ----------
-        sender : ultima.account.Account
+        sender : econia.account.Account
             Account sending coins
         recipient : str
             Address to send to
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        econia_addr: str
+            Econia account address, without leading hex specifier
         apt : str or int
             Base units of APT to transfer
         usd : int, optional
@@ -1189,23 +1189,23 @@ class UltimaClient(Client):
         """
         return self.run_script(
             sender,
-            [ultima_addr, ums.Coin.name, ums.Coin.members.transfer_both_coins],
+            [econia_addr, ems.Coin.name, ems.Coin.members.transfer_both_coins],
             [recipient, str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
     def init_account(
         self,
         signer: Account,
-        ultima_addr: str,
+        econia_addr: str,
     ) -> str:
         """Initialize user account
 
         Parameters
         ----------
-        signer: ultima.account.Account
-            Account initializing an Ultima-specific Ultima::User::Account
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        signer: econia.account.Account
+            Account initializing an Econia-specific Econia::User::Account
+        econia_addr: str
+            Econia account address, without leading hex specifier
 
         Returns
         -------
@@ -1214,24 +1214,25 @@ class UltimaClient(Client):
         """
         return self.run_script(
             signer,
-            [ultima_addr, ums.User.name, ums.User.members.init_account],
+            [econia_addr, ems.User.name, ems.User.members.init_account],
         )
 
     def deposit_coins(
         self,
         signer: Account,
-        ultima_addr: str,
+        econia_addr: str,
         apt: Union[str, int],
         usd: Union[str, int],
     ) -> str:
-        """Deposit coins from `Ultima::Coin::Balance` into collateral
+        """Deposit coins from `Econia::Coin::Balance` into collateral
 
         Parameters
         ----------
-        signer: ultima.account.Account
-            Account initializing an Ultima-specific Ultima::User::Account
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        signer: econia.account.Account
+            Account initializing an Econia-specific
+            Econia::User::Account
+        econia_addr: str
+            Econia account address, without leading hex specifier
         apt : str or int
             Amount of APT to deposit, in base units
         usd : str or int
@@ -1244,25 +1245,25 @@ class UltimaClient(Client):
         """
         return self.run_script(
             signer,
-            [ultima_addr, ums.User.name, ums.User.members.deposit_coins],
+            [econia_addr, ems.User.name, ems.User.members.deposit_coins],
             [str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
     def withdraw_coins(
         self,
         signer: Account,
-        ultima_addr: str,
+        econia_addr: str,
         apt: Union[str, int],
         usd: Union[str, int],
     ) -> str:
-        """Withdraw coins from collateral into `Ultima::Coin::Balance`
+        """Withdraw coins from collateral into `Econia::Coin::Balance`
 
         Parameters
         ----------
-        signer: ultima.account.Account
-            Account initializing an Ultima-specific Ultima::User::Account
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        signer: econia.account.Account
+            Account initializing an Econia-specific Econia::User::Account
+        econia_addr: str
+            Econia account address, without leading hex specifier
         apt : str or int
             Amount of APT to withdraw, in base units
         usd : str or int
@@ -1275,14 +1276,14 @@ class UltimaClient(Client):
         """
         return self.run_script(
             signer,
-            [ultima_addr, ums.User.name, ums.User.members.withdraw_coins],
+            [econia_addr, ems.User.name, ems.User.members.withdraw_coins],
             [str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
     def collateral_balances(
         self,
         addr: str,
-        ultima_addr: str
+        econia_addr: str
     ) -> Dict[str, Any]:
         """Return APT and USD collateral balances
 
@@ -1290,8 +1291,8 @@ class UltimaClient(Client):
         ----------
         addr : str
             Address to check balances of, without leading hex specifier
-        ultima_addr: str
-            Ultima account address, without leading hex specifier
+        econia_addr: str
+            Econia account address, without leading hex specifier
 
         Returns
         -------
@@ -1303,13 +1304,13 @@ class UltimaClient(Client):
         result = {APT: None, USD: None}
         APT_d, USD_d = self.get_typed_resource_data(
             addr,
-            ultima_addr,
-            ums.User.name,
-            ums.User.members.Collateral
+            econia_addr,
+            ems.User.name,
+            ems.User.members.Collateral
         )
-        available = ums.User.fields.available
-        holdings = ums.User.fields.holdings
-        subunits = ums.Coin.fields.subunits
+        available = ems.User.fields.available
+        holdings = ems.User.fields.holdings
+        subunits = ems.Coin.fields.subunits
         for key, data in [(APT, APT_d), (USD, USD_d)]:
             if data is not None:
                 result[key] = {
@@ -1320,7 +1321,7 @@ class UltimaClient(Client):
 
     def record_mock_order(
         self,
-        ultima: Account,
+        econia: Account,
         addr: str,
         id: int,
         side: str,
@@ -1331,8 +1332,8 @@ class UltimaClient(Client):
 
         Parameters
         ----------
-        ultima : ultima.account.Account
-            The Ultima account
+        econia : econia.account.Account
+            The Econia account
         addr : str
             Address to record order at
         id : int
@@ -1349,20 +1350,20 @@ class UltimaClient(Client):
         str
             Transaction hash
         """
-        record_mock_order = ums.User.members.record_mock_order
+        record_mock_order = ems.User.members.record_mock_order
         side_bool = get_side_bool(side)
         price = str(subunit_price(price))
         unfilled = str(subs(unfilled, APT))
         return self.run_script(
-            ultima,
-            [ultima.address(), ums.User.name, record_mock_order],
+            econia,
+            [econia.address(), ems.User.name, record_mock_order],
             [addr, str(int(id)), side_bool, price, unfilled]
         )
 
     def open_orders(
         self,
         addr: str,
-        ultima_addr: str
+        econia_addr: str
     ) -> pd.DataFrame:
         """Get open orders for an address
 
@@ -1377,23 +1378,23 @@ class UltimaClient(Client):
             A cleaned ledger showing open orders in readable format
         """
         # Get data, store in pandas.DataFrame
-        User = ums.User.name
-        Orders = ums.User.members.Orders
-        open = ums.User.fields.open
-        data = self.get_resource_data(addr, ultima_addr, User, Orders)[open]
+        User = ems.User.name
+        Orders = ems.User.members.Orders
+        open = ems.User.fields.open
+        data = self.get_resource_data(addr, econia_addr, User, Orders)[open]
         if len(data) == 0: return None
         df = pd.DataFrame.from_dict(data)
 
         # Sort columns to match original data structure
-        id = ums.User.fields.id
-        price = ums.User.fields.price
-        side = ums.User.fields.side
-        unfilled = ums.User.fields.unfilled
+        id = ems.User.fields.id
+        price = ems.User.fields.price
+        side = ems.User.fields.side
+        unfilled = ems.User.fields.unfilled
         df = df[[id, side, price, unfilled]]
         df.set_index(id, inplace=True)
 
         # Map side boolean values onto readable string
-        df[side] = df[side].map(ubms.side)
+        df[side] = df[side].map(ebms.side)
 
         # Convert string representation of ints to floats, then scale
         df = df.astype({price: float, unfilled: float})
@@ -1404,7 +1405,7 @@ class UltimaClient(Client):
 
     def trigger_match_order(
         self,
-        ultima: Account,
+        econia: Account,
         addr: str,
         id: int,
         apt: Union[str, int],
@@ -1414,8 +1415,8 @@ class UltimaClient(Client):
 
         Parameters
         ----------
-        ultima : ultima.account.Account
-            The Ultima account
+        econia : econia.account.Account
+            The Econia account
         addr : str
             Address to match at
         id : int
@@ -1430,26 +1431,26 @@ class UltimaClient(Client):
         str
             Transaction hash
         """
-        trigger = ums.User.members.trigger_match_order
+        trigger = ems.User.members.trigger_match_order
         apt = str(subs(apt, APT))
         usd = str(subs(usd, USD))
         return self.run_script(
-            ultima,
-            [ultima.address(), ums.User.name, trigger],
+            econia,
+            [econia.address(), ems.User.name, trigger],
             [addr, str(id), apt, usd]
         )
 
-class AlnokiClient(UltimaClient):
+class AlnokiClient(EconiaClient):
 
     def alnoki_publish(
         self,
         user: Account, # User publishing resource
-        ultima: str # Smart contract address
+        econia: str # Smart contract address
     ):
         """Publish AlnokiBST resource to account"""
         tx_hash = self.run_script(
             user,
-            [ultima, ums.AlnokiBST.name, 'alnoki_publish'],
+            [econia, ems.AlnokiBST.name, 'alnoki_publish'],
             []
         )
         self.tx_vn_url_print(tx_hash)
@@ -1467,13 +1468,13 @@ class AlnokiClient(UltimaClient):
     def alnoki_insert(
         self,
         user: Account, # User modifying resource
-        ultima: str, # Smart contract address
+        econia: str, # Smart contract address
         k: int,
         v: int,
     ):
         tx_hash = self.run_script(
             user,
-            [ultima, ums.AlnokiBST.name, 'alnoki_insert'],
+            [econia, ems.AlnokiBST.name, 'alnoki_insert'],
             [str(k), str(v)]
         )
         self.tx_vn_url_print(tx_hash)
@@ -1491,11 +1492,11 @@ class AlnokiClient(UltimaClient):
     def alnoki_min(
         self,
         user: Account, # Account with resource
-        ultima: str, # Smart contract address
+        econia: str, # Smart contract address
     ):
         tx_hash = self.run_script(
             user,
-            [ultima, ums.AlnokiBST.name, 'alnoki_min'],
+            [econia, ems.AlnokiBST.name, 'alnoki_min'],
             []
         )
         self.tx_vn_url_print(tx_hash)
@@ -1504,11 +1505,11 @@ class AlnokiClient(UltimaClient):
     def alnoki_max(
         self,
         user: Account, # Account with resource
-        ultima: str, # Smart contract address
+        econia: str, # Smart contract address
     ):
         tx_hash = self.run_script(
             user,
-            [ultima, ums.AlnokiBST.name, 'alnoki_max'],
+            [econia, ems.AlnokiBST.name, 'alnoki_max'],
             []
         )
         self.tx_vn_url_print(tx_hash)
@@ -1517,12 +1518,12 @@ class AlnokiClient(UltimaClient):
     def alnoki_has_key(
         self,
         user: Account,
-        ultima: str,
+        econia: str,
         k: int
     ):
         tx_hash = self.run_script(
             user,
-            [ultima, ums.AlnokiBST.name, 'alnoki_has_key'],
+            [econia, ems.AlnokiBST.name, 'alnoki_has_key'],
             [str(k)]
         )
         self.tx_vn_url_print(tx_hash)
@@ -1532,12 +1533,12 @@ class AlnokiClient(UltimaClient):
     def alnoki_get(
         self,
         user: Account, # Account with resource
-        ultima: str, # Smart contract address
+        econia: str, # Smart contract address
         k: int
     ):
         tx_hash = self.run_script(
             user,
-            [ultima, ums.AlnokiBST.name, 'alnoki_get'],
+            [econia, ems.AlnokiBST.name, 'alnoki_get'],
             [str(k)]
         )
         self.tx_vn_url_print(tx_hash)

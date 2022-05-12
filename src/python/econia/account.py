@@ -5,7 +5,7 @@ import os
 
 from pathlib import Path
 from nacl.signing import SigningKey
-from ultima.defs import (
+from econia.defs import (
     e_msgs,
     file_extensions as exts,
     single_sig_id,
@@ -25,7 +25,7 @@ class Account:
         stored as human readable hex string
     dev_nb : bool, optional
         If True, initialize using key generated per
-        :func:`build.gen_new_ultima_dev_account`, assuming there is only
+        :func:`build.gen_new_econia_dev_account`, assuming there is only
         one such key in the provided directory
 
     Attributes
@@ -38,14 +38,14 @@ class Account:
     >>> import random
     >>> import shutil
     >>> from pathlib import Path
-    >>> from ultima.account import Account
-    >>> random.seed('Ultima')
+    >>> from econia.account import Account
+    >>> random.seed('Econia')
     >>> art = Account(random.randbytes(32))
     >>> art.address()
-    '8831fe5427536eca8341a3ce0258b2a1de5a31ee54e6db638a8e1ccf5aaeba86'
+    '9f06af40c6bf3d33946488dd3e7c2ae2a516693317307134ac52cbfc930cc9f0'
     >>> hex_seed = art.signing_key._seed.hex()
     >>> hex_seed
-    '65fc056e6134c06208d819822eba58fa3dd56493f628ca5e7e0f671d0d1aa234'
+    '512bb4996ea58e29f71bb07cd2353b3ce0d9556023859f1fd440770553e28a21'
     >>> path = 'tmp/.secrets/art.key'
     >>> art.save_seed_to_disk(path)
     >>> Path(path).read_text() == hex_seed
@@ -63,8 +63,8 @@ class Account:
     ) -> None:
         if seed is None:
             if dev_nb:
-                # Assume only one keyfile in `ultima/.secrets`
-                rrj = util_paths.ultima_root_rel_jupyter
+                # Assume only one keyfile in `econia/.secrets`
+                rrj = util_paths.econia_root_rel_jupyter
                 secrets = util_paths.secrets_dir
                 s_dir = os.path.join(os.path.abspath(rrj), secrets)
                 keyfile_name = \
@@ -132,7 +132,7 @@ class Account:
         Example
         -------
         >>> import shutil
-        >>> from ultima.account import Account
+        >>> from econia.account import Account
         >>> path = 'tmp/.secrets/acct.key'
         >>> # Account generation makes new random seed each time
         >>> Account().save_seed_to_disk(path)
@@ -172,7 +172,7 @@ def hex_leader(
 
     Example
     -------
-    >>> from ultima.account import hex_leader
+    >>> from econia.account import hex_leader
     >>> hex_leader('f00cafe')
     '0xf00cafe'
     """

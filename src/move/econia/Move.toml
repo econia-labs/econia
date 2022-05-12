@@ -1,5 +1,5 @@
 [package]
-name = 'Ultima'
+name = 'Econia'
 version = '0.1.0' # Per SemVer
 
 # Named addresses should be in one of two forms, `long` or `short`,
@@ -22,7 +22,7 @@ version = '0.1.0' # Per SemVer
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Ultima = '0x413a11a30e1fcf36247980a0e9393aa9f7dbfc83d610230a491995cc33c1b3f2'
+Econia = '0x2dc67de0657de53bf43a179eb5ccce8d7102501902dd533a0435f25adf3a1178'
 TestUser = '0xace'
 
 [dependencies.AptosFramework]

@@ -32,6 +32,7 @@ Some functionality abstracted to be run from the command line:
 
 import os
 import re
+import shutil
 import sys
 
 from pathlib import Path
@@ -46,6 +47,7 @@ from econia.defs import (
     Econia,
     file_extensions,
     max_address_length,
+    named_addrs,
     networks,
     regex_trio_group_ids as r_i,
     seps,
@@ -583,13 +585,52 @@ def archive_keyfile(
     except FileNotFoundError: # Keyfile likely already deleted manually
         pass
 
+def archive_keyfiles(
+    s_path: str
+) -> None:
+    """Archive all keyfiles from `.secrets` into `.secrets/old`
+
+    Parameters
+    ----------
+    abs_path:
+        Absolute path to `.secrets` directory
+    """
+    for i in os.listdir(s_path): # Loop over directory contents
+        if os.path.isfile(Path(s_path) / i): # Move only if is file
+            shutil.move(Path(s_path) / i, Path(s_path) / util_paths.old_keys)
+
+def sub_named_toml_address(
+    econia_root: str = seps.dot,
+    generic: bool = True,
+    named: str = hex_leader(named_addrs.Econia),
+) -> str:
+    """Substitute the named Econia address in Move.toml file
+
+    Parameters
+    ----------
+    econia_root : str, optional
+        Relative path to econia repository root directory
+    generic : bool, optional
+        If a generic named address should be substututed, e.g. '_'
+    named : str, optional
+        The named address string to substitute back inside single quotes
+
+    Returns
+    -------
+    str
+        Old value enclosed in single quotes
+    """
+    pattern = r'(' + Econia + r'.+' + seps.sq + r')(\w+)(' + seps.sq + r')$'
+    if generic:
+        to_sub = seps.us
+    else:
+        to_sub = named
+    return sub_middle_group_file(get_toml_path(econia_root), pattern, to_sub)
+
 def gen_new_econia_dev_account(
     econia_root: str = seps.dot
-) -> str:
+) -> None:
     """Generate new Econia account, fund from faucet, update build files
-
-    For when bytecode loader gets stuck and will not upload valid code
-    without changing the Move module or Econia named address account
 
     Parameters
     ----------
@@ -607,10 +648,9 @@ def gen_new_econia_dev_account(
     # Strip off potential leading 0 for recording on disk
     address = normalized_hex(get_addr_bytes(account.address()))
     print(build_print_outputs.account_msg, address)
+    archive_keyfiles(get_secrets_dir(econia_root))
     account.save_seed_to_disk(get_key_path(address, econia_root))
-    prep_toml(econia_root, long=True)
-    old_address = sub_address_in_build_files(address, econia_root)
-    archive_keyfile(get_key_path(old_address, econia_root))
+    sub_named_toml_address(econia_root)
 
 if __name__ == '__main__':
     """See module docstring for examples"""
@@ -630,6 +670,7 @@ if __name__ == '__main__':
         serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
         account = Account(path=keyfile)
         publish_bytecode(account, econia_root, serialized)
+        sub_named_toml_address(econia_root, generic=False)
     if action == build_command_fields.gen: # Generate new dev account
         if len (sys.argv) == 3:
             econia_root = sys.argv[2]

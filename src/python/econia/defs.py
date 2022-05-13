@@ -37,6 +37,60 @@ coin_scales = SimpleNamespace(
 )
 """Decimal scalars for each coin"""
 
+Econia = 'Econia'
+"""Project name"""
+
+econia_bool_maps = SimpleNamespace(
+    side  = {True: 'Buy', False: 'Sell'},
+)
+"""Mapping from boolean values onto corresponding string"""
+
+econia_modules = SimpleNamespace(
+    Coin = SimpleNamespace(
+        name = 'Coin',
+        members = SimpleNamespace(
+            airdrop = 'airdrop',
+            APT = 'APT',
+            Balance = 'Balance',
+            publish_balances = 'publish_balances',
+            transfer_both_coins = 'transfer_both_coins',
+            USD = 'USD'
+        ),
+        fields = SimpleNamespace(
+            coin = 'coin',
+            subunits = 'subunits'
+        )
+    ),
+    CritBit = SimpleNamespace(
+        name = 'CritBit'
+    ),
+)
+"""Econia Move modules with nested member specifiers"""
+
+econia_module_publish_order = [
+    [
+        econia_modules.CritBit.name,
+    ],
+]
+"""
+Order to publish Move modules bytecode in, with sublists indicating
+batched modules that should be loaded together. Individual modules
+should be defined as the sole element in a list. If order within
+sub-batches is changed, loading may break, for instance among friends
+"""
+
+econia_paths = SimpleNamespace(
+    # Relative to Move package root directory
+    bytecode_dir = 'build/econia/bytecode_modules',
+    # Relative to Econia repository root directory
+    move_package_root = 'src/move/econia',
+    # Relative to Move package root
+    ss_path = 'ss',
+    # Relative to Move package root
+    toml_path = 'Move',
+)
+"""Econia Move code paths"""
+
 e_msgs = SimpleNamespace(
     decimal = "Decimal values must be reported as str ('123.45') or int (123)",
     failed = 'failed',
@@ -79,7 +133,8 @@ data should be signed. Per official Aptos transaction tutorial
 """
 
 named_addrs = SimpleNamespace(
-    Std = '1'
+    Std = '1',
+    Econia = '1234' # For command-line testing
 )
 """Named addresses (without leading hex specifier)"""
 
@@ -179,7 +234,8 @@ seps = SimpleNamespace(
     rsb = ']',
     sq = "'",
     sls = '/',
-    sp = ' '
+    sp = ' ',
+    us = '_'
 )
 """Separators"""
 
@@ -224,98 +280,6 @@ tx_sig_fields = SimpleNamespace(
 
 tx_timeout_granularity = 0.1
 """How long to wait between querying REST API for transaction status"""
-
-Econia = 'Econia'
-"""Project name"""
-
-econia_bool_maps = SimpleNamespace(
-    side  = {True: 'Buy', False: 'Sell'},
-)
-"""Mapping from boolean values onto corresponding string"""
-
-econia_modules = SimpleNamespace(
-    AlnokiBST = SimpleNamespace(
-        name = 'AlnokiBST',
-        members = SimpleNamespace(
-            alnoki_get = 'alnoki_get',
-            alnoki_has_key = 'alnoki_has_key',
-            alnoki_insert = 'alnoki_insert',
-            alnoki_max = 'alnoki_max',
-            alnoki_min = 'alnoki_min',
-            alnoki_publish = 'alnoki_publish'
-        )
-    ),
-    Book = SimpleNamespace(
-        name = 'Book',
-    ),
-    BST = SimpleNamespace(
-        name = 'BST',
-    ),
-    Coin = SimpleNamespace(
-        name = 'Coin',
-        members = SimpleNamespace(
-            airdrop = 'airdrop',
-            APT = 'APT',
-            Balance = 'Balance',
-            publish_balances = 'publish_balances',
-            transfer_both_coins = 'transfer_both_coins',
-            USD = 'USD'
-        ),
-        fields = SimpleNamespace(
-            coin = 'coin',
-            subunits = 'subunits'
-        )
-    ),
-    User = SimpleNamespace(
-        name = 'User',
-        members = SimpleNamespace(
-            Collateral = 'Collateral',
-            deposit_coins = 'deposit_coins',
-            init_account = 'init_account',
-            Orders = 'Orders',
-            record_mock_order = 'record_mock_order',
-            trigger_match_order = 'trigger_match_order',
-            withdraw_coins = 'withdraw_coins',
-        ),
-        fields = SimpleNamespace(
-            available = 'available',
-            holdings = 'holdings',
-            id = 'id',
-            open = 'open',
-            price = 'price',
-            side = 'side',
-            unfilled = 'unfilled'
-        )
-    )
-)
-"""Econia Move modules with nested member specifiers"""
-
-econia_module_publish_order = [
-    [
-        econia_modules.BST.name,
-    ],
-    [
-        econia_modules.AlnokiBST.name
-    ],
-]
-"""
-Order to publish Move modules bytecode in, with sublists indicating
-batched modules that should be loaded together. Individual modules
-should be defined as the sole element in a list. If order within
-sub-batches is changed, loading may break, for instance among friends
-"""
-
-econia_paths = SimpleNamespace(
-    # Relative to Move package root directory
-    bytecode_dir = 'build/econia/bytecode_modules',
-    # Relative to Econia repository root directory
-    move_package_root = 'src/move/econia',
-    # Relative to Move package root
-    ss_path = 'ss',
-    # Relative to Move package root
-    toml_path = 'Move',
-)
-"""Econia Move code paths"""
 
 util_paths = SimpleNamespace(
     # Relative to Econia repository root

@@ -2,28 +2,11 @@
 name = 'Econia'
 version = '0.1.0' # Per SemVer
 
-# Named addresses should be in one of two forms, `long` or `short`,
-# depending on the context. The Aptos blockchain accepts long (32-byte)
-# addresses, while the Move command line tools only accept short
-# (16-byte) bytes addresses.
-#
-# Long form:
-# Name = '0x1234567890123456789012345678901234567890123456789012345678901234'
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# Up to 64 characters following the hex specifier (for Aptos)
-#
-# Short form:
-# Name = '0x12345678901234567890123456789012' # 345678990123456789012345678901234
-#           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# 32 characters following the hex specifier, followed by a space, a
-# pound, a space, then the remaining address string without quotes. The
-# trailing comment is not strictly necessary, since addresses can be
-# listed for even shorter forms, like 0x1 for the AptosFramework
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Econia = '0x2dc67de0657de53bf43a179eb5ccce8d' # 7102501902dd533a0435f25adf3a1178
-TestUser = '0xace'
+Econia = '0x1234'
+TestUser = '0x5678'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

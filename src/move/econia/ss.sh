@@ -20,12 +20,13 @@ elif test $1 = c; then
 elif test $1 = er; then
     cd ../../../
 
-# Aptos build and publish bytecode for all modules, passing arguments
-# Other scripts automatically update the specified keyfile
+# Publish bytecode using a newly-generated address
 elif test $1 = pb; then
-    python ../../python/econia/build.py prep long ../../..
-    aptos move compile > /dev/null
-    python ../../python/econia/build.py publish ../../../.secrets/2dc67de0657de53bf43a179eb5ccce8d7102501902dd533a0435f25adf3a1178.key ../../../ $2
+    addr=$(python ../../python/econia/build.py gen ../../.. \
+        | grep -E -o "(\w+)$") # RegEx search on printed output
+    aptos move compile --named-addresses "Econia=0x$addr" > /dev/null
+    python ../../python/econia/build.py publish \
+        ../../../.secrets/"$addr".key ../../../ $2
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

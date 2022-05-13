@@ -27,6 +27,8 @@ elif test $1 = pb; then
     aptos move compile --named-addresses "Econia=0x$addr" > /dev/null
     python ../../python/econia/build.py publish \
         ../../../.secrets/"$addr".key ../../../ $2
+    # Rebuild docs with generic address to avoid git diffs
+    move package build --doc >/dev/null
 
 # Clean up temp files and format addresses in short form
 elif test $1 = cl; then

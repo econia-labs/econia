@@ -10,11 +10,11 @@ structopt = '0.3.21'
 
 [dependencies.aptos-vm]
 git = 'https://github.com/aptos-labs/aptos-core'
-rev = '23996a18f8cebbd4bc5c7c0677d62b7ade2cefc3'
+rev = 'refs/remotes/origin/HEAD'
 
 [dependencies.aptos-workspace-hack]
 git = 'https://github.com/aptos-labs/aptos-core'
-rev = '23996a18f8cebbd4bc5c7c0677d62b7ade2cefc3'
+rev = 'refs/remotes/origin/HEAD'
 
 [dependencies.move-compiler]
 git = 'https://github.com/move-language/move'

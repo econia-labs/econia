@@ -6,28 +6,31 @@ which contains a directory ``old``, hence ``econia/.secrets/old``
 Some functionality abstracted to be run from the command line:
 
 .. code-block:: zsh
-    :caption: Prepping Move.toml file
-
-    # From within Econia repository root
-    % python src/python/econia/build.py prep long
-    % python src/python/econia/build.py prep short
-    # From elsewhere
-    % cd src
-    python ../src/python/econia/build.py prep long '../'
-
-.. code-block:: zsh
-    :caption: Publishing all module bytecode
-
-    # From Econia repository root directory
-    % python src/python/econia/build.py publish .secrets/econia.key batch
-    Success, tx hash: 0x9322adcaacbcd499b35d16b5d24c4521f65f30da27b1efd127319d24c916820e
-
-.. code-block:: zsh
-    :caption: Generating a new dev account (when bytecode loader gets stuck)
+    :caption: Generate new account, set Econia = "_" in ``Move.toml``
 
     # From Econia repository root directory
     % python src/python/econia/build.py gen
-    New account: 767f55126ad35ac6acaa130a2a18ba38d721fd42e5fa4bfe10885216ee307706
+    New account: 1b41ccde69f967baf13f18005cba2172cc5555b163c9a4e4bda93ab9a4c38f53
+    % < src/move/econia/Move.toml
+    [package]
+    name = 'Econia'
+    ...
+    Econia = '_'
+    ...
+
+.. code-block:: zsh
+    :caption: Publish all module bytecode, replace Econia address
+
+    # From Econia repository root directory
+    % python src/python/econia/build.py publish .secrets/1b41ccde69f967baf13f18005cba2172cc5555b163c9a4e4bda93ab9a4c38f53.key . serial
+    BST: success (https://aptos-explorer.netlify.app/txn/1291521)
+    CritBit: success (https://aptos-explorer.netlify.app/txn/1291525)
+    % < src/move/econia/Move.toml
+    [package]
+    name = 'Econia'
+    ...
+    Econia = '0x1234'
+    ...
 """
 
 import os
@@ -660,18 +663,24 @@ if __name__ == '__main__':
     serial = build_command_fields.serial
     action = sys.argv[1]
 
-    if action == build_command_fields.prep: # Prepare Move.Toml file
-        long = sys.argv[2] == build_command_fields.long
-        econia_root = sys.argv[3]
-        prep_toml(econia_root, long)
-    if action == publish: # Aptos build and publish
+    if action == publish: # Publish compiled bytecode
         keyfile = sys.argv[2]
-        econia_root = sys.argv[3]
-        serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
+        econia_root = seps.dot
+        serialized = False
+        if len(sys.argv) >= 4:
+            econia_root = sys.argv[3]
+            serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
         account = Account(path=keyfile)
         publish_bytecode(account, econia_root, serialized)
         sub_named_toml_address(econia_root, generic=False)
-    if action == build_command_fields.gen: # Generate new dev account
+    elif action == build_command_fields.gen: # Generate new dev account
+        econia_root = seps.dot
         if len (sys.argv) == 3:
             econia_root = sys.argv[2]
         gen_new_econia_dev_account(econia_root)
+
+    # (Deprecated)  Prepare Move.Toml file
+    elif action == build_command_fields.prep:
+        long = sys.argv[2] == build_command_fields.long
+        econia_root = sys.argv[3]
+        prep_toml(econia_root, long)

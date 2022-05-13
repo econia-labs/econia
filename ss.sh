@@ -7,6 +7,7 @@ fi
 if test $1 = hello; then
     echo Hello, Econia developer
 
+# Clear terminal
 elif test $1 = c; then
     clear
 

@@ -22,7 +22,7 @@ version = '0.1.0' # Per SemVer
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Econia = '0x2dc67de0657de53bf43a179eb5ccce8d7102501902dd533a0435f25adf3a1178'
+Econia = '0x2dc67de0657de53bf43a179eb5ccce8d' # 7102501902dd533a0435f25adf3a1178
 TestUser = '0xace'
 
 [dependencies.AptosFramework]

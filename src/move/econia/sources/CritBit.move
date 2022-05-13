@@ -74,7 +74,8 @@ module Econia::CritBit {
 // Binary operation helper functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return a `u8` corresponding to the provided human-readable
-    /// string, comprising only "0" and "1", of 8 characters or less
+    /// string. The input string should contain only "0"s and "1"s, up
+    /// to 8 characters max, (e.g. `b"10101010"`)
     fun bu8(
         // Human-readable string, of form `b"10101010"`
         s: vector<u8>
@@ -91,7 +92,7 @@ module Econia::CritBit {
             } else assert!(b == 0x30, E_BIT_NOT_0_OR_1);
             i = i + 1; // Proceed to next-least-significant bit
         };
-        r
+        r // Return result
     }
 
     #[test]
@@ -110,7 +111,7 @@ module Econia::CritBit {
 
     #[test]
     #[expected_failure(abort_code = 0)]
-    /// Verify failure for non-binary ASCII string
+    /// Verify failure for non-binary-representing ASCII string
     fun bu8_failure() {bu8(b"2");}
 
 // Binary operation helper functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

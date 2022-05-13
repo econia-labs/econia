@@ -23,11 +23,12 @@ References:
 * [Tcler's Wiki 2021](https://wiki.tcl-lang.org/page/critbit)
 
 
--  [Struct `N`](#0x1234_CritBit_N)
--  [Struct `CBT`](#0x1234_CritBit_CBT)
--  [Constants](#@Constants_0)
--  [Function `bu8`](#0x1234_CritBit_bu8)
--  [Function `empty`](#0x1234_CritBit_empty)
+- [Module `0x1234::CritBit`](#module-0x1234critbit)
+  - [Struct `N`](#struct-n)
+  - [Struct `CBT`](#struct-cbt)
+  - [Constants](#constants)
+  - [Function `bu8`](#function-bu8)
+  - [Function `empty`](#function-empty)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -153,7 +154,8 @@ child relationship field, analagous to a <code>NULL</code> pointer
 ## Function `bu8`
 
 Return a <code>u8</code> corresponding to the provided human-readable
-string, comprising only "0" and "1", of 8 characters or less
+string. The input string should contain only "0"s and "1"s, up
+to 8 characters max, (e.g. <code>b"10101010"</code>)
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_bu8">bu8</a>(s: vector&lt;u8&gt;): u8
@@ -181,7 +183,7 @@ string, comprising only "0" and "1", of 8 characters or less
         } <b>else</b> <b>assert</b>!(b == 0x30, <a href="CritBit.md#0x1234_CritBit_E_BIT_NOT_0_OR_1">E_BIT_NOT_0_OR_1</a>);
         i = i + 1; // Proceed <b>to</b> next-least-significant bit
     };
-    r
+    r // Return result
 }
 </code></pre>
 

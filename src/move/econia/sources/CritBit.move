@@ -1,6 +1,6 @@
 /// A crit-bit tree is a compact binary prefix tree, similar to a binary
 /// search tree, that stores a prefix-free set of bitstrings, like
-/// 64-bit integers or variable-length 0-terminated byte strings. For a
+/// 128-bit integers or variable-length 0-terminated byte strings. For a
 /// given set of keys there exists a unique crit-bit tree representing
 /// the set, hence crit-bit trees do not requre complex rebalancing
 /// algorithms like those of AVL or red-black binary search trees.
@@ -25,12 +25,13 @@ module Econia::CritBit {
         borrow as v_b,
         destroy_empty as v_d_e,
         empty as v_e,
-        length as v_l,
         push_back as v_pu_b
     };
 
     #[test_only]
     use Std::Vector::{
+        append as v_a,
+        length as v_l,
         is_empty as v_i_e,
         pop_back as v_po_b,
     };
@@ -100,13 +101,44 @@ module Econia::CritBit {
 
 // Binary operation helper functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return a `u8` corresponding to the provided human-readable
-    /// string. The input string should contain only "0"s and "1"s, up
-    /// to 8 characters max (e.g. `b"10101010"`)
-    fun bu8(
-        // Human-readable string, of form `b"10101010"`
+    /// Return the number of the most significant bit (0-indexed from
+    /// LSB) at which two non-identical bitstrings, `s1` and `s2`, vary.
+    /// To begin with, a bitwise XOR is used to flag all differing bits:
+    /// ```
+    ///      s1: 101110001
+    ///      s2: 101011100
+    /// s1 ^ s2: 000101101
+    ///             |- critical bit = 5
+    /// ```
+    /// Next
+    /// ```
+    ///           r: 000101101
+    ///       r - 1: 000101100
+    /// r & (r - 1): 000101100
+    ///  r = r >> 1: 000010110
+    /// ```
+    /// The critical bit is then the number of the left-most 1 in the
+    /// XOR result `r`. From here, so long as `r` is greater than 1,
+    /// then `r` AND (`r` - 1)
+    /// then `r` if the LSB of `r` is 1, then so will
+    /// the LSB of the `r` & (`r` - 1) if the LSB
+    /// of `r` is 1, which means that so long as `r` AND (`r` - 1) is
+    /// not equal to
+    fun crit_bit(
+        s1: u128,
+        s2: u128,
+    ) {
+        let r = s1 ^ s2; // Marked 1 at bits that differ
+        r;
+    }
+
+    #[test_only]
+    /// Return a `u128` corresponding to the provided byte string. The
+    /// byte should only contain only "0"s and "1"s, up to 128
+    /// characters max (e.g. `b"100101...10101010"`)
+    fun u(
         s: vector<u8>
-    ): u8 {
+    ): u128 {
         let n = v_l<u8>(&s); // Get number of bits in the string
         let r = 0; // Initialize result to 0
         let i = 0; // Start loop at least significant bit
@@ -122,35 +154,58 @@ module Econia::CritBit {
         r // Return result
     }
 
+    #[test_only]
+    /// Return `u128` corresponding to concatenated result of `a`, `b`,
+    /// and `c`. Useful for line-wrapping long byte strings
+    fun u_long(
+        a: vector<u8>,
+        b: vector<u8>,
+        c: vector<u8>
+    ): u128 {
+        v_a<u8>(&mut b, c); // Append c onto b
+        v_a<u8>(&mut a, b); // Append b onto a
+        u(a) // Return u128 equivalent of concatenated bytestring
+    }
+
     #[test]
     /// Verify successful return values
-    fun bu8_success() {
-        assert!(bu8(b"0") == 0, 0);
-        assert!(bu8(b"1") == 1, 1);
-        assert!(bu8(b"00") == 0, 2);
-        assert!(bu8(b"01") == 1, 3);
-        assert!(bu8(b"10") == 2, 4);
-        assert!(bu8(b"11") == 3, 5);
-        assert!(bu8(b"10101010") == 170, 6);
-        assert!(bu8(b"00000001") == 1, 7);
-        assert!(bu8(b"11111111") == 255, 8);
+    fun u_success() {
+        assert!(u(b"0") == 0, 0);
+        assert!(u(b"1") == 1, 1);
+        assert!(u(b"00") == 0, 2);
+        assert!(u(b"01") == 1, 3);
+        assert!(u(b"10") == 2, 4);
+        assert!(u(b"11") == 3, 5);
+        assert!(u(b"10101010") == 170, 6);
+        assert!(u(b"00000001") == 1, 7);
+        assert!(u(b"11111111") == 255, 8);
+        assert!(u_long( // 60 characters on first two lines, 8 on last
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"11111111"
+        ) == ALL_HI, 9);
+        assert!(u_long( // 60 characters on first two lines, 8 on last
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"11111110"
+        ) == ALL_HI - 1, 10);
     }
 
     #[test]
     #[expected_failure(abort_code = 0)]
-    /// Verify failure for non-binary-representing ASCII string
-    fun bu8_failure() {bu8(b"2");}
+    /// Verify failure for non-binary-representative byte string
+    fun u_failure() {u(b"2");}
 
     /// Return a bitmask with all bits high except for bit `b`,
     /// 0-indexed starting at LSB: bitshift 1 by `b`, XOR with `ALL_HI`
-    fun bit_lo(b: u8): u128 {1 << b ^ ALL_HI}
+    fun b_lo(b: u8): u128 {1 << b ^ ALL_HI}
 
     #[test]
     /// Verify successful bitmask generation
-    fun bit_lo_success() {
-        assert!(bit_lo(0) == ALL_HI - 1, 0);
-        assert!(bit_lo(1) == ALL_HI - 2, 1);
-        assert!(bit_lo(127) == 0x7fffffffffffffffffffffffffffffff, 2);
+    fun b_lo_success() {
+        assert!(b_lo(0) == ALL_HI - 1, 0);
+        assert!(b_lo(1) == ALL_HI - 2, 1);
+        assert!(b_lo(127) == 0x7fffffffffffffffffffffffffffffff, 2);
     }
 
 // Binary operation helper functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -301,7 +356,7 @@ module Econia::CritBit {
 
 // Node borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-// Membership checking >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Membership checks >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return true if `cb` has key `k`
     fun has_key<V>(
@@ -323,7 +378,7 @@ module Econia::CritBit {
 
     #[test]
     /// Verify successful key checks for the following tree, where `i`
-    /// indicates the node's vector index:
+    /// indicates each node's vector index:
     /// ```
     ///              i = 0 -> 2nd
     ///                      /   \
@@ -333,9 +388,31 @@ module Econia::CritBit {
     ///                            /   \
     ///                 i = 5 -> 110   111 <- i = 6
     /// ```
-    fun has_key_success() {
-        1;
+    fun has_key_success():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pair by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        cb.r = 0; // Set root to node at vector index 0
+        // Append nodes per above tree
+        v_pu_b<N<u8>>(&mut cb.t, N{s:   b_lo(2), c:   2, l:   1, r:   2, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"001"), c: EXT, l: NIL, r: NIL, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:   b_lo(1), c:   1, l:   3, r:   4, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"101"), c: EXT, l: NIL, r: NIL, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:   b_lo(0), c:   0, l:   5, r:   6, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"110"), c: EXT, l: NIL, r: NIL, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"111"), c: EXT, l: NIL, r: NIL, v});
+        // Assert correct membership checks
+        assert!(has_key(&cb, u(b"001")), 0);
+        assert!(has_key(&cb, u(b"101")), 1);
+        assert!(has_key(&cb, u(b"110")), 2);
+        assert!(has_key(&cb, u(b"111")), 3);
+        assert!(!has_key(&cb, u(b"011")), 4); // Not in tree
+        cb // Return rather than unpack
     }
 
-// Membership checking <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// Membership checks <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// Critical bit determination <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// Critical bit determination >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 }

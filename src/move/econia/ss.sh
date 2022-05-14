@@ -48,7 +48,7 @@ elif test $1 = t; then
     move package test $2 $3
 
 # Output test coverage summary
-elif test $1 = c; then
+elif test $1 = s; then
     move package coverage summary
 
 # Run test coverage summary against a module

@@ -5,11 +5,12 @@
 
 A crit-bit tree is a compact binary prefix tree, similar to a binary
 search tree, that stores a prefix-free set of bitstrings, like
-64-bit integers or variable-length 0-terminated byte strings. For a
+n-bit integers or variable-length 0-terminated byte strings. For a
 given set of keys there exists a unique crit-bit tree representing
 the set, hence crit-bit trees do not requre complex rebalancing
 algorithms like those of AVL or red-black binary search trees.
 Crit-bit trees support the following operations, quickly:
+
 * Membership testing
 * Insertion
 * Deletion
@@ -18,9 +19,44 @@ Crit-bit trees support the following operations, quickly:
 * Iteration
 
 References:
+
 * [Bernstein 2006](https://cr.yp.to/critbit.html)
 * [Langley 2012](https://github.com/agl/critbit)
 * [Tcler's Wiki 2021](https://wiki.tcl-lang.org/page/critbit)
+
+The present implementation involves a tree with two types of nodes,
+inner and outer. Inner nodes have two children each, while outer
+nodes have no children. There are no nodes that have exactly one
+child. Outer nodes store a key-value pair with a 128-bit integer as
+a key, and an arbitrary value of generic type. Inner nodes do not
+store a key, but rather, a bitmask indicating the critical bit
+(crit-bit) of divergence between keys located within the node's two
+subtrees: keys in the node's left subtree have a 0 at the critical
+bit, while keys in the node's right subtree have a 1 at the critical
+bit. Bit numbers are 0-indexed starting at the least-significant bit
+(LSB), such that a critical bit of 3, for instance, corresponds to
+the bitstring <code>00....001000</code>. Inner nodes are arranged
+hierarchically, with the most sigificant critical bits at the top of
+the tree. For instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code>
+would be stored in a crit-bit tree as follows (vertical bars
+included at left of illustration per issue with documentation build
+engine, namely, the automatic stripping of leading whitespace in
+fenced code blocks):
+```
+|       2nd
+|      /   \
+|    001   1st
+|         /   \
+|       101   0th
+|            /   \
+|          110   111
+```
+Here, the inner node marked <code>2nd</code> stores the bitmask <code>00...00100</code>,
+the inner node marked <code>1st</code> stores the bitmask <code>00...00010</code>, and the
+inner node marked <code>0th</code> stores the bitmask <code>00...00001</code>. Hence, the
+sole key in the left subtree of the inner node marked <code>2nd</code> has 0 at
+bit 2, while all the keys in the node's right subtree have 1 at bit
+2, and so on for the other inner nodes.
 
 ---
 
@@ -28,15 +64,15 @@ References:
 -  [Struct `N`](#0x1234_CritBit_N)
 -  [Struct `CB`](#0x1234_CritBit_CB)
 -  [Constants](#@Constants_0)
--  [Function `bu8`](#0x1234_CritBit_bu8)
--  [Function `bit_lo`](#0x1234_CritBit_bit_lo)
+-  [Function `crit_bit`](#0x1234_CritBit_crit_bit)
+-  [Function `b_lo`](#0x1234_CritBit_b_lo)
 -  [Function `empty`](#0x1234_CritBit_empty)
 -  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
 -  [Function `singleton`](#0x1234_CritBit_singleton)
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `is_empty`](#0x1234_CritBit_is_empty)
 -  [Function `b_c`](#0x1234_CritBit_b_c)
--  [Function `borrow_closest_ext`](#0x1234_CritBit_borrow_closest_ext)
+-  [Function `borrow_closest_out`](#0x1234_CritBit_borrow_closest_out)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
 
 
@@ -89,19 +125,19 @@ value type <code>V</code>
 <code>l: u64</code>
 </dt>
 <dd>
- Left child node index, marked <code><a href="CritBit.md#0x1234_CritBit_NIL">NIL</a></code> when external node
+ Left child node index, marked <code><a href="CritBit.md#0x1234_CritBit_NIL">NIL</a></code> when outer node
 </dd>
 <dt>
 <code>r: u64</code>
 </dt>
 <dd>
- Right child node index, marked <code><a href="CritBit.md#0x1234_CritBit_NIL">NIL</a></code> when external node
+ Right child node index, marked <code><a href="CritBit.md#0x1234_CritBit_NIL">NIL</a></code> when outer node
 </dd>
 <dt>
 <code>v: V</code>
 </dt>
 <dd>
- Value from the key-value pair
+ Value from node's key-value pair
 </dd>
 </dl>
 
@@ -157,16 +193,6 @@ u128 bitmask with all bits high
 
 
 
-<a name="0x1234_CritBit_EXT"></a>
-
-Flag to indicate external node
-
-
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_EXT">EXT</a>: u8 = 255;
-</code></pre>
-
-
-
 <a name="0x1234_CritBit_E_BIT_NOT_0_OR_1"></a>
 
 
@@ -206,6 +232,16 @@ child relationship field, analagous to a <code>NULL</code> pointer
 
 
 
+<a name="0x1234_CritBit_OUT"></a>
+
+Flag to indicate outer node
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>: u8 = 255;
+</code></pre>
+
+
+
 <a name="0x1234_CritBit_R"></a>
 
 Right direction
@@ -216,16 +252,36 @@ Right direction
 
 
 
-<a name="0x1234_CritBit_bu8"></a>
+<a name="0x1234_CritBit_crit_bit"></a>
 
-## Function `bu8`
+## Function `crit_bit`
 
-Return a <code>u8</code> corresponding to the provided human-readable
-string. The input string should contain only "0"s and "1"s, up
-to 8 characters max (e.g. <code>b"10101010"</code>)
+Return the number of the most significant bit (0-indexed from
+LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
+To begin with, a bitwise XOR is used to flag all differing bits:
+```
+s1: 101110001
+s2: 101011100
+s1 ^ s2: 000101101
+|- critical bit = 5
+```
+Next
+```
+r: 000101101
+r - 1: 000101100
+r & (r - 1): 000101100
+r = r >> 1: 000010110
+```
+The critical bit is then the number of the left-most 1 in the
+XOR result <code>r</code>. From here, so long as <code>r</code> is greater than 1,
+then <code>r</code> AND (<code>r</code> - 1)
+then <code>r</code> if the LSB of <code>r</code> is 1, then so will
+the LSB of the <code>r</code> & (<code>r</code> - 1) if the LSB
+of <code>r</code> is 1, which means that so long as <code>r</code> AND (<code>r</code> - 1) is
+not equal to
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_bu8">bu8</a>(s: vector&lt;u8&gt;): u8
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(s1: u128, s2: u128)
 </code></pre>
 
 
@@ -234,23 +290,12 @@ to 8 characters max (e.g. <code>b"10101010"</code>)
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_bu8">bu8</a>(
-    // Human-readable string, of form `b"10101010"`
-    s: vector&lt;u8&gt;
-): u8 {
-    <b>let</b> n = v_l&lt;u8&gt;(&s); // Get number of bits in the string
-    <b>let</b> r = 0; // Initialize result <b>to</b> 0
-    <b>let</b> i = 0; // Start <b>loop</b> at least significant bit
-    <b>while</b> (i &lt; n) { // While there are bits left <b>to</b> review
-        <b>let</b> b = *v_b&lt;u8&gt;(&s, n - 1 - i); // Get bit under review
-        <b>if</b> (b == 0x31) { // If the bit is 1 (0x31 in ASCII)
-            // OR result <b>with</b> the correspondingly leftshifted bit
-            r = r | 1 &lt;&lt; (i <b>as</b> u8);
-        // Otherwise, <b>assert</b> bit is marked 0 (0x30 in ASCII)
-        } <b>else</b> <b>assert</b>!(b == 0x30, <a href="CritBit.md#0x1234_CritBit_E_BIT_NOT_0_OR_1">E_BIT_NOT_0_OR_1</a>);
-        i = i + 1; // Proceed <b>to</b> next-least-significant bit
-    };
-    r // Return result
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(
+    s1: u128,
+    s2: u128,
+) {
+    <b>let</b> r = s1 ^ s2; // Marked 1 at bits that differ
+    r;
 }
 </code></pre>
 
@@ -258,15 +303,15 @@ to 8 characters max (e.g. <code>b"10101010"</code>)
 
 </details>
 
-<a name="0x1234_CritBit_bit_lo"></a>
+<a name="0x1234_CritBit_b_lo"></a>
 
-## Function `bit_lo`
+## Function `b_lo`
 
 Return a bitmask with all bits high except for bit <code>b</code>,
 0-indexed starting at LSB: bitshift 1 by <code>b</code>, XOR with <code><a href="CritBit.md#0x1234_CritBit_ALL_HI">ALL_HI</a></code>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_bit_lo">bit_lo</a>(b: u8): u128
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_lo">b_lo</a>(b: u8): u128
 </code></pre>
 
 
@@ -275,7 +320,7 @@ Return a bitmask with all bits high except for bit <code>b</code>,
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_bit_lo">bit_lo</a>(b: u8): u128 {1 &lt;&lt; b ^ <a href="CritBit.md#0x1234_CritBit_ALL_HI">ALL_HI</a>}
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_lo">b_lo</a>(b: u8): u128 {1 &lt;&lt; b ^ <a href="CritBit.md#0x1234_CritBit_ALL_HI">ALL_HI</a>}
 </code></pre>
 
 
@@ -329,7 +374,7 @@ Insert key-value pair <code>k</code> and <code>v</code> into an empty <code>cb</
     k: u128,
     v: V
 ) {
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, <a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;{s: k, c: <a href="CritBit.md#0x1234_CritBit_EXT">EXT</a>, l: <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>, r: <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>, v});
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, <a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;{s: k, c: <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>, l: <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>, r: <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>, v});
 }
 </code></pre>
 
@@ -450,16 +495,16 @@ Return immutable reference to either left or right child of node
 
 </details>
 
-<a name="0x1234_CritBit_borrow_closest_ext"></a>
+<a name="0x1234_CritBit_borrow_closest_out"></a>
 
-## Function `borrow_closest_ext`
+## Function `borrow_closest_out`
 
-Walk a non-empty tree until arriving at the external node
-sharing the largest common prefix with <code>k</code>, then return a
-reference to the node. Internal nodes store a bitstring where
-all bits except the critical bit are 1, so if bitwise OR between
-this bitstring and <code>k</code> is identical to the bitstring, then <code>k</code>
-has 0 at the critical bit:
+Walk a non-empty tree until arriving at the outer node sharing
+the largest common prefix with <code>k</code>, then return a reference to
+the node. Inner nodes store a bitstring where all bits except
+the critical bit are 1, so if bitwise OR between this bitstring
+and <code>k</code> is identical to the bitstring, then <code>k</code> has 0 at the
+critical bit:
 ```
 Internal node bitstring, c = 5: ....1111011111
 Insertion key, bit 5 = 0:       ....1011000101
@@ -472,7 +517,7 @@ bitstring evaluates to <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> 
 and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> when <code>k</code> has the critical bit at 1.
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_ext">borrow_closest_ext</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_out">borrow_closest_out</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;
 </code></pre>
 
 
@@ -481,12 +526,12 @@ and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> when <code>k</code>
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_ext">borrow_closest_ext</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_out">borrow_closest_out</a>&lt;V&gt;(
     cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
     k: u128,
 ): &<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt; {
     <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, cb.r); // Borrow root node reference
-    <b>while</b> (n.c != <a href="CritBit.md#0x1234_CritBit_EXT">EXT</a>) { // While node under review is <b>internal</b> node
+    <b>while</b> (n.c != <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>) { // While node under review is <b>internal</b> node
         // Borrow either <a href="CritBit.md#0x1234_CritBit_L">L</a> or <a href="CritBit.md#0x1234_CritBit_R">R</a> child node depending on OR result
         n = <a href="CritBit.md#0x1234_CritBit_b_c">b_c</a>&lt;V&gt;(cb, n, n.s | k == n.s);
     }; // Node reference now corresponds <b>to</b> closest match
@@ -519,8 +564,8 @@ Return true if <code>cb</code> has key <code>k</code>
     k: u128,
 ): bool {
     <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb)) <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> empty
-    // Return <b>true</b> <b>if</b> closest external node match bitstring is `k`
-    <b>return</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_ext">borrow_closest_ext</a>&lt;V&gt;(cb, k).s == k
+    // Return <b>true</b> <b>if</b> closest outer node match bitstring is `k`
+    <b>return</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_out">borrow_closest_out</a>&lt;V&gt;(cb, k).s == k
 }
 </code></pre>
 

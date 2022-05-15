@@ -35,13 +35,12 @@ subtrees: keys in the node's left subtree have a 0 at the critical
 bit, while keys in the node's right subtree have a 1 at the critical
 bit. Bit numbers are 0-indexed starting at the least-significant bit
 (LSB), such that a critical bit of 3, for instance, corresponds to
-the bitstring <code>00....001000</code>. Inner nodes are arranged
-hierarchically, with the most sigificant critical bits at the top of
-the tree. For instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code>
-would be stored in a crit-bit tree as follows (vertical bars
-included at left of illustration per issue with documentation build
-engine, namely, the automatic stripping of leading whitespace in
-fenced code blocks):
+the bitmask <code>00....001000</code>. Inner nodes are arranged hierarchically,
+with the most sigificant critical bits at the top of the tree. For
+instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code> would be stored in
+a crit-bit tree as follows (vertical bars included at left of
+illustration per issue with documentation build engine, namely, the
+automatic stripping of leading whitespace in fenced code blocks):
 ```
 |       2nd
 |      /   \
@@ -56,7 +55,9 @@ the inner node marked <code>1st</code> stores the bitmask <code>00...00010</code
 inner node marked <code>0th</code> stores the bitmask <code>00...00001</code>. Hence, the
 sole key in the left subtree of the inner node marked <code>2nd</code> has 0 at
 bit 2, while all the keys in the node's right subtree have 1 at bit
-2, and so on for the other inner nodes.
+2. And similarly for the inner node marked <code>0th</code>, its left child
+node does not have bit 0 set, while its right child does have bit 0
+set.
 
 ---
 
@@ -72,7 +73,7 @@ bit 2, while all the keys in the node's right subtree have 1 at bit
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `is_empty`](#0x1234_CritBit_is_empty)
 -  [Function `b_c`](#0x1234_CritBit_b_c)
--  [Function `borrow_closest_out`](#0x1234_CritBit_borrow_closest_out)
+-  [Function `borrow_closest_outer`](#0x1234_CritBit_borrow_closest_outer)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
 
 
@@ -185,7 +186,7 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 
 <a name="0x1234_CritBit_ALL_HI"></a>
 
-u128 bitmask with all bits high
+u128 bitmask with all bits set
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_ALL_HI">ALL_HI</a>: u128 = 340282366920938463463374607431768211455;
@@ -495,29 +496,28 @@ Return immutable reference to either left or right child of node
 
 </details>
 
-<a name="0x1234_CritBit_borrow_closest_out"></a>
+<a name="0x1234_CritBit_borrow_closest_outer"></a>
 
-## Function `borrow_closest_out`
+## Function `borrow_closest_outer`
 
 Walk a non-empty tree until arriving at the outer node sharing
 the largest common prefix with <code>k</code>, then return a reference to
-the node. Inner nodes store a bitstring where all bits except
-the critical bit are 1, so if bitwise OR between this bitstring
-and <code>k</code> is identical to the bitstring, then <code>k</code> has 0 at the
-critical bit:
+the node. Inner nodes store a bitmask where all bits except the
+critical bit are not set, so if bitwise AND between <code>k</code> and an
+inner node's bitmask is 0, then <code>k</code> has 0 at the critical bit:
 ```
-Internal node bitstring, c = 5: ....1111011111
-Insertion key, bit 5 = 0:       ....1011000101
-Result of bitwise OR:           ....1111011111
+Insertion key, bit 5 = 0:  ...1011000101
+Inner node bitmask, c = 5: ...0000100000
+Result of bitwise AND:     ...0000000000
 ```
 Hence, since the directional constants <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> are set to
 <code><b>true</b></code> and <code><b>false</b></code> respectively, a conditional check on equality
-between the bitwise OR result and the original empty node
-bitstring evaluates to <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> when <code>k</code> has the critical bit at 0
-and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> when <code>k</code> has the critical bit at 1.
+between the 0 and the bitwise AND result evaluates to <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> when
+<code>k</code> does not have the critical bit set, and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> when <code>k</code> does
+have the critical bit set.
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_out">borrow_closest_out</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_outer">borrow_closest_outer</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;
 </code></pre>
 
 
@@ -526,16 +526,16 @@ and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> when <code>k</code>
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_out">borrow_closest_out</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_outer">borrow_closest_outer</a>&lt;V&gt;(
     cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
     k: u128,
 ): &<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt; {
     <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, cb.r); // Borrow root node reference
-    <b>while</b> (n.c != <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>) { // While node under review is <b>internal</b> node
-        // Borrow either <a href="CritBit.md#0x1234_CritBit_L">L</a> or <a href="CritBit.md#0x1234_CritBit_R">R</a> child node depending on OR result
-        n = <a href="CritBit.md#0x1234_CritBit_b_c">b_c</a>&lt;V&gt;(cb, n, n.s | k == n.s);
-    }; // Node reference now corresponds <b>to</b> closest match
-    n // Return node reference
+    <b>while</b> (n.c != <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>) { // While node under review is inner node
+        // Borrow either <a href="CritBit.md#0x1234_CritBit_L">L</a> or <a href="CritBit.md#0x1234_CritBit_R">R</a> child node depending on AND result
+        n = <a href="CritBit.md#0x1234_CritBit_b_c">b_c</a>&lt;V&gt;(cb, n, n.s & k == 0);
+    }; // Node reference now corresponds <b>to</b> closest outer node
+    n // Return closest outer node reference
 }
 </code></pre>
 
@@ -565,7 +565,7 @@ Return true if <code>cb</code> has key <code>k</code>
 ): bool {
     <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb)) <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> empty
     // Return <b>true</b> <b>if</b> closest outer node match bitstring is `k`
-    <b>return</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_out">borrow_closest_out</a>&lt;V&gt;(cb, k).s == k
+    <b>return</b> <a href="CritBit.md#0x1234_CritBit_borrow_closest_outer">borrow_closest_outer</a>&lt;V&gt;(cb, k).s == k
 }
 </code></pre>
 

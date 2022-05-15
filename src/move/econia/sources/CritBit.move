@@ -30,13 +30,12 @@
 /// bit, while keys in the node's right subtree have a 1 at the critical
 /// bit. Bit numbers are 0-indexed starting at the least-significant bit
 /// (LSB), such that a critical bit of 3, for instance, corresponds to
-/// the bitstring `00....001000`. Inner nodes are arranged
-/// hierarchically, with the most sigificant critical bits at the top of
-/// the tree. For instance, the keys `001`, `101`, `110`, and `111`
-/// would be stored in a crit-bit tree as follows (vertical bars
-/// included at left of illustration per issue with documentation build
-/// engine, namely, the automatic stripping of leading whitespace in
-/// fenced code blocks):
+/// the bitmask `00....001000`. Inner nodes are arranged hierarchically,
+/// with the most sigificant critical bits at the top of the tree. For
+/// instance, the keys `001`, `101`, `110`, and `111` would be stored in
+/// a crit-bit tree as follows (vertical bars included at left of
+/// illustration per issue with documentation build engine, namely, the
+/// automatic stripping of leading whitespace in fenced code blocks):
 /// ```
 /// |       2nd
 /// |      /   \
@@ -51,7 +50,9 @@
 /// inner node marked `0th` stores the bitmask `00...00001`. Hence, the
 /// sole key in the left subtree of the inner node marked `2nd` has 0 at
 /// bit 2, while all the keys in the node's right subtree have 1 at bit
-/// 2, and so on for the other inner nodes.
+/// 2. And similarly for the inner node marked `0th`, its left child
+/// node does not have bit 0 set, while its right child does have bit 0
+/// set.
 ///
 /// ---
 ///
@@ -79,7 +80,7 @@ module Econia::CritBit {
     const NIL: u64 = 0xffffffffffffffff;
     /// Flag to indicate outer node
     const OUT: u8 = 0xff;
-    /// u128 bitmask with all bits high
+    /// u128 bitmask with all bits set
     const ALL_HI: u128 = 0xffffffffffffffffffffffffffffffff;
     /// Left direction
     const L: bool = true;
@@ -364,30 +365,29 @@ module Econia::CritBit {
 
     /// Walk a non-empty tree until arriving at the outer node sharing
     /// the largest common prefix with `k`, then return a reference to
-    /// the node. Inner nodes store a bitstring where all bits except
-    /// the critical bit are 1, so if bitwise OR between this bitstring
-    /// and `k` is identical to the bitstring, then `k` has 0 at the
-    /// critical bit:
+    /// the node. Inner nodes store a bitmask where all bits except the
+    /// critical bit are not set, so if bitwise AND between `k` and an
+    /// inner node's bitmask is 0, then `k` has 0 at the critical bit:
     /// ```
-    /// Internal node bitstring, c = 5: ....1111011111
-    /// Insertion key, bit 5 = 0:       ....1011000101
-    /// Result of bitwise OR:           ....1111011111
+    /// Insertion key, bit 5 = 0:  ...1011000101
+    /// Inner node bitmask, c = 5: ...0000100000
+    /// Result of bitwise AND:     ...0000000000
     /// ```
     /// Hence, since the directional constants `L` and `R` are set to
     /// `true` and `false` respectively, a conditional check on equality
-    /// between the bitwise OR result and the original empty node
-    /// bitstring evaluates to `L` when `k` has the critical bit at 0
-    /// and `R` when `k` has the critical bit at 1.
-    fun borrow_closest_out<V>(
+    /// between the 0 and the bitwise AND result evaluates to `L` when
+    /// `k` does not have the critical bit set, and `R` when `k` does
+    /// have the critical bit set.
+    fun borrow_closest_outer<V>(
         cb: &CB<V>,
         k: u128,
     ): &N<V> {
         let n = v_b<N<V>>(&cb.t, cb.r); // Borrow root node reference
-        while (n.c != OUT) { // While node under review is internal node
-            // Borrow either L or R child node depending on OR result
-            n = b_c<V>(cb, n, n.s | k == n.s);
-        }; // Node reference now corresponds to closest match
-        n // Return node reference
+        while (n.c != OUT) { // While node under review is inner node
+            // Borrow either L or R child node depending on AND result
+            n = b_c<V>(cb, n, n.s & k == 0);
+        }; // Node reference now corresponds to closest outer node
+        n // Return closest outer node reference
     }
 
 // Node borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -401,7 +401,7 @@ module Econia::CritBit {
     ): bool {
         if (is_empty<V>(cb)) return false; // Return false if empty
         // Return true if closest outer node match bitstring is `k`
-        return borrow_closest_out<V>(cb, k).s == k
+        return borrow_closest_outer<V>(cb, k).s == k
     }
 
     #[test]
@@ -430,11 +430,11 @@ module Econia::CritBit {
         let cb = empty<u8>(); // Initialize empty tree
         cb.r = 0; // Set root to node at vector index 0
         // Append nodes per above tree
-        v_pu_b<N<u8>>(&mut cb.t, N{s:   b_lo(2), c:   2, l:   1, r:   2, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 2, c:   2, l:   1, r:   2, v});
         v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"001"), c: OUT, l: NIL, r: NIL, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s:   b_lo(1), c:   1, l:   3, r:   4, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 1, c:   1, l:   3, r:   4, v});
         v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"101"), c: OUT, l: NIL, r: NIL, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s:   b_lo(0), c:   0, l:   5, r:   6, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 0, c:   0, l:   5, r:   6, v});
         v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"110"), c: OUT, l: NIL, r: NIL, v});
         v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"111"), c: OUT, l: NIL, r: NIL, v});
         // Assert correct membership checks

@@ -64,19 +64,20 @@ set.
 ---
 
 
--  [Struct `N`](#0x1234_CritBit_N)
--  [Struct `CB`](#0x1234_CritBit_CB)
--  [Constants](#@Constants_0)
--  [Function `crit_bit`](#0x1234_CritBit_crit_bit)
--  [Function `b_lo`](#0x1234_CritBit_b_lo)
--  [Function `empty`](#0x1234_CritBit_empty)
--  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
--  [Function `singleton`](#0x1234_CritBit_singleton)
--  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
--  [Function `is_empty`](#0x1234_CritBit_is_empty)
--  [Function `b_c`](#0x1234_CritBit_b_c)
--  [Function `borrow_closest_outer`](#0x1234_CritBit_borrow_closest_outer)
--  [Function `has_key`](#0x1234_CritBit_has_key)
+- [Module `0x1234::CritBit`](#module-0x1234critbit)
+  - [Struct `N`](#struct-n)
+  - [Struct `CB`](#struct-cb)
+  - [Constants](#constants)
+  - [Function `crit_bit`](#function-crit_bit)
+  - [Function `b_lo`](#function-b_lo)
+  - [Function `empty`](#function-empty)
+  - [Function `insert_empty`](#function-insert_empty)
+  - [Function `singleton`](#function-singleton)
+  - [Function `destroy_empty`](#function-destroy_empty)
+  - [Function `is_empty`](#function-is_empty)
+  - [Function `b_c`](#function-b_c)
+  - [Function `borrow_closest_outer`](#function-borrow_closest_outer)
+  - [Function `has_key`](#function-has_key)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -337,7 +338,7 @@ for the present implementation, strings are not partioned into
 a multi-byte array, rather, they are stored as <code>u128</code> integers,
 so a binary search is instead proposed. Here, the same
 <code>x = s1 ^ s2</code> operation is first used to identify all differing
-bits, before iterating on an opper and lower bound for the
+bits, before iterating on an upper and lower bound for the
 critical bit number:
 ```
 >          s1: 10101010

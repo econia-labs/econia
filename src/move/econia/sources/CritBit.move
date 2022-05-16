@@ -210,7 +210,7 @@ module Econia::CritBit {
     /// a multi-byte array, rather, they are stored as `u128` integers,
     /// so a binary search is instead proposed. Here, the same
     /// `x = s1 ^ s2` operation is first used to identify all differing
-    /// bits, before iterating on an opper and lower bound for the
+    /// bits, before iterating on an upper and lower bound for the
     /// critical bit number:
     /// ```
     /// >          s1: 10101010

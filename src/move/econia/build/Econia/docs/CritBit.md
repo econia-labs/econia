@@ -21,6 +21,8 @@ Crit-bit trees support the following operations, quickly:
 References:
 
 * [Bernstein 2006](https://cr.yp.to/critbit.html)
+* [Langley 2008](
+https://www.imperialviolet.org/2008/09/29/critbit-trees.html)
 * [Langley 2012](https://github.com/agl/critbit)
 * [Tcler's Wiki 2021](https://wiki.tcl-lang.org/page/critbit)
 
@@ -38,17 +40,17 @@ bit. Bit numbers are 0-indexed starting at the least-significant bit
 the bitmask <code>00....001000</code>. Inner nodes are arranged hierarchically,
 with the most sigificant critical bits at the top of the tree. For
 instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code> would be stored in
-a crit-bit tree as follows (vertical bars included at left of
+a crit-bit tree as follows (right carets included at left of
 illustration per issue with documentation build engine, namely, the
 automatic stripping of leading whitespace in fenced code blocks):
 ```
-|       2nd
-|      /   \
-|    001   1st
-|         /   \
-|       101   0th
-|            /   \
-|          110   111
+>       2nd
+>      /   \
+>    001   1st
+>         /   \
+>       101   0th
+>            /   \
+>          110   111
 ```
 Here, the inner node marked <code>2nd</code> stores the bitmask <code>00...00100</code>,
 the inner node marked <code>1st</code> stores the bitmask <code>00...00010</code>, and the
@@ -118,8 +120,7 @@ value type <code>V</code>
 
  ```
  11101...1000100100
-             |    |- bit 0 is 0
- bit 5 is 1 -|
+  bit 5 = 1 -|    |- bit 0 = 0
  ```
 </dd>
 <dt>
@@ -186,7 +187,7 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 
 <a name="0x1234_CritBit_ALL_HI"></a>
 
-u128 bitmask with all bits set
+<code>u128</code> bitmask with all bits set
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_ALL_HI">ALL_HI</a>: u128 = 340282366920938463463374607431768211455;
@@ -218,6 +219,16 @@ Left direction
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_L">L</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_MAX_BIT_128"></a>
+
+Maximum bit number for a <code>u128</code>
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_MAX_BIT_128">MAX_BIT_128</a>: u8 = 127;
 </code></pre>
 
 
@@ -261,28 +272,132 @@ Return the number of the most significant bit (0-indexed from
 LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
 To begin with, a bitwise XOR is used to flag all differing bits:
 ```
-s1: 101110001
-s2: 101011100
-s1 ^ s2: 000101101
-|- critical bit = 5
+>           s1: 11110001
+>           s2: 11011100
+>  x = s1 ^ s2: 00101101
+>                 |- critical bit = 5
 ```
-Next
+Here, the critical bit is equivalent to the bit number of the
+most significant set bit in XOR result <code>x = s1 ^ s2</code>. At this
+point, [Langley 2012](https://github.com/agl/critbit) notes that
+<code>x</code> bitwise AND <code>x - 1</code> will be nonzero so long as <code>x</code> contains
+at least some bits set which are of lesser significance than the
+critical bit:
 ```
-r: 000101101
-r - 1: 000101100
-r & (r - 1): 000101100
-r = r >> 1: 000010110
+>               x: 00101101
+>           x - 1: 00101100
+> x = x & (x - 1): 00101100
 ```
-The critical bit is then the number of the left-most 1 in the
-XOR result <code>r</code>. From here, so long as <code>r</code> is greater than 1,
-then <code>r</code> AND (<code>r</code> - 1)
-then <code>r</code> if the LSB of <code>r</code> is 1, then so will
-the LSB of the <code>r</code> & (<code>r</code> - 1) if the LSB
-of <code>r</code> is 1, which means that so long as <code>r</code> AND (<code>r</code> - 1) is
-not equal to
+Thus he suggests repeating <code>x & (x - 1)</code> while the new result
+<code>x = x & (x - 1)</code> is not equal to zero, because such a loop will
+eventually reduce <code>x</code> to a power of two (excepting the trivial
+case where <code>x</code> starts as all 0 except bit 0 set, for which the
+loop never enters past the initial conditional check). Per this
+method, using the new <code>x</code> value for the current example, the
+second iteration proceeds as follows:
+```
+>               x: 00101100
+>           x - 1: 00101011
+> x = x & (x - 1): 00101000
+```
+The third iteration:
+```
+>               x: 00101000
+>           x - 1: 00100111
+> x = x & (x - 1): 00100000
+```
+Now, <code>x & x - 1</code> will equal zero and the loop will not begin a
+fourth iteration:
+```
+>             x: 00100000
+>         x - 1: 00011111
+> x AND (x - 1): 00000000
+```
+Thus after three iterations the corresponding inner node bitmask
+has been determined. However, in the case where the two input
+strings vary at all bits of lesser significance than that of the
+critical bit, there may be required as many as <code>k - 1</code>
+iterations, where <code>k</code> is the number of bits in each string under
+comparison. For instance, consider the case of the two 8-bit
+strings <code>s1</code> and <code>s2</code> as follows:
+```
+>              s1: 10101010
+>              s2: 01010101
+>     x = s1 ^ s2: 11111111
+>                  |- critical bit = 7
+> x = x & (x - 1): 11111110 [iteration 1]
+> x = x & (x - 1): 11111100 [iteration 2]
+> x = x & (x - 1): 11111000 [iteration 3]
+> ...
+```
+Notably, this method is only suggested after already having
+indentified the varying byte between the two strings, thus
+limiting <code>x & (x - 1)</code> operations to at most 7 iterations. But
+for the present implementation, strings are not partioned into
+a multi-byte array, rather, they are stored as <code>u128</code> integers,
+so a binary search is instead proposed. Here, the same
+<code>x = s1 ^ s2</code> operation is first used to identify all differing
+bits, before iterating on an opper and lower bound for the
+critical bit number:
+```
+>          s1: 10101010
+>          s2: 01010101
+> x = s1 ^ s2: 11111111
+>       u = 7 -|      |- l = 0
+```
+The upper bound <code>u</code> is initialized to the length of the string
+(7 in this example, but 127 for a <code>u128</code>), and the lower bound
+<code>l</code> is initialized to 0. Next the midpoint <code>m</code> is calculated as
+the average of <code>u</code> and <code>l</code>, in this case <code>m = (7 + 0) / 2 = 3</code>,
+per truncating integer division. Now, the shifted compare value
+<code>s = r &gt;&gt; m</code> is calculated and updates are applied according to
+three potential outcomes:
+
+* <code>s == 1</code> means that the critical bit <code>c</code> is equal to <code>m</code>
+* <code>s == 0</code> means that <code>c &lt; m</code>, so <code>u</code> is set to <code>m - 1</code>
+* <code>s &gt; 1</code> means that <code>c &gt; m</code>, so <code>l</code> us set to <code>m + 1</code>
+
+Hence, continuing the current example:
+```
+>          x: 11111111
+> s = x >> m: 00011111
+```
+<code>s &gt; 1</code>, so <code>l = m + 1 = 4</code>, and the search window has shrunk:
+```
+> x = s1 ^ s2: 11111111
+>       u = 7 -|  |- l = 4
+```
+Updating the midpoint yields <code>m = (7 + 4) / 2 = 5</code>:
+```
+>          x: 11111111
+> s = x >> m: 00000111
+```
+Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 6</code>, and the window
+shrinks again:
+```
+> x = s1 ^ s2: 11111111
+>       u = 7 -||- l = 6
+> s = x >> m: 00000011
+```
+Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 7</code>, the final iteration:
+```
+> x = s1 ^ s2: 11111111
+>       u = 7 -|- l = 7
+> s = x >> m: 00000001
+```
+Here, <code>s == 1</code>, which means that <code>c = m = 7</code>. Notably this
+search has converged after only 3 iterations, as opposed to 7
+for the linear search proposed above, and in general such a
+search converges after log_2(<code>k</code>) iterations at most, where <code>k</code>
+is the number of bits in each of the strings <code>s1</code> and <code>s2</code> under
+comparison. Hence this search method improves the O(<code>k</code>) search
+proposed by [Langley 2012](https://github.com/agl/critbit) to
+O(log(<code>k</code>)), and moreover, determines the actual number of the
+critical bit, rather than just a bitmask with bit <code>c</code> set, as he
+proposes, which can also be easily generated via <code>1 &lt;&lt; c</code>.
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(s1: u128, s2: u128)
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(s1: u128, s2: u128): u8
 </code></pre>
 
 
@@ -294,9 +409,16 @@ not equal to
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(
     s1: u128,
     s2: u128,
-) {
-    <b>let</b> r = s1 ^ s2; // Marked 1 at bits that differ
-    r;
+): u8 {
+    <b>let</b> x = s1 ^ s2; // XOR result marked 1 at bits that differ
+    <b>let</b> l = 0; // Lower bound on critical bit search
+    <b>let</b> u = <a href="CritBit.md#0x1234_CritBit_MAX_BIT_128">MAX_BIT_128</a>; // Upper bound on critical bit search
+    <b>loop</b> { // Begin binary search
+        <b>let</b> m = (l + u) / 2; // Calculate midpoint of search window
+        <b>let</b> s = x &gt;&gt; m; // Calculate midpoint shift of XOR result
+        <b>if</b> (s == 1) <b>return</b> m; // If shift equals 1, c = m
+        <b>if</b> (s &gt; 1) l = m + 1 <b>else</b> u = m - 1; // Update search bounds
+    }
 }
 </code></pre>
 
@@ -470,8 +592,8 @@ Return <code><b>true</b></code> if the tree is empty (if root is <code><a href="
 
 ## Function `b_c`
 
-Return immutable reference to either left or right child of node
-<code>n</code> in <code>cb</code> (left when <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code>, right when <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>)
+Return immutable reference to either left or right child of
+inner node <code>n</code> in <code>cb</code> (left if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code>, right if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>)
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c">b_c</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, n: &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;, d: bool): &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;

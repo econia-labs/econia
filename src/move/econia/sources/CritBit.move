@@ -82,8 +82,10 @@ module Econia::CritBit {
     const NIL: u64 = 0xffffffffffffffff;
     /// Flag to indicate outer node
     const OUT: u8 = 0xff;
-    /// u128 bitmask with all bits set
+    /// `u128` bitmask with all bits set
     const ALL_HI: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// Maximum bit number for a `u128`
+    const MAX_BIT_128: u8 = 127;
     /// Left direction
     const L: bool = true;
     /// Right direction
@@ -116,8 +118,7 @@ module Econia::CritBit {
         ///
         /// ```
         /// 11101...1000100100
-        ///             |    |- bit 0 is 0
-        /// bit 5 is 1 -|
+        ///  bit 5 = 1 -|    |- bit 0 = 0
         /// ```
         c: u8,
         /// Left child node index, marked `NIL` when outer node
@@ -144,90 +145,153 @@ module Econia::CritBit {
     /// LSB) at which two non-identical bitstrings, `s1` and `s2`, vary.
     /// To begin with, a bitwise XOR is used to flag all differing bits:
     /// ```
-    /// >       s1: 11110001
-    /// >       s2: 11011100
-    /// >  s1 ^ s2: 00101101
-    /// >             |- critical bit = 5
+    /// >           s1: 11110001
+    /// >           s2: 11011100
+    /// >  x = s1 ^ s2: 00101101
+    /// >                 |- critical bit = 5
     /// ```
-    /// Now, the critical bit is equivalent to the bit number of the
-    /// most significant set bit in the result `r = s1 ^ s2`. At this
-    /// point, [Langley 2008](
-    /// https://www.imperialviolet.org/2008/09/29/critbit-trees.html)
-    /// notes that `r` bitwise AND `r - 1` will be nonzero so long as
-    /// `r` contains at least some bits set which are of lesser
-    /// significance than the critical bit:
+    /// Here, the critical bit is equivalent to the bit number of the
+    /// most significant set bit in XOR result `x = s1 ^ s2`. At this
+    /// point, [Langley 2012](https://github.com/agl/critbit) notes that
+    /// `x` bitwise AND `x - 1` will be nonzero so long as `x` contains
+    /// at least some bits set which are of lesser significance than the
+    /// critical bit:
     /// ```
-    /// >             r: 00101101
-    /// >         r - 1: 00101100
-    /// > r AND (r - 1): 00101100
+    /// >               x: 00101101
+    /// >           x - 1: 00101100
+    /// > x = x & (x - 1): 00101100
     /// ```
-    /// Thus he suggests repeating `r & (r - 1)` while the new result
-    /// `r = r & (r - 1)` is not equal to zero, because such a loop will
-    /// eventually reduce `r` to a power of two (excepting the trivial
-    /// case where `r` starts as all 0 except bit 0 set, for which the
+    /// Thus he suggests repeating `x & (x - 1)` while the new result
+    /// `x = x & (x - 1)` is not equal to zero, because such a loop will
+    /// eventually reduce `x` to a power of two (excepting the trivial
+    /// case where `x` starts as all 0 except bit 0 set, for which the
     /// loop never enters past the initial conditional check). Per this
-    /// method, using the new `r` value for the current example, the
+    /// method, using the new `x` value for the current example, the
     /// second iteration proceeds as follows:
     /// ```
-    /// >             r: 00101100
-    /// >         r - 1: 00101011
-    /// > r AND (r - 1): 00101000
+    /// >               x: 00101100
+    /// >           x - 1: 00101011
+    /// > x = x & (x - 1): 00101000
     /// ```
     /// The third iteration:
     /// ```
-    /// >             r: 00101000
-    /// >         r - 1: 00100111
-    /// > r AND (r - 1): 00100000
+    /// >               x: 00101000
+    /// >           x - 1: 00100111
+    /// > x = x & (x - 1): 00100000
     /// ```
-    /// Now, `r & r - 1` will equal zero and the loop will not begin a
+    /// Now, `x & x - 1` will equal zero and the loop will not begin a
     /// fourth iteration:
     /// ```
-    /// >             r: 00100000
-    /// >         r - 1: 00011111
-    /// > r AND (r - 1): 00000000
+    /// >             x: 00100000
+    /// >         x - 1: 00011111
+    /// > x AND (x - 1): 00000000
     /// ```
     /// Thus after three iterations the corresponding inner node bitmask
     /// has been determined. However, in the case where the two input
     /// strings vary at all bits of lesser significance than that of the
     /// critical bit, there may be required as many as `k - 1`
-    /// iterations, where `k` is the length of the bitstrings under
-    /// comparison. For instance, in the case of the two 8-bit strings
-    /// `s1` and `s2` as follows:
+    /// iterations, where `k` is the number of bits in each string under
+    /// comparison. For instance, consider the case of the two 8-bit
+    /// strings `s1` and `s2` as follows:
     /// ```
     /// >              s1: 10101010
     /// >              s2: 01010101
-    /// >     r = s1 ^ s2: 11111111
-    /// > r = r & (r - 1): 11111110 [iteration 1]
-    /// > r = r & (r - 1): 11111100 [iteration 2]
-    /// > r = r & (r - 1): 11111000 [iteration 3]
+    /// >     x = s1 ^ s2: 11111111
+    /// >                  |- critical bit = 7
+    /// > x = x & (x - 1): 11111110 [iteration 1]
+    /// > x = x & (x - 1): 11111100 [iteration 2]
+    /// > x = x & (x - 1): 11111000 [iteration 3]
     /// > ...
     /// ```
     /// Notably, this method is only suggested after already having
     /// indentified the varying byte between the two strings, thus
-    /// limiting `r AND (r - 1)` operations to at most 7 iterations. But
+    /// limiting `x & (x - 1)` operations to at most 7 iterations. But
     /// for the present implementation, strings are not partioned into
     /// a multi-byte array, rather, they are stored as `u128` integers,
     /// so a binary search is instead proposed. Here, the same
-    /// `r = s1 ^ s2` operation is first used to identify all differing
+    /// `x = s1 ^ s2` operation is first used to identify all differing
     /// bits, before iterating on an opper and lower bound for the
     /// critical bit number:
     /// ```
-    /// >              s1: 10101010
-    /// >              s2: 01010101
-    /// >     r = s1 ^ s2: 11111111
-    /// >         u = 7   -|      |- l = 0
+    /// >          s1: 10101010
+    /// >          s2: 01010101
+    /// > x = s1 ^ s2: 11111111
+    /// >       u = 7 -|      |- l = 0
     /// ```
     /// The upper bound `u` is initialized to the length of the string
     /// (7 in this example, but 127 for a `u128`), and the lower bound
     /// `l` is initialized to 0. Next the midpoint `m` is calculated as
-    /// the average of `u` and `l`, in this case `u = (7 + 0) / 2 = 3`,
-    /// per truncating integer division, and r >> u
+    /// the average of `u` and `l`, in this case `m = (7 + 0) / 2 = 3`,
+    /// per truncating integer division. Now, the shifted compare value
+    /// `s = r >> m` is calculated and updates are applied according to
+    /// three potential outcomes:
+    ///
+    /// * `s == 1` means that the critical bit `c` is equal to `m`
+    /// * `s == 0` means that `c < m`, so `u` is set to `m - 1`
+    /// * `s > 1` means that `c > m`, so `l` us set to `m + 1`
+    ///
+    /// Hence, continuing the current example:
+    /// ```
+    /// >          x: 11111111
+    /// > s = x >> m: 00011111
+    /// ```
+    /// `s > 1`, so `l = m + 1 = 4`, and the search window has shrunk:
+    /// ```
+    /// > x = s1 ^ s2: 11111111
+    /// >       u = 7 -|  |- l = 4
+    /// ```
+    /// Updating the midpoint yields `m = (7 + 4) / 2 = 5`:
+    /// ```
+    /// >          x: 11111111
+    /// > s = x >> m: 00000111
+    /// ```
+    /// Again `s > 1`, so update `l = m + 1 = 6`, and the window
+    /// shrinks again:
+    /// ```
+    /// > x = s1 ^ s2: 11111111
+    /// >       u = 7 -||- l = 6
+    /// > s = x >> m: 00000011
+    /// ```
+    /// Again `s > 1`, so update `l = m + 1 = 7`, the final iteration:
+    /// ```
+    /// > x = s1 ^ s2: 11111111
+    /// >       u = 7 -|- l = 7
+    /// > s = x >> m: 00000001
+    /// ```
+    /// Here, `s == 1`, which means that `c = m = 7`. Notably this
+    /// search has converged after only 3 iterations, as opposed to 7
+    /// for the linear search proposed above, and in general such a
+    /// search converges after log_2(`k`) iterations at most, where `k`
+    /// is the number of bits in each of the strings `s1` and `s2` under
+    /// comparison. Hence this search method improves the O(`k`) search
+    /// proposed by [Langley 2012](https://github.com/agl/critbit) to
+    /// O(log(`k`)), and moreover, determines the actual number of the
+    /// critical bit, rather than just a bitmask with bit `c` set, as he
+    /// proposes, which can also be easily generated via `1 << c`.
     fun crit_bit(
         s1: u128,
         s2: u128,
-    ) {
-        let r = s1 ^ s2; // Marked 1 at bits that differ
-        r;
+    ): u8 {
+        let x = s1 ^ s2; // XOR result marked 1 at bits that differ
+        let l = 0; // Lower bound on critical bit search
+        let u = MAX_BIT_128; // Upper bound on critical bit search
+        loop { // Begin binary search
+            let m = (l + u) / 2; // Calculate midpoint of search window
+            let s = x >> m; // Calculate midpoint shift of XOR result
+            if (s == 1) return m; // If shift equals 1, c = m
+            if (s > 1) l = m + 1 else u = m - 1; // Update search bounds
+        }
+    }
+
+    #[test]
+    /// Verify successful determination of critical bit
+    fun crit_bit_success() {
+        let b = 0; // Start loop for bit 0
+        while (b <= MAX_BIT_128) { // Loop over all bit numbers
+            // Compare 0 versus a bitmask that is only set at bit b
+            assert!(crit_bit(0, 1 << b) == b, (b as u64));
+            b = b + 1; // Increment bit counter
+        };
     }
 
     #[test_only]

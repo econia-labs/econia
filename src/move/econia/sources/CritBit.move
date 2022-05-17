@@ -62,15 +62,16 @@ module Econia::CritBit {
 
     use Std::Vector::{
         borrow as v_b,
+        borrow_mut as v_b_m,
         destroy_empty as v_d_e,
         empty as v_e,
+        length as v_l,
         push_back as v_pu_b
     };
 
     #[test_only]
     use Std::Vector::{
         append as v_a,
-        length as v_l,
         is_empty as v_i_e,
         pop_back as v_po_b,
     };
@@ -97,6 +98,7 @@ module Econia::CritBit {
 
     const E_BIT_NOT_0_OR_1: u64 = 0;
     const E_DESTROY_NOT_EMPTY: u64 = 1;
+    const E_HAS_K: u64 = 2;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -481,11 +483,24 @@ module Econia::CritBit {
     /// Return immutable reference to either left or right child of
     /// inner node `n` in `cb` (left if `d` is `L`, right if `d` is `R`)
     fun b_c<V>(
-        cb: & CB<V>,
-        n: & N<V>,
+        cb: &CB<V>,
+        n: &N<V>,
         d: bool
     ): &N<V> {
         if (d == L) v_b<N<V>>(&cb.t, n.l) else v_b<N<V>>(&cb.t, n.r)
+    }
+
+    /// Like `b_c`, but also returns vector index of child node
+    fun b_c_i<V>(
+        cb: &CB<V>,
+        n: &N<V>,
+        d: bool
+    ): (
+        &N<V>,
+        u64
+    ) {
+        if (d == L) (v_b<N<V>>(&cb.t, n.l), n.l) else
+            (v_b<N<V>>(&cb.t, n.r), n.r)
     }
 
     /// Walk a non-empty tree until arriving at the outer node sharing
@@ -502,17 +517,33 @@ module Econia::CritBit {
     /// `true` and `false` respectively, a conditional check on equality
     /// between the 0 and the bitwise AND result evaluates to `L` when
     /// `k` does not have the critical bit set, and `R` when `k` does
-    /// have the critical bit set.
-    fun borrow_closest_outer<V>(
+    /// have the critical bit set. `b_c_o` stands for "borrow closest
+    /// outer"
+    fun b_c_o<V>(
         cb: &CB<V>,
         k: u128,
     ): &N<V> {
-        let n = v_b<N<V>>(&cb.t, cb.r); // Borrow root node reference
+        let n = v_b<N<V>>(&cb.t, cb.r); // Get root node reference
         while (n.c != OUT) { // While node under review is inner node
             // Borrow either L or R child node depending on AND result
             n = b_c<V>(cb, n, n.s & k == 0);
         }; // Node reference now corresponds to closest outer node
         n // Return closest outer node reference
+    }
+
+    /// Like `b_c_o`, but for mutable reference
+    fun b_c_o_m<V>(
+        cb: &mut CB<V>,
+        k: u128,
+    ): &mut N<V> {
+        let i = cb.r; // Get vector index of root node
+        let n = v_b<N<V>>(&cb.t, i); // Get root node reference
+        while (n.c != OUT) { // While node under review is inner node
+            // Borrow either L or R child node depending on AND result,
+            // and get index of the node
+            (n, i) = b_c_i<V>(cb, n, n.s & k == 0);
+        }; // Node index now corresponds to closest outer node
+        v_b_m<N<V>>(&mut cb.t, i) // Return mutable reference to node
     }
 
 // Node borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -526,7 +557,7 @@ module Econia::CritBit {
     ): bool {
         if (is_empty<V>(cb)) return false; // Return false if empty
         // Return true if closest outer node match bitstring is `k`
-        return borrow_closest_outer<V>(cb, k).s == k
+        return b_c_o<V>(cb, k).s == k
     }
 
     #[test]
@@ -571,9 +602,28 @@ module Econia::CritBit {
         cb // Return rather than unpack
     }
 
-// Membership checks <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-// Critical bit determination <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    /// Insert key `k` and value `v` into tree `cb`, aborting if `k` is
+    /// already present
+    fun insert_new<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        /*
+        v: V
+        */
+    ) {
+        let n = b_c_o_m<V>(cb, k); // Get closest outer node reference
+        assert!(n.s != k, E_HAS_K); // Abort if key already present
+        // Get critical bit between node key and insertion key
+        n.c = crit_bit(n.s, k); // Update node with new critical bit
+        let i = v_l<N<V>>(&cb.t); // Get index of first inserted node
+        i;
+        /*
+        if (k < n.s) {}
+        */
+    }
 
-// Critical bit determination >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 }

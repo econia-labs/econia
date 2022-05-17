@@ -487,17 +487,18 @@ module Econia::CritBit {
         if (d == L) v_b<N<V>>(&cb.t, n.l) else v_b<N<V>>(&cb.t, n.r)
     }
 
-    /// Like `b_c`, but also returns vector index of child node
-    fun b_c_i<V>(
-        cb: &CB<V>,
-        n: &N<V>,
+    /// Return mutable reference to the field where an inner node stores
+    /// the index of either its left or right child (left if `d` is `L`,
+    /// right if `d` is `R`). The inner node in question is borrowed by
+    /// dereferencing a reference to the field where its own node index
+    /// is stored, `i_f_r`, ("index field reference")
+    fun b_c_i_f_r<V>(
+        cb: &mut CB<V>,
+        i_f_r: &mut u64,
         d: bool
-    ): (
-        &N<V>,
-        u64
-    ) {
-        if (d == L) (v_b<N<V>>(&cb.t, n.l), n.l) else
-            (v_b<N<V>>(&cb.t, n.r), n.r)
+    ): &mut u64 {
+        if (d == L) &mut v_b_m<N<V>>(&mut cb.t, *i_f_r).l else
+            &mut v_b_m<N<V>>(&mut cb.t, *i_f_r).r
     }
 
     /// Walk a non-empty tree until arriving at the outer node sharing
@@ -528,19 +529,33 @@ module Econia::CritBit {
         n // Return closest outer node reference
     }
 
-    /// Like `b_c_o`, but for mutable reference
-    fun b_c_o_m<V>(
+    /// Return same as `b_c_o`, but also return mutable reference to the
+    /// field that stores the node vector index of the outer node
+    /// sharing the largest common prefix with `k` in `cb` (an "index
+    /// field reference", analagous to a pointer to the closest outer
+    /// node)
+    fun b_c_o_i_f_r<V>(
         cb: &mut CB<V>,
         k: u128,
-    ): &mut N<V> {
-        let i = cb.r; // Get vector index of root node
-        let n = v_b<N<V>>(&cb.t, i); // Get root node reference
+    ): (
+        &N<V>,
+        &mut u64
+    ) {
+        // Get mutable reference to the field where a node's vector
+        // index is stored ("index field reference"), starting at root
+        let i_f_r = &mut cb.r;
+        let n = v_b<N<V>>(&cb.t, *i_f_r); // Get root node reference
         while (n.c != OUT) { // While node under review is inner node
-            // Borrow either L or R child node depending on AND result,
-            // and get index of the node
-            (n, i) = b_c_i<V>(cb, n, n.s & k == 0);
-        }; // Node index now corresponds to closest outer node
-        v_b_m<N<V>>(&mut cb.t, i) // Return mutable reference to node
+            // Borrow mutable reference to the field that stores the
+            // vector index of the node's L or R child node, depending
+            // on AND result discussed in `b_c_o`
+            i_f_r = b_c_i_f_r<V>(cb, i_f_r, n.s & k == 0);
+            // Get reference to new node under review
+            n = v_b<N<V>>(&cb.t, *i_f_r);
+        }; // Index field reference is now that of closest outer node
+        // Return closest outer node reference, and corresponding index
+        // field reference (analagous to a pointer to the node)
+        (n, i_f_r)
     }
 
 // Node borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -601,8 +616,8 @@ module Econia::CritBit {
 
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Insert key `k` and value `v` into tree `cb`, aborting if `k` is
-    /// already present
+    /// Insert key `k` and value `v` into non-empty tree `cb`, aborting
+    /// if `k` is already present
     fun insert_new<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -610,15 +625,19 @@ module Econia::CritBit {
         v: V
         */
     ) {
-        let n = b_c_o_m<V>(cb, k); // Get closest outer node reference
+        // Get immutable reference to the closest outer node, and a
+        // mutable reference to the field where its index is stored
+        let i = v_l<N<V>>(&cb.t); // Get index of first new node
+        let (n, i_f_r) = b_c_o_i_f_r<V>(cb, k);
+        n; i_f_r; i;
+        /*
         assert!(n.s != k, E_HAS_K); // Abort if key already present
         // Get critical bit between node key and insertion key
-        n.c = crit_bit(n.s, k); // Update node with new critical bit
-        let i = v_l<N<V>>(&cb.t); // Get index of first inserted node
-        i;
-        /*
-        if (k < n.s) {}
+        let c = crit_bit(n.s, k);
         */
+        //v_a<N<V>>(&mut cb.t, N{s: k, c: OUT, l: 0, r: 0, v: V})
+        //v_a<N<V>>(&mut cb.t, N{})
+        // Should just switch node, rather than copy V over
     }
 
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

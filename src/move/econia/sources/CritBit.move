@@ -26,18 +26,20 @@
 /// nodes have no children. There are no nodes that have exactly one
 /// child. Outer nodes store a key-value pair with a 128-bit integer as
 /// a key, and an arbitrary value of generic type. Inner nodes do not
-/// store a key, but rather, a bitmask indicating the critical bit
-/// (crit-bit) of divergence between keys located within the node's two
-/// subtrees: keys in the node's left subtree have a 0 at the critical
-/// bit, while keys in the node's right subtree have a 1 at the critical
-/// bit. Bit numbers are 0-indexed starting at the least-significant bit
-/// (LSB), such that a critical bit of 3, for instance, corresponds to
-/// the bitmask `00....001000`. Inner nodes are arranged hierarchically,
-/// with the most sigificant critical bits at the top of the tree. For
-/// instance, the keys `001`, `101`, `110`, and `111` would be stored in
-/// a crit-bit tree as follows (right carets included at left of
-/// illustration per issue with documentation build engine, namely, the
-/// automatic stripping of leading whitespace in fenced code blocks):
+/// store a key, but rather, an 8-bit integer indicating the most
+/// significatn critical bit (crit-bit) of divergence between keys
+/// located within the node's two subtrees: keys in the node's left
+/// subtree have a 0 at the critical bit, while keys in the node's right
+/// subtree have a 1 at the critical bit. Bit numbers are 0-indexed
+/// starting at the least-significant bit (LSB), such that a critical
+/// bit of 3, for instance, corresponds to a comparison between the
+/// bitstrings `00...00000` and `00...01111`. Inner nodes are arranged
+/// hierarchically, with the most sigificant critical bits at the top of
+/// the tree. For instance, the keys `001`, `101`, `110`, and `111`
+/// would be stored in a crit-bit tree as follows (right carets included
+/// at left of illustration per issue with documentation build engine,
+/// namely, the automatic stripping of leading whitespace in fenced code
+/// blocks):
 /// ```
 /// >       2nd
 /// >      /   \
@@ -47,22 +49,19 @@
 /// >            /   \
 /// >          110   111
 /// ```
-/// Here, the inner node marked `2nd` stores the bitmask `00...00100`,
-/// the inner node marked `1st` stores the bitmask `00...00010`, and the
-/// inner node marked `0th` stores the bitmask `00...00001`. Hence, the
-/// sole key in the left subtree of the inner node marked `2nd` has 0 at
-/// bit 2, while all the keys in the node's right subtree have 1 at bit
-/// 2. And similarly for the inner node marked `0th`, its left child
-/// node does not have bit 0 set, while its right child does have bit 0
-/// set.
+/// Here, the inner node marked `2nd` stores the integer 2, the inner
+/// node marked `1st` stores the integer 1, and the inner node marked
+/// `0th` stores the integer 0. Hence, the sole key in the left subtree
+/// of the inner node marked `2nd` has 0 at bit 2, while all the keys in
+/// the node's right subtree have 1 at bit 2. And similarly for the
+/// inner node marked `0th`, its left child node does not have bit 0
+/// set, while its right child does have bit 0 set.
 ///
 /// ---
 ///
 module Econia::CritBit {
 
     use Std::Vector::{
-        borrow as v_b,
-        borrow_mut as v_b_m,
         destroy_empty as v_d_e,
         empty as v_e,
         is_empty as v_i_e,
@@ -72,6 +71,8 @@ module Econia::CritBit {
     #[test_only]
     use Std::Vector::{
         append as v_a,
+        borrow as v_b,
+        //borrow_mut as v_b_m,
         length as v_l,
         pop_back as v_po_b,
     };
@@ -82,8 +83,10 @@ module Econia::CritBit {
     const OUT: u8 = 0xff;
     /// `u128` bitmask with all bits set
     const ALL_HI: u128 = 0xffffffffffffffffffffffffffffffff;
-    /// Maximum bit number for a `u128`
-    const MAX_BIT_128: u8 = 127;
+    /// Most significant bit number for a `u128`
+    const MSB_u128: u8 = 127;
+    /// Most significant bit number for a `u64`
+    const MSB_u64: u8 = 63;
     /// Left direction
     const L: bool = true;
     /// Right direction
@@ -93,47 +96,58 @@ module Econia::CritBit {
 
 // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// When a char in a bytestring is neither 0 nor 1
     const E_BIT_NOT_0_OR_1: u64 = 0;
+    /// When attempting to destroy a non-empty crit-bit tree
     const E_DESTROY_NOT_EMPTY: u64 = 1;
+    /// When an insertion key is already present in a crit-bit tree
     const E_HAS_K: u64 = 2;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// A node in the crit-bit tree, representing a key-value pair with
-    /// value type `V`
-    struct N<V> has store {
-        /// Bitstring, which would preferably be a generic type
-        /// representing the union of {u8, u64, u128}. However this kind
-        /// of union typing is not supported by Move, so the most
-        /// general (and memory intensive) u128 is instead specified
-        /// strictly.
-        s: u128,
+    // Inner node
+    struct I has store {
         // Documentation comments, specifically on struct fields,
         // apparently do not support fenced code blocks unless they are
         // preceded by a blank line...
         /// Critical bit position. Bit numbers 0-indexed from LSB:
         ///
         /// ```
-        /// 11101...1000100100
-        ///  bit 5 = 1 -|    |- bit 0 = 0
+        /// 11101...1010010101
+        ///  bit 5 = 0 -|    |- bit 0 = 1
         /// ```
         c: u8,
-        /// Left child node index, marked 0 when outer node
+        /// Left child node index. When bit 63 is set, left child is an
+        /// outer node. Otherwise left child is an inner node.
         l: u64,
-        /// Right child node index, marked 0 when outer node
-        r: u64,
+        /// Right child node index. When bit 63 is set, right child is
+        /// an outer node. Otherwise right child is an inner node.
+        r: u64
+    }
+
+    /// Outer node with key `k` and value `v`
+    struct O<V> has store {
+        /// Key, which would preferably be a generic type representing
+        /// the union of {`u8`, `u64`, `u128`}. However this kind of
+        /// union typing is not supported by Move, so the most general
+        /// (and memory intensive) `u128` is instead specified strictly.
+        /// Must be an integer for bitwise operations.
+        k: u128,
         /// Value from node's key-value pair
         v: V
     }
 
     /// A crit-bit tree for key-value pairs with value type `V`
     struct CB<V> has store {
-        /// Root node index, set to 0 when vector of nodes is empty
+        /// Root node index. When bit 63 is set, root node is an outer
+        /// node. Otherwise root is an inner node. Should be 0 if empty
         r: u64,
-        /// Vector of nodes in the tree
-        t: vector<N<V>>
+        /// Inner nodes
+        i: vector<I>,
+        /// Outer nodes
+        o: vector<O<V>>
     }
 
 // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -185,7 +199,7 @@ module Econia::CritBit {
     /// >         x - 1: 00011111
     /// > x AND (x - 1): 00000000
     /// ```
-    /// Thus after three iterations the corresponding inner node bitmask
+    /// Thus after three iterations a corresponding critical bit bitmask
     /// has been determined. However, in the case where the two input
     /// strings vary at all bits of lesser significance than that of the
     /// critical bit, there may be required as many as `k - 1`
@@ -273,7 +287,7 @@ module Econia::CritBit {
     ): u8 {
         let x = s1 ^ s2; // XOR result marked 1 at bits that differ
         let l = 0; // Lower bound on critical bit search
-        let u = MAX_BIT_128; // Upper bound on critical bit search
+        let u = MSB_u128; // Upper bound on critical bit search
         loop { // Begin binary search
             let m = (l + u) / 2; // Calculate midpoint of search window
             let s = x >> m; // Calculate midpoint shift of XOR result
@@ -286,7 +300,7 @@ module Econia::CritBit {
     /// Verify successful determination of critical bit
     fun crit_bit_success() {
         let b = 0; // Start loop for bit 0
-        while (b <= MAX_BIT_128) { // Loop over all bit numbers
+        while (b <= MSB_u128) { // Loop over all bit numbers
             // Compare 0 versus a bitmask that is only set at bit b
             assert!(crit_bit(0, 1 << b) == b, (b as u64));
             b = b + 1; // Increment bit counter
@@ -376,18 +390,22 @@ module Econia::CritBit {
     /// Return an empty tree
     public fun empty<V>():
     CB<V> {
-        CB{r: 0, t: v_e<N<V>>()}
+        CB{r: 0, i: v_e<I>(), o: v_e<O<V>>()}
     }
 
     #[test]
     /// Verify new tree created empty
     fun empty_success():
-    vector<N<u8>> {
-        // Unpack root index and node vector
-        let CB{r, t} = empty<u8>();
-        assert!(v_i_e<N<u8>>(&t), 1); // Assert empty node vector
+    (
+        vector<I>,
+        vector<O<u8>>
+    ) {
+        // Unpack root index and node vectors
+        let CB{r, i, o} = empty<u8>();
+        assert!(v_i_e<I>(&i), 0); // Assert empty inner node vector
+        assert!(v_i_e<O<u8>>(&o), 1); // Assert empty outer node vector
         assert!(r == 0, 0); // Assert root set to 0
-        t // Return rather than unpack
+        (i, o) // Return rather than unpack
     }
 
     /// Insert key-value pair `k` and `v` into an empty `cb`
@@ -396,7 +414,9 @@ module Econia::CritBit {
         k: u128,
         v: V
     ) {
-        v_pu_b<N<V>>(&mut cb.t, N<V>{s: k, c: OUT, l: 0, r: 0, v});
+        // Push back outer node onto tree's vector of outer nodes
+        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v});
+        cb.r = 1 << MSB_u64; // Set MSB of root index field
     }
 
     /// Return a tree with one node having key `k` and value `v`
@@ -405,7 +425,7 @@ module Econia::CritBit {
         v: V
     ):
     CB<V> {
-        let cb = CB{r: 0, t: v_e<N<V>>()};
+        let cb = CB{r: 0, i: v_e<I>(), o: v_e<O<V>>()};
         insert_empty<V>(&mut cb, k, v);
         cb
     }
@@ -413,16 +433,20 @@ module Econia::CritBit {
     #[test]
     /// Verify singleton initialized with correct values
     fun singleton_success():
-    vector<N<u8>> {
+    (
+        vector<I>,
+        vector<O<u8>>,
+    ) {
         let cb = singleton<u8>(2, 3); // Initialize w/ key 2 and value 3
-        assert!(v_l<N<u8>>(&cb.t) == 1, 0); // Assert only one node
-        let CB{r, t} = cb; // Unpack the root index and nodes vector
-        assert!(r == 0, 1); // Assert root index = 0
-        // Pop and unpack last node from tree's vector of nodes
-        let N{s, c, l, r, v} = v_po_b<N<u8>>(&mut t);
-        // Assert values in the node are as expected
-        assert!(s == 2 && c == OUT && l == 0 && r == 0 && v == 3, 2);
-        t // Return vector of nodes rather than unpack
+        assert!(v_i_e<I>(&cb.i), 0); // Assert no inner nodes
+        assert!(v_l<O<u8>>(&cb.o) == 1, 1); // Assert single outer node
+        let CB{r, i, o} = cb; // Unpack root index and node vectors
+        assert!(r == 1 << MSB_u64, 2); // Assert root index has MSB set
+        // Pop and unpack last node from vector of outer nodes
+        let O{k, v} = v_po_b<O<u8>>(&mut o);
+        // Assert values in node are as expected
+        assert!(k == 2 && v == 3, 3);
+        (i, o) // Return rather than unpack
     }
 
 // Initialization <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -434,8 +458,9 @@ module Econia::CritBit {
         cb: CB<V>
     ) {
         assert!(is_empty(&cb), E_DESTROY_NOT_EMPTY);
-        let CB{r: _, t} = cb; // Unpack root node index and node vector
-        v_d_e(t); // Destroy empty node vector
+        let CB{r: _, i, o} = cb; // Unpack root index and node vectors
+        v_d_e(i); // Destroy empty inner node vector
+        v_d_e(o); // Destroy empty outer node vector
     }
 
     #[test]
@@ -457,8 +482,8 @@ module Econia::CritBit {
 
 // Size checks >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return `true` if the tree is empty (if node vector is empty)
-    fun is_empty<V>(cb: &CB<V>): bool {v_i_e<N<V>>(&cb.t)}
+    /// Return `true` if `cb` has no outer nodes
+    fun is_empty<V>(cb: &CB<V>): bool {v_i_e<O<V>>(&cb.o)}
 
     #[test]
     /// Verify emptiness check validity
@@ -477,6 +502,7 @@ module Econia::CritBit {
 
 // Node borrowing >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /*
     /// Return immutable reference to either left or right child of
     /// inner node `n` in `cb` (left if `d` is `L`, right if `d` is `R`)
     fun b_c<V>(
@@ -583,16 +609,17 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Verify successful key checks for the following tree, where `i`
-    /// indicates each node's vector index:
+    /// Verify successful key checks for the following tree, where `i_i`
+    /// indicates an inner node's vector index, and `o_i` indicates an
+    /// outer node's vector index:
     /// ```
-    ///              i = 0 -> 2nd
+    ///            i_i = 0 -> 2nd
     ///                      /   \
-    ///           i = 1 -> 001   1st <- i = 2
+    ///         o_i = 0 -> 001   1st <- i_i = 1
     ///                         /   \
-    ///              i = 3 -> 101   0th <- i = 4
+    ///            o_i = 1 -> 101   0th <- i_i = 2
     ///                            /   \
-    ///                 i = 5 -> 110   111 <- i = 6
+    ///               o_i = 2 -> 110   111 <- o_i = 3
     /// ```
     fun has_key_success():
     CB<u8> {
@@ -615,6 +642,7 @@ module Econia::CritBit {
         assert!(!has_key(&cb, u(b"011")), 4); // Not in tree
         cb // Return rather than unpack
     }
+    */
 
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

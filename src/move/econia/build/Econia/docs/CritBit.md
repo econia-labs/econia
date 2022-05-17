@@ -31,18 +31,20 @@ inner and outer. Inner nodes have two children each, while outer
 nodes have no children. There are no nodes that have exactly one
 child. Outer nodes store a key-value pair with a 128-bit integer as
 a key, and an arbitrary value of generic type. Inner nodes do not
-store a key, but rather, a bitmask indicating the critical bit
-(crit-bit) of divergence between keys located within the node's two
-subtrees: keys in the node's left subtree have a 0 at the critical
-bit, while keys in the node's right subtree have a 1 at the critical
-bit. Bit numbers are 0-indexed starting at the least-significant bit
-(LSB), such that a critical bit of 3, for instance, corresponds to
-the bitmask <code>00....001000</code>. Inner nodes are arranged hierarchically,
-with the most sigificant critical bits at the top of the tree. For
-instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code> would be stored in
-a crit-bit tree as follows (right carets included at left of
-illustration per issue with documentation build engine, namely, the
-automatic stripping of leading whitespace in fenced code blocks):
+store a key, but rather, an 8-bit integer indicating the most
+significatn critical bit (crit-bit) of divergence between keys
+located within the node's two subtrees: keys in the node's left
+subtree have a 0 at the critical bit, while keys in the node's right
+subtree have a 1 at the critical bit. Bit numbers are 0-indexed
+starting at the least-significant bit (LSB), such that a critical
+bit of 3, for instance, corresponds to a comparison between the
+bitstrings <code>00...00000</code> and <code>00...01111</code>. Inner nodes are arranged
+hierarchically, with the most sigificant critical bits at the top of
+the tree. For instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code>
+would be stored in a crit-bit tree as follows (right carets included
+at left of illustration per issue with documentation build engine,
+namely, the automatic stripping of leading whitespace in fenced code
+blocks):
 ```
 >       2nd
 >      /   \
@@ -52,19 +54,19 @@ automatic stripping of leading whitespace in fenced code blocks):
 >            /   \
 >          110   111
 ```
-Here, the inner node marked <code>2nd</code> stores the bitmask <code>00...00100</code>,
-the inner node marked <code>1st</code> stores the bitmask <code>00...00010</code>, and the
-inner node marked <code>0th</code> stores the bitmask <code>00...00001</code>. Hence, the
-sole key in the left subtree of the inner node marked <code>2nd</code> has 0 at
-bit 2, while all the keys in the node's right subtree have 1 at bit
-2. And similarly for the inner node marked <code>0th</code>, its left child
-node does not have bit 0 set, while its right child does have bit 0
-set.
+Here, the inner node marked <code>2nd</code> stores the integer 2, the inner
+node marked <code>1st</code> stores the integer 1, and the inner node marked
+<code>0th</code> stores the integer 0. Hence, the sole key in the left subtree
+of the inner node marked <code>2nd</code> has 0 at bit 2, while all the keys in
+the node's right subtree have 1 at bit 2. And similarly for the
+inner node marked <code>0th</code>, its left child node does not have bit 0
+set, while its right child does have bit 0 set.
 
 ---
 
 
--  [Struct `N`](#0x1234_CritBit_N)
+-  [Struct `I`](#0x1234_CritBit_I)
+-  [Struct `O`](#0x1234_CritBit_O)
 -  [Struct `CB`](#0x1234_CritBit_CB)
 -  [Constants](#@Constants_0)
 -  [Function `crit_bit`](#0x1234_CritBit_crit_bit)
@@ -74,10 +76,6 @@ set.
 -  [Function `singleton`](#0x1234_CritBit_singleton)
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `is_empty`](#0x1234_CritBit_is_empty)
--  [Function `b_c`](#0x1234_CritBit_b_c)
--  [Function `b_c_i_f_r`](#0x1234_CritBit_b_c_i_f_r)
--  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
--  [Function `has_key`](#0x1234_CritBit_has_key)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -85,15 +83,13 @@ set.
 
 
 
-<a name="0x1234_CritBit_N"></a>
+<a name="0x1234_CritBit_I"></a>
 
-## Struct `N`
-
-A node in the crit-bit tree, representing a key-value pair with
-value type <code>V</code>
+## Struct `I`
 
 
-<pre><code><b>struct</b> <a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt; <b>has</b> store
+
+<pre><code><b>struct</b> <a href="CritBit.md#0x1234_CritBit_I">I</a> <b>has</b> store
 </code></pre>
 
 
@@ -104,37 +100,61 @@ value type <code>V</code>
 
 <dl>
 <dt>
-<code>s: u128</code>
-</dt>
-<dd>
- Bitstring, which would preferably be a generic type
- representing the union of {u8, u64, u128}. However this kind
- of union typing is not supported by Move, so the most
- general (and memory intensive) u128 is instead specified
- strictly.
-</dd>
-<dt>
 <code>c: u8</code>
 </dt>
 <dd>
  Critical bit position. Bit numbers 0-indexed from LSB:
 
  ```
- 11101...1000100100
-  bit 5 = 1 -|    |- bit 0 = 0
+ 11101...1010010101
+  bit 5 = 0 -|    |- bit 0 = 1
  ```
 </dd>
 <dt>
 <code>l: u64</code>
 </dt>
 <dd>
- Left child node index, marked 0 when outer node
+ Left child node index. When bit 63 is set, left child is an
+ outer node. Otherwise left child is an inner node.
 </dd>
 <dt>
 <code>r: u64</code>
 </dt>
 <dd>
- Right child node index, marked 0 when outer node
+ Right child node index. When bit 63 is set, right child is
+ an outer node. Otherwise right child is an inner node.
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0x1234_CritBit_O"></a>
+
+## Struct `O`
+
+Outer node with key <code>k</code> and value <code>v</code>
+
+
+<pre><code><b>struct</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; <b>has</b> store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>k: u128</code>
+</dt>
+<dd>
+ Key, which would preferably be a generic type representing
+ the union of {<code>u8</code>, <code>u64</code>, <code>u128</code>}. However this kind of
+ union typing is not supported by Move, so the most general
+ (and memory intensive) <code>u128</code> is instead specified strictly.
+ Must be an integer for bitwise operations.
 </dd>
 <dt>
 <code>v: V</code>
@@ -168,13 +188,20 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 <code>r: u64</code>
 </dt>
 <dd>
- Root node index, set to 0 when vector of nodes is empty
+ Root node index. When bit 63 is set, root node is an outer
+ node. Otherwise root is an inner node. Should be 0 if empty
 </dd>
 <dt>
-<code>t: vector&lt;<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;&gt;</code>
+<code>i: vector&lt;<a href="CritBit.md#0x1234_CritBit_I">CritBit::I</a>&gt;</code>
 </dt>
 <dd>
- Vector of nodes in the tree
+ Inner nodes
+</dd>
+<dt>
+<code>o: vector&lt;<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;&gt;</code>
+</dt>
+<dd>
+ Outer nodes
 </dd>
 </dl>
 
@@ -198,6 +225,7 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 
 <a name="0x1234_CritBit_E_BIT_NOT_0_OR_1"></a>
 
+When a char in a bytestring is neither 0 nor 1
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_BIT_NOT_0_OR_1">E_BIT_NOT_0_OR_1</a>: u64 = 0;
@@ -207,6 +235,7 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 
 <a name="0x1234_CritBit_E_DESTROY_NOT_EMPTY"></a>
 
+When attempting to destroy a non-empty crit-bit tree
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_DESTROY_NOT_EMPTY">E_DESTROY_NOT_EMPTY</a>: u64 = 1;
@@ -216,6 +245,7 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 
 <a name="0x1234_CritBit_E_HAS_K"></a>
 
+When an insertion key is already present in a crit-bit tree
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>: u64 = 2;
@@ -233,12 +263,22 @@ Left direction
 
 
 
-<a name="0x1234_CritBit_MAX_BIT_128"></a>
+<a name="0x1234_CritBit_MSB_u128"></a>
 
-Maximum bit number for a <code>u128</code>
+Most significant bit number for a <code>u128</code>
 
 
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_MAX_BIT_128">MAX_BIT_128</a>: u8 = 127;
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_MSB_u128">MSB_u128</a>: u8 = 127;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_MSB_u64"></a>
+
+Most significant bit number for a <code>u64</code>
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_MSB_u64">MSB_u64</a>: u8 = 63;
 </code></pre>
 
 
@@ -312,7 +352,7 @@ fourth iteration:
 >         x - 1: 00011111
 > x AND (x - 1): 00000000
 ```
-Thus after three iterations the corresponding inner node bitmask
+Thus after three iterations a corresponding critical bit bitmask
 has been determined. However, in the case where the two input
 strings vary at all bits of lesser significance than that of the
 critical bit, there may be required as many as <code>k - 1</code>
@@ -411,7 +451,7 @@ proposes, which can also be easily generated via <code>1 &lt;&lt; c</code>.
 ): u8 {
     <b>let</b> x = s1 ^ s2; // XOR result marked 1 at bits that differ
     <b>let</b> l = 0; // Lower bound on critical bit search
-    <b>let</b> u = <a href="CritBit.md#0x1234_CritBit_MAX_BIT_128">MAX_BIT_128</a>; // Upper bound on critical bit search
+    <b>let</b> u = <a href="CritBit.md#0x1234_CritBit_MSB_u128">MSB_u128</a>; // Upper bound on critical bit search
     <b>loop</b> { // Begin binary search
         <b>let</b> m = (l + u) / 2; // Calculate midpoint of search window
         <b>let</b> s = x &gt;&gt; m; // Calculate midpoint shift of XOR result
@@ -467,7 +507,7 @@ Return an empty tree
 
 <pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_empty">empty</a>&lt;V&gt;():
 <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt; {
-    <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: 0, t: v_e&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;()}
+    <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: 0, i: v_e&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(), o: v_e&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;()}
 }
 </code></pre>
 
@@ -496,7 +536,9 @@ Insert key-value pair <code>k</code> and <code>v</code> into an empty <code>cb</
     k: u128,
     v: V
 ) {
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, <a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;{s: k, c: <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>, l: 0, r: 0, v});
+    // Push back outer node onto tree's vector of outer nodes
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;{k, v});
+    cb.r = 1 &lt;&lt; <a href="CritBit.md#0x1234_CritBit_MSB_u64">MSB_u64</a>; // Set MSB of root index field
 }
 </code></pre>
 
@@ -525,7 +567,7 @@ Return a tree with one node having key <code>k</code> and value <code>v</code>
     v: V
 ):
 <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt; {
-    <b>let</b> cb = <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: 0, t: v_e&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;()};
+    <b>let</b> cb = <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: 0, i: v_e&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(), o: v_e&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;()};
     <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>&lt;V&gt;(&<b>mut</b> cb, k, v);
     cb
 }
@@ -555,8 +597,9 @@ Destroy empty tree <code>cb</code>
     cb: <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;
 ) {
     <b>assert</b>!(<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>(&cb), <a href="CritBit.md#0x1234_CritBit_E_DESTROY_NOT_EMPTY">E_DESTROY_NOT_EMPTY</a>);
-    <b>let</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: _, t} = cb; // Unpack root node index and node vector
-    v_d_e(t); // Destroy empty node vector
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: _, i, o} = cb; // Unpack root index and node vectors
+    v_d_e(i); // Destroy empty inner node vector
+    v_d_e(o); // Destroy empty outer node vector
 }
 </code></pre>
 
@@ -568,7 +611,7 @@ Destroy empty tree <code>cb</code>
 
 ## Function `is_empty`
 
-Return <code><b>true</b></code> if the tree is empty (if node vector is empty)
+Return <code><b>true</b></code> if <code>cb</code> has no outer nodes
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): bool
@@ -580,154 +623,7 @@ Return <code><b>true</b></code> if the tree is empty (if node vector is empty)
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;): bool {v_i_e&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t)}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_b_c"></a>
-
-## Function `b_c`
-
-Return immutable reference to either left or right child of
-inner node <code>n</code> in <code>cb</code> (left if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code>, right if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>)
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c">b_c</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, n: &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;, d: bool): &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c">b_c</a>&lt;V&gt;(
-    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    n: &<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;,
-    d: bool
-): &<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt; {
-    <b>if</b> (d == <a href="CritBit.md#0x1234_CritBit_L">L</a>) v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, n.l) <b>else</b> v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, n.r)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_b_c_i_f_r"></a>
-
-## Function `b_c_i_f_r`
-
-Return mutable reference to the field where an inner node stores
-the index of either its left or right child (left if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code>,
-right if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>). The inner node in question is borrowed by
-dereferencing a reference to the field where its own node index
-is stored, <code>i_f_r</code>, ("index field reference")
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_i_f_r">b_c_i_f_r</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, i_f_r: &<b>mut</b> u64, d: bool): &<b>mut</b> u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_i_f_r">b_c_i_f_r</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    i_f_r: &<b>mut</b> u64,
-    d: bool
-): &<b>mut</b> u64 {
-    <b>if</b> (d == <a href="CritBit.md#0x1234_CritBit_L">L</a>) &<b>mut</b> v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, *i_f_r).l <b>else</b>
-        &<b>mut</b> v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, *i_f_r).r
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_b_c_o"></a>
-
-## Function `b_c_o`
-
-Walk a non-empty tree until arriving at the outer node sharing
-the largest common prefix with <code>k</code>, then return a reference to
-the node. Inner nodes store a bitmask where all bits except the
-critical bit are not set, so if bitwise AND between <code>k</code> and an
-inner node's bitmask is 0, then <code>k</code> has 0 at the critical bit:
-```
-Insertion key, bit 5 = 0:  ...1011000101
-Inner node bitmask, c = 5: ...0000100000
-Result of bitwise AND:     ...0000000000
-```
-Hence, since the directional constants <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> are set to
-<code><b>true</b></code> and <code><b>false</b></code> respectively, a conditional check on equality
-between the 0 and the bitwise AND result evaluates to <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> when
-<code>k</code> does not have the critical bit set, and <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code> when <code>k</code> does
-have the critical bit set. <code>b_c_o</code> stands for "borrow closest
-outer"
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(
-    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-): &<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt; {
-    <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, cb.r); // Get root node reference
-    <b>while</b> (n.c != <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>) { // While node under review is inner node
-        // Borrow either <a href="CritBit.md#0x1234_CritBit_L">L</a> or <a href="CritBit.md#0x1234_CritBit_R">R</a> child node depending on AND result
-        n = <a href="CritBit.md#0x1234_CritBit_b_c">b_c</a>&lt;V&gt;(cb, n, n.s & k == 0);
-    }; // Node reference now corresponds <b>to</b> closest outer node
-    n // Return closest outer node reference
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_has_key"></a>
-
-## Function `has_key`
-
-Return same as <code>b_c_o</code>, but also return mutable reference to the
-field that stores the node vector index of the outer node
-sharing the largest common prefix with <code>k</code> in <code>cb</code> (an "index
-field reference", analagous to a pointer to the closest outer
-node)
-Return true if <code>cb</code> has key <code>k</code>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_has_key">has_key</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_has_key">has_key</a>&lt;V&gt;(
-    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-): bool {
-    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb)) <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> empty
-    // Return <b>true</b> <b>if</b> closest outer node match bitstring is `k`
-    <b>return</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k).s == k
-}
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;): bool {v_i_e&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o)}
 </code></pre>
 
 

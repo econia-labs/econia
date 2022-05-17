@@ -65,6 +65,7 @@ module Econia::CritBit {
         borrow_mut as v_b_m,
         destroy_empty as v_d_e,
         empty as v_e,
+        is_empty as v_i_e,
         length as v_l,
         push_back as v_pu_b
     };
@@ -72,15 +73,11 @@ module Econia::CritBit {
     #[test_only]
     use Std::Vector::{
         append as v_a,
-        is_empty as v_i_e,
         pop_back as v_po_b,
     };
 
 // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Flag to indicate that there is no connected node for the given
-    /// child relationship field, analagous to a `NULL` pointer
-    const NIL: u64 = 0xffffffffffffffff;
     /// Flag to indicate outer node
     const OUT: u8 = 0xff;
     /// `u128` bitmask with all bits set
@@ -123,9 +120,9 @@ module Econia::CritBit {
         ///  bit 5 = 1 -|    |- bit 0 = 0
         /// ```
         c: u8,
-        /// Left child node index, marked `NIL` when outer node
+        /// Left child node index, marked 0 when outer node
         l: u64,
-        /// Right child node index, marked `NIL` when outer node
+        /// Right child node index, marked 0 when outer node
         r: u64,
         /// Value from node's key-value pair
         v: V
@@ -133,7 +130,7 @@ module Econia::CritBit {
 
     /// A crit-bit tree for key-value pairs with value type `V`
     struct CB<V> has store {
-        /// Root node index
+        /// Root node index, set to 0 when vector of nodes is empty
         r: u64,
         /// Vector of nodes in the tree
         t: vector<N<V>>
@@ -379,7 +376,7 @@ module Econia::CritBit {
     /// Return an empty tree
     public fun empty<V>():
     CB<V> {
-        CB{r: NIL, t: v_e<N<V>>()}
+        CB{r: 0, t: v_e<N<V>>()}
     }
 
     #[test]
@@ -388,8 +385,8 @@ module Econia::CritBit {
     vector<N<u8>> {
         // Unpack root index and node vector
         let CB{r, t} = empty<u8>();
-        assert!(r == NIL, 0); // Assert root set to NIL
         assert!(v_i_e<N<u8>>(&t), 1); // Assert empty node vector
+        assert!(r == 0, 0); // Assert root set to 0
         t // Return rather than unpack
     }
 
@@ -399,7 +396,7 @@ module Econia::CritBit {
         k: u128,
         v: V
     ) {
-        v_pu_b<N<V>>(&mut cb.t, N<V>{s: k, c: OUT, l: NIL, r: NIL, v});
+        v_pu_b<N<V>>(&mut cb.t, N<V>{s: k, c: OUT, l: 0, r: 0, v});
     }
 
     /// Return a tree with one node having key `k` and value `v`
@@ -424,7 +421,7 @@ module Econia::CritBit {
         // Pop and unpack last node from tree's vector of nodes
         let N{s, c, l, r, v} = v_po_b<N<u8>>(&mut t);
         // Assert values in the node are as expected
-        assert!(s == 2 && c == OUT && l == NIL && r == NIL && v == 3, 2);
+        assert!(s == 2 && c == OUT && l == 0 && r == 0 && v == 3, 2);
         t // Return vector of nodes rather than unpack
     }
 
@@ -460,8 +457,8 @@ module Econia::CritBit {
 
 // Size checks >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return `true` if the tree is empty (if root is `NIL`)
-    fun is_empty<V>(cb: &CB<V>): bool {cb.r == NIL}
+    /// Return `true` if the tree is empty (if node vector is empty)
+    fun is_empty<V>(cb: &CB<V>): bool {v_i_e<N<V>>(&cb.t)}
 
     #[test]
     /// Verify emptiness check validity
@@ -469,7 +466,7 @@ module Econia::CritBit {
     CB<u8> {
         let cb = empty<u8>(); // Get empty tree
         assert!(is_empty<u8>(&cb), 0); // Assert is empty
-        cb.r = 0; // Change root to non-NIL
+        insert_empty<u8>(&mut cb, 1, 2); // Insert key 1 and value 2
         // Assert not marked empty
         assert!(!is_empty<u8>(&cb), 0);
         cb // Return rather than unpack
@@ -586,13 +583,13 @@ module Econia::CritBit {
         let cb = empty<u8>(); // Initialize empty tree
         cb.r = 0; // Set root to node at vector index 0
         // Append nodes per above tree
-        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 2, c:   2, l:   1, r:   2, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"001"), c: OUT, l: NIL, r: NIL, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 1, c:   1, l:   3, r:   4, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"101"), c: OUT, l: NIL, r: NIL, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 0, c:   0, l:   5, r:   6, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"110"), c: OUT, l: NIL, r: NIL, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"111"), c: OUT, l: NIL, r: NIL, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 2, c:   2, l: 1, r: 2, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"001"), c: OUT, l: 0, r: 0, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 1, c:   1, l: 3, r: 4, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"101"), c: OUT, l: 0, r: 0, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 0, c:   0, l: 5, r: 6, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"110"), c: OUT, l: 0, r: 0, v});
+        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"111"), c: OUT, l: 0, r: 0, v});
         // Assert correct membership checks
         assert!(has_key(&cb, u(b"001")), 0);
         assert!(has_key(&cb, u(b"101")), 1);

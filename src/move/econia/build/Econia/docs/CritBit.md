@@ -130,13 +130,13 @@ value type <code>V</code>
 <code>l: u64</code>
 </dt>
 <dd>
- Left child node index, marked <code><a href="CritBit.md#0x1234_CritBit_NIL">NIL</a></code> when outer node
+ Left child node index, marked 0 when outer node
 </dd>
 <dt>
 <code>r: u64</code>
 </dt>
 <dd>
- Right child node index, marked <code><a href="CritBit.md#0x1234_CritBit_NIL">NIL</a></code> when outer node
+ Right child node index, marked 0 when outer node
 </dd>
 <dt>
 <code>v: V</code>
@@ -241,17 +241,6 @@ Maximum bit number for a <code>u128</code>
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_MAX_BIT_128">MAX_BIT_128</a>: u8 = 127;
-</code></pre>
-
-
-
-<a name="0x1234_CritBit_NIL"></a>
-
-Flag to indicate that there is no connected node for the given
-child relationship field, analagous to a <code>NULL</code> pointer
-
-
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>: u64 = 18446744073709551615;
 </code></pre>
 
 
@@ -480,7 +469,7 @@ Return an empty tree
 
 <pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_empty">empty</a>&lt;V&gt;():
 <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt; {
-    <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>, t: v_e&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;()}
+    <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: 0, t: v_e&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;()}
 }
 </code></pre>
 
@@ -509,7 +498,7 @@ Insert key-value pair <code>k</code> and <code>v</code> into an empty <code>cb</
     k: u128,
     v: V
 ) {
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, <a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;{s: k, c: <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>, l: <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>, r: <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>, v});
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, <a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;{s: k, c: <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>, l: 0, r: 0, v});
 }
 </code></pre>
 
@@ -581,7 +570,7 @@ Destroy empty tree <code>cb</code>
 
 ## Function `is_empty`
 
-Return <code><b>true</b></code> if the tree is empty (if root is <code><a href="CritBit.md#0x1234_CritBit_NIL">NIL</a></code>)
+Return <code><b>true</b></code> if the tree is empty (if node vector is empty)
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): bool
@@ -593,7 +582,7 @@ Return <code><b>true</b></code> if the tree is empty (if root is <code><a href="
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;): bool {cb.r == <a href="CritBit.md#0x1234_CritBit_NIL">NIL</a>}
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;): bool {v_i_e&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t)}
 </code></pre>
 
 

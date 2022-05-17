@@ -75,11 +75,9 @@ set.
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `is_empty`](#0x1234_CritBit_is_empty)
 -  [Function `b_c`](#0x1234_CritBit_b_c)
--  [Function `b_c_i`](#0x1234_CritBit_b_c_i)
+-  [Function `b_c_i_f_r`](#0x1234_CritBit_b_c_i_f_r)
 -  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
--  [Function `b_c_o_m`](#0x1234_CritBit_b_c_o_m)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
--  [Function `insert_new`](#0x1234_CritBit_insert_new)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -170,7 +168,7 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 <code>r: u64</code>
 </dt>
 <dd>
- Root node index
+ Root node index, set to 0 when vector of nodes is empty
 </dd>
 <dt>
 <code>t: vector&lt;<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;&gt;</code>
@@ -619,14 +617,18 @@ inner node <code>n</code> in <code>cb</code> (left if <code>d</code> is <code><a
 
 </details>
 
-<a name="0x1234_CritBit_b_c_i"></a>
+<a name="0x1234_CritBit_b_c_i_f_r"></a>
 
-## Function `b_c_i`
+## Function `b_c_i_f_r`
 
-Like <code>b_c</code>, but also returns vector index of child node
+Return mutable reference to the field where an inner node stores
+the index of either its left or right child (left if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code>,
+right if <code>d</code> is <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>). The inner node in question is borrowed by
+dereferencing a reference to the field where its own node index
+is stored, <code>i_f_r</code>, ("index field reference")
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_i">b_c_i</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, n: &<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;, d: bool): (&<a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;, u64)
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_i_f_r">b_c_i_f_r</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, i_f_r: &<b>mut</b> u64, d: bool): &<b>mut</b> u64
 </code></pre>
 
 
@@ -635,16 +637,13 @@ Like <code>b_c</code>, but also returns vector index of child node
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_i">b_c_i</a>&lt;V&gt;(
-    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    n: &<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;,
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_i_f_r">b_c_i_f_r</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    i_f_r: &<b>mut</b> u64,
     d: bool
-): (
-    &<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;,
-    u64
-) {
-    <b>if</b> (d == <a href="CritBit.md#0x1234_CritBit_L">L</a>) (v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, n.l), n.l) <b>else</b>
-        (v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, n.r), n.r)
+): &<b>mut</b> u64 {
+    <b>if</b> (d == <a href="CritBit.md#0x1234_CritBit_L">L</a>) &<b>mut</b> v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, *i_f_r).l <b>else</b>
+        &<b>mut</b> v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, *i_f_r).r
 }
 </code></pre>
 
@@ -700,45 +699,15 @@ outer"
 
 </details>
 
-<a name="0x1234_CritBit_b_c_o_m"></a>
-
-## Function `b_c_o_m`
-
-Like <code>b_c_o</code>, but for mutable reference
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o_m">b_c_o_m</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_N">CritBit::N</a>&lt;V&gt;
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o_m">b_c_o_m</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-): &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt; {
-    <b>let</b> i = cb.r; // Get vector index of root node
-    <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t, i); // Get root node reference
-    <b>while</b> (n.c != <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>) { // While node under review is inner node
-        // Borrow either <a href="CritBit.md#0x1234_CritBit_L">L</a> or <a href="CritBit.md#0x1234_CritBit_R">R</a> child node depending on AND result,
-        // and get index of the node
-        (n, i) = <a href="CritBit.md#0x1234_CritBit_b_c_i">b_c_i</a>&lt;V&gt;(cb, n, n.s & k == 0);
-    }; // Node index now corresponds <b>to</b> closest outer node
-    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&<b>mut</b> cb.t, i) // Return mutable reference <b>to</b> node
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0x1234_CritBit_has_key"></a>
 
 ## Function `has_key`
 
+Return same as <code>b_c_o</code>, but also return mutable reference to the
+field that stores the node vector index of the outer node
+sharing the largest common prefix with <code>k</code> in <code>cb</code> (an "index
+field reference", analagous to a pointer to the closest outer
+node)
 Return true if <code>cb</code> has key <code>k</code>
 
 
@@ -758,46 +727,6 @@ Return true if <code>cb</code> has key <code>k</code>
     <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb)) <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> empty
     // Return <b>true</b> <b>if</b> closest outer node match bitstring is `k`
     <b>return</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k).s == k
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_insert_new"></a>
-
-## Function `insert_new`
-
-Insert key <code>k</code> and value <code>v</code> into tree <code>cb</code>, aborting if <code>k</code> is
-already present
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_new">insert_new</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_new">insert_new</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-    /*
-    v: V
-    */
-) {
-    <b>let</b> n = <a href="CritBit.md#0x1234_CritBit_b_c_o_m">b_c_o_m</a>&lt;V&gt;(cb, k); // Get closest outer node reference
-    <b>assert</b>!(n.s != k, <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>); // Abort <b>if</b> key already present
-    // Get critical bit between node key and insertion key
-    n.c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(n.s, k); // Update node <b>with</b> new critical bit
-    <b>let</b> i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_N">N</a>&lt;V&gt;&gt;(&cb.t); // Get index of first inserted node
-    i;
-    /*
-    <b>if</b> (k &lt; n.s) {}
-    */
 }
 </code></pre>
 

@@ -66,13 +66,13 @@ module Econia::CritBit {
         destroy_empty as v_d_e,
         empty as v_e,
         is_empty as v_i_e,
-        length as v_l,
         push_back as v_pu_b
     };
 
     #[test_only]
     use Std::Vector::{
         append as v_a,
+        length as v_l,
         pop_back as v_po_b,
     };
 
@@ -534,6 +534,7 @@ module Econia::CritBit {
     /// sharing the largest common prefix with `k` in `cb` (an "index
     /// field reference", analagous to a pointer to the closest outer
     /// node)
+    /*
     fun b_c_o_i_f_r<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -557,6 +558,7 @@ module Econia::CritBit {
         // field reference (analagous to a pointer to the node)
         (n, i_f_r)
     }
+    */
 
 // Node borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -616,10 +618,35 @@ module Econia::CritBit {
 
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /*
+    /// Insert key `k` and value `v` into tree `cb`, for the special
+    /// case where the tree has exactly one node (pre-insertion) such
+    /// that the root field of the tree will have to be updated
+    fun insert_second_key<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V
+    ) {
+        let n = v_b<N<V>>(&cb.t, 0); // Borrow existing outer node
+        assert!(k == n.s, E_HAS_K); // Assert insertion key not in tree
+        // Push at back new key-value pair onto nodes vector
+        v_pu_b<N<V>>(&mut cb.t, N{s: k, c: OUT, l: 0, r: 0, v});
+        let c = crit_bit(n.s, k); // Get critical bit between two keys
+        // Vector index of left child of new inner node corresponds to
+        // the outer node having the smaller key, vice versa for right
+        let (l, r) = if (k < n.s) (1, 0) else (0, 1);
+        // Push at back inner node having corresponding children
+        // v_pu_b<N<V>>(&mut cb.t, N{s: 1 << c, c, l, r, v: 0});
+        // Update tree root field for newly-created inner node
+        cb.r = 2;
+    }
+    */
+
+    /*
     /// Insert key `k` and value `v` into non-empty tree `cb`, aborting
     /// if `k` is already present
-    fun insert_new<V>(
-        cb: &mut CB<V>,
+    fun insert_non_empty<V>(
+        cb: &mut cb<v>,
         k: u128,
         /*
         v: V
@@ -639,6 +666,7 @@ module Econia::CritBit {
         //v_a<N<V>>(&mut cb.t, N{})
         // Should just switch node, rather than copy V over
     }
+    */
 
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

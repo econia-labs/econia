@@ -20,7 +20,7 @@ module Econia::BST {
     }
 
     #[test]
-    /// So above solution doesn't inihibt code coverage
+    /// So above solution doesn't inhibit code coverage
     fun invoke_use_v_funcs() {
         use_v_funcs();
     }

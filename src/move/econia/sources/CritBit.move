@@ -735,7 +735,7 @@ module Econia::CritBit {
 
     /// Insert key `k` and value `v` into singleton tree `cb`, a special
     /// case that that requires updating the root field of the tree
-    fun insert_second_key<V>(
+    fun insert_singleton<V>(
         cb: &mut CB<V>,
         k: u128,
         v: V
@@ -757,19 +757,19 @@ module Econia::CritBit {
 
     #[test]
     /// Verify proper insertion result for left and right cases
-    fun insert_second_key_success():
+    fun insert_singleton_success():
     (
         CB<u8>,
         CB<u8>
     ) {
         let cb1 = singleton<u8>(u(b"1111"), 2); // Initialize singleton
-        insert_second_key(&mut cb1, u(b"1101"), 5); // Inserts to left
+        insert_singleton(&mut cb1, u(b"1101"), 5); // Inserts to left
         // Assert proper lookup traversal
         assert!(*borrow<u8>(&cb1, u(b"1111")) == 2, 0);
         assert!(*borrow<u8>(&cb1, u(b"1101")) == 5, 1);
         // Repeat for add to right
         let cb2 = singleton<u8>(u(b"1011"), 2); // Initialize singleton
-        insert_second_key(&mut cb2, u(b"1111"), 5); // Inserts to right
+        insert_singleton(&mut cb2, u(b"1111"), 5); // Inserts to right
         // Assert proper lookup traversal
         assert!(*borrow<u8>(&cb2, u(b"1011")) == 2, 0);
         assert!(*borrow<u8>(&cb2, u(b"1111")) == 5, 1);
@@ -779,38 +779,37 @@ module Econia::CritBit {
     #[test]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for attempting duplicate insertion on singleton
-    fun insert_second_key_failure():
+    fun insert_singleton_failure():
     CB<u8> {
         let cb = singleton<u8>(1, 2); // Initialize singleton
-        insert_second_key(&mut cb, 1, 5); // Attempt to insert same key
+        insert_singleton(&mut cb, 1, 5); // Attempt to insert same key
         cb // Return rather than unpack (or signal to compiler as much)
     }
 
-    /*
-    /// Insert key `k` and value `v` into non-empty tree `cb`, aborting
-    /// if `k` is already present
-    fun insert_non_empty<V>(
-        cb: &mut cb<v>,
+    /// Insert key `k` and value `v` into tree `cb` already having `n`
+    /// keys for general case where root is an inner node, aborting if
+    /// `k` is already present
+    fun insert_general<V>(
+        cb: &mut CB<V>,
         k: u128,
-        /*
-        v: V
-        */
+        //v: V,
+        //n: u64
     ) {
-        // Get immutable reference to the closest outer node, and a
-        // mutable reference to the field where its index is stored
-        let i = v_l<N<V>>(&cb.t); // Get index of first new node
-        let (n, i_f_r) = b_c_o_i_f_r<V>(cb, k);
-        n; i_f_r; i;
-        /*
-        assert!(n.s != k, E_HAS_K); // Abort if key already present
-        // Get critical bit between node key and insertion key
-        let c = crit_bit(n.s, k);
-        */
-        //v_a<N<V>>(&mut cb.t, N{s: k, c: OUT, l: 0, r: 0, v: V})
-        //v_a<N<V>>(&mut cb.t, N{})
-        // Should just switch node, rather than copy V over
+        let i_p = cb.r; // Initialize parent index to that of root node
+        let i_c: u64; // Initialize tracker for child node index
+        let c_s: bool; // Initialize tracker for child side
+        loop { // Loop over inner nodes
+            let p = v_b<I>(&cb.i, i_p); // Borrow parent inner node
+            // If key is set at critical bit, track the R child, else L
+            (i_c, c_s) = if (is_set(k, p.c)) (p.r, R) else (p.l, L);
+            if (is_out(i_c)) break; // Stop loop if child is outer node
+            i_p = i_c; // Else borrow next inner node to review
+        }; // Now child node index corresponds to closest outer node
+        // Borrow closest outer node, the child from the loop
+        let c_o = v_b<O<V>>(&cb.o, o_v(i_c));
+        let c = crit_bit(c_o.k, k); // Get critical bit of divergence
+        c_s; c;
     }
-    */
 
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

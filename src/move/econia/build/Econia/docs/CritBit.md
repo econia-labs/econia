@@ -83,7 +83,8 @@ set, while its right child does have bit 0 set.
 -  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
 -  [Function `borrow`](#0x1234_CritBit_borrow)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
--  [Function `insert_second_key`](#0x1234_CritBit_insert_second_key)
+-  [Function `insert_singleton`](#0x1234_CritBit_insert_singleton)
+-  [Function `insert_general`](#0x1234_CritBit_insert_general)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -876,15 +877,15 @@ Return true if <code>cb</code> has key <code>k</code>
 
 </details>
 
-<a name="0x1234_CritBit_insert_second_key"></a>
+<a name="0x1234_CritBit_insert_singleton"></a>
 
-## Function `insert_second_key`
+## Function `insert_singleton`
 
 Insert key <code>k</code> and value <code>v</code> into singleton tree <code>cb</code>, a special
 case that that requires updating the root field of the tree
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_second_key">insert_second_key</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V)
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_singleton">insert_singleton</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V)
 </code></pre>
 
 
@@ -893,7 +894,7 @@ case that that requires updating the root field of the tree
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_second_key">insert_second_key</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_singleton">insert_singleton</a>&lt;V&gt;(
     cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
     k: u128,
     v: V
@@ -911,6 +912,51 @@ case that that requires updating the root field of the tree
     v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, l, r});
     // Update tree root field for newly-created inner node
     cb.r = 0;
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_insert_general"></a>
+
+## Function `insert_general`
+
+Insert key <code>k</code> and value <code>v</code> into tree <code>cb</code> already having <code>n</code>
+keys for general case where root is an inner node, aborting if
+<code>k</code> is already present
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    //v: V,
+    //n: u64
+) {
+    <b>let</b> i_p = cb.r; // Initialize parent index <b>to</b> that of root node
+    <b>let</b> i_c: u64; // Initialize tracker for child node index
+    <b>let</b> c_s: bool; // Initialize tracker for child side
+    <b>loop</b> { // Loop over inner nodes
+        <b>let</b> p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_p); // Borrow parent inner node
+        // If key is set at critical bit, track the <a href="CritBit.md#0x1234_CritBit_R">R</a> child, <b>else</b> <a href="CritBit.md#0x1234_CritBit_L">L</a>
+        (i_c, c_s) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, p.c)) (p.r, <a href="CritBit.md#0x1234_CritBit_R">R</a>) <b>else</b> (p.l, <a href="CritBit.md#0x1234_CritBit_L">L</a>);
+        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_c)) <b>break</b>; // Stop <b>loop</b> <b>if</b> child is outer node
+        i_p = i_c; // Else borrow next inner node <b>to</b> review
+    }; // Now child node index corresponds <b>to</b> closest outer node
+    // Borrow closest outer node, the child from the <b>loop</b>
+    <b>let</b> c_o = v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c));
+    <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(c_o.k, k); // Get critical bit of divergence
+    c_s; c;
 }
 </code></pre>
 

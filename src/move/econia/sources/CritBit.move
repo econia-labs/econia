@@ -106,6 +106,10 @@ module Econia::CritBit {
     const E_DESTROY_NOT_EMPTY: u64 = 1;
     /// When an insertion key is already present in a crit-bit tree
     const E_HAS_K: u64 = 2;
+    /// When unable to borrow from empty tree
+    const E_BORROW_EMPTY: u64 = 3;
+    /// When no match to borrow
+    const E_BORROW_NO_K: u64 = 4;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -319,11 +323,11 @@ module Econia::CritBit {
 
     /// Convert flagged child node index `c` to unflagged outer node
     /// vector index, by AND with a bitmask that has only flag bit unset
-    fun out_v(c: u64): u64 {c & HI_64 ^ OUT << N_TYPE}
+    fun o_v(c: u64): u64 {c & HI_64 ^ OUT << N_TYPE}
 
     /// Convert unflagged outer node vector index `v` to flagged child
     /// node index, by OR with a bitmask that has only flag bit set
-    fun out_c(v: u64): u64 {v | OUT << N_TYPE}
+    fun o_c(v: u64): u64 {v | OUT << N_TYPE}
 
     #[test]
     /// Verify correct returns
@@ -341,16 +345,16 @@ module Econia::CritBit {
 
     #[test]
     /// Verify correct returns
-    fun out_v_success() {
-        assert!(out_v(1 << N_TYPE) == 0, 0);
-        assert!(out_v(1 << N_TYPE | 123) == 123, 1);
+    fun o_v_success() {
+        assert!(o_v(1 << N_TYPE) == 0, 0);
+        assert!(o_v(1 << N_TYPE | 123) == 123, 1);
     }
 
     #[test]
     /// Verify correct returns
     fun out_c_success() {
-        assert!(out_c(0) == 1 << N_TYPE, 0);
-        assert!(out_c(123) == 1 << N_TYPE | 123, 1);
+        assert!(o_c(0) == 1 << N_TYPE, 0);
+        assert!(o_c(123) == 1 << N_TYPE | 123, 1);
     }
 
     #[test_only]
@@ -548,7 +552,7 @@ module Econia::CritBit {
 
 // Size checks >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-// Node borrowing >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Borrowing >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /*
     /// Return immutable reference to either left or right child of
@@ -584,16 +588,48 @@ module Econia::CritBit {
         k: u128,
     ): &O<V> {
         // If root is an outer node, return reference to it
-        if (is_out(cb.r)) return (v_b<O<V>>(&cb.o, out_v(cb.r)));
+        if (is_out(cb.r)) return (v_b<O<V>>(&cb.o, o_v(cb.r)));
         // Otherwise borrow inner node at root
         let n = v_b<I>(&cb.i, cb.r);
         loop { // Loop over inner nodes
             // If key is set at critical bit, get index of child on R
             let i_c = if (is_set(k, n.c)) n.r else n.l; // Otherwise L
             // If child is outer node, borrow and return it
-            if (is_out(i_c)) return v_b<O<V>>(&cb.o, out_v(i_c));
+            if (is_out(i_c)) return v_b<O<V>>(&cb.o, o_v(i_c));
             n = v_b<I>(&cb.i, i_c); // Borrow next inner node to review
         }
+    }
+
+    /// Borrow value corresponding to key `k` in `cb`, aborting if empty
+    /// tree or no match
+    public fun borrow<V>(
+        cb: &CB<V>,
+        k: u128,
+    ): &V {
+        assert!(!is_empty<V>(cb), E_BORROW_EMPTY); // Abort if empty
+        let c_o = b_c_o<V>(cb, k); // Borrow closest outer node
+        assert!(c_o.k == k, E_BORROW_NO_K); // Abort if key not in tree
+        &c_o.v // Return immutable reference to corresponding value
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Assert failure for attempted borrow on empty tree
+    public fun borrow_empty():
+    CB<u8> {
+        let cb = empty<u8>();
+        borrow<u8>(&cb, 0);
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Assert failure for attempted borrow without matching key
+    public fun borrow_no_match():
+    CB<u8> {
+        let cb = singleton<u8>(3, 4);
+        borrow<u8>(&cb, 6);
+        cb // Return rather than unpack (or signal to compiler as much)
     }
 
     /*
@@ -627,7 +663,7 @@ module Econia::CritBit {
     }
     */
 
-// Node borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// Borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // Membership checks >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -667,9 +703,9 @@ module Econia::CritBit {
         let v = 0; // Ignore values in key-value pairs by setting to 0
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree
-        v_pu_b<I>(&mut cb.i, I{c: 2, l: out_c(0), r:       1 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, l: out_c(1), r:       2 });
-        v_pu_b<I>(&mut cb.i, I{c: 0, l: out_c(2), r: out_c(3)});
+        v_pu_b<I>(&mut cb.i, I{c: 2, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, l: o_c(1), r:     2 });
+        v_pu_b<I>(&mut cb.i, I{c: 0, l: o_c(2), r: o_c(3)});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"110"), v});
@@ -697,29 +733,58 @@ module Econia::CritBit {
 
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /*
-    /// Insert key `k` and value `v` into tree `cb`, for the special
-    /// case where the tree has exactly one node (pre-insertion) such
-    /// that the root field of the tree will have to be updated
+    /// Insert key `k` and value `v` into singleton tree `cb`, a special
+    /// case that that requires updating the root field of the tree
     fun insert_second_key<V>(
         cb: &mut CB<V>,
         k: u128,
         v: V
     ) {
-        let n = v_b<N<V>>(&cb.t, 0); // Borrow existing outer node
-        assert!(k == n.s, E_HAS_K); // Assert insertion key not in tree
-        // Push at back new key-value pair onto nodes vector
-        v_pu_b<N<V>>(&mut cb.t, N{s: k, c: OUT, l: 0, r: 0, v});
-        let c = crit_bit(n.s, k); // Get critical bit between two keys
-        // Vector index of left child of new inner node corresponds to
-        // the outer node having the smaller key, vice versa for right
-        let (l, r) = if (k < n.s) (1, 0) else (0, 1);
-        // Push at back inner node having corresponding children
-        // v_pu_b<N<V>>(&mut cb.t, N{s: 1 << c, c, l, r, v: 0});
+        let n = v_b<O<V>>(&cb.o, 0); // Borrow existing outer node
+        assert!(k != n.k, E_HAS_K); // Assert insertion key not in tree
+        let c = crit_bit(n.k, k); // Get critical bit between two keys
+        // If insertion key greater than existing key, new inner node at
+        // root should have existing key as left child and insertion key
+        // as right child, otherwise the opposite
+        let (l, r) = if (k > n.k) (o_c(0), o_c(1)) else (o_c(1), o_c(0));
+        // Push back new outer node onto outer node vector
+        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v});
+        // Push back new inner node with corresponding children
+        v_pu_b<I>(&mut cb.i, I{c, l, r});
         // Update tree root field for newly-created inner node
-        cb.r = 2;
+        cb.r = 0;
     }
-    */
+
+    #[test]
+    /// Verify proper insertion result for left and right cases
+    fun insert_second_key_success():
+    (
+        CB<u8>,
+        CB<u8>
+    ) {
+        let cb1 = singleton<u8>(u(b"1111"), 2); // Initialize singleton
+        insert_second_key(&mut cb1, u(b"1101"), 5); // Inserts to left
+        // Assert proper lookup traversal
+        assert!(*borrow<u8>(&cb1, u(b"1111")) == 2, 0);
+        assert!(*borrow<u8>(&cb1, u(b"1101")) == 5, 1);
+        // Repeat for add to right
+        let cb2 = singleton<u8>(u(b"1011"), 2); // Initialize singleton
+        insert_second_key(&mut cb2, u(b"1111"), 5); // Inserts to right
+        // Assert proper lookup traversal
+        assert!(*borrow<u8>(&cb2, u(b"1011")) == 2, 0);
+        assert!(*borrow<u8>(&cb2, u(b"1111")) == 5, 1);
+        (cb1, cb2) // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for attempting duplicate insertion on singleton
+    fun insert_second_key_failure():
+    CB<u8> {
+        let cb = singleton<u8>(1, 2); // Initialize singleton
+        insert_second_key(&mut cb, 1, 5); // Attempt to insert same key
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
 
     /*
     /// Insert key `k` and value `v` into non-empty tree `cb`, aborting

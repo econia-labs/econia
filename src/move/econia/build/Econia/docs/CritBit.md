@@ -72,8 +72,8 @@ set, while its right child does have bit 0 set.
 -  [Function `crit_bit`](#0x1234_CritBit_crit_bit)
 -  [Function `is_set`](#0x1234_CritBit_is_set)
 -  [Function `is_out`](#0x1234_CritBit_is_out)
--  [Function `out_v`](#0x1234_CritBit_out_v)
--  [Function `out_c`](#0x1234_CritBit_out_c)
+-  [Function `o_v`](#0x1234_CritBit_o_v)
+-  [Function `o_c`](#0x1234_CritBit_o_c)
 -  [Function `b_lo`](#0x1234_CritBit_b_lo)
 -  [Function `empty`](#0x1234_CritBit_empty)
 -  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
@@ -81,7 +81,9 @@ set, while its right child does have bit 0 set.
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `is_empty`](#0x1234_CritBit_is_empty)
 -  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
+-  [Function `borrow`](#0x1234_CritBit_borrow)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
+-  [Function `insert_second_key`](#0x1234_CritBit_insert_second_key)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -226,6 +228,26 @@ When a char in a bytestring is neither 0 nor 1
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_BIT_NOT_0_OR_1">E_BIT_NOT_0_OR_1</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_E_BORROW_EMPTY"></a>
+
+When unable to borrow from empty tree
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_E_BORROW_NO_K"></a>
+
+When no match to borrow
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_BORROW_NO_K">E_BORROW_NO_K</a>: u64 = 4;
 </code></pre>
 
 
@@ -538,15 +560,15 @@ Return <code><b>true</b></code> if vector index <code>i</code> indicates an oute
 
 </details>
 
-<a name="0x1234_CritBit_out_v"></a>
+<a name="0x1234_CritBit_o_v"></a>
 
-## Function `out_v`
+## Function `o_v`
 
 Convert flagged child node index <code>c</code> to unflagged outer node
 vector index, by AND with a bitmask that has only flag bit unset
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_out_v">out_v</a>(c: u64): u64
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(c: u64): u64
 </code></pre>
 
 
@@ -555,22 +577,22 @@ vector index, by AND with a bitmask that has only flag bit unset
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_out_v">out_v</a>(c: u64): u64 {c & <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a> ^ <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>}
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(c: u64): u64 {c & <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a> ^ <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>}
 </code></pre>
 
 
 
 </details>
 
-<a name="0x1234_CritBit_out_c"></a>
+<a name="0x1234_CritBit_o_c"></a>
 
-## Function `out_c`
+## Function `o_c`
 
 Convert unflagged outer node vector index <code>v</code> to flagged child
 node index, by OR with a bitmask that has only flag bit set
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_out_c">out_c</a>(v: u64): u64
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(v: u64): u64
 </code></pre>
 
 
@@ -579,7 +601,7 @@ node index, by OR with a bitmask that has only flag bit set
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_out_c">out_c</a>(v: u64): u64 {v | <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>}
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(v: u64): u64 {v | <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>}
 </code></pre>
 
 
@@ -775,16 +797,48 @@ it. <code>b_c_o</code> indicates "borrow closest outer"
     k: u128,
 ): &<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; {
     // If root is an outer node, <b>return</b> reference <b>to</b> it
-    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(cb.r)) <b>return</b> (v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_out_v">out_v</a>(cb.r)));
+    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(cb.r)) <b>return</b> (v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(cb.r)));
     // Otherwise borrow inner node at root
     <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, cb.r);
     <b>loop</b> { // Loop over inner nodes
         // If key is set at critical bit, get index of child on <a href="CritBit.md#0x1234_CritBit_R">R</a>
         <b>let</b> i_c = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, n.c)) n.r <b>else</b> n.l; // Otherwise <a href="CritBit.md#0x1234_CritBit_L">L</a>
         // If child is outer node, borrow and <b>return</b> it
-        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_c)) <b>return</b> v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_out_v">out_v</a>(i_c));
+        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_c)) <b>return</b> v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c));
         n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_c); // Borrow next inner node <b>to</b> review
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_borrow"></a>
+
+## Function `borrow`
+
+Borrow value corresponding to key <code>k</code> in <code>cb</code>, aborting if empty
+tree or no match
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow">borrow</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow">borrow</a>&lt;V&gt;(
+    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+): &V {
+    <b>assert</b>!(!<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb), <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>); // Abort <b>if</b> empty
+    <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k); // Borrow closest outer node
+    <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_BORROW_NO_K">E_BORROW_NO_K</a>); // Abort <b>if</b> key not in tree
+    &c_o.v // Return immutable reference <b>to</b> corresponding value
 }
 </code></pre>
 
@@ -815,6 +869,48 @@ Return true if <code>cb</code> has key <code>k</code>
     <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb)) <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> empty
     // Return <b>true</b> <b>if</b> closest outer node <b>has</b> same key
     <b>return</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k).k == k
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_insert_second_key"></a>
+
+## Function `insert_second_key`
+
+Insert key <code>k</code> and value <code>v</code> into singleton tree <code>cb</code>, a special
+case that that requires updating the root field of the tree
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_second_key">insert_second_key</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_second_key">insert_second_key</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V
+) {
+    <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, 0); // Borrow existing outer node
+    <b>assert</b>!(k != n.k, <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>); // Assert insertion key not in tree
+    <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(n.k, k); // Get critical bit between two keys
+    // If insertion key greater than existing key, new inner node at
+    // root should have existing key <b>as</b> left child and insertion key
+    // <b>as</b> right child, otherwise the opposite
+    <b>let</b> (l, r) = <b>if</b> (k &gt; n.k) (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(0), <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(1)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(1), <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(0));
+    // Push back new outer node onto outer node vector
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;{k, v});
+    // Push back new inner node <b>with</b> corresponding children
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, l, r});
+    // Update tree root field for newly-created inner node
+    cb.r = 0;
 }
 </code></pre>
 

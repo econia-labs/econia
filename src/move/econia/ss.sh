@@ -16,7 +16,7 @@ elif test $1 = er; then
     cd ../../../
 
 # Publish bytecode using a newly-generated address
-elif test $1 = pb; then
+elif test $1 = p; then
     # Capture RegEx search on printed output of address generator
     addr=$(python ../../python/econia/build.py gen ../../.. \
         | grep -E -o "(\w+)$")
@@ -34,7 +34,7 @@ elif test $1 = cl; then
     clear
 
 # Build package via Move command line
-elif test $1 = mb; then
+elif test $1 = b; then
     move package build
 
 # Run tests with coverage, passing optional argument
@@ -44,7 +44,7 @@ elif test $1 = tc; then
 
 # Run tests in standard form , passing optional argument
 # For example `s ts -f coin`
-elif test $1 = ts; then
+elif test $1 = t; then
     move package test $2 $3
 
 # Output test coverage summary
@@ -57,7 +57,7 @@ elif test $1 = cm; then
     move package coverage source --module $2
 
 # Build documentation
-elif test $1 = bd; then
+elif test $1 = d; then
     move package build --doc
 
 else

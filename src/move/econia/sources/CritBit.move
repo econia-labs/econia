@@ -62,6 +62,7 @@
 module Econia::CritBit {
 
     use Std::Vector::{
+        borrow as v_b,
         destroy_empty as v_d_e,
         empty as v_e,
         is_empty as v_i_e,
@@ -71,7 +72,6 @@ module Econia::CritBit {
     #[test_only]
     use Std::Vector::{
         append as v_a,
-        borrow as v_b,
         //borrow_mut as v_b_m,
         length as v_l,
         pop_back as v_po_b,
@@ -79,14 +79,18 @@ module Econia::CritBit {
 
 // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Flag to indicate outer node
-    const OUT: u8 = 0xff;
     /// `u128` bitmask with all bits set
-    const ALL_HI: u128 = 0xffffffffffffffffffffffffffffffff;
+    const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// `u64` bitmask with all bits set
+    const HI_64: u64 = 0xffffffffffffffff;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
-    /// Most significant bit number for a `u64`
-    const MSB_u64: u8 = 63;
+    /// Bit number of node type flag in a `u64` vector index
+    const N_TYPE: u8 = 63;
+    /// Node type bit flag indicating inner node
+    const IN: u64 = 0;
+    /// Node type bit flag indicating outer node
+    const OUT: u64 = 1;
     /// Left direction
     const L: bool = true;
     /// Right direction
@@ -107,7 +111,7 @@ module Econia::CritBit {
 
 // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    // Inner node
+    /// Inner node
     struct I has store {
         // Documentation comments, specifically on struct fields,
         // apparently do not support fenced code blocks unless they are
@@ -307,6 +311,48 @@ module Econia::CritBit {
         };
     }
 
+    /// Return `true` if `k` is set at bit `b`
+    fun is_set(k: u128, b: u8): bool {k >> b & 1 == 1}
+
+    /// Return `true` if vector index `i` indicates an outer node
+    fun is_out(i: u64): bool {(i >> N_TYPE & 1 == 1)}
+
+    /// Convert flagged child node index `c` to unflagged outer node
+    /// vector index, by AND with a bitmask that has only flag bit unset
+    fun out_v(c: u64): u64 {c & HI_64 ^ OUT << N_TYPE}
+
+    /// Convert unflagged outer node vector index `v` to flagged child
+    /// node index, by OR with a bitmask that has only flag bit set
+    fun out_c(v: u64): u64 {v | OUT << N_TYPE}
+
+    #[test]
+    /// Verify correct returns
+    fun is_set_success() {
+        assert!(is_set(u(b"11"), 0) && is_set(u(b"11"), 1), 0);
+        assert!(!is_set(u(b"10"), 0) && !is_set(u(b"01"), 1), 1);
+    }
+
+    #[test]
+    /// Verify correct returns
+    fun is_out_success() {
+        assert!(is_out(1 << N_TYPE), 0);
+        assert!(!is_out(0), 1);
+    }
+
+    #[test]
+    /// Verify correct returns
+    fun out_v_success() {
+        assert!(out_v(1 << N_TYPE) == 0, 0);
+        assert!(out_v(1 << N_TYPE | 123) == 123, 1);
+    }
+
+    #[test]
+    /// Verify correct returns
+    fun out_c_success() {
+        assert!(out_c(0) == 1 << N_TYPE, 0);
+        assert!(out_c(123) == 1 << N_TYPE | 123, 1);
+    }
+
     #[test_only]
     /// Return a `u128` corresponding to the provided byte string. The
     /// byte should only contain only "0"s and "1"s, up to 128
@@ -358,12 +404,12 @@ module Econia::CritBit {
             b"111111111111111111111111111111111111111111111111111111111111",
             b"111111111111111111111111111111111111111111111111111111111111",
             b"11111111"
-        ) == ALL_HI, 9);
+        ) == HI_128, 9);
         assert!(u_long( // 60 characters on first two lines, 8 on last
             b"111111111111111111111111111111111111111111111111111111111111",
             b"111111111111111111111111111111111111111111111111111111111111",
             b"11111110"
-        ) == ALL_HI - 1, 10);
+        ) == HI_128 - 1, 10);
     }
 
     #[test]
@@ -372,14 +418,14 @@ module Econia::CritBit {
     fun u_failure() {u(b"2");}
 
     /// Return a bitmask with all bits high except for bit `b`,
-    /// 0-indexed starting at LSB: bitshift 1 by `b`, XOR with `ALL_HI`
-    fun b_lo(b: u8): u128 {1 << b ^ ALL_HI}
+    /// 0-indexed starting at LSB: bitshift 1 by `b`, XOR with `HI_128`
+    fun b_lo(b: u8): u128 {1 << b ^ HI_128}
 
     #[test]
     /// Verify successful bitmask generation
     fun b_lo_success() {
-        assert!(b_lo(0) == ALL_HI - 1, 0);
-        assert!(b_lo(1) == ALL_HI - 2, 1);
+        assert!(b_lo(0) == HI_128 - 1, 0);
+        assert!(b_lo(1) == HI_128 - 2, 1);
         assert!(b_lo(127) == 0x7fffffffffffffffffffffffffffffff, 2);
     }
 
@@ -416,7 +462,8 @@ module Econia::CritBit {
     ) {
         // Push back outer node onto tree's vector of outer nodes
         v_pu_b<O<V>>(&mut cb.o, O<V>{k, v});
-        cb.r = 1 << MSB_u64; // Set MSB of root index field
+        // Set root index field to indicate 0th outer node
+        cb.r = OUT << N_TYPE;
     }
 
     /// Return a tree with one node having key `k` and value `v`
@@ -441,7 +488,8 @@ module Econia::CritBit {
         assert!(v_i_e<I>(&cb.i), 0); // Assert no inner nodes
         assert!(v_l<O<u8>>(&cb.o) == 1, 1); // Assert single outer node
         let CB{r, i, o} = cb; // Unpack root index and node vectors
-        assert!(r == 1 << MSB_u64, 2); // Assert root index has MSB set
+        // Assert root index field indicates 0th outer node
+        assert!(r == OUT << N_TYPE, 2);
         // Pop and unpack last node from vector of outer nodes
         let O{k, v} = v_po_b<O<u8>>(&mut o);
         // Assert values in node are as expected
@@ -505,7 +553,7 @@ module Econia::CritBit {
     /*
     /// Return immutable reference to either left or right child of
     /// inner node `n` in `cb` (left if `d` is `L`, right if `d` is `R`)
-    fun b_c<V>(
+    fun b_i_c<V>(
         cb: &CB<V>,
         n: &N<V>,
         d: bool
@@ -527,40 +575,33 @@ module Econia::CritBit {
             &mut v_b_m<N<V>>(&mut cb.t, *i_f_r).r
     }
 
+    */
     /// Walk a non-empty tree until arriving at the outer node sharing
     /// the largest common prefix with `k`, then return a reference to
-    /// the node. Inner nodes store a bitmask where all bits except the
-    /// critical bit are not set, so if bitwise AND between `k` and an
-    /// inner node's bitmask is 0, then `k` has 0 at the critical bit:
-    /// ```
-    /// Insertion key, bit 5 = 0:  ...1011000101
-    /// Inner node bitmask, c = 5: ...0000100000
-    /// Result of bitwise AND:     ...0000000000
-    /// ```
-    /// Hence, since the directional constants `L` and `R` are set to
-    /// `true` and `false` respectively, a conditional check on equality
-    /// between the 0 and the bitwise AND result evaluates to `L` when
-    /// `k` does not have the critical bit set, and `R` when `k` does
-    /// have the critical bit set. `b_c_o` stands for "borrow closest
-    /// outer"
+    /// it. `b_c_o` indicates "borrow closest outer"
     fun b_c_o<V>(
         cb: &CB<V>,
         k: u128,
-    ): &N<V> {
-        let n = v_b<N<V>>(&cb.t, cb.r); // Get root node reference
-        while (n.c != OUT) { // While node under review is inner node
-            // Borrow either L or R child node depending on AND result
-            n = b_c<V>(cb, n, n.s & k == 0);
-        }; // Node reference now corresponds to closest outer node
-        n // Return closest outer node reference
+    ): &O<V> {
+        // If root is an outer node, return reference to it
+        if (is_out(cb.r)) return (v_b<O<V>>(&cb.o, out_v(cb.r)));
+        // Otherwise borrow inner node at root
+        let n = v_b<I>(&cb.i, cb.r);
+        loop { // Loop over inner nodes
+            // If key is set at critical bit, get index of child on R
+            let i_c = if (is_set(k, n.c)) n.r else n.l; // Otherwise L
+            // If child is outer node, borrow and return it
+            if (is_out(i_c)) return v_b<O<V>>(&cb.o, out_v(i_c));
+            n = v_b<I>(&cb.i, i_c); // Borrow next inner node to review
+        }
     }
 
+    /*
     /// Return same as `b_c_o`, but also return mutable reference to the
     /// field that stores the node vector index of the outer node
     /// sharing the largest common prefix with `k` in `cb` (an "index
     /// field reference", analagous to a pointer to the closest outer
     /// node)
-    /*
     fun b_c_o_i_f_r<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -596,8 +637,8 @@ module Econia::CritBit {
         k: u128,
     ): bool {
         if (is_empty<V>(cb)) return false; // Return false if empty
-        // Return true if closest outer node match bitstring is `k`
-        return b_c_o<V>(cb, k).s == k
+        // Return true if closest outer node has same key
+        return b_c_o<V>(cb, k).k == k
     }
 
     #[test]
@@ -623,17 +664,16 @@ module Econia::CritBit {
     /// ```
     fun has_key_success():
     CB<u8> {
-        let v = 0; // Ignore values in key-value pair by setting to 0
+        let v = 0; // Ignore values in key-value pairs by setting to 0
         let cb = empty<u8>(); // Initialize empty tree
-        cb.r = 0; // Set root to node at vector index 0
         // Append nodes per above tree
-        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 2, c:   2, l: 1, r: 2, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"001"), c: OUT, l: 0, r: 0, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 1, c:   1, l: 3, r: 4, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"101"), c: OUT, l: 0, r: 0, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s:    1 << 0, c:   0, l: 5, r: 6, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"110"), c: OUT, l: 0, r: 0, v});
-        v_pu_b<N<u8>>(&mut cb.t, N{s: u(b"111"), c: OUT, l: 0, r: 0, v});
+        v_pu_b<I>(&mut cb.i, I{c: 2, l: out_c(0), r:       1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, l: out_c(1), r:       2 });
+        v_pu_b<I>(&mut cb.i, I{c: 0, l: out_c(2), r: out_c(3)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"110"), v});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v});
         // Assert correct membership checks
         assert!(has_key(&cb, u(b"001")), 0);
         assert!(has_key(&cb, u(b"101")), 1);
@@ -642,7 +682,18 @@ module Econia::CritBit {
         assert!(!has_key(&cb, u(b"011")), 4); // Not in tree
         cb // Return rather than unpack
     }
-    */
+
+    #[test]
+    /// Verify successful key checks in special case of singleton tree
+    fun has_key_singleton():
+    CB<u8> {
+        // Create singleton with key 1 and value 2
+        let cb = singleton<u8>(1, 2);
+        assert!(has_key(&cb, 1), 0); // Assert key of 1 registered
+        //assert!(!has_key(&cb, 3), 0); // Assert key of 3 not registered
+        cb // Return rather than unpack
+    }
+
 
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

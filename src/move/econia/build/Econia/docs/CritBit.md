@@ -76,15 +76,18 @@ set, while its right child does have bit 0 set.
 -  [Function `o_c`](#0x1234_CritBit_o_c)
 -  [Function `b_lo`](#0x1234_CritBit_b_lo)
 -  [Function `empty`](#0x1234_CritBit_empty)
--  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
 -  [Function `singleton`](#0x1234_CritBit_singleton)
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `is_empty`](#0x1234_CritBit_is_empty)
+-  [Function `length`](#0x1234_CritBit_length)
 -  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
 -  [Function `borrow`](#0x1234_CritBit_borrow)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
+-  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
 -  [Function `insert_singleton`](#0x1234_CritBit_insert_singleton)
 -  [Function `insert_general`](#0x1234_CritBit_insert_general)
+-  [Function `insert`](#0x1234_CritBit_insert)
+-  [Function `check_len`](#0x1234_CritBit_check_len)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -243,16 +246,6 @@ When unable to borrow from empty tree
 
 
 
-<a name="0x1234_CritBit_E_BORROW_NO_K"></a>
-
-When no match to borrow
-
-
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_BORROW_NO_K">E_BORROW_NO_K</a>: u64 = 4;
-</code></pre>
-
-
-
 <a name="0x1234_CritBit_E_DESTROY_NOT_EMPTY"></a>
 
 When attempting to destroy a non-empty crit-bit tree
@@ -269,6 +262,26 @@ When an insertion key is already present in a crit-bit tree
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_E_INSERT_LENGTH"></a>
+
+When no more keys can be inserted
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_INSERT_LENGTH">E_INSERT_LENGTH</a>: u64 = 5;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_E_NOT_HAS_K"></a>
+
+When no matching key in tree
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>: u64 = 4;
 </code></pre>
 
 
@@ -659,38 +672,6 @@ Return an empty tree
 
 </details>
 
-<a name="0x1234_CritBit_insert_empty"></a>
-
-## Function `insert_empty`
-
-Insert key-value pair <code>k</code> and <code>v</code> into an empty <code>cb</code>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-    v: V
-) {
-    // Push back outer node onto tree's vector of outer nodes
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;{k, v});
-    // Set root index field <b>to</b> indicate 0th outer node
-    cb.r = <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>;
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0x1234_CritBit_singleton"></a>
 
 ## Function `singleton`
@@ -759,7 +740,7 @@ Destroy empty tree <code>cb</code>
 Return <code><b>true</b></code> if <code>cb</code> has no outer nodes
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): bool
 </code></pre>
 
 
@@ -768,7 +749,30 @@ Return <code><b>true</b></code> if <code>cb</code> has no outer nodes
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;): bool {v_i_e&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o)}
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;): bool {v_i_e&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o)}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_length"></a>
+
+## Function `length`
+
+Return number of keys in <code>cb</code> (number of outer nodes)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_length">length</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_length">length</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;): u64 {v_l&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o)}
 </code></pre>
 
 
@@ -838,7 +842,7 @@ tree or no match
 ): &V {
     <b>assert</b>!(!<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb), <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>); // Abort <b>if</b> empty
     <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k); // Borrow closest outer node
-    <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_BORROW_NO_K">E_BORROW_NO_K</a>); // Abort <b>if</b> key not in tree
+    <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Abort <b>if</b> key not in tree
     &c_o.v // Return immutable reference <b>to</b> corresponding value
 }
 </code></pre>
@@ -877,12 +881,45 @@ Return true if <code>cb</code> has key <code>k</code>
 
 </details>
 
+<a name="0x1234_CritBit_insert_empty"></a>
+
+## Function `insert_empty`
+
+Insert key-value pair <code>k</code> and <code>v</code> into an empty <code>cb</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V
+) {
+    // Push back outer node onto tree's vector of outer nodes
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;{k, v});
+    // Set root index field <b>to</b> indicate 0th outer node
+    cb.r = <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>;
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0x1234_CritBit_insert_singleton"></a>
 
 ## Function `insert_singleton`
 
 Insert key <code>k</code> and value <code>v</code> into singleton tree <code>cb</code>, a special
-case that that requires updating the root field of the tree
+case that that requires updating the root field of the tree,
+aborting if <code>k</code> already in <code>cb</code>
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_singleton">insert_singleton</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V)
@@ -958,6 +995,7 @@ keys for general case where root is an inner node, aborting if
     <b>assert</b>!(c_o_k != k, <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>); // Assert key not already in tree
     // Push back outer node <b>with</b> new key-value pair
     v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v});
+    <b>let</b> n_i_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i); // Get index of new inner node <b>to</b> add
     <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(c_o_k, k); // Get critical bit of divergence
     <b>if</b> (k &lt; c_o_k) { // If insertion key less than closest outer key
         // Push back new inner node <b>with</b> insertion key at left child
@@ -966,7 +1004,6 @@ keys for general case where root is an inner node, aborting if
     } <b>else</b> { // Otherwise the opposite
         v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, l:    i_c, r: <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n)});
     };
-    <b>let</b> n_i_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i); // Get index of new inner node <b>to</b> add
     <b>if</b> (c_s == <a href="CritBit.md#0x1234_CritBit_L">L</a>) { // If side of child from <b>loop</b> parent node is <a href="CritBit.md#0x1234_CritBit_L">L</a>
         // Update its left child <b>to</b> the new inner node
         v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_p).l = n_i_i;
@@ -974,6 +1011,67 @@ keys for general case where root is an inner node, aborting if
         v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_p).r = n_i_i;
     }
 }
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_insert"></a>
+
+## Function `insert`
+
+Insert key <code>k</code> and value <code>v</code> into <code>cb</code>, aborting if <code>k</code> already
+in <code>cb</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert">insert</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert">insert</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V
+) {
+    <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get length of tree
+    <a href="CritBit.md#0x1234_CritBit_check_len">check_len</a>(l); // Verify insertion can take place
+    // Insert via one of three cases, depending on the length
+    <b>if</b> (l == 0) <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>(cb, k , v) <b>else</b>
+    <b>if</b> (l == 1) <a href="CritBit.md#0x1234_CritBit_insert_singleton">insert_singleton</a>(cb, k, v) <b>else</b>
+    <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>(cb, k , v, l);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_check_len"></a>
+
+## Function `check_len`
+
+Assert that <code>l</code> is less than the value indicated by a bitmask
+where only the 63rd bit is not set (the maximum number of keys
+that can be stored in a tree, since the 63rd bit is reserved for
+the node type bit flag)
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_check_len">check_len</a>(l: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_check_len">check_len</a>(l: u64) {<b>assert</b>!(l &lt; <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a> ^ 1 &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>, <a href="CritBit.md#0x1234_CritBit_E_INSERT_LENGTH">E_INSERT_LENGTH</a>);}
 </code></pre>
 
 

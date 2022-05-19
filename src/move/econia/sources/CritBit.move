@@ -108,8 +108,10 @@ module Econia::CritBit {
     const E_HAS_K: u64 = 2;
     /// When unable to borrow from empty tree
     const E_BORROW_EMPTY: u64 = 3;
-    /// When no match to borrow
-    const E_BORROW_NO_K: u64 = 4;
+    /// When no matching key in tree
+    const E_NOT_HAS_K: u64 = 4;
+    /// When no more keys can be inserted
+    const E_INSERT_LENGTH: u64 = 5;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -458,18 +460,6 @@ module Econia::CritBit {
         (i, o) // Return rather than unpack
     }
 
-    /// Insert key-value pair `k` and `v` into an empty `cb`
-    fun insert_empty<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        v: V
-    ) {
-        // Push back outer node onto tree's vector of outer nodes
-        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v});
-        // Set root index field to indicate 0th outer node
-        cb.r = OUT << N_TYPE;
-    }
-
     /// Return a tree with one node having key `k` and value `v`
     public fun singleton<V>(
         k: u128,
@@ -535,7 +525,7 @@ module Econia::CritBit {
 // Size checks >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return `true` if `cb` has no outer nodes
-    fun is_empty<V>(cb: &CB<V>): bool {v_i_e<O<V>>(&cb.o)}
+    public fun is_empty<V>(cb: &CB<V>): bool {v_i_e<O<V>>(&cb.o)}
 
     #[test]
     /// Verify emptiness check validity
@@ -549,6 +539,21 @@ module Econia::CritBit {
         cb // Return rather than unpack
     }
 
+    /// Return number of keys in `cb` (number of outer nodes)
+    public fun length<V>(cb: &CB<V>): u64 {v_l<O<V>>(&cb.o)}
+
+    #[test]
+    /// Verify length check validity
+    fun length_success():
+    CB<u8> {
+        let cb = empty(); // Initialize empty tree
+        assert!(length<u8>(&cb) == 0, 0); // Assert length is 0
+        insert(&mut cb, 1, 2); // Insert
+        assert!(length<u8>(&cb) == 1, 1); // Assert length is 1
+        insert(&mut cb, 3, 4); // Insert
+        assert!(length<u8>(&cb) == 2, 2); // Assert length is 2
+        cb // Return rather than unpack
+    }
 
 // Size checks >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -608,7 +613,7 @@ module Econia::CritBit {
     ): &V {
         assert!(!is_empty<V>(cb), E_BORROW_EMPTY); // Abort if empty
         let c_o = b_c_o<V>(cb, k); // Borrow closest outer node
-        assert!(c_o.k == k, E_BORROW_NO_K); // Abort if key not in tree
+        assert!(c_o.k == k, E_NOT_HAS_K); // Abort if key not in tree
         &c_o.v // Return immutable reference to corresponding value
     }
 
@@ -690,13 +695,13 @@ module Econia::CritBit {
     /// indicates an inner node's vector index, and `o_i` indicates an
     /// outer node's vector index:
     /// ```
-    ///            i_i = 0 -> 2nd
-    ///                      /   \
-    ///         o_i = 0 -> 001   1st <- i_i = 1
-    ///                         /   \
-    ///            o_i = 1 -> 101   0th <- i_i = 2
-    ///                            /   \
-    ///               o_i = 2 -> 110   111 <- o_i = 3
+    /// >           i_i = 0 -> 2nd
+    /// >                     /   \
+    /// >        o_i = 0 -> 001   1st <- i_i = 1
+    /// >                        /   \
+    /// >           o_i = 1 -> 101   0th <- i_i = 2
+    /// >                           /   \
+    /// >              o_i = 2 -> 110   111 <- o_i = 3
     /// ```
     fun has_key_success():
     CB<u8> {
@@ -726,15 +731,27 @@ module Econia::CritBit {
         // Create singleton with key 1 and value 2
         let cb = singleton<u8>(1, 2);
         assert!(has_key(&cb, 1), 0); // Assert key of 1 registered
-        //assert!(!has_key(&cb, 3), 0); // Assert key of 3 not registered
+        assert!(!has_key(&cb, 3), 0); // Assert key of 3 not registered
         cb // Return rather than unpack
     }
 
-
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Insert key-value pair `k` and `v` into an empty `cb`
+    fun insert_empty<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V
+    ) {
+        // Push back outer node onto tree's vector of outer nodes
+        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v});
+        // Set root index field to indicate 0th outer node
+        cb.r = OUT << N_TYPE;
+    }
+
     /// Insert key `k` and value `v` into singleton tree `cb`, a special
-    /// case that that requires updating the root field of the tree
+    /// case that that requires updating the root field of the tree,
+    /// aborting if `k` already in `cb`
     fun insert_singleton<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -756,23 +773,49 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Verify proper insertion result for left and right cases
+    /// Verify proper insertion result for left and right cases. Left:
+    /// ```
+    /// >      1111     Insert         c = 1
+    /// >                1101         /     \
+    /// >               ----->    1101       1111
+    /// ```
+    /// Right:
+    /// ```
+    /// >      1011     Insert         c = 2
+    /// >                1111         /     \
+    /// >               ----->    1011       1111
+    /// ```
     fun insert_singleton_success():
     (
         CB<u8>,
         CB<u8>
     ) {
-        let cb1 = singleton<u8>(u(b"1111"), 2); // Initialize singleton
-        insert_singleton(&mut cb1, u(b"1101"), 5); // Inserts to left
-        // Assert proper lookup traversal
-        assert!(*borrow<u8>(&cb1, u(b"1111")) == 2, 0);
-        assert!(*borrow<u8>(&cb1, u(b"1101")) == 5, 1);
-        // Repeat for add to right
-        let cb2 = singleton<u8>(u(b"1011"), 2); // Initialize singleton
-        insert_singleton(&mut cb2, u(b"1111"), 5); // Inserts to right
-        // Assert proper lookup traversal
-        assert!(*borrow<u8>(&cb2, u(b"1011")) == 2, 0);
-        assert!(*borrow<u8>(&cb2, u(b"1111")) == 5, 1);
+        // Left case
+        let cb1 = singleton<u8>(u(b"1111"), 4); // Initialize singleton
+        insert_singleton(&mut cb1, u(b"1101"), 5); // Insert to left
+        assert!(cb1.r == 0, 0); // Assert root is at new inner node
+        let i = v_b<I>(&cb1.i, 0); // Borrow inner node at root
+        // Assert root inner node values are as expected
+        assert!(i.c == 1 && i.l == o_c(1) && i.r == o_c(0), 1);
+        let o_o = v_b<O<u8>>(&cb1.o, 0); // Borrow original outer node
+        // Assert original outer node values are as expected
+        assert!(o_o.k == u(b"1111") && o_o.v == 4, 2);
+        let n_o = v_b<O<u8>>(&cb1.o, 1); // Borrow new outer node
+        // Assert new outer node values are as expected
+        assert!(n_o.k == u(b"1101") && n_o.v == 5, 3);
+        // Right case
+        let cb2 = singleton<u8>(u(b"1011"), 6); // Initialize singleton
+        insert_singleton(&mut cb2, u(b"1111"), 7); // Insert to right
+        assert!(cb2.r == 0, 0); // Assert root is at new inner node
+        let i = v_b<I>(&cb2.i, 0); // Borrow inner node at root
+        // Assert root inner node values are as expected
+        assert!(i.c == 2 && i.l == o_c(0) && i.r == o_c(1), 4);
+        let o_o = v_b<O<u8>>(&cb2.o, 0); // Borrow original outer node
+        // Assert original outer node values are as expected
+        assert!(o_o.k == u(b"1011") && o_o.v == 6, 5);
+        let n_o = v_b<O<u8>>(&cb2.o, 1); // Borrow new outer node
+        // Assert new outer node values are as expected
+        assert!(n_o.k == u(b"1111") && n_o.v == 7, 6);
         (cb1, cb2) // Return rather than unpack
     }
 
@@ -810,6 +853,7 @@ module Econia::CritBit {
         assert!(c_o_k != k, E_HAS_K); // Assert key not already in tree
         // Push back outer node with new key-value pair
         v_pu_b<O<V>>(&mut cb.o, O{k, v});
+        let n_i_i = v_l<I>(&cb.i); // Get index of new inner node to add
         let c = crit_bit(c_o_k, k); // Get critical bit of divergence
         if (k < c_o_k) { // If insertion key less than closest outer key
             // Push back new inner node with insertion key at left child
@@ -818,13 +862,156 @@ module Econia::CritBit {
         } else { // Otherwise the opposite
             v_pu_b<I>(&mut cb.i, I{c, l:    i_c, r: o_c(n)});
         };
-        let n_i_i = v_l<I>(&cb.i); // Get index of new inner node to add
         if (c_s == L) { // If side of child from loop parent node is L
             // Update its left child to the new inner node
             v_b_m<I>(&mut cb.i, i_p).l = n_i_i;
         } else { // Otherwise update right child to the new inner node
             v_b_m<I>(&mut cb.i, i_p).r = n_i_i;
         }
+    }
+
+    #[test]
+    /// Verify proper restructuring of tree for inserting to both left
+    /// and right of loop parent, and for inserting to both left and
+    /// right of new inner node. `NIN` indicates "new inner node", `NON`
+    /// indicates "new outer node", `i_i` indicates an inner node's
+    /// vector index, and `o_i` indicates an outer node's vector index.
+    /// Case 1:
+    /// ```
+    /// >      i_i = 0 -> 2nd
+    /// >                /   \
+    /// >   o_i = 0 -> 001   1st <- i_i = 1       Insert 110
+    /// >                   /   \                 --------->
+    /// >      o_i = 1 -> 101   111 <- o_i = 2
+    /// >
+    /// >      i_i = 0 -> 2nd
+    /// >                /   \
+    /// >   o_i = 0 -> 001   1st <- i_i = 1
+    /// >                   /   \
+    /// >      o_i = 1 -> 101   0th <- i_i = 2 (NIN)
+    /// >                      /   \
+    /// >   (NON) o_i = 3 -> 110   111 <- o_i = 2
+    /// ```
+    /// Case 2:
+    /// ```
+    /// >       i_i = 0 -> 1st                 Insert 01
+    /// >                 /   \                -------->
+    /// >    o_i = 0 -> 00     10 <- o_i = 1
+    /// >
+    /// >             i_i = 0 -> 1st
+    /// >                       /   \
+    /// >    (NIN) i_i = 1 -> 0th    10 <- o_i = 1
+    /// >                    /   \
+    /// >       o_i = 0 -> 00     01 <- o_i = 2 (NON)
+    /// ```
+    fun insert_general_success():
+    (
+        CB<u8>,
+        CB<u8>
+    ) {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        // Case 1
+        let cb1 = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, pre-insertion case 1
+        v_pu_b<I>(&mut cb1.i, I{c: 2, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb1.i, I{c: 1, l: o_c(1), r: o_c(2)});
+        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"001"), v});
+        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"101"), v});
+        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"111"), v});
+        // Insert new key
+        insert_general<u8>(&mut cb1, u(b"110"), v, 3);
+        // Assert parent inner node from loop now reflects new inner
+        // node as left child
+        assert!(v_b<I>(&cb1.i, 1).r == 2, 0);
+        let n_i = v_b<I>(&cb1.i, 2); // Borrow new inner node
+        // Assert correct fields on new inner node
+        assert!(n_i.c == 0 && n_i.l == o_c(3) && n_i.r == o_c(2), 1);
+        // Assert correct key for new outer node
+        assert!(v_b<O<u8>>(&cb1.o, 3).k == u(b"110"), 2);
+        // Case 2
+        let cb2 = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, pre-insertion case 2
+        v_pu_b<I>(&mut cb2.i, I{c: 1, l: o_c(0), r: o_c(1)});
+        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"00"), v});
+        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"10"), v});
+        // Insert new key
+        insert_general<u8>(&mut cb2, u(b"01"), v, 2);
+        // Assert parent inner node from loop now reflects new inner
+        // node as left child
+        assert!(v_b<I>(&cb2.i, 0).l == 1, 3);
+        let n_i = v_b<I>(&cb2.i, 1); // Borrow new inner node
+        // Assert correct fields on new inner node
+        assert!(n_i.c == 0 && n_i.l == o_c(0) && n_i.r == o_c(2), 4);
+        // Assert correct key for new outer node
+        assert!(v_b<O<u8>>(&cb2.o, 2).k == u(b"01"), 5);
+        (cb1, cb2) // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify aborts when key already in tree
+    fun insert_general_failure():
+    CB<u8> {
+        let cb = singleton<u8>(3, 4); // Initialize singleton
+        insert_singleton(&mut cb, 5, 6); // Insert onto singleton
+        // Attempt insert for general case, but with duplicate key
+        insert_general(&mut cb, 5, 7, 2);
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
+
+    /// Insert key `k` and value `v` into `cb`, aborting if `k` already
+    /// in `cb`
+    public fun insert<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V
+    ) {
+        let l = length(cb); // Get length of tree
+        check_len(l); // Verify insertion can take place
+        // Insert via one of three cases, depending on the length
+        if (l == 0) insert_empty(cb, k , v) else
+        if (l == 1) insert_singleton(cb, k, v) else
+        insert_general(cb, k , v, l);
+    }
+
+    #[test]
+    /// Verify correct lookup post-insertion
+    fun insert_success():
+    CB<u8> {
+        let cb = empty(); // Initialize empty tree
+        // Insert various key-value pairs
+        insert(&mut cb, 5, 35);
+        insert(&mut cb, 7, 73);
+        insert(&mut cb, 1, 99);
+        insert(&mut cb, 8, 44);
+        // Verify key-value lookup
+        assert!(*borrow(&cb, 8) == 44, 0);
+        assert!(*borrow(&cb, 1) == 99, 1);
+        assert!(*borrow(&cb, 7) == 73, 2);
+        assert!(*borrow(&cb, 5) == 35, 3);
+        cb // Return rather than unpack
+    }
+
+    /// Assert that `l` is less than the value indicated by a bitmask
+    /// where only the 63rd bit is not set (the maximum number of keys
+    /// that can be stored in a tree, since the 63rd bit is reserved for
+    /// the node type bit flag)
+    fun check_len(l: u64) {assert!(l < HI_64 ^ 1 << N_TYPE, E_INSERT_LENGTH);}
+
+    #[test]
+    /// Verify length check passes for valid sizes
+    fun check_len_success() {
+        check_len(0);
+        check_len(1200);
+        // Maximum number of keys that can be in tree pre-insert
+        check_len((HI_64 ^ 1 << N_TYPE) - 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify length check fails for too many elements
+    fun check_len_failure() {
+        check_len(HI_64 ^ 1 << N_TYPE); // Tree is full
     }
 
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

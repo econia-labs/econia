@@ -775,15 +775,15 @@ module Econia::CritBit {
     #[test]
     /// Verify proper insertion result for left and right cases. Left:
     /// ```
-    /// >      1111     Insert         c = 1
-    /// >                1101         /     \
-    /// >               ----->    1101       1111
+    /// >      1111     Insert         1st
+    /// >                1101         /   \
+    /// >               ----->    1101     1111
     /// ```
     /// Right:
     /// ```
-    /// >      1011     Insert         c = 2
-    /// >                1111         /     \
-    /// >               ----->    1011       1111
+    /// >      1011     Insert         2nd
+    /// >                1111         /   \
+    /// >               ----->    1011     1111
     /// ```
     fun insert_singleton_success():
     (
@@ -831,7 +831,27 @@ module Econia::CritBit {
 
     /// Insert key `k` and value `v` into tree `cb` already having `n`
     /// keys for general case where root is an inner node, aborting if
-    /// `k` is already present
+    /// `k` is already present. Here, a "parent" node is tracked during
+    /// a loop over inner nodes, so that it can be updated to reflect as
+    /// its child the new inner node post-insertion:
+    /// ```
+    /// >       2nd
+    /// >      /   \
+    /// >    001   1st <- parent
+    /// >         /   \
+    /// >       101   111 <- closest outer node
+    /// >
+    /// >       Insert 110
+    /// >       --------->
+    /// >
+    /// >                  2nd
+    /// >                 /   \
+    /// >               001   1st <- parent
+    /// >                    /   \
+    /// >                  101   0th <- new inner node
+    /// >                       /   \
+    /// >   new outer node -> 110   111 <- closest outer node
+    /// ```
     fun insert_general<V>(
         cb: &mut CB<V>,
         k: u128,

@@ -962,7 +962,27 @@ aborting if <code>k</code> already in <code>cb</code>
 
 Insert key <code>k</code> and value <code>v</code> into tree <code>cb</code> already having <code>n</code>
 keys for general case where root is an inner node, aborting if
-<code>k</code> is already present
+<code>k</code> is already present. Here, a "parent" node is tracked during
+a loop over inner nodes, so that it can be updated to reflect as
+its child the new inner node post-insertion:
+```
+>       2nd
+>      /   \
+>    001   1st <- parent
+>         /   \
+>       101   111 <- closest outer node
+>
+>       Insert 110
+>       --------->
+>
+>                  2nd
+>                 /   \
+>               001   1st <- parent
+>                    /   \
+>                  101   0th <- new inner node
+>                       /   \
+>   new outer node -> 110   111 <- closest outer node
+```
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n: u64)

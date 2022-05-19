@@ -1036,4 +1036,21 @@ module Econia::CritBit {
 
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+// Popping >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return the value corresponding to key `k` in tree `cb` and
+    /// destroy the outer node where it was stored, for the special case
+    /// of a singleton tree. Abort if `k` not in `cb`
+    fun pop_singleton<V>(
+        cb: &mut CB<V>,
+        k: u128
+    ) {
+        // Assert key actually in tree
+        assert!(v_b<O<V>>(cb.o, 0).k == k, E_NOT_HAS_K);
+        cb.r = 0; // Update root
+        let o = v_po_b<O<V>>(&mut cb.o); // Pop off outer node
+    }
+
+// Popping <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 }

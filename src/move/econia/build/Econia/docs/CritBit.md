@@ -928,7 +928,7 @@ keys for general case where root is an inner node, aborting if
 <code>k</code> is already present
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128)
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n: u64)
 </code></pre>
 
 
@@ -940,8 +940,8 @@ keys for general case where root is an inner node, aborting if
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>&lt;V&gt;(
     cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
     k: u128,
-    //v: V,
-    //n: u64
+    v: V,
+    n: u64
 ) {
     <b>let</b> i_p = cb.r; // Initialize parent index <b>to</b> that of root node
     <b>let</b> i_c: u64; // Initialize tracker for child node index
@@ -951,12 +951,28 @@ keys for general case where root is an inner node, aborting if
         // If key is set at critical bit, track the <a href="CritBit.md#0x1234_CritBit_R">R</a> child, <b>else</b> <a href="CritBit.md#0x1234_CritBit_L">L</a>
         (i_c, c_s) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, p.c)) (p.r, <a href="CritBit.md#0x1234_CritBit_R">R</a>) <b>else</b> (p.l, <a href="CritBit.md#0x1234_CritBit_L">L</a>);
         <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_c)) <b>break</b>; // Stop <b>loop</b> <b>if</b> child is outer node
-        i_p = i_c; // Else borrow next inner node <b>to</b> review
+        i_p = i_c; // Otherwise borrow next inner node <b>to</b> review
     }; // Now child node index corresponds <b>to</b> closest outer node
-    // Borrow closest outer node, the child from the <b>loop</b>
-    <b>let</b> c_o = v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c));
-    <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(c_o.k, k); // Get critical bit of divergence
-    c_s; c;
+    // Get key of closest outer node, the child from the <b>loop</b>
+    <b>let</b> c_o_k = v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c)).k;
+    <b>assert</b>!(c_o_k != k, <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>); // Assert key not already in tree
+    // Push back outer node <b>with</b> new key-value pair
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v});
+    <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(c_o_k, k); // Get critical bit of divergence
+    <b>if</b> (k &lt; c_o_k) { // If insertion key less than closest outer key
+        // Push back new inner node <b>with</b> insertion key at left child
+        // and closest outer key at right child
+        v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, l: <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n), r:    i_c});
+    } <b>else</b> { // Otherwise the opposite
+        v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, l:    i_c, r: <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n)});
+    };
+    <b>let</b> n_i_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i); // Get index of new inner node <b>to</b> add
+    <b>if</b> (c_s == <a href="CritBit.md#0x1234_CritBit_L">L</a>) { // If side of child from <b>loop</b> parent node is <a href="CritBit.md#0x1234_CritBit_L">L</a>
+        // Update its left child <b>to</b> the new inner node
+        v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_p).l = n_i_i;
+    } <b>else</b> { // Otherwise <b>update</b> right child <b>to</b> the new inner node
+        v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_p).r = n_i_i;
+    }
 }
 </code></pre>
 

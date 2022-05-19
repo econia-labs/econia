@@ -63,17 +63,17 @@ module Econia::CritBit {
 
     use Std::Vector::{
         borrow as v_b,
+        borrow_mut as v_b_m,
         destroy_empty as v_d_e,
         empty as v_e,
         is_empty as v_i_e,
+        length as v_l,
         push_back as v_pu_b
     };
 
     #[test_only]
     use Std::Vector::{
         append as v_a,
-        //borrow_mut as v_b_m,
-        length as v_l,
         pop_back as v_po_b,
     };
 
@@ -792,8 +792,8 @@ module Econia::CritBit {
     fun insert_general<V>(
         cb: &mut CB<V>,
         k: u128,
-        //v: V,
-        //n: u64
+        v: V,
+        n: u64
     ) {
         let i_p = cb.r; // Initialize parent index to that of root node
         let i_c: u64; // Initialize tracker for child node index
@@ -803,12 +803,28 @@ module Econia::CritBit {
             // If key is set at critical bit, track the R child, else L
             (i_c, c_s) = if (is_set(k, p.c)) (p.r, R) else (p.l, L);
             if (is_out(i_c)) break; // Stop loop if child is outer node
-            i_p = i_c; // Else borrow next inner node to review
+            i_p = i_c; // Otherwise borrow next inner node to review
         }; // Now child node index corresponds to closest outer node
-        // Borrow closest outer node, the child from the loop
-        let c_o = v_b<O<V>>(&cb.o, o_v(i_c));
-        let c = crit_bit(c_o.k, k); // Get critical bit of divergence
-        c_s; c;
+        // Get key of closest outer node, the child from the loop
+        let c_o_k = v_b<O<V>>(&cb.o, o_v(i_c)).k;
+        assert!(c_o_k != k, E_HAS_K); // Assert key not already in tree
+        // Push back outer node with new key-value pair
+        v_pu_b<O<V>>(&mut cb.o, O{k, v});
+        let c = crit_bit(c_o_k, k); // Get critical bit of divergence
+        if (k < c_o_k) { // If insertion key less than closest outer key
+            // Push back new inner node with insertion key at left child
+            // and closest outer key at right child
+            v_pu_b<I>(&mut cb.i, I{c, l: o_c(n), r:    i_c});
+        } else { // Otherwise the opposite
+            v_pu_b<I>(&mut cb.i, I{c, l:    i_c, r: o_c(n)});
+        };
+        let n_i_i = v_l<I>(&cb.i); // Get index of new inner node to add
+        if (c_s == L) { // If side of child from loop parent node is L
+            // Update its left child to the new inner node
+            v_b_m<I>(&mut cb.i, i_p).l = n_i_i;
+        } else { // Otherwise update right child to the new inner node
+            v_b_m<I>(&mut cb.i, i_p).r = n_i_i;
+        }
     }
 
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

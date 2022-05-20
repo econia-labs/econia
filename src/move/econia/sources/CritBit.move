@@ -814,6 +814,41 @@ module Econia::CritBit {
         cb // Return rather than unpack
     }
 
+// Membership checks <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+// Walking >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Walk tree `cb` having an inner node as its root, until arriving
+    /// at the node sharing the largest common prefix with key `k`, the
+    /// closest outer node. Then return:
+    /// * `&mut O<V>`: mutable reference to closest outer node
+    /// * `u64`: index of closest outer node
+    /// * `bool`: the side, `L` or `R`, on which the closest outer node
+    ///    is a child of its parent
+    fun walk_closest_outer<V>(
+        cb: &mut CB<V>,
+        k: u128
+    ): (
+        &mut O<V>,
+        u64,
+        bool,
+    ) {
+        let c_p = v_b<I>(&cb.i, 0); // Initialize closest parent to root
+        loop { // Loop over inner nodes until at closest outer node
+            // If key set at critical bit, track index and side of R
+            // child, else L
+            let (i, s) = if (is_set(k, c_p.c)) (c_p.r, R) else (c_p.l, L);
+            if (is_out(i)) { // If child is outer node
+                // Return mutable reference to it, its index, and side
+                return (v_b_m<O<V>>(&mut cb.o, o_v(i)), i, s)
+            };
+            c_p = v_b<I>(&cb.i, i); // Borrow next inner node
+        }
+    }
+    // VIEW DOC BUILD ON THIS YOU FOOL
+
+// Walking <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Insert key-value pair `k` and `v` into an empty `cb`
@@ -942,46 +977,29 @@ module Econia::CritBit {
         v: V,
         n_o: u64
     ) {
-        let c_p = v_b<I>(&cb.i, 0); // Initialize closest parent to root
-        let i_c_o: u64; // Declare index of closest outer node
-        let s_c_o: bool; // Declare side of closest outer node
-        // Declare mutable reference to closest outer node
-        let c_o: &mut O<V>;
-        loop { // Loop over inner nodes until at closest outer node
-            // If key is set at critical bit, track the R child, else L
-            (i_c_o, s_c_o) = if (is_set(k, c_p.c)) (c_p.r, R) else (c_p.l, L);
-            if (is_out(i_c_o)) { // If child is outer node
-                // Get mutable reference to it
-                c_o = v_b_m<O<V>>(&mut cb.o, o_v(i_c_o));
-                break // Then stop the loop
-            };
-            c_p = v_b<I>(&cb.i, i_c_o); // Borrow next inner node
-        };
+        // Get number of inner nodes in tree (index of new inner node)
+        let i_n_i = v_l<I>(&cb.i);
+        // Borrow closest outer node, get its index and side as child
+        let (c_o, i_c_o, s_c_o) = walk_closest_outer(cb, k);
         let k_c_o = c_o.k; // Get key of closest outer node
         assert!(k_c_o != k, E_HAS_K); // Assert key not a duplicate
         let i_c_p = c_o.p; // Get index of closest parent
-        let n_i = v_l<I>(&cb.i); // Get number of inner nodes in tree
-        // Update closest outer node to have as its parent the new inner
-        // node that will be pushed back on the inner nodes vector
-        c_o.p = n_i;
+        // Set closest outer node to have as its parent new inner node
+        c_o.p = i_n_i;
         // Borrow mutable reference to closest parent node
         let c_p = v_b_m<I>(&mut cb.i, i_c_p);
-        // Update closest parent to have as its child the new inner node
-        // that will be pushed back onto the inner nodes vector, on the
-        // same side that the closest outer node was a child at
-        if (s_c_o == L) c_p.l = n_i else c_p.r = n_i;
+        // Update closest parent to have as a child the new inner node,
+        // on the same side that the closest outer node was a child at
+        if (s_c_o == L) c_p.l = i_n_i else c_p.r = i_n_i;
         let c = crit_bit(k_c_o, k); // Get critical bit of divergence
-        if (k < k_c_o) { // If insertion key less than closest outer key
-            // Push back a new inner node having the closest parent as
-            // its parent, the insertion key as its left child, and the
-            // closest outer node as its right child
-            v_pu_b<I>(&mut cb.i, I{c, p: i_c_p, l: o_c(n_o), r:    i_c_o});
-        } else { // Else flip the child positions
-            v_pu_b<I>(&mut cb.i, I{c, p: i_c_p, l:    i_c_o, r: o_c(n_o)});
-        };
-        // Push back outer node with provided key-value pair, having new
-        // inner node as parent
-        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: n_i});
+        // If insertion key less than closest outer key, declare left
+        // child field (for new inner node) as new outer node and right
+        // child field as closest outer node, else flip the positions
+        let (l, r) = if (k < k_c_o) (o_c(n_o), i_c_o) else (i_c_o, o_c(n_o));
+        // Push back new inner node having closest parent as its parent
+        v_pu_b<I>(&mut cb.i, I{c, p: i_c_p, l, r});
+        // Push back new outer node having new inner node as parent
+        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
     }
 
     #[test]

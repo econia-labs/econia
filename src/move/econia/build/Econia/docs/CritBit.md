@@ -85,6 +85,7 @@ set, while its right child does have bit 0 set.
 -  [Function `borrow`](#0x1234_CritBit_borrow)
 -  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
+-  [Function `walk_closest_outer`](#0x1234_CritBit_walk_closest_outer)
 -  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
 -  [Function `insert_singleton`](#0x1234_CritBit_insert_singleton)
 -  [Function `insert_general`](#0x1234_CritBit_insert_general)
@@ -969,6 +970,54 @@ Return true if <code>cb</code> has key <code>k</code>
 
 </details>
 
+<a name="0x1234_CritBit_walk_closest_outer"></a>
+
+## Function `walk_closest_outer`
+
+Walk tree <code>cb</code> having an inner node as its root, until arriving
+at the node sharing the largest common prefix with key <code>k</code>, the
+closest outer node. Then return:
+* <code>&<b>mut</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;</code>: mutable reference to closest outer node
+* <code>u64</code>: index of closest outer node
+* <code>bool</code>: the side, <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> or <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>, on which the closest outer node
+is a child of its parent
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_walk_closest_outer">walk_closest_outer</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): (&<b>mut</b> <a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;, u64, bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_walk_closest_outer">walk_closest_outer</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128
+): (
+    &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;,
+    u64,
+    bool,
+) {
+    <b>let</b> c_p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, 0); // Initialize closest parent <b>to</b> root
+    <b>loop</b> { // Loop over inner nodes until at closest outer node
+        // If key set at critical bit, track index and side of <a href="CritBit.md#0x1234_CritBit_R">R</a>
+        // child, <b>else</b> <a href="CritBit.md#0x1234_CritBit_L">L</a>
+        <b>let</b> (i, s) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c_p.c)) (c_p.r, <a href="CritBit.md#0x1234_CritBit_R">R</a>) <b>else</b> (c_p.l, <a href="CritBit.md#0x1234_CritBit_L">L</a>);
+        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i)) { // If child is outer node
+            // Return mutable reference <b>to</b> it, its index, and side
+            <b>return</b> (v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i)), i, s)
+        };
+        c_p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i); // Borrow next inner node
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0x1234_CritBit_insert_empty"></a>
 
 ## Function `insert_empty`
@@ -1090,46 +1139,29 @@ that will also be inserted:
     v: V,
     n_o: u64
 ) {
-    <b>let</b> c_p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, 0); // Initialize closest parent <b>to</b> root
-    <b>let</b> i_c_o: u64; // Declare index of closest outer node
-    <b>let</b> s_c_o: bool; // Declare side of closest outer node
-    // Declare mutable reference <b>to</b> closest outer node
-    <b>let</b> c_o: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;;
-    <b>loop</b> { // Loop over inner nodes until at closest outer node
-        // If key is set at critical bit, track the <a href="CritBit.md#0x1234_CritBit_R">R</a> child, <b>else</b> <a href="CritBit.md#0x1234_CritBit_L">L</a>
-        (i_c_o, s_c_o) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c_p.c)) (c_p.r, <a href="CritBit.md#0x1234_CritBit_R">R</a>) <b>else</b> (c_p.l, <a href="CritBit.md#0x1234_CritBit_L">L</a>);
-        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_c_o)) { // If child is outer node
-            // Get mutable reference <b>to</b> it
-            c_o = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c_o));
-            <b>break</b> // Then stop the <b>loop</b>
-        };
-        c_p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_c_o); // Borrow next inner node
-    };
+    // Get number of inner nodes in tree (index of new inner node)
+    <b>let</b> i_n_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i);
+    // Borrow closest outer node, get its index and side <b>as</b> child
+    <b>let</b> (c_o, i_c_o, s_c_o) = <a href="CritBit.md#0x1234_CritBit_walk_closest_outer">walk_closest_outer</a>(cb, k);
     <b>let</b> k_c_o = c_o.k; // Get key of closest outer node
     <b>assert</b>!(k_c_o != k, <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>); // Assert key not a duplicate
     <b>let</b> i_c_p = c_o.p; // Get index of closest parent
-    <b>let</b> n_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i); // Get number of inner nodes in tree
-    // Update closest outer node <b>to</b> have <b>as</b> its parent the new inner
-    // node that will be pushed back on the inner nodes vector
-    c_o.p = n_i;
+    // Set closest outer node <b>to</b> have <b>as</b> its parent new inner node
+    c_o.p = i_n_i;
     // Borrow mutable reference <b>to</b> closest parent node
     <b>let</b> c_p = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_c_p);
-    // Update closest parent <b>to</b> have <b>as</b> its child the new inner node
-    // that will be pushed back onto the inner nodes vector, on the
-    // same side that the closest outer node was a child at
-    <b>if</b> (s_c_o == <a href="CritBit.md#0x1234_CritBit_L">L</a>) c_p.l = n_i <b>else</b> c_p.r = n_i;
+    // Update closest parent <b>to</b> have <b>as</b> a child the new inner node,
+    // on the same side that the closest outer node was a child at
+    <b>if</b> (s_c_o == <a href="CritBit.md#0x1234_CritBit_L">L</a>) c_p.l = i_n_i <b>else</b> c_p.r = i_n_i;
     <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(k_c_o, k); // Get critical bit of divergence
-    <b>if</b> (k &lt; k_c_o) { // If insertion key less than closest outer key
-        // Push back a new inner node having the closest parent <b>as</b>
-        // its parent, the insertion key <b>as</b> its left child, and the
-        // closest outer node <b>as</b> its right child
-        v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_c_p, l: <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), r:    i_c_o});
-    } <b>else</b> { // Else flip the child positions
-        v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_c_p, l:    i_c_o, r: <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o)});
-    };
-    // Push back outer node <b>with</b> provided key-value pair, having new
-    // inner node <b>as</b> parent
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: n_i});
+    // If insertion key less than closest outer key, declare left
+    // child field (for new inner node) <b>as</b> new outer node and right
+    // child field <b>as</b> closest outer node, <b>else</b> flip the positions
+    <b>let</b> (l, r) = <b>if</b> (k &lt; k_c_o) (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_c_o) <b>else</b> (i_c_o, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o));
+    // Push back new inner node having closest parent <b>as</b> its parent
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_c_p, l, r});
+    // Push back new outer node having new inner node <b>as</b> parent
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
 }
 </code></pre>
 

@@ -83,6 +83,7 @@ set, while its right child does have bit 0 set.
 -  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
 -  [Function `b_c_o_m`](#0x1234_CritBit_b_c_o_m)
 -  [Function `borrow`](#0x1234_CritBit_borrow)
+-  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
 -  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
 -  [Function `insert_singleton`](#0x1234_CritBit_insert_singleton)
@@ -878,8 +879,8 @@ indicates "borrow closest outer mutable"
 
 ## Function `borrow`
 
-Borrow value corresponding to key <code>k</code> in <code>cb</code>, aborting if empty
-tree or no match
+Return immutable reference to value corresponding to key <code>k</code> in
+<code>cb</code>, aborting if empty tree or no match
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow">borrow</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &V
@@ -899,6 +900,38 @@ tree or no match
     <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k); // Borrow closest outer node
     <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Abort <b>if</b> key not in tree
     &c_o.v // Return immutable reference <b>to</b> corresponding value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_borrow_mut"></a>
+
+## Function `borrow_mut`
+
+Return mutable reference to value corresponding to key <code>k</code> in
+<code>cb</code>, aborting if empty tree or no match
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_mut">borrow_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<b>mut</b> V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_mut">borrow_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+): &<b>mut</b> V {
+    <b>assert</b>!(!<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb), <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>); // Abort <b>if</b> empty
+    <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_c_o_m">b_c_o_m</a>&lt;V&gt;(cb, k); // Borrow closest outer node
+    <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Abort <b>if</b> key not in tree
+    &<b>mut</b> c_o.v // Return mutable reference <b>to</b> corresponding value
 }
 </code></pre>
 

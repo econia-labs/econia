@@ -631,8 +631,8 @@ module Econia::CritBit {
         }
     }
 
-    /// Borrow value corresponding to key `k` in `cb`, aborting if empty
-    /// tree or no match
+    /// Return immutable reference to value corresponding to key `k` in
+    /// `cb`, aborting if empty tree or no match
     public fun borrow<V>(
         cb: &CB<V>,
         k: u128,
@@ -643,13 +643,35 @@ module Econia::CritBit {
         &c_o.v // Return immutable reference to corresponding value
     }
 
+    /// Return mutable reference to value corresponding to key `k` in
+    /// `cb`, aborting if empty tree or no match
+    public fun borrow_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+    ): &mut V {
+        assert!(!is_empty<V>(cb), E_BORROW_EMPTY); // Abort if empty
+        let c_o = b_c_o_m<V>(cb, k); // Borrow closest outer node
+        assert!(c_o.k == k, E_NOT_HAS_K); // Abort if key not in tree
+        &mut c_o.v // Return mutable reference to corresponding value
+    }
+
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Assert failure for attempted borrow on empty tree
     public fun borrow_empty():
     CB<u8> {
-        let cb = empty<u8>();
-        borrow<u8>(&cb, 0);
+        let cb = empty<u8>(); // Initialize empty tree
+        borrow<u8>(&cb, 0); // Attempt invalid borrow
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Assert failure for attempted borrow on empty tree
+    public fun borrow_mut_empty():
+    CB<u8> {
+        let cb = empty<u8>(); // Initialize empty tree
+        borrow_mut<u8>(&mut cb, 0); // Attempt invalid borrow
         cb // Return rather than unpack (or signal to compiler as much)
     }
 
@@ -658,9 +680,40 @@ module Econia::CritBit {
     /// Assert failure for attempted borrow without matching key
     public fun borrow_no_match():
     CB<u8> {
-        let cb = singleton<u8>(3, 4);
-        borrow<u8>(&cb, 6);
+        let cb = singleton<u8>(3, 4); // Initialize singleton
+        borrow<u8>(&cb, 6); // Attempt invalid borrow
         cb // Return rather than unpack (or signal to compiler as much)
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Assert failure for attempted borrow without matching key
+    public fun borrow_mut_no_match():
+    CB<u8> {
+        let cb = singleton<u8>(3, 4); // Initialize singleton
+        borrow_mut<u8>(&mut cb, 6); // Attempt invalid borrow
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
+
+    #[test]
+    /// Assert correct modification of values
+    public fun borrow_mut_success():
+    CB<u8> {
+        let cb = empty<u8>(); // Initialize empty tree
+        // Insert assorted key-value pairs
+        insert(&mut cb, 2, 6);
+        insert(&mut cb, 3, 8);
+        insert(&mut cb, 1, 9);
+        insert(&mut cb, 7, 5);
+        // Modify some of the values
+        *borrow_mut<u8>(&mut cb, 1) = 2;
+        *borrow_mut<u8>(&mut cb, 2) = 4;
+        // Assert values are as expected
+        assert!(*borrow<u8>(&mut cb, 2) == 4, 0); // Changed
+        assert!(*borrow<u8>(&mut cb, 3) == 8, 0); // Unchanged
+        assert!(*borrow<u8>(&mut cb, 1) == 2, 0); // Changed
+        assert!(*borrow<u8>(&mut cb, 7) == 5, 0); // Unchanged
+        cb // Return rather than unpack
     }
 
     /*

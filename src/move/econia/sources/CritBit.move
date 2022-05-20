@@ -68,13 +68,13 @@ module Econia::CritBit {
         empty as v_e,
         is_empty as v_i_e,
         length as v_l,
+        pop_back as v_po_b,
         push_back as v_pu_b
     };
 
     #[test_only]
     use Std::Vector::{
         append as v_a,
-        pop_back as v_po_b,
     };
 
 // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1166,18 +1166,50 @@ module Econia::CritBit {
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // Popping >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-/*
+
     /// Return the value corresponding to key `k` in tree `cb` and
     /// destroy the outer node where it was stored, for the special case
     /// of a singleton tree. Abort if `k` not in `cb`
     fun pop_singleton<V>(
         cb: &mut CB<V>,
         k: u128
-    ) {
-        // Assert key actually in tree
-        assert!(v_b<O<V>>(cb.o, 0).k == k, E_NOT_HAS_K);
+    ): V {
+        // Assert key actually in tree at root node
+        assert!(v_b<O<V>>(&cb.o, 0).k == k, E_NOT_HAS_K);
         cb.r = 0; // Update root
-        let o = v_po_b<O<V>>(&mut cb.o); // Pop off outer node
+        // Pop off and destruct outer node at root
+        let O{k: _, v, p: _} = v_po_b<O<V>>(&mut cb.o);
+        v // Return value
+    }
+
+    #[test]
+    // Verify successful pop
+    fun pop_singleton_success() {
+        let cb = singleton(1, 2); // Initialize singleton
+        assert!(pop_singleton(&mut cb, 1) == 2, 0); // Verify pop value
+        assert!(is_empty(&mut cb), 1); // Assert marked as empty
+        assert!(cb.r == 0, 2); // Assert root index field updated
+        destroy_empty<u8>(cb); // Destroy empty tree
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    // Verify pop failure when key not in tree
+    fun pop_singleton_failure():
+    CB<u8> {
+        let cb = singleton(1, 2); // Initialize singleton
+        let _ = pop_singleton<u8>(&mut cb, 3); // Attempt invalid pop
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
+/*
+    /// Return the value corresponding to key `k` in tree `cb` and
+    /// destroy the outer node where it was stored, for the special case
+    /// of a tree having height one. Abort if `k` not in `cb`
+    pop_height_one<V>(
+        cb: &mut CB<V>,
+        k: u128
+    ): V {
+
     }
 */
 

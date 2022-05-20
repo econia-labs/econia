@@ -91,6 +91,7 @@ set, while its right child does have bit 0 set.
 -  [Function `insert_general`](#0x1234_CritBit_insert_general)
 -  [Function `insert`](#0x1234_CritBit_insert)
 -  [Function `check_len`](#0x1234_CritBit_check_len)
+-  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -1224,6 +1225,41 @@ the 63rd bit is reserved for the node type bit flag)
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_check_len">check_len</a>(l: u64) {<b>assert</b>!(l &lt; <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a> ^ 1 &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>, <a href="CritBit.md#0x1234_CritBit_E_INSERT_LENGTH">E_INSERT_LENGTH</a>);}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_pop_singleton"></a>
+
+## Function `pop_singleton`
+
+Return the value corresponding to key <code>k</code> in tree <code>cb</code> and
+destroy the outer node where it was stored, for the special case
+of a singleton tree. Abort if <code>k</code> not in <code>cb</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_singleton">pop_singleton</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_singleton">pop_singleton</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128
+): V {
+    // Assert key actually in tree at root node
+    <b>assert</b>!(v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, 0).k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>);
+    cb.r = 0; // Update root
+    // Pop off and destruct outer node at root
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_po_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o);
+    v // Return value
+}
 </code></pre>
 
 

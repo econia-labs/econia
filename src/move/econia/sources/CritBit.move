@@ -27,7 +27,7 @@
 /// child. Outer nodes store a key-value pair with a 128-bit integer as
 /// a key, and an arbitrary value of generic type. Inner nodes do not
 /// store a key, but rather, an 8-bit integer indicating the most
-/// significatn critical bit (crit-bit) of divergence between keys
+/// significant critical bit (crit-bit) of divergence between keys
 /// located within the node's two subtrees: keys in the node's left
 /// subtree have a 0 at the critical bit, while keys in the node's right
 /// subtree have a 1 at the critical bit. Bit numbers are 0-indexed
@@ -801,50 +801,53 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Verify proper insertion result for left and right cases. Left:
+    /// Verify proper insertion result for insertion to left:
     /// ```
     /// >      1111     Insert         1st
     /// >                1101         /   \
     /// >               ----->    1101     1111
     /// ```
-    /// Right:
+    fun insert_singleton_success_left():
+    (
+        CB<u8>
+    ) {
+        let cb = singleton<u8>(u(b"1111"), 4); // Initialize singleton
+        insert_singleton(&mut cb, u(b"1101"), 5); // Insert to left
+        assert!(cb.r == 0, 0); // Assert root is at new inner node
+        let i = v_b<I>(&cb.i, 0); // Borrow inner node at root
+        // Assert root inner node values are as expected
+        assert!(i.c == 1 && i.p == HI_64 && i.l == o_c(1) && i.r == o_c(0), 1);
+        let o_o = v_b<O<u8>>(&cb.o, 0); // Borrow original outer node
+        // Assert original outer node values are as expected
+        assert!(o_o.k == u(b"1111") && o_o.v == 4 && o_o.p == 0, 2);
+        let n_o = v_b<O<u8>>(&cb.o, 1); // Borrow new outer node
+        // Assert new outer node values are as expected
+        assert!(n_o.k == u(b"1101") && n_o.v == 5 && n_o.p == 0, 3);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify proper insertion result for insertion to right:
     /// ```
     /// >      1011     Insert         2nd
     /// >                1111         /   \
     /// >               ----->    1011     1111
     /// ```
-    fun insert_singleton_success():
-    (
-        CB<u8>,
-        CB<u8>
-    ) {
-        // Left case
-        let cb1 = singleton<u8>(u(b"1111"), 4); // Initialize singleton
-        insert_singleton(&mut cb1, u(b"1101"), 5); // Insert to left
-        assert!(cb1.r == 0, 0); // Assert root is at new inner node
-        let i = v_b<I>(&cb1.i, 0); // Borrow inner node at root
+    fun insert_singleton_success_right():
+    CB<u8> {
+        let cb = singleton<u8>(u(b"1011"), 6); // Initialize singleton
+        insert_singleton(&mut cb, u(b"1111"), 7); // Insert to right
+        assert!(cb.r == 0, 0); // Assert root is at new inner node
+        let i = v_b<I>(&cb.i, 0); // Borrow inner node at root
         // Assert root inner node values are as expected
-        assert!(i.c == 1 && i.p == HI_64 && i.l == o_c(1) && i.r == o_c(0), 1);
-        let o_o = v_b<O<u8>>(&cb1.o, 0); // Borrow original outer node
+        assert!(i.c == 2 && i.p == HI_64 && i.l == o_c(0) && i.r == o_c(1), 1);
+        let o_o = v_b<O<u8>>(&cb.o, 0); // Borrow original outer node
         // Assert original outer node values are as expected
-        assert!(o_o.k == u(b"1111") && o_o.v == 4 && o_o.p == 0, 2);
-        let n_o = v_b<O<u8>>(&cb1.o, 1); // Borrow new outer node
+        assert!(o_o.k == u(b"1011") && o_o.v == 6 && o_o.p == 0, 2);
+        let n_o = v_b<O<u8>>(&cb.o, 1); // Borrow new outer node
         // Assert new outer node values are as expected
-        assert!(n_o.k == u(b"1101") && n_o.v == 5 && n_o.p == 0, 3);
-        // Right case
-        let cb2 = singleton<u8>(u(b"1011"), 6); // Initialize singleton
-        insert_singleton(&mut cb2, u(b"1111"), 7); // Insert to right
-        assert!(cb2.r == 0, 0); // Assert root is at new inner node
-        let i = v_b<I>(&cb2.i, 0); // Borrow inner node at root
-        // Assert root inner node values are as expected
-        assert!(i.c == 2 && i.p == HI_64 && i.l == o_c(0) && i.r == o_c(1), 4);
-        let o_o = v_b<O<u8>>(&cb2.o, 0); // Borrow original outer node
-        // Assert original outer node values are as expected
-        assert!(o_o.k == u(b"1011") && o_o.v == 6 && o_o.p == 0, 5);
-        let n_o = v_b<O<u8>>(&cb2.o, 1); // Borrow new outer node
-        // Assert new outer node values are as expected
-        assert!(n_o.k == u(b"1111") && n_o.v == 7 && o_o.p == 0, 6);
-        (cb1, cb2) // Return rather than unpack
+        assert!(n_o.k == u(b"1111") && n_o.v == 7 && o_o.p == 0, 3);
+        cb // Return rather than unpack
     }
 
     #[test]
@@ -929,13 +932,12 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Verify proper restructuring of tree for inserting to both left
-    /// and right of closest outer parent, and for inserting to both
-    /// left and right of new inner node. `CON` indicates closest outer
-    /// node, `CP` indicates closest parent, `NIN` indicates new inner
-    /// node", `NON` indicates "new outer node", `i_i` indicates an
-    /// inner node's vector index, and `o_i` indicates an outer node's
-    /// vector index in below illustrations. Case 1:
+    /// Verify proper restructuring of tree for inserting key to left of
+    /// new inner node, where new inner node is inserted to right of
+    /// closest parent. `CON` indicates closest outer node, `CP`
+    /// indicates closest parent, `NIN` indicates new inner node, `NON`
+    /// indicates new outer node, `i_i` indicates an inner node's vector
+    /// index, and `o_i` indicates an outer node's vector index:
     /// ```
     /// >      i_i = 0 -> 2nd
     /// >                /   \
@@ -954,7 +956,36 @@ module Econia::CritBit {
     /// >                      /   \
     /// >   (NON) o_i = 3 -> 110   111 <- o_i = 2 (CON)
     /// ```
-    /// Case 2:
+    fun insert_general_success_1():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, pre-insertion
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r: o_c(2)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
+        // Insert new key
+        insert_general<u8>(&mut cb, u(b"110"), v, 3);
+        // Assert closest parent now reflects new inner node as R child
+        assert!(v_b<I>(&cb.i, 1).r == 2, 0);
+        let n_i = v_b<I>(&cb.i, 2); // Borrow new inner node
+        // Assert correct fields for new inner node
+        assert!(
+            n_i.c == 0 && n_i.p == 1 && n_i.l == o_c(3) && n_i.r == o_c(2), 1
+        );
+        let n_o = v_b<O<u8>>(&cb.o, 3); // Borrow new outer node
+        // Assert correct fields for new outer node
+        assert!(n_o.k == u(b"110") && n_o.p == 2, 2);
+        // Assert closest outer node now has new inner node as parent
+        assert!(v_b<O<u8>>(&cb.o, 2).p == 2, 3);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Like `insert_general_success_1`, but for `NIN` to left of `CP`
+    /// and `NON` to right of `NIN`
     /// ```
     /// >       (CP) i_i = 0 -> 1st
     /// >                      /   \
@@ -969,55 +1000,29 @@ module Econia::CritBit {
     /// >                      /   \
     /// >   (CON) o_i = 0 -> 00     01 <- o_i = 2 (NON)
     /// ```
-    fun insert_general_success():
-    (
-        CB<u8>,
-        CB<u8>
-    ) {
+    fun insert_general_success_2():
+    CB<u8> {
         let v = 0; // Ignore values in key-value pairs by setting to 0
-        // Case 1
-        let cb1 = empty<u8>(); // Initialize empty tree
-        // Append nodes per above tree, pre-insertion case 1
-        v_pu_b<I>(&mut cb1.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb1.i, I{c: 1, p:     0, l: o_c(1), r: o_c(2)});
-        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"001"), v, p: 0});
-        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"101"), v, p: 1});
-        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"111"), v, p: 1});
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, pre-insertion
+        v_pu_b<I>(&mut cb.i, I{c: 1, p: HI_64, l: o_c(0), r: o_c(1)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"00"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"10"), v, p: 0});
         // Insert new key
-        insert_general<u8>(&mut cb1, u(b"110"), v, 3);
-        // Assert closest parent now reflects new inner node as R child
-        assert!(v_b<I>(&cb1.i, 1).r == 2, 0);
-        let n_i = v_b<I>(&cb1.i, 2); // Borrow new inner node
-        // Assert correct fields for new inner node
-        assert!(
-            n_i.c == 0 && n_i.p == 1 && n_i.l == o_c(3) && n_i.r == o_c(2), 1
-        );
-        let n_o = v_b<O<u8>>(&cb1.o, 3); // Borrow new outer node
-        // Assert correct fields for new outer node
-        assert!(n_o.k == u(b"110") && n_o.p == 2, 2);
-        // Assert closest outer node now has new inner node as parent
-        assert!(v_b<O<u8>>(&cb1.o, 2).p == 2, 3);
-        // Case 2
-        let cb2 = empty<u8>(); // Initialize empty tree
-        // Append nodes per above tree, pre-insertion case 2
-        v_pu_b<I>(&mut cb2.i, I{c: 1, p: HI_64, l: o_c(0), r: o_c(1)});
-        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"00"), v, p: 0});
-        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"10"), v, p: 0});
-        // Insert new key
-        insert_general<u8>(&mut cb2, u(b"01"), v, 2);
+        insert_general<u8>(&mut cb, u(b"01"), v, 2);
         // Assert closest parent now reflects new inner node as L child
-        assert!(v_b<I>(&cb2.i, 0).l == 1, 4);
-        let n_i = v_b<I>(&cb2.i, 1); // Borrow new inner node
+        assert!(v_b<I>(&cb.i, 0).l == 1, 0);
+        let n_i = v_b<I>(&cb.i, 1); // Borrow new inner node
         // Assert correct fields for new inner node
         assert!(
-            n_i.c == 0 && n_i.p == 0 && n_i.l == o_c(0) && n_i.r == o_c(2), 5
+            n_i.c == 0 && n_i.p == 0 && n_i.l == o_c(0) && n_i.r == o_c(2), 1
         );
-        let n_o = v_b<O<u8>>(&cb2.o, 2); // Borrow new outer node
+        let n_o = v_b<O<u8>>(&cb.o, 2); // Borrow new outer node
         // Assert correct fields for new outer node
-        assert!(n_o.k == u(b"01") && n_o.p == 1, 6);
+        assert!(n_o.k == u(b"01") && n_o.p == 1, 2);
         // Assert closest outer node now has new inner node as parent
-        assert!(v_b<O<u8>>(&cb2.o, 0).p == 1, 3);
-        (cb1, cb2) // Return rather than unpack
+        assert!(v_b<O<u8>>(&cb.o, 0).p == 1, 3);
+        cb // Return rather than unpack
     }
 
     #[test]

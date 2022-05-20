@@ -32,7 +32,7 @@ nodes have no children. There are no nodes that have exactly one
 child. Outer nodes store a key-value pair with a 128-bit integer as
 a key, and an arbitrary value of generic type. Inner nodes do not
 store a key, but rather, an 8-bit integer indicating the most
-significatn critical bit (crit-bit) of divergence between keys
+significant critical bit (crit-bit) of divergence between keys
 located within the node's two subtrees: keys in the node's left
 subtree have a 0 at the critical bit, while keys in the node's right
 subtree have a 1 at the critical bit. Bit numbers are 0-indexed

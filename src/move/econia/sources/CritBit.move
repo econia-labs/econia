@@ -69,7 +69,8 @@ module Econia::CritBit {
         is_empty as v_i_e,
         length as v_l,
         pop_back as v_po_b,
-        push_back as v_pu_b
+        push_back as v_pu_b,
+        swap_remove as v_s_r
     };
 
     #[test_only]
@@ -111,7 +112,7 @@ module Econia::CritBit {
     /// When no matching key in tree
     const E_NOT_HAS_K: u64 = 4;
     /// When no more keys can be inserted
-    const E_INSERT_LENGTH: u64 = 5;
+    const E_INSERT_FULL: u64 = 5;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -327,7 +328,7 @@ module Econia::CritBit {
     fun is_set(k: u128, b: u8): bool {k >> b & 1 == 1}
 
     /// Return `true` if vector index `i` indicates an outer node
-    fun is_out(i: u64): bool {(i >> N_TYPE & 1 == 1)}
+    fun is_out(i: u64): bool {(i >> N_TYPE & OUT == OUT)}
 
     /// Convert flagged child node index `c` to unflagged outer node
     /// vector index, by AND with a bitmask that has only flag bit unset
@@ -347,22 +348,21 @@ module Econia::CritBit {
     #[test]
     /// Verify correct returns
     fun is_out_success() {
-        assert!(is_out(1 << N_TYPE), 0);
+        assert!(is_out(OUT << N_TYPE), 0);
         assert!(!is_out(0), 1);
     }
 
     #[test]
     /// Verify correct returns
     fun o_v_success() {
-        assert!(o_v(1 << N_TYPE) == 0, 0);
-        assert!(o_v(1 << N_TYPE | 123) == 123, 1);
-    }
+        assert!(o_v(OUT << N_TYPE) == 0, 0);
+        assert!(o_v(OUT << N_TYPE | 123) == 123, 1); }
 
     #[test]
     /// Verify correct returns
     fun out_c_success() {
-        assert!(o_c(0) == 1 << N_TYPE, 0);
-        assert!(o_c(123) == 1 << N_TYPE | 123, 1);
+        assert!(o_c(0) == OUT << N_TYPE, 0);
+        assert!(o_c(123) == OUT << N_TYPE | 123, 1);
     }
 
     #[test_only]
@@ -1145,7 +1145,7 @@ module Econia::CritBit {
     /// where only the 63rd bit is not set (this bitmask corresponds to
     /// the maximum number of keys that can be stored in a tree, since
     /// the 63rd bit is reserved for the node type bit flag)
-    fun check_len(l: u64) {assert!(l < HI_64 ^ 1 << N_TYPE, E_INSERT_LENGTH);}
+    fun check_len(l: u64) {assert!(l < HI_64 ^ OUT << N_TYPE, E_INSERT_FULL);}
 
     #[test]
     /// Verify length check passes for valid sizes
@@ -1153,14 +1153,14 @@ module Econia::CritBit {
         check_len(0);
         check_len(1200);
         // Maximum number of keys that can be in tree pre-insert
-        check_len((HI_64 ^ 1 << N_TYPE) - 1);
+        check_len((HI_64 ^ OUT << N_TYPE) - 1);
     }
 
     #[test]
     #[expected_failure(abort_code = 5)]
     /// Verify length check fails for too many elements
     fun check_len_failure() {
-        check_len(HI_64 ^ 1 << N_TYPE); // Tree is full
+        check_len(HI_64 ^ OUT << N_TYPE); // Tree is full
     }
 
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1179,7 +1179,7 @@ module Econia::CritBit {
         cb.r = 0; // Update root
         // Pop off and destruct outer node at root
         let O{k: _, v, p: _} = v_po_b<O<V>>(&mut cb.o);
-        v // Return value
+        v // Return popped value
     }
 
     #[test]
@@ -1201,17 +1201,85 @@ module Econia::CritBit {
         let _ = pop_singleton<u8>(&mut cb, 3); // Attempt invalid pop
         cb // Return rather than unpack (or signal to compiler as much)
     }
-/*
+
     /// Return the value corresponding to key `k` in tree `cb` and
     /// destroy the outer node where it was stored, for the special case
     /// of a tree having height one. Abort if `k` not in `cb`
-    pop_height_one<V>(
+    fun pop_height_one<V>(
         cb: &mut CB<V>,
         k: u128
     ): V {
-
+        let r = v_b_m<I>(&mut cb.i, 0); // Borrow inner node at root
+        // If pop key is set at critical bit, mark outer node to destroy
+        // as the root's right child and mark the outer node to keep
+        // as the root's left child, otherwise the opposite
+        let (o_d, o_k) =
+            if(is_set(k, r.c)) (o_v(r.r), o_v(r.l)) else (o_v(r.l), o_v(r.r));
+        // Assert key is actually in tree
+        assert!(v_b<O<V>>(&cb.o, o_d).k == k, E_NOT_HAS_K);
+        // Destroy inner node at root
+        let I{c: _, p: _, l: _, r: _} = v_po_b<I>(&mut cb.i);
+        // Update kept outer node parent field to indicate it is root
+        v_b_m<O<V>>(&mut cb.o, o_k).p = HI_64;
+        // Swap remove outer node to destroy, storing only its value
+        let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_d);
+        // Update root index field to indicate kept outer node
+        cb.r = OUT << N_TYPE;
+        v // Return popped value
     }
-*/
+
+    #[test]
+    /// Verify successful pop for popping left outer node:
+    /// ```
+    /// >        2nd (root)    Pop 1011       1100 (root)
+    /// >       /   \          ------->
+    /// >   1011     1100
+    /// ```
+    fun pop_height_one_success_l():
+    CB<u8> {
+        let cb = singleton(u(b"1011"), 2); // Initialize singleton
+        insert(&mut cb, u(b"1100"), 5); // Insert another key
+        // Assert correct pop value
+        assert!(pop_height_one(&mut cb, u(b"1011")) == 2, 0);
+        // Assert root index field updated correctly
+        assert!(cb.r == OUT << N_TYPE, 1);
+        let o_k = v_b<O<u8>>(&cb.o, 0); // Borrow kept outer node
+        // Assert kept outer node fields as expected
+        assert!(o_k.p == HI_64 && o_k.k == u(b"1100") && o_k.v == 5, 2);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify successful pop for popping right outer node:
+    /// ```
+    /// >        1st (root)    Pop 1110       1101 (root)
+    /// >       /   \          ------->
+    /// >   1101     1110
+    /// ```
+    fun pop_height_one_success_r():
+    CB<u8> {
+        let cb = singleton(u(b"1101"), 3); // Initialize singleton
+        insert(&mut cb, u(b"1110"), 6); // Insert another key
+        // Assert correct pop value
+        assert!(pop_height_one(&mut cb, u(b"1110")) == 6, 0);
+        // Assert root index field updated correctly
+        assert!(cb.r == OUT << N_TYPE, 1);
+        let o_k = v_b<O<u8>>(&cb.o, 0); // Borrow kept outer node
+        // Assert kept outer node fields as expected
+        assert!(o_k.p == HI_64 && o_k.k == u(b"1101") && o_k.v == 3, 2);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for attempting to pop value not in tree
+    fun pop_height_one_failure():
+    CB<u8> {
+        let cb = singleton(1, 3); // Initialize singleton
+        insert(&mut cb, 2, 6); // Insert another key
+        let _ = pop_height_one(&mut cb, 5); // Attempt invalid pop
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
 
 // Popping <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

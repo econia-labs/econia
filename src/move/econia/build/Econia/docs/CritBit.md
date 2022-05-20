@@ -92,6 +92,7 @@ set, while its right child does have bit 0 set.
 -  [Function `insert`](#0x1234_CritBit_insert)
 -  [Function `check_len`](#0x1234_CritBit_check_len)
 -  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
+-  [Function `pop_height_one`](#0x1234_CritBit_pop_height_one)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -284,12 +285,12 @@ When an insertion key is already present in a crit-bit tree
 
 
 
-<a name="0x1234_CritBit_E_INSERT_LENGTH"></a>
+<a name="0x1234_CritBit_E_INSERT_FULL"></a>
 
 When no more keys can be inserted
 
 
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_INSERT_LENGTH">E_INSERT_LENGTH</a>: u64 = 5;
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_INSERT_FULL">E_INSERT_FULL</a>: u64 = 5;
 </code></pre>
 
 
@@ -585,7 +586,7 @@ Return <code><b>true</b></code> if vector index <code>i</code> indicates an oute
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i: u64): bool {(i &gt;&gt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a> & 1 == 1)}
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i: u64): bool {(i &gt;&gt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a> & <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> == <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a>)}
 </code></pre>
 
 
@@ -1224,7 +1225,7 @@ the 63rd bit is reserved for the node type bit flag)
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_check_len">check_len</a>(l: u64) {<b>assert</b>!(l &lt; <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a> ^ 1 &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>, <a href="CritBit.md#0x1234_CritBit_E_INSERT_LENGTH">E_INSERT_LENGTH</a>);}
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_check_len">check_len</a>(l: u64) {<b>assert</b>!(l &lt; <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a> ^ <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>, <a href="CritBit.md#0x1234_CritBit_E_INSERT_FULL">E_INSERT_FULL</a>);}
 </code></pre>
 
 
@@ -1258,7 +1259,53 @@ of a singleton tree. Abort if <code>k</code> not in <code>cb</code>
     cb.r = 0; // Update root
     // Pop off and destruct outer node at root
     <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_po_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o);
-    v // Return value
+    v // Return popped value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_pop_height_one"></a>
+
+## Function `pop_height_one`
+
+Return the value corresponding to key <code>k</code> in tree <code>cb</code> and
+destroy the outer node where it was stored, for the special case
+of a tree having height one. Abort if <code>k</code> not in <code>cb</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_height_one">pop_height_one</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_height_one">pop_height_one</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128
+): V {
+    <b>let</b> r = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, 0); // Borrow inner node at root
+    // If pop key is set at critical bit, mark outer node <b>to</b> destroy
+    // <b>as</b> the root's right child and mark the outer node <b>to</b> keep
+    // <b>as</b> the root's left child, otherwise the opposite
+    <b>let</b> (o_d, o_k) =
+        <b>if</b>(<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, r.c)) (<a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(r.r), <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(r.l)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(r.l), <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(r.r));
+    // Assert key is actually in tree
+    <b>assert</b>!(v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, o_d).k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>);
+    // Destroy inner node at root
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_I">I</a>{c: _, p: _, l: _, r: _} = v_po_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i);
+    // Update kept outer node parent field <b>to</b> indicate it is root
+    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, o_k).p = <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a>;
+    // Swap remove outer node <b>to</b> destroy, storing only its value
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, o_d);
+    // Update root index field <b>to</b> indicate kept outer node
+    cb.r = <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>;
+    v // Return popped value
 }
 </code></pre>
 

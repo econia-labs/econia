@@ -129,6 +129,9 @@ module Econia::CritBit {
         ///  bit 5 = 0 -|    |- bit 0 = 1
         /// ```
         c: u8,
+        /// Parent node vector index. `HI_64` when node is root,
+        /// otherwise corresponds to vector index of an inner node.
+        p: u64,
         /// Left child node index. When bit 63 is set, left child is an
         /// outer node. Otherwise left child is an inner node.
         l: u64,
@@ -146,13 +149,16 @@ module Econia::CritBit {
         /// Must be an integer for bitwise operations.
         k: u128,
         /// Value from node's key-value pair
-        v: V
+        v: V,
+        /// Parent node vector index. `HI_64` when node is root,
+        /// otherwise corresponds to vector index of an inner node.
+        p: u64,
     }
 
     /// A crit-bit tree for key-value pairs with value type `V`
     struct CB<V> has store {
         /// Root node index. When bit 63 is set, root node is an outer
-        /// node. Otherwise root is an inner node. Should be 0 if empty
+        /// node. Otherwise root is an inner node. 0 when tree is empty
         r: u64,
         /// Inner nodes
         i: vector<I>,
@@ -485,9 +491,9 @@ module Econia::CritBit {
         // Assert root index field indicates 0th outer node
         assert!(r == OUT << N_TYPE, 2);
         // Pop and unpack last node from vector of outer nodes
-        let O{k, v} = v_po_b<O<u8>>(&mut o);
+        let O{k, v, p} = v_po_b<O<u8>>(&mut o);
         // Assert values in node are as expected
-        assert!(k == 2 && v == 3, 3);
+        assert!(k == 2 && v == 3 && p == HI_64, 3);
         (i, o) // Return rather than unpack
     }
 
@@ -583,11 +589,11 @@ module Econia::CritBit {
         if (d == L) &mut v_b_m<N<V>>(&mut cb.t, *i_f_r).l else
             &mut v_b_m<N<V>>(&mut cb.t, *i_f_r).r
     }
-
     */
-    /// Walk a non-empty tree until arriving at the outer node sharing
-    /// the largest common prefix with `k`, then return a reference to
-    /// it. `b_c_o` indicates "borrow closest outer"
+
+    /// Return immutable reference to the outer node sharing the largest
+    /// common prefix with `k` in non-empty tree `cb`. `b_c_o` indicates
+    /// "borrow closest outer"
     fun b_c_o<V>(
         cb: &CB<V>,
         k: u128,
@@ -599,8 +605,28 @@ module Econia::CritBit {
         loop { // Loop over inner nodes
             // If key is set at critical bit, get index of child on R
             let i_c = if (is_set(k, n.c)) n.r else n.l; // Otherwise L
-            // If child is outer node, borrow and return it
+            // If child is outer node, return reference to it
             if (is_out(i_c)) return v_b<O<V>>(&cb.o, o_v(i_c));
+            n = v_b<I>(&cb.i, i_c); // Borrow next inner node to review
+        }
+    }
+
+    /// Return mutable reference to the outer node sharing the largest
+    /// common prefix with `k` in non-empty tree `cb`. `b_c_o_m`
+    /// indicates "borrow closest outer mutable"
+    fun b_c_o_m<V>(
+        cb: &mut CB<V>,
+        k: u128,
+    ): &mut O<V> {
+        // If root is an outer node, return mutable reference to it
+        if (is_out(cb.r)) return (v_b_m<O<V>>(&mut cb.o, o_v(cb.r)));
+        // Otherwise borrow inner node at root
+        let n = v_b<I>(&cb.i, cb.r);
+        loop { // Loop over inner nodes
+            // If key is set at critical bit, get index of child on R
+            let i_c = if (is_set(k, n.c)) n.r else n.l; // Otherwise L
+            // If child is outer node, return mutable reference to it
+            if (is_out(i_c)) return v_b_m<O<V>>(&mut cb.o, o_v(i_c));
             n = v_b<I>(&cb.i, i_c); // Borrow next inner node to review
         }
     }
@@ -708,13 +734,13 @@ module Econia::CritBit {
         let v = 0; // Ignore values in key-value pairs by setting to 0
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree
-        v_pu_b<I>(&mut cb.i, I{c: 2, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, l: o_c(1), r:     2 });
-        v_pu_b<I>(&mut cb.i, I{c: 0, l: o_c(2), r: o_c(3)});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"110"), v});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v});
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r:     2 });
+        v_pu_b<I>(&mut cb.i, I{c: 0, p:     1, l: o_c(2), r: o_c(3)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"110"), v, p: 2});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
         // Assert correct membership checks
         assert!(has_key(&cb, u(b"001")), 0);
         assert!(has_key(&cb, u(b"101")), 1);
@@ -744,7 +770,7 @@ module Econia::CritBit {
         v: V
     ) {
         // Push back outer node onto tree's vector of outer nodes
-        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v});
+        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v, p: HI_64});
         // Set root index field to indicate 0th outer node
         cb.r = OUT << N_TYPE;
     }
@@ -764,10 +790,12 @@ module Econia::CritBit {
         // root should have existing key as left child and insertion key
         // as right child, otherwise the opposite
         let (l, r) = if (k > n.k) (o_c(0), o_c(1)) else (o_c(1), o_c(0));
-        // Push back new outer node onto outer node vector
-        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v});
         // Push back new inner node with corresponding children
-        v_pu_b<I>(&mut cb.i, I{c, l, r});
+        v_pu_b<I>(&mut cb.i, I{c, p: HI_64, l, r});
+        // Update existing outer node to have new inner node as parent
+        v_b_m<O<V>>(&mut cb.o, 0).p = 0;
+        // Push back new outer node onto outer node vector
+        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v, p: 0});
         // Update tree root field for newly-created inner node
         cb.r = 0;
     }
@@ -796,26 +824,26 @@ module Econia::CritBit {
         assert!(cb1.r == 0, 0); // Assert root is at new inner node
         let i = v_b<I>(&cb1.i, 0); // Borrow inner node at root
         // Assert root inner node values are as expected
-        assert!(i.c == 1 && i.l == o_c(1) && i.r == o_c(0), 1);
+        assert!(i.c == 1 && i.p == HI_64 && i.l == o_c(1) && i.r == o_c(0), 1);
         let o_o = v_b<O<u8>>(&cb1.o, 0); // Borrow original outer node
         // Assert original outer node values are as expected
-        assert!(o_o.k == u(b"1111") && o_o.v == 4, 2);
+        assert!(o_o.k == u(b"1111") && o_o.v == 4 && o_o.p == 0, 2);
         let n_o = v_b<O<u8>>(&cb1.o, 1); // Borrow new outer node
         // Assert new outer node values are as expected
-        assert!(n_o.k == u(b"1101") && n_o.v == 5, 3);
+        assert!(n_o.k == u(b"1101") && n_o.v == 5 && n_o.p == 0, 3);
         // Right case
         let cb2 = singleton<u8>(u(b"1011"), 6); // Initialize singleton
         insert_singleton(&mut cb2, u(b"1111"), 7); // Insert to right
         assert!(cb2.r == 0, 0); // Assert root is at new inner node
         let i = v_b<I>(&cb2.i, 0); // Borrow inner node at root
         // Assert root inner node values are as expected
-        assert!(i.c == 2 && i.l == o_c(0) && i.r == o_c(1), 4);
+        assert!(i.c == 2 && i.p == HI_64 && i.l == o_c(0) && i.r == o_c(1), 4);
         let o_o = v_b<O<u8>>(&cb2.o, 0); // Borrow original outer node
         // Assert original outer node values are as expected
-        assert!(o_o.k == u(b"1011") && o_o.v == 6, 5);
+        assert!(o_o.k == u(b"1011") && o_o.v == 6 && o_o.p == 0, 5);
         let n_o = v_b<O<u8>>(&cb2.o, 1); // Borrow new outer node
         // Assert new outer node values are as expected
-        assert!(n_o.k == u(b"1111") && n_o.v == 7, 6);
+        assert!(n_o.k == u(b"1111") && n_o.v == 7 && o_o.p == 0, 6);
         (cb1, cb2) // Return rather than unpack
     }
 
@@ -829,15 +857,15 @@ module Econia::CritBit {
         cb // Return rather than unpack (or signal to compiler as much)
     }
 
-    /// Insert key `k` and value `v` into tree `cb` already having `n`
+    /// Insert key `k` and value `v` into tree `cb` already having `n_o`
     /// keys for general case where root is an inner node, aborting if
-    /// `k` is already present. Here, a "parent" node is tracked during
-    /// a loop over inner nodes, so that it can be updated to reflect as
-    /// its child the new inner node post-insertion:
+    /// `k` is already present. Here, the parent to the closest outer
+    /// node must be updated to have as its child the new inner node
+    /// that will also be inserted:
     /// ```
     /// >       2nd
     /// >      /   \
-    /// >    001   1st <- parent
+    /// >    001   1st <- closest parent
     /// >         /   \
     /// >       101   111 <- closest outer node
     /// >
@@ -846,7 +874,7 @@ module Econia::CritBit {
     /// >
     /// >                  2nd
     /// >                 /   \
-    /// >               001   1st <- parent
+    /// >               001   1st <- closest parent
     /// >                    /   \
     /// >                  101   0th <- new inner node
     /// >                       /   \
@@ -856,73 +884,90 @@ module Econia::CritBit {
         cb: &mut CB<V>,
         k: u128,
         v: V,
-        n: u64
+        n_o: u64
     ) {
-        let i_p = cb.r; // Initialize parent index to that of root node
-        let i_c: u64; // Initialize tracker for child node index
-        let c_s: bool; // Initialize tracker for child side
-        loop { // Loop over inner nodes
-            let p = v_b<I>(&cb.i, i_p); // Borrow parent inner node
+        let c_p = v_b<I>(&cb.i, 0); // Initialize closest parent to root
+        let i_c_o: u64; // Declare index of closest outer node
+        let s_c_o: bool; // Declare side of closest outer node
+        // Declare mutable reference to closest outer node
+        let c_o: &mut O<V>;
+        loop { // Loop over inner nodes until at closest outer node
             // If key is set at critical bit, track the R child, else L
-            (i_c, c_s) = if (is_set(k, p.c)) (p.r, R) else (p.l, L);
-            if (is_out(i_c)) break; // Stop loop if child is outer node
-            i_p = i_c; // Otherwise borrow next inner node to review
-        }; // Now child node index corresponds to closest outer node
-        // Get key of closest outer node, the child from the loop
-        let c_o_k = v_b<O<V>>(&cb.o, o_v(i_c)).k;
-        assert!(c_o_k != k, E_HAS_K); // Assert key not already in tree
-        // Push back outer node with new key-value pair
-        v_pu_b<O<V>>(&mut cb.o, O{k, v});
-        let n_i_i = v_l<I>(&cb.i); // Get index of new inner node to add
-        let c = crit_bit(c_o_k, k); // Get critical bit of divergence
-        if (k < c_o_k) { // If insertion key less than closest outer key
-            // Push back new inner node with insertion key at left child
-            // and closest outer key at right child
-            v_pu_b<I>(&mut cb.i, I{c, l: o_c(n), r:    i_c});
-        } else { // Otherwise the opposite
-            v_pu_b<I>(&mut cb.i, I{c, l:    i_c, r: o_c(n)});
+            (i_c_o, s_c_o) = if (is_set(k, c_p.c)) (c_p.r, R) else (c_p.l, L);
+            if (is_out(i_c_o)) { // If child is outer node
+                // Get mutable reference to it
+                c_o = v_b_m<O<V>>(&mut cb.o, o_v(i_c_o));
+                break // Then stop the loop
+            };
+            c_p = v_b<I>(&cb.i, i_c_o); // Borrow next inner node
         };
-        if (c_s == L) { // If side of child from loop parent node is L
-            // Update its left child to the new inner node
-            v_b_m<I>(&mut cb.i, i_p).l = n_i_i;
-        } else { // Otherwise update right child to the new inner node
-            v_b_m<I>(&mut cb.i, i_p).r = n_i_i;
-        }
+        let k_c_o = c_o.k; // Get key of closest outer node
+        assert!(k_c_o != k, E_HAS_K); // Assert key not a duplicate
+        let i_c_p = c_o.p; // Get index of closest parent
+        let n_i = v_l<I>(&cb.i); // Get number of inner nodes in tree
+        // Update closest outer node to have as its parent the new inner
+        // node that will be pushed back on the inner nodes vector
+        c_o.p = n_i;
+        // Borrow mutable reference to closest parent node
+        let c_p = v_b_m<I>(&mut cb.i, i_c_p);
+        // Update closest parent to have as its child the new inner node
+        // that will be pushed back onto the inner nodes vector, on the
+        // same side that the closest outer node was a child at
+        if (s_c_o == L) c_p.l = n_i else c_p.r = n_i;
+        let c = crit_bit(k_c_o, k); // Get critical bit of divergence
+        if (k < k_c_o) { // If insertion key less than closest outer key
+            // Push back a new inner node having the closest parent as
+            // its parent, the insertion key as its left child, and the
+            // closest outer node as its right child
+            v_pu_b<I>(&mut cb.i, I{c, p: i_c_p, l: o_c(n_o), r:    i_c_o});
+        } else { // Else flip the child positions
+            v_pu_b<I>(&mut cb.i, I{c, p: i_c_p, l:    i_c_o, r: o_c(n_o)});
+        };
+        // Push back outer node with provided key-value pair, having new
+        // inner node as parent
+        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: n_i});
     }
 
     #[test]
     /// Verify proper restructuring of tree for inserting to both left
-    /// and right of loop parent, and for inserting to both left and
-    /// right of new inner node. `NIN` indicates "new inner node", `NON`
-    /// indicates "new outer node", `i_i` indicates an inner node's
-    /// vector index, and `o_i` indicates an outer node's vector index.
-    /// Case 1:
+    /// and right of closest outer parent, and for inserting to both
+    /// left and right of new inner node. `CON` indicates closest outer
+    /// node, `CP` indicates closest parent, `NIN` indicates new inner
+    /// node", `NON` indicates "new outer node", `i_i` indicates an
+    /// inner node's vector index, and `o_i` indicates an outer node's
+    /// vector index in below illustrations. Case 1:
     /// ```
     /// >      i_i = 0 -> 2nd
     /// >                /   \
-    /// >   o_i = 0 -> 001   1st <- i_i = 1       Insert 110
-    /// >                   /   \                 --------->
-    /// >      o_i = 1 -> 101   111 <- o_i = 2
+    /// >   o_i = 0 -> 001   1st <- i_i = 1 (CP)
+    /// >                   /   \
+    /// >      o_i = 1 -> 101   111 <- o_i = 2 (CON)
+    /// >
+    /// >                     Insert 110
+    /// >                     --------->
     /// >
     /// >      i_i = 0 -> 2nd
     /// >                /   \
-    /// >   o_i = 0 -> 001   1st <- i_i = 1
+    /// >   o_i = 0 -> 001   1st <- i_i = 1 (CP)
     /// >                   /   \
     /// >      o_i = 1 -> 101   0th <- i_i = 2 (NIN)
     /// >                      /   \
-    /// >   (NON) o_i = 3 -> 110   111 <- o_i = 2
+    /// >   (NON) o_i = 3 -> 110   111 <- o_i = 2 (CON)
     /// ```
     /// Case 2:
     /// ```
-    /// >       i_i = 0 -> 1st                 Insert 01
-    /// >                 /   \                -------->
-    /// >    o_i = 0 -> 00     10 <- o_i = 1
+    /// >       (CP) i_i = 0 -> 1st
+    /// >                      /   \
+    /// >   (CON) o_i = 0 -> 00     10 <- o_i = 1
     /// >
-    /// >             i_i = 0 -> 1st
-    /// >                       /   \
-    /// >    (NIN) i_i = 1 -> 0th    10 <- o_i = 1
-    /// >                    /   \
-    /// >       o_i = 0 -> 00     01 <- o_i = 2 (NON)
+    /// >                  Insert 01
+    /// >                  -------->
+    /// >
+    /// >          (CP) i_i = 0 -> 1st
+    /// >                         /   \
+    /// >      (NIN) i_i = 1 -> 0th    10 <- o_i = 1
+    /// >                      /   \
+    /// >   (CON) o_i = 0 -> 00     01 <- o_i = 2 (NON)
     /// ```
     fun insert_general_success():
     (
@@ -933,37 +978,45 @@ module Econia::CritBit {
         // Case 1
         let cb1 = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, pre-insertion case 1
-        v_pu_b<I>(&mut cb1.i, I{c: 2, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb1.i, I{c: 1, l: o_c(1), r: o_c(2)});
-        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"001"), v});
-        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"101"), v});
-        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"111"), v});
+        v_pu_b<I>(&mut cb1.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb1.i, I{c: 1, p:     0, l: o_c(1), r: o_c(2)});
+        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"001"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"101"), v, p: 1});
+        v_pu_b<O<u8>>(&mut cb1.o, O{k: u(b"111"), v, p: 1});
         // Insert new key
         insert_general<u8>(&mut cb1, u(b"110"), v, 3);
-        // Assert parent inner node from loop now reflects new inner
-        // node as left child
+        // Assert closest parent now reflects new inner node as R child
         assert!(v_b<I>(&cb1.i, 1).r == 2, 0);
         let n_i = v_b<I>(&cb1.i, 2); // Borrow new inner node
-        // Assert correct fields on new inner node
-        assert!(n_i.c == 0 && n_i.l == o_c(3) && n_i.r == o_c(2), 1);
-        // Assert correct key for new outer node
-        assert!(v_b<O<u8>>(&cb1.o, 3).k == u(b"110"), 2);
+        // Assert correct fields for new inner node
+        assert!(
+            n_i.c == 0 && n_i.p == 1 && n_i.l == o_c(3) && n_i.r == o_c(2), 1
+        );
+        let n_o = v_b<O<u8>>(&cb1.o, 3); // Borrow new outer node
+        // Assert correct fields for new outer node
+        assert!(n_o.k == u(b"110") && n_o.p == 2, 2);
+        // Assert closest outer node now has new inner node as parent
+        assert!(v_b<O<u8>>(&cb1.o, 2).p == 2, 3);
         // Case 2
         let cb2 = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, pre-insertion case 2
-        v_pu_b<I>(&mut cb2.i, I{c: 1, l: o_c(0), r: o_c(1)});
-        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"00"), v});
-        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"10"), v});
+        v_pu_b<I>(&mut cb2.i, I{c: 1, p: HI_64, l: o_c(0), r: o_c(1)});
+        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"00"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb2.o, O{k: u(b"10"), v, p: 0});
         // Insert new key
         insert_general<u8>(&mut cb2, u(b"01"), v, 2);
-        // Assert parent inner node from loop now reflects new inner
-        // node as left child
-        assert!(v_b<I>(&cb2.i, 0).l == 1, 3);
+        // Assert closest parent now reflects new inner node as L child
+        assert!(v_b<I>(&cb2.i, 0).l == 1, 4);
         let n_i = v_b<I>(&cb2.i, 1); // Borrow new inner node
-        // Assert correct fields on new inner node
-        assert!(n_i.c == 0 && n_i.l == o_c(0) && n_i.r == o_c(2), 4);
-        // Assert correct key for new outer node
-        assert!(v_b<O<u8>>(&cb2.o, 2).k == u(b"01"), 5);
+        // Assert correct fields for new inner node
+        assert!(
+            n_i.c == 0 && n_i.p == 0 && n_i.l == o_c(0) && n_i.r == o_c(2), 5
+        );
+        let n_o = v_b<O<u8>>(&cb2.o, 2); // Borrow new outer node
+        // Assert correct fields for new outer node
+        assert!(n_o.k == u(b"01") && n_o.p == 1, 6);
+        // Assert closest outer node now has new inner node as parent
+        assert!(v_b<O<u8>>(&cb2.o, 0).p == 1, 3);
         (cb1, cb2) // Return rather than unpack
     }
 
@@ -1013,9 +1066,9 @@ module Econia::CritBit {
     }
 
     /// Assert that `l` is less than the value indicated by a bitmask
-    /// where only the 63rd bit is not set (the maximum number of keys
-    /// that can be stored in a tree, since the 63rd bit is reserved for
-    /// the node type bit flag)
+    /// where only the 63rd bit is not set (this bitmask corresponds to
+    /// the maximum number of keys that can be stored in a tree, since
+    /// the 63rd bit is reserved for the node type bit flag)
     fun check_len(l: u64) {assert!(l < HI_64 ^ 1 << N_TYPE, E_INSERT_LENGTH);}
 
     #[test]
@@ -1037,7 +1090,7 @@ module Econia::CritBit {
 // Insertion <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // Popping >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
+/*
     /// Return the value corresponding to key `k` in tree `cb` and
     /// destroy the outer node where it was stored, for the special case
     /// of a singleton tree. Abort if `k` not in `cb`
@@ -1050,6 +1103,7 @@ module Econia::CritBit {
         cb.r = 0; // Update root
         let o = v_po_b<O<V>>(&mut cb.o); // Pop off outer node
     }
+*/
 
 // Popping <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

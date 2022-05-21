@@ -84,6 +84,8 @@ module Econia::CritBit {
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
     /// `u64` bitmask with all bits set
     const HI_64: u64 = 0xffffffffffffffff;
+    /// `u64` bitmask with all bits set, to flag that a node is at root
+    const ROOT: u64 = 0xffffffffffffffff;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
     /// Bit number of node type flag in a `u64` vector index
@@ -130,7 +132,7 @@ module Econia::CritBit {
         ///  bit 5 = 0 -|    |- bit 0 = 1
         /// ```
         c: u8,
-        /// Parent node vector index. `HI_64` when node is root,
+        /// Parent node vector index. `ROOT` when node is root,
         /// otherwise corresponds to vector index of an inner node.
         p: u64,
         /// Left child node index. When bit 63 is set, left child is an
@@ -151,7 +153,7 @@ module Econia::CritBit {
         k: u128,
         /// Value from node's key-value pair
         v: V,
-        /// Parent node vector index. `HI_64` when node is root,
+        /// Parent node vector index. `ROOT` when node is root,
         /// otherwise corresponds to vector index of an inner node.
         p: u64,
     }
@@ -493,7 +495,7 @@ module Econia::CritBit {
         // Pop and unpack last node from vector of outer nodes
         let O{k, v, p} = v_po_b<O<u8>>(&mut o);
         // Assert values in node are as expected
-        assert!(k == 2 && v == 3 && p == HI_64, 3);
+        assert!(k == 2 && v == 3 && p == ROOT, 3);
         (i, o) // Return rather than unpack
     }
 
@@ -787,9 +789,9 @@ module Econia::CritBit {
         let v = 0; // Ignore values in key-value pairs by setting to 0
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree
-        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r:     2 });
-        v_pu_b<I>(&mut cb.i, I{c: 0, p:     1, l: o_c(2), r: o_c(3)});
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:    0, l: o_c(1), r:     2 });
+        v_pu_b<I>(&mut cb.i, I{c: 0, p:    1, l: o_c(2), r: o_c(3)});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"110"), v, p: 2});
@@ -865,7 +867,7 @@ module Econia::CritBit {
         v: V
     ) {
         // Push back outer node onto tree's vector of outer nodes
-        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v, p: HI_64});
+        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v, p: ROOT});
         // Set root index field to indicate 0th outer node
         cb.r = OUT << N_TYPE;
     }
@@ -886,7 +888,7 @@ module Econia::CritBit {
         // as right child, otherwise the opposite
         let (l, r) = if (k > n.k) (o_c(0), o_c(1)) else (o_c(1), o_c(0));
         // Push back new inner node with corresponding children
-        v_pu_b<I>(&mut cb.i, I{c, p: HI_64, l, r});
+        v_pu_b<I>(&mut cb.i, I{c, p: ROOT, l, r});
         // Update existing outer node to have new inner node as parent
         v_b_m<O<V>>(&mut cb.o, 0).p = 0;
         // Push back new outer node onto outer node vector
@@ -911,7 +913,7 @@ module Econia::CritBit {
         assert!(cb.r == 0, 0); // Assert root is at new inner node
         let i = v_b<I>(&cb.i, 0); // Borrow inner node at root
         // Assert root inner node values are as expected
-        assert!(i.c == 1 && i.p == HI_64 && i.l == o_c(1) && i.r == o_c(0), 1);
+        assert!(i.c == 1 && i.p == ROOT && i.l == o_c(1) && i.r == o_c(0), 1);
         let o_o = v_b<O<u8>>(&cb.o, 0); // Borrow original outer node
         // Assert original outer node values are as expected
         assert!(o_o.k == u(b"1111") && o_o.v == 4 && o_o.p == 0, 2);
@@ -935,7 +937,7 @@ module Econia::CritBit {
         assert!(cb.r == 0, 0); // Assert root is at new inner node
         let i = v_b<I>(&cb.i, 0); // Borrow inner node at root
         // Assert root inner node values are as expected
-        assert!(i.c == 2 && i.p == HI_64 && i.l == o_c(0) && i.r == o_c(1), 1);
+        assert!(i.c == 2 && i.p == ROOT && i.l == o_c(0) && i.r == o_c(1), 1);
         let o_o = v_b<O<u8>>(&cb.o, 0); // Borrow original outer node
         // Assert original outer node values are as expected
         assert!(o_o.k == u(b"1011") && o_o.v == 6 && o_o.p == 0, 2);
@@ -1039,8 +1041,8 @@ module Econia::CritBit {
         let v = 0; // Ignore values in key-value pairs by setting to 0
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, pre-insertion
-        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r: o_c(2)});
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:    0, l: o_c(1), r: o_c(2)});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
@@ -1083,7 +1085,7 @@ module Econia::CritBit {
         let v = 0; // Ignore values in key-value pairs by setting to 0
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, pre-insertion
-        v_pu_b<I>(&mut cb.i, I{c: 1, p: HI_64, l: o_c(0), r: o_c(1)});
+        v_pu_b<I>(&mut cb.i, I{c: 1, p: ROOT, l: o_c(0), r: o_c(1)});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"00"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"10"), v, p: 0});
         // Insert new key
@@ -1227,7 +1229,7 @@ module Econia::CritBit {
         // Destroy inner node at root
         let I{c: _, p: _, l: _, r: _} = v_po_b<I>(&mut cb.i);
         // Update kept outer node parent field to indicate it is root
-        v_b_m<O<V>>(&mut cb.o, o_k).p = HI_64;
+        v_b_m<O<V>>(&mut cb.o, o_k).p = ROOT;
         // Swap remove outer node to destroy, storing only its value
         let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_d);
         // Update root index field to indicate kept outer node
@@ -1306,7 +1308,7 @@ module Econia::CritBit {
             // Update children to have relocated node as their parent
             v_b_m<O<V>>(&mut cb.o, i_l).p = i_n;
             v_b_m<O<V>>(&mut cb.o, i_r).p = i_n;
-            if (i_p == HI_64) return; // Return if relocated root node
+            if (i_p == ROOT) return; // Return if relocated root node
             // Borrow mutable reference to relocated node's parent
             let p = v_b_m<I>(&mut cb.i, i_p);
             // If relocated node was previously left child, update
@@ -1332,8 +1334,8 @@ module Econia::CritBit {
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus outer node at
         // vector index 2, which will be swap removed
-        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(3), r: o_c(1)});
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:    0, l: o_c(3), r: o_c(1)});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
         v_pu_b<O<u8>>(&mut cb.o, O{k:    HI_128, v, p: HI_64}); // Bogus
@@ -1363,8 +1365,8 @@ module Econia::CritBit {
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus outer node at
         // vector index 2, which will be swap removed
-        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r: o_c(3)});
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:    0, l: o_c(1), r: o_c(3)});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
         v_pu_b<O<u8>>(&mut cb.o, O{k:    HI_128, v, p: HI_64}); // Bogus
@@ -1394,10 +1396,10 @@ module Econia::CritBit {
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus inner node at
         // vector index 1, which will be swap removed
-        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     2 });
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l: o_c(0), r:     2 });
         // Bogus node
-        v_pu_b<I>(&mut cb.i, I{c: 0, p:     0, l:     0 , r:     0 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r: o_c(2)});
+        v_pu_b<I>(&mut cb.i, I{c: 0, p:    0, l:     0 , r:     0 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:    0, l: o_c(1), r: o_c(2)});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 2});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
@@ -1431,10 +1433,10 @@ module Econia::CritBit {
         let cb = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus inner node at
         // vector index 1, which will be swap removed
-        v_pu_b<I>(&mut cb.i, I{c: 1, p:     2, l: o_c(1), r: o_c(2)});
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:    2, l: o_c(1), r: o_c(2)});
         // Bogus node
-        v_pu_b<I>(&mut cb.i, I{c: 0, p:     0, l:     0 , r:     0 });
-        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     0 });
+        v_pu_b<I>(&mut cb.i, I{c: 0, p:    0, l:     0 , r:     0 });
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l: o_c(0), r:     0 });
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 2});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
@@ -1469,7 +1471,7 @@ module Econia::CritBit {
         assert!(cb.r == OUT << N_TYPE, 1);
         let o_k = v_b<O<u8>>(&cb.o, 0); // Borrow kept outer node
         // Assert kept outer node fields as expected
-        assert!(o_k.p == HI_64 && o_k.k == u(b"1100") && o_k.v == 5, 2);
+        assert!(o_k.p == ROOT && o_k.k == u(b"1100") && o_k.v == 5, 2);
         cb // Return rather than unpack
     }
 
@@ -1490,7 +1492,7 @@ module Econia::CritBit {
         assert!(cb.r == OUT << N_TYPE, 1);
         let o_k = v_b<O<u8>>(&cb.o, 0); // Borrow kept outer node
         // Assert kept outer node fields as expected
-        assert!(o_k.p == HI_64 && o_k.k == u(b"1101") && o_k.v == 3, 2);
+        assert!(o_k.p == ROOT && o_k.k == u(b"1101") && o_k.v == 3, 2);
         cb // Return rather than unpack
     }
 

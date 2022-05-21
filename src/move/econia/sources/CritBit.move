@@ -822,7 +822,7 @@ module Econia::CritBit {
     /// at the node sharing the largest common prefix with key `k`, the
     /// closest outer node. Then return:
     /// * `&mut O<V>`: mutable reference to closest outer node
-    /// * `u64`: index of closest outer node
+    /// * `u64`: index of closest outer node (with node type bit flag)
     /// * `bool`: the side, `L` or `R`, on which the closest outer node
     ///    is a child of its parent
     fun walk_closest_outer<V>(
@@ -835,17 +835,17 @@ module Econia::CritBit {
     ) {
         let c_p = v_b<I>(&cb.i, 0); // Initialize closest parent to root
         loop { // Loop over inner nodes until at closest outer node
-            // If key set at critical bit, track index and side of R
-            // child, else L
+            // If key set at critical bit, track field index and side of
+            // R child, else L
             let (i, s) = if (is_set(k, c_p.c)) (c_p.r, R) else (c_p.l, L);
             if (is_out(i)) { // If child is outer node
-                // Return mutable reference to it, its index, and side
+                // Return mutable reference to it, its field index, and
+                // side as child
                 return (v_b_m<O<V>>(&mut cb.o, o_v(i)), i, s)
             };
             c_p = v_b<I>(&cb.i, i); // Borrow next inner node
         }
     }
-    // VIEW DOC BUILD ON THIS YOU FOOL
 
 // Walking <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -979,7 +979,7 @@ module Econia::CritBit {
     ) {
         // Get number of inner nodes in tree (index of new inner node)
         let i_n_i = v_l<I>(&cb.i);
-        // Borrow closest outer node, get its index and side as child
+        // Borrow closest outer node, get its field index, side as child
         let (c_o, i_c_o, s_c_o) = walk_closest_outer(cb, k);
         let k_c_o = c_o.k; // Get key of closest outer node
         assert!(k_c_o != k, E_HAS_K); // Assert key not a duplicate

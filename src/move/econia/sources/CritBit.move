@@ -1294,12 +1294,7 @@ module Econia::CritBit {
         if (is_out(i_n)) { // If child field index indicates outer node
             // Get index of parent to relocated node
             let i_p = v_b<O<V>>(&cb.o, o_v(i_n)).p;
-            // Borrow mutable reference to parent
-            let p = v_b_m<I>(&mut cb.i, i_p);
-            // If relocated node was previously left child, update
-            // parent's left child to indicate the relocated node's new
-            // position, otherwise do update for right child of parent
-            if (p.l == o_c(n_n - 1)) p.l = i_n else p.r = i_n;
+            stitch_child_of_parent<V>(cb, i_n, i_p, o_c(n_n - 1));
         } else { // If child field index indicates inner node
             // Borrow mutable reference to it
             let n = v_b<I>(&cb.i, i_n);
@@ -1316,6 +1311,20 @@ module Econia::CritBit {
             // position, otherwise do update for right child of parent
             if (p.l == n_n - 1) p.l = i_n else p.r = i_n;
         }
+    }
+
+    fun stitch_child_of_parent<V>(
+        cb: &mut CB<V>,
+        i_n: u64,
+        i_p: u64,
+        i_l: u64
+    ) {
+        // Borrow mutable reference to parent
+        let p = v_b_m<I>(&mut cb.i, i_p);
+        // If relocated node was previously left child, update
+        // parent's left child to indicate the relocated node's new
+        // position, otherwise do update for right child of parent
+        if (p.l == i_l) p.l = i_n else p.r = i_n;
     }
 
     #[test]

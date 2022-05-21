@@ -1234,14 +1234,15 @@ module Econia::CritBit {
         cb.r = OUT << N_TYPE;
         v // Return popped value
     }
+
 /*
-    /// Return the value corresponding to key `k` in tree `cb` and
-    /// destroy the outer node where it was stored, for the general case
-    /// of a tree taller than a height of one. Abort if `k` not in `cb`.
-    /// Here, the parent of the popped node must be removed, and the
-    /// grandparent of the popped node must be updated to have as its
-    /// child the popped node's sibling at the same position where the
-    /// popped node's parent previously was:
+    /// Return the value corresponding to key `k` in tree `cb` having
+    /// `n_o` keys and destroy the outer node where it was stored, for
+    /// the general case of a tree taller than a height of one. Abort if
+    /// `k` not in `cb`. Here, the parent of the popped node must be
+    /// removed, and the grandparent of the popped node must be updated
+    /// to have as its child the popped node's sibling at the same
+    /// position where the popped node's parent previously was:
     /// ```
     /// >              2nd <- grandparent
     /// >             /   \
@@ -1258,12 +1259,196 @@ module Econia::CritBit {
     /// ```
     fun pop_general<V>(
         cb: &mut CB<V>,
-        k: u128
+        k: u128,
+        n_o: u64
     ): V {
-        // Borrow closest outer node, get its field index, its side as a
-        // child, its key, and the index of its parent
-        let (c_o, i_c_o, s_c_o, k_c_o) = walk_closest_outer(cb, k);
+        // Get field index of closest outer node, its side as a child,
+        // its key, the vector index of its parent, and borrow a mutable
+        // reference to it
+        let (i_c_o, s_c_o, k_c_o, i_c_p, c_o) = walk_closest_outer(cb, k);
         assert!(k_c_o == k, E_NOT_HAS_K); // Assert key in tree
+        // Swap remove outer node to destroy, storing only its value
+        let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_v(i_c_o));
+        /*
+        May want to upwalk walk_closest outer to not return key?
+        */
+        // If destroyed outer node was not last outer node in vector,
+        // repair the parent-child relationship broken by swap remove
+        if (o_v(i_c_o) < n_o - 1) stitch_swap_remove(cb, i_c_o, n_o);
+        // How handle here if inner node was previously at root?
+        // How to update swap remove?
+    }
+*/
+
+    /// Repair a broken parent-child relationship in `cb` caused by
+    /// swap removing, for relocated node now at index indicated by
+    /// child field index `i_n`, in vector that contained `n_n` nodes
+    /// before the swap remove (when relocated node was last in vector)
+    fun stitch_swap_remove<V>(
+        cb: &mut CB<V>,
+        i_n: u64,
+        n_n: u64
+    ) {
+        if (is_out(i_n)) { // If child field index indicates outer node
+            // Get index of parent to relocated node
+            let i_p = v_b<O<V>>(&cb.o, o_v(i_n)).p;
+            // Borrow mutable reference to parent
+            let p = v_b_m<I>(&mut cb.i, i_p);
+            // If relocated node was previously left child, update
+            // parent's left child to indicate the relocated node's new
+            // position, otherwise do update for right child of parent
+            if (p.l == o_c(n_n - 1)) p.l = i_n else p.r = i_n;
+        } else { // If child field index indicates inner node
+            // Borrow mutable reference to it
+            let n = v_b<I>(&cb.i, i_n);
+            // Get vector index of node's parent and children
+            let (i_p, i_l, i_r) = (n.p, o_v(n.l), o_v(n.r));
+            // Update children to have relocated node as their parent
+            v_b_m<O<V>>(&mut cb.o, i_l).p = i_n;
+            v_b_m<O<V>>(&mut cb.o, i_r).p = i_n;
+            if (i_p == HI_64) return; // Return if relocated root node
+            // Borrow mutable reference to relocated node's parent
+            let p = v_b_m<I>(&mut cb.i, i_p);
+            // If relocated node was previously left child, update
+            // parent's left child to indicate relocated node's new
+            // position, otherwise do update for right child of parent
+            if (p.l == n_n - 1) p.l = i_n else p.r = i_n;
+        }
+    }
+
+    #[test]
+    /// Verify successful stitch for relocated left child outer node.
+    /// `o_i` indicates outer index, `i_i` indicates inner index:
+    /// ```
+    /// >                          2nd <- i_i = 0
+    /// >                         /   \
+    /// >            o_i = 0 -> 001   1st <- i_i = 1
+    /// >                            /   \
+    /// >   (relocated) o_i = 3 -> 101   111 <- o_i = 1
+    /// ```
+    fun stitch_swap_remove_o_l():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, including bogus outer node at
+        // vector index 2, which will be swap removed
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(3), r: o_c(1)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
+        v_pu_b<O<u8>>(&mut cb.o, O{k:    HI_128, v, p: HI_64}); // Bogus
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
+        // Swap remove and destruct bogus node
+        let O{k: _, v: _, p: _} = v_s_r<O<u8>>(&mut cb.o, 2);
+        // Stitch broken relationship
+        stitch_swap_remove(&mut cb, o_c(2), 4);
+        // Assert parent to relocated node indicates proper child update
+        assert!(v_b<I>(&cb.i, 1).l == o_c(2), 0);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify successful stitch for relocated right child outer node.
+    /// `o_i` indicates outer index, `i_i` indicates inner index:
+    /// ```
+    /// >                2nd <- i_i = 0
+    /// >               /   \
+    /// >  o_i = 0 -> 001   1st <- i_i = 1
+    /// >                  /   \
+    /// >     o_i = 1 -> 101   111 <- o_i = 3 (relocated)
+    /// ```
+    fun stitch_swap_remove_o_r():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, including bogus outer node at
+        // vector index 2, which will be swap removed
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     1 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r: o_c(3)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
+        v_pu_b<O<u8>>(&mut cb.o, O{k:    HI_128, v, p: HI_64}); // Bogus
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
+        // Swap remove and destruct bogus node
+        let O{k: _, v: _, p: _} = v_s_r<O<u8>>(&mut cb.o, 2);
+        // Stitch broken relationship
+        stitch_swap_remove(&mut cb, o_c(2), 4);
+        // Assert parent to relocated node indicates proper child update
+        assert!(v_b<I>(&cb.i, 1).r == o_c(2), 0);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify successful stitch for relocated right child inner node.
+    /// `o_i` indicates outer index, `i_i` indicates inner index:
+    /// ```
+    /// >                2nd <- i_i = 0
+    /// >               /   \
+    /// >  o_i = 0 -> 001   1st <- i_i = 2 (relocated)
+    /// >                  /   \
+    /// >     o_i = 1 -> 101   111 <- o_i = 2
+    /// ```
+    fun stitch_swap_remove_i_r():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, including bogus inner node at
+        // vector index 1, which will be swap removed
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     2 });
+        // Bogus node
+        v_pu_b<I>(&mut cb.i, I{c: 0, p:     0, l:     0 , r:     0 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:     0, l: o_c(1), r: o_c(2)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 2});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
+        // Swap remove and destruct bogus node
+        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
+        // Stitch broken relationship
+        stitch_swap_remove(&mut cb, 1, 3);
+        // Assert parent to relocated node indicates proper child update
+        assert!(v_b<I>(&cb.i, 0).r == 1, 0);
+        // Assert children to relocated node indicate proper parent
+        // update
+        assert!(v_b<O<u8>>(&cb.o, 1).p == 1, 1); // Left child
+        assert!(v_b<O<u8>>(&cb.o, 2).p == 1, 1); // Right child
+        cb // Return rather than unpack
+    }
+
+/*
+    #[test]
+    /// Verify successful stitch for relocated root inner node. `o_i`
+    /// indicates outer index, `i_i` indicates inner index:
+    /// ```
+    /// >                2nd <- i_i = 2 (relocated)
+    /// >               /   \
+    /// >  o_i = 0 -> 001   1st <- i_i = 0
+    /// >                  /   \
+    /// >     o_i = 1 -> 101   111 <- o_i = 2
+    /// ```
+    fun stitch_swap_remove_r():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, including bogus inner node at
+        // vector index 1, which will be swap removed
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:     2, l: o_c(1), r: o_c(2)});
+        // Bogus node
+        v_pu_b<I>(&mut cb.i, I{c: 0, p:     0, l:     0 , r:     0 });
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: HI_64, l: o_c(0), r:     0 });
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 2});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
+        // Swap remove and destruct bogus node
+        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
+        // Stitch broken relationship
+        stitch_swap_remove(&mut cb, 1, 3);
+        // Assert parent to relocated node indicates proper child update
+        assert!(v_b<I>(&cb.i, 0).r == 1, 0);
+        // Assert children to relocated node indicate proper parent
+        // update
+        assert!(v_b<O<u8>>(&cb.o, 1).p == 1, 1); // Left child
+        assert!(v_b<O<u8>>(&cb.o, 2).p == 1, 1); // Right child
+        cb // Return rather than unpack
     }
 */
 

@@ -821,17 +821,21 @@ module Econia::CritBit {
     /// Walk tree `cb` having an inner node as its root, until arriving
     /// at the node sharing the largest common prefix with key `k`, the
     /// closest outer node. Then return:
-    /// * `&mut O<V>`: mutable reference to closest outer node
     /// * `u64`: index of closest outer node (with node type bit flag)
     /// * `bool`: the side, `L` or `R`, on which the closest outer node
     ///    is a child of its parent
+    /// * `u128`: key of closest outer node
+    /// * `u64`: vector index of parent to closest outer node
+    /// * `&mut O<V>`: mutable reference to closest outer node
     fun walk_closest_outer<V>(
         cb: &mut CB<V>,
         k: u128
     ): (
-        &mut O<V>,
         u64,
         bool,
+        u128,
+        u64,
+        &mut O<V>,
     ) {
         let c_p = v_b<I>(&cb.i, 0); // Initialize closest parent to root
         loop { // Loop over inner nodes until at closest outer node
@@ -839,9 +843,12 @@ module Econia::CritBit {
             // R child, else L
             let (i, s) = if (is_set(k, c_p.c)) (c_p.r, R) else (c_p.l, L);
             if (is_out(i)) { // If child is outer node
-                // Return mutable reference to it, its field index, and
-                // side as child
-                return (v_b_m<O<V>>(&mut cb.o, o_v(i)), i, s)
+                // Borrow immutable reference to it
+                let c_o = v_b_m<O<V>>(&mut cb.o, o_v(i));
+                // Return field index of closest outer node, its side as
+                // a child, its key, the vector index of its parent, and
+                // a mutable reference to i
+                return (i, s, c_o.k, c_o.p, c_o)
             };
             c_p = v_b<I>(&cb.i, i); // Borrow next inner node
         }
@@ -979,11 +986,11 @@ module Econia::CritBit {
     ) {
         // Get number of inner nodes in tree (index of new inner node)
         let i_n_i = v_l<I>(&cb.i);
-        // Borrow closest outer node, get its field index, side as child
-        let (c_o, i_c_o, s_c_o) = walk_closest_outer(cb, k);
-        let k_c_o = c_o.k; // Get key of closest outer node
+        // Get field index of closest outer node, its side as a child,
+        // its key, the vector index of its parent, and borrow a mutable
+        // reference to it
+        let (i_c_o, s_c_o, k_c_o, i_c_p, c_o) = walk_closest_outer(cb, k);
         assert!(k_c_o != k, E_HAS_K); // Assert key not a duplicate
-        let i_c_p = c_o.p; // Get index of closest parent
         // Set closest outer node to have as its parent new inner node
         c_o.p = i_n_i;
         // Borrow mutable reference to closest parent node
@@ -1227,6 +1234,38 @@ module Econia::CritBit {
         cb.r = OUT << N_TYPE;
         v // Return popped value
     }
+/*
+    /// Return the value corresponding to key `k` in tree `cb` and
+    /// destroy the outer node where it was stored, for the general case
+    /// of a tree taller than a height of one. Abort if `k` not in `cb`.
+    /// Here, the parent of the popped node must be removed, and the
+    /// grandparent of the popped node must be updated to have as its
+    /// child the popped node's sibling at the same position where the
+    /// popped node's parent previously was:
+    /// ```
+    /// >              2nd <- grandparent
+    /// >             /   \
+    /// >           001   1st <- parent
+    /// >                /   \
+    /// >   sibling -> 101   111 <- popped node
+    /// >
+    /// >       Pop 111
+    /// >       ------>
+    /// >
+    /// >                  2nd <- grandparent
+    /// >                 /   \
+    /// >               001    101 <- sibling
+    /// ```
+    fun pop_general<V>(
+        cb: &mut CB<V>,
+        k: u128
+    ): V {
+        // Borrow closest outer node, get its field index, its side as a
+        // child, its key, and the index of its parent
+        let (c_o, i_c_o, s_c_o, k_c_o) = walk_closest_outer(cb, k);
+        assert!(k_c_o == k, E_NOT_HAS_K); // Assert key in tree
+    }
+*/
 
     #[test]
     /// Verify successful pop for popping left outer node:

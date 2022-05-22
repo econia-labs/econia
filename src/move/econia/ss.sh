@@ -60,6 +60,11 @@ elif test $1 = cm; then
 elif test $1 = d; then
     move package build --doc
 
+# Add all and commit
+elif test $1 = ac; then
+    git add .
+    git commit
+
 else
     echo Invalid option
 fi

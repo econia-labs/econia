@@ -2,7 +2,7 @@
 /// search tree, that stores a prefix-free set of bitstrings, like
 /// n-bit integers or variable-length 0-terminated byte strings. For a
 /// given set of keys there exists a unique crit-bit tree representing
-/// the set, hence crit-bit trees do not requre complex rebalancing
+/// the set, hence crit-bit trees do not require complex rebalancing
 /// algorithms like those of AVL or red-black binary search trees.
 /// Crit-bit trees support the following operations, quickly:
 ///
@@ -34,12 +34,13 @@
 /// starting at the least-significant bit (LSB), such that a critical
 /// bit of 3, for instance, corresponds to a comparison between the
 /// bitstrings `00...00000` and `00...01111`. Inner nodes are arranged
-/// hierarchically, with the most sigificant critical bits at the top of
-/// the tree. For instance, the keys `001`, `101`, `110`, and `111`
+/// hierarchically, with the most significant critical bits at the top
+/// of the tree. For instance, the keys `001`, `101`, `110`, and `111`
 /// would be stored in a crit-bit tree as follows (right carets included
 /// at left of illustration per issue with documentation build engine,
-/// namely, the automatic stripping of leading whitespace in fenced code
-/// blocks):
+/// namely, the automatic stripping of leading whitespace in top-level
+/// module documentation comments, which prohibits the simple initiation
+/// of monospaced code blocks through indentation by 4 spaces):
 /// ```
 /// >       2nd
 /// >      /   \
@@ -122,14 +123,14 @@ module Econia::CritBit {
 
     /// Inner node
     struct I has store {
-        // Documentation comments, specifically on struct fields,
+        // Documentation comments, specifically within struct fields,
         // apparently do not support fenced code blocks unless they are
         // preceded by a blank line...
         /// Critical bit position. Bit numbers 0-indexed from LSB:
         ///
         /// ```
-        /// 11101...1010010101
-        ///  bit 5 = 0 -|    |- bit 0 = 1
+        /// >    11101...1010010101
+        /// >     bit 5 = 0 -|    |- bit 0 = 1
         /// ```
         c: u8,
         /// Parent node vector index. `ROOT` when node is root,
@@ -236,9 +237,9 @@ module Econia::CritBit {
     /// > ...
     /// ```
     /// Notably, this method is only suggested after already having
-    /// indentified the varying byte between the two strings, thus
+    /// identified the varying byte between the two strings, thus
     /// limiting `x & (x - 1)` operations to at most 7 iterations. But
-    /// for the present implementation, strings are not partioned into
+    /// for the present implementation, strings are not partitioned into
     /// a multi-byte array, rather, they are stored as `u128` integers,
     /// so a binary search is instead proposed. Here, the same
     /// `x = s1 ^ s2` operation is first used to identify all differing
@@ -1520,7 +1521,7 @@ module Econia::CritBit {
         // If child is an outer node, borrow corresponding node and
         // update its parent field index to that of relocated node
         if (is_out(i_c)) v_b_m<O<V>>(&mut cb.o, o_v(i_c)).p = i_n
-            // Otherwise perform opdate on an inner node
+            // Otherwise perform update on an inner node
             else v_b_m<I>(&mut cb.i, i_c).p = i_n;
     }
 

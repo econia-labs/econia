@@ -7,7 +7,7 @@ A crit-bit tree is a compact binary prefix tree, similar to a binary
 search tree, that stores a prefix-free set of bitstrings, like
 n-bit integers or variable-length 0-terminated byte strings. For a
 given set of keys there exists a unique crit-bit tree representing
-the set, hence crit-bit trees do not requre complex rebalancing
+the set, hence crit-bit trees do not require complex rebalancing
 algorithms like those of AVL or red-black binary search trees.
 Crit-bit trees support the following operations, quickly:
 
@@ -39,12 +39,13 @@ subtree have a 1 at the critical bit. Bit numbers are 0-indexed
 starting at the least-significant bit (LSB), such that a critical
 bit of 3, for instance, corresponds to a comparison between the
 bitstrings <code>00...00000</code> and <code>00...01111</code>. Inner nodes are arranged
-hierarchically, with the most sigificant critical bits at the top of
-the tree. For instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code>
+hierarchically, with the most significant critical bits at the top
+of the tree. For instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code>
 would be stored in a crit-bit tree as follows (right carets included
 at left of illustration per issue with documentation build engine,
-namely, the automatic stripping of leading whitespace in fenced code
-blocks):
+namely, the automatic stripping of leading whitespace in top-level
+module documentation comments, which prohibits the simple initiation
+of monospaced code blocks through indentation by 4 spaces):
 ```
 >       2nd
 >      /   \
@@ -128,8 +129,8 @@ Inner node
  Critical bit position. Bit numbers 0-indexed from LSB:
 
  ```
- 11101...1010010101
-  bit 5 = 0 -|    |- bit 0 = 1
+ >    11101...1010010101
+ >     bit 5 = 0 -|    |- bit 0 = 1
  ```
 </dd>
 <dt>
@@ -466,9 +467,9 @@ strings <code>s1</code> and <code>s2</code> as follows:
 > ...
 ```
 Notably, this method is only suggested after already having
-indentified the varying byte between the two strings, thus
+identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations. But
-for the present implementation, strings are not partioned into
+for the present implementation, strings are not partitioned into
 a multi-byte array, rather, they are stored as <code>u128</code> integers,
 so a binary search is instead proposed. Here, the same
 <code>x = s1 ^ s2</code> operation is first used to identify all differing
@@ -1598,7 +1599,7 @@ index <code>i_n</code>
     // If child is an outer node, borrow corresponding node and
     // <b>update</b> its parent field index <b>to</b> that of relocated node
     <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_c)) v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c)).p = i_n
-        // Otherwise perform opdate on an inner node
+        // Otherwise perform <b>update</b> on an inner node
         <b>else</b> v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_c).p = i_n;
 }
 </code></pre>

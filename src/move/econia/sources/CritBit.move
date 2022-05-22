@@ -1239,11 +1239,15 @@ module Econia::CritBit {
 
     /// Return the value corresponding to key `k` in tree `cb` having
     /// `n_o` keys and destroy the outer node where it was stored, for
-    /// the general case of a tree taller than a height of one. Abort if
-    /// `k` not in `cb`. Here, the parent of the popped node must be
-    /// removed, and the grandparent of the popped node must be updated
-    /// to have as its child the popped node's sibling at the same
-    /// position where the popped node's parent previously was:
+    /// the general case of a tree with more than one outer node. Abort
+    /// if `k` not in `cb`. Here, the parent of the popped node must be
+    /// removed, and if the popped node has a grandparent, the
+    /// grandparent of the popped node must be updated to have as its
+    /// child the popped node's sibling at the same position where the
+    /// popped node's parent previously was, whether the sibling is an
+    /// outer or inner node. Likewise the sibling must be updated to
+    /// have as its parent the grandparent to the popped node. Outer
+    /// node sibling case:
     /// ```
     /// >              2nd <- grandparent
     /// >             /   \
@@ -1258,6 +1262,56 @@ module Econia::CritBit {
     /// >                 /   \
     /// >               001    101 <- sibling
     /// ```
+    /// Inner node sibling case:
+    /// ```
+    /// >              2nd <- grandparent
+    /// >             /   \
+    /// >           001   1st <- parent
+    /// >                /   \
+    /// >   sibling -> 0th   111 <- popped node
+    /// >             /   \
+    /// >           100   101
+    /// >
+    /// >       Pop 111
+    /// >       ------>
+    /// >
+    /// >              2nd <- grandparent
+    /// >             /   \
+    /// >           001   0th <- sibling
+    /// >                /   \
+    /// >              100   101
+    /// ```
+    /// If the popped node does not have a grandparent (if its parent is
+    /// the root node), then the root node must be removed and the
+    /// popped node's sibling must become the new root, whether the
+    /// sibling is an inner or outer node. Likewise the sibling must be
+    /// updated to indicate that it is the root. Inner node sibling
+    /// case:
+    /// ```
+    /// >                     2nd <- parent
+    /// >                    /   \
+    /// >   popped node -> 001   1st <- sibling
+    /// >                       /   \
+    /// >                     101   111
+    /// >
+    /// >       Pop 001
+    /// >       ------>
+    /// >
+    /// >                  1st <- sibling
+    /// >                 /   \
+    /// >               101    111
+    /// ```
+    /// Outer node sibling case:
+    /// ```
+    /// >                     2nd <- parent
+    /// >                    /   \
+    /// >   popped node -> 001   101 <- sibling
+    /// >
+    /// >       Pop 001
+    /// >       ------>
+    /// >
+    /// >                  101 <- sibling
+    /// ```
     fun pop_general<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -1267,32 +1321,41 @@ module Econia::CritBit {
         // its key, and the vector index of its parent
         let (i_c_o, s_c_o, k_c_o, i_c_p, _) = walk_closest_outer(cb, k);
         assert!(k_c_o == k, E_NOT_HAS_K); // Assert key in tree
+        let n_i = v_l<I>(&cb.i); // Get number of inner nodes pre-pop
+        // Borrow immutable reference to popped node's parent
+        let p = v_b<I>(&cb.i, i_c_p);
+        // If popped outer node was a left child, store the right child
+        // field index of its parent as the child field index of the
+        // popped node's sibling. Else flip the direction
+        let i_s = if (s_c_o == L) p.r else p.l;
+        // Get parent field index of parent of popped node
+        let i_p_p = p.p;
+        // Update popped node's sibling to have at its parent index
+        // field the same index as the popped node's parent, whether
+        // the sibling is an inner or outer node
+        if (is_out(i_s)) v_b_m<O<V>>(&mut cb.o, o_v(i_s)).p = i_p_p
+            else v_b_m<I>(&mut cb.i, i_s).p = i_p_p;
+        if (i_p_p == ROOT) { // If popped node's parent is root
+            // Set root field index to index of popped node's sibling
+            cb.r = i_s;
+        } else { // If popped node has a grandparent
+            // Borrow mutable reference to popped node's grandparent
+            let g_p = v_b_m<I>(&mut cb.i, i_p_p);
+            // If popped node's parent was a left child, update popped
+            // node's grandparent to have as its child the popped node's
+            // sibling. Else the right child
+            if (g_p.l == i_c_p) g_p.l = i_s else g_p.r = i_s;
+        };
         // Swap remove popped outer node, storing only its value
         let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_v(i_c_o));
         // If destroyed outer node was not last outer node in vector,
         // repair the parent-child relationship broken by swap remove
         if (o_v(i_c_o) < n_o - 1) stitch_swap_remove(cb, i_c_o, n_o);
-        let n_i = v_l<I>(&cb.i); // Get number of inner nodes pre-pop
-        // Swap remove parent of popped outer node, storing field index
-        // of its parent (grandparent to popped node) and children
-        let I{c: _, p: i_g_p, l, r} = v_s_r<I>(&mut cb.i, i_c_p);
+        // Swap remove parent of popped outer node, storing no fields
+        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, i_c_p);
         // If destroyed inner node was not last inner node in vector,
         // repair the parent-child relationship broken by swap remove
         if (i_c_p < n_i - 1) stitch_swap_remove(cb, i_c_p, n_i);
-        // If popped outer node was a left child, store the right child
-        // field index of its parent as the child field index of the
-        // popped node's sibling, discarding the parent's left child
-        // field index. Else swap the directions
-        let (i_s, _) = if (s_c_o == L) (r, l) else (l, r);
-        // Borrow mutable reference to popped node's grandparent
-        let g_p = v_b_m<I>(&mut cb.i, i_g_p);
-        // If popped node's parent was a left child, update popped
-        // node's grandparent to have as its child the popped node's
-        // sibling. Else the right child
-        if (g_p.l == i_c_p) g_p.l = i_s else g_p.r = i_s;
-        // Update popped node's sibling to have as its parent the popped
-        // node's grandparent
-        v_b_m<O<V>>(&mut cb.o, o_v(i_s)).p = i_g_p;
         v // Return popped value
     }
 
@@ -1322,20 +1385,18 @@ module Econia::CritBit {
         insert(&mut cb, u(b"101"), 8);
         // Insert key 001, generating new inner node marked 2nd, at root
         insert(&mut cb, u(b"001"), 9);
-        /*
         // Assert correct pop value for key 111
         assert!(pop_general(&mut cb, u(b"111"), 3) == 7, 0);
         assert!(cb.r == 0, 1); // Assert root field updated
         let r = v_b<I>(&mut cb.i, 0); // Borrow inner node at root
         // Assert root inner node fields are as expected
-        assert!(r.c == 2 && r.p == ROOT && r.l == o_c(0) && r.l == o_c(1), 2);
+        assert!(r.c == 2 && r.p == ROOT && r.l == o_c(0) && r.r == o_c(1), 2);
         let o_l = v_b<O<u8>>(&mut cb.o, 0); // Borrow outer node on left
         // Assert left outer node fields are as expected
         assert!(o_l.k == u(b"001") && o_l.v == 9 && o_l.p == 0, 3);
         let o_r = v_b<O<u8>>(&mut cb.o, 1); // Borrow outer node on right
         // Assert right outer node fields are as expected
         assert!(o_r.k == u(b"101") && o_r.v == 8 && o_r.p == 0, 4);
-        */
         cb // Return rather than unpack
     }
 

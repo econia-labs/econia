@@ -1400,6 +1400,40 @@ module Econia::CritBit {
         cb // Return rather than unpack
     }
 
+    #[test]
+    /// Variation on `pop_general_success_1`:
+    /// ```
+    /// >                    2nd <- i_i = 2
+    /// >                   /   \
+    /// >      i_i = 1 -> 1st   111 <- o_i = 3
+    /// >                /   \
+    /// >   o_i = 2 -> 001   0th <- i_i = 0
+    /// >                   /   \
+    /// >     o_i = 1 ->  010    011 <- o_i = 0
+    /// >
+    /// >       Pop 001
+    /// >       ------>
+    /// >
+    /// >                    2nd  <- i_i = 1
+    /// >                   /   \
+    /// >      o_i = 0 -> 0th   111 <- o_i = 2
+    /// >                /   \
+    /// >   o_i = 1 -> 010   011 <- o_i = 0
+    /// ```
+    fun pop_general_success_2():
+    CB<u8> {
+        // Initialize singleton with key 011
+        let cb = singleton(u(b"011"), 5);
+        // Insert key 010, generating new inner node with critbit = 0
+        insert(&mut cb, u(b"010"), 6);
+        // Insert key 001, generating new inner node with critbit = 1
+        insert(&mut cb, u(b"001"), 8);
+        // Insert key 111, generating new inner node with critbit = 2
+        insert(&mut cb, u(b"111"), 7);
+        assert!(cb.r == 0, 1);
+        cb // Return rather than unpack
+    }
+
     /// Repair a broken parent-child relationship in `cb` caused by
     /// swap removing, for relocated node now at index indicated by
     /// child field index `i_n`, in vector that contained `n_n` nodes

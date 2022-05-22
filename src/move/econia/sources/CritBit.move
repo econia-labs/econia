@@ -1291,40 +1291,57 @@ module Econia::CritBit {
         i_n: u64,
         n_n: u64
     ) {
-        if (is_out(i_n)) { // If child field index indicates outer node
+        // If child field index indicates relocated outer node
+        if (is_out(i_n)) {
             // Get index of parent to relocated node
             let i_p = v_b<O<V>>(&cb.o, o_v(i_n)).p;
+            // Update parent to reflect relocated node position
             stitch_child_of_parent<V>(cb, i_n, i_p, o_c(n_n - 1));
-        } else { // If child field index indicates inner node
+        } else { // If child field index indicates relocated inner node
             // Borrow mutable reference to it
             let n = v_b<I>(&cb.i, i_n);
-            // Get vector index of node's parent and children
-            let (i_p, i_l, i_r) = (n.p, o_v(n.l), o_v(n.r));
+            // Get field index of node's parent and children
+            let (i_p, i_l, i_r) = (n.p, n.l, n.r);
             // Update children to have relocated node as their parent
-            v_b_m<O<V>>(&mut cb.o, i_l).p = i_n;
-            v_b_m<O<V>>(&mut cb.o, i_r).p = i_n;
-            if (i_p == ROOT) return; // Return if relocated root node
-            // Borrow mutable reference to relocated node's parent
-            let p = v_b_m<I>(&mut cb.i, i_p);
-            // If relocated node was previously left child, update
-            // parent's left child to indicate relocated node's new
-            // position, otherwise do update for right child of parent
-            if (p.l == n_n - 1) p.l = i_n else p.r = i_n;
+            stitch_parent_of_child(cb, i_n, i_l); // Left child
+            stitch_parent_of_child(cb, i_n, i_r); // Right child
+            // If root node relocated, update root field and return
+            if (i_p == ROOT) {cb.r = i_n; return};
+            // Else update parent to reflect relocated node position
+            stitch_child_of_parent<V>(cb, i_n, i_p, n_n - 1);
         }
     }
 
+    /// Update child node at child field index `i_c` in `cb` to reflect
+    /// as its parent an inner node that has be relocated to child field
+    /// index `i_n`
+    fun stitch_parent_of_child<V>(
+        cb: &mut CB<V>,
+        i_n: u64,
+        i_c: u64
+    ) {
+        // If child is an outer node, borrow corresponding node and
+        // update its parent field index to that of relocated node
+        if (is_out(i_c)) v_b_m<O<V>>(&mut cb.o, o_v(i_c)).p = i_n
+            // Otherwise perform opdate on an inner node
+            else v_b_m<I>(&mut cb.i, i_c).p = i_n;
+    }
+
+    /// Update parent node at index `i_p` in `cb` to reflect as its
+    /// child a node that has been relocated from old child field index
+    /// `i_o` to new child field index `i_n`
     fun stitch_child_of_parent<V>(
         cb: &mut CB<V>,
         i_n: u64,
         i_p: u64,
-        i_l: u64
+        i_o: u64
     ) {
         // Borrow mutable reference to parent
         let p = v_b_m<I>(&mut cb.i, i_p);
         // If relocated node was previously left child, update
         // parent's left child to indicate the relocated node's new
         // position, otherwise do update for right child of parent
-        if (p.l == i_l) p.l = i_n else p.r = i_n;
+        if (p.l == i_o) p.l = i_n else p.r = i_n;
     }
 
     #[test]
@@ -1414,18 +1431,53 @@ module Econia::CritBit {
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
         // Swap remove and destruct bogus node
         let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
-        // Stitch broken relationship
+        // Stitch broken relationships
         stitch_swap_remove(&mut cb, 1, 3);
         // Assert parent to relocated node indicates proper child update
         assert!(v_b<I>(&cb.i, 0).r == 1, 0);
         // Assert children to relocated node indicate proper parent
         // update
         assert!(v_b<O<u8>>(&cb.o, 1).p == 1, 1); // Left child
-        assert!(v_b<O<u8>>(&cb.o, 2).p == 1, 1); // Right child
+        assert!(v_b<O<u8>>(&cb.o, 2).p == 1, 2); // Right child
         cb // Return rather than unpack
     }
 
-/*
+    #[test]
+    /// Verify successful stitch for relocated left child inner node.
+    /// `o_i` indicates outer index, `i_i` indicates inner index:
+    /// ```
+    /// >                 i_i = 0 -> 2nd
+    /// >                           /   \
+    /// >  (relocated) i_i = 2 -> 1st    100 <- i_i = 0
+    /// >                        /   \
+    /// >           o_i = 1 -> 001   011 <- o_i = 2
+    /// ```
+    fun stitch_swap_remove_i_l():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append nodes per above tree, including bogus inner node at
+        // vector index 1, which will be swap removed
+        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l:     2 , r: o_c(0)});
+        // Bogus node
+        v_pu_b<I>(&mut cb.i, I{c: 0, p:    0, l:     0 , r:     0 });
+        v_pu_b<I>(&mut cb.i, I{c: 1, p:    0, l: o_c(1), r: o_c(2)});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"100"), v, p: 0});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 2});
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"011"), v, p: 2});
+        // Swap remove and destruct bogus node
+        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
+        // Stitch broken relationships
+        stitch_swap_remove(&mut cb, 1, 3);
+        // Assert parent to relocated node indicates proper child update
+        assert!(v_b<I>(&cb.i, 0).l == 1, 0);
+        // Assert children to relocated node indicate proper parent
+        // update
+        assert!(v_b<O<u8>>(&cb.o, 1).p == 1, 1); // Left child
+        assert!(v_b<O<u8>>(&cb.o, 2).p == 1, 2); // Right child
+        cb // Return rather than unpack
+    }
+
     #[test]
     /// Verify successful stitch for relocated root inner node. `o_i`
     /// indicates outer index, `i_i` indicates inner index:
@@ -1451,17 +1503,16 @@ module Econia::CritBit {
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
         // Swap remove and destruct bogus node
         let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
-        // Stitch broken relationship
+        // Stitch broken relationships
         stitch_swap_remove(&mut cb, 1, 3);
-        // Assert parent to relocated node indicates proper child update
-        assert!(v_b<I>(&cb.i, 0).r == 1, 0);
+        // Assert root field reflects relocated node position
+        assert!(cb.r == 1, 0);
         // Assert children to relocated node indicate proper parent
         // update
-        assert!(v_b<O<u8>>(&cb.o, 1).p == 1, 1); // Left child
-        assert!(v_b<O<u8>>(&cb.o, 2).p == 1, 1); // Right child
+        assert!(v_b<O<u8>>(&cb.o, 0).p == 1, 1); // Left child
+        assert!(v_b<I>(&cb.i, 0).p == 1, 2); // Right child
         cb // Return rather than unpack
     }
-*/
 
     #[test]
     /// Verify successful pop for popping left outer node:

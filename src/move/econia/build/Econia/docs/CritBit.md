@@ -93,6 +93,9 @@ set, while its right child does have bit 0 set.
 -  [Function `check_len`](#0x1234_CritBit_check_len)
 -  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
 -  [Function `pop_height_one`](#0x1234_CritBit_pop_height_one)
+-  [Function `stitch_swap_remove`](#0x1234_CritBit_stitch_swap_remove)
+-  [Function `stitch_parent_of_child`](#0x1234_CritBit_stitch_parent_of_child)
+-  [Function `stitch_child_of_parent`](#0x1234_CritBit_stitch_child_of_parent)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -132,7 +135,7 @@ Inner node
 <code>p: u64</code>
 </dt>
 <dd>
- Parent node vector index. <code><a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a></code> when node is root,
+ Parent node vector index. <code><a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a></code> when node is root,
  otherwise corresponds to vector index of an inner node.
 </dd>
 <dt>
@@ -191,7 +194,7 @@ Outer node with key <code>k</code> and value <code>v</code>
 <code>p: u64</code>
 </dt>
 <dd>
- Parent node vector index. <code><a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a></code> when node is root,
+ Parent node vector index. <code><a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a></code> when node is root,
  otherwise corresponds to vector index of an inner node.
 </dd>
 </dl>
@@ -381,6 +384,16 @@ Right direction
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_R">R</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_ROOT"></a>
+
+<code>u64</code> bitmask with all bits set, to flag that a node is at root
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>: u64 = 18446744073709551615;
 </code></pre>
 
 
@@ -1050,7 +1063,7 @@ Insert key-value pair <code>k</code> and <code>v</code> into an empty <code>cb</
     v: V
 ) {
     // Push back outer node onto tree's vector of outer nodes
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;{k, v, p: <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a>});
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;{k, v, p: <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>});
     // Set root index field <b>to</b> indicate 0th outer node
     cb.r = <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>;
 }
@@ -1091,7 +1104,7 @@ aborting if <code>k</code> already in <code>cb</code>
     // <b>as</b> right child, otherwise the opposite
     <b>let</b> (l, r) = <b>if</b> (k &gt; n.k) (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(0), <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(1)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(1), <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(0));
     // Push back new inner node <b>with</b> corresponding children
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a>, l, r});
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>, l, r});
     // Update existing outer node <b>to</b> have new inner node <b>as</b> parent
     v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, 0).p = 0;
     // Push back new outer node onto outer node vector
@@ -1308,12 +1321,134 @@ of a tree having height one. Abort if <code>k</code> not in <code>cb</code>
     // Destroy inner node at root
     <b>let</b> <a href="CritBit.md#0x1234_CritBit_I">I</a>{c: _, p: _, l: _, r: _} = v_po_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i);
     // Update kept outer node parent field <b>to</b> indicate it is root
-    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, o_k).p = <a href="CritBit.md#0x1234_CritBit_HI_64">HI_64</a>;
+    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, o_k).p = <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>;
     // Swap remove outer node <b>to</b> destroy, storing only its value
     <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, o_d);
     // Update root index field <b>to</b> indicate kept outer node
     cb.r = <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>;
     v // Return popped value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_stitch_swap_remove"></a>
+
+## Function `stitch_swap_remove`
+
+Repair a broken parent-child relationship in <code>cb</code> caused by
+swap removing, for relocated node now at index indicated by
+child field index <code>i_n</code>, in vector that contained <code>n_n</code> nodes
+before the swap remove (when relocated node was last in vector)
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, i_n: u64, n_n: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    i_n: u64,
+    n_n: u64
+) {
+    // If child field index indicates relocated outer node
+    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_n)) {
+        // Get index of parent <b>to</b> relocated node
+        <b>let</b> i_p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_n)).p;
+        // Update parent <b>to</b> reflect relocated node position
+        <a href="CritBit.md#0x1234_CritBit_stitch_child_of_parent">stitch_child_of_parent</a>&lt;V&gt;(cb, i_n, i_p, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_n - 1));
+    } <b>else</b> { // If child field index indicates relocated inner node
+        // Borrow mutable reference <b>to</b> it
+        <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_n);
+        // Get field index of node's parent and children
+        <b>let</b> (i_p, i_l, i_r) = (n.p, n.l, n.r);
+        // Update children <b>to</b> have relocated node <b>as</b> their parent
+        <a href="CritBit.md#0x1234_CritBit_stitch_parent_of_child">stitch_parent_of_child</a>(cb, i_n, i_l); // Left child
+        <a href="CritBit.md#0x1234_CritBit_stitch_parent_of_child">stitch_parent_of_child</a>(cb, i_n, i_r); // Right child
+        // If root node relocated, <b>update</b> root field and <b>return</b>
+        <b>if</b> (i_p == <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>) {cb.r = i_n; <b>return</b>};
+        // Else <b>update</b> parent <b>to</b> reflect relocated node position
+        <a href="CritBit.md#0x1234_CritBit_stitch_child_of_parent">stitch_child_of_parent</a>&lt;V&gt;(cb, i_n, i_p, n_n - 1);
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_stitch_parent_of_child"></a>
+
+## Function `stitch_parent_of_child`
+
+Update child node at child field index <code>i_c</code> in <code>cb</code> to reflect
+as its parent an inner node that has be relocated to child field
+index <code>i_n</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_stitch_parent_of_child">stitch_parent_of_child</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, i_n: u64, i_c: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_stitch_parent_of_child">stitch_parent_of_child</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    i_n: u64,
+    i_c: u64
+) {
+    // If child is an outer node, borrow corresponding node and
+    // <b>update</b> its parent field index <b>to</b> that of relocated node
+    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_c)) v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c)).p = i_n
+        // Otherwise perform opdate on an inner node
+        <b>else</b> v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_c).p = i_n;
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_stitch_child_of_parent"></a>
+
+## Function `stitch_child_of_parent`
+
+Update parent node at index <code>i_p</code> in <code>cb</code> to reflect as its
+child a node that has been relocated from old child field index
+<code>i_o</code> to new child field index <code>i_n</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_stitch_child_of_parent">stitch_child_of_parent</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, i_n: u64, i_p: u64, i_o: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_stitch_child_of_parent">stitch_child_of_parent</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    i_n: u64,
+    i_p: u64,
+    i_o: u64
+) {
+    // Borrow mutable reference <b>to</b> parent
+    <b>let</b> p = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_p);
+    // If relocated node was previously left child, <b>update</b>
+    // parent's left child <b>to</b> indicate the relocated node's new
+    // position, otherwise do <b>update</b> for right child of parent
+    <b>if</b> (p.l == i_o) p.l = i_n <b>else</b> p.r = i_n;
 }
 </code></pre>
 

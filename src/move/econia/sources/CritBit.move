@@ -960,26 +960,70 @@ module Econia::CritBit {
 
     /// Insert key `k` and value `v` into tree `cb` already having `n_o`
     /// keys for general case where root is an inner node, aborting if
-    /// `k` is already present. Here, the parent to the closest outer
-    /// node must be updated to have as its child the new inner node
-    /// that will also be inserted:
+    /// `k` is already present. First, perform an outer node search and
+    /// identify the critical bit of divergence between the searched
+    /// outer node and `k`. Then walk back up the tree, inserting a new
+    /// inner node at the appropriate position. In the case of inserting
+    /// a new inner node directly above the searched outer node, the
+    /// searched outer node must be updated to have as its parent the
+    /// new inner node, and the search parent node must be updated to
+    /// have as its child the new inner node where the searched outer
+    /// node previously was:
     /// ```
     /// >       2nd
     /// >      /   \
-    /// >    001   1st <- closest parent
+    /// >    001   1st <- search parent
     /// >         /   \
-    /// >       101   111 <- closest outer node
+    /// >       101   111 <- search outer node
     /// >
     /// >       Insert 110
     /// >       --------->
     /// >
     /// >                  2nd
     /// >                 /   \
-    /// >               001   1st <- closest parent
+    /// >               001   1st <- search parent
     /// >                    /   \
     /// >                  101   0th <- new inner node
     /// >                       /   \
-    /// >   new outer node -> 110   111 <- closest outer node
+    /// >   new outer node -> 110   111 <- search outer node
+    /// ```
+    /// In the case of inserting a new inner node above the search
+    /// parent when the search parent is the root, the new inner node
+    /// becomes the root and has as its child the new outer node:
+    /// ```
+    /// >          0th <- search parent
+    /// >         /   \
+    /// >       101   111 <- search outer node
+    /// >
+    /// >       Insert 011
+    /// >       --------->
+    /// >
+    /// >                         2nd <- new inner node
+    /// >                        /   \
+    /// >    new outer node -> 011   0th <- search parent
+    /// >                           /   \
+    /// >                         101   111 <- search outer node
+    /// ```
+    /// In the case of inserting a new inner node above the search
+    /// parent when the search parent is not the root:
+    /// ```
+    /// >
+    /// >           2nd
+    /// >          /   \
+    /// >        011   0th <- search parent
+    /// >             /   \
+    /// >           101   111 <- search outer node
+    /// >
+    /// >       Insert 100
+    /// >       --------->
+    /// >
+    /// >                       2nd
+    /// >                      /   \
+    /// >                    001   1st <- new inner node
+    /// >                         /   \
+    /// >     new outer node -> 100   0th <- search parent
+    /// >                            /   \
+    /// >                          110   111 <- search outer node
     /// ```
     fun insert_general<V>(
         cb: &mut CB<V>,

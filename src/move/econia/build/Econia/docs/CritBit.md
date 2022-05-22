@@ -65,39 +65,38 @@ set, while its right child does have bit 0 set.
 ---
 
 
-- [Module `0x1234::CritBit`](#module-0x1234critbit)
-  - [Struct `I`](#struct-i)
-  - [Struct `O`](#struct-o)
-  - [Struct `CB`](#struct-cb)
-  - [Constants](#constants)
-  - [Function `crit_bit`](#function-crit_bit)
-  - [Function `is_set`](#function-is_set)
-  - [Function `is_out`](#function-is_out)
-  - [Function `o_v`](#function-o_v)
-  - [Function `o_c`](#function-o_c)
-  - [Function `b_lo`](#function-b_lo)
-  - [Function `empty`](#function-empty)
-  - [Function `singleton`](#function-singleton)
-  - [Function `destroy_empty`](#function-destroy_empty)
-  - [Function `is_empty`](#function-is_empty)
-  - [Function `length`](#function-length)
-  - [Function `b_c_o`](#function-b_c_o)
-  - [Function `b_c_o_m`](#function-b_c_o_m)
-  - [Function `borrow`](#function-borrow)
-  - [Function `borrow_mut`](#function-borrow_mut)
-  - [Function `has_key`](#function-has_key)
-  - [Function `search_outer`](#function-search_outer)
-  - [Function `insert_empty`](#function-insert_empty)
-  - [Function `insert_singleton`](#function-insert_singleton)
-  - [Function `insert_general`](#function-insert_general)
-  - [Function `insert`](#function-insert)
-  - [Function `check_len`](#function-check_len)
-  - [Function `pop_singleton`](#function-pop_singleton)
-  - [Function `pop_height_one`](#function-pop_height_one)
-  - [Function `pop_general`](#function-pop_general)
-  - [Function `stitch_swap_remove`](#function-stitch_swap_remove)
-  - [Function `stitch_parent_of_child`](#function-stitch_parent_of_child)
-  - [Function `stitch_child_of_parent`](#function-stitch_child_of_parent)
+-  [Struct `I`](#0x1234_CritBit_I)
+-  [Struct `O`](#0x1234_CritBit_O)
+-  [Struct `CB`](#0x1234_CritBit_CB)
+-  [Constants](#@Constants_0)
+-  [Function `crit_bit`](#0x1234_CritBit_crit_bit)
+-  [Function `is_set`](#0x1234_CritBit_is_set)
+-  [Function `is_out`](#0x1234_CritBit_is_out)
+-  [Function `o_v`](#0x1234_CritBit_o_v)
+-  [Function `o_c`](#0x1234_CritBit_o_c)
+-  [Function `b_lo`](#0x1234_CritBit_b_lo)
+-  [Function `empty`](#0x1234_CritBit_empty)
+-  [Function `singleton`](#0x1234_CritBit_singleton)
+-  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
+-  [Function `is_empty`](#0x1234_CritBit_is_empty)
+-  [Function `length`](#0x1234_CritBit_length)
+-  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
+-  [Function `b_c_o_m`](#0x1234_CritBit_b_c_o_m)
+-  [Function `borrow`](#0x1234_CritBit_borrow)
+-  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
+-  [Function `has_key`](#0x1234_CritBit_has_key)
+-  [Function `search_outer`](#0x1234_CritBit_search_outer)
+-  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
+-  [Function `insert_singleton`](#0x1234_CritBit_insert_singleton)
+-  [Function `insert_general`](#0x1234_CritBit_insert_general)
+-  [Function `insert`](#0x1234_CritBit_insert)
+-  [Function `check_len`](#0x1234_CritBit_check_len)
+-  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
+-  [Function `pop_height_one`](#0x1234_CritBit_pop_height_one)
+-  [Function `pop_general`](#0x1234_CritBit_pop_general)
+-  [Function `stitch_swap_remove`](#0x1234_CritBit_stitch_swap_remove)
+-  [Function `stitch_parent_of_child`](#0x1234_CritBit_stitch_parent_of_child)
+-  [Function `stitch_child_of_parent`](#0x1234_CritBit_stitch_child_of_parent)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -1127,26 +1126,70 @@ aborting if <code>k</code> already in <code>cb</code>
 
 Insert key <code>k</code> and value <code>v</code> into tree <code>cb</code> already having <code>n_o</code>
 keys for general case where root is an inner node, aborting if
-<code>k</code> is already present. Here, the parent to the closest outer
-node must be updated to have as its child the new inner node
-that will also be inserted:
+<code>k</code> is already present. First, perform an outer node search and
+identify the critical bit of divergence between the searched
+outer node and <code>k</code>. Then walk back up the tree, inserting a new
+inner node at the appropriate position. In the case of inserting
+a new inner node directly above the searched outer node, the
+searched outer node must be updated to have as its parent the
+new inner node, and the search parent node must be updated to
+have as its child the new inner node where the searched outer
+node previously was:
 ```
 >       2nd
 >      /   \
->    001   1st <- closest parent
+>    001   1st <- search parent
 >         /   \
->       101   111 <- closest outer node
+>       101   111 <- search outer node
 >
 >       Insert 110
 >       --------->
 >
 >                  2nd
 >                 /   \
->               001   1st <- closest parent
+>               001   1st <- search parent
 >                    /   \
 >                  101   0th <- new inner node
 >                       /   \
->   new outer node -> 110   111 <- closest outer node
+>   new outer node -> 110   111 <- search outer node
+```
+In the case of inserting a new inner node above the search
+parent when the search parent is the root, the new inner node
+becomes the root and has as its child the new outer node:
+```
+>          0th <- search parent
+>         /   \
+>       101   111 <- search outer node
+>
+>       Insert 011
+>       --------->
+>
+>                         2nd <- new inner node
+>                        /   \
+>    new outer node -> 011   0th <- search parent
+>                           /   \
+>                         101   111 <- search outer node
+```
+In the case of inserting a new inner node above the search
+parent when the search parent is not the root:
+```
+>
+>           2nd
+>          /   \
+>        011   0th <- search parent
+>             /   \
+>           101   111 <- search outer node
+>
+>       Insert 100
+>       --------->
+>
+>                       2nd
+>                      /   \
+>                    001   1st <- new inner node
+>                         /   \
+>     new outer node -> 100   0th <- search parent
+>                            /   \
+>                          110   111 <- search outer node
 ```
 
 

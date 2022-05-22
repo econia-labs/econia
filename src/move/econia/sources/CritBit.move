@@ -818,18 +818,19 @@ module Econia::CritBit {
 
 // Membership checks <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-// Walking >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// Searching >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Walk tree `cb` having an inner node as its root, until arriving
-    /// at the node sharing the largest common prefix with key `k`, the
-    /// closest outer node. Then return:
-    /// * `u64`: index of closest outer node (with node type bit flag)
-    /// * `bool`: the side, `L` or `R`, on which the closest outer node
+    /// Walk from root tree `cb` having an inner node as its root,
+    /// branching left or right at each inner node depending on whether
+    /// `k` is unset or set, respectively, at the given critical bit.
+    /// After arriving at an outer node, then return:
+    /// * `u64`: index of searched outer node (with node type bit flag)
+    /// * `bool`: the side, `L` or `R`, on which the searched outer node
     ///    is a child of its parent
-    /// * `u128`: key of closest outer node
-    /// * `u64`: vector index of parent to closest outer node
-    /// * `&mut O<V>`: mutable reference to closest outer node
-    fun walk_closest_outer<V>(
+    /// * `u128`: key of searched outer node
+    /// * `u64`: vector index of parent to searched outer node
+    /// * `&mut O<V>`: mutable reference to searched outer node
+    fun search_outer<V>(
         cb: &mut CB<V>,
         k: u128
     ): (
@@ -839,24 +840,24 @@ module Econia::CritBit {
         u64,
         &mut O<V>,
     ) {
-        let c_p = v_b<I>(&cb.i, 0); // Initialize closest parent to root
-        loop { // Loop over inner nodes until at closest outer node
+        let s_p = v_b<I>(&cb.i, 0); // Initialize search parent to root
+        loop { // Loop over inner nodes until branching to outer node
             // If key set at critical bit, track field index and side of
             // R child, else L
-            let (i, s) = if (is_set(k, c_p.c)) (c_p.r, R) else (c_p.l, L);
+            let (i, s) = if (is_set(k, s_p.c)) (s_p.r, R) else (s_p.l, L);
             if (is_out(i)) { // If child is outer node
                 // Borrow immutable reference to it
-                let c_o = v_b_m<O<V>>(&mut cb.o, o_v(i));
-                // Return field index of closest outer node, its side as
-                // a child, its key, the vector index of its parent, and
-                // a mutable reference to i
-                return (i, s, c_o.k, c_o.p, c_o)
+                let s_o = v_b_m<O<V>>(&mut cb.o, o_v(i));
+                // Return field index of searched outer node, its side
+                // as a child, its key, the vector index of its parent,
+                // and a mutable reference to it
+                return (i, s, s_o.k, s_o.p, s_o)
             };
-            c_p = v_b<I>(&cb.i, i); // Borrow next inner node
+            s_p = v_b<I>(&cb.i, i); // Search next inner node
         }
     }
 
-// Walking <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// Searching <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 // Insertion >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -988,25 +989,25 @@ module Econia::CritBit {
     ) {
         // Get number of inner nodes in tree (index of new inner node)
         let i_n_i = v_l<I>(&cb.i);
-        // Get field index of closest outer node, its side as a child,
+        // Get field index of searched outer node, its side as a child,
         // its key, the vector index of its parent, and borrow a mutable
         // reference to it
-        let (i_c_o, s_c_o, k_c_o, i_c_p, c_o) = walk_closest_outer(cb, k);
-        assert!(k_c_o != k, E_HAS_K); // Assert key not a duplicate
-        // Set closest outer node to have as its parent new inner node
-        c_o.p = i_n_i;
-        // Borrow mutable reference to closest parent node
-        let c_p = v_b_m<I>(&mut cb.i, i_c_p);
-        // Update closest parent to have as a child the new inner node,
-        // on the same side that the closest outer node was a child at
-        if (s_c_o == L) c_p.l = i_n_i else c_p.r = i_n_i;
-        let c = crit_bit(k_c_o, k); // Get critical bit of divergence
-        // If insertion key less than closest outer key, declare left
+        let (i_s_o, s_s_o, k_s_o, i_s_p, s_o) = search_outer(cb, k);
+        assert!(k_s_o != k, E_HAS_K); // Assert key not a duplicate
+        // Set searched outer node to have as its parent new inner node
+        s_o.p = i_n_i;
+        // Borrow mutable reference to search parent
+        let s_p = v_b_m<I>(&mut cb.i, i_s_p);
+        // Update search parent to have as a child the new inner node,
+        // on the same side that the searched outer node was a child at
+        if (s_s_o == L) s_p.l = i_n_i else s_p.r = i_n_i;
+        let c = crit_bit(k_s_o, k); // Get critical bit of divergence
+        // If insertion key less than searched outer key, declare left
         // child field (for new inner node) as new outer node and right
-        // child field as closest outer node, else flip the positions
-        let (l, r) = if (k < k_c_o) (o_c(n_o), i_c_o) else (i_c_o, o_c(n_o));
-        // Push back new inner node having closest parent as its parent
-        v_pu_b<I>(&mut cb.i, I{c, p: i_c_p, l, r});
+        // child field as searched outer node, else flip the positions
+        let (l, r) = if (k < k_s_o) (o_c(n_o), i_s_o) else (i_s_o, o_c(n_o));
+        // Push back new inner node having search parent as its parent
+        v_pu_b<I>(&mut cb.i, I{c, p: i_s_p, l, r});
         // Push back new outer node having new inner node as parent
         v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
     }
@@ -1317,17 +1318,17 @@ module Econia::CritBit {
         k: u128,
         n_o: u64
     ): V {
-        // Get field index of closest outer node, its side as a child,
+        // Get field index of searched outer node, its side as a child,
         // its key, and the vector index of its parent
-        let (i_c_o, s_c_o, k_c_o, i_c_p, _) = walk_closest_outer(cb, k);
-        assert!(k_c_o == k, E_NOT_HAS_K); // Assert key in tree
+        let (i_s_o, s_s_o, k_s_o, i_s_p, _) = search_outer(cb, k);
+        assert!(k_s_o == k, E_NOT_HAS_K); // Assert key in tree
         let n_i = v_l<I>(&cb.i); // Get number of inner nodes pre-pop
         // Borrow immutable reference to popped node's parent
-        let p = v_b<I>(&cb.i, i_c_p);
+        let p = v_b<I>(&cb.i, i_s_p);
         // If popped outer node was a left child, store the right child
         // field index of its parent as the child field index of the
         // popped node's sibling. Else flip the direction
-        let i_s = if (s_c_o == L) p.r else p.l;
+        let i_s = if (s_s_o == L) p.r else p.l;
         // Get parent field index of parent of popped node
         let i_p_p = p.p;
         // Update popped node's sibling to have at its parent index
@@ -1344,18 +1345,18 @@ module Econia::CritBit {
             // If popped node's parent was a left child, update popped
             // node's grandparent to have as its child the popped node's
             // sibling. Else the right child
-            if (g_p.l == i_c_p) g_p.l = i_s else g_p.r = i_s;
+            if (g_p.l == i_s_p) g_p.l = i_s else g_p.r = i_s;
         };
         // Swap remove popped outer node, storing only its value
-        let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_v(i_c_o));
+        let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_v(i_s_o));
         // If destroyed outer node was not last outer node in vector,
         // repair the parent-child relationship broken by swap remove
-        if (o_v(i_c_o) < n_o - 1) stitch_swap_remove(cb, i_c_o, n_o);
+        if (o_v(i_s_o) < n_o - 1) stitch_swap_remove(cb, i_s_o, n_o);
         // Swap remove parent of popped outer node, storing no fields
-        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, i_c_p);
+        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, i_s_p);
         // If destroyed inner node was not last inner node in vector,
         // repair the parent-child relationship broken by swap remove
-        if (i_c_p < n_i - 1) stitch_swap_remove(cb, i_c_p, n_i);
+        if (i_s_p < n_i - 1) stitch_swap_remove(cb, i_s_p, n_i);
         v // Return popped value
     }
 

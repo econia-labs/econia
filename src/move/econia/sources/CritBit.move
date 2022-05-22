@@ -1237,7 +1237,6 @@ module Econia::CritBit {
         v // Return popped value
     }
 
-/*
     /// Return the value corresponding to key `k` in tree `cb` having
     /// `n_o` keys and destroy the outer node where it was stored, for
     /// the general case of a tree taller than a height of one. Abort if
@@ -1265,22 +1264,80 @@ module Econia::CritBit {
         n_o: u64
     ): V {
         // Get field index of closest outer node, its side as a child,
-        // its key, the vector index of its parent, and borrow a mutable
-        // reference to it
-        let (i_c_o, s_c_o, k_c_o, i_c_p, c_o) = walk_closest_outer(cb, k);
+        // its key, and the vector index of its parent
+        let (i_c_o, s_c_o, k_c_o, i_c_p, _) = walk_closest_outer(cb, k);
         assert!(k_c_o == k, E_NOT_HAS_K); // Assert key in tree
-        // Swap remove outer node to destroy, storing only its value
+        // Swap remove popped outer node, storing only its value
         let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_v(i_c_o));
-        /*
-        May want to upwalk walk_closest outer to not return key?
-        */
         // If destroyed outer node was not last outer node in vector,
         // repair the parent-child relationship broken by swap remove
         if (o_v(i_c_o) < n_o - 1) stitch_swap_remove(cb, i_c_o, n_o);
-        // How handle here if inner node was previously at root?
-        // How to update swap remove?
+        let n_i = v_l<I>(&cb.i); // Get number of inner nodes pre-pop
+        // Swap remove parent of popped outer node, storing field index
+        // of its parent (grandparent to popped node) and children
+        let I{c: _, p: i_g_p, l, r} = v_s_r<I>(&mut cb.i, i_c_p);
+        // If destroyed inner node was not last inner node in vector,
+        // repair the parent-child relationship broken by swap remove
+        if (i_c_p < n_i - 1) stitch_swap_remove(cb, i_c_p, n_i);
+        // If popped outer node was a left child, store the right child
+        // field index of its parent as the child field index of the
+        // popped node's sibling, discarding the parent's left child
+        // field index. Else swap the directions
+        let (i_s, _) = if (s_c_o == L) (r, l) else (l, r);
+        // Borrow mutable reference to popped node's grandparent
+        let g_p = v_b_m<I>(&mut cb.i, i_g_p);
+        // If popped node's parent was a left child, update popped
+        // node's grandparent to have as its child the popped node's
+        // sibling. Else the right child
+        if (g_p.l == i_c_p) g_p.l = i_s else g_p.r = i_s;
+        // Update popped node's sibling to have as its parent the popped
+        // node's grandparent
+        v_b_m<O<V>>(&mut cb.o, o_v(i_s)).p = i_g_p;
+        v // Return popped value
     }
-*/
+
+    #[test]
+    /// Verify correct pop result and node updates, for `o_i` indicating
+    /// outer node vector index and `i_i` indicating inner node vector
+    /// index:
+    /// ```
+    /// >                  2nd <- i_i = 1
+    /// >                 /   \
+    /// >    o_i = 2 -> 001   1st <- i_i = 0
+    /// >                    /   \
+    /// >       o_i = 1 -> 101   111 <- o_i = 0
+    /// >
+    /// >       Pop 111
+    /// >       ------>
+    /// >
+    /// >                  2nd  <- i_i = 0
+    /// >                 /   \
+    /// >    o_i = 0 -> 001   101 <- o_i = 1
+    /// ```
+    fun pop_general_success_1():
+    CB<u8> {
+        // Initialize singleton for node to be popped
+        let cb = singleton(u(b"111"), 7);
+        // Insert sibling, generating inner node marked 1st
+        insert(&mut cb, u(b"101"), 8);
+        // Insert key 001, generating new inner node marked 2nd, at root
+        insert(&mut cb, u(b"001"), 9);
+        /*
+        // Assert correct pop value for key 111
+        assert!(pop_general(&mut cb, u(b"111"), 3) == 7, 0);
+        assert!(cb.r == 0, 1); // Assert root field updated
+        let r = v_b<I>(&mut cb.i, 0); // Borrow inner node at root
+        // Assert root inner node fields are as expected
+        assert!(r.c == 2 && r.p == ROOT && r.l == o_c(0) && r.l == o_c(1), 2);
+        let o_l = v_b<O<u8>>(&mut cb.o, 0); // Borrow outer node on left
+        // Assert left outer node fields are as expected
+        assert!(o_l.k == u(b"001") && o_l.v == 9 && o_l.p == 0, 3);
+        let o_r = v_b<O<u8>>(&mut cb.o, 1); // Borrow outer node on right
+        // Assert right outer node fields are as expected
+        assert!(o_r.k == u(b"101") && o_r.v == 8 && o_r.p == 0, 4);
+        */
+        cb // Return rather than unpack
+    }
 
     /// Repair a broken parent-child relationship in `cb` caused by
     /// swap removing, for relocated node now at index indicated by

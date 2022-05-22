@@ -93,6 +93,7 @@ set, while its right child does have bit 0 set.
 -  [Function `check_len`](#0x1234_CritBit_check_len)
 -  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
 -  [Function `pop_height_one`](#0x1234_CritBit_pop_height_one)
+-  [Function `pop_general`](#0x1234_CritBit_pop_general)
 -  [Function `stitch_swap_remove`](#0x1234_CritBit_stitch_swap_remove)
 -  [Function `stitch_parent_of_child`](#0x1234_CritBit_stitch_parent_of_child)
 -  [Function `stitch_child_of_parent`](#0x1234_CritBit_stitch_child_of_parent)
@@ -1326,6 +1327,85 @@ of a tree having height one. Abort if <code>k</code> not in <code>cb</code>
     <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, o_d);
     // Update root index field <b>to</b> indicate kept outer node
     cb.r = <a href="CritBit.md#0x1234_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0x1234_CritBit_N_TYPE">N_TYPE</a>;
+    v // Return popped value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_pop_general"></a>
+
+## Function `pop_general`
+
+Return the value corresponding to key <code>k</code> in tree <code>cb</code> having
+<code>n_o</code> keys and destroy the outer node where it was stored, for
+the general case of a tree taller than a height of one. Abort if
+<code>k</code> not in <code>cb</code>. Here, the parent of the popped node must be
+removed, and the grandparent of the popped node must be updated
+to have as its child the popped node's sibling at the same
+position where the popped node's parent previously was:
+```
+>              2nd <- grandparent
+>             /   \
+>           001   1st <- parent
+>                /   \
+>   sibling -> 101   111 <- popped node
+>
+>       Pop 111
+>       ------>
+>
+>                  2nd <- grandparent
+>                 /   \
+>               001    101 <- sibling
+```
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_general">pop_general</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, n_o: u64): V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_general">pop_general</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    n_o: u64
+): V {
+    // Get field index of closest outer node, its side <b>as</b> a child,
+    // its key, and the vector index of its parent
+    <b>let</b> (i_c_o, s_c_o, k_c_o, i_c_p, _) = <a href="CritBit.md#0x1234_CritBit_walk_closest_outer">walk_closest_outer</a>(cb, k);
+    <b>assert</b>!(k_c_o == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Assert key in tree
+    // Swap remove popped outer node, storing only its value
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c_o));
+    // If destroyed outer node was not last outer node in vector,
+    // repair the parent-child relationship broken by swap remove
+    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_c_o) &lt; n_o - 1) <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_c_o, n_o);
+    <b>let</b> n_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i); // Get number of inner nodes pre-pop
+    // Swap remove parent of popped outer node, storing field index
+    // of its parent (grandparent <b>to</b> popped node) and children
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_I">I</a>{c: _, p: i_g_p, l, r} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_c_p);
+    // If destroyed inner node was not last inner node in vector,
+    // repair the parent-child relationship broken by swap remove
+    <b>if</b> (i_c_p &lt; n_i - 1) <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_c_p, n_i);
+    // If popped outer node was a left child, store the right child
+    // field index of its parent <b>as</b> the child field index of the
+    // popped node's sibling, discarding the parent's left child
+    // field index. Else swap the directions
+    <b>let</b> (i_s, _) = <b>if</b> (s_c_o == <a href="CritBit.md#0x1234_CritBit_L">L</a>) (r, l) <b>else</b> (l, r);
+    // Borrow mutable reference <b>to</b> popped node's grandparent
+    <b>let</b> g_p = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_g_p);
+    // If popped node's parent was a left child, <b>update</b> popped
+    // node's grandparent <b>to</b> have <b>as</b> its child the popped node's
+    // sibling. Else the right child
+    <b>if</b> (g_p.l == i_c_p) g_p.l = i_s <b>else</b> g_p.r = i_s;
+    // Update popped node's sibling <b>to</b> have <b>as</b> its parent the popped
+    // node's grandparent
+    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_s)).p = i_g_p;
     v // Return popped value
 }
 </code></pre>

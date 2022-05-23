@@ -884,18 +884,15 @@ module Econia::CritBit {
         let n = v_b<O<V>>(&cb.o, 0); // Borrow existing outer node
         assert!(k != n.k, E_HAS_K); // Assert insertion key not in tree
         let c = crit_bit(n.k, k); // Get critical bit between two keys
-        // If insertion key greater than existing key, new inner node at
-        // root should have existing key as left child and insertion key
-        // as right child, otherwise the opposite
-        let (l, r) = if (k > n.k) (o_c(0), o_c(1)) else (o_c(1), o_c(0));
-        // Push back new inner node with corresponding children
-        v_pu_b<I>(&mut cb.i, I{c, p: ROOT, l, r});
+        // Push back new inner and outer nodes, with inner node
+        // indicating that it is root. If insertion key is greater than
+        // singleton key, new inner node should have as its left child
+        // existing outer node and should have as its right child new
+        // outer node
+        push_back_insert_nodes(cb, k, v, 0, c, ROOT, k > n.k, o_c(0), o_c(1));
+        cb.r = 0; // Update tree root field to indicate new inner node
         // Update existing outer node to have new inner node as parent
         v_b_m<O<V>>(&mut cb.o, 0).p = 0;
-        // Push back new outer node onto outer node vector
-        v_pu_b<O<V>>(&mut cb.o, O<V>{k, v, p: 0});
-        // Update tree root field for newly-created inner node
-        cb.r = 0;
     }
 
     #[test]
@@ -963,7 +960,7 @@ module Econia::CritBit {
     /// `k` is already present. First, perform an outer node search and
     /// identify the critical bit of divergence between the search outer
     /// node and `k`. Then, if the critical bit is less than that of the
-    /// search parent:
+    /// search parent (`insert_below()`):
     ///
     /// * Insert a new inner node directly above the search outer node
     /// * Update the search outer node to have as its parent the new
@@ -988,9 +985,9 @@ module Econia::CritBit {
     /// >                       /   \
     /// >   new outer node -> 110   111 <- search outer node
     /// ```
-    /// Otherwise, begin walking back up the tree. If walk arrives at
-    /// the root node, insert a new inner node above the root, updating
-    /// relationships accordingly:
+    /// Otherwise, begin walking back up the tree (`insert_above()`). If
+    /// walk arrives at the root node, insert a new inner node above the
+    /// root, updating associated relationships (`insert_above_root()`):
     /// ```
     /// >          1st
     /// >         /   \
@@ -1011,7 +1008,7 @@ module Econia::CritBit {
     /// ```
     /// Otherwise, if walk arrives at a node indicating a critical bit
     /// larger than that between the insertion key and the search node,
-    /// insert the new inner node below it:
+    /// insert the new inner node below it (`insert_below_walk()`):
     /// ```
     /// >
     /// >           2nd
@@ -1055,7 +1052,19 @@ module Econia::CritBit {
         }
     }
 
-    /// Decomposed case specified in `insert_general`
+    /// Decomposed case specified in `insert_general`, insertion below
+    /// search parent, for parameters:
+    /// * `cb`: Tree to insert into
+    /// * `k` : Key to insert
+    /// * `v` : Value to insert
+    /// * `n_o` : Number of keys (outer nodes) in `cb` pre-insert
+    /// * `i_n_i` : Number of inner nodes in `cb` pre-insert (index of
+    ///   new inner node)
+    /// * `i_s_o`: Field index of search outer node (with bit flag)
+    /// * `s_s_o`: Side on which search outer node is child
+    /// * `k_s_o`: Key of search outer node
+    /// * `i_s_p`: Index of search parent
+    /// * `c`: Critical bit between insertion key and search outer node
     fun insert_below<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -1075,17 +1084,26 @@ module Econia::CritBit {
         if (s_s_o == L) s_p.l = i_n_i else s_p.r = i_n_i;
         // Set search outer node to have new inner node as parent
         v_b_m<O<V>>(&mut cb.o, o_v(i_s_o)).p = i_n_i;
-        // If insertion key less than search outer key, declare left
-        // child field for new inner node as new outer node and right
-        // child field as search outer node, else the opposite
-        let (l, r) = if (k < k_s_o) (o_c(n_o), i_s_o) else (i_s_o, o_c(n_o));
-        // Push back new outer node with new inner node as parent
-        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
-        // Push back new inner node with search parent as parent
-        v_pu_b<I>(&mut cb.i, I{c, p: i_s_p, l, r});
+        // Push back new inner and outer nodes, with inner node having
+        // as its parent the search parent. If insertion key is less
+        // than key of search outer node, new inner node should have as
+        // its left child the new outer node and should have as its
+        // right child the search outer node
+        push_back_insert_nodes(
+            cb, k, v, i_n_i, c, i_s_p, k < k_s_o, o_c(n_o), i_s_o
+        );
     }
 
-    /// Decomposed case specified in `insert_general`
+    /// Decomposed case specified in `insert_general`, walk up tree, for
+    /// parameters:
+    /// * `cb`: Tree to insert into
+    /// * `k` : Key to insert
+    /// * `v` : Value to insert
+    /// * `n_o` : Number of keys (outer nodes) in `cb` pre-insert
+    /// * `i_n_i` : Number of inner nodes in `cb` pre-insert (index of
+    ///   new inner node)
+    /// * `i_s_p`: Index of search parent
+    /// * `c`: Critical bit between insertion key and search outer node
     fun insert_above<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -1105,9 +1123,8 @@ module Econia::CritBit {
                 // Borrow mutable reference to node under review
                 let n_r = v_b_m<I>(&mut cb.i, i_n_r);
                 // If critical bit between insertion key and search
-                // outer node is less than that indicated by node
-                // under review
-                if (c < n_r.c) {
+                // outer node is less than that of node under review
+                if (c < n_r.c) { // If need to insert below
                     // Insert below node under review
                     return insert_below_walk(cb, k, v, n_o, i_n_i, i_n_r, c)
                 } else { // If need to insert above
@@ -1117,7 +1134,15 @@ module Econia::CritBit {
         }
     }
 
-    /// Decomposed case specified in `insert_general`
+    /// Decomposed case specified in `insert_general`, insertion above
+    /// root, for parameters:
+    /// * `cb`: Tree to insert into
+    /// * `k` : Key to insert
+    /// * `v` : Value to insert
+    /// * `n_o` : Number of keys (outer nodes) in `cb` pre-insert
+    /// * `i_n_i` : Number of inner nodes in `cb` pre-insert (index of
+    ///   new inner node)
+    /// * `c`: Critical bit between insertion key and search outer node
     fun insert_above_root<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -1126,21 +1151,31 @@ module Econia::CritBit {
         i_n_i: u64,
         c: u8
     ) {
+        let i_o_r = cb.r; // Get index of old root to insert above
+        // Set old root node to have new inner node as parent
+        v_b_m<I>(&mut cb.i, i_o_r).p = i_n_i;
         // Set root field index to indicate new inner node
         cb.r = i_n_i;
-        // Set old root node to have new inner node as parent
-        v_b_m<I>(&mut cb.i, cb.r).p = i_n_i;
-        // If insertion key is set at critical bit, declare left child
-        // field for new inner node as root node and right child field
-        // as new outer node, else the opposite
-        let (l, r) = if (is_set(k, c)) (cb.r, o_c(n_o)) else (o_c(n_o), cb.r);
-        // Push back new outer node with new inner node as parent
-        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
-        // Push back new root inner node that indicates it is root
-        v_pu_b<I>(&mut cb.i, I{c, p: ROOT, l, r});
+        // Push back new inner and outer nodes, with inner node
+        // indicating that it is root. If insertion key is set at
+        // critical bit, new inner node should have as its left child
+        // the previous root node and should have as its right child
+        // the new outer node
+        push_back_insert_nodes(
+            cb, k, v, i_n_i, c, ROOT, is_set(k, c), i_o_r, o_c(n_o)
+        );
     }
 
-    /// Decomposed case specified in `insert_general`
+    /// Decomposed case specified in `insert_general`, insertion below
+    /// a node encountered during walk, for parameters:
+    /// * `cb`: Tree to insert into
+    /// * `k` : Key to insert
+    /// * `v` : Value to insert
+    /// * `n_o` : Number of keys (outer nodes) in `cb` pre-insert
+    /// * `i_n_i` : Number of inner nodes in `cb` pre-insert (index of
+    ///   new inner node)
+    /// * `i_n_r` : Index of node under review from walk
+    /// * `c`: Critical bit between insertion key and search outer node
     fun insert_below_walk<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -1161,31 +1196,30 @@ module Econia::CritBit {
         if (s_w_c == L) n_r.l = i_n_i else n_r.r = i_n_i;
         // Update walked child to have new inner node as its parent
         v_b_m<I>(&mut cb.i, i_w_c).p = i_n_i;
-        // If insertion key is set at critical bit, declare left child
-        // field for new inner node as walked child of node under review
-        // and right child field as new outer node, else the opposite
-        let (l, r) =
-            if (is_set(k, c)) (i_w_c, o_c(n_o)) else (o_c(n_o), i_w_c);
-        // Push back new outer node with new inner node as parent
-        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
-        // Push back new inner node having node under review as parent
-        v_pu_b<I>(&mut cb.i, I{c, p: i_n_r, l, r});
+        // Push back new inner and outer nodes, with inner node having
+        // as its parent the node under review. If insertion key is set
+        // at critical bit, new inner node should have as its left child
+        // the walked child of the node under review and should have as
+        // its right child the new outer node
+        push_back_insert_nodes(
+            cb, k, v, i_n_i, c, i_n_r, is_set(k, c), i_w_c, o_c(n_o)
+        );
     }
 
     /// Push back a new inner node and outer node into tree `cb`, where
     /// the new outer node should have key `k`, value `v`, and have as
     /// its parent the new inner node at vector index `i_n_i`, which
-    /// should have critical bit `c`, parent field index `i_n_p`, and
-    /// if `i_n_c_c` is `true`, left child field index `c1` and right
-    /// child field index `c2`. If the "inner node child condition" is
-    /// `false`, the polarity of the children should be flipped)
+    /// should have critical bit `c`, parent field index `i_p`, and if
+    /// `i_n_c_c` is `true`, left child field index `c1` and right child
+    /// field index `c2`. If the "inner node child condition" is `false`
+    /// the polarity of the children should be flipped
     fun push_back_insert_nodes<V>(
         cb: &mut CB<V>,
         k: u128,
         v: V,
         i_n_i: u64,
         c: u8,
-        i_n_p: u64,
+        i_p: u64,
         i_n_c_c: bool,
         c1: u64,
         c2: u64,
@@ -1196,7 +1230,7 @@ module Econia::CritBit {
         // Push back new outer node with new inner node as parent
         v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
         // Push back new inner node with specified parent and children
-        v_pu_b<I>(&mut cb.i, I{c, p: i_n_p, l, r});
+        v_pu_b<I>(&mut cb.i, I{c, p: i_p, l, r});
     }
 
     #[test]
@@ -1317,7 +1351,7 @@ module Econia::CritBit {
         // Insert via one of three cases, depending on the length
         if (l == 0) insert_empty(cb, k , v) else
         if (l == 1) insert_singleton(cb, k, v) else
-        insert_general(cb, k , v, l);
+        insert_general(cb, k, v, l);
     }
 
     #[test]

@@ -1106,18 +1106,15 @@ if <code>k</code> already in <code>cb</code>
     <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, 0); // Borrow existing outer node
     <b>assert</b>!(k != n.k, <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>); // Assert insertion key not in tree
     <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(n.k, k); // Get critical bit between two keys
-    // If insertion key greater than existing key, new inner node at
-    // root should have existing key <b>as</b> left child and insertion key
-    // <b>as</b> right child, otherwise the opposite
-    <b>let</b> (l, r) = <b>if</b> (k &gt; n.k) (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(0), <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(1)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(1), <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(0));
-    // Push back new inner node <b>with</b> corresponding children
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>, l, r});
+    // Push back new inner and outer nodes, <b>with</b> inner node
+    // indicating that it is root. If insertion key is greater than
+    // singleton key, new inner node should have <b>as</b> its left child
+    // existing outer node and should have <b>as</b> its right child new
+    // outer node
+    <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>(cb, k, v, 0, c, <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>, k &gt; n.k, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(0), <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(1));
+    cb.r = 0; // Update tree root field <b>to</b> indicate new inner node
     // Update existing outer node <b>to</b> have new inner node <b>as</b> parent
     v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, 0).p = 0;
-    // Push back new outer node onto outer node vector
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;{k, v, p: 0});
-    // Update tree root field for newly-created inner node
-    cb.r = 0;
 }
 </code></pre>
 
@@ -1134,7 +1131,7 @@ keys for general case where root is an inner node, aborting if
 <code>k</code> is already present. First, perform an outer node search and
 identify the critical bit of divergence between the search outer
 node and <code>k</code>. Then, if the critical bit is less than that of the
-search parent:
+search parent (<code><a href="CritBit.md#0x1234_CritBit_insert_below">insert_below</a>()</code>):
 
 * Insert a new inner node directly above the search outer node
 * Update the search outer node to have as its parent the new
@@ -1159,9 +1156,9 @@ node where the search outer node previously was:
 >                       /   \
 >   new outer node -> 110   111 <- search outer node
 ```
-Otherwise, begin walking back up the tree. If walk arrives at
-the root node, insert a new inner node above the root, updating
-relationships accordingly:
+Otherwise, begin walking back up the tree (<code><a href="CritBit.md#0x1234_CritBit_insert_above">insert_above</a>()</code>). If
+walk arrives at the root node, insert a new inner node above the
+root, updating associated relationships (<code><a href="CritBit.md#0x1234_CritBit_insert_above_root">insert_above_root</a>()</code>):
 ```
 >          1st
 >         /   \
@@ -1182,7 +1179,7 @@ relationships accordingly:
 ```
 Otherwise, if walk arrives at a node indicating a critical bit
 larger than that between the insertion key and the search node,
-insert the new inner node below it:
+insert the new inner node below it (<code><a href="CritBit.md#0x1234_CritBit_insert_below_walk">insert_below_walk</a>()</code>):
 ```
 >
 >           2nd
@@ -1246,7 +1243,19 @@ insert the new inner node below it:
 
 ## Function `insert_below`
 
-Decomposed case specified in <code>insert_general</code>
+Decomposed case specified in <code>insert_general</code>, insertion below
+search parent, for parameters:
+* <code>cb</code>: Tree to insert into
+* <code>k</code> : Key to insert
+* <code>v</code> : Value to insert
+* <code>n_o</code> : Number of keys (outer nodes) in <code>cb</code> pre-insert
+* <code>i_n_i</code> : Number of inner nodes in <code>cb</code> pre-insert (index of
+new inner node)
+* <code>i_s_o</code>: Field index of search outer node (with bit flag)
+* <code>s_s_o</code>: Side on which search outer node is child
+* <code>k_s_o</code>: Key of search outer node
+* <code>i_s_p</code>: Index of search parent
+* <code>c</code>: Critical bit between insertion key and search outer node
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_below">insert_below</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, i_s_o: u64, s_s_o: bool, k_s_o: u128, i_s_p: u64, c: u8)
@@ -1277,14 +1286,14 @@ Decomposed case specified in <code>insert_general</code>
     <b>if</b> (s_s_o == <a href="CritBit.md#0x1234_CritBit_L">L</a>) s_p.l = i_n_i <b>else</b> s_p.r = i_n_i;
     // Set search outer node <b>to</b> have new inner node <b>as</b> parent
     v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_s_o)).p = i_n_i;
-    // If insertion key less than search outer key, declare left
-    // child field for new inner node <b>as</b> new outer node and right
-    // child field <b>as</b> search outer node, <b>else</b> the opposite
-    <b>let</b> (l, r) = <b>if</b> (k &lt; k_s_o) (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_s_o) <b>else</b> (i_s_o, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o));
-    // Push back new outer node <b>with</b> new inner node <b>as</b> parent
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
-    // Push back new inner node <b>with</b> search parent <b>as</b> parent
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_s_p, l, r});
+    // Push back new inner and outer nodes, <b>with</b> inner node having
+    // <b>as</b> its parent the search parent. If insertion key is less
+    // than key of search outer node, new inner node should have <b>as</b>
+    // its left child the new outer node and should have <b>as</b> its
+    // right child the search outer node
+    <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>(
+        cb, k, v, i_n_i, c, i_s_p, k &lt; k_s_o, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_s_o
+    );
 }
 </code></pre>
 
@@ -1296,7 +1305,16 @@ Decomposed case specified in <code>insert_general</code>
 
 ## Function `insert_above`
 
-Decomposed case specified in <code>insert_general</code>
+Decomposed case specified in <code>insert_general</code>, walk up tree, for
+parameters:
+* <code>cb</code>: Tree to insert into
+* <code>k</code> : Key to insert
+* <code>v</code> : Value to insert
+* <code>n_o</code> : Number of keys (outer nodes) in <code>cb</code> pre-insert
+* <code>i_n_i</code> : Number of inner nodes in <code>cb</code> pre-insert (index of
+new inner node)
+* <code>i_s_p</code>: Index of search parent
+* <code>c</code>: Critical bit between insertion key and search outer node
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_above">insert_above</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, i_s_p: u64, c: u8)
@@ -1327,9 +1345,8 @@ Decomposed case specified in <code>insert_general</code>
             // Borrow mutable reference <b>to</b> node under review
             <b>let</b> n_r = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_n_r);
             // If critical bit between insertion key and search
-            // outer node is less than that indicated by node
-            // under review
-            <b>if</b> (c &lt; n_r.c) {
+            // outer node is less than that of node under review
+            <b>if</b> (c &lt; n_r.c) { // If need <b>to</b> insert below
                 // Insert below node under review
                 <b>return</b> <a href="CritBit.md#0x1234_CritBit_insert_below_walk">insert_below_walk</a>(cb, k, v, n_o, i_n_i, i_n_r, c)
             } <b>else</b> { // If need <b>to</b> insert above
@@ -1348,7 +1365,15 @@ Decomposed case specified in <code>insert_general</code>
 
 ## Function `insert_above_root`
 
-Decomposed case specified in <code>insert_general</code>
+Decomposed case specified in <code>insert_general</code>, insertion above
+root, for parameters:
+* <code>cb</code>: Tree to insert into
+* <code>k</code> : Key to insert
+* <code>v</code> : Value to insert
+* <code>n_o</code> : Number of keys (outer nodes) in <code>cb</code> pre-insert
+* <code>i_n_i</code> : Number of inner nodes in <code>cb</code> pre-insert (index of
+new inner node)
+* <code>c</code>: Critical bit between insertion key and search outer node
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_above_root">insert_above_root</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, c: u8)
@@ -1368,18 +1393,19 @@ Decomposed case specified in <code>insert_general</code>
     i_n_i: u64,
     c: u8
 ) {
+    <b>let</b> i_o_r = cb.r; // Get index of <b>old</b> root <b>to</b> insert above
+    // Set <b>old</b> root node <b>to</b> have new inner node <b>as</b> parent
+    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_o_r).p = i_n_i;
     // Set root field index <b>to</b> indicate new inner node
     cb.r = i_n_i;
-    // Set <b>old</b> root node <b>to</b> have new inner node <b>as</b> parent
-    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, cb.r).p = i_n_i;
-    // If insertion key is set at critical bit, declare left child
-    // field for new inner node <b>as</b> root node and right child field
-    // <b>as</b> new outer node, <b>else</b> the opposite
-    <b>let</b> (l, r) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c)) (cb.r, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), cb.r);
-    // Push back new outer node <b>with</b> new inner node <b>as</b> parent
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
-    // Push back new root inner node that indicates it is root
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>, l, r});
+    // Push back new inner and outer nodes, <b>with</b> inner node
+    // indicating that it is root. If insertion key is set at
+    // critical bit, new inner node should have <b>as</b> its left child
+    // the previous root node and should have <b>as</b> its right child
+    // the new outer node
+    <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>(
+        cb, k, v, i_n_i, c, <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>, <a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c), i_o_r, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o)
+    );
 }
 </code></pre>
 
@@ -1391,7 +1417,16 @@ Decomposed case specified in <code>insert_general</code>
 
 ## Function `insert_below_walk`
 
-Decomposed case specified in <code>insert_general</code>
+Decomposed case specified in <code>insert_general</code>, insertion below
+a node encountered during walk, for parameters:
+* <code>cb</code>: Tree to insert into
+* <code>k</code> : Key to insert
+* <code>v</code> : Value to insert
+* <code>n_o</code> : Number of keys (outer nodes) in <code>cb</code> pre-insert
+* <code>i_n_i</code> : Number of inner nodes in <code>cb</code> pre-insert (index of
+new inner node)
+* <code>i_n_r</code> : Index of node under review from walk
+* <code>c</code>: Critical bit between insertion key and search outer node
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_below_walk">insert_below_walk</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, i_n_r: u64, c: u8)
@@ -1423,15 +1458,14 @@ Decomposed case specified in <code>insert_general</code>
     <b>if</b> (s_w_c == <a href="CritBit.md#0x1234_CritBit_L">L</a>) n_r.l = i_n_i <b>else</b> n_r.r = i_n_i;
     // Update walked child <b>to</b> have new inner node <b>as</b> its parent
     v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_w_c).p = i_n_i;
-    // If insertion key is set at critical bit, declare left child
-    // field for new inner node <b>as</b> walked child of node under review
-    // and right child field <b>as</b> new outer node, <b>else</b> the opposite
-    <b>let</b> (l, r) =
-        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c)) (i_w_c, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_w_c);
-    // Push back new outer node <b>with</b> new inner node <b>as</b> parent
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
-    // Push back new inner node having node under review <b>as</b> parent
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_n_r, l, r});
+    // Push back new inner and outer nodes, <b>with</b> inner node having
+    // <b>as</b> its parent the node under review. If insertion key is set
+    // at critical bit, new inner node should have <b>as</b> its left child
+    // the walked child of the node under review and should have <b>as</b>
+    // its right child the new outer node
+    <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>(
+        cb, k, v, i_n_i, c, i_n_r, <a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c), i_w_c, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o)
+    );
 }
 </code></pre>
 
@@ -1446,13 +1480,13 @@ Decomposed case specified in <code>insert_general</code>
 Push back a new inner node and outer node into tree <code>cb</code>, where
 the new outer node should have key <code>k</code>, value <code>v</code>, and have as
 its parent the new inner node at vector index <code>i_n_i</code>, which
-should have critical bit <code>c</code>, parent field index <code>i_n_p</code>, and
-if <code>i_n_c_c</code> is <code><b>true</b></code>, left child field index <code>c1</code> and right
-child field index <code>c2</code>. If the "inner node child condition" is
-<code><b>false</b></code>, the polarity of the children should be flipped)
+should have critical bit <code>c</code>, parent field index <code>i_p</code>, and if
+<code>i_n_c_c</code> is <code><b>true</b></code>, left child field index <code>c1</code> and right child
+field index <code>c2</code>. If the "inner node child condition" is <code><b>false</b></code>
+the polarity of the children should be flipped
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, i_n_i: u64, c: u8, i_n_p: u64, i_n_c_c: bool, c1: u64, c2: u64)
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, i_n_i: u64, c: u8, i_p: u64, i_n_c_c: bool, c1: u64, c2: u64)
 </code></pre>
 
 
@@ -1467,7 +1501,7 @@ child field index <code>c2</code>. If the "inner node child condition" is
     v: V,
     i_n_i: u64,
     c: u8,
-    i_n_p: u64,
+    i_p: u64,
     i_n_c_c: bool,
     c1: u64,
     c2: u64,
@@ -1478,7 +1512,7 @@ child field index <code>c2</code>. If the "inner node child condition" is
     // Push back new outer node <b>with</b> new inner node <b>as</b> parent
     v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
     // Push back new inner node <b>with</b> specified parent and children
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_n_p, l, r});
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_p, l, r});
 }
 </code></pre>
 
@@ -1513,7 +1547,7 @@ in <code>cb</code>
     // Insert via one of three cases, depending on the length
     <b>if</b> (l == 0) <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>(cb, k , v) <b>else</b>
     <b>if</b> (l == 1) <a href="CritBit.md#0x1234_CritBit_insert_singleton">insert_singleton</a>(cb, k, v) <b>else</b>
-    <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>(cb, k , v, l);
+    <a href="CritBit.md#0x1234_CritBit_insert_general">insert_general</a>(cb, k, v, l);
 }
 </code></pre>
 

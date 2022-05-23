@@ -825,11 +825,12 @@ module Econia::CritBit {
     /// branching left or right at each inner node depending on whether
     /// `k` is unset or set, respectively, at the given critical bit.
     /// After arriving at an outer node, then return:
-    /// * `u64`: index of searched outer node (with node type bit flag)
-    /// * `bool`: the side, `L` or `R`, on which the searched outer node
+    /// * `u64`: index of search outer node (with node type bit flag)
+    /// * `bool`: the side, `L` or `R`, on which the search outer node
     ///    is a child of its parent
-    /// * `u128`: key of searched outer node
-    /// * `u64`: vector index of parent to searched outer node
+    /// * `u128`: key of search outer node
+    /// * `u64`: vector index of parent of search outer node
+    /// * `u8`: critical bit indicated by parent of search outer node
     fun search_outer<V>(
         cb: &mut CB<V>,
         k: u128
@@ -838,6 +839,7 @@ module Econia::CritBit {
         bool,
         u128,
         u64,
+        u8,
     ) {
         let s_p = v_b<I>(&cb.i, 0); // Initialize search parent to root
         loop { // Loop over inner nodes until branching to outer node
@@ -847,10 +849,10 @@ module Econia::CritBit {
             if (is_out(i)) { // If child is outer node
                 // Borrow immutable reference to it
                 let s_o = v_b_m<O<V>>(&mut cb.o, o_v(i));
-                // Return child field index of searched outer node, its
-                // side as a child, its key, and the vector index of its
-                // parent
-                return (i, s, s_o.k, s_o.p)
+                // Return child field index of search outer node, its
+                // side as a child, its key, the vector index of its
+                // parent, and parent's indicated critical bit
+                return (i, s, s_o.k, s_o.p, s_p.c)
             };
             s_p = v_b<I>(&cb.i, i); // Search next inner node
         }
@@ -1038,82 +1040,163 @@ module Econia::CritBit {
         // Get number of inner nodes in tree (index of new inner node)
         let i_n_i = v_l<I>(&cb.i);
         // Get field index of search outer node, its side as a child,
-        // its key, and the vector index of its parent
-        let (i_s_o, s_s_o, k_s_o, i_s_p) = search_outer(cb, k);
+        // its key, the vector index of its parent, and the critical
+        // bit indicated by the search parent
+        let (i_s_o, s_s_o, k_s_o, i_s_p, s_p_c) = search_outer(cb, k);
         assert!(k_s_o != k, E_HAS_K); // Assert key not a duplicate
-        let c = crit_bit(k_s_o, k); // Get critical bit of divergence
-        // Declare placeholders for other fields in new inner node
-        let (p, l, r): (u64, u64, u64);
+        // Get critical bit between insertion key and search outer node
+        let c = crit_bit(k_s_o, k);
+        // If critical bit is less than that indicated by search parent
+        if (c < s_p_c) {
+            // Insert new inner node below search parent
+            insert_below(cb, k, v, n_o, i_n_i, i_s_o, s_s_o, k_s_o, i_s_p, c);
+        } else { // If need to insert new inner node above search parent
+            insert_above(cb, k, v, n_o, i_n_i, i_s_p, c);
+        }
+    }
+
+    /// Decomposed case specified in `insert_general`
+    fun insert_below<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V,
+        n_o: u64,
+        i_n_i: u64,
+        i_s_o: u64,
+        s_s_o: bool,
+        k_s_o: u128,
+        i_s_p: u64,
+        c: u8
+    ) {
         // Borrow mutable reference to search parent
         let s_p = v_b_m<I>(&mut cb.i, i_s_p);
-        if (c < s_p.c) { // If critical bit is less than that of parent
-            // Update search parent to have new inner node as child,
-            // on same side that the searched outer node was a child at
-            if (s_s_o == L) s_p.l = i_n_i else s_p.r = i_n_i;
-            // If insertion key less than searched outer key, declare l
-            // child field for new inner node as new outer node and r
-            // child field as searched outer node, else flip positions
-            (l, r) = if (k < k_s_o) (o_c(n_o), i_s_o) else (i_s_o, o_c(n_o));
-            // Set new inner node to have search parent as parent
-            p = i_s_p;
-            // Set searched outer node to have new inner node as parent
-            v_b_m<O<V>>(&mut cb.o, o_v(i_s_o)).p = i_n_i;
-        } else { // If need to insert new inner node above search parent
-            // Set index of node under review to search parent's parent
-            let i_n_r = s_p.p;
-            loop { // Loop over inner nodes
-                if (i_n_r == ROOT) { // If walk arrives at root
-                    // If insertion key is set at critical bit, declare
-                    // l child field for new inner node as root node and
-                    // r child field as new outer node, else opposite
-                    (l, r) = if (is_set(k, c)) (cb.r, o_c(n_o))
-                        else (o_c(n_o), cb.r);
-                    // Set root node to have new inner node as parent
-                    v_b_m<I>(&mut cb.i, cb.r).p = i_n_i;
-                    // Set root field index to indicate new inner node
-                    cb.r = i_n_i;
-                    // Set new inner node to indicate it is root
-                    p = ROOT;
-                    break
-                } else { // If walk has not arrived at root
-                    // Borrow mutable reference to node under review
-                    let n_r = v_b_m<I>(&mut cb.i, i_n_r);
-                    // If critical bit between insertion key and search
-                    // outer node is less than that indicated by node
-                    // under review
-                    if (c < n_r.c) { // If need to insert below
-                        // If insertion key is set at critical bit
-                        // indicated by node under review, mark side and
-                        // index of walked child as its r child, else l
-                        let (s_w_c, i_w_c) = if (is_set(k, n_r.c)) (R, n_r.r)
-                            else (L, n_r.l);
-                        // Set node under review to have as child new
-                        // inner node on same side as walked child
-                        if (s_w_c == L) n_r.l = i_n_i else n_r.r = i_n_i;
-                        // If insertion key is set at critical bit,
-                        // declare l child field for new inner node as
-                        // walked child of node under review and r child
-                        // field as new outer node, else the opposite
-                        (l, r) = if (is_set(k, c)) (i_w_c, o_c(n_o))
-                            else (o_c(n_o), i_w_c);
-                        // Set new inner node to have as its parent the
-                        // node under review
-                        p = i_n_r;
-                        // Update walked child to have new inner node as
-                        // its parent
-                        v_b_m<I>(&mut cb.i, i_w_c).p = i_n_i;
-                        break
-                    } else { // If need to insert above
-                        // Review node under review's parent next
-                        i_n_r = n_r.p;
-                    }
-                }
-            }
-        };
+        // Update search parent to have new inner node as child, on same
+        // side that the search outer node was a child at
+        if (s_s_o == L) s_p.l = i_n_i else s_p.r = i_n_i;
+        // Set search outer node to have new inner node as parent
+        v_b_m<O<V>>(&mut cb.o, o_v(i_s_o)).p = i_n_i;
+        // If insertion key less than search outer key, declare left
+        // child field for new inner node as new outer node and right
+        // child field as search outer node, else the opposite
+        let (l, r) = if (k < k_s_o) (o_c(n_o), i_s_o) else (i_s_o, o_c(n_o));
         // Push back new outer node with new inner node as parent
         v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
-        // Push back new inner node with fields computed above
-        v_pu_b<I>(&mut cb.i, I{c, p, l, r});
+        // Push back new inner node with search parent as parent
+        v_pu_b<I>(&mut cb.i, I{c, p: i_s_p, l, r});
+    }
+
+    /// Decomposed case specified in `insert_general`
+    fun insert_above<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V,
+        n_o: u64,
+        i_n_i: u64,
+        i_s_p: u64,
+        c: u8
+    ) {
+        // Set index of node under review to search parent's parent
+        let i_n_r = v_b<I>(&cb.i, i_s_p).p;
+        loop { // Loop over inner nodes
+            if (i_n_r == ROOT) { // If walk arrives at root
+                // Insert above root
+                return insert_above_root(cb, k, v, n_o, i_n_i, c)
+            } else { // If walk has not arrived at root
+                // Borrow mutable reference to node under review
+                let n_r = v_b_m<I>(&mut cb.i, i_n_r);
+                // If critical bit between insertion key and search
+                // outer node is less than that indicated by node
+                // under review
+                if (c < n_r.c) {
+                    // Insert below node under review
+                    return insert_below_walk(cb, k, v, n_o, i_n_i, i_n_r, c)
+                } else { // If need to insert above
+                    i_n_r = n_r.p; // Review node under review's parent
+                }
+            }
+        }
+    }
+
+    /// Decomposed case specified in `insert_general`
+    fun insert_above_root<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V,
+        n_o: u64,
+        i_n_i: u64,
+        c: u8
+    ) {
+        // Set root field index to indicate new inner node
+        cb.r = i_n_i;
+        // Set old root node to have new inner node as parent
+        v_b_m<I>(&mut cb.i, cb.r).p = i_n_i;
+        // If insertion key is set at critical bit, declare left child
+        // field for new inner node as root node and right child field
+        // as new outer node, else the opposite
+        let (l, r) = if (is_set(k, c)) (cb.r, o_c(n_o)) else (o_c(n_o), cb.r);
+        // Push back new outer node with new inner node as parent
+        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
+        // Push back new root inner node that indicates it is root
+        v_pu_b<I>(&mut cb.i, I{c, p: ROOT, l, r});
+    }
+
+    /// Decomposed case specified in `insert_general`
+    fun insert_below_walk<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V,
+        n_o: u64,
+        i_n_i: u64,
+        i_n_r: u64,
+        c: u8
+    ) {
+        // Borrow mutable reference to node under review
+        let n_r = v_b_m<I>(&mut cb.i, i_n_r);
+        // If insertion key is set at critical bit indicated by node
+        // under review, mark side and index of walked child as its
+        // right child, else left
+        let (s_w_c, i_w_c) = if (is_set(k, n_r.c)) (R, n_r.r) else (L, n_r.l);
+        // Set node under review to have as child new inner node on same
+        // side as walked child
+        if (s_w_c == L) n_r.l = i_n_i else n_r.r = i_n_i;
+        // Update walked child to have new inner node as its parent
+        v_b_m<I>(&mut cb.i, i_w_c).p = i_n_i;
+        // If insertion key is set at critical bit, declare left child
+        // field for new inner node as walked child of node under review
+        // and right child field as new outer node, else the opposite
+        let (l, r) =
+            if (is_set(k, c)) (i_w_c, o_c(n_o)) else (o_c(n_o), i_w_c);
+        // Push back new outer node with new inner node as parent
+        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
+        // Push back new inner node having node under review as parent
+        v_pu_b<I>(&mut cb.i, I{c, p: i_n_r, l, r});
+    }
+
+    /// Push back a new inner node and outer node into tree `cb`, where
+    /// the new outer node should have key `k`, value `v`, and have as
+    /// its parent the new inner node at vector index `i_n_i`, which
+    /// should have critical bit `c`, parent field index `i_n_p`, and
+    /// if `i_n_c_c` is `true`, left child field index `c1` and right
+    /// child field index `c2`. If the "inner node child condition" is
+    /// `false`, the polarity of the children should be flipped)
+    fun push_back_insert_nodes<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        v: V,
+        i_n_i: u64,
+        c: u8,
+        i_n_p: u64,
+        i_n_c_c: bool,
+        c1: u64,
+        c2: u64,
+    ) {
+        // If inner node child condition marked true, declare left child
+        // field for new inner node as c1 and right as c2, else flip
+        let (l, r) = if (i_n_c_c) (c1, c2) else (c2, c1);
+        // Push back new outer node with new inner node as parent
+        v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
+        // Push back new inner node with specified parent and children
+        v_pu_b<I>(&mut cb.i, I{c, p: i_n_p, l, r});
     }
 
     #[test]
@@ -1422,9 +1505,9 @@ module Econia::CritBit {
         k: u128,
         n_o: u64
     ): V {
-        // Get field index of searched outer node, its side as a child,
+        // Get field index of search outer node, its side as a child,
         // its key, and the vector index of its parent
-        let (i_s_o, s_s_o, k_s_o, i_s_p) = search_outer(cb, k);
+        let (i_s_o, s_s_o, k_s_o, i_s_p, _) = search_outer(cb, k);
         assert!(k_s_o == k, E_NOT_HAS_K); // Assert key in tree
         let n_i = v_l<I>(&cb.i); // Get number of inner nodes pre-pop
         // Borrow immutable reference to popped node's parent

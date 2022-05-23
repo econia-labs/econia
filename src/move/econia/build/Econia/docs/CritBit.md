@@ -90,6 +90,11 @@ set, while its right child does have bit 0 set.
 -  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
 -  [Function `insert_singleton`](#0x1234_CritBit_insert_singleton)
 -  [Function `insert_general`](#0x1234_CritBit_insert_general)
+-  [Function `insert_below`](#0x1234_CritBit_insert_below)
+-  [Function `insert_above`](#0x1234_CritBit_insert_above)
+-  [Function `insert_above_root`](#0x1234_CritBit_insert_above_root)
+-  [Function `insert_below_walk`](#0x1234_CritBit_insert_below_walk)
+-  [Function `push_back_insert_nodes`](#0x1234_CritBit_push_back_insert_nodes)
 -  [Function `insert`](#0x1234_CritBit_insert)
 -  [Function `check_len`](#0x1234_CritBit_check_len)
 -  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
@@ -995,14 +1000,15 @@ Walk from root tree <code>cb</code> having an inner node as its root,
 branching left or right at each inner node depending on whether
 <code>k</code> is unset or set, respectively, at the given critical bit.
 After arriving at an outer node, then return:
-* <code>u64</code>: index of searched outer node (with node type bit flag)
-* <code>bool</code>: the side, <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> or <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>, on which the searched outer node
+* <code>u64</code>: index of search outer node (with node type bit flag)
+* <code>bool</code>: the side, <code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> or <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>, on which the search outer node
 is a child of its parent
-* <code>u128</code>: key of searched outer node
-* <code>u64</code>: vector index of parent to searched outer node
+* <code>u128</code>: key of search outer node
+* <code>u64</code>: vector index of parent of search outer node
+* <code>u8</code>: critical bit indicated by parent of search outer node
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_search_outer">search_outer</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): (u64, bool, u128, u64)
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_search_outer">search_outer</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): (u64, bool, u128, u64, u8)
 </code></pre>
 
 
@@ -1019,6 +1025,7 @@ is a child of its parent
     bool,
     u128,
     u64,
+    u8,
 ) {
     <b>let</b> s_p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, 0); // Initialize search parent <b>to</b> root
     <b>loop</b> { // Loop over inner nodes until branching <b>to</b> outer node
@@ -1028,10 +1035,10 @@ is a child of its parent
         <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i)) { // If child is outer node
             // Borrow immutable reference <b>to</b> it
             <b>let</b> s_o = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i));
-            // Return child field index of searched outer node, its
-            // side <b>as</b> a child, its key, and the vector index of its
-            // parent
-            <b>return</b> (i, s, s_o.k, s_o.p)
+            // Return child field index of search outer node, its
+            // side <b>as</b> a child, its key, the vector index of its
+            // parent, and parent's indicated critical bit
+            <b>return</b> (i, s, s_o.k, s_o.p, s_p.c)
         };
         s_p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i); // Search next inner node
     }
@@ -1215,82 +1222,263 @@ insert the new inner node below it:
     // Get number of inner nodes in tree (index of new inner node)
     <b>let</b> i_n_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i);
     // Get field index of search outer node, its side <b>as</b> a child,
-    // its key, and the vector index of its parent
-    <b>let</b> (i_s_o, s_s_o, k_s_o, i_s_p) = <a href="CritBit.md#0x1234_CritBit_search_outer">search_outer</a>(cb, k);
+    // its key, the vector index of its parent, and the critical
+    // bit indicated by the search parent
+    <b>let</b> (i_s_o, s_s_o, k_s_o, i_s_p, s_p_c) = <a href="CritBit.md#0x1234_CritBit_search_outer">search_outer</a>(cb, k);
     <b>assert</b>!(k_s_o != k, <a href="CritBit.md#0x1234_CritBit_E_HAS_K">E_HAS_K</a>); // Assert key not a duplicate
-    <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(k_s_o, k); // Get critical bit of divergence
-    // Declare placeholders for other fields in new inner node
-    <b>let</b> (p, l, r): (u64, u64, u64);
+    // Get critical bit between insertion key and search outer node
+    <b>let</b> c = <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(k_s_o, k);
+    // If critical bit is less than that indicated by search parent
+    <b>if</b> (c &lt; s_p_c) {
+        // Insert new inner node below search parent
+        <a href="CritBit.md#0x1234_CritBit_insert_below">insert_below</a>(cb, k, v, n_o, i_n_i, i_s_o, s_s_o, k_s_o, i_s_p, c);
+    } <b>else</b> { // If need <b>to</b> insert new inner node above search parent
+        <a href="CritBit.md#0x1234_CritBit_insert_above">insert_above</a>(cb, k, v, n_o, i_n_i, i_s_p, c);
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_insert_below"></a>
+
+## Function `insert_below`
+
+Decomposed case specified in <code>insert_general</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_below">insert_below</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, i_s_o: u64, s_s_o: bool, k_s_o: u128, i_s_p: u64, c: u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_below">insert_below</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V,
+    n_o: u64,
+    i_n_i: u64,
+    i_s_o: u64,
+    s_s_o: bool,
+    k_s_o: u128,
+    i_s_p: u64,
+    c: u8
+) {
     // Borrow mutable reference <b>to</b> search parent
     <b>let</b> s_p = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_s_p);
-    <b>if</b> (c &lt; s_p.c) { // If critical bit is less than that of parent
-        // Update search parent <b>to</b> have new inner node <b>as</b> child,
-        // on same side that the searched outer node was a child at
-        <b>if</b> (s_s_o == <a href="CritBit.md#0x1234_CritBit_L">L</a>) s_p.l = i_n_i <b>else</b> s_p.r = i_n_i;
-        // If insertion key less than searched outer key, declare l
-        // child field for new inner node <b>as</b> new outer node and r
-        // child field <b>as</b> searched outer node, <b>else</b> flip positions
-        (l, r) = <b>if</b> (k &lt; k_s_o) (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_s_o) <b>else</b> (i_s_o, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o));
-        // Set new inner node <b>to</b> have search parent <b>as</b> parent
-        p = i_s_p;
-        // Set searched outer node <b>to</b> have new inner node <b>as</b> parent
-        v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_s_o)).p = i_n_i;
-    } <b>else</b> { // If need <b>to</b> insert new inner node above search parent
-        // Set index of node under review <b>to</b> search parent's parent
-        <b>let</b> i_n_r = s_p.p;
-        <b>loop</b> { // Loop over inner nodes
-            <b>if</b> (i_n_r == <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>) { // If walk arrives at root
-                // If insertion key is set at critical bit, declare
-                // l child field for new inner node <b>as</b> root node and
-                // r child field <b>as</b> new outer node, <b>else</b> opposite
-                (l, r) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c)) (cb.r, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o))
-                    <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), cb.r);
-                // Set root node <b>to</b> have new inner node <b>as</b> parent
-                v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, cb.r).p = i_n_i;
-                // Set root field index <b>to</b> indicate new inner node
-                cb.r = i_n_i;
-                // Set new inner node <b>to</b> indicate it is root
-                p = <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>;
-                <b>break</b>
-            } <b>else</b> { // If walk <b>has</b> not arrived at root
-                // Borrow mutable reference <b>to</b> node under review
-                <b>let</b> n_r = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_n_r);
-                // If critical bit between insertion key and search
-                // outer node is less than that indicated by node
-                // under review
-                <b>if</b> (c &lt; n_r.c) { // If need <b>to</b> insert below
-                    // If insertion key is set at critical bit
-                    // indicated by node under review, mark side and
-                    // index of walked child <b>as</b> its r child, <b>else</b> l
-                    <b>let</b> (s_w_c, i_w_c) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, n_r.c)) (<a href="CritBit.md#0x1234_CritBit_R">R</a>, n_r.r)
-                        <b>else</b> (<a href="CritBit.md#0x1234_CritBit_L">L</a>, n_r.l);
-                    // Set node under review <b>to</b> have <b>as</b> child new
-                    // inner node on same side <b>as</b> walked child
-                    <b>if</b> (s_w_c == <a href="CritBit.md#0x1234_CritBit_L">L</a>) n_r.l = i_n_i <b>else</b> n_r.r = i_n_i;
-                    // If insertion key is set at critical bit,
-                    // declare l child field for new inner node <b>as</b>
-                    // walked child of node under review and r child
-                    // field <b>as</b> new outer node, <b>else</b> the opposite
-                    (l, r) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c)) (i_w_c, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o))
-                        <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_w_c);
-                    // Set new inner node <b>to</b> have <b>as</b> its parent the
-                    // node under review
-                    p = i_n_r;
-                    // Update walked child <b>to</b> have new inner node <b>as</b>
-                    // its parent
-                    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_w_c).p = i_n_i;
-                    <b>break</b>
-                } <b>else</b> { // If need <b>to</b> insert above
-                    // Review node under review's parent next
-                    i_n_r = n_r.p;
-                }
-            }
-        }
-    };
+    // Update search parent <b>to</b> have new inner node <b>as</b> child, on same
+    // side that the search outer node was a child at
+    <b>if</b> (s_s_o == <a href="CritBit.md#0x1234_CritBit_L">L</a>) s_p.l = i_n_i <b>else</b> s_p.r = i_n_i;
+    // Set search outer node <b>to</b> have new inner node <b>as</b> parent
+    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_s_o)).p = i_n_i;
+    // If insertion key less than search outer key, declare left
+    // child field for new inner node <b>as</b> new outer node and right
+    // child field <b>as</b> search outer node, <b>else</b> the opposite
+    <b>let</b> (l, r) = <b>if</b> (k &lt; k_s_o) (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_s_o) <b>else</b> (i_s_o, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o));
     // Push back new outer node <b>with</b> new inner node <b>as</b> parent
     v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
-    // Push back new inner node <b>with</b> fields computed above
-    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p, l, r});
+    // Push back new inner node <b>with</b> search parent <b>as</b> parent
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_s_p, l, r});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_insert_above"></a>
+
+## Function `insert_above`
+
+Decomposed case specified in <code>insert_general</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_above">insert_above</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, i_s_p: u64, c: u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_above">insert_above</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V,
+    n_o: u64,
+    i_n_i: u64,
+    i_s_p: u64,
+    c: u8
+) {
+    // Set index of node under review <b>to</b> search parent's parent
+    <b>let</b> i_n_r = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_s_p).p;
+    <b>loop</b> { // Loop over inner nodes
+        <b>if</b> (i_n_r == <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>) { // If walk arrives at root
+            // Insert above root
+            <b>return</b> <a href="CritBit.md#0x1234_CritBit_insert_above_root">insert_above_root</a>(cb, k, v, n_o, i_n_i, c)
+        } <b>else</b> { // If walk <b>has</b> not arrived at root
+            // Borrow mutable reference <b>to</b> node under review
+            <b>let</b> n_r = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_n_r);
+            // If critical bit between insertion key and search
+            // outer node is less than that indicated by node
+            // under review
+            <b>if</b> (c &lt; n_r.c) {
+                // Insert below node under review
+                <b>return</b> <a href="CritBit.md#0x1234_CritBit_insert_below_walk">insert_below_walk</a>(cb, k, v, n_o, i_n_i, i_n_r, c)
+            } <b>else</b> { // If need <b>to</b> insert above
+                i_n_r = n_r.p; // Review node under review's parent
+            }
+        }
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_insert_above_root"></a>
+
+## Function `insert_above_root`
+
+Decomposed case specified in <code>insert_general</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_above_root">insert_above_root</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, c: u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_above_root">insert_above_root</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V,
+    n_o: u64,
+    i_n_i: u64,
+    c: u8
+) {
+    // Set root field index <b>to</b> indicate new inner node
+    cb.r = i_n_i;
+    // Set <b>old</b> root node <b>to</b> have new inner node <b>as</b> parent
+    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, cb.r).p = i_n_i;
+    // If insertion key is set at critical bit, declare left child
+    // field for new inner node <b>as</b> root node and right child field
+    // <b>as</b> new outer node, <b>else</b> the opposite
+    <b>let</b> (l, r) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c)) (cb.r, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), cb.r);
+    // Push back new outer node <b>with</b> new inner node <b>as</b> parent
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
+    // Push back new root inner node that indicates it is root
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>, l, r});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_insert_below_walk"></a>
+
+## Function `insert_below_walk`
+
+Decomposed case specified in <code>insert_general</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_below_walk">insert_below_walk</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, n_o: u64, i_n_i: u64, i_n_r: u64, c: u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_insert_below_walk">insert_below_walk</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V,
+    n_o: u64,
+    i_n_i: u64,
+    i_n_r: u64,
+    c: u8
+) {
+    // Borrow mutable reference <b>to</b> node under review
+    <b>let</b> n_r = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_n_r);
+    // If insertion key is set at critical bit indicated by node
+    // under review, mark side and index of walked child <b>as</b> its
+    // right child, <b>else</b> left
+    <b>let</b> (s_w_c, i_w_c) = <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, n_r.c)) (<a href="CritBit.md#0x1234_CritBit_R">R</a>, n_r.r) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_L">L</a>, n_r.l);
+    // Set node under review <b>to</b> have <b>as</b> child new inner node on same
+    // side <b>as</b> walked child
+    <b>if</b> (s_w_c == <a href="CritBit.md#0x1234_CritBit_L">L</a>) n_r.l = i_n_i <b>else</b> n_r.r = i_n_i;
+    // Update walked child <b>to</b> have new inner node <b>as</b> its parent
+    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_w_c).p = i_n_i;
+    // If insertion key is set at critical bit, declare left child
+    // field for new inner node <b>as</b> walked child of node under review
+    // and right child field <b>as</b> new outer node, <b>else</b> the opposite
+    <b>let</b> (l, r) =
+        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, c)) (i_w_c, <a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o)) <b>else</b> (<a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>(n_o), i_w_c);
+    // Push back new outer node <b>with</b> new inner node <b>as</b> parent
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
+    // Push back new inner node having node under review <b>as</b> parent
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_n_r, l, r});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_push_back_insert_nodes"></a>
+
+## Function `push_back_insert_nodes`
+
+Push back a new inner node and outer node into tree <code>cb</code>, where
+the new outer node should have key <code>k</code>, value <code>v</code>, and have as
+its parent the new inner node at vector index <code>i_n_i</code>, which
+should have critical bit <code>c</code>, parent field index <code>i_n_p</code>, and
+if <code>i_n_c_c</code> is <code><b>true</b></code>, left child field index <code>c1</code> and right
+child field index <code>c2</code>. If the "inner node child condition" is
+<code><b>false</b></code>, the polarity of the children should be flipped)
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, v: V, i_n_i: u64, c: u8, i_n_p: u64, i_n_c_c: bool, c1: u64, c2: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_push_back_insert_nodes">push_back_insert_nodes</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    v: V,
+    i_n_i: u64,
+    c: u8,
+    i_n_p: u64,
+    i_n_c_c: bool,
+    c1: u64,
+    c2: u64,
+) {
+    // If inner node child condition marked <b>true</b>, declare left child
+    // field for new inner node <b>as</b> c1 and right <b>as</b> c2, <b>else</b> flip
+    <b>let</b> (l, r) = <b>if</b> (i_n_c_c) (c1, c2) <b>else</b> (c2, c1);
+    // Push back new outer node <b>with</b> new inner node <b>as</b> parent
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_O">O</a>{k, v, p: i_n_i});
+    // Push back new inner node <b>with</b> specified parent and children
+    v_pu_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, <a href="CritBit.md#0x1234_CritBit_I">I</a>{c, p: i_n_p, l, r});
 }
 </code></pre>
 
@@ -1535,9 +1723,9 @@ Outer node sibling case:
     k: u128,
     n_o: u64
 ): V {
-    // Get field index of searched outer node, its side <b>as</b> a child,
+    // Get field index of search outer node, its side <b>as</b> a child,
     // its key, and the vector index of its parent
-    <b>let</b> (i_s_o, s_s_o, k_s_o, i_s_p) = <a href="CritBit.md#0x1234_CritBit_search_outer">search_outer</a>(cb, k);
+    <b>let</b> (i_s_o, s_s_o, k_s_o, i_s_p, _) = <a href="CritBit.md#0x1234_CritBit_search_outer">search_outer</a>(cb, k);
     <b>assert</b>!(k_s_o == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Assert key in tree
     <b>let</b> n_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i); // Get number of inner nodes pre-pop
     // Borrow immutable reference <b>to</b> popped node's parent

@@ -13,6 +13,7 @@
         "bysource",
         "bytestring",
         "conda",
+        "critbit",
         "devnet",
         "docstrings",
         "doctest",

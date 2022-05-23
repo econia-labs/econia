@@ -60,10 +60,16 @@ elif test $1 = cm; then
 elif test $1 = d; then
     move package build --doc
 
+# Watch source code and rebuild documentation if it changes
+elif test $1 = wd; then
+    ls sources/*.move | entr move package build --doc
+
 # Add all and commit
 elif test $1 = ac; then
+    cd ../../../
     git add .
     git commit
+    cd src/move/econia
 
 else
     echo Invalid option

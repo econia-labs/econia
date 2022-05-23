@@ -61,6 +61,7 @@ elif test $1 = d; then
     move package build --doc
 
 # Watch source code and rebuild documentation if it changes
+# May require `brew install entr` beforehand
 elif test $1 = wd; then
     ls sources/*.move | entr move package build --doc
 

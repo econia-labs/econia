@@ -81,8 +81,8 @@ set, while its right child does have bit 0 set.
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `is_empty`](#0x1234_CritBit_is_empty)
 -  [Function `length`](#0x1234_CritBit_length)
--  [Function `b_c_o`](#0x1234_CritBit_b_c_o)
--  [Function `b_c_o_m`](#0x1234_CritBit_b_c_o_m)
+-  [Function `b_s_o`](#0x1234_CritBit_b_s_o)
+-  [Function `b_s_o_m`](#0x1234_CritBit_b_s_o_m)
 -  [Function `borrow`](#0x1234_CritBit_borrow)
 -  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
@@ -818,16 +818,18 @@ Return number of keys in <code>cb</code> (number of outer nodes)
 
 </details>
 
-<a name="0x1234_CritBit_b_c_o"></a>
+<a name="0x1234_CritBit_b_s_o"></a>
 
-## Function `b_c_o`
+## Function `b_s_o`
 
-Return immutable reference to the outer node sharing the largest
-common prefix with <code>k</code> in non-empty tree <code>cb</code>. <code>b_c_o</code> indicates
-"borrow closest outer"
+Walk non-empty tree <code>cb</code>, breaking out if at outer node,
+branching left or right at each inner node depending on whether
+<code>k</code> is unset or set, respectively, at the given critical bit.
+Then return mutable reference to search outer node (<code>b_c_o</code>
+indicates borrow search outer)
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_s_o">b_s_o</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
 </code></pre>
 
 
@@ -836,7 +838,7 @@ common prefix with <code>k</code> in non-empty tree <code>cb</code>. <code>b_c_o
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_s_o">b_s_o</a>&lt;V&gt;(
     cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
     k: u128,
 ): &<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; {
@@ -858,16 +860,14 @@ common prefix with <code>k</code> in non-empty tree <code>cb</code>. <code>b_c_o
 
 </details>
 
-<a name="0x1234_CritBit_b_c_o_m"></a>
+<a name="0x1234_CritBit_b_s_o_m"></a>
 
-## Function `b_c_o_m`
+## Function `b_s_o_m`
 
-Return mutable reference to the outer node sharing the largest
-common prefix with <code>k</code> in non-empty tree <code>cb</code>. <code>b_c_o_m</code>
-indicates "borrow closest outer mutable"
+Like <code><a href="CritBit.md#0x1234_CritBit_b_s_o">b_s_o</a>()</code>, but for mutable reference
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o_m">b_c_o_m</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_s_o_m">b_s_o_m</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128): &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
 </code></pre>
 
 
@@ -876,7 +876,7 @@ indicates "borrow closest outer mutable"
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_c_o_m">b_c_o_m</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_b_s_o_m">b_s_o_m</a>&lt;V&gt;(
     cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
     k: u128,
 ): &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; {
@@ -920,7 +920,7 @@ Return immutable reference to value corresponding to key <code>k</code> in
     k: u128,
 ): &V {
     <b>assert</b>!(!<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb), <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>); // Abort <b>if</b> empty
-    <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k); // Borrow closest outer node
+    <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_s_o">b_s_o</a>&lt;V&gt;(cb, k); // Borrow search outer node
     <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Abort <b>if</b> key not in tree
     &c_o.v // Return immutable reference <b>to</b> corresponding value
 }
@@ -952,7 +952,7 @@ Return mutable reference to value corresponding to key <code>k</code> in
     k: u128,
 ): &<b>mut</b> V {
     <b>assert</b>!(!<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb), <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>); // Abort <b>if</b> empty
-    <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_c_o_m">b_c_o_m</a>&lt;V&gt;(cb, k); // Borrow closest outer node
+    <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_s_o_m">b_s_o_m</a>&lt;V&gt;(cb, k); // Borrow search outer node
     <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Abort <b>if</b> key not in tree
     &<b>mut</b> c_o.v // Return mutable reference <b>to</b> corresponding value
 }
@@ -983,8 +983,8 @@ Return true if <code>cb</code> has key <code>k</code>
     k: u128,
 ): bool {
     <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>&lt;V&gt;(cb)) <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> empty
-    // Return <b>true</b> <b>if</b> closest outer node <b>has</b> same key
-    <b>return</b> <a href="CritBit.md#0x1234_CritBit_b_c_o">b_c_o</a>&lt;V&gt;(cb, k).k == k
+    // Return <b>true</b> <b>if</b> search outer node <b>has</b> same key
+    <b>return</b> <a href="CritBit.md#0x1234_CritBit_b_s_o">b_s_o</a>&lt;V&gt;(cb, k).k == k
 }
 </code></pre>
 

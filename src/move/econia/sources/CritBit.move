@@ -568,10 +568,12 @@ module Econia::CritBit {
 
 // Borrowing >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return immutable reference to the outer node sharing the largest
-    /// common prefix with `k` in non-empty tree `cb`. `b_c_o` indicates
-    /// "borrow closest outer"
-    fun b_c_o<V>(
+    /// Walk non-empty tree `cb`, breaking out if at outer node,
+    /// branching left or right at each inner node depending on whether
+    /// `k` is unset or set, respectively, at the given critical bit.
+    /// Then return mutable reference to search outer node (`b_c_o`
+    /// indicates borrow search outer)
+    fun b_s_o<V>(
         cb: &CB<V>,
         k: u128,
     ): &O<V> {
@@ -588,10 +590,8 @@ module Econia::CritBit {
         }
     }
 
-    /// Return mutable reference to the outer node sharing the largest
-    /// common prefix with `k` in non-empty tree `cb`. `b_c_o_m`
-    /// indicates "borrow closest outer mutable"
-    fun b_c_o_m<V>(
+    /// Like `b_s_o()`, but for mutable reference
+    fun b_s_o_m<V>(
         cb: &mut CB<V>,
         k: u128,
     ): &mut O<V> {
@@ -615,7 +615,7 @@ module Econia::CritBit {
         k: u128,
     ): &V {
         assert!(!is_empty<V>(cb), E_BORROW_EMPTY); // Abort if empty
-        let c_o = b_c_o<V>(cb, k); // Borrow closest outer node
+        let c_o = b_s_o<V>(cb, k); // Borrow search outer node
         assert!(c_o.k == k, E_NOT_HAS_K); // Abort if key not in tree
         &c_o.v // Return immutable reference to corresponding value
     }
@@ -627,7 +627,7 @@ module Econia::CritBit {
         k: u128,
     ): &mut V {
         assert!(!is_empty<V>(cb), E_BORROW_EMPTY); // Abort if empty
-        let c_o = b_c_o_m<V>(cb, k); // Borrow closest outer node
+        let c_o = b_s_o_m<V>(cb, k); // Borrow search outer node
         assert!(c_o.k == k, E_NOT_HAS_K); // Abort if key not in tree
         &mut c_o.v // Return mutable reference to corresponding value
     }
@@ -703,8 +703,8 @@ module Econia::CritBit {
         k: u128,
     ): bool {
         if (is_empty<V>(cb)) return false; // Return false if empty
-        // Return true if closest outer node has same key
-        return b_c_o<V>(cb, k).k == k
+        // Return true if search outer node has same key
+        return b_s_o<V>(cb, k).k == k
     }
 
     #[test]

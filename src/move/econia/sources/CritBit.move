@@ -568,32 +568,6 @@ module Econia::CritBit {
 
 // Borrowing >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /*
-    /// Return immutable reference to either left or right child of
-    /// inner node `n` in `cb` (left if `d` is `L`, right if `d` is `R`)
-    fun b_i_c<V>(
-        cb: &CB<V>,
-        n: &N<V>,
-        d: bool
-    ): &N<V> {
-        if (d == L) v_b<N<V>>(&cb.t, n.l) else v_b<N<V>>(&cb.t, n.r)
-    }
-
-    /// Return mutable reference to the field where an inner node stores
-    /// the index of either its left or right child (left if `d` is `L`,
-    /// right if `d` is `R`). The inner node in question is borrowed by
-    /// dereferencing a reference to the field where its own node index
-    /// is stored, `i_f_r`, ("index field reference")
-    fun b_c_i_f_r<V>(
-        cb: &mut CB<V>,
-        i_f_r: &mut u64,
-        d: bool
-    ): &mut u64 {
-        if (d == L) &mut v_b_m<N<V>>(&mut cb.t, *i_f_r).l else
-            &mut v_b_m<N<V>>(&mut cb.t, *i_f_r).r
-    }
-    */
-
     /// Return immutable reference to the outer node sharing the largest
     /// common prefix with `k` in non-empty tree `cb`. `b_c_o` indicates
     /// "borrow closest outer"
@@ -718,37 +692,6 @@ module Econia::CritBit {
         assert!(*borrow<u8>(&mut cb, 7) == 5, 0); // Unchanged
         cb // Return rather than unpack
     }
-
-    /*
-    /// Return same as `b_c_o`, but also return mutable reference to the
-    /// field that stores the node vector index of the outer node
-    /// sharing the largest common prefix with `k` in `cb` (an "index
-    /// field reference", analagous to a pointer to the closest outer
-    /// node)
-    fun b_c_o_i_f_r<V>(
-        cb: &mut CB<V>,
-        k: u128,
-    ): (
-        &N<V>,
-        &mut u64
-    ) {
-        // Get mutable reference to the field where a node's vector
-        // index is stored ("index field reference"), starting at root
-        let i_f_r = &mut cb.r;
-        let n = v_b<N<V>>(&cb.t, *i_f_r); // Get root node reference
-        while (n.c != OUT) { // While node under review is inner node
-            // Borrow mutable reference to the field that stores the
-            // vector index of the node's L or R child node, depending
-            // on AND result discussed in `b_c_o`
-            i_f_r = b_c_i_f_r<V>(cb, i_f_r, n.s & k == 0);
-            // Get reference to new node under review
-            n = v_b<N<V>>(&cb.t, *i_f_r);
-        }; // Index field reference is now that of closest outer node
-        // Return closest outer node reference, and corresponding index
-        // field reference (analagous to a pointer to the node)
-        (n, i_f_r)
-    }
-    */
 
 // Borrowing <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1234,100 +1177,6 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Verify proper restructuring of tree for inserting key to left of
-    /// new inner node, where new inner node is inserted to right of
-    /// closest parent. `CON` indicates closest outer node, `CP`
-    /// indicates closest parent, `NIN` indicates new inner node, `NON`
-    /// indicates new outer node, `i_i` indicates an inner node's vector
-    /// index, and `o_i` indicates an outer node's vector index:
-    /// ```
-    /// >      i_i = 0 -> 2nd
-    /// >                /   \
-    /// >   o_i = 0 -> 001   1st <- i_i = 1 (CP)
-    /// >                   /   \
-    /// >      o_i = 1 -> 101   111 <- o_i = 2 (CON)
-    /// >
-    /// >                     Insert 110
-    /// >                     --------->
-    /// >
-    /// >      i_i = 0 -> 2nd
-    /// >                /   \
-    /// >   o_i = 0 -> 001   1st <- i_i = 1 (CP)
-    /// >                   /   \
-    /// >      o_i = 1 -> 101   0th <- i_i = 2 (NIN)
-    /// >                      /   \
-    /// >   (NON) o_i = 3 -> 110   111 <- o_i = 2 (CON)
-    /// ```
-    fun insert_general_success_1():
-    CB<u8> {
-        let v = 0; // Ignore values in key-value pairs by setting to 0
-        let cb = empty<u8>(); // Initialize empty tree
-        // Append nodes per above tree, pre-insertion
-        v_pu_b<I>(&mut cb.i, I{c: 2, p: ROOT, l: o_c(0), r:     1 });
-        v_pu_b<I>(&mut cb.i, I{c: 1, p:    0, l: o_c(1), r: o_c(2)});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
-        // Insert new key
-        insert_general<u8>(&mut cb, u(b"110"), v, 3);
-        // Assert closest parent now reflects new inner node as R child
-        assert!(v_b<I>(&cb.i, 1).r == 2, 0);
-        let n_i = v_b<I>(&cb.i, 2); // Borrow new inner node
-        // Assert correct fields for new inner node
-        assert!(
-            n_i.c == 0 && n_i.p == 1 && n_i.l == o_c(3) && n_i.r == o_c(2), 1
-        );
-        let n_o = v_b<O<u8>>(&cb.o, 3); // Borrow new outer node
-        // Assert correct fields for new outer node
-        assert!(n_o.k == u(b"110") && n_o.p == 2, 2);
-        // Assert closest outer node now has new inner node as parent
-        assert!(v_b<O<u8>>(&cb.o, 2).p == 2, 3);
-        cb // Return rather than unpack
-    }
-
-    #[test]
-    /// Like `insert_general_success_1`, but for `NIN` to left of `CP`
-    /// and `NON` to right of `NIN`
-    /// ```
-    /// >       (CP) i_i = 0 -> 1st
-    /// >                      /   \
-    /// >   (CON) o_i = 0 -> 00     10 <- o_i = 1
-    /// >
-    /// >                  Insert 01
-    /// >                  -------->
-    /// >
-    /// >          (CP) i_i = 0 -> 1st
-    /// >                         /   \
-    /// >      (NIN) i_i = 1 -> 0th    10 <- o_i = 1
-    /// >                      /   \
-    /// >   (CON) o_i = 0 -> 00     01 <- o_i = 2 (NON)
-    /// ```
-    fun insert_general_success_2():
-    CB<u8> {
-        let v = 0; // Ignore values in key-value pairs by setting to 0
-        let cb = empty<u8>(); // Initialize empty tree
-        // Append nodes per above tree, pre-insertion
-        v_pu_b<I>(&mut cb.i, I{c: 1, p: ROOT, l: o_c(0), r: o_c(1)});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"00"), v, p: 0});
-        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"10"), v, p: 0});
-        // Insert new key
-        insert_general<u8>(&mut cb, u(b"01"), v, 2);
-        // Assert closest parent now reflects new inner node as L child
-        assert!(v_b<I>(&cb.i, 0).l == 1, 0);
-        let n_i = v_b<I>(&cb.i, 1); // Borrow new inner node
-        // Assert correct fields for new inner node
-        assert!(
-            n_i.c == 0 && n_i.p == 0 && n_i.l == o_c(0) && n_i.r == o_c(2), 1
-        );
-        let n_o = v_b<O<u8>>(&cb.o, 2); // Borrow new outer node
-        // Assert correct fields for new outer node
-        assert!(n_o.k == u(b"01") && n_o.p == 1, 2);
-        // Assert closest outer node now has new inner node as parent
-        assert!(v_b<O<u8>>(&cb.o, 0).p == 1, 3);
-        cb // Return rather than unpack
-    }
-
-    #[test]
     #[expected_failure(abort_code = 2)]
     /// Verify aborts when key already in tree
     fun insert_general_failure():
@@ -1355,20 +1204,140 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Verify correct lookup post-insertion
-    fun insert_success():
+    /// Verify correct node fields for following insertion sequence,
+    /// where `i_i` and `o_i` indicate inner and outer node vector
+    /// indices, respectively:
+    /// ```
+    /// >  Insert 1101    1101 <- o_i = 0    Insert 1000
+    /// >  ---------->                       ---------->
+    /// >
+    /// >                  2nd <- i_i = 0
+    /// >                 /   \                   Insert 1100
+    /// >   o_i = 1 -> 1000    1101 <- o_i = 0    ---------->
+    /// >
+    /// >                  2nd <- i_i = 0
+    /// >                 /   \                   Insert 1110
+    /// >   o_i = 1 -> 1000    0th <- i_i = 1     ---------->
+    /// >                     /   \
+    /// >      o_i = 2 -> 1100     1101 <- o_i = 0
+    /// >
+    /// >                      2nd <- i_i = 0     Insert 0000
+    /// >                     /   \               ---------->
+    /// >      o_i = 1 -> 1000     1st <- i_i = 2
+    /// >                         /   \
+    /// >           i_i = 1 -> 0th     1110 <- o_i = 3
+    /// >                     /   \
+    /// >      o_i = 2 -> 1100     1101 <- o_i = 0
+    /// >
+    /// >                     3rd <- i_i = 3
+    /// >                    /   \
+    /// >     o_i = 4 -> 0000     2nd <- i_i = 0
+    /// >                        /   \
+    /// >         o_i = 1 -> 1000     1st <- i_i = 2
+    /// >                            /   \
+    /// >              i_i = 1 -> 0th     1110 <- o_i = 3
+    /// >                        /   \
+    /// >         o_i = 2 -> 1100     1101 <- o_i = 0
+    /// ```
+    fun insert_success_1():
     CB<u8> {
         let cb = empty(); // Initialize empty tree
         // Insert various key-value pairs
-        insert(&mut cb, 5, 35);
-        insert(&mut cb, 7, 73);
-        insert(&mut cb, 1, 99);
-        insert(&mut cb, 8, 44);
-        // Verify key-value lookup
-        assert!(*borrow(&cb, 8) == 44, 0);
-        assert!(*borrow(&cb, 1) == 99, 1);
-        assert!(*borrow(&cb, 7) == 73, 2);
-        assert!(*borrow(&cb, 5) == 35, 3);
+        insert(&mut cb, u(b"1101"), 0);
+        insert(&mut cb, u(b"1000"), 1);
+        insert(&mut cb, u(b"1100"), 2);
+        insert(&mut cb, u(b"1110"), 3);
+        insert(&mut cb, u(b"0000"), 4);
+        // Verify root field indicates correct inner node
+        assert!(cb.r == 3, 0);
+        // Verify inner node fields in ascending order of vector index
+        let i = v_b<I>(&cb.i, 0);
+        assert!(i.c == 2 && i.p ==    3 && i.l == o_c(1) && i.r ==     2 , 1);
+        let i = v_b<I>(&cb.i, 1);
+        assert!(i.c == 0 && i.p ==    2 && i.l == o_c(2) && i.r == o_c(0), 2);
+        let i = v_b<I>(&cb.i, 2);
+        assert!(i.c == 1 && i.p ==    0 && i.l ==     1  && i.r == o_c(3), 3);
+        let i = v_b<I>(&cb.i, 3);
+        assert!(i.c == 3 && i.p == ROOT && i.l == o_c(4) && i.r ==     0 , 4);
+        // Verify outer node fields in ascending order of vector index
+        let o = v_b<O<u8>>(&cb.o, 0);
+        assert!(o.k == u(b"1101") && o.v == 0 && o.p == 1, 5);
+        let o = v_b<O<u8>>(&cb.o, 1);
+        assert!(o.k == u(b"1000") && o.v == 1 && o.p == 0, 6);
+        let o = v_b<O<u8>>(&cb.o, 2);
+        assert!(o.k == u(b"1100") && o.v == 2 && o.p == 1, 7);
+        let o = v_b<O<u8>>(&cb.o, 3);
+        assert!(o.k == u(b"1110") && o.v == 3 && o.p == 2, 8);
+        let o = v_b<O<u8>>(&cb.o, 4);
+        assert!(o.k == u(b"0000") && o.v == 4 && o.p == 3, 9);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Variation on `insert_success_1()`:
+    /// ```
+    /// >  Insert 0101    0101 <- o_i = 0    Insert 0000
+    /// >  ---------->                       ---------->
+    /// >
+    /// >                  2nd <- i_i = 0
+    /// >                 /   \                   Insert 0001
+    /// >   o_i = 1 -> 0000    0101 <- o_i = 0    ---------->
+    /// >
+    /// >                        2nd <- i_i = 0       Insert 1000
+    /// >                       /   \                 ---------->
+    /// >         i_i = 1 -> 0th     0101 <- o_i = 0
+    /// >                   /   \
+    /// >    o_i = 1 -> 0000     0001 <- o_i = 2
+    /// >
+    /// >                            3rd <- i_i = 2    Insert 0011
+    /// >                           /   \              ---------->
+    /// >             i_i = 0 -> 2nd     1000 <- o_i = 3
+    /// >                       /   \
+    /// >         i_i = 1 -> 0th     0101 <- o_i = 0
+    /// >                   /   \
+    /// >    o_i = 1 -> 0000     0001 <- o_i = 2
+    /// >
+    /// >                                3rd <- i_i = 2
+    /// >                               /   \
+    /// >                 i_i = 0 -> 2nd     1000 <- o_i = 3
+    /// >                           /   \
+    /// >             i_i = 3 -> 1st     0101 <- o_i = 0
+    /// >                       /   \
+    /// >         i_i = 1 -> 0th     0011 <- o_i = 4
+    /// >                   /   \
+    /// >    o_i = 1 -> 0000     0001 <- o_i = 2
+    /// ```
+    fun insert_success_2():
+    CB<u8> {
+        let cb = empty(); // Initialize empty tree
+        // Insert various key-value pairs
+        insert(&mut cb, u(b"0101"), 0);
+        insert(&mut cb, u(b"0000"), 1);
+        insert(&mut cb, u(b"0001"), 2);
+        insert(&mut cb, u(b"1000"), 3);
+        insert(&mut cb, u(b"0011"), 4);
+        // Verify root field indicates correct inner node
+        assert!(cb.r == 2, 0);
+        // Verify inner node fields in ascending order of vector index
+        let i = v_b<I>(&cb.i, 0);
+        assert!(i.c == 2 && i.p ==    2 && i.l ==     3  && i.r == o_c(0), 1);
+        let i = v_b<I>(&cb.i, 1);
+        assert!(i.c == 0 && i.p ==    3 && i.l == o_c(1) && i.r == o_c(2), 2);
+        let i = v_b<I>(&cb.i, 2);
+        assert!(i.c == 3 && i.p == ROOT && i.l ==     0  && i.r == o_c(3), 3);
+        let i = v_b<I>(&cb.i, 3);
+        assert!(i.c == 1 && i.p ==    0 && i.l ==     1  && i.r == o_c(4), 4);
+        // Verify outer node fields in ascending order of vector index
+        let o = v_b<O<u8>>(&cb.o, 0);
+        assert!(o.k == u(b"0101") && o.v == 0 && o.p == 0, 5);
+        let o = v_b<O<u8>>(&cb.o, 1);
+        assert!(o.k == u(b"0000") && o.v == 1 && o.p == 1, 6);
+        let o = v_b<O<u8>>(&cb.o, 2);
+        assert!(o.k == u(b"0001") && o.v == 2 && o.p == 1, 7);
+        let o = v_b<O<u8>>(&cb.o, 3);
+        assert!(o.k == u(b"1000") && o.v == 3 && o.p == 2, 8);
+        let o = v_b<O<u8>>(&cb.o, 4);
+        assert!(o.k == u(b"0011") && o.v == 4 && o.p == 3, 9);
         cb // Return rather than unpack
     }
 
@@ -1623,7 +1592,7 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Variation on `pop_general_success_1`:
+    /// Variation on `pop_general_success_1()`:
     /// ```
     /// >                    2nd <- i_i = 2
     /// >                   /   \

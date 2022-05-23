@@ -1512,17 +1512,54 @@ module Econia::CritBit {
         // its key, and the vector index of its parent
         let (i_s_o, s_s_o, k_s_o, i_s_p, _) = search_outer(cb, k);
         assert!(k_s_o == k, E_NOT_HAS_K); // Assert key in tree
+        // Update sibling, parent, grandparent relationships
+        pop_update_relationships(cb, s_s_o, i_s_p);
+        // Destroy old nodes, returning popped value
+        pop_destroy_nodes(cb, i_s_p, i_s_o, n_o)
+    }
+
+    /// Remove from `cb` inner node at child field index `i_i`, and
+    /// outer node at child field index `i_o` (from node vector with
+    /// `n_o` outer nodes pre-pop). Then return the popped value from
+    /// the outer node
+    fun pop_destroy_nodes<V>(
+        cb: &mut CB<V>,
+        i_i: u64,
+        i_o: u64,
+        n_o: u64
+    ): V {
         let n_i = v_l<I>(&cb.i); // Get number of inner nodes pre-pop
+        // Swap remove parent of popped outer node, storing no fields
+        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, i_i);
+        // If destroyed inner node was not last inner node in vector,
+        // repair the parent-child relationship broken by swap remove
+        if (i_i < n_i - 1) stitch_swap_remove(cb, i_i, n_i);
+        // Swap remove popped outer node, storing only its value
+        let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_v(i_o));
+        // If destroyed outer node was not last outer node in vector,
+        // repair the parent-child relationship broken by swap remove
+        if (o_v(i_o) < n_o - 1) stitch_swap_remove(cb, i_o, n_o);
+        v // Return popped value
+    }
+
+    /// Update relationships in `cb` for popping a node which is a child
+    /// on side `s_c` (`L` or `R`), to parent node at index `i_p`, per
+    /// `pop_general()`
+    fun pop_update_relationships<V>(
+        cb: &mut CB<V>,
+        s_c: bool,
+        i_p: u64,
+    ) {
         // Borrow immutable reference to popped node's parent
-        let p = v_b<I>(&cb.i, i_s_p);
+        let p = v_b<I>(&cb.i, i_p);
         // If popped outer node was a left child, store the right child
         // field index of its parent as the child field index of the
         // popped node's sibling. Else flip the direction
-        let i_s = if (s_s_o == L) p.r else p.l;
-        // Get parent field index of parent of popped node
+        let i_s = if (s_c == L) p.r else p.l;
+        // Get parent field index of popped node's parent
         let i_p_p = p.p;
         // Update popped node's sibling to have at its parent index
-        // field the same index as the popped node's parent, whether
+        // field the same as that of the popped node's parent, whether
         // the sibling is an inner or outer node
         if (is_out(i_s)) v_b_m<O<V>>(&mut cb.o, o_v(i_s)).p = i_p_p
             else v_b_m<I>(&mut cb.i, i_s).p = i_p_p;
@@ -1535,19 +1572,8 @@ module Econia::CritBit {
             // If popped node's parent was a left child, update popped
             // node's grandparent to have as its child the popped node's
             // sibling. Else the right child
-            if (g_p.l == i_s_p) g_p.l = i_s else g_p.r = i_s;
+            if (g_p.l == i_p) g_p.l = i_s else g_p.r = i_s;
         };
-        // Swap remove popped outer node, storing only its value
-        let O{k: _, v, p: _} = v_s_r<O<V>>(&mut cb.o, o_v(i_s_o));
-        // If destroyed outer node was not last outer node in vector,
-        // repair the parent-child relationship broken by swap remove
-        if (o_v(i_s_o) < n_o - 1) stitch_swap_remove(cb, i_s_o, n_o);
-        // Swap remove parent of popped outer node, storing no fields
-        let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, i_s_p);
-        // If destroyed inner node was not last inner node in vector,
-        // repair the parent-child relationship broken by swap remove
-        if (i_s_p < n_i - 1) stitch_swap_remove(cb, i_s_p, n_i);
-        v // Return popped value
     }
 
     #[test]

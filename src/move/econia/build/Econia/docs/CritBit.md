@@ -100,6 +100,8 @@ set, while its right child does have bit 0 set.
 -  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
 -  [Function `pop_height_one`](#0x1234_CritBit_pop_height_one)
 -  [Function `pop_general`](#0x1234_CritBit_pop_general)
+-  [Function `pop_destroy_nodes`](#0x1234_CritBit_pop_destroy_nodes)
+-  [Function `pop_update_relationships`](#0x1234_CritBit_pop_update_relationships)
 -  [Function `stitch_swap_remove`](#0x1234_CritBit_stitch_swap_remove)
 -  [Function `stitch_parent_of_child`](#0x1234_CritBit_stitch_parent_of_child)
 -  [Function `stitch_child_of_parent`](#0x1234_CritBit_stitch_child_of_parent)
@@ -1761,17 +1763,94 @@ Outer node sibling case:
     // its key, and the vector index of its parent
     <b>let</b> (i_s_o, s_s_o, k_s_o, i_s_p, _) = <a href="CritBit.md#0x1234_CritBit_search_outer">search_outer</a>(cb, k);
     <b>assert</b>!(k_s_o == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Assert key in tree
+    // Update sibling, parent, grandparent relationships
+    <a href="CritBit.md#0x1234_CritBit_pop_update_relationships">pop_update_relationships</a>(cb, s_s_o, i_s_p);
+    // Destroy <b>old</b> nodes, returning popped value
+    <a href="CritBit.md#0x1234_CritBit_pop_destroy_nodes">pop_destroy_nodes</a>(cb, i_s_p, i_s_o, n_o)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_pop_destroy_nodes"></a>
+
+## Function `pop_destroy_nodes`
+
+Remove from <code>cb</code> inner node at child field index <code>i_i</code>, and
+outer node at child field index <code>i_o</code> (from node vector with
+<code>n_o</code> outer nodes pre-pop). Then return the popped value from
+the outer node
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_destroy_nodes">pop_destroy_nodes</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, i_i: u64, i_o: u64, n_o: u64): V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_destroy_nodes">pop_destroy_nodes</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    i_i: u64,
+    i_o: u64,
+    n_o: u64
+): V {
     <b>let</b> n_i = v_l&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i); // Get number of inner nodes pre-pop
+    // Swap remove parent of popped outer node, storing no fields
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_I">I</a>{c: _, p: _, l: _, r: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_i);
+    // If destroyed inner node was not last inner node in vector,
+    // repair the parent-child relationship broken by swap remove
+    <b>if</b> (i_i &lt; n_i - 1) <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_i, n_i);
+    // Swap remove popped outer node, storing only its value
+    <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_o));
+    // If destroyed outer node was not last outer node in vector,
+    // repair the parent-child relationship broken by swap remove
+    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_o) &lt; n_o - 1) <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_o, n_o);
+    v // Return popped value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_pop_update_relationships"></a>
+
+## Function `pop_update_relationships`
+
+Update relationships in <code>cb</code> for popping a node which is a child
+on side <code>s_c</code> (<code><a href="CritBit.md#0x1234_CritBit_L">L</a></code> or <code><a href="CritBit.md#0x1234_CritBit_R">R</a></code>), to parent node at index <code>i_p</code>, per
+<code><a href="CritBit.md#0x1234_CritBit_pop_general">pop_general</a>()</code>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_update_relationships">pop_update_relationships</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, s_c: bool, i_p: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_pop_update_relationships">pop_update_relationships</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    s_c: bool,
+    i_p: u64,
+) {
     // Borrow immutable reference <b>to</b> popped node's parent
-    <b>let</b> p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_s_p);
+    <b>let</b> p = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_p);
     // If popped outer node was a left child, store the right child
     // field index of its parent <b>as</b> the child field index of the
     // popped node's sibling. Else flip the direction
-    <b>let</b> i_s = <b>if</b> (s_s_o == <a href="CritBit.md#0x1234_CritBit_L">L</a>) p.r <b>else</b> p.l;
-    // Get parent field index of parent of popped node
+    <b>let</b> i_s = <b>if</b> (s_c == <a href="CritBit.md#0x1234_CritBit_L">L</a>) p.r <b>else</b> p.l;
+    // Get parent field index of popped node's parent
     <b>let</b> i_p_p = p.p;
     // Update popped node's sibling <b>to</b> have at its parent index
-    // field the same index <b>as</b> the popped node's parent, whether
+    // field the same <b>as</b> that of the popped node's parent, whether
     // the sibling is an inner or outer node
     <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_s)) v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_s)).p = i_p_p
         <b>else</b> v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_s).p = i_p_p;
@@ -1784,19 +1863,8 @@ Outer node sibling case:
         // If popped node's parent was a left child, <b>update</b> popped
         // node's grandparent <b>to</b> have <b>as</b> its child the popped node's
         // sibling. Else the right child
-        <b>if</b> (g_p.l == i_s_p) g_p.l = i_s <b>else</b> g_p.r = i_s;
+        <b>if</b> (g_p.l == i_p) g_p.l = i_s <b>else</b> g_p.r = i_s;
     };
-    // Swap remove popped outer node, storing only its value
-    <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_s_o));
-    // If destroyed outer node was not last outer node in vector,
-    // repair the parent-child relationship broken by swap remove
-    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_s_o) &lt; n_o - 1) <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_s_o, n_o);
-    // Swap remove parent of popped outer node, storing no fields
-    <b>let</b> <a href="CritBit.md#0x1234_CritBit_I">I</a>{c: _, p: _, l: _, r: _} = v_s_r&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_s_p);
-    // If destroyed inner node was not last inner node in vector,
-    // repair the parent-child relationship broken by swap remove
-    <b>if</b> (i_s_p &lt; n_i - 1) <a href="CritBit.md#0x1234_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_s_p, n_i);
-    v // Return popped value
 }
 </code></pre>
 

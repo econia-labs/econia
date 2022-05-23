@@ -317,7 +317,7 @@ module Econia::CritBit {
     }
 
     #[test]
-    /// Verify successful determination of critical bit
+    /// Verify successful determination of critical bit at all positions
     fun crit_bit_success() {
         let b = 0; // Start loop for bit 0
         while (b <= MSB_u128) { // Loop over all bit numbers
@@ -830,7 +830,6 @@ module Econia::CritBit {
     ///    is a child of its parent
     /// * `u128`: key of searched outer node
     /// * `u64`: vector index of parent to searched outer node
-    /// * `&mut O<V>`: mutable reference to searched outer node
     fun search_outer<V>(
         cb: &mut CB<V>,
         k: u128
@@ -839,7 +838,6 @@ module Econia::CritBit {
         bool,
         u128,
         u64,
-        &mut O<V>,
     ) {
         let s_p = v_b<I>(&cb.i, 0); // Initialize search parent to root
         loop { // Loop over inner nodes until branching to outer node
@@ -849,10 +847,10 @@ module Econia::CritBit {
             if (is_out(i)) { // If child is outer node
                 // Borrow immutable reference to it
                 let s_o = v_b_m<O<V>>(&mut cb.o, o_v(i));
-                // Return field index of searched outer node, its side
-                // as a child, its key, the vector index of its parent,
-                // and a mutable reference to it
-                return (i, s, s_o.k, s_o.p, s_o)
+                // Return child field index of searched outer node, its
+                // side as a child, its key, and the vector index of its
+                // parent
+                return (i, s, s_o.k, s_o.p)
             };
             s_p = v_b<I>(&cb.i, i); // Search next inner node
         }
@@ -874,9 +872,8 @@ module Econia::CritBit {
         cb.r = OUT << N_TYPE;
     }
 
-    /// Insert key `k` and value `v` into singleton tree `cb`, a special
-    /// case that that requires updating the root field of the tree,
-    /// aborting if `k` already in `cb`
+    /// Insert key `k` and value `v` into singleton tree `cb`, aborting
+    /// if `k` already in `cb`
     fun insert_singleton<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -962,14 +959,15 @@ module Econia::CritBit {
     /// Insert key `k` and value `v` into tree `cb` already having `n_o`
     /// keys for general case where root is an inner node, aborting if
     /// `k` is already present. First, perform an outer node search and
-    /// identify the critical bit of divergence between the searched
-    /// outer node and `k`. Then walk back up the tree, inserting a new
-    /// inner node at the appropriate position. In the case of inserting
-    /// a new inner node directly above the searched outer node, the
-    /// searched outer node must be updated to have as its parent the
-    /// new inner node, and the search parent node must be updated to
-    /// have as its child the new inner node where the searched outer
-    /// node previously was:
+    /// identify the critical bit of divergence between the search outer
+    /// node and `k`. Then, if the critical bit is less than that of the
+    /// search parent:
+    ///
+    /// * Insert a new inner node directly above the search outer node
+    /// * Update the search outer node to have as its parent the new
+    ///   inner node
+    /// * Update the search parent to have as its child the new inner
+    ///   node where the search outer node previously was:
     /// ```
     /// >       2nd
     /// >      /   \
@@ -988,25 +986,30 @@ module Econia::CritBit {
     /// >                       /   \
     /// >   new outer node -> 110   111 <- search outer node
     /// ```
-    /// In the case of inserting a new inner node above the search
-    /// parent when the search parent is the root, the new inner node
-    /// becomes the root and has as its child the new outer node:
+    /// Otherwise, begin walking back up the tree. If walk arrives at
+    /// the root node, insert a new inner node above the root, updating
+    /// relationships accordingly:
     /// ```
-    /// >          0th <- search parent
+    /// >          1st
     /// >         /   \
-    /// >       101   111 <- search outer node
+    /// >       101   0th <- search parent
+    /// >            /   \
+    /// >          110    111 <- search outer node
     /// >
     /// >       Insert 011
     /// >       --------->
     /// >
     /// >                         2nd <- new inner node
     /// >                        /   \
-    /// >    new outer node -> 011   0th <- search parent
+    /// >    new outer node -> 011   1st
     /// >                           /   \
-    /// >                         101   111 <- search outer node
+    /// >                         101   0th <- search parent
+    /// >                              /   \
+    /// >                            110   111 <- search outer node
     /// ```
-    /// In the case of inserting a new inner node above the search
-    /// parent when the search parent is not the root:
+    /// Otherwise, if walk arrives at a node indicating a critical bit
+    /// larger than that between the insertion key and the search node,
+    /// insert the new inner node below it:
     /// ```
     /// >
     /// >           2nd
@@ -1034,27 +1037,83 @@ module Econia::CritBit {
     ) {
         // Get number of inner nodes in tree (index of new inner node)
         let i_n_i = v_l<I>(&cb.i);
-        // Get field index of searched outer node, its side as a child,
-        // its key, the vector index of its parent, and borrow a mutable
-        // reference to it
-        let (i_s_o, s_s_o, k_s_o, i_s_p, s_o) = search_outer(cb, k);
+        // Get field index of search outer node, its side as a child,
+        // its key, and the vector index of its parent
+        let (i_s_o, s_s_o, k_s_o, i_s_p) = search_outer(cb, k);
         assert!(k_s_o != k, E_HAS_K); // Assert key not a duplicate
-        // Set searched outer node to have as its parent new inner node
-        s_o.p = i_n_i;
+        let c = crit_bit(k_s_o, k); // Get critical bit of divergence
+        // Declare placeholders for other fields in new inner node
+        let (p, l, r): (u64, u64, u64);
         // Borrow mutable reference to search parent
         let s_p = v_b_m<I>(&mut cb.i, i_s_p);
-        // Update search parent to have as a child the new inner node,
-        // on the same side that the searched outer node was a child at
-        if (s_s_o == L) s_p.l = i_n_i else s_p.r = i_n_i;
-        let c = crit_bit(k_s_o, k); // Get critical bit of divergence
-        // If insertion key less than searched outer key, declare left
-        // child field (for new inner node) as new outer node and right
-        // child field as searched outer node, else flip the positions
-        let (l, r) = if (k < k_s_o) (o_c(n_o), i_s_o) else (i_s_o, o_c(n_o));
-        // Push back new inner node having search parent as its parent
-        v_pu_b<I>(&mut cb.i, I{c, p: i_s_p, l, r});
-        // Push back new outer node having new inner node as parent
+        if (c < s_p.c) { // If critical bit is less than that of parent
+            // Update search parent to have new inner node as child,
+            // on same side that the searched outer node was a child at
+            if (s_s_o == L) s_p.l = i_n_i else s_p.r = i_n_i;
+            // If insertion key less than searched outer key, declare l
+            // child field for new inner node as new outer node and r
+            // child field as searched outer node, else flip positions
+            (l, r) = if (k < k_s_o) (o_c(n_o), i_s_o) else (i_s_o, o_c(n_o));
+            // Set new inner node to have search parent as parent
+            p = i_s_p;
+            // Set searched outer node to have new inner node as parent
+            v_b_m<O<V>>(&mut cb.o, o_v(i_s_o)).p = i_n_i;
+        } else { // If need to insert new inner node above search parent
+            // Set index of node under review to search parent's parent
+            let i_n_r = s_p.p;
+            loop { // Loop over inner nodes
+                if (i_n_r == ROOT) { // If walk arrives at root
+                    // If insertion key is set at critical bit, declare
+                    // l child field for new inner node as root node and
+                    // r child field as new outer node, else opposite
+                    (l, r) = if (is_set(k, c)) (cb.r, o_c(n_o))
+                        else (o_c(n_o), cb.r);
+                    // Set root node to have new inner node as parent
+                    v_b_m<I>(&mut cb.i, cb.r).p = i_n_i;
+                    // Set root field index to indicate new inner node
+                    cb.r = i_n_i;
+                    // Set new inner node to indicate it is root
+                    p = ROOT;
+                    break
+                } else { // If walk has not arrived at root
+                    // Borrow mutable reference to node under review
+                    let n_r = v_b_m<I>(&mut cb.i, i_n_r);
+                    // If critical bit between insertion key and search
+                    // outer node is less than that indicated by node
+                    // under review
+                    if (c < n_r.c) { // If need to insert below
+                        // If insertion key is set at critical bit
+                        // indicated by node under review, mark side and
+                        // index of walked child as its r child, else l
+                        let (s_w_c, i_w_c) = if (is_set(k, n_r.c)) (R, n_r.r)
+                            else (L, n_r.l);
+                        // Set node under review to have as child new
+                        // inner node on same side as walked child
+                        if (s_w_c == L) n_r.l = i_n_i else n_r.r = i_n_i;
+                        // If insertion key is set at critical bit,
+                        // declare l child field for new inner node as
+                        // walked child of node under review and r child
+                        // field as new outer node, else the opposite
+                        (l, r) = if (is_set(k, c)) (i_w_c, o_c(n_o))
+                            else (o_c(n_o), i_w_c);
+                        // Set new inner node to have as its parent the
+                        // node under review
+                        p = i_n_r;
+                        // Update walked child to have new inner node as
+                        // its parent
+                        v_b_m<I>(&mut cb.i, i_w_c).p = i_n_i;
+                        break
+                    } else { // If need to insert above
+                        // Review node under review's parent next
+                        i_n_r = n_r.p;
+                    }
+                }
+            }
+        };
+        // Push back new outer node with new inner node as parent
         v_pu_b<O<V>>(&mut cb.o, O{k, v, p: i_n_i});
+        // Push back new inner node with fields computed above
+        v_pu_b<I>(&mut cb.i, I{c, p, l, r});
     }
 
     #[test]
@@ -1365,7 +1424,7 @@ module Econia::CritBit {
     ): V {
         // Get field index of searched outer node, its side as a child,
         // its key, and the vector index of its parent
-        let (i_s_o, s_s_o, k_s_o, i_s_p, _) = search_outer(cb, k);
+        let (i_s_o, s_s_o, k_s_o, i_s_p) = search_outer(cb, k);
         assert!(k_s_o == k, E_NOT_HAS_K); // Assert key in tree
         let n_i = v_l<I>(&cb.i); // Get number of inner nodes pre-pop
         // Borrow immutable reference to popped node's parent
@@ -1476,7 +1535,7 @@ module Econia::CritBit {
         insert(&mut cb, u(b"001"), 8);
         // Insert key 111, generating new inner node with critbit = 2
         insert(&mut cb, u(b"111"), 7);
-        assert!(cb.r == 0, 1);
+        assert!(cb.r == 2, 1);
         cb // Return rather than unpack
     }
 

@@ -3,13 +3,18 @@
 
 # Module `0x1234::CritBit`
 
-A crit-bit tree is a compact binary prefix tree, similar to a binary
-search tree, that stores a prefix-free set of bitstrings, like
-n-bit integers or variable-length 0-terminated byte strings. For a
-given set of keys there exists a unique crit-bit tree representing
-the set, hence crit-bit trees do not require complex rebalancing
-algorithms like those of AVL or red-black binary search trees.
-Crit-bit trees support the following operations, quickly:
+
+<a name="@Background_0"></a>
+
+## Background
+
+A critical bit (crit-bit) tree is a compact binary prefix tree,
+similar to a binary search tree, that stores a prefix-free set of
+bitstrings, like n-bit integers or variable-length 0-terminated byte
+strings. For a given set of keys there exists a unique crit-bit tree
+representing the set, hence crit-bit trees do not require complex
+rebalancing algorithms like those of AVL or red-black binary search
+trees. Crit-bit trees support the following operations, quickly:
 
 * Membership testing
 * Insertion
@@ -18,7 +23,11 @@ Crit-bit trees support the following operations, quickly:
 * Successor
 * Iteration
 
-References:
+
+<a name="@References_1"></a>
+
+### References
+
 
 * [Bernstein 2006](https://cr.yp.to/critbit.html)
 * [Langley 2008](
@@ -26,26 +35,41 @@ https://www.imperialviolet.org/2008/09/29/critbit-trees.html)
 * [Langley 2012](https://github.com/agl/critbit)
 * [Tcler's Wiki 2021](https://wiki.tcl-lang.org/page/critbit)
 
+
+<a name="@Implementation_2"></a>
+
+## Implementation
+
+
+
+<a name="@Structure_3"></a>
+
+### Structure
+
+
 The present implementation involves a tree with two types of nodes,
-inner and outer. Inner nodes have two children each, while outer
-nodes have no children. There are no nodes that have exactly one
-child. Outer nodes store a key-value pair with a 128-bit integer as
-a key, and an arbitrary value of generic type. Inner nodes do not
-store a key, but rather, an 8-bit integer indicating the most
-significant critical bit (crit-bit) of divergence between keys
-located within the node's two subtrees: keys in the node's left
-subtree have a 0 at the critical bit, while keys in the node's right
-subtree have a 1 at the critical bit. Bit numbers are 0-indexed
-starting at the least-significant bit (LSB), such that a critical
-bit of 3, for instance, corresponds to a comparison between the
-bitstrings <code>00...00000</code> and <code>00...01111</code>. Inner nodes are arranged
-hierarchically, with the most significant critical bits at the top
-of the tree. For instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code>
-would be stored in a crit-bit tree as follows (right carets included
-at left of illustration per issue with documentation build engine,
-namely, the automatic stripping of leading whitespace in top-level
-module documentation comments, which prohibits the simple initiation
-of monospaced code blocks through indentation by 4 spaces):
+inner (<code><a href="CritBit.md#0x1234_CritBit_I">I</a></code>) and outer (<code><a href="CritBit.md#0x1234_CritBit_O">O</a></code>). Inner nodes have two children each
+(<code><a href="CritBit.md#0x1234_CritBit_I">I</a>.l</code> and <code><a href="CritBit.md#0x1234_CritBit_I">I</a>.r</code>), while outer nodes have no children. There are no
+nodes that have exactly one child. Outer nodes store a key-value
+pair with a 128-bit integer as a key (<code><a href="CritBit.md#0x1234_CritBit_O">O</a>.k</code>), and an arbitrary value
+of generic type (<code><a href="CritBit.md#0x1234_CritBit_O">O</a>.v</code>). Inner nodes do not store a key, but rather,
+an 8-bit integer (<code><a href="CritBit.md#0x1234_CritBit_I">I</a>.c</code>) indicating the most significant critical
+bit (crit-bit) of divergence between keys located within the node's
+two subtrees: keys in the node's left subtree are unset at the
+critical bit, while keys in the node's right subtree are set at the
+critical bit. Both node types have a parent (<code><a href="CritBit.md#0x1234_CritBit_I">I</a>.p</code>, <code><a href="CritBit.md#0x1234_CritBit_O">O</a>.p</code>), which
+may be flagged as <code><a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a></code> if the the node is the root.
+
+Bit numbers are 0-indexed starting at the least-significant bit
+(LSB), such that a critical bit of 3, for instance, corresponds to a
+comparison between <code>00...00000</code> and <code>00...01111</code>. Inner nodes are
+arranged hierarchically, with the most significant critical bits at
+the top of the tree. For instance, the keys <code>001</code>, <code>101</code>, <code>110</code>, and
+<code>111</code> would be stored in a crit-bit tree as follows (right carets
+included at left of illustration per issue with documentation build
+engine, namely, the automatic stripping of leading whitespace in
+documentation comments, which prohibits the simple initiation of
+monospaced code blocks through indentation by 4 spaces):
 ```
 >       2nd
 >      /   \
@@ -58,18 +82,53 @@ of monospaced code blocks through indentation by 4 spaces):
 Here, the inner node marked <code>2nd</code> stores the integer 2, the inner
 node marked <code>1st</code> stores the integer 1, and the inner node marked
 <code>0th</code> stores the integer 0. Hence, the sole key in the left subtree
-of the inner node marked <code>2nd</code> has 0 at bit 2, while all the keys in
-the node's right subtree have 1 at bit 2. And similarly for the
-inner node marked <code>0th</code>, its left child node does not have bit 0
-set, while its right child does have bit 0 set.
+of the inner node marked <code>2nd</code> is unset at bit 2, while all the keys
+in the node's right subtree are set at bit 2. And similarly for the
+inner node marked <code>0th</code>, its left child is unset at bit 0, while its
+right child is set at bit 0.
+
+
+<a name="@Node_indices_4"></a>
+
+### Node indices
+
+
+Both inner nodes (<code><a href="CritBit.md#0x1234_CritBit_I">I</a></code>) and outer nodes (<code><a href="CritBit.md#0x1234_CritBit_O">O</a></code>) are stored in vectors
+(<code><a href="CritBit.md#0x1234_CritBit_CB">CB</a>.i</code> and <code><a href="CritBit.md#0x1234_CritBit_CB">CB</a>.o</code>), and parent-child relationships between nodes
+are described in terms of vector indices: an outer node indicating
+<code>123</code> in its parent field (<code><a href="CritBit.md#0x1234_CritBit_O">O</a>.p</code>), for instance, has as its parent
+an inner node at vector index <code>123</code>. Notably, the vector index of an
+inner node is identical to the number indicated by its child's
+parent field (<code><a href="CritBit.md#0x1234_CritBit_I">I</a>.p</code> or <code><a href="CritBit.md#0x1234_CritBit_O">O</a>.p</code>), but the vector index of an outer node
+is **not** identical to the number indicated by its parent's child
+field (<code><a href="CritBit.md#0x1234_CritBit_I">I</a>.l</code> or <code><a href="CritBit.md#0x1234_CritBit_I">I</a>.r</code>), because the 63rd bit of a so-called "field
+index" (the number stored in a struct field) is reserved for a node
+type bit flag, with outer nodes having bit 63 set and inner nodes
+having bit 63 unset. This schema enables discrimination between node
+types based solely on the "field index" of a related node via
+<code><a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>()</code>, but requires that outer node indices be routinely
+converted between "child field index" form and "vector index" form
+via <code><a href="CritBit.md#0x1234_CritBit_o_c">o_c</a>()</code> and <code><a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>()</code>.
+
+Similarly, if a node, inner or outer, is located at the root, its
+"parent field index" will indicate <code><a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a></code>, and will not correspond
+to the vector index of any inner node, since the root node does not
+have a parent. Likewise, the "root field" of the tree (<code><a href="CritBit.md#0x1234_CritBit_CB">CB</a>.r</code>) will
+contain the field index of the given node, set at bit 63 if the root
+is an outer node.
 
 ---
 
 
+-  [Background](#@Background_0)
+    -  [References](#@References_1)
+-  [Implementation](#@Implementation_2)
+    -  [Structure](#@Structure_3)
+    -  [Node indices](#@Node_indices_4)
 -  [Struct `I`](#0x1234_CritBit_I)
 -  [Struct `O`](#0x1234_CritBit_O)
 -  [Struct `CB`](#0x1234_CritBit_CB)
--  [Constants](#@Constants_0)
+-  [Constants](#@Constants_5)
 -  [Function `crit_bit`](#0x1234_CritBit_crit_bit)
 -  [Function `is_set`](#0x1234_CritBit_is_set)
 -  [Function `is_out`](#0x1234_CritBit_is_out)
@@ -256,7 +315,7 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
 
 </details>
 
-<a name="@Constants_0"></a>
+<a name="@Constants_5"></a>
 
 ## Constants
 

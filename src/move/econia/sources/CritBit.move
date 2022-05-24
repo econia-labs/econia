@@ -1,10 +1,11 @@
-/// A crit-bit tree is a compact binary prefix tree, similar to a binary
-/// search tree, that stores a prefix-free set of bitstrings, like
-/// n-bit integers or variable-length 0-terminated byte strings. For a
-/// given set of keys there exists a unique crit-bit tree representing
-/// the set, hence crit-bit trees do not require complex rebalancing
-/// algorithms like those of AVL or red-black binary search trees.
-/// Crit-bit trees support the following operations, quickly:
+/// # Background
+/// A critical bit (crit-bit) tree is a compact binary prefix tree,
+/// similar to a binary search tree, that stores a prefix-free set of
+/// bitstrings, like n-bit integers or variable-length 0-terminated byte
+/// strings. For a given set of keys there exists a unique crit-bit tree
+/// representing the set, hence crit-bit trees do not require complex
+/// rebalancing algorithms like those of AVL or red-black binary search
+/// trees. Crit-bit trees support the following operations, quickly:
 ///
 /// * Membership testing
 /// * Insertion
@@ -13,7 +14,7 @@
 /// * Successor
 /// * Iteration
 ///
-/// References:
+/// ## References
 ///
 /// * [Bernstein 2006](https://cr.yp.to/critbit.html)
 /// * [Langley 2008](
@@ -21,26 +22,33 @@
 /// * [Langley 2012](https://github.com/agl/critbit)
 /// * [Tcler's Wiki 2021](https://wiki.tcl-lang.org/page/critbit)
 ///
+/// # Implementation
+///
+/// ## Structure
+///
 /// The present implementation involves a tree with two types of nodes,
-/// inner and outer. Inner nodes have two children each, while outer
-/// nodes have no children. There are no nodes that have exactly one
-/// child. Outer nodes store a key-value pair with a 128-bit integer as
-/// a key, and an arbitrary value of generic type. Inner nodes do not
-/// store a key, but rather, an 8-bit integer indicating the most
-/// significant critical bit (crit-bit) of divergence between keys
-/// located within the node's two subtrees: keys in the node's left
-/// subtree have a 0 at the critical bit, while keys in the node's right
-/// subtree have a 1 at the critical bit. Bit numbers are 0-indexed
-/// starting at the least-significant bit (LSB), such that a critical
-/// bit of 3, for instance, corresponds to a comparison between the
-/// bitstrings `00...00000` and `00...01111`. Inner nodes are arranged
-/// hierarchically, with the most significant critical bits at the top
-/// of the tree. For instance, the keys `001`, `101`, `110`, and `111`
-/// would be stored in a crit-bit tree as follows (right carets included
-/// at left of illustration per issue with documentation build engine,
-/// namely, the automatic stripping of leading whitespace in top-level
-/// module documentation comments, which prohibits the simple initiation
-/// of monospaced code blocks through indentation by 4 spaces):
+/// inner (`I`) and outer (`O`). Inner nodes have two children each
+/// (`I.l` and `I.r`), while outer nodes have no children. There are no
+/// nodes that have exactly one child. Outer nodes store a key-value
+/// pair with a 128-bit integer as a key (`O.k`), and an arbitrary value
+/// of generic type (`O.v`). Inner nodes do not store a key, but rather,
+/// an 8-bit integer (`I.c`) indicating the most significant critical
+/// bit (crit-bit) of divergence between keys located within the node's
+/// two subtrees: keys in the node's left subtree are unset at the
+/// critical bit, while keys in the node's right subtree are set at the
+/// critical bit. Both node types have a parent (`I.p`, `O.p`), which
+/// may be flagged as `ROOT` if the the node is the root.
+///
+/// Bit numbers are 0-indexed starting at the least-significant bit
+/// (LSB), such that a critical bit of 3, for instance, corresponds to a
+/// comparison between `00...00000` and `00...01111`. Inner nodes are
+/// arranged hierarchically, with the most significant critical bits at
+/// the top of the tree. For instance, the keys `001`, `101`, `110`, and
+/// `111` would be stored in a crit-bit tree as follows (right carets
+/// included at left of illustration per issue with documentation build
+/// engine, namely, the automatic stripping of leading whitespace in
+/// documentation comments, which prohibits the simple initiation of
+/// monospaced code blocks through indentation by 4 spaces):
 /// ```
 /// >       2nd
 /// >      /   \
@@ -53,10 +61,36 @@
 /// Here, the inner node marked `2nd` stores the integer 2, the inner
 /// node marked `1st` stores the integer 1, and the inner node marked
 /// `0th` stores the integer 0. Hence, the sole key in the left subtree
-/// of the inner node marked `2nd` has 0 at bit 2, while all the keys in
-/// the node's right subtree have 1 at bit 2. And similarly for the
-/// inner node marked `0th`, its left child node does not have bit 0
-/// set, while its right child does have bit 0 set.
+/// of the inner node marked `2nd` is unset at bit 2, while all the keys
+/// in the node's right subtree are set at bit 2. And similarly for the
+/// inner node marked `0th`, its left child is unset at bit 0, while its
+/// right child is set at bit 0.
+///
+/// ## Node indices
+///
+/// Both inner nodes (`I`) and outer nodes (`O`) are stored in vectors
+/// (`CB.i` and `CB.o`), and parent-child relationships between nodes
+/// are described in terms of vector indices: an outer node indicating
+/// `123` in its parent field (`O.p`), for instance, has as its parent
+/// an inner node at vector index `123`. Notably, the vector index of an
+/// inner node is identical to the number indicated by its child's
+/// parent field (`I.p` or `O.p`), but the vector index of an outer node
+/// is **not** identical to the number indicated by its parent's child
+/// field (`I.l` or `I.r`), because the 63rd bit of a so-called "field
+/// index" (the number stored in a struct field) is reserved for a node
+/// type bit flag, with outer nodes having bit 63 set and inner nodes
+/// having bit 63 unset. This schema enables discrimination between node
+/// types based solely on the "field index" of a related node via
+/// `is_out()`, but requires that outer node indices be routinely
+/// converted between "child field index" form and "vector index" form
+/// via `o_c()` and `o_v()`.
+///
+/// Similarly, if a node, inner or outer, is located at the root, its
+/// "parent field index" will indicate `ROOT`, and will not correspond
+/// to the vector index of any inner node, since the root node does not
+/// have a parent. Likewise, the "root field" of the tree (`CB.r`) will
+/// contain the field index of the given node, set at bit 63 if the root
+/// is an outer node.
 ///
 /// ---
 ///

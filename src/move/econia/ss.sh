@@ -65,12 +65,20 @@ elif test $1 = d; then
 elif test $1 = wd; then
     ls sources/*.move | entr move package build --doc
 
-# Add all and commit
+# Git add all and commit
 elif test $1 = ac; then
     cd ../../../
     git add .
     git commit
     cd src/move/econia
+
+# Print Git log
+elif test $1 = l; then
+    git log
+
+# Git push
+elif test $1 = gp; then
+    git push
 
 else
     echo Invalid option

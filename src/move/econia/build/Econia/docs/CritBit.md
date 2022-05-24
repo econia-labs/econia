@@ -85,6 +85,8 @@ set, while its right child does have bit 0 set.
 -  [Function `b_s_o_m`](#0x1234_CritBit_b_s_o_m)
 -  [Function `borrow`](#0x1234_CritBit_borrow)
 -  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
+-  [Function `borrow_min`](#0x1234_CritBit_borrow_min)
+-  [Function `borrow_max`](#0x1234_CritBit_borrow_max)
 -  [Function `has_key`](#0x1234_CritBit_has_key)
 -  [Function `search_outer`](#0x1234_CritBit_search_outer)
 -  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
@@ -979,6 +981,82 @@ Return mutable reference to value corresponding to key <code>k</code> in
     <b>let</b> c_o = <a href="CritBit.md#0x1234_CritBit_b_s_o_m">b_s_o_m</a>&lt;V&gt;(cb, k); // Borrow search outer node
     <b>assert</b>!(c_o.k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Abort <b>if</b> key not in tree
     &<b>mut</b> c_o.v // Return mutable reference <b>to</b> corresponding value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_borrow_min"></a>
+
+## Function `borrow_min`
+
+Return immutable reference to outer node having minimum key in
+<code>cb</code>, aborting if <code>cb</code> empty
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_min">borrow_min</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_min">borrow_min</a>&lt;V&gt;(
+    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+): &<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; {
+    <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree
+    <b>assert</b>!(l != 0, <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>); // Assert tree not empty
+    // If singleton tree, <b>return</b> immutable reference <b>to</b> root node
+    <b>if</b> (l == 1) <b>return</b> v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(cb.r));
+    // Else initialize index of search node <b>to</b> left child of root
+    <b>let</b> i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, cb.r).l;
+    <b>while</b> (!<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_n)) { // While search node is inner node
+        i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_n).l // Review node's left child next
+    }; // Index of search node now corresponds <b>to</b> outer node
+    // Return immutable reference <b>to</b> node
+    v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_n))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_borrow_max"></a>
+
+## Function `borrow_max`
+
+Return immutable reference to outer node having maximum key in
+<code>cb</code>, aborting if <code>cb</code> empty
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_max">borrow_max</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_max">borrow_max</a>&lt;V&gt;(
+    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+): &<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; {
+    <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree
+    <b>assert</b>!(l != 0, <a href="CritBit.md#0x1234_CritBit_E_BORROW_EMPTY">E_BORROW_EMPTY</a>); // Assert tree not empty
+    // If singleton tree, <b>return</b> immutable reference <b>to</b> root node
+    <b>if</b> (l == 1) <b>return</b> v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(cb.r));
+    // Else initialize index of search node <b>to</b> right child of root
+    <b>let</b> i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, cb.r).r;
+    <b>while</b> (!<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_n)) { // While search node is inner node
+        i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_n).r // Review node's right child next
+    }; // Index of search node now corresponds <b>to</b> outer node
+    // Return immutable reference <b>to</b> node
+    v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_n))
 }
 </code></pre>
 
@@ -2013,7 +2091,7 @@ child a node that has been relocated from old child field index
 Return the minimum key in <code>cb</code>, aborting if <code>cb</code> is empty
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_min_key">min_key</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): u128
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_min_key">min_key</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): u128
 </code></pre>
 
 
@@ -2022,7 +2100,7 @@ Return the minimum key in <code>cb</code>, aborting if <code>cb</code> is empty
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_min_key">min_key</a>&lt;V&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_min_key">min_key</a>&lt;V&gt;(
     cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
 ): u128 {
     <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree
@@ -2049,7 +2127,7 @@ Return the minimum key in <code>cb</code>, aborting if <code>cb</code> is empty
 Return the maximum key in <code>cb</code>, aborting if <code>cb</code> is empty
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_max_key">max_key</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): u128
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_max_key">max_key</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): u128
 </code></pre>
 
 
@@ -2058,7 +2136,7 @@ Return the maximum key in <code>cb</code>, aborting if <code>cb</code> is empty
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_max_key">max_key</a>&lt;V&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_max_key">max_key</a>&lt;V&gt;(
     cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
 ): u128 {
     <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree

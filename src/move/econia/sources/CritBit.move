@@ -636,30 +636,118 @@ module Econia::CritBit {
         &mut c_o.v // Return mutable reference to corresponding value
     }
 
+    /// Return immutable reference to outer node having minimum key in
+    /// `cb`, aborting if `cb` empty
+    public fun borrow_min<V>(
+        cb: &CB<V>,
+    ): &O<V> {
+        let l = length(cb); // Get number of keys in tree
+        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
+        // If singleton tree, return immutable reference to root node
+        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r));
+        // Else initialize index of search node to left child of root
+        let i_n = v_b<I>(&cb.i, cb.r).l;
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
+        }; // Index of search node now corresponds to outer node
+        // Return immutable reference to node
+        v_b<O<V>>(&cb.o, o_v(i_n))
+    }
+
+    /// Return immutable reference to outer node having maximum key in
+    /// `cb`, aborting if `cb` empty
+    public fun borrow_max<V>(
+        cb: &CB<V>,
+    ): &O<V> {
+        let l = length(cb); // Get number of keys in tree
+        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
+        // If singleton tree, return immutable reference to root node
+        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r));
+        // Else initialize index of search node to right child of root
+        let i_n = v_b<I>(&cb.i, cb.r).r;
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
+        }; // Index of search node now corresponds to outer node
+        // Return immutable reference to node
+        v_b<O<V>>(&cb.o, o_v(i_n))
+    }
+
     #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Assert failure for attempted borrow on empty tree
-    public fun borrow_empty():
+    /// Verify correct minimum key node borrow
+    fun borrow_min_success():
     CB<u8> {
-        let cb = empty<u8>(); // Initialize empty tree
-        borrow<u8>(&cb, 0); // Attempt invalid borrow
-        cb // Return rather than unpack (or signal to compiler as much)
+        let cb = singleton(3, 5); // Initialize singleton
+        let n = borrow_min(&cb); // Borrow node with minimum key
+        // Assert correct key-value pair
+        assert!(n.k == 3 && n.v == 5, 0);
+        // Insert additional values
+        insert(&mut cb, 2, 7);
+        insert(&mut cb, 5, 8);
+        insert(&mut cb, 1, 6);
+        let n = borrow_min(&cb); // Borrow node with minimum key
+        // Assert correct key-value pair
+        assert!(n.k == 1 && n.v == 6, 1);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify correct maximum key node borrow
+    fun borrow_max_success():
+    CB<u8> {
+        let cb = singleton(3, 5); // Initialize singleton
+        let n = borrow_max(&cb); // Borrow node with minimum key
+        // Assert correct key-value pair
+        assert!(n.k == 3 && n.v == 5, 0);
+        // Insert additional values
+        insert(&mut cb, 2, 7);
+        insert(&mut cb, 5, 8);
+        insert(&mut cb, 4, 6);
+        let n = borrow_max(&cb); // Borrow node with minimum key
+        // Assert correct key-value pair
+        assert!(n.k == 5 && n.v == 8, 1);
+        cb // Return rather than unpack
     }
 
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Assert failure for attempted borrow on empty tree
-    public fun borrow_mut_empty():
-    CB<u8> {
+    fun borrow_min_failure() {
+        let cb = empty<u8>(); // Initialize empty tree
+        borrow_min(&cb); // Attempt invalid borrow
+        destroy_empty(cb); // Destroy empty tree
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Assert failure for attempted borrow on empty tree
+    fun borrow_max_failure() {
+        let cb = empty<u8>(); // Initialize empty tree
+        borrow_max(&cb); // Attempt invalid borrow
+        destroy_empty(cb); // Destroy empty tree
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Assert failure for attempted borrow on empty tree
+    fun borrow_empty() {
+        let cb = empty<u8>(); // Initialize empty tree
+        borrow<u8>(&cb, 0); // Attempt invalid borrow
+        destroy_empty(cb); // Destroy empty tree
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Assert failure for attempted borrow on empty tree
+    fun borrow_mut_empty() {
         let cb = empty<u8>(); // Initialize empty tree
         borrow_mut<u8>(&mut cb, 0); // Attempt invalid borrow
-        cb // Return rather than unpack (or signal to compiler as much)
+        destroy_empty(cb); // Destroy empty tree
     }
 
     #[test]
     #[expected_failure(abort_code = 4)]
     /// Assert failure for attempted borrow without matching key
-    public fun borrow_no_match():
+    fun borrow_no_match():
     CB<u8> {
         let cb = singleton<u8>(3, 4); // Initialize singleton
         borrow<u8>(&cb, 6); // Attempt invalid borrow
@@ -669,7 +757,7 @@ module Econia::CritBit {
     #[test]
     #[expected_failure(abort_code = 4)]
     /// Assert failure for attempted borrow without matching key
-    public fun borrow_mut_no_match():
+    fun borrow_mut_no_match():
     CB<u8> {
         let cb = singleton<u8>(3, 4); // Initialize singleton
         borrow_mut<u8>(&mut cb, 6); // Attempt invalid borrow
@@ -678,7 +766,7 @@ module Econia::CritBit {
 
     #[test]
     /// Assert correct modification of values
-    public fun borrow_mut_success():
+    fun borrow_mut_success():
     CB<u8> {
         let cb = empty<u8>(); // Initialize empty tree
         // Insert assorted key-value pairs
@@ -1946,7 +2034,7 @@ module Econia::CritBit {
 // Lookup >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return the minimum key in `cb`, aborting if `cb` is empty
-    fun min_key<V>(
+    public fun min_key<V>(
         cb: &CB<V>,
     ): u128 {
         let l = length(cb); // Get number of keys in tree
@@ -1962,7 +2050,7 @@ module Econia::CritBit {
     }
 
     /// Return the maximum key in `cb`, aborting if `cb` is empty
-    fun max_key<V>(
+    public fun max_key<V>(
         cb: &CB<V>,
     ): u128 {
         let l = length(cb); // Get number of keys in tree

@@ -73,7 +73,7 @@ elif test $1 = ac; then
     cd src/move/econia
 
 # Print Git log
-elif test $1 = l; then
+elif test $1 = gl; then
     git log
 
 # Git push

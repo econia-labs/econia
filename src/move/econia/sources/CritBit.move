@@ -214,6 +214,9 @@ module Econia::CritBit {
 
     /// Return the number of the most significant bit (0-indexed from
     /// LSB) at which two non-identical bitstrings, `s1` and `s2`, vary.
+    ///
+    /// # XOR/AND method
+    ///
     /// To begin with, a bitwise XOR is used to flag all differing bits:
     /// ```
     /// >           s1: 11110001
@@ -223,10 +226,9 @@ module Econia::CritBit {
     /// ```
     /// Here, the critical bit is equivalent to the bit number of the
     /// most significant set bit in XOR result `x = s1 ^ s2`. At this
-    /// point, [Langley 2012](https://github.com/agl/critbit) notes that
-    /// `x` bitwise AND `x - 1` will be nonzero so long as `x` contains
-    /// at least some bits set which are of lesser significance than the
-    /// critical bit:
+    /// point, [Langley 2012](#@References_1) notes that `x` bitwise AND
+    /// `x - 1` will be nonzero so long as `x` contains at least some
+    /// bits set which are of lesser significance than the critical bit:
     /// ```
     /// >               x: 00101101
     /// >           x - 1: 00101100
@@ -276,8 +278,11 @@ module Econia::CritBit {
     /// ```
     /// Notably, this method is only suggested after already having
     /// identified the varying byte between the two strings, thus
-    /// limiting `x & (x - 1)` operations to at most 7 iterations. But
-    /// for the present implementation, strings are not partitioned into
+    /// limiting `x & (x - 1)` operations to at most 7 iterations.
+    ///
+    /// # Binary search method
+    ///
+    /// For the present implementation, strings are not partitioned into
     /// a multi-byte array, rather, they are stored as `u128` integers,
     /// so a binary search is instead proposed. Here, the same
     /// `x = s1 ^ s2` operation is first used to identify all differing
@@ -332,13 +337,13 @@ module Econia::CritBit {
     /// Here, `s == 1`, which means that `c = m = 7`. Notably this
     /// search has converged after only 3 iterations, as opposed to 7
     /// for the linear search proposed above, and in general such a
-    /// search converges after log_2(`k`) iterations at most, where `k`
+    /// search converges after $log_2(k)$ iterations at most, where $k$
     /// is the number of bits in each of the strings `s1` and `s2` under
-    /// comparison. Hence this search method improves the O(`k`) search
-    /// proposed by [Langley 2012](https://github.com/agl/critbit) to
-    /// O(log(`k`)), and moreover, determines the actual number of the
-    /// critical bit, rather than just a bitmask with bit `c` set, as he
-    /// proposes, which can also be easily generated via `1 << c`.
+    /// comparison. Hence this search method improves the $O(k)$ search
+    /// proposed by [Langley 2012](#@References_1) to $O(log_2(k))$, and
+    /// moreover, determines the actual number of the critical bit,
+    /// rather than just a bitmask with bit `c` set, as he proposes,
+    /// which can also be easily generated via `1 << c`.
     fun crit_bit(
         s1: u128,
         s2: u128,

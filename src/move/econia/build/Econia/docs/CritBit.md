@@ -120,54 +120,57 @@ is an outer node.
 ---
 
 
--  [Background](#@Background_0)
-    -  [References](#@References_1)
--  [Implementation](#@Implementation_2)
-    -  [Structure](#@Structure_3)
-    -  [Node indices](#@Node_indices_4)
--  [Struct `I`](#0x1234_CritBit_I)
--  [Struct `O`](#0x1234_CritBit_O)
--  [Struct `CB`](#0x1234_CritBit_CB)
--  [Constants](#@Constants_5)
--  [Function `crit_bit`](#0x1234_CritBit_crit_bit)
--  [Function `is_set`](#0x1234_CritBit_is_set)
--  [Function `is_out`](#0x1234_CritBit_is_out)
--  [Function `o_v`](#0x1234_CritBit_o_v)
--  [Function `o_c`](#0x1234_CritBit_o_c)
--  [Function `b_lo`](#0x1234_CritBit_b_lo)
--  [Function `empty`](#0x1234_CritBit_empty)
--  [Function `singleton`](#0x1234_CritBit_singleton)
--  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
--  [Function `is_empty`](#0x1234_CritBit_is_empty)
--  [Function `length`](#0x1234_CritBit_length)
--  [Function `b_s_o`](#0x1234_CritBit_b_s_o)
--  [Function `b_s_o_m`](#0x1234_CritBit_b_s_o_m)
--  [Function `borrow`](#0x1234_CritBit_borrow)
--  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
--  [Function `borrow_min`](#0x1234_CritBit_borrow_min)
--  [Function `borrow_max`](#0x1234_CritBit_borrow_max)
--  [Function `has_key`](#0x1234_CritBit_has_key)
--  [Function `search_outer`](#0x1234_CritBit_search_outer)
--  [Function `insert_empty`](#0x1234_CritBit_insert_empty)
--  [Function `insert_singleton`](#0x1234_CritBit_insert_singleton)
--  [Function `insert_general`](#0x1234_CritBit_insert_general)
--  [Function `insert_below`](#0x1234_CritBit_insert_below)
--  [Function `insert_above`](#0x1234_CritBit_insert_above)
--  [Function `insert_above_root`](#0x1234_CritBit_insert_above_root)
--  [Function `insert_below_walk`](#0x1234_CritBit_insert_below_walk)
--  [Function `push_back_insert_nodes`](#0x1234_CritBit_push_back_insert_nodes)
--  [Function `insert`](#0x1234_CritBit_insert)
--  [Function `check_len`](#0x1234_CritBit_check_len)
--  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
--  [Function `pop`](#0x1234_CritBit_pop)
--  [Function `pop_general`](#0x1234_CritBit_pop_general)
--  [Function `pop_destroy_nodes`](#0x1234_CritBit_pop_destroy_nodes)
--  [Function `pop_update_relationships`](#0x1234_CritBit_pop_update_relationships)
--  [Function `stitch_swap_remove`](#0x1234_CritBit_stitch_swap_remove)
--  [Function `stitch_parent_of_child`](#0x1234_CritBit_stitch_parent_of_child)
--  [Function `stitch_child_of_parent`](#0x1234_CritBit_stitch_child_of_parent)
--  [Function `min_key`](#0x1234_CritBit_min_key)
--  [Function `max_key`](#0x1234_CritBit_max_key)
+- [Module `0x1234::CritBit`](#module-0x1234critbit)
+  - [Background](#background)
+    - [References](#references)
+  - [Implementation](#implementation)
+    - [Structure](#structure)
+    - [Node indices](#node-indices)
+  - [Struct `I`](#struct-i)
+  - [Struct `O`](#struct-o)
+  - [Struct `CB`](#struct-cb)
+  - [Constants](#constants)
+  - [Function `crit_bit`](#function-crit_bit)
+    - [XOR/AND method](#xorand-method)
+    - [Binary search method](#binary-search-method)
+  - [Function `is_set`](#function-is_set)
+  - [Function `is_out`](#function-is_out)
+  - [Function `o_v`](#function-o_v)
+  - [Function `o_c`](#function-o_c)
+  - [Function `b_lo`](#function-b_lo)
+  - [Function `empty`](#function-empty)
+  - [Function `singleton`](#function-singleton)
+  - [Function `destroy_empty`](#function-destroy_empty)
+  - [Function `is_empty`](#function-is_empty)
+  - [Function `length`](#function-length)
+  - [Function `b_s_o`](#function-b_s_o)
+  - [Function `b_s_o_m`](#function-b_s_o_m)
+  - [Function `borrow`](#function-borrow)
+  - [Function `borrow_mut`](#function-borrow_mut)
+  - [Function `borrow_min`](#function-borrow_min)
+  - [Function `borrow_max`](#function-borrow_max)
+  - [Function `has_key`](#function-has_key)
+  - [Function `search_outer`](#function-search_outer)
+  - [Function `insert_empty`](#function-insert_empty)
+  - [Function `insert_singleton`](#function-insert_singleton)
+  - [Function `insert_general`](#function-insert_general)
+  - [Function `insert_below`](#function-insert_below)
+  - [Function `insert_above`](#function-insert_above)
+  - [Function `insert_above_root`](#function-insert_above_root)
+  - [Function `insert_below_walk`](#function-insert_below_walk)
+  - [Function `push_back_insert_nodes`](#function-push_back_insert_nodes)
+  - [Function `insert`](#function-insert)
+  - [Function `check_len`](#function-check_len)
+  - [Function `pop_singleton`](#function-pop_singleton)
+  - [Function `pop`](#function-pop)
+  - [Function `pop_general`](#function-pop_general)
+  - [Function `pop_destroy_nodes`](#function-pop_destroy_nodes)
+  - [Function `pop_update_relationships`](#function-pop_update_relationships)
+  - [Function `stitch_swap_remove`](#function-stitch_swap_remove)
+  - [Function `stitch_parent_of_child`](#function-stitch_parent_of_child)
+  - [Function `stitch_child_of_parent`](#function-stitch_child_of_parent)
+  - [Function `min_key`](#function-min_key)
+  - [Function `max_key`](#function-max_key)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -496,6 +499,13 @@ Right direction
 
 Return the number of the most significant bit (0-indexed from
 LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
+
+
+<a name="@XOR/AND_method_6"></a>
+
+### XOR/AND method
+
+
 To begin with, a bitwise XOR is used to flag all differing bits:
 ```
 >           s1: 11110001
@@ -505,10 +515,9 @@ To begin with, a bitwise XOR is used to flag all differing bits:
 ```
 Here, the critical bit is equivalent to the bit number of the
 most significant set bit in XOR result <code>x = s1 ^ s2</code>. At this
-point, [Langley 2012](https://github.com/agl/critbit) notes that
-<code>x</code> bitwise AND <code>x - 1</code> will be nonzero so long as <code>x</code> contains
-at least some bits set which are of lesser significance than the
-critical bit:
+point, [Langley 2012](#@References_1) notes that <code>x</code> bitwise AND
+<code>x - 1</code> will be nonzero so long as <code>x</code> contains at least some
+bits set which are of lesser significance than the critical bit:
 ```
 >               x: 00101101
 >           x - 1: 00101100
@@ -558,8 +567,15 @@ strings <code>s1</code> and <code>s2</code> as follows:
 ```
 Notably, this method is only suggested after already having
 identified the varying byte between the two strings, thus
-limiting <code>x & (x - 1)</code> operations to at most 7 iterations. But
-for the present implementation, strings are not partitioned into
+limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
+
+
+<a name="@Binary_search_method_7"></a>
+
+### Binary search method
+
+
+For the present implementation, strings are not partitioned into
 a multi-byte array, rather, they are stored as <code>u128</code> integers,
 so a binary search is instead proposed. Here, the same
 <code>x = s1 ^ s2</code> operation is first used to identify all differing
@@ -614,13 +630,13 @@ Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 7</code>, the final ite
 Here, <code>s == 1</code>, which means that <code>c = m = 7</code>. Notably this
 search has converged after only 3 iterations, as opposed to 7
 for the linear search proposed above, and in general such a
-search converges after log_2(<code>k</code>) iterations at most, where <code>k</code>
+search converges after $log_2(k)$ iterations at most, where $k$
 is the number of bits in each of the strings <code>s1</code> and <code>s2</code> under
-comparison. Hence this search method improves the O(<code>k</code>) search
-proposed by [Langley 2012](https://github.com/agl/critbit) to
-O(log(<code>k</code>)), and moreover, determines the actual number of the
-critical bit, rather than just a bitmask with bit <code>c</code> set, as he
-proposes, which can also be easily generated via <code>1 &lt;&lt; c</code>.
+comparison. Hence this search method improves the $O(k)$ search
+proposed by [Langley 2012](#@References_1) to $O(log_2(k))$, and
+moreover, determines the actual number of the critical bit,
+rather than just a bitmask with bit <code>c</code> set, as he proposes,
+which can also be easily generated via <code>1 &lt;&lt; c</code>.
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_crit_bit">crit_bit</a>(s1: u128, s2: u128): u8

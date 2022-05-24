@@ -118,6 +118,8 @@ module Econia::CritBit {
     const E_INSERT_FULL: u64 = 5;
     /// When attempting to pop from empty tree
     const E_POP_EMPTY: u64 = 6;
+    /// When attempting to look up on an empty tree
+    const E_LOOKUP_EMPTY: u64 = 7;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1941,4 +1943,85 @@ module Econia::CritBit {
 
 // Popping <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+// Lookup >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return the minimum key in `cb`, aborting if `cb` is empty
+    fun min_key<V>(
+        cb: &CB<V>,
+    ): u128 {
+        let l = length(cb); // Get number of keys in tree
+        assert!(l != 0, E_LOOKUP_EMPTY); // Assert tree not empty
+        // If singleton tree, return key of outer node at root
+        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r)).k;
+        // Else initialize index of search node to left child of root
+        let i_n = v_b<I>(&cb.i, cb.r).l;
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
+        }; // Index of search node now corresponds to outer node
+        v_b<O<V>>(&cb.o, o_v(i_n)).k // Return key of node
+    }
+
+    /// Return the maximum key in `cb`, aborting if `cb` is empty
+    fun max_key<V>(
+        cb: &CB<V>,
+    ): u128 {
+        let l = length(cb); // Get number of keys in tree
+        assert!(l != 0, E_LOOKUP_EMPTY); // Assert tree not empty
+        // If singleton tree, return key of outer node at root
+        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r)).k;
+        // Else initialize index of search node to right child of root
+        let i_n = v_b<I>(&cb.i, cb.r).r;
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
+        }; // Index of search node now corresponds to outer node
+        v_b<O<V>>(&cb.o, o_v(i_n)).k // Return key of node
+    }
+
+    #[test]
+    /// Verify correct minimum key lookup
+    fun min_key_success():
+    CB<u8> {
+        let cb = singleton(3, 5); // Initialize singleton
+        assert!(min_key(&cb) == 3, 0); // Assert correct lookup
+        // Insert additional values
+        insert(&mut cb, 2, 7);
+        insert(&mut cb, 5, 8);
+        insert(&mut cb, 1, 6);
+        assert!(min_key(&cb) == 1, 0); // Assert correct lookup
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify correct maximum key lookup
+    fun max_key_success():
+    CB<u8> {
+        let cb = singleton(3, 5); // Initialize singleton
+        assert!(max_key(&cb) == 3, 0); // Assert correct lookup
+        // Insert additional values
+        insert(&mut cb, 2, 7);
+        insert(&mut cb, 5, 8);
+        insert(&mut cb, 4, 6);
+        assert!(max_key(&cb) == 5, 0); // Assert correct lookup
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify minimum key lookup failure when tree empty
+    fun min_key_failure_empty() {
+        let cb = empty<u8>(); // Initialize empty tree
+        let _ = min_key(&cb); // Attempt invalid lookup
+        destroy_empty(cb);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify maximum key lookup failure when tree empty
+    fun max_key_failure_empty() {
+        let cb = empty<u8>(); // Initialize empty tree
+        let _ = max_key(&cb); // Attempt invalid lookup
+        destroy_empty(cb);
+    }
+
+// Lookup <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }

@@ -105,6 +105,8 @@ set, while its right child does have bit 0 set.
 -  [Function `stitch_swap_remove`](#0x1234_CritBit_stitch_swap_remove)
 -  [Function `stitch_parent_of_child`](#0x1234_CritBit_stitch_parent_of_child)
 -  [Function `stitch_child_of_parent`](#0x1234_CritBit_stitch_child_of_parent)
+-  [Function `min_key`](#0x1234_CritBit_min_key)
+-  [Function `max_key`](#0x1234_CritBit_max_key)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -303,6 +305,16 @@ When no more keys can be inserted
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_INSERT_FULL">E_INSERT_FULL</a>: u64 = 5;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_E_LOOKUP_EMPTY"></a>
+
+When attempting to look up on an empty tree
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_LOOKUP_EMPTY">E_LOOKUP_EMPTY</a>: u64 = 7;
 </code></pre>
 
 
@@ -1987,6 +1999,78 @@ child a node that has been relocated from old child field index
     // parent's left child <b>to</b> indicate the relocated node's new
     // position, otherwise do <b>update</b> for right child of parent
     <b>if</b> (p.l == i_o) p.l = i_n <b>else</b> p.r = i_n;
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_min_key"></a>
+
+## Function `min_key`
+
+Return the minimum key in <code>cb</code>, aborting if <code>cb</code> is empty
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_min_key">min_key</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_min_key">min_key</a>&lt;V&gt;(
+    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+): u128 {
+    <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree
+    <b>assert</b>!(l != 0, <a href="CritBit.md#0x1234_CritBit_E_LOOKUP_EMPTY">E_LOOKUP_EMPTY</a>); // Assert tree not empty
+    // If singleton tree, <b>return</b> key of outer node at root
+    <b>if</b> (l == 1) <b>return</b> v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(cb.r)).k;
+    // Else initialize index of search node <b>to</b> left child of root
+    <b>let</b> i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, cb.r).l;
+    <b>while</b> (!<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_n)) { // While search node is inner node
+        i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_n).l // Review node's left child next
+    }; // Index of search node now corresponds <b>to</b> outer node
+    v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_n)).k // Return key of node
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_max_key"></a>
+
+## Function `max_key`
+
+Return the maximum key in <code>cb</code>, aborting if <code>cb</code> is empty
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_max_key">max_key</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_max_key">max_key</a>&lt;V&gt;(
+    cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+): u128 {
+    <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree
+    <b>assert</b>!(l != 0, <a href="CritBit.md#0x1234_CritBit_E_LOOKUP_EMPTY">E_LOOKUP_EMPTY</a>); // Assert tree not empty
+    // If singleton tree, <b>return</b> key of outer node at root
+    <b>if</b> (l == 1) <b>return</b> v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(cb.r)).k;
+    // Else initialize index of search node <b>to</b> right child of root
+    <b>let</b> i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, cb.r).r;
+    <b>while</b> (!<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_n)) { // While search node is inner node
+        i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_n).r // Review node's right child next
+    }; // Index of search node now corresponds <b>to</b> outer node
+    v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_n)).k // Return key of node
 }
 </code></pre>
 

@@ -72,14 +72,6 @@ elif test $1 = ac; then
     git commit
     cd src/move/econia
 
-# Print Git log
-elif test $1 = gl; then
-    git log
-
-# Git push
-elif test $1 = gp; then
-    git push
-
 else
     echo Invalid option
 fi

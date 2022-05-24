@@ -116,6 +116,8 @@ module Econia::CritBit {
     const E_NOT_HAS_K: u64 = 4;
     /// When no more keys can be inserted
     const E_INSERT_FULL: u64 = 5;
+    /// When attempting to pop from empty tree
+    const E_POP_EMPTY: u64 = 6;
 
 // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -775,7 +777,7 @@ module Econia::CritBit {
     /// * `u64`: vector index of parent of search outer node
     /// * `u8`: critical bit indicated by parent of search outer node
     fun search_outer<V>(
-        cb: &mut CB<V>,
+        cb: &CB<V>,
         k: u128
     ): (
         u64,
@@ -784,14 +786,15 @@ module Econia::CritBit {
         u64,
         u8,
     ) {
-        let s_p = v_b<I>(&cb.i, 0); // Initialize search parent to root
+        // Initialize search parent to root
+        let s_p = v_b<I>(&cb.i, cb.r);
         loop { // Loop over inner nodes until branching to outer node
             // If key set at critical bit, track field index and side of
             // R child, else L
             let (i, s) = if (is_set(k, s_p.c)) (s_p.r, R) else (s_p.l, L);
             if (is_out(i)) { // If child is outer node
                 // Borrow immutable reference to it
-                let s_o = v_b_m<O<V>>(&mut cb.o, o_v(i));
+                let s_o = v_b<O<V>>(&cb.o, o_v(i));
                 // Return child field index of search outer node, its
                 // side as a child, its key, the vector index of its
                 // parent, and parent's indicated critical bit
@@ -1367,9 +1370,9 @@ module Econia::CritBit {
 
 // Popping >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return the value corresponding to key `k` in tree `cb` and
-    /// destroy the outer node where it was stored, for the special case
-    /// of a singleton tree. Abort if `k` not in `cb`
+    /// Return the value corresponding to key `k` in singleton tree `cb`
+    /// and destroy the outer node where it was stored, aborting if `k`
+    /// not in `cb`
     fun pop_singleton<V>(
         cb: &mut CB<V>,
         k: u128
@@ -1402,6 +1405,7 @@ module Econia::CritBit {
         cb // Return rather than unpack (or signal to compiler as much)
     }
 
+    #[test_only]
     /// Return the value corresponding to key `k` in tree `cb` and
     /// destroy the outer node where it was stored, for the special case
     /// of a tree having height one. Abort if `k` not in `cb`
@@ -1426,6 +1430,18 @@ module Econia::CritBit {
         // Update root index field to indicate kept outer node
         cb.r = OUT << N_TYPE;
         v // Return popped value
+    }
+
+    /// Pop from `cb` value corresponding to key `k`, aborting if `cb`
+    /// is empty or does not contain `k`
+    public fun pop<V>(
+        cb: &mut CB<V>,
+        k: u128
+    ): V {
+        assert!(!is_empty(cb), E_POP_EMPTY); // Assert tree not empty
+        let l = length(cb); // Get number of outer nodes in tree
+        // Depending on length, pop from singleton or for general case
+        if (l == 1) pop_singleton(cb, k) else pop_general(cb, k, l)
     }
 
     /// Return the value corresponding to key `k` in tree `cb` having
@@ -1564,7 +1580,8 @@ module Econia::CritBit {
         if (is_out(i_s)) v_b_m<O<V>>(&mut cb.o, o_v(i_s)).p = i_p_p
             else v_b_m<I>(&mut cb.i, i_s).p = i_p_p;
         if (i_p_p == ROOT) { // If popped node's parent is root
-            // Set root field index to index of popped node's sibling
+            // Set root field index to child field index of popped
+            // node's sibling
             cb.r = i_s;
         } else { // If popped node has a grandparent
             // Borrow mutable reference to popped node's grandparent
@@ -1636,19 +1653,83 @@ module Econia::CritBit {
     /// >      o_i = 0 -> 0th   111 <- o_i = 2
     /// >                /   \
     /// >   o_i = 1 -> 010   011 <- o_i = 0
+    /// >
+    /// >       Pop 111
+    /// >       ------>
+    /// >
+    /// >      o_i = 0 -> 0th
+    /// >                /   \
+    /// >   o_i = 1 -> 010   011 <- o_i = 0
+    /// >
+    /// >       Pop 011
+    /// >       ------>
+    /// >
+    /// >   o_i = 0 -> 010
+    /// >
+    /// >       Pop 010
+    /// >       ------>
+    /// >
+    /// >       (empty)
     /// ```
-    fun pop_general_success_2():
+    fun pop_general_success_2() {
+        // Initialize singleton tree with key-value pair {011, 5}
+        let cb = singleton(u(b"011"), 5); // Initialize singleton tree
+        insert(&mut cb, u(b"010"), 6); // Insert {010, 6}
+        insert(&mut cb, u(b"001"), 7); // Insert {001, 7}
+        insert(&mut cb, u(b"111"), 8); // Insert {001, 8}
+        assert!(pop(&mut cb, u(b"001")) == 7, 0); // Assert correct pop
+        assert!(cb.r == 1, 1); // Assert root field updated correctly
+        // Verify post-pop inner node fields in ascending order of index
+        let i = v_b<I>(&cb.i, 0);
+        assert!(i.c == 0 && i.p ==    1 && i.l == o_c(1) && i.r == o_c(0), 2);
+        let i = v_b<I>(&cb.i, 1);
+        assert!(i.c == 2 && i.p == ROOT && i.l ==     0  && i.r == o_c(2), 3);
+        // Verify outer node fields in ascending order of vector index
+        let o = v_b<O<u8>>(&cb.o, 0);
+        assert!(o.k == u(b"011") && o.v == 5 && o.p == 0, 4);
+        let o = v_b<O<u8>>(&cb.o, 1);
+        assert!(o.k == u(b"010") && o.v == 6 && o.p == 0, 5);
+        let o = v_b<O<u8>>(&cb.o, 2);
+        assert!(o.k == u(b"111") && o.v == 8 && o.p == 1, 6);
+        assert!(pop(&mut cb, u(b"111")) == 8, 7); // Assert correct pop
+        assert!(cb.r == 0, 8); // Assert root field updated correctly
+        // Verify post-pop inner node fields at root
+        let i = v_b<I>(&cb.i, 0);
+        assert!(i.c == 0 && i.p == ROOT && i.l == o_c(1) && i.r == o_c(0), 9);
+        // Verify outer node fields in ascending order of vector index
+        let o = v_b<O<u8>>(&cb.o, 0);
+        assert!(o.k == u(b"011") && o.v == 5 && o.p == 0, 10);
+        let o = v_b<O<u8>>(&cb.o, 1);
+        assert!(o.k == u(b"010") && o.v == 6 && o.p == 0, 11);
+        assert!(pop(&mut cb, u(b"011")) == 5, 12); // Assert correct pop
+        assert!(cb.r == o_c(0), 13); // Assert correct root field update
+        // Verify post-pop outer node fields at root
+        let o = v_b<O<u8>>(&cb.o, 0);
+        assert!(o.k == u(b"010") && o.v == 6 && o.p == ROOT, 14);
+        assert!(pop(&mut cb, u(b"010")) == 6, 15); // Assert correct pop
+        assert!(cb.r == 0, 16); // Assert root field updated correctly
+        assert!(is_empty(&cb), 17); // Assert is empty
+        destroy_empty(cb); // Destroy
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for attempting to pop key not in tree
+    fun pop_general_failure_no_key():
     CB<u8> {
-        // Initialize singleton with key 011
-        let cb = singleton(u(b"011"), 5);
-        // Insert key 010, generating new inner node with critbit = 0
-        insert(&mut cb, u(b"010"), 6);
-        // Insert key 001, generating new inner node with critbit = 1
-        insert(&mut cb, u(b"001"), 8);
-        // Insert key 111, generating new inner node with critbit = 2
-        insert(&mut cb, u(b"111"), 7);
-        assert!(cb.r == 2, 1);
-        cb // Return rather than unpack
+        let cb = singleton(1, 7); // Initialize singleton
+        insert(&mut cb, 2, 8); // Add a second element
+        let _ = pop(&mut cb, 3); // Attempt invalid pop
+        cb // Return rather than unpack (or signal to compiler as much)
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for attempting to pop from empty tree
+    fun pop_failure_empty() {
+        let cb = empty<u8>(); // Initialize empty tree
+        let _ = pop(&mut cb, 3); // Attempt invalid pop
+        destroy_empty(cb); // Destroy empty tree
     }
 
     /// Repair a broken parent-child relationship in `cb` caused by
@@ -1662,9 +1743,11 @@ module Econia::CritBit {
     ) {
         // If child field index indicates relocated outer node
         if (is_out(i_n)) {
-            // Get index of parent to relocated node
+            // Get node's parent field index
             let i_p = v_b<O<V>>(&cb.o, o_v(i_n)).p;
-            // Update parent to reflect relocated node position
+            // If root node was relocated, update root field and return
+            if (i_p == ROOT) {cb.r = i_n; return};
+            // Else update parent to reflect relocated node position
             stitch_child_of_parent<V>(cb, i_n, i_p, o_c(n_n - 1));
         } else { // If child field index indicates relocated inner node
             // Borrow mutable reference to it

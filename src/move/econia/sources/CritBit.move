@@ -218,7 +218,7 @@ module Econia::CritBit {
 
     /// Return immutable reference to outer node having maximum key in
     /// `cb`, aborting if `cb` empty
-    public fun borrow_max<V>(
+    public fun borrow_max_node<V>(
         cb: &CB<V>,
     ): &O<V> {
         let l = length(cb); // Get number of keys in tree
@@ -236,7 +236,7 @@ module Econia::CritBit {
 
     /// Return immutable reference to outer node having minimum key in
     /// `cb`, aborting if `cb` empty
-    public fun borrow_min<V>(
+    public fun borrow_min_node<V>(
         cb: &CB<V>,
     ): &O<V> {
         let l = length(cb); // Get number of keys in tree
@@ -1223,25 +1223,25 @@ module Econia::CritBit {
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Assert failure for attempted borrow on empty tree
-    fun borrow_max_failure() {
+    fun borrow_max_node_failure() {
         let cb = empty<u8>(); // Initialize empty tree
-        borrow_max(&cb); // Attempt invalid borrow
+        borrow_max_node(&cb); // Attempt invalid borrow
         destroy_empty(cb); // Destroy empty tree
     }
 
     #[test]
     /// Verify correct maximum key node borrow
-    fun borrow_max_success():
+    fun borrow_max_node_success():
     CB<u8> {
         let cb = singleton(3, 5); // Initialize singleton
-        let n = borrow_max(&cb); // Borrow node with minimum key
+        let n = borrow_max_node(&cb); // Borrow node with minimum key
         // Assert correct key-value pair
         assert!(n.k == 3 && n.v == 5, 0);
         // Insert additional values
         insert(&mut cb, 2, 7);
         insert(&mut cb, 5, 8);
         insert(&mut cb, 4, 6);
-        let n = borrow_max(&cb); // Borrow node with minimum key
+        let n = borrow_max_node(&cb); // Borrow node with minimum key
         // Assert correct key-value pair
         assert!(n.k == 5 && n.v == 8, 1);
         cb // Return rather than unpack
@@ -1250,25 +1250,25 @@ module Econia::CritBit {
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Assert failure for attempted borrow on empty tree
-    fun borrow_min_failure() {
+    fun borrow_min_node_failure() {
         let cb = empty<u8>(); // Initialize empty tree
-        borrow_min(&cb); // Attempt invalid borrow
+        borrow_min_node(&cb); // Attempt invalid borrow
         destroy_empty(cb); // Destroy empty tree
     }
 
     #[test]
     /// Verify correct minimum key node borrow
-    fun borrow_min_success():
+    fun borrow_min_node_success():
     CB<u8> {
         let cb = singleton(3, 5); // Initialize singleton
-        let n = borrow_min(&cb); // Borrow node with minimum key
+        let n = borrow_min_node(&cb); // Borrow node with minimum key
         // Assert correct key-value pair
         assert!(n.k == 3 && n.v == 5, 0);
         // Insert additional values
         insert(&mut cb, 2, 7);
         insert(&mut cb, 5, 8);
         insert(&mut cb, 1, 6);
-        let n = borrow_min(&cb); // Borrow node with minimum key
+        let n = borrow_min_node(&cb); // Borrow node with minimum key
         // Assert correct key-value pair
         assert!(n.k == 1 && n.v == 6, 1);
         cb // Return rather than unpack

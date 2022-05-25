@@ -132,8 +132,8 @@ is an outer node.
     -  [Error codes](#@Error_codes_6)
     -  [General constants](#@General_constants_7)
 -  [Function `borrow`](#0x1234_CritBit_borrow)
--  [Function `borrow_max`](#0x1234_CritBit_borrow_max)
--  [Function `borrow_min`](#0x1234_CritBit_borrow_min)
+-  [Function `borrow_max_node`](#0x1234_CritBit_borrow_max_node)
+-  [Function `borrow_min_node`](#0x1234_CritBit_borrow_min_node)
 -  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
 -  [Function `empty`](#0x1234_CritBit_empty)
@@ -535,15 +535,15 @@ Return immutable reference to value corresponding to key <code>k</code> in
 
 </details>
 
-<a name="0x1234_CritBit_borrow_max"></a>
+<a name="0x1234_CritBit_borrow_max_node"></a>
 
-## Function `borrow_max`
+## Function `borrow_max_node`
 
 Return immutable reference to outer node having maximum key in
 <code>cb</code>, aborting if <code>cb</code> empty
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_max">borrow_max</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_max_node">borrow_max_node</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
 </code></pre>
 
 
@@ -552,7 +552,7 @@ Return immutable reference to outer node having maximum key in
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_max">borrow_max</a>&lt;V&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_max_node">borrow_max_node</a>&lt;V&gt;(
     cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
 ): &<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; {
     <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree
@@ -573,15 +573,15 @@ Return immutable reference to outer node having maximum key in
 
 </details>
 
-<a name="0x1234_CritBit_borrow_min"></a>
+<a name="0x1234_CritBit_borrow_min_node"></a>
 
-## Function `borrow_min`
+## Function `borrow_min_node`
 
 Return immutable reference to outer node having minimum key in
 <code>cb</code>, aborting if <code>cb</code> empty
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_min">borrow_min</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_min_node">borrow_min_node</a>&lt;V&gt;(cb: &<a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;
 </code></pre>
 
 
@@ -590,7 +590,7 @@ Return immutable reference to outer node having minimum key in
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_min">borrow_min</a>&lt;V&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_borrow_min_node">borrow_min_node</a>&lt;V&gt;(
     cb: &<a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
 ): &<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt; {
     <b>let</b> l = <a href="CritBit.md#0x1234_CritBit_length">length</a>(cb); // Get number of keys in tree

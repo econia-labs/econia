@@ -166,9 +166,9 @@ module Econia::CritBit {
 
     /// When a char in a bytestring is neither 0 nor 1
     const E_BIT_NOT_0_OR_1: u64 = 0;
-    /// When attempting to destroy a non-empty crit-bit tree
+    /// When attempting to destroy a non-empty tree
     const E_DESTROY_NOT_EMPTY: u64 = 1;
-    /// When an insertion key is already present in a crit-bit tree
+    /// When an insertion key is already present in a tree
     const E_HAS_K: u64 = 2;
     /// When unable to borrow from empty tree
     const E_BORROW_EMPTY: u64 = 3;
@@ -180,6 +180,8 @@ module Econia::CritBit {
     const E_POP_EMPTY: u64 = 6;
     /// When attempting to look up on an empty tree
     const E_LOOKUP_EMPTY: u64 = 7;
+    /// When attempting to traverse an empty tree
+    const E_TRAVERSE_EMPTY: u64 = 8;
 
     /// # General constants
 
@@ -216,6 +218,7 @@ module Econia::CritBit {
         &c_o.v // Return immutable reference to corresponding value
     }
 
+/*
     /// Return immutable reference to outer node having maximum key in
     /// `cb`, aborting if `cb` empty
     public fun borrow_max_node<V>(
@@ -232,24 +235,6 @@ module Econia::CritBit {
         }; // Index of search node now corresponds to outer node
         // Return immutable reference to node
         v_b<O<V>>(&cb.o, o_v(i_n))
-    }
-
-    /// Return mutable reference to outer node having maximum key in
-    /// `cb`, aborting if `cb` empty
-    public fun borrow_max_node_mut<V>(
-        cb: &mut CB<V>,
-    ): &mut O<V> {
-        let l = length(cb); // Get number of keys in tree
-        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
-        // If singleton tree, return mutable reference to root node
-        if (l == 1) return v_b_m<O<V>>(&mut cb.o, o_v(cb.r));
-        // Else initialize index of search node to right child of root
-        let i_n = v_b<I>(&cb.i, cb.r).r;
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
-        }; // Index of search node now corresponds to outer node
-        // Return mutable reference to node
-        v_b_m<O<V>>(&mut cb.o, o_v(i_n))
     }
 
     /// Return immutable reference to outer node having minimum key in
@@ -269,24 +254,7 @@ module Econia::CritBit {
         // Return immutable reference to node
         v_b<O<V>>(&cb.o, o_v(i_n))
     }
-
-    /// Return mutable reference to outer node having minimum key in
-    /// `cb`, aborting if `cb` empty
-    public fun borrow_min_node_mut<V>(
-        cb: &mut CB<V>,
-    ): &mut O<V> {
-        let l = length(cb); // Get number of keys in tree
-        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
-        // If singleton tree, return mutable reference to root node
-        if (l == 1) return v_b_m<O<V>>(&mut cb.o, o_v(cb.r));
-        // Else initialize index of search node to left child of root
-        let i_n = v_b<I>(&cb.i, cb.r).l;
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
-        }; // Index of search node now corresponds to outer node
-        // Return mutable reference to node
-        v_b_m<O<V>>(&mut cb.o, o_v(i_n))
-    }
+*/
 
     /// Return mutable reference to value corresponding to key `k` in
     /// `cb`, aborting if empty tree or no match
@@ -1255,6 +1223,7 @@ module Econia::CritBit {
         destroy_empty(cb); // Destroy empty tree
     }
 
+/*
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Assert failure for attempted borrow on empty tree
@@ -1366,6 +1335,7 @@ module Econia::CritBit {
         assert!(n.k == 1 && n.v == 6, 1);
         cb // Return rather than unpack
     }
+*/
 
     #[test]
     #[expected_failure(abort_code = 3)]
@@ -2240,4 +2210,119 @@ module Econia::CritBit {
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // To sort >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    public(friend) fun inner_at<V>(
+        cb: &mut CB<V>,
+        i_p: u64
+    ): &I {
+        v_b_m<I>(&mut cb.i, i_p)
+    }
+
+    // The walk takes the index of the parent and the val of key from
+    // traverse_dec_via_parent
+    // next_from_parent_of_dec
+
+    // Return the parent field of outer node `o_n`
+    public(friend) fun parent_field_of<V>(
+        o_n: &O<V>
+    ): u64 {
+        o_n.p
+    }
+
+/*
+    #[test]
+    /// ```
+    /// >         2nd
+    /// >        /   \
+    /// >      001   1st
+    /// >           /   \
+    /// >         100   0th
+    /// >              /   \
+    /// >            110   111
+    /// ```
+    fun parent_at_success():
+    CB<u8> {
+        let v = 0; // Ignore values by setting to 0
+        let cb = singleton(u(b"001"), v); // Initialize singleton
+        insert(&mut cb, u(b"100"), v); // Insert key 100
+        insert(&mut cb, u(b"110"), v); // Insert key 110
+        insert(&mut cb, u(b"111"), v); // Insert key 111
+        // Borrow mutable reference to max node
+        let n_m = borrow_max_node_mut(&mut cb);
+        // Borrow immutable reference to parent of max node
+        let p_m = inner_at(&mut cb, parent_field_of(n_m));
+        assert!(p_m.c == 0, 0); // Assert has critical bit of 0
+        cb // Return rather than unpack
+    }
+*/
+
+    /// Return maximum key in `cb`, a mutable reference to the value
+    /// from the corresponding node, and the parent field of the node,
+    /// aborting if `cb` empty, to begin decreasing traversal
+    public fun begin_dec_traverse_mut<V>(
+        cb: &mut CB<V>,
+    ): (
+        u128,
+        &mut V,
+        u64
+    ) {
+        // Assert tree not empty
+        assert!(!is_empty(cb), E_TRAVERSE_EMPTY);
+        let i_n = cb.r; // Initialize index of search node to root field
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
+        }; // Index of search node now corresponds to max outer node
+        // Borrow mutable reference to max node
+        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_n));
+        // Return its key, mutable reference to its value, and its
+        // parent field
+        (n.k, &mut n.v, n.p)
+    }
+
+    #[test]
+    /// Verify successful start of decreasing traversal for tree
+    /// sequence below, where `o_i` indicates outer node vector index
+    /// and `i_i` indicates inner node vector index:
+    /// ```
+    /// >     100 <- o_i = 0                  Insert 110
+    /// >                                     --------->
+    /// >                   1st <- i_i = 0
+    /// >                  /   \
+    /// >    o_i = 0 -> 100     110 <- o_i = 1
+    /// ```
+    fun begin_dec_traverse_mut_success():
+    CB<u8> {
+       let cb = singleton(u(b"100"), 5); // Initialize singleton
+       // Start decreasing traversal
+       let (n_k, v_ref, n_p) = begin_dec_traverse_mut(&mut cb);
+       // Verify return values are as expected
+       assert!(n_k == u(b"100") && *v_ref == 5 && n_p == ROOT, 0);
+       *v_ref = 6; // Modify value
+       // Assert update persistence
+       assert!(*borrow(&cb, u(b"100")) == 6, 1);
+       cb // Return rather than unpack
+    }
+
+/*
+    /// Return mutable reference to outer node having minimum key in
+    /// `cb`, aborting if `cb` empty
+    public fun borrow_min_node_mut<V>(
+        cb: &mut CB<V>,
+    ): &mut O<V> {
+        let l = length(cb); // Get number of keys in tree
+        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
+        // If singleton tree, return mutable reference to root node
+        if (l == 1) return v_b_m<O<V>>(&mut cb.o, o_v(cb.r));
+        // Else initialize index of search node to left child of root
+        let i_n = v_b<I>(&cb.i, cb.r).l;
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
+        }; // Index of search node now corresponds to outer node
+        // Return mutable reference to node
+        v_b_m<O<V>>(&mut cb.o, o_v(i_n))
+    }
+*/
+    // To sort <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }

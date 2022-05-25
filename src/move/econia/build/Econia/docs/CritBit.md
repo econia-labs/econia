@@ -909,7 +909,7 @@ not in <code>cb</code>
     // Assert key actually in tree at root node
     <b>assert</b>!(v_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, 0).k == k, <a href="CritBit.md#0x1234_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>);
     cb.r = 0; // Update root
-    // Pop off and destruct outer node at root
+    // Pop off and unpack outer node at root
     <b>let</b> <a href="CritBit.md#0x1234_CritBit_O">O</a>{k: _, v, p: _} = v_po_b&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o);
     v // Return popped value
 }

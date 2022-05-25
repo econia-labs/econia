@@ -356,7 +356,7 @@ module Econia::CritBit {
         // Assert key actually in tree at root node
         assert!(v_b<O<V>>(&cb.o, 0).k == k, E_NOT_HAS_K);
         cb.r = 0; // Update root
-        // Pop off and destruct outer node at root
+        // Pop off and unpack outer node at root
         let O{k: _, v, p: _} = v_po_b<O<V>>(&mut cb.o);
         v // Return popped value
     }
@@ -1944,7 +1944,7 @@ module Econia::CritBit {
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"100"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 2});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"011"), v, p: 2});
-        // Swap remove and destruct bogus node
+        // Swap remove and unpack bogus node
         let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
         // Stitch broken relationships
         stitch_swap_remove(&mut cb, 1, 3);
@@ -1980,7 +1980,7 @@ module Econia::CritBit {
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 2});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
-        // Swap remove and destruct bogus node
+        // Swap remove and unpack bogus node
         let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
         // Stitch broken relationships
         stitch_swap_remove(&mut cb, 1, 3);
@@ -2015,7 +2015,7 @@ module Econia::CritBit {
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
         v_pu_b<O<u8>>(&mut cb.o, O{k:    HI_128, v, p: HI_64}); // Bogus
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
-        // Swap remove and destruct bogus node
+        // Swap remove and unpack bogus node
         let O{k: _, v: _, p: _} = v_s_r<O<u8>>(&mut cb.o, 2);
         // Stitch broken relationship
         stitch_swap_remove(&mut cb, o_c(2), 4);
@@ -2046,7 +2046,7 @@ module Econia::CritBit {
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 1});
         v_pu_b<O<u8>>(&mut cb.o, O{k:    HI_128, v, p: HI_64}); // Bogus
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 1});
-        // Swap remove and destruct bogus node
+        // Swap remove and unpack bogus node
         let O{k: _, v: _, p: _} = v_s_r<O<u8>>(&mut cb.o, 2);
         // Stitch broken relationship
         stitch_swap_remove(&mut cb, o_c(2), 4);
@@ -2065,7 +2065,7 @@ module Econia::CritBit {
     /// >                  /   \
     /// >     o_i = 1 -> 101   111 <- o_i = 2
     /// ```
-    fun stitch_swap_remove_r():
+    fun stitch_swap_remove_r_i():
     CB<u8> {
         let v = 0; // Ignore values in key-value pairs by setting to 0
         let cb = empty<u8>(); // Initialize empty tree
@@ -2078,7 +2078,7 @@ module Econia::CritBit {
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"001"), v, p: 0});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"101"), v, p: 2});
         v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"111"), v, p: 2});
-        // Swap remove and destruct bogus node
+        // Swap remove and unpack bogus node
         let I{c: _, p: _, l: _, r: _} = v_s_r<I>(&mut cb.i, 1);
         // Stitch broken relationships
         stitch_swap_remove(&mut cb, 1, 3);
@@ -2088,6 +2088,32 @@ module Econia::CritBit {
         // update
         assert!(v_b<O<u8>>(&cb.o, 0).p == 1, 1); // Left child
         assert!(v_b<I>(&cb.i, 0).p == 1, 2); // Right child
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify successful stitch for relocated root outer node
+    /// ```
+    /// >      100 <- i_i = 1 (relocated)
+    /// ```
+    fun stitch_swap_remove_r_o():
+    CB<u8> {
+        let v = 0; // Ignore values in key-value pairs by setting to 0
+        let cb = empty<u8>(); // Initialize empty tree
+        // Append root outer node per above diagram, including bogus
+        // outer node at vector index 0, which will be swap removed
+        v_pu_b<O<u8>>(&mut cb.o, O{k:    HI_128, v, p: HI_64}); // Bogus
+        v_pu_b<O<u8>>(&mut cb.o, O{k: u(b"100"), v, p:  ROOT});
+        // Swap remove and unpack bogus node
+        let O{k: _, v: _, p: _} = v_s_r<O<u8>>(&mut cb.o, 0);
+        // Stitch broken relationships
+        stitch_swap_remove(&mut cb, o_c(0), 2);
+        // Assert root field indicates relocated outer node
+        assert!(cb.r == o_c(0), 0);
+        // Borrow reference to outer node at root
+        let n = v_b<O<u8>>(&cb.o, 0);
+        // Assert fields are as expected
+        assert!(n.k == u(b"100") && n.v == 0 && n.p == ROOT, 1);
         cb // Return rather than unpack
     }
 

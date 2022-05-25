@@ -234,6 +234,24 @@ module Econia::CritBit {
         v_b<O<V>>(&cb.o, o_v(i_n))
     }
 
+    /// Return mutable reference to outer node having maximum key in
+    /// `cb`, aborting if `cb` empty
+    public fun borrow_max_node_mut<V>(
+        cb: &mut CB<V>,
+    ): &mut O<V> {
+        let l = length(cb); // Get number of keys in tree
+        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
+        // If singleton tree, return mutable reference to root node
+        if (l == 1) return v_b_m<O<V>>(&mut cb.o, o_v(cb.r));
+        // Else initialize index of search node to right child of root
+        let i_n = v_b<I>(&cb.i, cb.r).r;
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
+        }; // Index of search node now corresponds to outer node
+        // Return mutable reference to node
+        v_b_m<O<V>>(&mut cb.o, o_v(i_n))
+    }
+
     /// Return immutable reference to outer node having minimum key in
     /// `cb`, aborting if `cb` empty
     public fun borrow_min_node<V>(
@@ -252,6 +270,23 @@ module Econia::CritBit {
         v_b<O<V>>(&cb.o, o_v(i_n))
     }
 
+    /// Return mutable reference to outer node having minimum key in
+    /// `cb`, aborting if `cb` empty
+    public fun borrow_min_node_mut<V>(
+        cb: &mut CB<V>,
+    ): &mut O<V> {
+        let l = length(cb); // Get number of keys in tree
+        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
+        // If singleton tree, return mutable reference to root node
+        if (l == 1) return v_b_m<O<V>>(&mut cb.o, o_v(cb.r));
+        // Else initialize index of search node to left child of root
+        let i_n = v_b<I>(&cb.i, cb.r).l;
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
+        }; // Index of search node now corresponds to outer node
+        // Return mutable reference to node
+        v_b_m<O<V>>(&mut cb.o, o_v(i_n))
+    }
 
     /// Return mutable reference to value corresponding to key `k` in
     /// `cb`, aborting if empty tree or no match
@@ -1230,18 +1265,47 @@ module Econia::CritBit {
     }
 
     #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Assert failure for attempted borrow on empty tree
+    fun borrow_max_node_mut_failure() {
+        let cb = empty<u8>(); // Initialize empty tree
+        borrow_max_node_mut(&mut cb); // Attempt invalid borrow
+        destroy_empty(cb); // Destroy empty tree
+    }
+
+    #[test]
     /// Verify correct maximum key node borrow
-    fun borrow_max_node_success():
+    fun borrow_max_node_mut_success():
     CB<u8> {
         let cb = singleton(3, 5); // Initialize singleton
-        let n = borrow_max_node(&cb); // Borrow node with minimum key
+        // Borrow node with max key
+        let n = borrow_max_node_mut(&mut cb);
         // Assert correct key-value pair
         assert!(n.k == 3 && n.v == 5, 0);
         // Insert additional values
         insert(&mut cb, 2, 7);
         insert(&mut cb, 5, 8);
         insert(&mut cb, 4, 6);
-        let n = borrow_max_node(&cb); // Borrow node with minimum key
+        // Borrow node with max key
+        let n = borrow_max_node_mut(&mut cb);
+        // Assert correct key-value pair
+        assert!(n.k == 5 && n.v == 8, 1);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify correct maximum key node borrow
+    fun borrow_max_node_success():
+    CB<u8> {
+        let cb = singleton(3, 5); // Initialize singleton
+        let n = borrow_max_node(&cb); // Borrow node with max key
+        // Assert correct key-value pair
+        assert!(n.k == 3 && n.v == 5, 0);
+        // Insert additional values
+        insert(&mut cb, 2, 7);
+        insert(&mut cb, 5, 8);
+        insert(&mut cb, 4, 6);
+        let n = borrow_max_node(&cb); // Borrow node with max key
         // Assert correct key-value pair
         assert!(n.k == 5 && n.v == 8, 1);
         cb // Return rather than unpack
@@ -1257,18 +1321,47 @@ module Econia::CritBit {
     }
 
     #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Assert failure for attempted borrow on empty tree
+    fun borrow_min_node_mut_failure() {
+        let cb = empty<u8>(); // Initialize empty tree
+        borrow_min_node_mut(&mut cb); // Attempt invalid borrow
+        destroy_empty(cb); // Destroy empty tree
+    }
+
+    #[test]
+    /// Verify correct maximum key node borrow
+    fun borrow_min_node_mut_success():
+    CB<u8> {
+        let cb = singleton(3, 5); // Initialize singleton
+        // Borrow node with min key
+        let n = borrow_min_node_mut(&mut cb);
+        // Assert correct key-value pair
+        assert!(n.k == 3 && n.v == 5, 0);
+        // Insert additional values
+        insert(&mut cb, 2, 7);
+        insert(&mut cb, 5, 8);
+        insert(&mut cb, 4, 6);
+        // Borrow node with min key
+        let n = borrow_min_node_mut(&mut cb);
+        // Assert correct key-value pair
+        assert!(n.k == 2 && n.v == 7, 1);
+        cb // Return rather than unpack
+    }
+
+    #[test]
     /// Verify correct minimum key node borrow
     fun borrow_min_node_success():
     CB<u8> {
         let cb = singleton(3, 5); // Initialize singleton
-        let n = borrow_min_node(&cb); // Borrow node with minimum key
+        let n = borrow_min_node(&cb); // Borrow node with min key
         // Assert correct key-value pair
         assert!(n.k == 3 && n.v == 5, 0);
         // Insert additional values
         insert(&mut cb, 2, 7);
         insert(&mut cb, 5, 8);
         insert(&mut cb, 1, 6);
-        let n = borrow_min_node(&cb); // Borrow node with minimum key
+        let n = borrow_min_node(&cb); // Borrow node with min key
         // Assert correct key-value pair
         assert!(n.k == 1 && n.v == 6, 1);
         cb // Return rather than unpack

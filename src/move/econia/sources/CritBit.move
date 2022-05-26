@@ -298,32 +298,16 @@ module Econia::CritBit {
     public fun max_key<V>(
         cb: &CB<V>,
     ): u128 {
-        let l = length(cb); // Get number of keys in tree
-        assert!(l != 0, E_LOOKUP_EMPTY); // Assert tree not empty
-        // If singleton tree, return key of outer node at root
-        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r)).k;
-        // Else initialize index of search node to right child of root
-        let i_n = v_b<I>(&cb.i, cb.r).r;
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
-        }; // Index of search node now corresponds to outer node
-        v_b<O<V>>(&cb.o, o_v(i_n)).k // Return key of node
+        assert!(!is_empty(cb), E_LOOKUP_EMPTY); // Assert tree not empty
+        v_b<O<V>>(&cb.o, max_key_v_i<V>(cb)).k // Return max key
     }
 
     /// Return the minimum key in `cb`, aborting if `cb` is empty
     public fun min_key<V>(
         cb: &CB<V>,
     ): u128 {
-        let l = length(cb); // Get number of keys in tree
-        assert!(l != 0, E_LOOKUP_EMPTY); // Assert tree not empty
-        // If singleton tree, return key of outer node at root
-        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r)).k;
-        // Else initialize index of search node to left child of root
-        let i_n = v_b<I>(&cb.i, cb.r).l;
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
-        }; // Index of search node now corresponds to outer node
-        v_b<O<V>>(&cb.o, o_v(i_n)).k // Return key of node
+        assert!(!is_empty(cb), E_LOOKUP_EMPTY); // Assert tree not empty
+        v_b<O<V>>(&cb.o, min_key_v_i<V>(cb)).k // Return min key
     }
 
     /// Pop from `cb` value corresponding to key `k`, aborting if `cb`
@@ -903,6 +887,32 @@ module Econia::CritBit {
         cb.r = 0; // Update tree root field to indicate new inner node
         // Update existing outer node to have new inner node as parent
         v_b_m<O<V>>(&mut cb.o, 0).p = 0;
+    }
+
+    /// Return the vector index of the outer node containing the maximum
+    /// key in non-empty tree `cb`
+    fun max_key_v_i<V>(
+        cb: &CB<V>
+    ): u64 {
+        let i_n = cb.r; // Initialize index of search node to root
+        loop { // Loop over nodes
+            // If search node is an outer node return its vector index
+            if (is_out(i_n)) return o_v(i_n);
+            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
+        }
+    }
+
+    /// Return the vector index of the outer node containing the minimum
+    /// key in non-empty tree `cb`
+    fun min_key_v_i<V>(
+        cb: &CB<V>
+    ): u64 {
+        let i_n = cb.r; // Initialize index of search node to root
+        loop { // Loop over nodes
+            // If search node is an outer node return its vector index
+            if (is_out(i_n)) return o_v(i_n);
+            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
+        }
     }
 
     /// Return `true` if vector index `i` indicates an outer node

@@ -1,4 +1,5 @@
 /// # Background
+///
 /// A critical bit (crit-bit) tree is a compact binary prefix tree,
 /// similar to a binary search tree, that stores a prefix-free set of
 /// bitstrings, like n-bit integers or variable-length 0-terminated byte
@@ -2122,13 +2123,16 @@ module Econia::CritBit {
     /// Initialize a mutable iterated predecessor traversal, starting
     /// at the node containing the maximum key in a tree having at least
     /// one outer node
+    ///
     /// # Parameters
     /// * `cb`: A crit-bit tree containing at least one outer node
+    ///
     /// # Returns
     /// * `u128`: Maximum key in `cb`
     /// * `&mut V`: Mutable reference to max key node's value
     /// * `u64`: Max key node's parent field
     /// * `u64`: Child field index of max key node
+    ///
     /// # Considerations
     /// * Publicly exposes the vector index of a node
     /// * Assumes caller has already verified tree is not empty
@@ -2183,6 +2187,7 @@ module Econia::CritBit {
     /// node" contains the "start key") to the node containing the
     /// predecessor to the start key (the "target node" contains the
     /// "target key")
+    ///
     /// # Method
     /// 1. Walk up from start node until arriving at an inner node that
     ///    has the start key as the minimum key in its right subtree
@@ -2191,15 +2196,18 @@ module Econia::CritBit {
     /// 2. Walk to maximum key in apex node's left subtree, breaking out
     ///    at target node (the first outer node): walk to apex node's
     ///    left child, then walk along right children
+    ///
     /// # Parameters
     /// * `cb`: Crit-bit tree containing at least two nodes
     /// * `k`: Start key (not permitted to be minimum key in `cb`)
     /// * `p_f`: Start node's parent field
+    ///
     /// # Returns
     /// * `u128`: Target key
     /// * `&mut V`: Mutable reference to target node's value
     /// * `u64`: Target node's parent field
     /// * `u64`: Child field index of target node
+    ///
     /// # Considerations
     /// * Assumes passed start key is not minimum key in tree
     /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
@@ -2235,18 +2243,21 @@ module Econia::CritBit {
     /// node" contains the "start key") to the node containing the
     /// predecessor to the start key (the "target node" contains the
     /// "target key"), then pop the start node and return its value
+    ///
     /// # Parameters
     /// * `cb`: Crit-bit tree containing at least two nodes
     /// * `k`: Start key (not permitted to be minimum key in `cb`)
     /// * `p_f`: Start node's parent field
     /// * `c_i`: Child field index of start node
     /// * `n_o`: Number of outer nodes in `cb`
+    ///
     /// # Returns
     /// * `u128`: Target key
     /// * `&mut V`: Mutable reference to target node's value
     /// * `u64`: Target node's parent field
     /// * `u64`: Child field index of target node
     /// * `V`: Popped start node's value
+    ///
     /// # Considerations
     /// * Assumes passed start key is not minimum key in tree
     /// * Takes a publicy-exposed vector index (`p_f`) as a parameter

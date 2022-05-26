@@ -8,6 +8,7 @@
 
 ## Background
 
+
 A critical bit (crit-bit) tree is a compact binary prefix tree,
 similar to a binary search tree, that stores a prefix-free set of
 bitstrings, like n-bit integers or variable-length 0-terminated byte
@@ -2212,11 +2213,13 @@ Initialize a mutable iterated predecessor traversal, starting
 at the node containing the maximum key in a tree having at least
 one outer node
 
+
 <a name="@Parameters_10"></a>
 
 ### Parameters
 
 * <code>cb</code>: A crit-bit tree containing at least one outer node
+
 
 <a name="@Returns_11"></a>
 
@@ -2226,6 +2229,7 @@ one outer node
 * <code>&<b>mut</b> V</code>: Mutable reference to max key node's value
 * <code>u64</code>: Max key node's parent field
 * <code>u64</code>: Child field index of max key node
+
 
 <a name="@Considerations_12"></a>
 
@@ -2275,6 +2279,7 @@ node" contains the "start key") to the node containing the
 predecessor to the start key (the "target node" contains the
 "target key")
 
+
 <a name="@Method_13"></a>
 
 ### Method
@@ -2287,6 +2292,7 @@ has the last walked node as its right child
 at target node (the first outer node): walk to apex node's
 left child, then walk along right children
 
+
 <a name="@Parameters_14"></a>
 
 ### Parameters
@@ -2294,6 +2300,7 @@ left child, then walk along right children
 * <code>cb</code>: Crit-bit tree containing at least two nodes
 * <code>k</code>: Start key (not permitted to be minimum key in <code>cb</code>)
 * <code>p_f</code>: Start node's parent field
+
 
 <a name="@Returns_15"></a>
 
@@ -2303,6 +2310,7 @@ left child, then walk along right children
 * <code>&<b>mut</b> V</code>: Mutable reference to target node's value
 * <code>u64</code>: Target node's parent field
 * <code>u64</code>: Child field index of target node
+
 
 <a name="@Considerations_16"></a>
 
@@ -2363,6 +2371,7 @@ node" contains the "start key") to the node containing the
 predecessor to the start key (the "target node" contains the
 "target key"), then pop the start node and return its value
 
+
 <a name="@Parameters_17"></a>
 
 ### Parameters
@@ -2373,6 +2382,7 @@ predecessor to the start key (the "target node" contains the
 * <code>c_i</code>: Child field index of start node
 * <code>n_o</code>: Number of outer nodes in <code>cb</code>
 
+
 <a name="@Returns_18"></a>
 
 ### Returns
@@ -2382,6 +2392,7 @@ predecessor to the start key (the "target node" contains the
 * <code>u64</code>: Target node's parent field
 * <code>u64</code>: Child field index of target node
 * <code>V</code>: Popped start node's value
+
 
 <a name="@Considerations_19"></a>
 

@@ -180,6 +180,10 @@ is an outer node.
     -  [Parameters](#@Parameters_14)
     -  [Returns](#@Returns_15)
     -  [Considerations](#@Considerations_16)
+-  [Function `traverse_pop_p_mut`](#0x1234_CritBit_traverse_pop_p_mut)
+    -  [Parameters](#@Parameters_17)
+    -  [Returns](#@Returns_18)
+    -  [Considerations](#@Considerations_19)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -413,36 +417,6 @@ When attempting to pop from empty tree
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_POP_EMPTY">E_POP_EMPTY</a>: u64 = 6;
-</code></pre>
-
-
-
-<a name="0x1234_CritBit_E_TRAVERSE_EMPTY"></a>
-
-When attempting to traverse an empty tree
-
-
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_EMPTY">E_TRAVERSE_EMPTY</a>: u64 = 8;
-</code></pre>
-
-
-
-<a name="0x1234_CritBit_E_TRAVERSE_ROOT"></a>
-
-When attempting to traverse past the root
-
-
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_ROOT">E_TRAVERSE_ROOT</a>: u64 = 10;
-</code></pre>
-
-
-
-<a name="0x1234_CritBit_E_TRAVERSE_TOO_SMALL"></a>
-
-When attempting to traverse within tree having too few elements
-
-
-<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_TOO_SMALL">E_TRAVERSE_TOO_SMALL</a>: u64 = 9;
 </code></pre>
 
 
@@ -2373,6 +2347,93 @@ left child, then walk along right children
     // Return target node's key, mutable reference <b>to</b> its value, its
     // parent field, and child field index of it
     (c.k, &<b>mut</b> c.v, c.p, c_f)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_traverse_pop_p_mut"></a>
+
+## Function `traverse_pop_p_mut`
+
+Traverse from the node containing the specified key (the "start
+node" contains the "start key") to the node containing the
+predecessor to the start key (the "target node" contains the
+"target key"), then pop the start node and return its value
+
+<a name="@Parameters_17"></a>
+
+### Parameters
+
+* <code>cb</code>: Crit-bit tree containing at least two nodes
+* <code>k</code>: Start key (not permitted to be minimum key in <code>cb</code>)
+* <code>p_f</code>: Start node's parent field
+* <code>c_i</code>: Child field index of start node
+* <code>n_o</code>: Number of outer nodes in <code>cb</code>
+
+<a name="@Returns_18"></a>
+
+### Returns
+
+* <code>u128</code>: Target key
+* <code>&<b>mut</b> V</code>: Mutable reference to target node's value
+* <code>u64</code>: Target node's parent field
+* <code>u64</code>: Child field index of target node
+* <code>V</code>: Popped start node's value
+
+<a name="@Considerations_19"></a>
+
+### Considerations
+
+* Assumes passed start key is not minimum key in tree
+* Takes a publicy-exposed vector index (<code>p_f</code>) as a parameter
+* Does not calculate number of outer nodes in <code>cb</code>, but rather
+accepts this number as a parameter, which should be tracked by
+the caller
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_traverse_pop_p_mut">traverse_pop_p_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, c_i: u64, n_o: u64): (u128, &<b>mut</b> V, u64, u64, V)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_traverse_pop_p_mut">traverse_pop_p_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    p_f: u64,
+    c_i: u64,
+    n_o: u64
+): (
+    u128,
+    &<b>mut</b> V,
+    u64,
+    u64,
+    V
+) {
+    // Store side on which the start node is a child of its parent
+    <b>let</b> s_s = <b>if</b>(<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, p_f).c)) <a href="CritBit.md#0x1234_CritBit_R">R</a> <b>else</b> <a href="CritBit.md#0x1234_CritBit_L">L</a>;
+    // Store target node's pre-pop field index
+    <b>let</b> (_, _, _, i_t) = <a href="CritBit.md#0x1234_CritBit_traverse_p_mut">traverse_p_mut</a>(cb, k, p_f);
+    // Update relationships for popped start node
+    <a href="CritBit.md#0x1234_CritBit_pop_update_relationships">pop_update_relationships</a>(cb, s_s, p_f);
+    // Store start node value from pop-facilitated node destruction
+    <b>let</b> s_v = <a href="CritBit.md#0x1234_CritBit_pop_destroy_nodes">pop_destroy_nodes</a>(cb, p_f, c_i, n_o);
+    // If target node was last in outer node vector, then swap
+    // remove will have relocated it, so <b>update</b> its <b>post</b>-pop field
+    // index <b>to</b> the start node's pre-pop field index
+    <b>if</b> (<a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_t) == n_o - 1) i_t = c_i;
+    // Borrow mutable reference <b>to</b> target node
+    <b>let</b> t = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_t));
+    // Return target node's key, mutable reference <b>to</b> its value, its
+    // parent field, the child field index of it, and the start
+    // node's popped value
+    (t.k, &<b>mut</b> t.v, t.p, i_t, s_v)
 }
 </code></pre>
 

@@ -180,12 +180,6 @@ module Econia::CritBit {
     const E_POP_EMPTY: u64 = 6;
     /// When attempting to look up on an empty tree
     const E_LOOKUP_EMPTY: u64 = 7;
-    /// When attempting to traverse an empty tree
-    const E_TRAVERSE_EMPTY: u64 = 8;
-    /// When attempting to traverse within tree having too few elements
-    const E_TRAVERSE_TOO_SMALL: u64 = 9;
-    /// When attempting to traverse past the root
-    const E_TRAVERSE_ROOT: u64 = 10;
 
     /// # General constants
 
@@ -2235,6 +2229,61 @@ module Econia::CritBit {
         // Return target node's key, mutable reference to its value, its
         // parent field, and child field index of it
         (c.k, &mut c.v, c.p, c_f)
+    }
+
+    /// Traverse from the node containing the specified key (the "start
+    /// node" contains the "start key") to the node containing the
+    /// predecessor to the start key (the "target node" contains the
+    /// "target key"), then pop the start node and return its value
+    /// # Parameters
+    /// * `cb`: Crit-bit tree containing at least two nodes
+    /// * `k`: Start key (not permitted to be minimum key in `cb`)
+    /// * `p_f`: Start node's parent field
+    /// * `c_i`: Child field index of start node
+    /// * `n_o`: Number of outer nodes in `cb`
+    /// # Returns
+    /// * `u128`: Target key
+    /// * `&mut V`: Mutable reference to target node's value
+    /// * `u64`: Target node's parent field
+    /// * `u64`: Child field index of target node
+    /// * `V`: Popped start node's value
+    /// # Considerations
+    /// * Assumes passed start key is not minimum key in tree
+    /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
+    /// * Does not calculate number of outer nodes in `cb`, but rather
+    ///   accepts this number as a parameter, which should be tracked by
+    ///   the caller
+    fun traverse_pop_p_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64,
+        c_i: u64,
+        n_o: u64
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64,
+        V
+    ) {
+        // Store side on which the start node is a child of its parent
+        let s_s = if(is_set(k, v_b<I>(&cb.i, p_f).c)) R else L;
+        // Store target node's pre-pop field index
+        let (_, _, _, i_t) = traverse_p_mut(cb, k, p_f);
+        // Update relationships for popped start node
+        pop_update_relationships(cb, s_s, p_f);
+        // Store start node value from pop-facilitated node destruction
+        let s_v = pop_destroy_nodes(cb, p_f, c_i, n_o);
+        // If target node was last in outer node vector, then swap
+        // remove will have relocated it, so update its post-pop field
+        // index to the start node's pre-pop field index
+        if (o_v(i_t) == n_o - 1) i_t = c_i;
+        // Borrow mutable reference to target node
+        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
+        // Return target node's key, mutable reference to its value, its
+        // parent field, the child field index of it, and the start
+        // node's popped value
+        (t.k, &mut t.v, t.p, i_t, s_v)
     }
 
     // To sort <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

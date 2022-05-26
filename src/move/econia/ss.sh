@@ -11,6 +11,10 @@ if test $1 = hello; then
 elif test $1 = c; then
     clear
 
+# Conda activate econia environment
+elif test $1 = ca; then
+    conda activate econia
+
 # Go back to Econia project repository root
 elif test $1 = er; then
     cd ../../../

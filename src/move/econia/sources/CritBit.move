@@ -276,7 +276,7 @@ module Econia::CritBit {
         cb: &CB<V>,
     ): u128 {
         assert!(!is_empty(cb), E_LOOKUP_EMPTY); // Assert tree not empty
-        v_b<O<V>>(&cb.o, max_node_v_i<V>(cb)).k // Return max key
+        v_b<O<V>>(&cb.o, o_v(max_node_c_i<V>(cb))).k // Return max key
     }
 
     /// Return the minimum key in `cb`, aborting if `cb` is empty
@@ -284,7 +284,7 @@ module Econia::CritBit {
         cb: &CB<V>,
     ): u128 {
         assert!(!is_empty(cb), E_LOOKUP_EMPTY); // Assert tree not empty
-        v_b<O<V>>(&cb.o, min_node_v_i<V>(cb)).k // Return min key
+        v_b<O<V>>(&cb.o, o_v(min_node_c_i<V>(cb))).k // Return min key
     }
 
     /// Pop from `cb` value corresponding to key `k`, aborting if `cb`
@@ -816,28 +816,28 @@ module Econia::CritBit {
         v_b_m<O<V>>(&mut cb.o, 0).p = 0;
     }
 
-    /// Return the vector index of the outer node containing the maximum
-    /// key in non-empty tree `cb`
-    fun max_node_v_i<V>(
+    /// Return the child field index of the outer node containing the
+    /// maximum key in non-empty tree `cb`
+    fun max_node_c_i<V>(
         cb: &CB<V>
     ): u64 {
         let i_n = cb.r; // Initialize index of search node to root
         loop { // Loop over nodes
-            // If search node is an outer node return its vector index
-            if (is_out(i_n)) return o_v(i_n);
+            // If search node is an outer node return its field index
+            if (is_out(i_n)) return i_n;
             i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
         }
     }
 
-    /// Return the vector index of the outer node containing the minimum
-    /// key in non-empty tree `cb`
-    fun min_node_v_i<V>(
+    /// Return the chield field index of the outer node containing the
+    /// minimum key in non-empty tree `cb`
+    fun min_node_c_i<V>(
         cb: &CB<V>
     ): u64 {
         let i_n = cb.r; // Initialize index of search node to root
         loop { // Loop over nodes
-            // If search node is an outer node return its vector index
-            if (is_out(i_n)) return o_v(i_n);
+            // If search node is an outer node return its field index
+            if (is_out(i_n)) return i_n;
             i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
         }
     }
@@ -2067,11 +2067,11 @@ module Econia::CritBit {
         insert(&mut cb, u(b"1110"), 3);
         insert(&mut cb, u(b"0000"), 4);
        // Initialize predecessor traversal
-        let (k, v_ref, p_f) = init_traverse_p_mut(&mut cb);
+        let (k, v_ref, p_f, i) = init_traverse_p_mut(&mut cb);
         // Assert traversal returns
-        assert!(k == u(b"1110") && *v_ref == 3 && p_f == 2, 0);
+        assert!(k == u(b"1110") && *v_ref == 3 && p_f == 2 && i == o_c(3), 0);
         // Traverse to predecessor
-        let (k, v_ref, p_f, i) = traverse_p_mut(&mut cb, k, p_f);
+        (k, v_ref, p_f, i) = traverse_p_mut(&mut cb, k, p_f);
         // Assert traversal returns
         assert!(k == u(b"1101") && *v_ref == 0 && p_f == 1 && i == o_c(0), 1);
         *v_ref = 5; // Modify value
@@ -2134,6 +2134,7 @@ module Econia::CritBit {
     /// * `u128`: Maximum key in `cb`
     /// * `&mut V`: Mutable reference to max key node's value
     /// * `u64`: Max key node's parent field
+    /// * `u64`: Child field index of max key node
     /// # Considerations
     /// * Publicly exposes the vector index of a node
     /// * Assumes caller has already verified tree is not empty
@@ -2142,15 +2143,16 @@ module Econia::CritBit {
     ): (
         u128,
         &mut V,
+        u64,
         u64
     ) {
-        // Get vector index of node containing max key
-        let i_m_n = max_node_v_i(cb);
+        // Get child field index of node containing max key
+        let i_m = max_node_c_i(cb);
         // Borrow mutable reference to max node
-        let n = v_b_m<O<V>>(&mut cb.o, i_m_n);
-        // Return max node's key, mutable reference to its value, and
-        // its parent field
-        (n.k, &mut n.v, n.p)
+        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_m));
+        // Return max node's key, mutable reference to its value, its
+        // parent field, and child field index of it
+        (n.k, &mut n.v, n.p, i_m)
     }
 
     #[test]
@@ -2168,17 +2170,18 @@ module Econia::CritBit {
     CB<u8> {
        let cb = singleton(u(b"100"), 5); // Initialize singleton
        // Initialize predecessor traversal
-       let (n_k, v_ref, n_p) = init_traverse_p_mut(&mut cb);
+       let (n_k, v_ref, n_p, i) = init_traverse_p_mut(&mut cb);
        // Verify return values are as expected
-       assert!(n_k == u(b"100") && *v_ref == 5 && n_p == ROOT, 0);
+       assert!(n_k == u(b"100") && *v_ref == 5, 0);
+       assert!(n_p == ROOT && i == o_c(0), 1);
        *v_ref = 6; // Modify value
        // Assert mutation persistence
-       assert!(*borrow(&cb, u(b"100")) == 6, 1);
+       assert!(*borrow(&cb, u(b"100")) == 6, 2);
        insert(&mut cb, u(b"110"), 7); // Insert new key
        // Initialize predecessor traversal
-       let (n_k, v_ref, n_p) = init_traverse_p_mut(&mut cb);
+       (n_k, v_ref, n_p, i) = init_traverse_p_mut(&mut cb);
        // Verify new return values are as expected
-       assert!(n_k == u(b"110") && *v_ref == 7 && n_p == 0, 2);
+       assert!(n_k == u(b"110") && *v_ref == 7 && n_p == 0 && i == o_c(1), 3);
        cb // Return rather than unpack
     }
 
@@ -2202,7 +2205,7 @@ module Econia::CritBit {
     /// * `u128`: Target key
     /// * `&mut V`: Mutable reference to target node's value
     /// * `u64`: Target node's parent field
-    /// * `u64`: Field index of target node
+    /// * `u64`: Child field index of target node
     /// # Considerations
     /// * Assumes passed start key is not minimum key in tree
     /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
@@ -2230,7 +2233,7 @@ module Econia::CritBit {
         // Borrow mutable reference to target node
         let c = v_b_m<O<V>>(&mut cb.o, o_v(c_f));
         // Return target node's key, mutable reference to its value, its
-        // parent field, and field index of target node
+        // parent field, and child field index of it
         (c.k, &mut c.v, c.p, c_f)
     }
 

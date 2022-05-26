@@ -182,6 +182,10 @@ module Econia::CritBit {
     const E_LOOKUP_EMPTY: u64 = 7;
     /// When attempting to traverse an empty tree
     const E_TRAVERSE_EMPTY: u64 = 8;
+    /// When attempting to traverse within tree having too few elements
+    const E_TRAVERSE_TOO_SMALL: u64 = 9;
+    /// When attempting to traverse past the root
+    const E_TRAVERSE_ROOT: u64 = 10;
 
     /// # General constants
 
@@ -206,6 +210,29 @@ module Econia::CritBit {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Return maximum key in `cb`, a mutable reference to the value
+    /// from the corresponding node, and the parent field of the node,
+    /// aborting if `cb` empty, to begin decreasing traversal
+    public fun begin_traverse_dec_mut<V>(
+        cb: &mut CB<V>,
+    ): (
+        u128,
+        &mut V,
+        u64
+    ) {
+        // Assert tree not empty
+        assert!(!is_empty(cb), E_TRAVERSE_EMPTY);
+        let i_n = cb.r; // Initialize index of search node to root field
+        while (!is_out(i_n)) { // While search node is inner node
+            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
+        }; // Index of search node now corresponds to max outer node
+        // Borrow mutable reference to max node
+        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_n));
+        // Return its key, mutable reference to its value, and its
+        // parent field
+        (n.k, &mut n.v, n.p)
+    }
+
     /// Return immutable reference to value corresponding to key `k` in
     /// `cb`, aborting if empty tree or no match
     public fun borrow<V>(
@@ -217,44 +244,6 @@ module Econia::CritBit {
         assert!(c_o.k == k, E_NOT_HAS_K); // Abort if key not in tree
         &c_o.v // Return immutable reference to corresponding value
     }
-
-/*
-    /// Return immutable reference to outer node having maximum key in
-    /// `cb`, aborting if `cb` empty
-    public fun borrow_max_node<V>(
-        cb: &CB<V>,
-    ): &O<V> {
-        let l = length(cb); // Get number of keys in tree
-        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
-        // If singleton tree, return immutable reference to root node
-        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r));
-        // Else initialize index of search node to right child of root
-        let i_n = v_b<I>(&cb.i, cb.r).r;
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
-        }; // Index of search node now corresponds to outer node
-        // Return immutable reference to node
-        v_b<O<V>>(&cb.o, o_v(i_n))
-    }
-
-    /// Return immutable reference to outer node having minimum key in
-    /// `cb`, aborting if `cb` empty
-    public fun borrow_min_node<V>(
-        cb: &CB<V>,
-    ): &O<V> {
-        let l = length(cb); // Get number of keys in tree
-        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
-        // If singleton tree, return immutable reference to root node
-        if (l == 1) return v_b<O<V>>(&cb.o, o_v(cb.r));
-        // Else initialize index of search node to left child of root
-        let i_n = v_b<I>(&cb.i, cb.r).l;
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
-        }; // Index of search node now corresponds to outer node
-        // Return immutable reference to node
-        v_b<O<V>>(&cb.o, o_v(i_n))
-    }
-*/
 
     /// Return mutable reference to value corresponding to key `k` in
     /// `cb`, aborting if empty tree or no match
@@ -373,6 +362,56 @@ module Econia::CritBit {
         let cb = CB{r: 0, i: v_e<I>(), o: v_e<O<V>>()};
         insert_empty<V>(&mut cb, k, v);
         cb
+    }
+
+    /// Traverse to the node in `cb` containing the predecessor to key
+    /// `k`, where `k` is contained in an outer hode having parent field
+    /// `p_f`. Abort if `p_f` is `ROOT`, or if traversal walks past end
+    /// of tree. Once at the new node, return its key, a mutable
+    /// reference to its value, and its parent field. Start by walking
+    /// to the inner node that has the traversal key as the minimum key
+    /// in its right subtree: walk up from traversal key until reaching
+    /// an inner node via its right child. Then walk to the maximum
+    /// key in the node's left subtree: walk to its left child, then
+    /// keep walking along right children, breaking out when an outer
+    /// node is reached.
+    fun traverse_dec_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64
+    ): (
+        u128,
+        &mut V,
+        u64
+    ) {
+        // Assert not trying to traverse in singleton or empty tree
+        assert!(length(cb) > 1, E_TRAVERSE_TOO_SMALL);
+        // Borrow immutable reference to inner node indicated by parent
+        // field
+        let n = v_b<I>(&cb.i, p_f);
+        loop { // Begin walking up tree from traversal key
+            // If traversal starting key is set at critical bit, then an
+            // inner node has been reached by via its right child, so
+            // the walk should now go back down the node's left subtree
+            if (is_set(k, n.c)) break;
+            // Assert not trying to traverse past root
+            assert!(n.p != ROOT, E_TRAVERSE_ROOT);
+            // Borrow immutable reference to next inner node indicated
+            // by node under review's parent field
+            n = v_b<I>(&cb.i, n.p);
+        }; // Now at node having traversal key as min in right subtree
+        let c_f = n.l; // Get inner node's left child field
+        // While child indicated by field is inner node
+        while(!is_out(c_f)) {
+            // Borrow immutable reference to the child
+            n = v_b<I>(&cb.i, c_f);
+            c_f = n.r; // Review its right child next
+        }; // Child field now indicates outer node
+        // Borrow mutable reference to outer node
+        let c = v_b_m<O<V>>(&mut cb.o, o_v(c_f));
+        // Return outer node's key, mutable reference to its value, and
+        // its parent field
+        (c.k, &mut c.v, c.p)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1215,6 +1254,45 @@ module Econia::CritBit {
     }
 
     #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify abort for attempting to traverse empty tree
+    fun begin_traverse_dec_mut_failure() {
+        let cb = empty<u8>(); // Init empty tree
+        // Attempt invalid traversal initiation
+        let (_, _, _) = begin_traverse_dec_mut(&mut cb);
+        destroy_empty(cb); // Destroy empty tree
+    }
+
+    #[test]
+    /// Verify successful start of decreasing traversal for tree
+    /// sequence below, where `o_i` indicates outer node vector index
+    /// and `i_i` indicates inner node vector index:
+    /// ```
+    /// >     100 <- o_i = 0                  Insert 110
+    /// >                                     --------->
+    /// >                   1st <- i_i = 0
+    /// >                  /   \
+    /// >    o_i = 0 -> 100     110 <- o_i = 1
+    /// ```
+    fun begin_traverse_dec_mut_success():
+    CB<u8> {
+       let cb = singleton(u(b"100"), 5); // Initialize singleton
+       // Start decreasing traversal
+       let (n_k, v_ref, n_p) = begin_traverse_dec_mut(&mut cb);
+       // Verify return values are as expected
+       assert!(n_k == u(b"100") && *v_ref == 5 && n_p == ROOT, 0);
+       *v_ref = 6; // Modify value
+       // Assert update persistence
+       assert!(*borrow(&cb, u(b"100")) == 6, 1);
+       insert(&mut cb, u(b"110"), 7); // Insert new key
+       // Start decreasing traversal
+       let (n_k, v_ref, n_p) = begin_traverse_dec_mut(&mut cb);
+       // Verify new return values are as expected
+       assert!(n_k == u(b"110") && *v_ref == 7 && n_p == 0, 2);
+       cb // Return rather than unpack
+    }
+
+    #[test]
     #[expected_failure(abort_code = 3)]
     /// Assert failure for attempted borrow on empty tree
     fun borrow_empty() {
@@ -1222,120 +1300,6 @@ module Econia::CritBit {
         borrow<u8>(&cb, 0); // Attempt invalid borrow
         destroy_empty(cb); // Destroy empty tree
     }
-
-/*
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Assert failure for attempted borrow on empty tree
-    fun borrow_max_node_failure() {
-        let cb = empty<u8>(); // Initialize empty tree
-        borrow_max_node(&cb); // Attempt invalid borrow
-        destroy_empty(cb); // Destroy empty tree
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Assert failure for attempted borrow on empty tree
-    fun borrow_max_node_mut_failure() {
-        let cb = empty<u8>(); // Initialize empty tree
-        borrow_max_node_mut(&mut cb); // Attempt invalid borrow
-        destroy_empty(cb); // Destroy empty tree
-    }
-
-    #[test]
-    /// Verify correct maximum key node borrow
-    fun borrow_max_node_mut_success():
-    CB<u8> {
-        let cb = singleton(3, 5); // Initialize singleton
-        // Borrow node with max key
-        let n = borrow_max_node_mut(&mut cb);
-        // Assert correct key-value pair
-        assert!(n.k == 3 && n.v == 5, 0);
-        // Insert additional values
-        insert(&mut cb, 2, 7);
-        insert(&mut cb, 5, 8);
-        insert(&mut cb, 4, 6);
-        // Borrow node with max key
-        let n = borrow_max_node_mut(&mut cb);
-        // Assert correct key-value pair
-        assert!(n.k == 5 && n.v == 8, 1);
-        cb // Return rather than unpack
-    }
-
-    #[test]
-    /// Verify correct maximum key node borrow
-    fun borrow_max_node_success():
-    CB<u8> {
-        let cb = singleton(3, 5); // Initialize singleton
-        let n = borrow_max_node(&cb); // Borrow node with max key
-        // Assert correct key-value pair
-        assert!(n.k == 3 && n.v == 5, 0);
-        // Insert additional values
-        insert(&mut cb, 2, 7);
-        insert(&mut cb, 5, 8);
-        insert(&mut cb, 4, 6);
-        let n = borrow_max_node(&cb); // Borrow node with max key
-        // Assert correct key-value pair
-        assert!(n.k == 5 && n.v == 8, 1);
-        cb // Return rather than unpack
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Assert failure for attempted borrow on empty tree
-    fun borrow_min_node_failure() {
-        let cb = empty<u8>(); // Initialize empty tree
-        borrow_min_node(&cb); // Attempt invalid borrow
-        destroy_empty(cb); // Destroy empty tree
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Assert failure for attempted borrow on empty tree
-    fun borrow_min_node_mut_failure() {
-        let cb = empty<u8>(); // Initialize empty tree
-        borrow_min_node_mut(&mut cb); // Attempt invalid borrow
-        destroy_empty(cb); // Destroy empty tree
-    }
-
-    #[test]
-    /// Verify correct maximum key node borrow
-    fun borrow_min_node_mut_success():
-    CB<u8> {
-        let cb = singleton(3, 5); // Initialize singleton
-        // Borrow node with min key
-        let n = borrow_min_node_mut(&mut cb);
-        // Assert correct key-value pair
-        assert!(n.k == 3 && n.v == 5, 0);
-        // Insert additional values
-        insert(&mut cb, 2, 7);
-        insert(&mut cb, 5, 8);
-        insert(&mut cb, 4, 6);
-        // Borrow node with min key
-        let n = borrow_min_node_mut(&mut cb);
-        // Assert correct key-value pair
-        assert!(n.k == 2 && n.v == 7, 1);
-        cb // Return rather than unpack
-    }
-
-    #[test]
-    /// Verify correct minimum key node borrow
-    fun borrow_min_node_success():
-    CB<u8> {
-        let cb = singleton(3, 5); // Initialize singleton
-        let n = borrow_min_node(&cb); // Borrow node with min key
-        // Assert correct key-value pair
-        assert!(n.k == 3 && n.v == 5, 0);
-        // Insert additional values
-        insert(&mut cb, 2, 7);
-        insert(&mut cb, 5, 8);
-        insert(&mut cb, 1, 6);
-        let n = borrow_min_node(&cb); // Borrow node with min key
-        // Assert correct key-value pair
-        assert!(n.k == 1 && n.v == 6, 1);
-        cb // Return rather than unpack
-    }
-*/
 
     #[test]
     #[expected_failure(abort_code = 3)]
@@ -2181,6 +2145,85 @@ module Econia::CritBit {
     }
 
     #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for trying to traverse past root
+    fun traverse_dec_mut_failure_root():
+    CB<u8> {
+        let cb = singleton(1, 2); // Initialize singleton
+        insert(&mut cb, 2, 3); // Add a second key-value pair
+        // Begin traversal at max key
+        let (k, _, p_f) = begin_traverse_dec_mut(&mut cb);
+        // Traverse to predecessor (valid)
+        (k, _, p_f) = traverse_dec_mut(&mut cb, k, p_f);
+        // Attempt invalid traversal past min key
+        (_, _, _) = traverse_dec_mut(&mut cb, k, p_f);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for trying to traverse tree too small
+    fun traverse_dec_mut_failure_small():
+    CB<u8> {
+        let cb = singleton(1, 2); // Initialize singleton
+        // Begin traversal at max key
+        let (k, _, p_f) = begin_traverse_dec_mut(&mut cb);
+        // Attempt invalid traverse to predecessor
+        (_, _, _) = traverse_dec_mut(&mut cb, k, p_f);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    /// Verify proper decreasing traversal for below diagram, where
+    /// `i_i` indicates inner node vector index and `o_i` indicates
+    /// outer node vector index
+    /// ```
+    /// >                     3rd <- i_i = 3
+    /// >                    /   \
+    /// >     o_i = 4 -> 0000     2nd <- i_i = 0
+    /// >                        /   \
+    /// >         o_i = 1 -> 1000     1st <- i_i = 2
+    /// >                            /   \
+    /// >              i_i = 1 -> 0th     1110 <- o_i = 3
+    /// >                        /   \
+    /// >         o_i = 2 -> 1100     1101 <- o_i = 0
+    /// ```
+    fun traverse_dec_mut_success():
+    CB<u8> {
+        let cb = empty(); // Initialize empty tree
+        // Insert various key-value pairs
+        insert(&mut cb, u(b"1101"), 0);
+        insert(&mut cb, u(b"1000"), 1);
+        insert(&mut cb, u(b"1100"), 2);
+        insert(&mut cb, u(b"1110"), 3);
+        insert(&mut cb, u(b"0000"), 4);
+        // Begin traversal at max key
+        let (k, v_ref, p_f) = begin_traverse_dec_mut(&mut cb);
+        // Assert traversal returns
+        assert!(k == u(b"1110") && *v_ref == 3 && p_f == 2, 0);
+        // Traverse to predecessor
+        (k, v_ref, p_f) = traverse_dec_mut(&mut cb, k, p_f);
+        // Assert traversal returns
+        assert!(k == u(b"1101") && *v_ref == 0 && p_f == 1, 1);
+        *v_ref = 5; // Modify value
+        // Assert mutation persistence
+        assert!(*borrow(&cb, u(b"1101")) == 5, 2);
+        // Traverse to predecessor
+        (k, v_ref, p_f) = traverse_dec_mut(&mut cb, k, p_f);
+        // Assert traversal returns
+        assert!(k == u(b"1100") && *v_ref == 2 && p_f == 1, 3);
+        // Traverse to predecessor
+        (k, v_ref, p_f) = traverse_dec_mut(&mut cb, k, p_f);
+        // Assert traversal returns
+        assert!(k == u(b"1000") && *v_ref == 1 && p_f == 0, 4);
+        // Traverse to predecessor
+        (k, v_ref, p_f) = traverse_dec_mut(&mut cb, k, p_f);
+        // Assert traversal returns
+        assert!(k == u(b"0000") && *v_ref == 4 && p_f == 3, 5);
+        cb // Return rather than unpack
+    }
+
+    #[test]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for non-binary-representative byte string
     fun u_failure() {u(b"2");}
@@ -2213,116 +2256,5 @@ module Econia::CritBit {
 
     // To sort >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    public(friend) fun inner_at<V>(
-        cb: &mut CB<V>,
-        i_p: u64
-    ): &I {
-        v_b_m<I>(&mut cb.i, i_p)
-    }
-
-    // The walk takes the index of the parent and the val of key from
-    // traverse_dec_via_parent
-    // next_from_parent_of_dec
-
-    // Return the parent field of outer node `o_n`
-    public(friend) fun parent_field_of<V>(
-        o_n: &O<V>
-    ): u64 {
-        o_n.p
-    }
-
-/*
-    #[test]
-    /// ```
-    /// >         2nd
-    /// >        /   \
-    /// >      001   1st
-    /// >           /   \
-    /// >         100   0th
-    /// >              /   \
-    /// >            110   111
-    /// ```
-    fun parent_at_success():
-    CB<u8> {
-        let v = 0; // Ignore values by setting to 0
-        let cb = singleton(u(b"001"), v); // Initialize singleton
-        insert(&mut cb, u(b"100"), v); // Insert key 100
-        insert(&mut cb, u(b"110"), v); // Insert key 110
-        insert(&mut cb, u(b"111"), v); // Insert key 111
-        // Borrow mutable reference to max node
-        let n_m = borrow_max_node_mut(&mut cb);
-        // Borrow immutable reference to parent of max node
-        let p_m = inner_at(&mut cb, parent_field_of(n_m));
-        assert!(p_m.c == 0, 0); // Assert has critical bit of 0
-        cb // Return rather than unpack
-    }
-*/
-
-    /// Return maximum key in `cb`, a mutable reference to the value
-    /// from the corresponding node, and the parent field of the node,
-    /// aborting if `cb` empty, to begin decreasing traversal
-    public fun begin_dec_traverse_mut<V>(
-        cb: &mut CB<V>,
-    ): (
-        u128,
-        &mut V,
-        u64
-    ) {
-        // Assert tree not empty
-        assert!(!is_empty(cb), E_TRAVERSE_EMPTY);
-        let i_n = cb.r; // Initialize index of search node to root field
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).r // Review node's right child next
-        }; // Index of search node now corresponds to max outer node
-        // Borrow mutable reference to max node
-        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_n));
-        // Return its key, mutable reference to its value, and its
-        // parent field
-        (n.k, &mut n.v, n.p)
-    }
-
-    #[test]
-    /// Verify successful start of decreasing traversal for tree
-    /// sequence below, where `o_i` indicates outer node vector index
-    /// and `i_i` indicates inner node vector index:
-    /// ```
-    /// >     100 <- o_i = 0                  Insert 110
-    /// >                                     --------->
-    /// >                   1st <- i_i = 0
-    /// >                  /   \
-    /// >    o_i = 0 -> 100     110 <- o_i = 1
-    /// ```
-    fun begin_dec_traverse_mut_success():
-    CB<u8> {
-       let cb = singleton(u(b"100"), 5); // Initialize singleton
-       // Start decreasing traversal
-       let (n_k, v_ref, n_p) = begin_dec_traverse_mut(&mut cb);
-       // Verify return values are as expected
-       assert!(n_k == u(b"100") && *v_ref == 5 && n_p == ROOT, 0);
-       *v_ref = 6; // Modify value
-       // Assert update persistence
-       assert!(*borrow(&cb, u(b"100")) == 6, 1);
-       cb // Return rather than unpack
-    }
-
-/*
-    /// Return mutable reference to outer node having minimum key in
-    /// `cb`, aborting if `cb` empty
-    public fun borrow_min_node_mut<V>(
-        cb: &mut CB<V>,
-    ): &mut O<V> {
-        let l = length(cb); // Get number of keys in tree
-        assert!(l != 0, E_BORROW_EMPTY); // Assert tree not empty
-        // If singleton tree, return mutable reference to root node
-        if (l == 1) return v_b_m<O<V>>(&mut cb.o, o_v(cb.r));
-        // Else initialize index of search node to left child of root
-        let i_n = v_b<I>(&cb.i, cb.r).l;
-        while (!is_out(i_n)) { // While search node is inner node
-            i_n = v_b<I>(&cb.i, i_n).l // Review node's left child next
-        }; // Index of search node now corresponds to outer node
-        // Return mutable reference to node
-        v_b_m<O<V>>(&mut cb.o, o_v(i_n))
-    }
-*/
     // To sort <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }

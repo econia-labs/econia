@@ -131,6 +131,7 @@ is an outer node.
 -  [Constants](#@Constants_5)
     -  [Error codes](#@Error_codes_6)
     -  [General constants](#@General_constants_7)
+-  [Function `begin_traverse_dec_mut`](#0x1234_CritBit_begin_traverse_dec_mut)
 -  [Function `borrow`](#0x1234_CritBit_borrow)
 -  [Function `borrow_mut`](#0x1234_CritBit_borrow_mut)
 -  [Function `destroy_empty`](#0x1234_CritBit_destroy_empty)
@@ -143,6 +144,7 @@ is an outer node.
 -  [Function `pop`](#0x1234_CritBit_pop)
 -  [Function `pop_singleton`](#0x1234_CritBit_pop_singleton)
 -  [Function `singleton`](#0x1234_CritBit_singleton)
+-  [Function `traverse_dec_mut`](#0x1234_CritBit_traverse_dec_mut)
 -  [Function `b_s_o`](#0x1234_CritBit_b_s_o)
 -  [Function `b_s_o_m`](#0x1234_CritBit_b_s_o_m)
 -  [Function `check_len`](#0x1234_CritBit_check_len)
@@ -169,9 +171,6 @@ is an outer node.
 -  [Function `stitch_child_of_parent`](#0x1234_CritBit_stitch_child_of_parent)
 -  [Function `stitch_parent_of_child`](#0x1234_CritBit_stitch_parent_of_child)
 -  [Function `stitch_swap_remove`](#0x1234_CritBit_stitch_swap_remove)
--  [Function `inner_at`](#0x1234_CritBit_inner_at)
--  [Function `parent_field_of`](#0x1234_CritBit_parent_field_of)
--  [Function `begin_dec_traverse_mut`](#0x1234_CritBit_begin_dec_traverse_mut)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -419,6 +418,26 @@ When attempting to traverse an empty tree
 
 
 
+<a name="0x1234_CritBit_E_TRAVERSE_ROOT"></a>
+
+When attempting to traverse past the root
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_ROOT">E_TRAVERSE_ROOT</a>: u64 = 10;
+</code></pre>
+
+
+
+<a name="0x1234_CritBit_E_TRAVERSE_TOO_SMALL"></a>
+
+When attempting to traverse within tree having too few elements
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_TOO_SMALL">E_TRAVERSE_TOO_SMALL</a>: u64 = 9;
+</code></pre>
+
+
+
 <a name="0x1234_CritBit_HI_128"></a>
 
 
@@ -513,6 +532,49 @@ Right direction
 </code></pre>
 
 
+
+<a name="0x1234_CritBit_begin_traverse_dec_mut"></a>
+
+## Function `begin_traverse_dec_mut`
+
+Return maximum key in <code>cb</code>, a mutable reference to the value
+from the corresponding node, and the parent field of the node,
+aborting if <code>cb</code> empty, to begin decreasing traversal
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_begin_traverse_dec_mut">begin_traverse_dec_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): (u128, &<b>mut</b> V, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_begin_traverse_dec_mut">begin_traverse_dec_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+): (
+    u128,
+    &<b>mut</b> V,
+    u64
+) {
+    // Assert tree not empty
+    <b>assert</b>!(!<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>(cb), <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_EMPTY">E_TRAVERSE_EMPTY</a>);
+    <b>let</b> i_n = cb.r; // Initialize index of search node <b>to</b> root field
+    <b>while</b> (!<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_n)) { // While search node is inner node
+        i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_n).r // Review node's right child next
+    }; // Index of search node now corresponds <b>to</b> max outer node
+    // Borrow mutable reference <b>to</b> max node
+    <b>let</b> n = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_n));
+    // Return its key, mutable reference <b>to</b> its value, and its
+    // parent field
+    (n.k, &<b>mut</b> n.v, n.p)
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0x1234_CritBit_borrow"></a>
 
@@ -878,6 +940,76 @@ Return a tree with one node having key <code>k</code> and value <code>v</code>
     <b>let</b> cb = <a href="CritBit.md#0x1234_CritBit_CB">CB</a>{r: 0, i: v_e&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(), o: v_e&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;()};
     <a href="CritBit.md#0x1234_CritBit_insert_empty">insert_empty</a>&lt;V&gt;(&<b>mut</b> cb, k, v);
     cb
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0x1234_CritBit_traverse_dec_mut"></a>
+
+## Function `traverse_dec_mut`
+
+Traverse to the node in <code>cb</code> containing the predecessor to key
+<code>k</code>, where <code>k</code> is contained in an outer hode having parent field
+<code>p_f</code>. Abort if <code>p_f</code> is <code><a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a></code>, or if traversal walks past end
+of tree. Once at the new node, return its key, a mutable
+reference to its value, and its parent field. Start by walking
+to the inner node that has the traversal key as the minimum key
+in its right subtree: walk up from traversal key until reaching
+an inner node via its right child. Then walk to the maximum
+key in the node's left subtree: walk to its left child, then
+keep walking along right children, breaking out when an outer
+node is reached.
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_traverse_dec_mut">traverse_dec_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64): (u128, &<b>mut</b> V, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0x1234_CritBit_traverse_dec_mut">traverse_dec_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    p_f: u64
+): (
+    u128,
+    &<b>mut</b> V,
+    u64
+) {
+    // Assert not trying <b>to</b> traverse in singleton or empty tree
+    <b>assert</b>!(<a href="CritBit.md#0x1234_CritBit_length">length</a>(cb) &gt; 1, <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_TOO_SMALL">E_TRAVERSE_TOO_SMALL</a>);
+    // Borrow immutable reference <b>to</b> inner node indicated by parent
+    // field
+    <b>let</b> n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, p_f);
+    <b>loop</b> { // Begin walking up tree from traversal key
+        // If traversal starting key is set at critical bit, then an
+        // inner node <b>has</b> been reached by via its right child, so
+        // the walk should now go back down the node's left subtree
+        <b>if</b> (<a href="CritBit.md#0x1234_CritBit_is_set">is_set</a>(k, n.c)) <b>break</b>;
+        // Assert not trying <b>to</b> traverse past root
+        <b>assert</b>!(n.p != <a href="CritBit.md#0x1234_CritBit_ROOT">ROOT</a>, <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_ROOT">E_TRAVERSE_ROOT</a>);
+        // Borrow immutable reference <b>to</b> next inner node indicated
+        // by node under review's parent field
+        n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, n.p);
+    }; // Now at node having traversal key <b>as</b> <b>min</b> in right subtree
+    <b>let</b> c_f = n.l; // Get inner node's left child field
+    // While child indicated by field is inner node
+    <b>while</b>(!<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(c_f)) {
+        // Borrow immutable reference <b>to</b> the child
+        n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, c_f);
+        c_f = n.r; // Review its right child next
+    }; // Child field now indicates outer node
+    // Borrow mutable reference <b>to</b> outer node
+    <b>let</b> c = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(c_f));
+    // Return outer node's key, mutable reference <b>to</b> its value, and
+    // its parent field
+    (c.k, &<b>mut</b> c.v, c.p)
 }
 </code></pre>
 
@@ -2145,102 +2277,6 @@ before the swap remove (when relocated node was last in vector)
         // Else <b>update</b> parent <b>to</b> reflect relocated node position
         <a href="CritBit.md#0x1234_CritBit_stitch_child_of_parent">stitch_child_of_parent</a>&lt;V&gt;(cb, i_n, i_p, n_n - 1);
     }
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_inner_at"></a>
-
-## Function `inner_at`
-
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="CritBit.md#0x1234_CritBit_inner_at">inner_at</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;, i_p: u64): &<a href="CritBit.md#0x1234_CritBit_I">CritBit::I</a>
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="CritBit.md#0x1234_CritBit_inner_at">inner_at</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-    i_p: u64
-): &<a href="CritBit.md#0x1234_CritBit_I">I</a> {
-    v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_p)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_parent_field_of"></a>
-
-## Function `parent_field_of`
-
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="CritBit.md#0x1234_CritBit_parent_field_of">parent_field_of</a>&lt;V&gt;(o_n: &<a href="CritBit.md#0x1234_CritBit_O">CritBit::O</a>&lt;V&gt;): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="CritBit.md#0x1234_CritBit_parent_field_of">parent_field_of</a>&lt;V&gt;(
-    o_n: &<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;
-): u64 {
-    o_n.p
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0x1234_CritBit_begin_dec_traverse_mut"></a>
-
-## Function `begin_dec_traverse_mut`
-
-Return maximum key in <code>cb</code>, a mutable reference to the value
-from the corresponding node, and the parent field of the node,
-aborting if <code>cb</code> empty, to begin decreasing traversal
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_begin_dec_traverse_mut">begin_dec_traverse_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CritBit::CB</a>&lt;V&gt;): (u128, &<b>mut</b> V, u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0x1234_CritBit_begin_dec_traverse_mut">begin_dec_traverse_mut</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0x1234_CritBit_CB">CB</a>&lt;V&gt;,
-): (
-    u128,
-    &<b>mut</b> V,
-    u64
-) {
-    // Assert tree not empty
-    <b>assert</b>!(!<a href="CritBit.md#0x1234_CritBit_is_empty">is_empty</a>(cb), <a href="CritBit.md#0x1234_CritBit_E_TRAVERSE_EMPTY">E_TRAVERSE_EMPTY</a>);
-    <b>let</b> i_n = cb.r; // Initialize index of search node <b>to</b> root field
-    <b>while</b> (!<a href="CritBit.md#0x1234_CritBit_is_out">is_out</a>(i_n)) { // While search node is inner node
-        i_n = v_b&lt;<a href="CritBit.md#0x1234_CritBit_I">I</a>&gt;(&cb.i, i_n).r // Review node's right child next
-    }; // Index of search node now corresponds <b>to</b> max outer node
-    // Borrow mutable reference <b>to</b> max node
-    <b>let</b> n = v_b_m&lt;<a href="CritBit.md#0x1234_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0x1234_CritBit_o_v">o_v</a>(i_n));
-    // Return its key, mutable reference <b>to</b> its value, and its
-    // parent field
-    (n.k, &<b>mut</b> n.v, n.p)
 }
 </code></pre>
 

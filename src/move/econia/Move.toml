@@ -5,7 +5,7 @@ version = '0.1.0' # Per SemVer
 [addresses]
 AptosFramework = '0x1'
 Std = '0x1'
-Econia = '0x1234'
+Econia = '0xc0deb00c'
 TestUser = '0x5678'
 
 [dependencies.AptosFramework]

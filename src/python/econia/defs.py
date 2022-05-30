@@ -134,7 +134,7 @@ data should be signed. Per official Aptos transaction tutorial
 
 named_addrs = SimpleNamespace(
     Std = '1',
-    Econia = '1234' # For command-line testing
+    Econia = 'c0deb00c' # For command-line testing
 )
 """Named addresses (without leading hex specifier)"""
 

@@ -93,6 +93,43 @@
 /// contain the field index of the given node, set at bit 63 if the root
 /// is an outer node.
 ///
+/// # Operations
+///
+/// ## Basic
+///
+/// ### Initialization
+/// * `empty()`
+/// * `singleton()`
+///
+/// ### Mutation
+/// * `insert()`
+/// * `pop()`
+///
+/// ### Lookup
+/// * `borrow()`
+/// * `borrow_mut()`
+/// * `has_key()`
+/// * `max_key()`
+/// * `min_key()`
+///
+/// ### Size
+/// * `is_empty()`
+/// * `length()`
+///
+/// ### Destruction
+/// * `destroy_empty()`
+///
+/// ## Traversal
+///
+/// ### Functions
+/// * `traverse_p_init_mut()`
+/// * `traverse_s_init_mut()`
+/// * `traverse_p_mut()`
+/// * `traverse_s_mut()`
+/// * `traverse_pop_p_mut()`
+/// * `traverse_pop_s_mut()`
+///
+/// ### Walkthrough
 /// ---
 ///
 module Econia::CritBit {
@@ -245,6 +282,16 @@ module Econia::CritBit {
         CB{r: 0, i: v_e<I>(), o: v_e<O<V>>()}
     }
 
+    /// Return true if `cb` has key `k`
+    public fun has_key<V>(
+        cb: &CB<V>,
+        k: u128,
+    ): bool {
+        if (is_empty<V>(cb)) return false; // Return false if empty
+        // Return true if search outer node has same key
+        return b_s_o<V>(cb, k).k == k
+    }
+
     /// Insert key `k` and value `v` into `cb`, aborting if `k` already
     /// in `cb`
     public fun insert<V>(
@@ -292,21 +339,6 @@ module Econia::CritBit {
         let l = length(cb); // Get number of outer nodes in tree
         // Depending on length, pop from singleton or for general case
         if (l == 1) pop_singleton(cb, k) else pop_general(cb, k, l)
-    }
-
-    /// Return the value corresponding to key `k` in singleton tree `cb`
-    /// and destroy the outer node where it was stored, aborting if `k`
-    /// not in `cb`
-    fun pop_singleton<V>(
-        cb: &mut CB<V>,
-        k: u128
-    ): V {
-        // Assert key actually in tree at root node
-        assert!(v_b<O<V>>(&cb.o, 0).k == k, E_NOT_HAS_K);
-        cb.r = 0; // Update root
-        // Pop off and unpack outer node at root
-        let O{k: _, v, p: _} = v_po_b<O<V>>(&mut cb.o);
-        v // Return popped value
     }
 
     /// Return a tree with one node having key `k` and value `v`
@@ -384,7 +416,7 @@ module Econia::CritBit {
     /// ```
     /// Here, the critical bit is equivalent to the bit number of the
     /// most significant set bit in XOR result `x = s1 ^ s2`. At this
-    /// point, [Langley 2012](#@References_1) notes that `x` bitwise AND
+    /// point, [Langley 2012](#References) notes that `x` bitwise AND
     /// `x - 1` will be nonzero so long as `x` contains at least some
     /// bits set which are of lesser significance than the critical bit:
     /// ```
@@ -498,7 +530,7 @@ module Econia::CritBit {
     /// search converges after $log_2(k)$ iterations at most, where $k$
     /// is the number of bits in each of the strings `s1` and `s2` under
     /// comparison. Hence this search method improves the $O(k)$ search
-    /// proposed by [Langley 2012](#@References_1) to $O(log_2(k))$, and
+    /// proposed by [Langley 2012](#References) to $O(log_2(k))$, and
     /// moreover, determines the actual number of the critical bit,
     /// rather than just a bitmask with bit `c` set, as he proposes,
     /// which can also be easily generated via `1 << c`.
@@ -515,16 +547,6 @@ module Econia::CritBit {
             if (s == 1) return m; // If shift equals 1, c = m
             if (s > 1) l = m + 1 else u = m - 1; // Update search bounds
         }
-    }
-
-    /// Return true if `cb` has key `k`
-    fun has_key<V>(
-        cb: &CB<V>,
-        k: u128,
-    ): bool {
-        if (is_empty<V>(cb)) return false; // Return false if empty
-        // Return true if search outer node has same key
-        return b_s_o<V>(cb, k).k == k
     }
 
     /// Decomposed case specified in `insert_general`, walk up tree, for
@@ -963,6 +985,21 @@ module Econia::CritBit {
         pop_update_relationships(cb, s_s_o, i_s_p);
         // Destroy old nodes, returning popped value
         pop_destroy_nodes(cb, i_s_p, i_s_o, n_o)
+    }
+
+    /// Return the value corresponding to key `k` in singleton tree `cb`
+    /// and destroy the outer node where it was stored, aborting if `k`
+    /// not in `cb`
+    fun pop_singleton<V>(
+        cb: &mut CB<V>,
+        k: u128
+    ): V {
+        // Assert key actually in tree at root node
+        assert!(v_b<O<V>>(&cb.o, 0).k == k, E_NOT_HAS_K);
+        cb.r = 0; // Update root
+        // Pop off and unpack outer node at root
+        let O{k: _, v, p: _} = v_po_b<O<V>>(&mut cb.o);
+        v // Return popped value
     }
 
     /// Update relationships in `cb` for popping a node which is a child
@@ -2070,7 +2107,8 @@ module Econia::CritBit {
 
     // To sort >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Wrapped `traverse_p_init_mut()` call for predecessor traversal
+    /// Wrapped `traverse_p_init_mut()` call for predecessor traversal.
+    /// See [traversal walkthrough](#Walkthrough)
     public fun traverse_p_init_mut<V>(
         cb: &mut CB<V>,
     ): (
@@ -2082,7 +2120,8 @@ module Econia::CritBit {
         traverse_init_mut(cb, L)
     }
 
-    /// Wrapped `traverse_p_init_mut()` call for successor traversal
+    /// Wrapped `traverse_p_init_mut()` call for successor traversal.
+    /// See [traversal walkthrough](#Walkthrough)
     public fun traverse_s_init_mut<V>(
         cb: &mut CB<V>,
     ): (
@@ -2095,7 +2134,8 @@ module Econia::CritBit {
     }
 
     /// Initialize a mutable iterated inorder traversal in a tree having
-    /// at least one outer node
+    /// at least one outer node. See [traversal walkthrough](
+    /// #Walkthrough)
     ///
     /// # Parameters
     /// * `cb`: A crit-bit tree containing at least one outer node
@@ -2130,7 +2170,8 @@ module Econia::CritBit {
         (n.k, &mut n.v, n.p, i_n)
     }
 
-    /// Wrapped `traverse_mut()` call for predecessor traversal
+    /// Wrapped `traverse_mut()` call for predecessor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
     public fun traverse_p_mut<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -2144,7 +2185,8 @@ module Econia::CritBit {
         traverse_mut<V>(cb, k, p_f, L)
     }
 
-    /// Wrapped `traverse_mut()` call for successor traversal
+    /// Wrapped `traverse_mut()` call for successor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
     public fun traverse_s_mut<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -2158,11 +2200,12 @@ module Econia::CritBit {
         traverse_mut<V>(cb, k, p_f, R)
     }
 
-    /// Wrapped `traverse_c_i_mut()` call, to obtain following returns:
+    /// Wrapped `traverse_c_i()` call, to obtain following returns:
     /// * `u128`: Target key
-    /// * `&mut V`: Mutable reference to value of target node
+    /// * `&mut V`: Mutable reference to target node's value
     /// * `u64`: Target node's parent field
     /// * `u64`: Child field index of target node
+    /// See [traversal walkthrough](#Walkthrough)
     fun traverse_mut<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -2175,7 +2218,7 @@ module Econia::CritBit {
         u64
     ) {
         // Get child field index of target node
-        let i_t = traverse_c_i_mut<V>(cb, k, p_f, d);
+        let i_t = traverse_c_i<V>(cb, k, p_f, d);
         // Borrow mutable reference to target node
         let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
         // Return target node's key, mutable reference to its value, its
@@ -2183,7 +2226,8 @@ module Econia::CritBit {
         (t.k, &mut t.v, t.p, i_t)
     }
 
-    /// Wrapped `traverse_pop_mut()` call for predecessor traversal
+    /// Wrapped `traverse_pop_mut()` call for predecessor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
     public fun traverse_pop_p_mut<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -2200,7 +2244,8 @@ module Econia::CritBit {
         traverse_pop_mut(cb, k, p_f, c_i, n_o, L)
     }
 
-    /// Wrapped `traverse_pop_mut()` call for successor traversal
+    /// Wrapped `traverse_pop_mut()` call for successor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
     public fun traverse_pop_s_mut<V>(
         cb: &mut CB<V>,
         k: u128,
@@ -2221,7 +2266,8 @@ module Econia::CritBit {
     /// specified key (the "start node" containing the "start key") to
     /// either the inorder predecessor or the inorder successor to the
     /// start key (the "target node" containing the "target key"), then
-    /// pop the start node and return its value
+    /// pop the start node and return its value. See [traversal
+    /// walkthrough](#Walkthrough)
     ///
     /// # Parameters
     /// * `cb`: Crit-bit tree containing at least two nodes
@@ -2267,7 +2313,7 @@ module Econia::CritBit {
         // Store side on which the start node is a child of its parent
         let s_s = if(is_set(k, v_b<I>(&cb.i, p_f).c)) R else L;
         // Store target node's pre-pop child field index
-        let i_t = traverse_c_i_mut(cb, k, p_f, d);
+        let i_t = traverse_c_i(cb, k, p_f, d);
         // Update relationships for popped start node
         pop_update_relationships(cb, s_s, p_f);
         // Store start node value from pop-facilitated node destruction
@@ -2287,7 +2333,9 @@ module Econia::CritBit {
     /// Traverse in the specified direction from the node containing the
     /// specified key (the "start node" containing the "start key") to
     /// either the inorder predecessor or the inorder successor to the
-    /// start key (the "target node" containing the "target key")
+    /// start key (the "target node" containing the "target key"), then
+    /// return the child field index of the target node. See [traversal
+    /// walkthrough](#Walkthrough)
     ///
     /// # Method (predecessor)
     /// 1. Walk up from start node until arriving at an inner node that
@@ -2325,8 +2373,8 @@ module Econia::CritBit {
     ///   predecessor traversal, and that passed start key is not
     ///   maximum key in tree if successor traversal
     /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
-    fun traverse_c_i_mut<V>(
-        cb: &mut CB<V>,
+    fun traverse_c_i<V>(
+        cb: &CB<V>,
         k: u128,
         p_f: u64,
         d: bool,

@@ -125,9 +125,9 @@ is an outer node.
 
 
 
-<a name="@Basic_6"></a>
+<a name="@Basic_public_functions_6"></a>
 
-### Basic
+### Basic public functions
 
 
 
@@ -143,6 +143,7 @@ is an outer node.
 
 #### Mutation
 
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_borrow_mut">borrow_mut</a>()</code>
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_insert">insert</a>()</code>
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_pop">pop</a>()</code>
 
@@ -152,7 +153,6 @@ is an outer node.
 #### Lookup
 
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_borrow">borrow</a>()</code>
-* <code><a href="CritBit.md#0xc0deb00c_CritBit_borrow_mut">borrow_mut</a>()</code>
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_has_key">has_key</a>()</code>
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_max_key">max_key</a>()</code>
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_min_key">min_key</a>()</code>
@@ -178,22 +178,45 @@ is an outer node.
 ### Traversal
 
 
+[Predecessor public functions](#Predecessor-public-functions) and
+[successor public functions](#Successor-public-functions) are
+wrapped [generic private functions](#Generic-private-functions),
+with [generic private function](#Generic-private-functions)
+documentation comments detailing the relevant algorithms
 
-<a name="@Functions_13"></a>
 
-#### Functions
+<a name="@Predecessor_public_functions_13"></a>
+
+#### Predecessor public functions
 
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>()</code>
-* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_init_mut">traverse_s_init_mut</a>()</code>
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_mut">traverse_p_mut</a>()</code>
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_pop_mut">traverse_p_pop_mut</a>()</code>
+
+
+<a name="@Successor_public_functions_14"></a>
+
+#### Successor public functions
+
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_init_mut">traverse_s_init_mut</a>()</code>
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_mut">traverse_s_mut</a>()</code>
-* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_p_mut">traverse_pop_p_mut</a>()</code>
-* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_s_mut">traverse_pop_s_mut</a>()</code>
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_pop_mut">traverse_s_pop_mut</a>()</code>
 
 
-<a name="@Walkthrough_14"></a>
+<a name="@Generic_private_functions_15"></a>
+
+#### Generic private functions
+
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code>
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>()</code>
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>()</code>
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>()</code>
+
+
+<a name="@Walkthrough_16"></a>
 
 #### Walkthrough
+
 
 ---
 
@@ -204,21 +227,23 @@ is an outer node.
     -  [Structure](#@Structure_3)
     -  [Node indices](#@Node_indices_4)
 -  [Operations](#@Operations_5)
-    -  [Basic](#@Basic_6)
+    -  [Basic public functions](#@Basic_public_functions_6)
         -  [Initialization](#@Initialization_7)
         -  [Mutation](#@Mutation_8)
         -  [Lookup](#@Lookup_9)
         -  [Size](#@Size_10)
         -  [Destruction](#@Destruction_11)
     -  [Traversal](#@Traversal_12)
-        -  [Functions](#@Functions_13)
-        -  [Walkthrough](#@Walkthrough_14)
+        -  [Predecessor public functions](#@Predecessor_public_functions_13)
+        -  [Successor public functions](#@Successor_public_functions_14)
+        -  [Generic private functions](#@Generic_private_functions_15)
+        -  [Walkthrough](#@Walkthrough_16)
 -  [Struct `CB`](#0xc0deb00c_CritBit_CB)
 -  [Struct `I`](#0xc0deb00c_CritBit_I)
 -  [Struct `O`](#0xc0deb00c_CritBit_O)
--  [Constants](#@Constants_15)
-    -  [Error codes](#@Error_codes_16)
-    -  [General constants](#@General_constants_17)
+-  [Constants](#@Constants_17)
+    -  [Error codes](#@Error_codes_18)
+    -  [General constants](#@General_constants_19)
 -  [Function `borrow`](#0xc0deb00c_CritBit_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_CritBit_borrow_mut)
 -  [Function `destroy_empty`](#0xc0deb00c_CritBit_destroy_empty)
@@ -231,12 +256,18 @@ is an outer node.
 -  [Function `min_key`](#0xc0deb00c_CritBit_min_key)
 -  [Function `pop`](#0xc0deb00c_CritBit_pop)
 -  [Function `singleton`](#0xc0deb00c_CritBit_singleton)
+-  [Function `traverse_p_init_mut`](#0xc0deb00c_CritBit_traverse_p_init_mut)
+-  [Function `traverse_p_mut`](#0xc0deb00c_CritBit_traverse_p_mut)
+-  [Function `traverse_p_pop_mut`](#0xc0deb00c_CritBit_traverse_p_pop_mut)
+-  [Function `traverse_s_init_mut`](#0xc0deb00c_CritBit_traverse_s_init_mut)
+-  [Function `traverse_s_mut`](#0xc0deb00c_CritBit_traverse_s_mut)
+-  [Function `traverse_s_pop_mut`](#0xc0deb00c_CritBit_traverse_s_pop_mut)
 -  [Function `b_s_o`](#0xc0deb00c_CritBit_b_s_o)
 -  [Function `b_s_o_m`](#0xc0deb00c_CritBit_b_s_o_m)
 -  [Function `check_len`](#0xc0deb00c_CritBit_check_len)
 -  [Function `crit_bit`](#0xc0deb00c_CritBit_crit_bit)
-    -  [XOR/AND method](#@XOR/AND_method_18)
-    -  [Binary search method](#@Binary_search_method_19)
+    -  [XOR/AND method](#@XOR/AND_method_20)
+    -  [Binary search method](#@Binary_search_method_21)
 -  [Function `insert_above`](#0xc0deb00c_CritBit_insert_above)
 -  [Function `insert_above_root`](#0xc0deb00c_CritBit_insert_above_root)
 -  [Function `insert_below`](#0xc0deb00c_CritBit_insert_below)
@@ -259,28 +290,21 @@ is an outer node.
 -  [Function `stitch_child_of_parent`](#0xc0deb00c_CritBit_stitch_child_of_parent)
 -  [Function `stitch_parent_of_child`](#0xc0deb00c_CritBit_stitch_parent_of_child)
 -  [Function `stitch_swap_remove`](#0xc0deb00c_CritBit_stitch_swap_remove)
--  [Function `traverse_p_init_mut`](#0xc0deb00c_CritBit_traverse_p_init_mut)
--  [Function `traverse_s_init_mut`](#0xc0deb00c_CritBit_traverse_s_init_mut)
--  [Function `traverse_init_mut`](#0xc0deb00c_CritBit_traverse_init_mut)
-    -  [Walkthrough)](#@Walkthrough)_20)
-    -  [Parameters](#@Parameters_21)
-    -  [Returns](#@Returns_22)
-    -  [Considerations](#@Considerations_23)
--  [Function `traverse_p_mut`](#0xc0deb00c_CritBit_traverse_p_mut)
--  [Function `traverse_s_mut`](#0xc0deb00c_CritBit_traverse_s_mut)
--  [Function `traverse_mut`](#0xc0deb00c_CritBit_traverse_mut)
--  [Function `traverse_pop_p_mut`](#0xc0deb00c_CritBit_traverse_pop_p_mut)
--  [Function `traverse_pop_s_mut`](#0xc0deb00c_CritBit_traverse_pop_s_mut)
--  [Function `traverse_pop_mut`](#0xc0deb00c_CritBit_traverse_pop_mut)
+-  [Function `traverse_c_i`](#0xc0deb00c_CritBit_traverse_c_i)
+    -  [Method (predecessor)](#@Method_(predecessor)_22)
+    -  [Method (successor)](#@Method_(successor)_23)
     -  [Parameters](#@Parameters_24)
     -  [Returns](#@Returns_25)
     -  [Considerations](#@Considerations_26)
--  [Function `traverse_c_i`](#0xc0deb00c_CritBit_traverse_c_i)
-    -  [Method (predecessor)](#@Method_(predecessor)_27)
-    -  [Method (successor)](#@Method_(successor)_28)
-    -  [Parameters](#@Parameters_29)
-    -  [Returns](#@Returns_30)
-    -  [Considerations](#@Considerations_31)
+-  [Function `traverse_init_mut`](#0xc0deb00c_CritBit_traverse_init_mut)
+    -  [Parameters](#@Parameters_27)
+    -  [Returns](#@Returns_28)
+    -  [Considerations](#@Considerations_29)
+-  [Function `traverse_mut`](#0xc0deb00c_CritBit_traverse_mut)
+-  [Function `traverse_pop_mut`](#0xc0deb00c_CritBit_traverse_pop_mut)
+    -  [Parameters](#@Parameters_30)
+    -  [Returns](#@Returns_31)
+    -  [Considerations](#@Considerations_32)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -428,7 +452,7 @@ Outer node with key <code>k</code> and value <code>v</code>
 
 </details>
 
-<a name="@Constants_15"></a>
+<a name="@Constants_17"></a>
 
 ## Constants
 
@@ -436,7 +460,7 @@ Outer node with key <code>k</code> and value <code>v</code>
 <a name="0xc0deb00c_CritBit_E_BIT_NOT_0_OR_1"></a>
 
 
-<a name="@Error_codes_16"></a>
+<a name="@Error_codes_18"></a>
 
 ### Error codes
 
@@ -521,7 +545,7 @@ When attempting to pop from empty tree
 <a name="0xc0deb00c_CritBit_HI_128"></a>
 
 
-<a name="@General_constants_17"></a>
+<a name="@General_constants_19"></a>
 
 ### General constants
 
@@ -963,6 +987,218 @@ Return a tree with one node having key <code>k</code> and value <code>v</code>
 
 </details>
 
+<a name="0xc0deb00c_CritBit_traverse_p_init_mut"></a>
+
+## Function `traverse_p_init_mut`
+
+Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>()</code> call for predecessor traversal.
+See [traversal walkthrough](#Walkthrough)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;): (u128, &<b>mut</b> V, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+): (
+    u128,
+    &<b>mut</b> V,
+    u64,
+    u64
+) {
+    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>(cb, <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_CritBit_traverse_p_mut"></a>
+
+## Function `traverse_p_mut`
+
+Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>()</code> call for predecessor traversal. See
+[traversal walkthrough](#Walkthrough)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_mut">traverse_p_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64): (u128, &<b>mut</b> V, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_mut">traverse_p_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    p_f: u64
+): (
+    u128,
+    &<b>mut</b> V,
+    u64,
+    u64
+) {
+    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>&lt;V&gt;(cb, k, p_f, <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_CritBit_traverse_p_pop_mut"></a>
+
+## Function `traverse_p_pop_mut`
+
+Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>()</code> call for predecessor traversal. See
+[traversal walkthrough](#Walkthrough)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_pop_mut">traverse_p_pop_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, c_i: u64, n_o: u64): (u128, &<b>mut</b> V, u64, u64, V)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_pop_mut">traverse_p_pop_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    p_f: u64,
+    c_i: u64,
+    n_o: u64
+): (
+    u128,
+    &<b>mut</b> V,
+    u64,
+    u64,
+    V
+) {
+    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>(cb, k, p_f, c_i, n_o, <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_CritBit_traverse_s_init_mut"></a>
+
+## Function `traverse_s_init_mut`
+
+Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>()</code> call for successor traversal.
+See [traversal walkthrough](#Walkthrough)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_init_mut">traverse_s_init_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;): (u128, &<b>mut</b> V, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_init_mut">traverse_s_init_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+): (
+    u128,
+    &<b>mut</b> V,
+    u64,
+    u64
+) {
+    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>(cb, <a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_CritBit_traverse_s_mut"></a>
+
+## Function `traverse_s_mut`
+
+Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>()</code> call for successor traversal. See
+[traversal walkthrough](#Walkthrough)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_mut">traverse_s_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64): (u128, &<b>mut</b> V, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_mut">traverse_s_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    p_f: u64
+): (
+    u128,
+    &<b>mut</b> V,
+    u64,
+    u64
+) {
+    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>&lt;V&gt;(cb, k, p_f, <a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_CritBit_traverse_s_pop_mut"></a>
+
+## Function `traverse_s_pop_mut`
+
+Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>()</code> call for successor traversal. See
+[traversal walkthrough](#Walkthrough)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_pop_mut">traverse_s_pop_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, c_i: u64, n_o: u64): (u128, &<b>mut</b> V, u64, u64, V)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_pop_mut">traverse_s_pop_mut</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    p_f: u64,
+    c_i: u64,
+    n_o: u64
+): (
+    u128,
+    &<b>mut</b> V,
+    u64,
+    u64,
+    V
+) {
+    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>(cb, k, p_f, c_i, n_o, <a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_CritBit_b_s_o"></a>
 
 ## Function `b_s_o`
@@ -1077,7 +1313,7 @@ Return the number of the most significant bit (0-indexed from
 LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-<a name="@XOR/AND_method_18"></a>
+<a name="@XOR/AND_method_20"></a>
 
 ### XOR/AND method
 
@@ -1146,7 +1382,7 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_19"></a>
+<a name="@Binary_search_method_21"></a>
 
 ### Binary search method
 
@@ -2301,15 +2537,76 @@ before the swap remove (when relocated node was last in vector)
 
 </details>
 
-<a name="0xc0deb00c_CritBit_traverse_p_init_mut"></a>
+<a name="0xc0deb00c_CritBit_traverse_c_i"></a>
 
-## Function `traverse_p_init_mut`
+## Function `traverse_c_i`
 
-Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>()</code> call for predecessor traversal.
-See [traversal walkthrough](#Walkthrough)
+Traverse in the specified direction from the node containing the
+specified key (the "start node" containing the "start key") to
+either the inorder predecessor or the inorder successor to the
+start key (the "target node" containing the "target key"), then
+return the child field index of the target node. See
+[traversal](#Traversal)
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;): (u128, &<b>mut</b> V, u64, u64)
+<a name="@Method_(predecessor)_22"></a>
+
+### Method (predecessor)
+
+1. Walk up from start node until arriving at an inner node that
+has the start key as the minimum key in its right subtree
+(the "apex node"): walk up until arriving at a parent that
+has the last walked node as its right child
+2. Walk to maximum key in apex node's left subtree, breaking out
+at target node (the first outer node): walk to apex node's
+left child, then walk along right children
+
+
+<a name="@Method_(successor)_23"></a>
+
+### Method (successor)
+
+1. Walk up from start node until arriving at an inner node that
+has the start key as the maximum key in its left subtree
+(the "apex node"): walk up until arriving at a parent that
+has the last walked node as its left child
+2. Walk to minimum key in apex node's right subtree, breaking
+out at target node (the first outer node): walk to apex
+node's right child, then walk along left children
+
+
+<a name="@Parameters_24"></a>
+
+### Parameters
+
+* <code>cb</code>: Crit-bit tree containing at least two nodes
+* <code>k</code>: Start key. If predecessor traversal, <code>k</code> cannot be
+minimum key in <code>cb</code>, since this key does not have a
+predecessor. Likewise, if successor traversal, <code>k</code> cannot be
+maximum key in <code>cb</code>, since this key does not have a successor
+* <code>p_f</code>: Start node's parent field
+* <code>d</code>: Direction to traverse. If <code><a href="CritBit.md#0xc0deb00c_CritBit_L">L</a></code>, predecessor traversal,
+else successor traversal
+
+
+<a name="@Returns_25"></a>
+
+### Returns
+
+* <code>u64</code>: Child field index of target node
+
+
+<a name="@Considerations_26"></a>
+
+### Considerations
+
+* Assumes passed start key is not minimum key in tree if
+predecessor traversal, and that passed start key is not
+maximum key in tree if successor traversal
+* Takes a publicy-exposed vector index (<code>p_f</code>) as a parameter
+
+
+<pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>&lt;V&gt;(cb: &<a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, d: bool): u64
 </code></pre>
 
 
@@ -2318,48 +2615,33 @@ See [traversal walkthrough](#Walkthrough)
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
-): (
-    u128,
-    &<b>mut</b> V,
-    u64,
-    u64
-) {
-    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>(cb, <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_CritBit_traverse_s_init_mut"></a>
-
-## Function `traverse_s_init_mut`
-
-Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>()</code> call for successor traversal.
-See [traversal walkthrough](#Walkthrough)
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_init_mut">traverse_s_init_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;): (u128, &<b>mut</b> V, u64, u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_init_mut">traverse_s_init_mut</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
-): (
-    u128,
-    &<b>mut</b> V,
-    u64,
-    u64
-) {
-    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>(cb, <a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>)
+<pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>&lt;V&gt;(
+    cb: &<a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+    k: u128,
+    p_f: u64,
+    d: bool,
+): u64 {
+    // Borrow immutable reference <b>to</b> start node's parent
+    <b>let</b> p = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p_f);
+    // If start key is set at parent node's critical bit, then the
+    // upward walk <b>has</b> reach an inner node via its right child. This
+    // is the <b>break</b> condition for successor traversal, when d is <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>,
+    // a constant value that evaluates <b>to</b> <b>true</b>. The inverse case
+    // applies for predecessor traversal, so <b>continue</b> upward walk
+    // <b>as</b> long <b>as</b> d is not equal <b>to</b> the conditional critbit check
+    <b>while</b> (d != <a href="CritBit.md#0xc0deb00c_CritBit_is_set">is_set</a>(k, p.c)) { // While <b>break</b> condition not met
+        // Borrow immutable reference <b>to</b> next parent in upward walk
+        p = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p.p);
+    }; // Now at apex node
+    // If predecessor traversal get left child field of apex node,
+    // <b>else</b> left right field
+    <b>let</b> c_f = <b>if</b> (d == <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>) p.l <b>else</b> p.r;
+    <b>while</b> (!<a href="CritBit.md#0xc0deb00c_CritBit_is_out">is_out</a>(c_f)) { // While child field indicates inner node
+        // If predecessor traversal review child's right child next,
+        // <b>else</b> review child's left child next
+        c_f = <b>if</b> (d == <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>) v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, c_f).r <b>else</b> v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, c_f).l;
+    }; // Child field now indicates target node
+    c_f // Return child field index of target node
 }
 </code></pre>
 
@@ -2372,15 +2654,10 @@ See [traversal walkthrough](#Walkthrough)
 ## Function `traverse_init_mut`
 
 Initialize a mutable iterated inorder traversal in a tree having
-at least one outer node. See [traversal walkthrough](
-
-<a name="@Walkthrough)_20"></a>
-
-### Walkthrough)
+at least one outer node. See [traversal](#Traversal)
 
 
-
-<a name="@Parameters_21"></a>
+<a name="@Parameters_27"></a>
 
 ### Parameters
 
@@ -2389,7 +2666,7 @@ at least one outer node. See [traversal walkthrough](
 traversal, else successor traversal
 
 
-<a name="@Returns_22"></a>
+<a name="@Returns_28"></a>
 
 ### Returns
 
@@ -2399,7 +2676,7 @@ traversal, else successor traversal
 * <code>u64</code>: Child field index of corresponding node
 
 
-<a name="@Considerations_23"></a>
+<a name="@Considerations_29"></a>
 
 ### Considerations
 
@@ -2440,76 +2717,6 @@ traversal, else successor traversal
 
 </details>
 
-<a name="0xc0deb00c_CritBit_traverse_p_mut"></a>
-
-## Function `traverse_p_mut`
-
-Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>()</code> call for predecessor traversal. See
-[traversal walkthrough](#Walkthrough)
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_mut">traverse_p_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64): (u128, &<b>mut</b> V, u64, u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_mut">traverse_p_mut</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-    p_f: u64
-): (
-    u128,
-    &<b>mut</b> V,
-    u64,
-    u64
-) {
-    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>&lt;V&gt;(cb, k, p_f, <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_CritBit_traverse_s_mut"></a>
-
-## Function `traverse_s_mut`
-
-Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>()</code> call for successor traversal. See
-[traversal walkthrough](#Walkthrough)
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_mut">traverse_s_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64): (u128, &<b>mut</b> V, u64, u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_mut">traverse_s_mut</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-    p_f: u64
-): (
-    u128,
-    &<b>mut</b> V,
-    u64,
-    u64
-) {
-    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>&lt;V&gt;(cb, k, p_f, <a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>)
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_CritBit_traverse_mut"></a>
 
 ## Function `traverse_mut`
@@ -2519,7 +2726,7 @@ Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i<
 * <code>&<b>mut</b> V</code>: Mutable reference to target node's value
 * <code>u64</code>: Target node's parent field
 * <code>u64</code>: Child field index of target node
-See [traversal walkthrough](#Walkthrough)
+See [traversal](#Traversal)
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, d: bool): (u128, &<b>mut</b> V, u64, u64)
@@ -2556,82 +2763,6 @@ See [traversal walkthrough](#Walkthrough)
 
 </details>
 
-<a name="0xc0deb00c_CritBit_traverse_pop_p_mut"></a>
-
-## Function `traverse_pop_p_mut`
-
-Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>()</code> call for predecessor traversal. See
-[traversal walkthrough](#Walkthrough)
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_p_mut">traverse_pop_p_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, c_i: u64, n_o: u64): (u128, &<b>mut</b> V, u64, u64, V)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_p_mut">traverse_pop_p_mut</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-    p_f: u64,
-    c_i: u64,
-    n_o: u64
-): (
-    u128,
-    &<b>mut</b> V,
-    u64,
-    u64,
-    V
-) {
-    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>(cb, k, p_f, c_i, n_o, <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_CritBit_traverse_pop_s_mut"></a>
-
-## Function `traverse_pop_s_mut`
-
-Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>()</code> call for successor traversal. See
-[traversal walkthrough](#Walkthrough)
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_s_mut">traverse_pop_s_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, c_i: u64, n_o: u64): (u128, &<b>mut</b> V, u64, u64, V)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_s_mut">traverse_pop_s_mut</a>&lt;V&gt;(
-    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-    p_f: u64,
-    c_i: u64,
-    n_o: u64
-): (
-    u128,
-    &<b>mut</b> V,
-    u64,
-    u64,
-    V
-) {
-    <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>(cb, k, p_f, c_i, n_o, <a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>)
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_CritBit_traverse_pop_mut"></a>
 
 ## Function `traverse_pop_mut`
@@ -2640,11 +2771,11 @@ Traverse in the specified direction from the node containing the
 specified key (the "start node" containing the "start key") to
 either the inorder predecessor or the inorder successor to the
 start key (the "target node" containing the "target key"), then
-pop the start node and return its value. See [traversal
-walkthrough](#Walkthrough)
+pop the start node and return its value. See
+[traversal](#Traversal)
 
 
-<a name="@Parameters_24"></a>
+<a name="@Parameters_30"></a>
 
 ### Parameters
 
@@ -2660,7 +2791,7 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_25"></a>
+<a name="@Returns_31"></a>
 
 ### Returns
 
@@ -2671,7 +2802,7 @@ else successor traversal
 * <code>V</code>: Popped start node's value
 
 
-<a name="@Considerations_26"></a>
+<a name="@Considerations_32"></a>
 
 ### Considerations
 
@@ -2725,118 +2856,6 @@ the caller
     // parent field, the child field index of it, and the start
     // node's popped value
     (t.k, &<b>mut</b> t.v, t.p, i_t, s_v)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_CritBit_traverse_c_i"></a>
-
-## Function `traverse_c_i`
-
-Traverse in the specified direction from the node containing the
-specified key (the "start node" containing the "start key") to
-either the inorder predecessor or the inorder successor to the
-start key (the "target node" containing the "target key"), then
-return the child field index of the target node. See [traversal
-walkthrough](#Walkthrough)
-
-
-<a name="@Method_(predecessor)_27"></a>
-
-### Method (predecessor)
-
-1. Walk up from start node until arriving at an inner node that
-has the start key as the minimum key in its right subtree
-(the "apex node"): walk up until arriving at a parent that
-has the last walked node as its right child
-2. Walk to maximum key in apex node's left subtree, breaking out
-at target node (the first outer node): walk to apex node's
-left child, then walk along right children
-
-
-<a name="@Method_(successor)_28"></a>
-
-### Method (successor)
-
-1. Walk up from start node until arriving at an inner node that
-has the start key as the maximum key in its left subtree
-(the "apex node"): walk up until arriving at a parent that
-has the last walked node as its left child
-2. Walk to minimum key in apex node's right subtree, breaking
-out at target node (the first outer node): walk to apex
-node's right child, then walk along left children
-
-
-<a name="@Parameters_29"></a>
-
-### Parameters
-
-* <code>cb</code>: Crit-bit tree containing at least two nodes
-* <code>k</code>: Start key. If predecessor traversal, <code>k</code> cannot be
-minimum key in <code>cb</code>, since this key does not have a
-predecessor. Likewise, if successor traversal, <code>k</code> cannot be
-maximum key in <code>cb</code>, since this key does not have a successor
-* <code>p_f</code>: Start node's parent field
-* <code>d</code>: Direction to traverse. If <code><a href="CritBit.md#0xc0deb00c_CritBit_L">L</a></code>, predecessor traversal,
-else successor traversal
-
-
-<a name="@Returns_30"></a>
-
-### Returns
-
-* <code>u64</code>: Child field index of target node
-
-
-<a name="@Considerations_31"></a>
-
-### Considerations
-
-* Assumes passed start key is not minimum key in tree if
-predecessor traversal, and that passed start key is not
-maximum key in tree if successor traversal
-* Takes a publicy-exposed vector index (<code>p_f</code>) as a parameter
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>&lt;V&gt;(cb: &<a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, d: bool): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>&lt;V&gt;(
-    cb: &<a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
-    k: u128,
-    p_f: u64,
-    d: bool,
-): u64 {
-    // Borrow immutable reference <b>to</b> start node's parent
-    <b>let</b> p = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p_f);
-    // If start key is set at parent node's critical bit, then the
-    // upward walk <b>has</b> reach an inner node via its right child. This
-    // is the <b>break</b> condition for successor traversal, when d is <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>,
-    // a constant value that evaluates <b>to</b> <b>true</b>. The inverse case
-    // applies for predecessor traversal, so <b>continue</b> upward walk
-    // <b>as</b> long <b>as</b> d is not equal <b>to</b> the conditional critbit check
-    <b>while</b> (d != <a href="CritBit.md#0xc0deb00c_CritBit_is_set">is_set</a>(k, p.c)) { // While <b>break</b> condition not met
-        // Borrow immutable reference <b>to</b> next parent in upward walk
-        p = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p.p);
-    }; // Now at apex node
-    // If predecessor traversal get left child field of apex node,
-    // <b>else</b> left right field
-    <b>let</b> c_f = <b>if</b> (d == <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>) p.l <b>else</b> p.r;
-    <b>while</b> (!<a href="CritBit.md#0xc0deb00c_CritBit_is_out">is_out</a>(c_f)) { // While child field indicates inner node
-        // If predecessor traversal review child's right child next,
-        // <b>else</b> review child's left child next
-        c_f = <b>if</b> (d == <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>) v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, c_f).r <b>else</b> v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, c_f).l;
-    }; // Child field now indicates target node
-    c_f // Return child field index of target node
 }
 </code></pre>
 

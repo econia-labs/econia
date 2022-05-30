@@ -95,19 +95,19 @@
 ///
 /// # Operations
 ///
-/// ## Basic
+/// ## Basic public functions
 ///
 /// ### Initialization
 /// * `empty()`
 /// * `singleton()`
 ///
 /// ### Mutation
+/// * `borrow_mut()`
 /// * `insert()`
 /// * `pop()`
 ///
 /// ### Lookup
 /// * `borrow()`
-/// * `borrow_mut()`
 /// * `has_key()`
 /// * `max_key()`
 /// * `min_key()`
@@ -121,15 +121,30 @@
 ///
 /// ## Traversal
 ///
-/// ### Functions
+/// [Predecessor public functions](#Predecessor-public-functions) and
+/// [successor public functions](#Successor-public-functions) are
+/// wrapped [generic private functions](#Generic-private-functions),
+/// with [generic private function](#Generic-private-functions)
+/// documentation comments detailing the relevant algorithms
+///
+/// ### Predecessor public functions
 /// * `traverse_p_init_mut()`
-/// * `traverse_s_init_mut()`
 /// * `traverse_p_mut()`
+/// * `traverse_p_pop_mut()`
+///
+/// ### Successor public functions
+/// * `traverse_s_init_mut()`
 /// * `traverse_s_mut()`
-/// * `traverse_pop_p_mut()`
-/// * `traverse_pop_s_mut()`
+/// * `traverse_s_pop_mut()`
+///
+/// ### Generic private functions
+/// * `traverse_c_i()`
+/// * `traverse_init_mut()`
+/// * `traverse_mut()`
+/// * `traverse_pop_mut()`
 ///
 /// ### Walkthrough
+///
 /// ---
 ///
 module Econia::CritBit {
@@ -164,7 +179,7 @@ module Econia::CritBit {
 
     /// Inner node
     struct I has store {
-        // Documentation comments, specifically within struct fields,
+        // Documentation comments, specifically for struct fields,
         // apparently do not support fenced code blocks unless they are
         // preceded by a blank line...
         /// Critical bit position. Bit numbers 0-indexed from LSB:
@@ -350,6 +365,98 @@ module Econia::CritBit {
         let cb = CB{r: 0, i: v_e<I>(), o: v_e<O<V>>()};
         insert_empty<V>(&mut cb, k, v);
         cb
+    }
+
+    /// Wrapped `traverse_init_mut()` call for predecessor traversal.
+    /// See [traversal walkthrough](#Walkthrough)
+    public fun traverse_p_init_mut<V>(
+        cb: &mut CB<V>,
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        traverse_init_mut(cb, L)
+    }
+
+    /// Wrapped `traverse_mut()` call for predecessor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
+    public fun traverse_p_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        traverse_mut<V>(cb, k, p_f, L)
+    }
+
+    /// Wrapped `traverse_pop_mut()` call for predecessor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
+    public fun traverse_p_pop_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64,
+        c_i: u64,
+        n_o: u64
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64,
+        V
+    ) {
+        traverse_pop_mut(cb, k, p_f, c_i, n_o, L)
+    }
+
+    /// Wrapped `traverse_init_mut()` call for successor traversal.
+    /// See [traversal walkthrough](#Walkthrough)
+    public fun traverse_s_init_mut<V>(
+        cb: &mut CB<V>,
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        traverse_init_mut(cb, R)
+    }
+
+    /// Wrapped `traverse_mut()` call for successor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
+    public fun traverse_s_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        traverse_mut<V>(cb, k, p_f, R)
+    }
+
+    /// Wrapped `traverse_pop_mut()` call for successor traversal. See
+    /// [traversal walkthrough](#Walkthrough)
+    public fun traverse_s_pop_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64,
+        c_i: u64,
+        n_o: u64
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64,
+        V
+    ) {
+        traverse_pop_mut(cb, k, p_f, c_i, n_o, R)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1164,6 +1271,208 @@ module Econia::CritBit {
             // Else update parent to reflect relocated node position
             stitch_child_of_parent<V>(cb, i_n, i_p, n_n - 1);
         }
+    }
+
+    /// Traverse in the specified direction from the node containing the
+    /// specified key (the "start node" containing the "start key") to
+    /// either the inorder predecessor or the inorder successor to the
+    /// start key (the "target node" containing the "target key"), then
+    /// return the child field index of the target node. See
+    /// [traversal](#Traversal)
+    ///
+    /// # Method (predecessor)
+    /// 1. Walk up from start node until arriving at an inner node that
+    ///    has the start key as the minimum key in its right subtree
+    ///    (the "apex node"): walk up until arriving at a parent that
+    ///    has the last walked node as its right child
+    /// 2. Walk to maximum key in apex node's left subtree, breaking out
+    ///    at target node (the first outer node): walk to apex node's
+    ///    left child, then walk along right children
+    ///
+    /// # Method (successor)
+    /// 1. Walk up from start node until arriving at an inner node that
+    ///    has the start key as the maximum key in its left subtree
+    ///    (the "apex node"): walk up until arriving at a parent that
+    ///    has the last walked node as its left child
+    /// 2. Walk to minimum key in apex node's right subtree, breaking
+    ///    out at target node (the first outer node): walk to apex
+    ///    node's right child, then walk along left children
+    ///
+    /// # Parameters
+    /// * `cb`: Crit-bit tree containing at least two nodes
+    /// * `k`: Start key. If predecessor traversal, `k` cannot be
+    ///   minimum key in `cb`, since this key does not have a
+    ///   predecessor. Likewise, if successor traversal, `k` cannot be
+    ///   maximum key in `cb`, since this key does not have a successor
+    /// * `p_f`: Start node's parent field
+    /// * `d`: Direction to traverse. If `L`, predecessor traversal,
+    ///   else successor traversal
+    ///
+    /// # Returns
+    /// * `u64`: Child field index of target node
+    ///
+    /// # Considerations
+    /// * Assumes passed start key is not minimum key in tree if
+    ///   predecessor traversal, and that passed start key is not
+    ///   maximum key in tree if successor traversal
+    /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
+    fun traverse_c_i<V>(
+        cb: &CB<V>,
+        k: u128,
+        p_f: u64,
+        d: bool,
+    ): u64 {
+        // Borrow immutable reference to start node's parent
+        let p = v_b<I>(&cb.i, p_f);
+        // If start key is set at parent node's critical bit, then the
+        // upward walk has reach an inner node via its right child. This
+        // is the break condition for successor traversal, when d is L,
+        // a constant value that evaluates to true. The inverse case
+        // applies for predecessor traversal, so continue upward walk
+        // as long as d is not equal to the conditional critbit check
+        while (d != is_set(k, p.c)) { // While break condition not met
+            // Borrow immutable reference to next parent in upward walk
+            p = v_b<I>(&cb.i, p.p);
+        }; // Now at apex node
+        // If predecessor traversal get left child field of apex node,
+        // else left right field
+        let c_f = if (d == L) p.l else p.r;
+        while (!is_out(c_f)) { // While child field indicates inner node
+            // If predecessor traversal review child's right child next,
+            // else review child's left child next
+            c_f = if (d == L) v_b<I>(&cb.i, c_f).r else v_b<I>(&cb.i, c_f).l;
+        }; // Child field now indicates target node
+        c_f // Return child field index of target node
+    }
+
+    /// Initialize a mutable iterated inorder traversal in a tree having
+    /// at least one outer node. See [traversal](#Traversal)
+    ///
+    /// # Parameters
+    /// * `cb`: A crit-bit tree containing at least one outer node
+    /// * `d`: Direction to traverse. If `L`, initialize predecessor
+    ///   traversal, else successor traversal
+    ///
+    /// # Returns
+    /// * `u128`: Maximum key in `cb` if `d` is `L`, else minimum key
+    /// * `&mut V`: Mutable reference to corresponding node's value
+    /// * `u64`: Parent field of corresponding node
+    /// * `u64`: Child field index of corresponding node
+    ///
+    /// # Considerations
+    /// * Publicly exposes the vector index of a node
+    /// * Assumes caller has already verified tree is not empty
+    fun traverse_init_mut<V>(
+        cb: &mut CB<V>,
+        d: bool,
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        // If predecessor traversal, get child field index of node
+        // having maximum key, else node having minimum key
+        let i_n = if (d == L) max_node_c_i(cb) else min_node_c_i(cb);
+        // Borrow mutable reference to node
+        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_n));
+        // Return node's key, mutable reference to its value, its parent
+        // field, and the child field index of it
+        (n.k, &mut n.v, n.p, i_n)
+    }
+
+    /// Wrapped `traverse_c_i()` call, to obtain following returns:
+    /// * `u128`: Target key
+    /// * `&mut V`: Mutable reference to target node's value
+    /// * `u64`: Target node's parent field
+    /// * `u64`: Child field index of target node
+    /// See [traversal](#Traversal)
+    fun traverse_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64,
+        d: bool
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        // Get child field index of target node
+        let i_t = traverse_c_i<V>(cb, k, p_f, d);
+        // Borrow mutable reference to target node
+        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
+        // Return target node's key, mutable reference to its value, its
+        // parent field, and child field index of it
+        (t.k, &mut t.v, t.p, i_t)
+    }
+
+    /// Traverse in the specified direction from the node containing the
+    /// specified key (the "start node" containing the "start key") to
+    /// either the inorder predecessor or the inorder successor to the
+    /// start key (the "target node" containing the "target key"), then
+    /// pop the start node and return its value. See
+    /// [traversal](#Traversal)
+    ///
+    /// # Parameters
+    /// * `cb`: Crit-bit tree containing at least two nodes
+    /// * `k`: Start key. If predecessor traversal, `k` cannot be
+    ///   minimum key in `cb`, since this key does not have a
+    ///   predecessor. Likewise, if successor traversal, `k` cannot be
+    ///   maximum key in `cb`, since this key does not have a successor
+    /// * `p_f`: Start node's parent field
+    /// * `c_i`: Child field index of start node
+    /// * `n_o`: Number of outer nodes in `cb`
+    /// * `d`: Direction to traverse. If `L`, predecessor traversal,
+    ///   else successor traversal
+    ///
+    /// # Returns
+    /// * `u128`: Target key
+    /// * `&mut V`: Mutable reference to target node's value
+    /// * `u64`: Target node's parent field
+    /// * `u64`: Child field index of target node
+    /// * `V`: Popped start node's value
+    ///
+    /// # Considerations
+    /// * Assumes passed start key is not minimum key in tree if
+    ///   predecessor traversal, and that passed start key is not
+    ///   maximum key in tree if successor traversal
+    /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
+    /// * Does not calculate number of outer nodes in `cb`, but rather
+    ///   accepts this number as a parameter, which should be tracked by
+    ///   the caller
+    fun traverse_pop_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64,
+        c_i: u64,
+        n_o: u64,
+        d: bool
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64,
+        V
+    ) {
+        // Store side on which the start node is a child of its parent
+        let s_s = if(is_set(k, v_b<I>(&cb.i, p_f).c)) R else L;
+        // Store target node's pre-pop child field index
+        let i_t = traverse_c_i(cb, k, p_f, d);
+        // Update relationships for popped start node
+        pop_update_relationships(cb, s_s, p_f);
+        // Store start node value from pop-facilitated node destruction
+        let s_v = pop_destroy_nodes(cb, p_f, c_i, n_o);
+        // If target node was last in outer node vector, then swap
+        // remove will have relocated it, so update its post-pop field
+        // index to the start node's pre-pop field index
+        if (o_v(i_t) == n_o - 1) i_t = c_i;
+        // Borrow mutable reference to target node
+        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
+        // Return target node's key, mutable reference to its value, its
+        // parent field, the child field index of it, and the start
+        // node's popped value
+        (t.k, &mut t.v, t.p, i_t, s_v)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2075,334 +2384,6 @@ module Econia::CritBit {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for non-binary-representative byte string
-    fun u_failure() {u(b"2");}
-
-    #[test]
-    /// Verify successful return values
-    fun u_success() {
-        assert!(u(b"0") == 0, 0);
-        assert!(u(b"1") == 1, 1);
-        assert!(u(b"00") == 0, 2);
-        assert!(u(b"01") == 1, 3);
-        assert!(u(b"10") == 2, 4);
-        assert!(u(b"11") == 3, 5);
-        assert!(u(b"10101010") == 170, 6);
-        assert!(u(b"00000001") == 1, 7);
-        assert!(u(b"11111111") == 255, 8);
-        assert!(u_long( // 60 characters on first two lines, 8 on last
-            b"111111111111111111111111111111111111111111111111111111111111",
-            b"111111111111111111111111111111111111111111111111111111111111",
-            b"11111111"
-        ) == HI_128, 9);
-        assert!(u_long( // 60 characters on first two lines, 8 on last
-            b"111111111111111111111111111111111111111111111111111111111111",
-            b"111111111111111111111111111111111111111111111111111111111111",
-            b"11111110"
-        ) == HI_128 - 1, 10);
-    }
-
-    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // To sort >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Wrapped `traverse_p_init_mut()` call for predecessor traversal.
-    /// See [traversal walkthrough](#Walkthrough)
-    public fun traverse_p_init_mut<V>(
-        cb: &mut CB<V>,
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        traverse_init_mut(cb, L)
-    }
-
-    /// Wrapped `traverse_p_init_mut()` call for successor traversal.
-    /// See [traversal walkthrough](#Walkthrough)
-    public fun traverse_s_init_mut<V>(
-        cb: &mut CB<V>,
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        traverse_init_mut(cb, R)
-    }
-
-    /// Initialize a mutable iterated inorder traversal in a tree having
-    /// at least one outer node. See [traversal walkthrough](
-    /// #Walkthrough)
-    ///
-    /// # Parameters
-    /// * `cb`: A crit-bit tree containing at least one outer node
-    /// * `d`: Direction to traverse. If `L`, initialize predecessor
-    ///   traversal, else successor traversal
-    ///
-    /// # Returns
-    /// * `u128`: Maximum key in `cb` if `d` is `L`, else minimum key
-    /// * `&mut V`: Mutable reference to corresponding node's value
-    /// * `u64`: Parent field of corresponding node
-    /// * `u64`: Child field index of corresponding node
-    ///
-    /// # Considerations
-    /// * Publicly exposes the vector index of a node
-    /// * Assumes caller has already verified tree is not empty
-    fun traverse_init_mut<V>(
-        cb: &mut CB<V>,
-        d: bool,
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        // If predecessor traversal, get child field index of node
-        // having maximum key, else node having minimum key
-        let i_n = if (d == L) max_node_c_i(cb) else min_node_c_i(cb);
-        // Borrow mutable reference to node
-        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_n));
-        // Return node's key, mutable reference to its value, its parent
-        // field, and the child field index of it
-        (n.k, &mut n.v, n.p, i_n)
-    }
-
-    /// Wrapped `traverse_mut()` call for predecessor traversal. See
-    /// [traversal walkthrough](#Walkthrough)
-    public fun traverse_p_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        traverse_mut<V>(cb, k, p_f, L)
-    }
-
-    /// Wrapped `traverse_mut()` call for successor traversal. See
-    /// [traversal walkthrough](#Walkthrough)
-    public fun traverse_s_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        traverse_mut<V>(cb, k, p_f, R)
-    }
-
-    /// Wrapped `traverse_c_i()` call, to obtain following returns:
-    /// * `u128`: Target key
-    /// * `&mut V`: Mutable reference to target node's value
-    /// * `u64`: Target node's parent field
-    /// * `u64`: Child field index of target node
-    /// See [traversal walkthrough](#Walkthrough)
-    fun traverse_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64,
-        d: bool
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        // Get child field index of target node
-        let i_t = traverse_c_i<V>(cb, k, p_f, d);
-        // Borrow mutable reference to target node
-        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
-        // Return target node's key, mutable reference to its value, its
-        // parent field, and child field index of it
-        (t.k, &mut t.v, t.p, i_t)
-    }
-
-    /// Wrapped `traverse_pop_mut()` call for predecessor traversal. See
-    /// [traversal walkthrough](#Walkthrough)
-    public fun traverse_pop_p_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64,
-        c_i: u64,
-        n_o: u64
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64,
-        V
-    ) {
-        traverse_pop_mut(cb, k, p_f, c_i, n_o, L)
-    }
-
-    /// Wrapped `traverse_pop_mut()` call for successor traversal. See
-    /// [traversal walkthrough](#Walkthrough)
-    public fun traverse_pop_s_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64,
-        c_i: u64,
-        n_o: u64
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64,
-        V
-    ) {
-        traverse_pop_mut(cb, k, p_f, c_i, n_o, R)
-    }
-
-    /// Traverse in the specified direction from the node containing the
-    /// specified key (the "start node" containing the "start key") to
-    /// either the inorder predecessor or the inorder successor to the
-    /// start key (the "target node" containing the "target key"), then
-    /// pop the start node and return its value. See [traversal
-    /// walkthrough](#Walkthrough)
-    ///
-    /// # Parameters
-    /// * `cb`: Crit-bit tree containing at least two nodes
-    /// * `k`: Start key. If predecessor traversal, `k` cannot be
-    ///   minimum key in `cb`, since this key does not have a
-    ///   predecessor. Likewise, if successor traversal, `k` cannot be
-    ///   maximum key in `cb`, since this key does not have a successor
-    /// * `p_f`: Start node's parent field
-    /// * `c_i`: Child field index of start node
-    /// * `n_o`: Number of outer nodes in `cb`
-    /// * `d`: Direction to traverse. If `L`, predecessor traversal,
-    ///   else successor traversal
-    ///
-    /// # Returns
-    /// * `u128`: Target key
-    /// * `&mut V`: Mutable reference to target node's value
-    /// * `u64`: Target node's parent field
-    /// * `u64`: Child field index of target node
-    /// * `V`: Popped start node's value
-    ///
-    /// # Considerations
-    /// * Assumes passed start key is not minimum key in tree if
-    ///   predecessor traversal, and that passed start key is not
-    ///   maximum key in tree if successor traversal
-    /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
-    /// * Does not calculate number of outer nodes in `cb`, but rather
-    ///   accepts this number as a parameter, which should be tracked by
-    ///   the caller
-    fun traverse_pop_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64,
-        c_i: u64,
-        n_o: u64,
-        d: bool
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64,
-        V
-    ) {
-        // Store side on which the start node is a child of its parent
-        let s_s = if(is_set(k, v_b<I>(&cb.i, p_f).c)) R else L;
-        // Store target node's pre-pop child field index
-        let i_t = traverse_c_i(cb, k, p_f, d);
-        // Update relationships for popped start node
-        pop_update_relationships(cb, s_s, p_f);
-        // Store start node value from pop-facilitated node destruction
-        let s_v = pop_destroy_nodes(cb, p_f, c_i, n_o);
-        // If target node was last in outer node vector, then swap
-        // remove will have relocated it, so update its post-pop field
-        // index to the start node's pre-pop field index
-        if (o_v(i_t) == n_o - 1) i_t = c_i;
-        // Borrow mutable reference to target node
-        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
-        // Return target node's key, mutable reference to its value, its
-        // parent field, the child field index of it, and the start
-        // node's popped value
-        (t.k, &mut t.v, t.p, i_t, s_v)
-    }
-
-    /// Traverse in the specified direction from the node containing the
-    /// specified key (the "start node" containing the "start key") to
-    /// either the inorder predecessor or the inorder successor to the
-    /// start key (the "target node" containing the "target key"), then
-    /// return the child field index of the target node. See [traversal
-    /// walkthrough](#Walkthrough)
-    ///
-    /// # Method (predecessor)
-    /// 1. Walk up from start node until arriving at an inner node that
-    ///    has the start key as the minimum key in its right subtree
-    ///    (the "apex node"): walk up until arriving at a parent that
-    ///    has the last walked node as its right child
-    /// 2. Walk to maximum key in apex node's left subtree, breaking out
-    ///    at target node (the first outer node): walk to apex node's
-    ///    left child, then walk along right children
-    ///
-    /// # Method (successor)
-    /// 1. Walk up from start node until arriving at an inner node that
-    ///    has the start key as the maximum key in its left subtree
-    ///    (the "apex node"): walk up until arriving at a parent that
-    ///    has the last walked node as its left child
-    /// 2. Walk to minimum key in apex node's right subtree, breaking
-    ///    out at target node (the first outer node): walk to apex
-    ///    node's right child, then walk along left children
-    ///
-    /// # Parameters
-    /// * `cb`: Crit-bit tree containing at least two nodes
-    /// * `k`: Start key. If predecessor traversal, `k` cannot be
-    ///   minimum key in `cb`, since this key does not have a
-    ///   predecessor. Likewise, if successor traversal, `k` cannot be
-    ///   maximum key in `cb`, since this key does not have a successor
-    /// * `p_f`: Start node's parent field
-    /// * `d`: Direction to traverse. If `L`, predecessor traversal,
-    ///   else successor traversal
-    ///
-    /// # Returns
-    /// * `u64`: Child field index of target node
-    ///
-    /// # Considerations
-    /// * Assumes passed start key is not minimum key in tree if
-    ///   predecessor traversal, and that passed start key is not
-    ///   maximum key in tree if successor traversal
-    /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
-    fun traverse_c_i<V>(
-        cb: &CB<V>,
-        k: u128,
-        p_f: u64,
-        d: bool,
-    ): u64 {
-        // Borrow immutable reference to start node's parent
-        let p = v_b<I>(&cb.i, p_f);
-        // If start key is set at parent node's critical bit, then the
-        // upward walk has reach an inner node via its right child. This
-        // is the break condition for successor traversal, when d is L,
-        // a constant value that evaluates to true. The inverse case
-        // applies for predecessor traversal, so continue upward walk
-        // as long as d is not equal to the conditional critbit check
-        while (d != is_set(k, p.c)) { // While break condition not met
-            // Borrow immutable reference to next parent in upward walk
-            p = v_b<I>(&cb.i, p.p);
-        }; // Now at apex node
-        // If predecessor traversal get left child field of apex node,
-        // else left right field
-        let c_f = if (d == L) p.l else p.r;
-        while (!is_out(c_f)) { // While child field indicates inner node
-            // If predecessor traversal review child's right child next,
-            // else review child's left child next
-            c_f = if (d == L) v_b<I>(&cb.i, c_f).r else v_b<I>(&cb.i, c_f).l;
-        }; // Child field now indicates target node
-        c_f // Return child field index of target node
-    }
-
-    #[test]
     /// Verify proper traversal popping and associated operations for
     /// below sequence diagram, where `i_i` indicates inner node vector
     /// index and `o_i` indicates outer node vector index
@@ -2474,7 +2455,7 @@ module Econia::CritBit {
         // value
         assert!(k == u(b"1110") && *v_r == 15 && p_f == 2 && i == o_c(3), 2);
         // Traverse pop back to predecessor (to 1101)
-        let (k, v_r, p_f, i, v) = traverse_pop_p_mut(&mut cb, k, p_f, i, 5);
+        let (k, v_r, p_f, i, v) = traverse_p_pop_mut(&mut cb, k, p_f, i, 5);
         assert!(v == 15, 3); // Assert value popped correctly
         // Assert correct predecessor traversal returns, including
         // mutated value
@@ -2484,17 +2465,17 @@ module Econia::CritBit {
         // Assert correct successor traversal initialization returns
         assert!(k == u(b"0000") && *v_r == 14 && p_f == 2 && i == o_c(3), 5);
         // Traverse pop to successor (to 1000)
-        (k, v_r, p_f, i, v) = traverse_pop_s_mut(&mut cb, k, p_f, i, 4);
+        (k, v_r, p_f, i, v) = traverse_s_pop_mut(&mut cb, k, p_f, i, 4);
         assert!(v == 14, 6); // Assert value popped correctly
         // Assert correct predecessor traversal returns
         assert!(k == u(b"1000") && *v_r == 11 && p_f == 0 && i == o_c(1), 7);
         // Traverse pop to successor (to 1100)
-        (k, v_r, p_f, i, v) = traverse_pop_s_mut(&mut cb, k, p_f, i, 3);
+        (k, v_r, p_f, i, v) = traverse_s_pop_mut(&mut cb, k, p_f, i, 3);
         assert!(v == 11, 8); // Assert value popped correctly
         // Assert correct predecessor traversal returns
         assert!(k == u(b"1100") && *v_r == 12 && p_f == 0 && i == o_c(1), 9);
         // Traverse pop to successor (to 1101)
-        (k, v_r, p_f, i, v) = traverse_pop_s_mut(&mut cb, k, p_f, i, 2);
+        (k, v_r, p_f, i, v) = traverse_s_pop_mut(&mut cb, k, p_f, i, 2);
         assert!(v == 12, 10); // Assert value popped correctly
         // Assert correct successor traversal returns, including
         // mutation from beginning of test
@@ -2504,5 +2485,34 @@ module Econia::CritBit {
         cb // Return rather than unpack
     }
 
-    // To sort <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for non-binary-representative byte string
+    fun u_failure() {u(b"2");}
+
+    #[test]
+    /// Verify successful return values
+    fun u_success() {
+        assert!(u(b"0") == 0, 0);
+        assert!(u(b"1") == 1, 1);
+        assert!(u(b"00") == 0, 2);
+        assert!(u(b"01") == 1, 3);
+        assert!(u(b"10") == 2, 4);
+        assert!(u(b"11") == 3, 5);
+        assert!(u(b"10101010") == 170, 6);
+        assert!(u(b"00000001") == 1, 7);
+        assert!(u(b"11111111") == 255, 8);
+        assert!(u_long( // 60 characters on first two lines, 8 on last
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"11111111"
+        ) == HI_128, 9);
+        assert!(u_long( // 60 characters on first two lines, 8 on last
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"11111110"
+        ) == HI_128 - 1, 10);
+    }
+
+    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }

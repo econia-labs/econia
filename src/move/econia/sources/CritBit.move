@@ -1381,12 +1381,13 @@ module Econia::CritBit {
         (n.k, &mut n.v, n.p, i_n)
     }
 
-    /// Wrapped `traverse_c_i()` call, to obtain following returns:
+    /// Wrapped `traverse_c_i()` call for enumerated return extraction.
+    /// See [traversal](#Traversal)
+    /// # Returns
     /// * `u128`: Target key
     /// * `&mut V`: Mutable reference to target node's value
     /// * `u64`: Target node's parent field
     /// * `u64`: Child field index of target node
-    /// See [traversal](#Traversal)
     fun traverse_mut<V>(
         cb: &mut CB<V>,
         k: u128,

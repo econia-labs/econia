@@ -301,10 +301,11 @@ documentation comments detailing the relevant algorithms
     -  [Returns](#@Returns_28)
     -  [Considerations](#@Considerations_29)
 -  [Function `traverse_mut`](#0xc0deb00c_CritBit_traverse_mut)
+    -  [Returns](#@Returns_30)
 -  [Function `traverse_pop_mut`](#0xc0deb00c_CritBit_traverse_pop_mut)
-    -  [Parameters](#@Parameters_30)
-    -  [Returns](#@Returns_31)
-    -  [Considerations](#@Considerations_32)
+    -  [Parameters](#@Parameters_31)
+    -  [Returns](#@Returns_32)
+    -  [Considerations](#@Considerations_33)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -2721,12 +2722,17 @@ traversal, else successor traversal
 
 ## Function `traverse_mut`
 
-Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code> call, to obtain following returns:
+Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code> call for enumerated return extraction.
+See [traversal](#Traversal)
+
+<a name="@Returns_30"></a>
+
+### Returns
+
 * <code>u128</code>: Target key
 * <code>&<b>mut</b> V</code>: Mutable reference to target node's value
 * <code>u64</code>: Target node's parent field
 * <code>u64</code>: Child field index of target node
-See [traversal](#Traversal)
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_mut">traverse_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, d: bool): (u128, &<b>mut</b> V, u64, u64)
@@ -2775,7 +2781,7 @@ pop the start node and return its value. See
 [traversal](#Traversal)
 
 
-<a name="@Parameters_30"></a>
+<a name="@Parameters_31"></a>
 
 ### Parameters
 
@@ -2791,7 +2797,7 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_31"></a>
+<a name="@Returns_32"></a>
 
 ### Returns
 
@@ -2802,7 +2808,7 @@ else successor traversal
 * <code>V</code>: Popped start node's value
 
 
-<a name="@Considerations_32"></a>
+<a name="@Considerations_33"></a>
 
 ### Considerations
 

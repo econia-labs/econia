@@ -1545,7 +1545,7 @@ module Econia::CritBit {
     /// * Assumes passed start key is not minimum key in tree if
     ///   predecessor traversal, and that passed start key is not
     ///   maximum key in tree if successor traversal
-    /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
+    /// * Takes an exposed vector index (`p_f`) as a parameter
     fun traverse_c_i<V>(
         cb: &CB<V>,
         k: u128,
@@ -1590,7 +1590,7 @@ module Econia::CritBit {
     /// * `u64`: Child field index of corresponding node
     ///
     /// # Considerations
-    /// * Publicly exposes the vector index of a node
+    /// * Exposes node indices
     /// * Assumes caller has already verified tree is not empty
     fun traverse_init_mut<V>(
         cb: &mut CB<V>,
@@ -1668,8 +1668,7 @@ module Econia::CritBit {
     /// * Assumes passed start key is not minimum key in tree if
     ///   predecessor traversal, and that passed start key is not
     ///   maximum key in tree if successor traversal
-    /// * Takes publicy-exposed node indices (`p_f`, `c_i`) as
-    ///   parameters
+    /// * Takes exposed node indices (`p_f`, `c_i`) as parameters
     /// * Does not calculate number of outer nodes in `cb`, but rather
     ///   accepts this number as a parameter (`n_o`), which should be
     ///   tracked by the caller

@@ -2849,7 +2849,7 @@ else successor traversal
 * Assumes passed start key is not minimum key in tree if
 predecessor traversal, and that passed start key is not
 maximum key in tree if successor traversal
-* Takes a publicy-exposed vector index (<code>p_f</code>) as a parameter
+* Takes an exposed vector index (<code>p_f</code>) as a parameter
 
 
 <pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>&lt;V&gt;(cb: &<a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, d: bool): u64
@@ -2926,7 +2926,7 @@ traversal, else successor traversal
 
 ### Considerations
 
-* Publicly exposes the vector index of a node
+* Exposes node indices
 * Assumes caller has already verified tree is not empty
 
 
@@ -3060,8 +3060,7 @@ else successor traversal
 * Assumes passed start key is not minimum key in tree if
 predecessor traversal, and that passed start key is not
 maximum key in tree if successor traversal
-* Takes publicy-exposed node indices (<code>p_f</code>, <code>c_i</code>) as
-parameters
+* Takes exposed node indices (<code>p_f</code>, <code>c_i</code>) as parameters
 * Does not calculate number of outer nodes in <code>cb</code>, but rather
 accepts this number as a parameter (<code>n_o</code>), which should be
 tracked by the caller

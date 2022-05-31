@@ -217,11 +217,16 @@ documentation comments detailing the relevant algorithms.
 
 #### Walkthrough
 
+* [Syntax motivations](#Syntax-motivations)
+* [Full predecessor traversal](#Full-predecessor-traversal)
+* [Partial successor traversal](#Partial-successor-traversal)
+* [Singleton traversal initialization
+](#Singleton-traversal-initialization)
 
 
 <a name="@Syntax_motivations_17"></a>
 
-##### Syntax motivations
+#### Syntax motivations
 
 
 Iterated traversal, unlike other public implementations, exposes
@@ -246,12 +251,14 @@ due to a need for greater efficiency. Like pointer-based
 implementations in general, this solution is extremely powerful in
 terms of the speed enhancement it provides, but if used incorrectly
 it can lead to "undefined behavior." As such, a breakdown of the
-canonical sytax is provided below.
+canonical syntax is provided below, along with additional discussion
+on error-checking facilities that have been intentionally excluded
+in the interest of efficiency.
 
 
 <a name="@Full_predecessor_traversal_18"></a>
 
-##### Full predecessor traversal
+#### Full predecessor traversal
 
 
 To start, initialize a tree with {$n, 100n$}, for $0 < n < 10$:
@@ -270,18 +277,35 @@ insert(&mut cb, 5, 500);
 insert(&mut cb, 4, 400);
 ```
 
-Before traversal, get the number of keys in the tree and initialize
-a traversed key counter to 0:
+Before starting traversal, first verify that the tree is not empty:
 
 ```move
-// Get number of keys, initialize traversed key count to 0
-let (l, i) = (length(&cb), 0);
+assert!(!is_empty(&cb), 0); // Assert tree not empty
 ```
 
-Then initialize predecessor traversal per <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>()</code>,
-storing the max key in the tree, a mutable reference to its
-corresponding value, the parent field of the corresponding node, and
-the child field index of the corresponding node.
+This check could be performed within the generalized initialization
+function, <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_init_mut">traverse_init_mut</a>()</code>, but doing so would introduce
+compounding computational overhead, especially for applications
+where traversal is repeatedly initialized after having already
+established that the tree in question is not empty. Hence it is
+assumed that any functions which call traversal initializers will
+only do so after having verified that node iteration is possible in
+the first place, and that they will track loop counters to prevent
+an attempted traversal past the end of the tree. The loop counters
+in question include a counter for the number of keys in the tree,
+which must be decremented if any nodes are popped during traversal,
+and a counter for the number of remaining traversals possible:
+
+```move
+let n = length(&cb); // Get number of keys in the tree
+let r = n - 1; // Get number of remaining traversals possible
+```
+
+Continuing the example, then initialize predecessor traversal per
+<code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_init_mut">traverse_p_init_mut</a>()</code>, storing the max key in the tree, a mutable
+reference to its corresponding value, the parent field of the
+corresponding node, and the child field index of the corresponding
+node.
 
 ```move
 // Initialize predecessor traversal: get max key in tree,
@@ -292,35 +316,31 @@ let (k, v_r, p_f, c_i) = traverse_p_init_mut(&mut cb);
 
 Now perform an inorder predecessor traversal, popping out the node
 for any keys that are a multiple of 4, otherwise incrementing the
-tens place of the corresponding value by the number of keys that
-have been accessed. Hence, {4, 400} will be popped, {9, 900} updates
-to {9, 910}, and {7, 700} updates to {7, 730}. Again, since Move's
-documentation build engine strips leading whitespace, right carets
-are included to preserve indentation
+corresponding value by a monotonically increasing multiple of 10,
+starting at 10, with the exception of the final node, which has its
+value set to 0. Hence, {9, 900} updates to {9, 910}, {8, 800} gets
+popped, {7, 700} updates to {7, 720}, and so on, until {1, 100} gets
+updated to {1, 0}. Again, since Move's documentation build engine
+strips leading whitespace, right carets are included to preserve
+indentation:
 
 ```move
-> while(i <= l) { // While there are remaining predecessors
+> let i = 10; // Initialize value increment counter
+> while(r > 0) { // While remaining traversals possible
 >     if (k % 4 == 0) { // If key is a multiple of 4
 >         // Traverse pop corresponding node and discard its value
 >         (k, v_r, p_f, c_i, _) =
->             traverse_p_pop_mut(&mut cb, k, p_f, c_i, l);
->         l = l - 1; // Decrement count of keys in tree
+>             traverse_p_pop_mut(&mut cb, k, p_f, c_i, n);
+>         n = n - 1; // Decrement key count
 >     } else { // If key is not a multiple of 4
->         // Increment corresponding value by 10 times the
->         // traversed key count, 1-indexed
->         *v_r = *v_r + 10 * (i + 1);
+>         *v_r = *v_r + i; // Increment corresponding value
+>         i = i + 10; // Increment by 10 more next iteration
 >         // Traverse to predecessor
 >         (k, v_r, p_f, c_i) = traverse_p_mut(&mut cb, k, p_f);
 >     };
->     i = i + 1; // Increment traversed key count
+>     r = r - 1; // Decrement remaining traversal count
 > }; // Traversal has ended up at node having minimum key
-```
-
-Now that traversal has reached the final key-value pair, {1, 100},
-set the corresponding value to 0
-
-```move
-*v_r = 0; // Set corresponding value to 0
+> *v_r = 0; // Set corresponding value to 0
 ```
 
 After the traversal, {4, 400} and {8, 800} have thus been popped,
@@ -328,70 +348,121 @@ and key-value pairs have updated accordingly:
 
 ```move
 // Assert keys popped correctly
-assert!(!has_key(&cb, 4) && !has_key(&cb, 8), 0);
-// Assert values updated correctly
-assert!(*borrow(&cb, 1) ==   0, 1);
-assert!(*borrow(&cb, 2) == 280, 2);
-assert!(*borrow(&cb, 3) == 370, 3);
-assert!(*borrow(&cb, 5) == 550, 4);
-assert!(*borrow(&cb, 6) == 640, 5);
-assert!(*borrow(&cb, 7) == 730, 6);
-assert!(*borrow(&cb, 9) == 910, 7);
+assert!(!has_key(&cb, 4) && !has_key(&cb, 8), 1);
+// Assert correct value updates
+assert!(*borrow(&cb, 1) ==   0, 2);
+assert!(*borrow(&cb, 2) == 260, 3);
+assert!(*borrow(&cb, 3) == 350, 4);
+assert!(*borrow(&cb, 5) == 540, 5);
+assert!(*borrow(&cb, 6) == 630, 6);
+assert!(*borrow(&cb, 7) == 720, 7);
+assert!(*borrow(&cb, 9) == 910, 8);
 ```
+
+Here, the only assurance that the traversal does not go past the end
+of the tree is the proper tracking of loop variables: again, the
+relevant error-checking could have been implemented in a
+corresponding traversal function, namely <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code>, but this
+would introduce compounding computational overhead. Since traversal
+already requires precise management of loop counter variables and
+node indices, it is assumed that they are managed correctly and thus
+no native error-checking is implemented so as to improve efficiency.
 
 
 <a name="@Partial_successor_traversal_19"></a>
 
-##### Partial successor traversal
+#### Partial successor traversal
 
 
-Continuing the example, in the general case now increment the ones
-place instead of the tens place, and if the key is 7, break out of
-the loop, popping the corresponding value and setting the successor
-to instead have it as a value:
+Continuing the example, since the number of keys was updated during
+the last loop, simply check that key count is greater than 0 to
+verify tree is not empty. Then re-initialize the remaining traversal
+counter, and this time use a value increment counter for a
+monotonically increasing multiple of 1. Then initialize sucessor
+traversal:
 
 ```move
-(l, i) = (length(&cb), 0); // Re-initialize loop counters
-// Initialize successor iteration
+assert!(n > 0, 9); // Assert tree still not empty
+// Re-initialize remaining traversal, value increment counters
+(r, i) = (n - 1, 1);
+// Initialize successor traversal
 (k, v_r, p_f, c_i) = traverse_s_init_mut(&mut cb);
 ```
 
+Here, if the key is equal to 7, then traverse pop the corresponding
+node and store its value, then stop traversal:
+
 ```move
-> // Initialize successor iteration
-> (k, v_r, p_f, c_i) = traverse_s_init_mut(&mut cb);
-> while(i <= l) { // While there are remaining successors
+> let v = 0; // Initialize variable to store value of matched node
+> while(r > 0) { // While remaining traversals possible
 >     if (k == 7) { // If key is 7
->         // Traverse pop corresponding node and store its
->         // key-value pair
->         let (k, _, _, _, v) =
->             traverse_s_pop_mut(&mut cb, k, p_f, c_i, l);
->         // Update the popped node's successor to have as its
->         // value the popped node's value
->         *borrow_mut(&mut cb, k) = v;
->         break // Stop the traversal
+>         // Traverse pop corresponding node and store its value
+>         (_, _, _, _, v) = traverse_s_pop_mut(&mut cb, k, p_f, c_i, n);
+>         break // Stop traversal
 >     } else { // For all keys not equal to 7
->         // Increment value by the traversed key count, 1-indexed
->         *v_r = *v_r + 1 * (i + 1);
+>         *v_r = *v_r + i; // Increment corresponding value
 >         // Traverse to successor
 >         (k, v_r, p_f, c_i) = traverse_s_mut(&mut cb, k, p_f);
->         i = i + 1; // Increment traversed key count
+>         i = i + 1; // Increment by 1 more next iteration
 >     };
+>     r = r - 1; // Decrement remaining traversal count
 > };
 ```
-Hence {7, 730} has been popped, {9, 910} has updated to {9, 730},
-and other key-value pairs have had the ones place in their value
-updated accordingly:
+Hence {7, 720} has been popped, {9, 910} has been left unmodified,
+and other key-value pairs have been updated accordingly:
 
 ```move
 // Assert key popped correctly
-assert!(!has_key(&cb, 7), 8);
+assert!(!has_key(&cb, 7), 10);
+// Assert value of popped node stored correctly
+assert!(v == 720, 11);
 // Assert values updated correctly
-assert!(*borrow(&cb, 1) ==   1,  9);
-assert!(*borrow(&cb, 2) == 282, 10);
-assert!(*borrow(&cb, 3) == 373, 11);
-assert!(*borrow(&cb, 5) == 554, 12);
-assert!(*borrow(&cb, 6) == 645, 13);
-assert!(*borrow(&cb, 9) == 730, 14);
+assert!(*borrow(&cb, 1) ==   1, 12);
+assert!(*borrow(&cb, 2) == 262, 13);
+assert!(*borrow(&cb, 3) == 353, 14);
+assert!(*borrow(&cb, 5) == 544, 15);
+assert!(*borrow(&cb, 6) == 635, 16);
+assert!(*borrow(&cb, 9) == 910, 17);
+```
+
+
+<a name="@Singleton_traversal_initialization_20"></a>
+
+#### Singleton traversal initialization
+
+
+Traversal initializers can still be validly called in the case of a
+singleton tree:
+
+```move
+// Pop all key-value pairs except {9, 910}
+_ = pop(&mut cb, 1);
+_ = pop(&mut cb, 2);
+_ = pop(&mut cb, 3);
+_ = pop(&mut cb, 5);
+_ = pop(&mut cb, 6);
+assert!(!is_empty(&cb), 18); // Assert tree not empty
+let n = length(&cb); // Get number of keys in the tree
+let r = n - 1; // Get number of remaining traversals possible
+// Initialize successor traversal
+(k, v_r, p_f, _) = traverse_s_init_mut(&mut cb);
+```
+
+In this case, the value of the corresponding node can still be
+updated, and a traversal loop can even be implemented, with the loop
+simply being skipped over:
+
+```move
+> *v_r = 1234; // Update value of node having minimum key
+> while(r > 0) { // While remaining traversals possible
+>     *v_r = 4321; // Update value of corresponding node
+>     // Traverse to successor
+>     (k, v_r, p_f, _) = traverse_s_mut(&mut cb, k, p_f);
+>     r = r - 1; // Decrement remaining traversal count
+> }; // This loop does not go through any iterations
+> // Assert value unchanged via loop
+> assert!(pop(&mut cb, 9) == 1234, 19);
+> destroy_empty(cb); // Destroy empty tree
 ```
 
 ---
@@ -414,12 +485,16 @@ assert!(*borrow(&cb, 9) == 730, 14);
         -  [Successor public functions](#@Successor_public_functions_14)
         -  [Generic private functions](#@Generic_private_functions_15)
         -  [Walkthrough](#@Walkthrough_16)
+        -  [Syntax motivations](#@Syntax_motivations_17)
+        -  [Full predecessor traversal](#@Full_predecessor_traversal_18)
+        -  [Partial successor traversal](#@Partial_successor_traversal_19)
+        -  [Singleton traversal initialization](#@Singleton_traversal_initialization_20)
 -  [Struct `CB`](#0xc0deb00c_CritBit_CB)
 -  [Struct `I`](#0xc0deb00c_CritBit_I)
 -  [Struct `O`](#0xc0deb00c_CritBit_O)
--  [Constants](#@Constants_20)
-    -  [Error codes](#@Error_codes_21)
-    -  [General constants](#@General_constants_22)
+-  [Constants](#@Constants_21)
+    -  [Error codes](#@Error_codes_22)
+    -  [General constants](#@General_constants_23)
 -  [Function `borrow`](#0xc0deb00c_CritBit_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_CritBit_borrow_mut)
 -  [Function `destroy_empty`](#0xc0deb00c_CritBit_destroy_empty)
@@ -442,8 +517,8 @@ assert!(*borrow(&cb, 9) == 730, 14);
 -  [Function `b_s_o_m`](#0xc0deb00c_CritBit_b_s_o_m)
 -  [Function `check_len`](#0xc0deb00c_CritBit_check_len)
 -  [Function `crit_bit`](#0xc0deb00c_CritBit_crit_bit)
-    -  [XOR/AND method](#@XOR/AND_method_23)
-    -  [Binary search method](#@Binary_search_method_24)
+    -  [XOR/AND method](#@XOR/AND_method_24)
+    -  [Binary search method](#@Binary_search_method_25)
 -  [Function `insert_above`](#0xc0deb00c_CritBit_insert_above)
 -  [Function `insert_above_root`](#0xc0deb00c_CritBit_insert_above_root)
 -  [Function `insert_below`](#0xc0deb00c_CritBit_insert_below)
@@ -467,21 +542,21 @@ assert!(*borrow(&cb, 9) == 730, 14);
 -  [Function `stitch_parent_of_child`](#0xc0deb00c_CritBit_stitch_parent_of_child)
 -  [Function `stitch_swap_remove`](#0xc0deb00c_CritBit_stitch_swap_remove)
 -  [Function `traverse_c_i`](#0xc0deb00c_CritBit_traverse_c_i)
-    -  [Method (predecessor)](#@Method_(predecessor)_25)
-    -  [Method (successor)](#@Method_(successor)_26)
-    -  [Parameters](#@Parameters_27)
-    -  [Returns](#@Returns_28)
-    -  [Considerations](#@Considerations_29)
+    -  [Method (predecessor)](#@Method_(predecessor)_26)
+    -  [Method (successor)](#@Method_(successor)_27)
+    -  [Parameters](#@Parameters_28)
+    -  [Returns](#@Returns_29)
+    -  [Considerations](#@Considerations_30)
 -  [Function `traverse_init_mut`](#0xc0deb00c_CritBit_traverse_init_mut)
-    -  [Parameters](#@Parameters_30)
-    -  [Returns](#@Returns_31)
-    -  [Considerations](#@Considerations_32)
+    -  [Parameters](#@Parameters_31)
+    -  [Returns](#@Returns_32)
+    -  [Considerations](#@Considerations_33)
 -  [Function `traverse_mut`](#0xc0deb00c_CritBit_traverse_mut)
-    -  [Returns](#@Returns_33)
+    -  [Returns](#@Returns_34)
 -  [Function `traverse_pop_mut`](#0xc0deb00c_CritBit_traverse_pop_mut)
-    -  [Parameters](#@Parameters_34)
-    -  [Returns](#@Returns_35)
-    -  [Considerations](#@Considerations_36)
+    -  [Parameters](#@Parameters_35)
+    -  [Returns](#@Returns_36)
+    -  [Considerations](#@Considerations_37)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -629,7 +704,7 @@ Outer node with key <code>k</code> and value <code>v</code>
 
 </details>
 
-<a name="@Constants_20"></a>
+<a name="@Constants_21"></a>
 
 ## Constants
 
@@ -637,7 +712,7 @@ Outer node with key <code>k</code> and value <code>v</code>
 <a name="0xc0deb00c_CritBit_E_BIT_NOT_0_OR_1"></a>
 
 
-<a name="@Error_codes_21"></a>
+<a name="@Error_codes_22"></a>
 
 ### Error codes
 
@@ -722,7 +797,7 @@ When attempting to pop from empty tree
 <a name="0xc0deb00c_CritBit_HI_128"></a>
 
 
-<a name="@General_constants_22"></a>
+<a name="@General_constants_23"></a>
 
 ### General constants
 
@@ -1490,7 +1565,7 @@ Return the number of the most significant bit (0-indexed from
 LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-<a name="@XOR/AND_method_23"></a>
+<a name="@XOR/AND_method_24"></a>
 
 ### XOR/AND method
 
@@ -1559,7 +1634,7 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_24"></a>
+<a name="@Binary_search_method_25"></a>
 
 ### Binary search method
 
@@ -2726,7 +2801,7 @@ return the child field index of the target node. See
 [traversal](#Traversal)
 
 
-<a name="@Method_(predecessor)_25"></a>
+<a name="@Method_(predecessor)_26"></a>
 
 ### Method (predecessor)
 
@@ -2739,7 +2814,7 @@ at target node (the first outer node): walk to apex node's
 left child, then walk along right children
 
 
-<a name="@Method_(successor)_26"></a>
+<a name="@Method_(successor)_27"></a>
 
 ### Method (successor)
 
@@ -2752,7 +2827,7 @@ out at target node (the first outer node): walk to apex
 node's right child, then walk along left children
 
 
-<a name="@Parameters_27"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -2766,14 +2841,14 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_28"></a>
+<a name="@Returns_29"></a>
 
 ### Returns
 
 * <code>u64</code>: Child field index of target node
 
 
-<a name="@Considerations_29"></a>
+<a name="@Considerations_30"></a>
 
 ### Considerations
 
@@ -2834,7 +2909,7 @@ Initialize a mutable iterated inorder traversal in a tree having
 at least one outer node. See [traversal](#Traversal)
 
 
-<a name="@Parameters_30"></a>
+<a name="@Parameters_31"></a>
 
 ### Parameters
 
@@ -2843,7 +2918,7 @@ at least one outer node. See [traversal](#Traversal)
 traversal, else successor traversal
 
 
-<a name="@Returns_31"></a>
+<a name="@Returns_32"></a>
 
 ### Returns
 
@@ -2853,7 +2928,7 @@ traversal, else successor traversal
 * <code>u64</code>: Child field index of corresponding node
 
 
-<a name="@Considerations_32"></a>
+<a name="@Considerations_33"></a>
 
 ### Considerations
 
@@ -2901,7 +2976,7 @@ traversal, else successor traversal
 Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code> call for enumerated return extraction.
 See [traversal](#Traversal)
 
-<a name="@Returns_33"></a>
+<a name="@Returns_34"></a>
 
 ### Returns
 
@@ -2957,7 +3032,7 @@ pop the start node and return its value. See
 [traversal](#Traversal)
 
 
-<a name="@Parameters_34"></a>
+<a name="@Parameters_35"></a>
 
 ### Parameters
 
@@ -2973,7 +3048,7 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_35"></a>
+<a name="@Returns_36"></a>
 
 ### Returns
 
@@ -2984,7 +3059,7 @@ else successor traversal
 * <code>V</code>: Popped start node's value
 
 
-<a name="@Considerations_36"></a>
+<a name="@Considerations_37"></a>
 
 ### Considerations
 

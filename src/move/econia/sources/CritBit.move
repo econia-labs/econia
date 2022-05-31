@@ -1668,10 +1668,11 @@ module Econia::CritBit {
     /// * Assumes passed start key is not minimum key in tree if
     ///   predecessor traversal, and that passed start key is not
     ///   maximum key in tree if successor traversal
-    /// * Takes a publicy-exposed vector index (`p_f`) as a parameter
+    /// * Takes publicy-exposed node indices (`p_f`, `c_i`) as
+    ///   parameters
     /// * Does not calculate number of outer nodes in `cb`, but rather
-    ///   accepts this number as a parameter, which should be tracked by
-    ///   the caller
+    ///   accepts this number as a parameter (`n_o`), which should be
+    ///   tracked by the caller
     fun traverse_pop_mut<V>(
         cb: &mut CB<V>,
         k: u128,

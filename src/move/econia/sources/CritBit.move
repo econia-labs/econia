@@ -93,33 +93,31 @@
 /// contain the field index of the given node, set at bit 63 if the root
 /// is an outer node.
 ///
-/// # Operations
+/// # Basic public functions
 ///
-/// ## Basic public functions
-///
-/// ### Initialization
+/// ## Initialization
 /// * `empty()`
 /// * `singleton()`
 ///
-/// ### Mutation
+/// ## Mutation
 /// * `borrow_mut()`
 /// * `insert()`
 /// * `pop()`
 ///
-/// ### Lookup
+/// ## Lookup
 /// * `borrow()`
 /// * `has_key()`
 /// * `max_key()`
 /// * `min_key()`
 ///
-/// ### Size
+/// ## Size
 /// * `is_empty()`
 /// * `length()`
 ///
-/// ### Destruction
+/// ## Destruction
 /// * `destroy_empty()`
 ///
-/// ## Traversal
+/// # Traversal
 ///
 /// [Predecessor public functions](#Predecessor-public-functions) and
 /// [successor public functions](#Successor-public-functions) are
@@ -128,23 +126,23 @@
 /// documentation comments detailing the relevant algorithms. See
 /// [walkthrough](#Walkthrough) for canonical implementation syntax.
 ///
-/// ### Predecessor public functions
+/// ## Predecessor public functions
 /// * `traverse_p_init_mut()`
 /// * `traverse_p_mut()`
 /// * `traverse_p_pop_mut()`
 ///
-/// ### Successor public functions
+/// ## Successor public functions
 /// * `traverse_s_init_mut()`
 /// * `traverse_s_mut()`
 /// * `traverse_s_pop_mut()`
 ///
-/// ### Generic private functions
+/// ## Generic private functions
 /// * `traverse_c_i()`
 /// * `traverse_init_mut()`
 /// * `traverse_mut()`
 /// * `traverse_pop_mut()`
 ///
-/// ### Walkthrough
+/// ## Walkthrough
 /// * [Syntax motivations](#Syntax-motivations)
 /// * [Full predecessor traversal](#Full-predecessor-traversal)
 /// * [Partial successor traversal](#Partial-successor-traversal)

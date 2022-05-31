@@ -125,7 +125,7 @@
 /// [successor public functions](#Successor-public-functions) are
 /// wrapped [generic private functions](#Generic-private-functions),
 /// with [generic private function](#Generic-private-functions)
-/// documentation comments detailing the relevant algorithms
+/// documentation comments detailing the relevant algorithms.
 ///
 /// ### Predecessor public functions
 /// * `traverse_p_init_mut()`
@@ -144,6 +144,170 @@
 /// * `traverse_pop_mut()`
 ///
 /// ### Walkthrough
+///
+/// #### Syntax motivations
+///
+/// Iterated traversal, unlike other public implementations, exposes
+/// internal [node indices](#Node-indices) that must be tracked during
+/// loopwise operations, because Move's borrow-checking system prohibits
+/// mutably borrowing a `CB` when an `I` or `O` is already being mutably
+/// borrowed. Not that this borrow-checking constraint introduces an
+/// absolute prohibition on iterated traversal without exposed node
+/// indices, but rather, the given borrow-checking constraints
+/// render non-node-index-exposed traversal inefficient: to traverse
+/// without exposing internal node indices would require searching for a
+/// key from the root during each iteration. Instead, by publicly
+/// exposing node indices, it is possible to walk from one outer node to
+/// the next without having to perform such redundant operations, per
+/// `traverse_c_i()`.
+///
+/// The test `traverse_demo()` provides canonical traversal syntax
+/// in this regard, with exposed node indices essentially acting as
+/// pointers. Hence, node-index-exposed traversal presents a kind of
+/// circumvention of Move's borrow-checking system, implemented only
+/// due to a need for greater efficiency. Like pointer-based
+/// implementations in general, this solution is extremely powerful in
+/// terms of the speed enhancement it provides, but if used incorrectly
+/// it can lead to "undefined behavior." As such, a breakdown of the
+/// canonical sytax is provided below.
+///
+/// #### Full predecessor traversal
+///
+/// To start, initialize a tree with $\{n, 100n\}$, for $0 < n < 10$:
+///
+/// ```move
+/// let cb = empty(); // Initialize empty tree
+/// // Insert {n, 100 * n} for 0 < n < 10, out of order
+/// insert(&mut cb, 9, 900);
+/// insert(&mut cb, 6, 600);
+/// insert(&mut cb, 3, 300);
+/// insert(&mut cb, 1, 100);
+/// insert(&mut cb, 8, 800);
+/// insert(&mut cb, 2, 200);
+/// insert(&mut cb, 7, 700);
+/// insert(&mut cb, 5, 500);
+/// insert(&mut cb, 4, 400);
+/// ```
+///
+/// Before traversal, get the number of keys in the tree and initialize
+/// a traversed key counter to 0:
+///
+/// ```move
+/// // Get number of keys, initialize traversed key count to 0
+/// let (l, i) = (length(&cb), 0);
+/// ```
+///
+/// Then initialize predecessor traversal per `traverse_p_init_mut()`,
+/// storing the max key in the tree, a mutable reference to its
+/// corresponding value, the parent field of the corresponding node, and
+/// the child field index of the corresponding node.
+///
+/// ```move
+/// // Initialize predecessor traversal: get max key in tree,
+/// // mutable reference to corresponding value, parent field of
+/// // corresponding node, and the child field index of it
+/// let (k, v_r, p_f, c_i) = traverse_p_init_mut(&mut cb);
+/// ```
+///
+/// Now perform an inorder predecessor traversal, popping out the node
+/// for any keys that are a multiple of 4, otherwise incrementing the
+/// tens place of the corresponding value by the number of keys that
+/// have been accessed. Hence, $\{4, 400\}$ will be popped, $\{9, 900\}$
+/// updates to $\{9, 910\}$, and $\{7, 700\}$ updates to $\{7, 730\}$.
+/// Again, since Move's documentation build engine strips leading
+/// whitespace, right carets are included to preserve indentation
+///
+/// ```move
+/// > while(i <= l) { // While there are remaining predecessors
+/// >     if (k % 4 == 0) { // If key is a multiple of 4
+/// >         // Traverse pop corresponding node and discard its value
+/// >         (k, v_r, p_f, c_i, _) =
+/// >             traverse_p_pop_mut(&mut cb, k, p_f, c_i, l);
+/// >         l = l - 1; // Decrement count of keys in tree
+/// >     } else { // If key is not a multiple of 4
+/// >         // Increment corresponding value by 10 times the
+/// >         // traversed key count, 1-indexed
+/// >         *v_r = *v_r + 10 * (i + 1);
+/// >         // Traverse to predecessor
+/// >         (k, v_r, p_f, c_i) = traverse_p_mut(&mut cb, k, p_f);
+/// >     };
+/// >     i = i + 1; // Increment traversed key count
+/// > }; // Traversal has ended up at node having minimum key
+/// ```
+///
+/// Now that traversal has reached the final key-value pair,
+/// $\{1, 100\}$, set the corresponding value to 0
+///
+/// ```move
+/// *v_r = 0; // Set corresponding value to 0
+/// ```
+///
+/// After the traversal, $\{4, 400\}$ and $\{8, 800\}$ have thus been
+/// popped, and key-value pairs have updated accordingly:
+///
+/// ```move
+/// // Assert keys popped correctly
+/// assert!(!has_key(&cb, 4) && !has_key(&cb, 8), 0);
+/// // Assert values updated correctly
+/// assert!(*borrow(&cb, 1) ==   0, 1);
+/// assert!(*borrow(&cb, 2) == 280, 2);
+/// assert!(*borrow(&cb, 3) == 370, 3);
+/// assert!(*borrow(&cb, 5) == 550, 4);
+/// assert!(*borrow(&cb, 6) == 640, 5);
+/// assert!(*borrow(&cb, 7) == 730, 6);
+/// assert!(*borrow(&cb, 9) == 910, 7);
+/// ```
+///
+/// #### Parial successor traversal
+///
+/// Continuing the example, in the general case now increment the ones
+/// place instead of the tens place, and if the key is 7, break out of
+/// the loop, popping the corresponding value and setting the successor
+/// to instead have it as a value:
+///
+/// ```move
+/// (l, i) = (length(&cb), 0); // Re-initialize loop counters
+/// // Initialize successor iteration
+/// (k, v_r, p_f, c_i) = traverse_s_init_mut(&mut cb);
+/// ```
+///
+/// ```move
+/// > // Initialize successor iteration
+/// > (k, v_r, p_f, c_i) = traverse_s_init_mut(&mut cb);
+/// > while(i <= l) { // While there are remaining successors
+/// >     if (k == 7) { // If key is 7
+/// >         // Traverse pop corresponding node and store its
+/// >         // key-value pair
+/// >         let (k, _, _, _, v) =
+/// >             traverse_s_pop_mut(&mut cb, k, p_f, c_i, l);
+/// >         // Update the popped node's successor to have as its
+/// >         // value the popped node's value
+/// >         *borrow_mut(&mut cb, k) = v;
+/// >         break // Stop the traversal
+/// >     } else { // For all keys not equal to 7
+/// >         // Increment value by the traversed key count, 1-indexed
+/// >         *v_r = *v_r + 1 * (i + 1);
+/// >         // Traverse to successor
+/// >         (k, v_r, p_f, c_i) = traverse_s_mut(&mut cb, k, p_f);
+/// >         i = i + 1; // Increment traversed key count
+/// >     };
+/// > };
+/// ```
+/// Hence $\{7, 730\}$ has been popped, $\{9, 910\}$ has updated to
+/// $\{9, 730\}$, and other key-value pairs have had the ones place in
+/// their value updated accordingly:
+///
+/// ```move
+/// // Assert key popped correctly
+/// assert!(!has_key(&cb, 7), 8);
+/// // Assert values updated correctly
+/// assert!(*borrow(&cb, 1) ==   1,  9);
+/// assert!(*borrow(&cb, 2) == 282, 10);
+/// assert!(*borrow(&cb, 3) == 373, 11);
+/// assert!(*borrow(&cb, 5) == 554, 12);
+/// assert!(*borrow(&cb, 6) == 645, 13);
+/// assert!(*borrow(&cb, 9) == 730, 14);
+/// ```
 ///
 /// ---
 ///
@@ -2381,6 +2545,85 @@ module Econia::CritBit {
         let n = v_b<O<u8>>(&cb.o, 0);
         // Assert fields are as expected
         assert!(n.k == u(b"100") && n.v == 0 && n.p == ROOT, 1);
+        cb // Return rather than unpack
+    }
+
+    #[test]
+    fun traverse_demo():
+    CB<u64> {
+        let cb = empty(); // Initialize empty tree
+        // Insert {n, 100 * n} for 0 < n < 10, out of order
+        insert(&mut cb, 9, 900);
+        insert(&mut cb, 6, 600);
+        insert(&mut cb, 3, 300);
+        insert(&mut cb, 1, 100);
+        insert(&mut cb, 8, 800);
+        insert(&mut cb, 2, 200);
+        insert(&mut cb, 7, 700);
+        insert(&mut cb, 5, 500);
+        insert(&mut cb, 4, 400);
+        // Get number of keys, initialize traversed key count to 0
+        let (l, i) = (length(&cb), 0);
+        // Initialize predecessor traversal: get max key in tree,
+        // mutable reference to corresponding value, parent field of
+        // corresponding node, and the child field index of it
+        let (k, v_r, p_f, c_i) = traverse_p_init_mut(&mut cb);
+        while(i <= l) { // While there are remaining predecessors
+            if (k % 4 == 0) { // If key is a multiple of 4
+                // Traverse pop corresponding node and discard its value
+                (k, v_r, p_f, c_i, _) =
+                    traverse_p_pop_mut(&mut cb, k, p_f, c_i, l);
+                l = l - 1; // Decrement count of keys in tree
+            } else { // If key is not a multiple of 4
+                // Increment corresponding value by 10 times the
+                // traversed key count, 1-indexed
+                *v_r = *v_r + 10 * (i + 1);
+                // Traverse to predecessor
+                (k, v_r, p_f, c_i) = traverse_p_mut(&mut cb, k, p_f);
+            };
+            i = i + 1; // Increment traversed key count
+        }; // Traversal has ended up at node having minimum key
+        *v_r = 0; // Set corresponding value to 0
+        // Assert keys popped correctly
+        assert!(!has_key(&cb, 4) && !has_key(&cb, 8), 0);
+        // Assert values updated correctly
+        assert!(*borrow(&cb, 1) ==   0, 1);
+        assert!(*borrow(&cb, 2) == 280, 2);
+        assert!(*borrow(&cb, 3) == 370, 3);
+        assert!(*borrow(&cb, 5) == 550, 4);
+        assert!(*borrow(&cb, 6) == 640, 5);
+        assert!(*borrow(&cb, 7) == 730, 6);
+        assert!(*borrow(&cb, 9) == 910, 7);
+        (l, i) = (length(&cb), 0); // Re-initialize loop counters
+        // Initialize successor iteration
+        (k, v_r, p_f, c_i) = traverse_s_init_mut(&mut cb);
+        while(i <= l) { // While there are remaining successors
+            if (k == 7) { // If key is 7
+                // Traverse pop corresponding node and store its
+                // key-value pair
+                let (k, _, _, _, v) =
+                    traverse_s_pop_mut(&mut cb, k, p_f, c_i, l);
+                // Update the popped node's successor to have as its
+                // value the popped node's value
+                *borrow_mut(&mut cb, k) = v;
+                break // Stop the traversal
+            } else { // For all keys not equal to 7
+                // Increment value by the traversed key count, 1-indexed
+                *v_r = *v_r + 1 * (i + 1);
+                // Traverse to successor
+                (k, v_r, p_f, c_i) = traverse_s_mut(&mut cb, k, p_f);
+                i = i + 1; // Increment traversed key count
+            };
+        };
+        // Assert key popped correctly
+        assert!(!has_key(&cb, 7), 8);
+        // Assert values updated correctly
+        assert!(*borrow(&cb, 1) ==   1,  9);
+        assert!(*borrow(&cb, 2) == 282, 10);
+        assert!(*borrow(&cb, 3) == 373, 11);
+        assert!(*borrow(&cb, 5) == 554, 12);
+        assert!(*borrow(&cb, 6) == 645, 13);
+        assert!(*borrow(&cb, 9) == 730, 14);
         cb // Return rather than unpack
     }
 

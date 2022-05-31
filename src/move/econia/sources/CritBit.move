@@ -173,7 +173,7 @@
 ///
 /// #### Full predecessor traversal
 ///
-/// To start, initialize a tree with $\{n, 100n\}$, for $0 < n < 10$:
+/// To start, initialize a tree with {$n, 100n$}, for $0 < n < 10$:
 ///
 /// ```move
 /// let cb = empty(); // Initialize empty tree
@@ -212,10 +212,10 @@
 /// Now perform an inorder predecessor traversal, popping out the node
 /// for any keys that are a multiple of 4, otherwise incrementing the
 /// tens place of the corresponding value by the number of keys that
-/// have been accessed. Hence, $\{4, 400\}$ will be popped, $\{9, 900\}$
-/// updates to $\{9, 910\}$, and $\{7, 700\}$ updates to $\{7, 730\}$.
-/// Again, since Move's documentation build engine strips leading
-/// whitespace, right carets are included to preserve indentation
+/// have been accessed. Hence, {4, 400} will be popped, {9, 900} updates
+/// to {9, 910}, and {7, 700} updates to {7, 730}. Again, since Move's
+/// documentation build engine strips leading whitespace, right carets
+/// are included to preserve indentation
 ///
 /// ```move
 /// > while(i <= l) { // While there are remaining predecessors
@@ -235,15 +235,15 @@
 /// > }; // Traversal has ended up at node having minimum key
 /// ```
 ///
-/// Now that traversal has reached the final key-value pair,
-/// $\{1, 100\}$, set the corresponding value to 0
+/// Now that traversal has reached the final key-value pair, {1, 100},
+/// set the corresponding value to 0
 ///
 /// ```move
 /// *v_r = 0; // Set corresponding value to 0
 /// ```
 ///
-/// After the traversal, $\{4, 400\}$ and $\{8, 800\}$ have thus been
-/// popped, and key-value pairs have updated accordingly:
+/// After the traversal, {4, 400} and {8, 800} have thus been popped,
+/// and key-value pairs have updated accordingly:
 ///
 /// ```move
 /// // Assert keys popped correctly
@@ -258,7 +258,7 @@
 /// assert!(*borrow(&cb, 9) == 910, 7);
 /// ```
 ///
-/// #### Parial successor traversal
+/// #### Partial successor traversal
 ///
 /// Continuing the example, in the general case now increment the ones
 /// place instead of the tens place, and if the key is 7, break out of
@@ -293,9 +293,9 @@
 /// >     };
 /// > };
 /// ```
-/// Hence $\{7, 730\}$ has been popped, $\{9, 910\}$ has updated to
-/// $\{9, 730\}$, and other key-value pairs have had the ones place in
-/// their value updated accordingly:
+/// Hence {7, 730} has been popped, {9, 910} has updated to {9, 730},
+/// and other key-value pairs have had the ones place in their value
+/// updated accordingly:
 ///
 /// ```move
 /// // Assert key popped correctly

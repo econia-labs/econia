@@ -1,15 +1,15 @@
 # Econia
-
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
-* [Developer setup](#developer-setup)
-    * [Shell scripts](#shell-scripts)
-    * [Installing dependencies](#installing-dependencies)
-    * [Conda](#conda)
-* [Major filetypes](#major-filetypes)
-    * [Python](#python)
-    * [Jupyter](#jupyter)
-    * [Move](#move)
+- [Econia](#econia)
+  - [Developer setup](#developer-setup)
+    - [Shell scripts](#shell-scripts)
+    - [Installing dependencies](#installing-dependencies)
+    - [Conda](#conda)
+  - [Major filetypes](#major-filetypes)
+    - [Python](#python)
+    - [Jupyter](#jupyter)
+    - [Move](#move)
 
 ## Developer setup
 
@@ -146,17 +146,18 @@ With the `econia` conda environment active, you can then build the documentation
 
 ### Python
 
-The Econia Python package source code is at `src/python/econia`.
-Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into the documentation website via Sphinx.
-Sphinx documentation source files are at `doc/sphinx`.
+The Econia Python package source code is at [`src/python/econia`](src/python/econia).
+Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into a documentation website via Sphinx.
+Sphinx documentation source files are at [`doc/sphinx`](doc/sphinx).
 
 ### Jupyter
 
-Interactive Jupyter notebook examples are at `src/jupyter`, listed in increasing order of creation number.
+Interactive Jupyter notebook examples are at [`src/jupyter`](src/jupyter), listed in increasing order of creation number.
 The earliest notebooks are subject to breaking changes at the most recent commit, but they have been archived so as to be functional at the commit when they where finalized.
 Hence, older commits can be checked out and experimented with, but mostly they are useful for harvesting old code patterns.
 
 ### Move
 
-Move source code is at `src/move/econia`.
+Move source code is at [`src/move/econia`](src/move/econia).
 In the absence of a formal style guide, Move code is formatted similarly to PEP8-style Python code.
+Auto-generated module documentation files are at [`src/move/econia/build/Econia/docs`](src/move/econia/build/Econia/docs).

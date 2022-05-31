@@ -182,7 +182,8 @@ is an outer node.
 [successor public functions](#Successor-public-functions) are
 wrapped [generic private functions](#Generic-private-functions),
 with [generic private function](#Generic-private-functions)
-documentation comments detailing the relevant algorithms.
+documentation comments detailing the relevant algorithms. See
+[walkthrough](#Walkthrough) for canonical implementation syntax.
 
 
 <a name="@Predecessor_public_functions_13"></a>

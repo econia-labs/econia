@@ -125,7 +125,8 @@
 /// [successor public functions](#Successor-public-functions) are
 /// wrapped [generic private functions](#Generic-private-functions),
 /// with [generic private function](#Generic-private-functions)
-/// documentation comments detailing the relevant algorithms.
+/// documentation comments detailing the relevant algorithms. See
+/// [walkthrough](#Walkthrough) for canonical implementation syntax.
 ///
 /// ### Predecessor public functions
 /// * `traverse_p_init_mut()`
@@ -2616,6 +2617,7 @@ module Econia::CritBit {
     }
 
     #[test]
+    /// See [walkthrough](#Walkthrough)
     fun traverse_demo() {
         let cb = empty(); // Initialize empty tree
         // Insert {n, 100 * n} for 0 < n < 10, out of order

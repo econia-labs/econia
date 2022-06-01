@@ -46,21 +46,6 @@ econia_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 econia_modules = SimpleNamespace(
-    Coin = SimpleNamespace(
-        name = 'Coin',
-        members = SimpleNamespace(
-            airdrop = 'airdrop',
-            APT = 'APT',
-            Balance = 'Balance',
-            publish_balances = 'publish_balances',
-            transfer_both_coins = 'transfer_both_coins',
-            USD = 'USD'
-        ),
-        fields = SimpleNamespace(
-            coin = 'coin',
-            subunits = 'subunits'
-        )
-    ),
     CritBit = SimpleNamespace(
         name = 'CritBit'
     ),

@@ -11,9 +11,9 @@ TestUser = '0x5678'
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = 'HEAD'
+rev = 'origin/HEAD'
 
 [dependencies.MoveStdlib]
 git = 'https://github.com/move-language/move'
 subdir = 'language/move-stdlib'
-rev = 'HEAD'
+rev = 'origin/HEAD'

@@ -47,6 +47,7 @@
 -  [Function `scale_factor`](#0xc0deb00c_Market_scale_factor)
 -  [Function `verify_address`](#0xc0deb00c_Market_verify_address)
 -  [Function `verify_bytestring`](#0xc0deb00c_Market_verify_bytestring)
+-  [Function `verify_market_types`](#0xc0deb00c_Market_verify_market_types)
 -  [Function `verify_t`](#0xc0deb00c_Market_verify_t)
 
 
@@ -759,13 +760,13 @@ Open orders on a user's account
  Scale factor
 </dd>
 <dt>
-<code>a: <a href="../../../build/AptosFramework/docs/Table.md#0x1_Table_Table">Table::Table</a>&lt;u128, u64&gt;</code>
+<code>a: <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;u64&gt;</code>
 </dt>
 <dd>
  Asks
 </dd>
 <dt>
-<code>b: <a href="../../../build/AptosFramework/docs/Table.md#0x1_Table_Table">Table::Table</a>&lt;u128, u64&gt;</code>
+<code>b: <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;u64&gt;</code>
 </dt>
 <dd>
  Bids
@@ -879,182 +880,12 @@ Base coin type type name
 
 
 
-<a name="0xc0deb00c_Market_E0TN"></a>
+<a name="0xc0deb00c_Market_E_NOT_COIN"></a>
 
+When a type does not correspond to a coin
 
 
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E0TN">E0TN</a>: vector&lt;u8&gt; = [69, 48];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E10TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E10TN">E10TN</a>: vector&lt;u8&gt; = [69, 49, 48];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E11TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E11TN">E11TN</a>: vector&lt;u8&gt; = [69, 49, 49];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E12TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E12TN">E12TN</a>: vector&lt;u8&gt; = [69, 49, 50];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E13TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E13TN">E13TN</a>: vector&lt;u8&gt; = [69, 49, 51];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E14TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E14TN">E14TN</a>: vector&lt;u8&gt; = [69, 49, 52];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E15TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E15TN">E15TN</a>: vector&lt;u8&gt; = [69, 49, 53];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E16TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E16TN">E16TN</a>: vector&lt;u8&gt; = [69, 49, 54];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E17TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E17TN">E17TN</a>: vector&lt;u8&gt; = [69, 49, 55];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E18TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E18TN">E18TN</a>: vector&lt;u8&gt; = [69, 49, 56];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E19TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E19TN">E19TN</a>: vector&lt;u8&gt; = [69, 49, 57];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E1TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E1TN">E1TN</a>: vector&lt;u8&gt; = [69, 49];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E2TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E2TN">E2TN</a>: vector&lt;u8&gt; = [69, 50];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E3TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E3TN">E3TN</a>: vector&lt;u8&gt; = [69, 51];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E4TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E4TN">E4TN</a>: vector&lt;u8&gt; = [69, 52];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E5TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E5TN">E5TN</a>: vector&lt;u8&gt; = [69, 53];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E6TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E6TN">E6TN</a>: vector&lt;u8&gt; = [69, 54];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E7TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E7TN">E7TN</a>: vector&lt;u8&gt; = [69, 55];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E8TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E8TN">E8TN</a>: vector&lt;u8&gt; = [69, 56];
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Market_E9TN"></a>
-
-
-
-<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E9TN">E9TN</a>: vector&lt;u8&gt; = [69, 57];
+<pre><code><b>const</b> <a href="Market.md#0xc0deb00c_Market_E_NOT_COIN">E_NOT_COIN</a>: u64 = 5;
 </code></pre>
 
 
@@ -1383,8 +1214,9 @@ Publish <code><a href="Market.md#0xc0deb00c_Market_MR">MR</a></code> to Econia's
 
 ## Function `register_market`
 
-Register a market for the given <code>B</code>, <code>Q</code>, <code>E</code> tuple, aborting
-if registry not initialized or if market already registered
+Register a market for the given base coin type <code>B</code>, quote coin
+type <code>Q</code>, and scale exponent <code>E</code> , aborting if registry not
+initialized or if market already registered
 
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Market.md#0xc0deb00c_Market_register_market">register_market</a>&lt;B, Q, E&gt;(host: &signer)
@@ -1399,9 +1231,10 @@ if registry not initialized or if market already registered
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Market.md#0xc0deb00c_Market_register_market">register_market</a>&lt;B, Q, E&gt;(
     host: &signer
 ) <b>acquires</b> <a href="Market.md#0xc0deb00c_Market_MR">MR</a> {
+    <a href="Market.md#0xc0deb00c_Market_verify_market_types">verify_market_types</a>&lt;B, Q, E&gt;(); // Verify valid type arguments
     // Assert market registry is initialized at Econia account
     <b>assert</b>!(<b>exists</b>&lt;<a href="Market.md#0xc0deb00c_Market_MR">MR</a>&gt;(@Econia), <a href="Market.md#0xc0deb00c_Market_E_NO_REGISTRY">E_NO_REGISTRY</a>);
-    // Get market info <b>struct</b> for given coin/exponent tuple
+    // Get market info for given type arguments
     <b>let</b> m_i = <a href="Market.md#0xc0deb00c_Market_MI">MI</a>{b: ti_t_o&lt;B&gt;(), q: ti_t_o&lt;Q&gt;(), e: ti_t_o&lt;E&gt;()};
     // Borrow mutable reference <b>to</b> market registry table
     <b>let</b> r_t = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Market.md#0xc0deb00c_Market_MR">MR</a>&gt;(@Econia).t;
@@ -1409,7 +1242,7 @@ if registry not initialized or if market already registered
     <b>assert</b>!(!t_c(r_t, m_i), <a href="Market.md#0xc0deb00c_Market_E_REGISTERED">E_REGISTERED</a>);
     // Pack empty order book <b>with</b> corresponding scale factor
     <b>let</b> ob = <a href="Market.md#0xc0deb00c_Market_OB">OB</a>&lt;B, Q, E&gt;{f: <a href="Market.md#0xc0deb00c_Market_scale_factor">scale_factor</a>&lt;E&gt;(), a: cb_e&lt;<a href="Market.md#0xc0deb00c_Market_P">P</a>&gt;(), b: cb_e&lt;<a href="Market.md#0xc0deb00c_Market_P">P</a>&gt;()};
-    // Pack empty order book in market container, <b>move</b> <b>to</b> host
+    // Pack market container <b>with</b> order book, <b>move</b> <b>to</b> host
     <b>move_to</b>&lt;<a href="Market.md#0xc0deb00c_Market_MC">MC</a>&lt;B, Q, E&gt;&gt;(host, <a href="Market.md#0xc0deb00c_Market_MC">MC</a>{ob});
     t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
 }
@@ -1442,28 +1275,28 @@ u64 {
     <a href="Market.md#0xc0deb00c_Market_verify_address">verify_address</a>(ti_a_a(&t_i), @Econia, <a href="Market.md#0xc0deb00c_Market_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     // Verify exponent type flag is from this <b>module</b>
     <a href="Market.md#0xc0deb00c_Market_verify_bytestring">verify_bytestring</a>(ti_m_n(&t_i), <a href="Market.md#0xc0deb00c_Market_M_NAME">M_NAME</a>, <a href="Market.md#0xc0deb00c_Market_E_WRONG_MODULE">E_WRONG_MODULE</a>);
-    <b>let</b> e_t_n = ti_s_n(&t_i); // Get scale exponent type name
-    // Return corresponding scale factor for exponent type flag
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E0TN">E0TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F0">F0</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E1TN">E1TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F1">F1</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E2TN">E2TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F2">F2</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E3TN">E3TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F3">F3</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E4TN">E4TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F4">F4</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E5TN">E5TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F5">F5</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E6TN">E6TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F6">F6</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E7TN">E7TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F7">F7</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E8TN">E8TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F8">F8</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E9TN">E9TN</a> ) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F9">F9</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E10TN">E10TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F10">F10</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E11TN">E11TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F11">F11</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E12TN">E12TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F12">F12</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E13TN">E13TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F13">F13</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E14TN">E14TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F14">F14</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E15TN">E15TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F15">F15</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E16TN">E16TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F16">F16</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E17TN">E17TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F17">F17</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E18TN">E18TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F18">F18</a>;
-    <b>if</b> (e_t_n == <a href="Market.md#0xc0deb00c_Market_E19TN">E19TN</a>) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F19">F19</a>;
+    <b>let</b> s_n = ti_s_n(&t_i); // Get type <b>struct</b> name
+    // Return corresponding scale factor
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E0">E0</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F0">F0</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E1">E1</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F1">F1</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E2">E2</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F2">F2</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E3">E3</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F3">F3</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E4">E4</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F4">F4</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E5">E5</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F5">F5</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E6">E6</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F6">F6</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E7">E7</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F7">F7</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E8">E8</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F8">F8</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E9">E9</a>&gt;() )) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F9">F9</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E10">E10</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F10">F10</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E11">E11</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F11">F11</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E12">E12</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F12">F12</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E13">E13</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F13">F13</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E14">E14</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F14">F14</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E15">E15</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F15">F15</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E16">E16</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F16">F16</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E17">E17</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F17">F17</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E18">E18</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F18">F18</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Market.md#0xc0deb00c_Market_E19">E19</a>&gt;())) <b>return</b> <a href="Market.md#0xc0deb00c_Market_F19">F19</a>;
     <b>abort</b> <a href="Market.md#0xc0deb00c_Market_E_WRONG_EXPONENT_T">E_WRONG_EXPONENT_T</a> // Else <b>abort</b>
 }
 </code></pre>
@@ -1523,6 +1356,34 @@ Assert <code>s1</code> equals <code>s2</code>, aborting with code <code>e</code>
     e: u64
 ) {
     <b>assert</b>!(bs1 == bs2, e); // Assert equality
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Market_verify_market_types"></a>
+
+## Function `verify_market_types`
+
+Assert <code>B</code> and <code>Q</code> are coins, and that <code>E</code> is scale exponent
+
+
+<pre><code><b>fun</b> <a href="Market.md#0xc0deb00c_Market_verify_market_types">verify_market_types</a>&lt;B, Q, E&gt;()
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Market.md#0xc0deb00c_Market_verify_market_types">verify_market_types</a>&lt;B, Q, E&gt;() {
+    <b>assert</b>!(c_i_c_i&lt;B&gt;(), <a href="Market.md#0xc0deb00c_Market_E_NOT_COIN">E_NOT_COIN</a>); // Assert base quote type
+    <b>assert</b>!(c_i_c_i&lt;Q&gt;(), <a href="Market.md#0xc0deb00c_Market_E_NOT_COIN">E_NOT_COIN</a>); // Assert quote coin type
+    // Assert scale exponent type <b>has</b> corresponding scale factor
+    <a href="Market.md#0xc0deb00c_Market_scale_factor">scale_factor</a>&lt;E&gt;();
 }
 </code></pre>
 

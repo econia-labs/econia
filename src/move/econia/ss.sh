@@ -46,6 +46,10 @@ elif test $1 = b; then
 elif test $1 = tc; then
     move package test --coverage $2 $3
 
+# Run aptos CLI test with filter and passed argument
+elif test $1 = tf; then
+    aptos move test --filter $2
+
 # Run tests in standard form , passing optional argument
 # For example `s ts -f coin`
 elif test $1 = t; then

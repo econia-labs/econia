@@ -7,6 +7,7 @@ module Econia::Market {
 
     use AptosFramework::Coin::{
         Coin as C,
+        is_coin_initialized as c_i_c_i
     };
 
     use AptosFramework::Table::{
@@ -113,9 +114,9 @@ module Econia::Market {
         /// Scale factor
         f: u64,
         /// Asks
-        a: T<u128, u64>,
+        a: CB<u64>,
         /// Bids
-        b: T<u128, u64>,
+        b: CB<u64>,
         /// Base coins
         b_c: C<B>,
         /// Base coins available to withdraw
@@ -138,28 +139,6 @@ module Econia::Market {
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    // Scale exponent type names
-    const E0TN : vector<u8> = b"E0";
-    const E1TN : vector<u8> = b"E1";
-    const E2TN : vector<u8> = b"E2";
-    const E3TN : vector<u8> = b"E3";
-    const E4TN : vector<u8> = b"E4";
-    const E5TN : vector<u8> = b"E5";
-    const E6TN : vector<u8> = b"E6";
-    const E7TN : vector<u8> = b"E7";
-    const E8TN : vector<u8> = b"E8";
-    const E9TN : vector<u8> = b"E9";
-    const E10TN: vector<u8> = b"E10";
-    const E11TN: vector<u8> = b"E11";
-    const E12TN: vector<u8> = b"E12";
-    const E13TN: vector<u8> = b"E13";
-    const E14TN: vector<u8> = b"E14";
-    const E15TN: vector<u8> = b"E15";
-    const E16TN: vector<u8> = b"E16";
-    const E17TN: vector<u8> = b"E17";
-    const E18TN: vector<u8> = b"E18";
-    const E19TN: vector<u8> = b"E19";
 
     // Scale factors
     const F0 : u64 = 1;
@@ -200,6 +179,8 @@ module Econia::Market {
     const E_NO_REGISTRY: u64 = 3;
     /// When a given market is already registered
     const E_REGISTERED: u64 = 4;
+    /// When a type does not correspond to a coin
+    const E_NOT_COIN: u64 = 5;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -269,14 +250,16 @@ module Econia::Market {
         move_to<MR>(account, MR{t: t_n<MI, address>()});
     }
 
-    /// Register a market for the given `B`, `Q`, `E` tuple, aborting
-    /// if registry not initialized or if market already registered
+    /// Register a market for the given base coin type `B`, quote coin
+    /// type `Q`, and scale exponent `E` , aborting if registry not
+    /// initialized or if market already registered
     public(script) fun register_market<B, Q, E>(
         host: &signer
     ) acquires MR {
+        verify_market_types<B, Q, E>(); // Verify valid type arguments
         // Assert market registry is initialized at Econia account
         assert!(exists<MR>(@Econia), E_NO_REGISTRY);
-        // Get market info struct for given coin/exponent tuple
+        // Get market info for given type arguments
         let m_i = MI{b: ti_t_o<B>(), q: ti_t_o<Q>(), e: ti_t_o<E>()};
         // Borrow mutable reference to market registry table
         let r_t = &mut borrow_global_mut<MR>(@Econia).t;
@@ -284,7 +267,7 @@ module Econia::Market {
         assert!(!t_c(r_t, m_i), E_REGISTERED);
         // Pack empty order book with corresponding scale factor
         let ob = OB<B, Q, E>{f: scale_factor<E>(), a: cb_e<P>(), b: cb_e<P>()};
-        // Pack empty order book in market container, move to host
+        // Pack market container with order book, move to host
         move_to<MC<B, Q, E>>(host, MC{ob});
         t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
     }
@@ -301,28 +284,28 @@ module Econia::Market {
         verify_address(ti_a_a(&t_i), @Econia, E_NOT_ECONIA);
         // Verify exponent type flag is from this module
         verify_bytestring(ti_m_n(&t_i), M_NAME, E_WRONG_MODULE);
-        let e_t_n = ti_s_n(&t_i); // Get scale exponent type name
-        // Return corresponding scale factor for exponent type flag
-        if (e_t_n == E0TN ) return F0;
-        if (e_t_n == E1TN ) return F1;
-        if (e_t_n == E2TN ) return F2;
-        if (e_t_n == E3TN ) return F3;
-        if (e_t_n == E4TN ) return F4;
-        if (e_t_n == E5TN ) return F5;
-        if (e_t_n == E6TN ) return F6;
-        if (e_t_n == E7TN ) return F7;
-        if (e_t_n == E8TN ) return F8;
-        if (e_t_n == E9TN ) return F9;
-        if (e_t_n == E10TN) return F10;
-        if (e_t_n == E11TN) return F11;
-        if (e_t_n == E12TN) return F12;
-        if (e_t_n == E13TN) return F13;
-        if (e_t_n == E14TN) return F14;
-        if (e_t_n == E15TN) return F15;
-        if (e_t_n == E16TN) return F16;
-        if (e_t_n == E17TN) return F17;
-        if (e_t_n == E18TN) return F18;
-        if (e_t_n == E19TN) return F19;
+        let s_n = ti_s_n(&t_i); // Get type struct name
+        // Return corresponding scale factor
+        if (s_n == ti_s_n(&ti_t_o<E0>() )) return F0;
+        if (s_n == ti_s_n(&ti_t_o<E1>() )) return F1;
+        if (s_n == ti_s_n(&ti_t_o<E2>() )) return F2;
+        if (s_n == ti_s_n(&ti_t_o<E3>() )) return F3;
+        if (s_n == ti_s_n(&ti_t_o<E4>() )) return F4;
+        if (s_n == ti_s_n(&ti_t_o<E5>() )) return F5;
+        if (s_n == ti_s_n(&ti_t_o<E6>() )) return F6;
+        if (s_n == ti_s_n(&ti_t_o<E7>() )) return F7;
+        if (s_n == ti_s_n(&ti_t_o<E8>() )) return F8;
+        if (s_n == ti_s_n(&ti_t_o<E9>() )) return F9;
+        if (s_n == ti_s_n(&ti_t_o<E10>())) return F10;
+        if (s_n == ti_s_n(&ti_t_o<E11>())) return F11;
+        if (s_n == ti_s_n(&ti_t_o<E12>())) return F12;
+        if (s_n == ti_s_n(&ti_t_o<E13>())) return F13;
+        if (s_n == ti_s_n(&ti_t_o<E14>())) return F14;
+        if (s_n == ti_s_n(&ti_t_o<E15>())) return F15;
+        if (s_n == ti_s_n(&ti_t_o<E16>())) return F16;
+        if (s_n == ti_s_n(&ti_t_o<E17>())) return F17;
+        if (s_n == ti_s_n(&ti_t_o<E18>())) return F18;
+        if (s_n == ti_s_n(&ti_t_o<E19>())) return F19;
         abort E_WRONG_EXPONENT_T // Else abort
     }
 
@@ -342,6 +325,14 @@ module Econia::Market {
         e: u64
     ) {
         assert!(bs1 == bs2, e); // Assert equality
+    }
+
+    /// Assert `B` and `Q` are coins, and that `E` is scale exponent
+    fun verify_market_types<B, Q, E>() {
+        assert!(c_i_c_i<B>(), E_NOT_COIN); // Assert base quote type
+        assert!(c_i_c_i<Q>(), E_NOT_COIN); // Assert quote coin type
+        // Assert scale exponent type has corresponding scale factor
+        scale_factor<E>();
     }
 
     /// Assert `t1` equals `t2`, aborting with code `e` if not
@@ -388,6 +379,7 @@ module Econia::Market {
     ) {
         init_registry(account); // Attempt invalid initialization
     }
+
     #[test(econia = @Econia)]
     /// Verify registry publish correctly
     public(script) fun init_registry_success(
@@ -409,9 +401,41 @@ module Econia::Market {
         verify_t(&m_i.e, &ti_t_o<E2>(), 2);
     }
 
+    #[test(
+        econia = @Econia,
+        host = @TestUser
+    )]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for uninitialized market registry
+    public(script) fun register_market_failure_no_registry(
+        econia: &signer,
+        host: &signer
+    ) acquires MR {
+        init_coin_types(econia); // Initialize coin types
+        // Attempt invalid registration
+        register_market<BCT, QCT, E0>(host);
+    }
+
+/*
+    #[test(
+        econia = @Econia,
+        host = @TestUser
+    )]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for attempted re-registration
+    public(script) fun register_market_failure_registered(
+        econia: &signer,
+        host: &signer
+    ) acquires MR {
+        init_coin_types(econia); // Initialize coin types
+        init_registry(econia); // Initialize registry
+        register_market<BCT, QCT, E0>(host); // Register market
+    }
+*/
+
     #[test]
     #[expected_failure(abort_code = 2)]
-    /// Verify abortion for invalid type
+    /// Verify failure for invalid type
     fun scale_factor_failure() {scale_factor<E20>();}
 
     #[test]
@@ -463,6 +487,37 @@ module Econia::Market {
     /// Verify no error raised for same bytestring
     fun verify_bytestring_success() {
         verify_bytestring(M_NAME, M_NAME, 0);
+    }
+
+    #[test(econia = @Econia)]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for invalid base coin type
+    fun verify_market_types_failure_b(
+        econia: &signer
+    ) {
+        init_coin_types(econia); // Initialize coins
+        // Pass invalid base coin type
+        verify_market_types<E0, QCT, E0>();
+    }
+
+    #[test(econia = @Econia)]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for invalid quote coin type
+    fun verify_market_types_failure_q(
+        econia: &signer
+    ) {
+        init_coin_types(econia); // Initialize coins
+        // Pass invalid quote coin type
+        verify_market_types<BCT, E0, E0>();
+    }
+
+    #[test(econia = @Econia)]
+    /// Verify success for all valid types
+    fun verify_market_types_success(
+        econia: &signer
+    ) {
+        init_coin_types(econia); // Initialize coins
+        verify_market_types<BCT, QCT, E0>(); // Verify sample market
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

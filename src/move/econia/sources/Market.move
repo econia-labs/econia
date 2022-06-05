@@ -1,6 +1,141 @@
-/// # Prices and scales
+/// # Permissionless scaling
+///
+/// ## Coins
+///
+/// This implementation provides market data structures for trading
+/// `Coin` types ("coins") against one another. Each coin has a
+/// corresponding `CoinType` ("coin type"), and each instantiation of a
+/// coin has an associated `u64` amount (`Coin<CoinType>.value`).
+///
+/// Coins can be traded against one another in a "trading pair", which
+/// contains a "base coin" that is denominated in terms of a "quote
+/// coin" (terminology inherited from Forex markets). At present the
+/// most common cryptocurrency trading pair is `BTC/USD`, which
+/// corresponds to Bitcoin (base coin) denominated in United States
+/// Dollars (quote "coin"): $29,759.51 per Bitcoin at the time of this
+/// writing.
+///
+/// Notably, for the above example, neither `BTC` nor `USD` actually
+/// correspond to `Coin` types on the Aptos blockchain, but in all
+/// likelihood these two assets will come to be represented on-chain as
+/// a wrapped Bitcoin variant (coin type `wBTC` or similar) and a
+/// USD-backed stablecoin, respectively, with the latter issued by a
+/// centralized minting authority under the purview of the United States
+/// government, for example `USDC`.
+///
+/// Despite the risk of arbitrary seizure by centralized stablecoin
+/// issuers, centralized stablecoins like `USDC` have nevertheless
+/// become the standard mode of denomination for on-chain trading, so
+/// for illustrative purposes, USDC will be taken as the default quote
+/// coin for future examples.
+///
+/// ## Decimal price
+///
+/// While `Coin` types have a `u64` value, the user-facing
+/// representation of this amount often takes the form of a decimal, for
+/// example, `100.75 USDC`, corresponding to 100 dollars and 75 cents.
+/// More precision is still possible, though, with `USDC` commonly
+/// offering up to 6 decimal places on other blockchains, so that a user
+/// can hold an amount like `500.123456 USDC`. On Aptos, this would
+/// correspond to a `Coin<USDC>.value` of `500123456` and a
+/// `CoinInfo<USDC>.decimals` of `6`. Similarly, base coins may have an
+/// arbitrary number of decimals, even though their underlying value is
+/// still stored as a `u64`.
+///
+/// For a given trading pair, the conversion between quote coin and base
+/// coin is achieved by simple multiplication and division:
+/// * $coins_{quote} = coins_{base} * price$
+/// * $coins_{base} = coins_{quote} / price$
+///
+/// For example, 2 `wBTC` at a price of `29,759.51 USDC` per `wBTC` per
+/// corresponds to $2 * 29,759.51 =$ `59,519.02 USDC`, while `59,519.02
+/// USDC` corresponds to $59,519.02 / 29,759.51 =$ `2 wBTC`
+///
+/// ## Scaled integer price
+///
+/// Again, however, coin values are ultimately represented as `u64`
+/// amounts, and similarly, the present implementation's matching engine
+/// relies on `u64` prices. Hence a price "scale factor" is sometimes
+/// required, for instance when trading digital assets having a
+/// relatively low valuation:
+///
+/// Consider recently issued protocol coin `PRO`, which has 3 decimal
+/// places, a circulating supply of 1 billion, and a `USDC`-denominated
+/// market cap of $100,000. A single user-facing representation of a
+/// coin, `1.000 PRO`, thus corresponds to `1000` indivisible subunits
+/// and has a market price of $100,000 / 10^9 =$ `0.0001 USDC`, which
+/// means that one indivisible subunit of `PRO` has a market value of
+/// $0.0001 / 1000 =$ `0.0000001 USDC`. Except `USDC` only has 6 decimal
+/// places, meaning that an indivisible subunit of `PRO` costs less than
+/// one indivisible subunit of `USDC` (`0.000001 USDC`). Hence, an order
+/// for `2.567 PRO` would be invalid, since it would correspond to
+/// `0.0000002567 USDC`, an unrepresentable amount.
+///
+/// The proposed solution is a scaled integer price, defined as the
+/// number of quote subunits per `SF` base subunits (`SF` denoting
+/// scale factor):
+/// * $price_{scaled} = \frac{subunits_{quote}}{subunits_{base} / SF} =
+///   SF(\frac{subunits_{quote}}{subunits_{base}})$
+/// * $subunits_{base} = SF (subunits_{quote} / price_{scaled})$
+/// * $subunits_{quote} = price_{scaled} (subunits_{base} / SF)$
+///
+/// For instance, a scale factor of 1,000 for the current
+/// example yields prices denoting the number of `USDC` subunits
+/// (`0.000001 USDC`) per 1,000 `PRO` subunits (`1.000 PRO`). At a
+/// nominal price of `0.0001 USDC` per `1.000 PRO`, the scaled integer
+/// price would thus be `100`, a valid `u64`.  Likewise, if the price
+/// were to fall to `0.000001 USDC` per `1.000 PRO`, the scaled integer
+/// price would then be `1`, still a valid `u64`. Here, the base coin
+/// can only be transacted in amounts that are integer multiples of the
+/// scale factor, because otherwise the corresponding number of quote
+/// coin subunits could assume a non-integer value: a user may place an
+/// order to trade `1.000 PRO` or `2.000 PRO`, but not `1.500 PRO`,
+/// because at a scaled integer price of `1`, it would require 1.5
+/// indivisible `USDC` subunits to settle the trade, an amount that
+/// cannot be represented in a `u64`.
+///
+/// ## Market dynamics
+///
+/// If, eventually, the `USDC`-denominated market capitalization of
+/// `PRO` were to increase to $100B, then each `1.000 PRO` would assume
+/// a nominal value of `$100`, and a scale factor of `1000` would not
+/// provide adequate trading granularity: a user could place an order
+/// for `1.000 PRO` (`100 USDC`) or `2.000 PRO` (`200 USDC`), but
+/// due to the integer-multiple lot size requirement described above,
+/// enforced at the algorithm level, it would be impossible to place an
+/// order for `.5 PRO` (`50 USDC`). This limitation would almost
+/// certainly restrict retail trading activity, thus reducing price
+/// discovery efficiency, and so the scale factor of `1000` would no
+/// longer be appropriate.
+///
+/// But what is the most appropriate new scale factor for this mature
+/// trading pair? `100`? `10`? `1`? What happens if the price later
+/// plummets? And if the scale factor should be updated, then who
+/// executes the code change, and when do they do it? Shall the
+/// centralized authority who mints USDC (and who also has the power to
+/// arbitrarily seize anyone's assets) additionally be granted the
+/// authority to change the scale factor at any time? What if said
+/// entity, of for that matter, any centralized entity that can either
+/// act maliciously or be coerced, intentionally chooses an
+/// inappropriate scale factor in the interest of halting activity on an
+/// arbitrary trading pair?
+///
+/// With regard to choosing an appropriate scale factor, or for that
+/// matter, facilitating trading pairs in general, the present
+/// implementation's solution is to simply "let the market decide", via
+/// a permissionless market registration system that allows anyone to
+/// register any trading pair, with any scale factor of the form
+/// $10^E, E\in \{0, 1, 2, \ldots, 19\}$, as long as the trading pair
+/// has not already been initialized. Hence, when a new coin becomes
+/// available, several trading pairs are likely to be established across
+/// different scale factors, and the correspondingly fractured liquidty
+/// will tend to gravitate towards a preferred scale factor. As prices
+/// go up or down, liquidity will naturally migrate to the most
+/// efficient scale factor on-the-fly, without any required input from a
+/// centralized entity.
+///
+/// # Implementation details
 /// * "Scale exponent"
-/// * "Scale factor"
 module Econia::Market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -336,7 +471,7 @@ module Econia::Market {
     }
 
     /// Assert `t1` equals `t2`, aborting with code `e` if not
-    fun verify_t(
+    fun verify_t_i(
         t1: &TI,
         t2: &TI,
         e: u64
@@ -395,10 +530,10 @@ module Econia::Market {
     fun pack_market_info() {
         // Pack market info for test coin types
         let m_i = MI{b: ti_t_o<BCT>(), q: ti_t_o<QCT>(), e: ti_t_o<E2>()};
-        verify_t(&m_i.b, &ti_t_o<BCT>(), 0); // Verify base coin type
-        verify_t(&m_i.q, &ti_t_o<QCT>(), 1); // Verify quote coin type
+        verify_t_i(&m_i.b, &ti_t_o<BCT>(), 0); // Verify base coin type
+        verify_t_i(&m_i.q, &ti_t_o<QCT>(), 1); // Verify quote coin type
         // Verify scale exponent type
-        verify_t(&m_i.e, &ti_t_o<E2>(), 2);
+        verify_t_i(&m_i.e, &ti_t_o<E2>(), 2);
     }
 
     #[test(

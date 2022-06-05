@@ -4,51 +4,212 @@
 # Module `0xc0deb00c::Market`
 
 
-<a name="@Prices_and_scales_0"></a>
+<a name="@Permissionless_scaling_0"></a>
 
-## Prices and scales
+## Permissionless scaling
+
+
+
+<a name="@Coins_1"></a>
+
+### Coins
+
+
+This implementation provides market data structures for trading
+<code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a></code> types ("coins") against one another. Each coin has a
+corresponding <code>CoinType</code> ("coin type"), and each instantiation of a
+coin has an associated <code>u64</code> amount (<code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a>&lt;CoinType&gt;.value</code>).
+
+Coins can be traded against one another in a "trading pair", which
+contains a "base coin" that is denominated in terms of a "quote
+coin" (terminology inherited from Forex markets). At present the
+most common cryptocurrency trading pair is <code>BTC/USD</code>, which
+corresponds to Bitcoin (base coin) denominated in United States
+Dollars (quote "coin"): $29,759.51 per Bitcoin at the time of this
+writing.
+
+Notably, for the above example, neither <code>BTC</code> nor <code>USD</code> actually
+correspond to <code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a></code> types on the Aptos blockchain, but in all
+likelihood these two assets will come to be represented on-chain as
+a wrapped Bitcoin variant (coin type <code>wBTC</code> or similar) and a
+USD-backed stablecoin, respectively, with the latter issued by a
+centralized minting authority under the purview of the United States
+government, for example <code>USDC</code>.
+
+Despite the risk of arbitrary seizure by centralized stablecoin
+issuers, centralized stablecoins like <code>USDC</code> have nevertheless
+become the standard mode of denomination for on-chain trading, so
+for illustrative purposes, USDC will be taken as the default quote
+coin for future examples.
+
+
+<a name="@Decimal_price_2"></a>
+
+### Decimal price
+
+
+While <code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a></code> types have a <code>u64</code> value, the user-facing
+representation of this amount often takes the form of a decimal, for
+example, <code>100.75 USDC</code>, corresponding to 100 dollars and 75 cents.
+More precision is still possible, though, with <code>USDC</code> commonly
+offering up to 6 decimal places on other blockchains, so that a user
+can hold an amount like <code>500.123456 USDC</code>. On Aptos, this would
+correspond to a <code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a>&lt;USDC&gt;.value</code> of <code>500123456</code> and a
+<code>CoinInfo&lt;USDC&gt;.decimals</code> of <code>6</code>. Similarly, base coins may have an
+arbitrary number of decimals, even though their underlying value is
+still stored as a <code>u64</code>.
+
+For a given trading pair, the conversion between quote coin and base
+coin is achieved by simple multiplication and division:
+* $coins_{quote} = coins_{base} * price$
+* $coins_{base} = coins_{quote} / price$
+
+For example, 2 <code>wBTC</code> at a price of <code>29,759.51 USDC</code> per <code>wBTC</code> per
+corresponds to $2 * 29,759.51 =$ <code>59,519.02 USDC</code>, while <code>59,519.02
+USDC</code> corresponds to $59,519.02 / 29,759.51 =$ <code>2 wBTC</code>
+
+
+<a name="@Scaled_integer_price_3"></a>
+
+### Scaled integer price
+
+
+Again, however, coin values are ultimately represented as <code>u64</code>
+amounts, and similarly, the present implementation's matching engine
+relies on <code>u64</code> prices. Hence a price "scale factor" is sometimes
+required, for instance when trading digital assets having a
+relatively low valuation:
+
+Consider recently issued protocol coin <code>PRO</code>, which has 3 decimal
+places, a circulating supply of 1 billion, and a <code>USDC</code>-denominated
+market cap of $100,000. A single user-facing representation of a
+coin, <code>1.000 PRO</code>, thus corresponds to <code>1000</code> indivisible subunits
+and has a market price of $100,000 / 10^9 =$ <code>0.0001 USDC</code>, which
+means that one indivisible subunit of <code>PRO</code> has a market value of
+$0.0001 / 1000 =$ <code>0.0000001 USDC</code>. Except <code>USDC</code> only has 6 decimal
+places, meaning that an indivisible subunit of <code>PRO</code> costs less than
+one indivisible subunit of <code>USDC</code> (<code>0.000001 USDC</code>). Hence, an order
+for <code>2.567 PRO</code> would be invalid, since it would correspond to
+<code>0.0000002567 USDC</code>, an unrepresentable amount.
+
+The proposed solution is a scaled integer price, defined as the
+number of quote subunits per <code>SF</code> base subunits (<code>SF</code> denoting
+scale factor):
+* $price_{scaled} = \frac{subunits_{quote}}{subunits_{base} / SF} =
+SF(\frac{subunits_{quote}}{subunits_{base}})$
+* $subunits_{base} = SF (subunits_{quote} / price_{scaled})$
+* $subunits_{quote} = price_{scaled} (subunits_{base} / SF)$
+
+For instance, a scale factor of 1,000 for the current
+example yields prices denoting the number of <code>USDC</code> subunits
+(<code>0.000001 USDC</code>) per 1,000 <code>PRO</code> subunits (<code>1.000 PRO</code>). At a
+nominal price of <code>0.0001 USDC</code> per <code>1.000 PRO</code>, the scaled integer
+price would thus be <code>100</code>, a valid <code>u64</code>.  Likewise, if the price
+were to fall to <code>0.000001 USDC</code> per <code>1.000 PRO</code>, the scaled integer
+price would then be <code>1</code>, still a valid <code>u64</code>. Here, the base coin
+can only be transacted in amounts that are integer multiples of the
+scale factor, because otherwise the corresponding number of quote
+coin subunits could assume a non-integer value: a user may place an
+order to trade <code>1.000 PRO</code> or <code>2.000 PRO</code>, but not <code>1.500 PRO</code>,
+because at a scaled integer price of <code>1</code>, it would require 1.5
+indivisible <code>USDC</code> subunits to settle the trade, an amount that
+cannot be represented in a <code>u64</code>.
+
+
+<a name="@Market_dynamics_4"></a>
+
+### Market dynamics
+
+
+If, eventually, the <code>USDC</code>-denominated market capitalization of
+<code>PRO</code> were to increase to $100B, then each <code>1.000 PRO</code> would assume
+a nominal value of <code>$100</code>, and a scale factor of <code>1000</code> would not
+provide adequate trading granularity: a user could place an order
+for <code>1.000 PRO</code> (<code>100 USDC</code>) or <code>2.000 PRO</code> (<code>200 USDC</code>), but
+due to the integer-multiple lot size requirement described above,
+enforced at the algorithm level, it would be impossible to place an
+order for <code>.5 PRO</code> (<code>50 USDC</code>). This limitation would almost
+certainly restrict retail trading activity, thus reducing price
+discovery efficiency, and so the scale factor of <code>1000</code> would no
+longer be appropriate.
+
+But what is the most appropriate new scale factor for this mature
+trading pair? <code>100</code>? <code>10</code>? <code>1</code>? What happens if the price later
+plummets? And if the scale factor should be updated, then who
+executes the code change, and when do they do it? Shall the
+centralized authority who mints USDC (and who also has the power to
+arbitrarily seize anyone's assets) additionally be granted the
+authority to change the scale factor at any time? What if said
+entity, of for that matter, any centralized entity that can either
+act maliciously or be coerced, intentionally chooses an
+inappropriate scale factor in the interest of halting activity on an
+arbitrary trading pair?
+
+With regard to choosing an appropriate scale factor, or for that
+matter, facilitating trading pairs in general, the present
+implementation's solution is to simply "let the market decide", via
+a permissionless market registration system that allows anyone to
+register any trading pair, with any scale factor of the form
+$10^E, E\in \{0, 1, 2, \ldots, 19\}$, as long as the trading pair
+has not already been initialized. Hence, when a new coin becomes
+available, several trading pairs are likely to be established across
+different scale factors, and the correspondingly fractured liquidty
+will tend to gravitate towards a preferred scale factor. As prices
+go up or down, liquidity will naturally migrate to the most
+efficient scale factor on-the-fly, without any required input from a
+centralized entity.
+
+
+<a name="@Implementation_details_5"></a>
+
+## Implementation details
 
 * "Scale exponent"
-* "Scale factor"
 
 
--  [Prices and scales](#@Prices_and_scales_0)
--  [Struct `E0`](#0xc0deb00c_Market_E0)
--  [Struct `E1`](#0xc0deb00c_Market_E1)
--  [Struct `E2`](#0xc0deb00c_Market_E2)
--  [Struct `E3`](#0xc0deb00c_Market_E3)
--  [Struct `E4`](#0xc0deb00c_Market_E4)
--  [Struct `E5`](#0xc0deb00c_Market_E5)
--  [Struct `E6`](#0xc0deb00c_Market_E6)
--  [Struct `E7`](#0xc0deb00c_Market_E7)
--  [Struct `E8`](#0xc0deb00c_Market_E8)
--  [Struct `E9`](#0xc0deb00c_Market_E9)
--  [Struct `E10`](#0xc0deb00c_Market_E10)
--  [Struct `E11`](#0xc0deb00c_Market_E11)
--  [Struct `E12`](#0xc0deb00c_Market_E12)
--  [Struct `E13`](#0xc0deb00c_Market_E13)
--  [Struct `E14`](#0xc0deb00c_Market_E14)
--  [Struct `E15`](#0xc0deb00c_Market_E15)
--  [Struct `E16`](#0xc0deb00c_Market_E16)
--  [Struct `E17`](#0xc0deb00c_Market_E17)
--  [Struct `E18`](#0xc0deb00c_Market_E18)
--  [Struct `E19`](#0xc0deb00c_Market_E19)
--  [Resource `MC`](#0xc0deb00c_Market_MC)
--  [Struct `MI`](#0xc0deb00c_Market_MI)
--  [Resource `MR`](#0xc0deb00c_Market_MR)
--  [Struct `OB`](#0xc0deb00c_Market_OB)
--  [Resource `OO`](#0xc0deb00c_Market_OO)
--  [Struct `P`](#0xc0deb00c_Market_P)
--  [Constants](#@Constants_1)
-    -  [Error codes](#@Error_codes_2)
-    -  [Type name bytestrings](#@Type_name_bytestrings_3)
--  [Function `init_registry`](#0xc0deb00c_Market_init_registry)
--  [Function `register_market`](#0xc0deb00c_Market_register_market)
--  [Function `scale_factor`](#0xc0deb00c_Market_scale_factor)
--  [Function `verify_address`](#0xc0deb00c_Market_verify_address)
--  [Function `verify_bytestring`](#0xc0deb00c_Market_verify_bytestring)
--  [Function `verify_market_types`](#0xc0deb00c_Market_verify_market_types)
--  [Function `verify_t`](#0xc0deb00c_Market_verify_t)
+- [Module `0xc0deb00c::Market`](#module-0xc0deb00cmarket)
+  - [Permissionless scaling](#permissionless-scaling)
+    - [Coins](#coins)
+    - [Decimal price](#decimal-price)
+    - [Scaled integer price](#scaled-integer-price)
+    - [Market dynamics](#market-dynamics)
+  - [Implementation details](#implementation-details)
+  - [Struct `E0`](#struct-e0)
+  - [Struct `E1`](#struct-e1)
+  - [Struct `E2`](#struct-e2)
+  - [Struct `E3`](#struct-e3)
+  - [Struct `E4`](#struct-e4)
+  - [Struct `E5`](#struct-e5)
+  - [Struct `E6`](#struct-e6)
+  - [Struct `E7`](#struct-e7)
+  - [Struct `E8`](#struct-e8)
+  - [Struct `E9`](#struct-e9)
+  - [Struct `E10`](#struct-e10)
+  - [Struct `E11`](#struct-e11)
+  - [Struct `E12`](#struct-e12)
+  - [Struct `E13`](#struct-e13)
+  - [Struct `E14`](#struct-e14)
+  - [Struct `E15`](#struct-e15)
+  - [Struct `E16`](#struct-e16)
+  - [Struct `E17`](#struct-e17)
+  - [Struct `E18`](#struct-e18)
+  - [Struct `E19`](#struct-e19)
+  - [Resource `MC`](#resource-mc)
+  - [Struct `MI`](#struct-mi)
+  - [Resource `MR`](#resource-mr)
+  - [Struct `OB`](#struct-ob)
+  - [Resource `OO`](#resource-oo)
+  - [Struct `P`](#struct-p)
+  - [Constants](#constants)
+    - [Error codes](#error-codes)
+    - [Type name bytestrings](#type-name-bytestrings)
+  - [Function `init_registry`](#function-init_registry)
+  - [Function `register_market`](#function-register_market)
+  - [Function `scale_factor`](#function-scale_factor)
+  - [Function `verify_address`](#function-verify_address)
+  - [Function `verify_bytestring`](#function-verify_bytestring)
+  - [Function `verify_market_types`](#function-verify_market_types)
+  - [Function `verify_t_i`](#function-verify_t_i)
 
 
 <pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
@@ -835,7 +996,7 @@ Position in an order book
 
 </details>
 
-<a name="@Constants_1"></a>
+<a name="@Constants_6"></a>
 
 ## Constants
 
@@ -893,7 +1054,7 @@ When a type does not correspond to a coin
 <a name="0xc0deb00c_Market_E_NOT_ECONIA"></a>
 
 
-<a name="@Error_codes_2"></a>
+<a name="@Error_codes_7"></a>
 
 ### Error codes
 
@@ -1128,7 +1289,7 @@ When wrong module
 <a name="0xc0deb00c_Market_M_NAME"></a>
 
 
-<a name="@Type_name_bytestrings_3"></a>
+<a name="@Type_name_bytestrings_8"></a>
 
 ### Type name bytestrings
 
@@ -1391,14 +1552,14 @@ Assert <code>B</code> and <code>Q</code> are coins, and that <code>E</code> is s
 
 </details>
 
-<a name="0xc0deb00c_Market_verify_t"></a>
+<a name="0xc0deb00c_Market_verify_t_i"></a>
 
-## Function `verify_t`
+## Function `verify_t_i`
 
 Assert <code>t1</code> equals <code>t2</code>, aborting with code <code>e</code> if not
 
 
-<pre><code><b>fun</b> <a href="Market.md#0xc0deb00c_Market_verify_t">verify_t</a>(t1: &<a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a>, t2: &<a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a>, e: u64)
+<pre><code><b>fun</b> <a href="Market.md#0xc0deb00c_Market_verify_t_i">verify_t_i</a>(t1: &<a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a>, t2: &<a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a>, e: u64)
 </code></pre>
 
 
@@ -1407,7 +1568,7 @@ Assert <code>t1</code> equals <code>t2</code>, aborting with code <code>e</code>
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="Market.md#0xc0deb00c_Market_verify_t">verify_t</a>(
+<pre><code><b>fun</b> <a href="Market.md#0xc0deb00c_Market_verify_t_i">verify_t_i</a>(
     t1: &TI,
     t2: &TI,
     e: u64

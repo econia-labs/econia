@@ -1,4 +1,4 @@
-/// # Permissionless scaling
+/// # Dynamic scaling
 ///
 /// ## Coins
 ///
@@ -74,8 +74,8 @@
 /// The proposed solution is a scaled integer price, defined as the
 /// number of quote subunits per `SF` base subunits (`SF` denoting
 /// scale factor):
-/// * $price_{scaled} = \frac{subunits_{quote}}{subunits_{base} / SF} =
-///   SF(\frac{subunits_{quote}}{subunits_{base}})$
+/// * $price_{scaled} = \frac{subunits_{quote}}{subunits_{base} / SF} =$
+///   $SF(\frac{subunits_{quote}}{subunits_{base}})$
 /// * $subunits_{base} = SF (subunits_{quote} / price_{scaled})$
 /// * $subunits_{quote} = price_{scaled} (subunits_{base} / SF)$
 ///
@@ -94,7 +94,7 @@
 /// indivisible `USDC` subunits to settle the trade, an amount that
 /// cannot be represented in a `u64`.
 ///
-/// ## Market dynamics
+/// ## Market effects
 ///
 /// If, eventually, the `USDC`-denominated market capitalization of
 /// `PRO` were to increase to $100B, then each `1.000 PRO` would assume
@@ -131,11 +131,32 @@
 /// different scale factors, and the correspondingly fractured liquidty
 /// will tend to gravitate towards a preferred scale factor. As prices
 /// go up or down, liquidity will naturally migrate to the most
-/// efficient scale factor on-the-fly, without any required input from a
-/// centralized entity.
+/// efficient scale factor, without any input from a centralized entity.
 ///
-/// # Implementation details
-/// * "Scale exponent"
+/// # Data structures
+///
+/// ## Market info
+///
+/// A trading pair, or market, is fully specified by a unique `MI`
+/// (Market info) struct, with fields for a base coin type, a quote
+/// coin type, and a so-called "scale exponent" (`E` as above,
+/// corresonding to a power of 10). These types are commonly represented
+/// in other functions and structs as `<B, Q, E>`
+///
+/// ## Scale exponents and factors
+///
+/// The scale exponent types `E0`, `E1`, ..., `E19`, correspond to the
+/// scale factors `F0`, `F1`, ... `F19`, with lookup
+/// functionality provided by `scale_factor<E>()`. Notably, scale
+/// exponents are types, while scale factors are `u64`, with the former
+/// enabling lookup in global storage, and the latter enabling integer
+/// arithmetic at the matching engine level. From a purely computer
+/// science perspective, it would actually be more straightforward for
+/// scale exponents and factors to correspond to powers of two, but
+/// since this is a financial application, powers of 10 are instead
+/// used. Hence the largest scale factor is `F19` $= 10^{19} =$
+/// `10000000000000000000`, the largest power of ten that can be
+/// represented in a `u64`
 module Econia::Market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -163,7 +184,6 @@ module Econia::Market {
     use Econia::CritBit::{
         CB,
         empty as cb_e
-
     };
 
     use Std::Signer::{
@@ -179,6 +199,16 @@ module Econia::Market {
         BurnCapability as CBC,
         initialize as c_i,
         MintCapability as CMC
+    };
+
+    #[test_only]
+    use AptosFramework::Table::{
+        borrow as t_b,
+    };
+
+    #[test_only]
+    use Econia::CritBit::{
+        is_empty as cb_i_e
     };
 
     #[test_only]
@@ -551,7 +581,6 @@ module Econia::Market {
         register_market<BCT, QCT, E0>(host);
     }
 
-/*
     #[test(
         econia = @Econia,
         host = @TestUser
@@ -565,8 +594,33 @@ module Econia::Market {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
         register_market<BCT, QCT, E0>(host); // Register market
+        // Attempt invalid registration
+        register_market<BCT, QCT, E0>(host);
     }
-*/
+
+    #[test(
+        econia = @Econia,
+        host = @TestUser
+    )]
+    /// Verify successful registration
+    public(script) fun register_market_success(
+        econia: &signer,
+        host: &signer
+    ) acquires MC, MR {
+        init_coin_types(econia); // Initialize coin types
+        init_registry(econia); // Initialize registry
+        register_market<BCT, QCT, E4>(host); // Register market
+        // Borrow immutable reference to order book
+        let o_b = &borrow_global<MC<BCT, QCT, E4>>(s_a_o(host)).ob;
+        // Assert order book fields are as expected
+        assert!(o_b.f == F4 && cb_i_e<P>(&o_b.a) && cb_i_e<P>(&o_b.b), 0);
+        // Borrow immutable referece to market registry
+        let r_t = &borrow_global<MR>(@Econia).t;
+        // Define market info struct to look up in table
+        let m_i = MI{b: ti_t_o<BCT>(), q: ti_t_o<QCT>(), e: ti_t_o<E4>()};
+        // Assert registry reflects market-host relationship
+        assert!(*t_b(r_t, m_i) == s_a_o(host), 1);
+    }
 
     #[test]
     #[expected_failure(abort_code = 2)]

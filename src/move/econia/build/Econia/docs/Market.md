@@ -4,9 +4,9 @@
 # Module `0xc0deb00c::Market`
 
 
-<a name="@Permissionless_scaling_0"></a>
+<a name="@Dynamic_scaling_0"></a>
 
-## Permissionless scaling
+## Dynamic scaling
 
 
 
@@ -95,8 +95,8 @@ for <code>2.567 PRO</code> would be invalid, since it would correspond to
 The proposed solution is a scaled integer price, defined as the
 number of quote subunits per <code>SF</code> base subunits (<code>SF</code> denoting
 scale factor):
-* $price_{scaled} = \frac{subunits_{quote}}{subunits_{base} / SF} =
-SF(\frac{subunits_{quote}}{subunits_{base}})$
+* $price_{scaled} = \frac{subunits_{quote}}{subunits_{base} / SF} =$
+$SF(\frac{subunits_{quote}}{subunits_{base}})$
 * $subunits_{base} = SF (subunits_{quote} / price_{scaled})$
 * $subunits_{quote} = price_{scaled} (subunits_{base} / SF)$
 
@@ -116,9 +116,9 @@ indivisible <code>USDC</code> subunits to settle the trade, an amount that
 cannot be represented in a <code>u64</code>.
 
 
-<a name="@Market_dynamics_4"></a>
+<a name="@Market_effects_4"></a>
 
-### Market dynamics
+### Market effects
 
 
 If, eventually, the <code>USDC</code>-denominated market capitalization of
@@ -156,60 +156,90 @@ available, several trading pairs are likely to be established across
 different scale factors, and the correspondingly fractured liquidty
 will tend to gravitate towards a preferred scale factor. As prices
 go up or down, liquidity will naturally migrate to the most
-efficient scale factor on-the-fly, without any required input from a
-centralized entity.
+efficient scale factor, without any input from a centralized entity.
 
 
-<a name="@Implementation_details_5"></a>
+<a name="@Data_structures_5"></a>
 
-## Implementation details
-
-* "Scale exponent"
+## Data structures
 
 
-- [Module `0xc0deb00c::Market`](#module-0xc0deb00cmarket)
-  - [Permissionless scaling](#permissionless-scaling)
-    - [Coins](#coins)
-    - [Decimal price](#decimal-price)
-    - [Scaled integer price](#scaled-integer-price)
-    - [Market dynamics](#market-dynamics)
-  - [Implementation details](#implementation-details)
-  - [Struct `E0`](#struct-e0)
-  - [Struct `E1`](#struct-e1)
-  - [Struct `E2`](#struct-e2)
-  - [Struct `E3`](#struct-e3)
-  - [Struct `E4`](#struct-e4)
-  - [Struct `E5`](#struct-e5)
-  - [Struct `E6`](#struct-e6)
-  - [Struct `E7`](#struct-e7)
-  - [Struct `E8`](#struct-e8)
-  - [Struct `E9`](#struct-e9)
-  - [Struct `E10`](#struct-e10)
-  - [Struct `E11`](#struct-e11)
-  - [Struct `E12`](#struct-e12)
-  - [Struct `E13`](#struct-e13)
-  - [Struct `E14`](#struct-e14)
-  - [Struct `E15`](#struct-e15)
-  - [Struct `E16`](#struct-e16)
-  - [Struct `E17`](#struct-e17)
-  - [Struct `E18`](#struct-e18)
-  - [Struct `E19`](#struct-e19)
-  - [Resource `MC`](#resource-mc)
-  - [Struct `MI`](#struct-mi)
-  - [Resource `MR`](#resource-mr)
-  - [Struct `OB`](#struct-ob)
-  - [Resource `OO`](#resource-oo)
-  - [Struct `P`](#struct-p)
-  - [Constants](#constants)
-    - [Error codes](#error-codes)
-    - [Type name bytestrings](#type-name-bytestrings)
-  - [Function `init_registry`](#function-init_registry)
-  - [Function `register_market`](#function-register_market)
-  - [Function `scale_factor`](#function-scale_factor)
-  - [Function `verify_address`](#function-verify_address)
-  - [Function `verify_bytestring`](#function-verify_bytestring)
-  - [Function `verify_market_types`](#function-verify_market_types)
-  - [Function `verify_t_i`](#function-verify_t_i)
+
+<a name="@Market_info_6"></a>
+
+### Market info
+
+
+A trading pair, or market, is fully specified by a unique <code><a href="Market.md#0xc0deb00c_Market_MI">MI</a></code>
+(Market info) struct, with fields for a base coin type, a quote
+coin type, and a so-called "scale exponent" (<code>E</code> as above,
+corresonding to a power of 10). These types are commonly represented
+in other functions and structs as <code>&lt;B, Q, E&gt;</code>
+
+
+<a name="@Scale_exponents_and_factors_7"></a>
+
+### Scale exponents and factors
+
+
+The scale exponent types <code><a href="Market.md#0xc0deb00c_Market_E0">E0</a></code>, <code><a href="Market.md#0xc0deb00c_Market_E1">E1</a></code>, ..., <code><a href="Market.md#0xc0deb00c_Market_E19">E19</a></code>, correspond to the
+scale factors <code><a href="Market.md#0xc0deb00c_Market_F0">F0</a></code>, <code><a href="Market.md#0xc0deb00c_Market_F1">F1</a></code>, ... <code><a href="Market.md#0xc0deb00c_Market_F19">F19</a></code>, with lookup
+functionality provided by <code><a href="Market.md#0xc0deb00c_Market_scale_factor">scale_factor</a>&lt;E&gt;()</code>. Notably, scale
+exponents are types, while scale factors are <code>u64</code>, with the former
+enabling lookup in global storage, and the latter enabling integer
+arithmetic at the matching engine level. From a purely computer
+science perspective, it would actually be more straightforward for
+scale exponents and factors to correspond to powers of two, but
+since this is a financial application, powers of 10 are instead
+used. Hence the largest scale factor is <code><a href="Market.md#0xc0deb00c_Market_F19">F19</a></code> $= 10^{19} =$
+<code>10000000000000000000</code>, the largest power of ten that can be
+represented in a <code>u64</code>
+
+
+-  [Dynamic scaling](#@Dynamic_scaling_0)
+    -  [Coins](#@Coins_1)
+    -  [Decimal price](#@Decimal_price_2)
+    -  [Scaled integer price](#@Scaled_integer_price_3)
+    -  [Market effects](#@Market_effects_4)
+-  [Data structures](#@Data_structures_5)
+    -  [Market info](#@Market_info_6)
+    -  [Scale exponents and factors](#@Scale_exponents_and_factors_7)
+-  [Struct `E0`](#0xc0deb00c_Market_E0)
+-  [Struct `E1`](#0xc0deb00c_Market_E1)
+-  [Struct `E2`](#0xc0deb00c_Market_E2)
+-  [Struct `E3`](#0xc0deb00c_Market_E3)
+-  [Struct `E4`](#0xc0deb00c_Market_E4)
+-  [Struct `E5`](#0xc0deb00c_Market_E5)
+-  [Struct `E6`](#0xc0deb00c_Market_E6)
+-  [Struct `E7`](#0xc0deb00c_Market_E7)
+-  [Struct `E8`](#0xc0deb00c_Market_E8)
+-  [Struct `E9`](#0xc0deb00c_Market_E9)
+-  [Struct `E10`](#0xc0deb00c_Market_E10)
+-  [Struct `E11`](#0xc0deb00c_Market_E11)
+-  [Struct `E12`](#0xc0deb00c_Market_E12)
+-  [Struct `E13`](#0xc0deb00c_Market_E13)
+-  [Struct `E14`](#0xc0deb00c_Market_E14)
+-  [Struct `E15`](#0xc0deb00c_Market_E15)
+-  [Struct `E16`](#0xc0deb00c_Market_E16)
+-  [Struct `E17`](#0xc0deb00c_Market_E17)
+-  [Struct `E18`](#0xc0deb00c_Market_E18)
+-  [Struct `E19`](#0xc0deb00c_Market_E19)
+-  [Resource `MC`](#0xc0deb00c_Market_MC)
+-  [Struct `MI`](#0xc0deb00c_Market_MI)
+-  [Resource `MR`](#0xc0deb00c_Market_MR)
+-  [Struct `OB`](#0xc0deb00c_Market_OB)
+-  [Resource `OO`](#0xc0deb00c_Market_OO)
+-  [Struct `P`](#0xc0deb00c_Market_P)
+-  [Constants](#@Constants_8)
+    -  [Error codes](#@Error_codes_9)
+    -  [Type name bytestrings](#@Type_name_bytestrings_10)
+-  [Function `init_registry`](#0xc0deb00c_Market_init_registry)
+-  [Function `register_market`](#0xc0deb00c_Market_register_market)
+-  [Function `scale_factor`](#0xc0deb00c_Market_scale_factor)
+-  [Function `verify_address`](#0xc0deb00c_Market_verify_address)
+-  [Function `verify_bytestring`](#0xc0deb00c_Market_verify_bytestring)
+-  [Function `verify_market_types`](#0xc0deb00c_Market_verify_market_types)
+-  [Function `verify_t_i`](#0xc0deb00c_Market_verify_t_i)
 
 
 <pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
@@ -996,7 +1026,7 @@ Position in an order book
 
 </details>
 
-<a name="@Constants_6"></a>
+<a name="@Constants_8"></a>
 
 ## Constants
 
@@ -1054,7 +1084,7 @@ When a type does not correspond to a coin
 <a name="0xc0deb00c_Market_E_NOT_ECONIA"></a>
 
 
-<a name="@Error_codes_7"></a>
+<a name="@Error_codes_9"></a>
 
 ### Error codes
 
@@ -1289,7 +1319,7 @@ When wrong module
 <a name="0xc0deb00c_Market_M_NAME"></a>
 
 
-<a name="@Type_name_bytestrings_8"></a>
+<a name="@Type_name_bytestrings_10"></a>
 
 ### Type name bytestrings
 

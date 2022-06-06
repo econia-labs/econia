@@ -220,7 +220,7 @@ module Econia::Market {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    // Scale exponent type flags
+    // Scale exponent types
     struct E0{}
     struct E1{}
     struct E2{}
@@ -303,7 +303,24 @@ module Econia::Market {
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// When account/address is not Econia
+    const E_NOT_ECONIA: u64 = 0;
+    /// When wrong module
+    const E_WRONG_MODULE: u64 = 1;
+    /// When wrong type for exponent flag
+    const E_WRONG_EXPONENT_T: u64 = 2;
+    /// When market registry not initialized
+    const E_NO_REGISTRY: u64 = 3;
+    /// When a given market is already registered
+    const E_REGISTERED: u64 = 4;
+    /// When a type does not correspond to a coin
+    const E_NOT_COIN: u64 = 5;
+
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // General constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     // Scale factors
     const F0 : u64 = 1;
@@ -327,27 +344,10 @@ module Econia::Market {
     const F18: u64 = 1000000000000000000;
     const F19: u64 = 10000000000000000000;
 
-    /// # Type name bytestrings
-
     /// This module's name
     const M_NAME: vector<u8> = b"Market";
 
-    /// # Error codes
-
-    /// When account/address is not Econia
-    const E_NOT_ECONIA: u64 = 0;
-    /// When wrong module
-    const E_WRONG_MODULE: u64 = 1;
-    /// When wrong type for exponent flag
-    const E_WRONG_EXPONENT_T: u64 = 2;
-    /// When market registry not initialized
-    const E_NO_REGISTRY: u64 = 3;
-    /// When a given market is already registered
-    const E_REGISTERED: u64 = 4;
-    /// When a type does not correspond to a coin
-    const E_NOT_COIN: u64 = 5;
-
-    // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // General constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

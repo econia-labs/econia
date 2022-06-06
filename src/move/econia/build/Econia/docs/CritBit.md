@@ -487,8 +487,6 @@ simply being skipped over:
 -  [Struct `I`](#0xc0deb00c_CritBit_I)
 -  [Struct `O`](#0xc0deb00c_CritBit_O)
 -  [Constants](#@Constants_20)
-    -  [Error codes](#@Error_codes_21)
-    -  [General constants](#@General_constants_22)
 -  [Function `borrow`](#0xc0deb00c_CritBit_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_CritBit_borrow_mut)
 -  [Function `destroy_empty`](#0xc0deb00c_CritBit_destroy_empty)
@@ -511,8 +509,8 @@ simply being skipped over:
 -  [Function `b_s_o_m`](#0xc0deb00c_CritBit_b_s_o_m)
 -  [Function `check_len`](#0xc0deb00c_CritBit_check_len)
 -  [Function `crit_bit`](#0xc0deb00c_CritBit_crit_bit)
-    -  [XOR/AND method](#@XOR/AND_method_23)
-    -  [Binary search method](#@Binary_search_method_24)
+    -  [XOR/AND method](#@XOR/AND_method_21)
+    -  [Binary search method](#@Binary_search_method_22)
 -  [Function `insert_above`](#0xc0deb00c_CritBit_insert_above)
 -  [Function `insert_above_root`](#0xc0deb00c_CritBit_insert_above_root)
 -  [Function `insert_below`](#0xc0deb00c_CritBit_insert_below)
@@ -536,21 +534,21 @@ simply being skipped over:
 -  [Function `stitch_parent_of_child`](#0xc0deb00c_CritBit_stitch_parent_of_child)
 -  [Function `stitch_swap_remove`](#0xc0deb00c_CritBit_stitch_swap_remove)
 -  [Function `traverse_c_i`](#0xc0deb00c_CritBit_traverse_c_i)
-    -  [Method (predecessor)](#@Method_(predecessor)_25)
-    -  [Method (successor)](#@Method_(successor)_26)
-    -  [Parameters](#@Parameters_27)
-    -  [Returns](#@Returns_28)
-    -  [Considerations](#@Considerations_29)
+    -  [Method (predecessor)](#@Method_(predecessor)_23)
+    -  [Method (successor)](#@Method_(successor)_24)
+    -  [Parameters](#@Parameters_25)
+    -  [Returns](#@Returns_26)
+    -  [Considerations](#@Considerations_27)
 -  [Function `traverse_init_mut`](#0xc0deb00c_CritBit_traverse_init_mut)
-    -  [Parameters](#@Parameters_30)
-    -  [Returns](#@Returns_31)
-    -  [Considerations](#@Considerations_32)
+    -  [Parameters](#@Parameters_28)
+    -  [Returns](#@Returns_29)
+    -  [Considerations](#@Considerations_30)
 -  [Function `traverse_mut`](#0xc0deb00c_CritBit_traverse_mut)
-    -  [Returns](#@Returns_33)
+    -  [Returns](#@Returns_31)
 -  [Function `traverse_pop_mut`](#0xc0deb00c_CritBit_traverse_pop_mut)
-    -  [Parameters](#@Parameters_34)
-    -  [Returns](#@Returns_35)
-    -  [Considerations](#@Considerations_36)
+    -  [Parameters](#@Parameters_32)
+    -  [Returns](#@Returns_33)
+    -  [Considerations](#@Considerations_34)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -705,11 +703,6 @@ Outer node with key <code>k</code> and value <code>v</code>
 
 <a name="0xc0deb00c_CritBit_E_BIT_NOT_0_OR_1"></a>
 
-
-<a name="@Error_codes_21"></a>
-
-### Error codes
-
 When a char in a bytestring is neither 0 nor 1
 
 
@@ -789,11 +782,6 @@ When attempting to pop from empty tree
 
 
 <a name="0xc0deb00c_CritBit_HI_128"></a>
-
-
-<a name="@General_constants_22"></a>
-
-### General constants
 
 <code>u128</code> bitmask with all bits set
 
@@ -1559,7 +1547,7 @@ Return the number of the most significant bit (0-indexed from
 LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-<a name="@XOR/AND_method_23"></a>
+<a name="@XOR/AND_method_21"></a>
 
 ### XOR/AND method
 
@@ -1628,7 +1616,7 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_24"></a>
+<a name="@Binary_search_method_22"></a>
 
 ### Binary search method
 
@@ -2795,7 +2783,7 @@ return the child field index of the target node. See
 [traversal](#Traversal)
 
 
-<a name="@Method_(predecessor)_25"></a>
+<a name="@Method_(predecessor)_23"></a>
 
 ### Method (predecessor)
 
@@ -2808,7 +2796,7 @@ at target node (the first outer node): walk to apex node's
 left child, then walk along right children
 
 
-<a name="@Method_(successor)_26"></a>
+<a name="@Method_(successor)_24"></a>
 
 ### Method (successor)
 
@@ -2821,7 +2809,7 @@ out at target node (the first outer node): walk to apex
 node's right child, then walk along left children
 
 
-<a name="@Parameters_27"></a>
+<a name="@Parameters_25"></a>
 
 ### Parameters
 
@@ -2835,14 +2823,14 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_28"></a>
+<a name="@Returns_26"></a>
 
 ### Returns
 
 * <code>u64</code>: Child field index of target node
 
 
-<a name="@Considerations_29"></a>
+<a name="@Considerations_27"></a>
 
 ### Considerations
 
@@ -2903,7 +2891,7 @@ Initialize a mutable iterated inorder traversal in a tree having
 at least one outer node. See [traversal](#Traversal)
 
 
-<a name="@Parameters_30"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -2912,7 +2900,7 @@ at least one outer node. See [traversal](#Traversal)
 traversal, else successor traversal
 
 
-<a name="@Returns_31"></a>
+<a name="@Returns_29"></a>
 
 ### Returns
 
@@ -2922,7 +2910,7 @@ traversal, else successor traversal
 * <code>u64</code>: Child field index of corresponding node
 
 
-<a name="@Considerations_32"></a>
+<a name="@Considerations_30"></a>
 
 ### Considerations
 
@@ -2970,7 +2958,7 @@ traversal, else successor traversal
 Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code> call for enumerated return extraction.
 See [traversal](#Traversal)
 
-<a name="@Returns_33"></a>
+<a name="@Returns_31"></a>
 
 ### Returns
 
@@ -3026,7 +3014,7 @@ pop the start node and return its value. See
 [traversal](#Traversal)
 
 
-<a name="@Parameters_34"></a>
+<a name="@Parameters_32"></a>
 
 ### Parameters
 
@@ -3042,7 +3030,7 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_35"></a>
+<a name="@Returns_33"></a>
 
 ### Returns
 
@@ -3053,7 +3041,7 @@ else successor traversal
 * <code>V</code>: Popped start node's value
 
 
-<a name="@Considerations_36"></a>
+<a name="@Considerations_34"></a>
 
 ### Considerations
 

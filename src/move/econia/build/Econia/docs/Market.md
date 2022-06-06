@@ -231,8 +231,6 @@ represented in a <code>u64</code>
 -  [Resource `OO`](#0xc0deb00c_Market_OO)
 -  [Struct `P`](#0xc0deb00c_Market_P)
 -  [Constants](#@Constants_8)
-    -  [Error codes](#@Error_codes_9)
-    -  [Type name bytestrings](#@Type_name_bytestrings_10)
 -  [Function `init_registry`](#0xc0deb00c_Market_init_registry)
 -  [Function `register_market`](#0xc0deb00c_Market_register_market)
 -  [Function `scale_factor`](#0xc0deb00c_Market_scale_factor)
@@ -1083,11 +1081,6 @@ When a type does not correspond to a coin
 
 <a name="0xc0deb00c_Market_E_NOT_ECONIA"></a>
 
-
-<a name="@Error_codes_9"></a>
-
-### Error codes
-
 When account/address is not Econia
 
 
@@ -1317,11 +1310,6 @@ When wrong module
 
 
 <a name="0xc0deb00c_Market_M_NAME"></a>
-
-
-<a name="@Type_name_bytestrings_10"></a>
-
-### Type name bytestrings
 
 This module's name
 

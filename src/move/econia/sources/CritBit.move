@@ -445,7 +445,7 @@ module Econia::CritBit {
         p: u64,
     }
 
-    /// # Error codes
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// When a char in a bytestring is neither 0 nor 1
     const E_BIT_NOT_0_OR_1: u64 = 0;
@@ -464,7 +464,9 @@ module Econia::CritBit {
     /// When attempting to look up on an empty tree
     const E_LOOKUP_EMPTY: u64 = 7;
 
-    /// # General constants
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // General constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// `u128` bitmask with all bits set
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
@@ -484,6 +486,8 @@ module Econia::CritBit {
     const L: bool = true;
     /// Right direction
     const R: bool = false;
+
+    // General constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

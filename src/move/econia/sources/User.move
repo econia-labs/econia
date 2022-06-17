@@ -1,5 +1,5 @@
-/// Collateral management functionality
-module Econia::Collateral {
+/// User-side functionality
+module Econia::User {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

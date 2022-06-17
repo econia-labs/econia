@@ -11,9 +11,9 @@ Pure-Move implementation of order book functionality
 -  [Struct `P`](#0xc0deb00c_Book_P)
 -  [Constants](#@Constants_0)
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
--  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 -  [Function `get_book_init_cap`](#0xc0deb00c_Book_get_book_init_cap)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
+-  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -196,36 +196,6 @@ Return <code><b>true</b></code> if specified order book type exists at address
 
 </details>
 
-<a name="0xc0deb00c_Book_scale_factor"></a>
-
-## Function `scale_factor`
-
-Return scale factor of specified order book at given address
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(
-    addr: <b>address</b>
-): u64
-<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
-    // Assert book <b>exists</b> at given <b>address</b>
-    <b>assert</b>!(<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(addr), <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>);
-    <b>borrow_global</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(addr).f // Return book's scale factor
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_Book_get_book_init_cap"></a>
 
 ## Function `get_book_init_cap`
@@ -281,6 +251,36 @@ Initialize order book under host account, provided <code><a href="Book.md#0xc0de
     // Pack empty order book
     <b>let</b> o_b = <a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;{f, a: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), b: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), m_a: 0, m_b: 0};
     <b>move_to</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host, o_b); // Move <b>to</b> host
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_scale_factor"></a>
+
+## Function `scale_factor`
+
+Return scale factor of specified order book at given address
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>
+): u64
+<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    // Assert book <b>exists</b> at given <b>address</b>
+    <b>assert</b>!(<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(addr), <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>);
+    <b>borrow_global</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(addr).f // Return book's scale factor
 }
 </code></pre>
 

@@ -153,7 +153,7 @@ module Econia::Collateral {
     ) {
         r_r_t_m(econia); // Register test market
         init_c_c<BCT, QCT, E0>(user); // Initialize order collateral
-        init_c_c<BCT, QCT, E0>(user); // Attempt invalid re-initialization
+        init_c_c<BCT, QCT, E0>(user); // Attempt invalid re-init
     }
 
     #[test(

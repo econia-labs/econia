@@ -86,18 +86,6 @@ module Econia::Book {
     /// Return `true` if specified order book type exists at address
     public fun exists_book<B, Q, E>(a: address): bool {exists<OB<B, Q, E>>(a)}
 
-    /// Return scale factor of specified order book at given address
-    public fun scale_factor<B, Q, E>(
-        addr: address
-    ): u64
-    acquires OB {
-        // Assert book exists at given address
-        assert!(exists_book<B, Q, E>(addr), E_NO_BOOK);
-        borrow_global<OB<B, Q, E>>(addr).f // Return book's scale factor
-    }
-
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     /// Return a `BookInitCap`, aborting if not called by Econia account
     public fun get_book_init_cap(
         account: &signer
@@ -119,6 +107,18 @@ module Econia::Book {
         let o_b = OB<B, Q, E>{f, a: cb_e<P>(), b: cb_e<P>(), m_a: 0, m_b: 0};
         move_to<OB<B, Q, E>>(host, o_b); // Move to host
     }
+
+    /// Return scale factor of specified order book at given address
+    public fun scale_factor<B, Q, E>(
+        addr: address
+    ): u64
+    acquires OB {
+        // Assert book exists at given address
+        assert!(exists_book<B, Q, E>(addr), E_NO_BOOK);
+        borrow_global<OB<B, Q, E>>(addr).f // Return book's scale factor
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

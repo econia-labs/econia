@@ -205,7 +205,7 @@ can be represented in a <code>u64</code>
 
 <a name="@Test-oriented_architecture_8"></a>
 
-## Test-oriented architecture
+### Test-oriented architecture
 
 
 The current module relies heavily on Move native functions defined
@@ -242,7 +242,7 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 -  [Data structures](#@Data_structures_5)
     -  [Market info](#@Market_info_6)
     -  [Scale exponents and factors](#@Scale_exponents_and_factors_7)
--  [Test-oriented architecture](#@Test-oriented_architecture_8)
+    -  [Test-oriented architecture](#@Test-oriented_architecture_8)
 -  [Resource `BICC`](#0xc0deb00c_Registry_BICC)
 -  [Struct `E0`](#0xc0deb00c_Registry_E0)
 -  [Struct `E1`](#0xc0deb00c_Registry_E1)

@@ -165,7 +165,7 @@
 /// $= 10^{19} =$ `10000000000000000000`, the largest power of ten that
 /// can be represented in a `u64`
 ///
-/// # Test-oriented architecture
+/// ## Test-oriented architecture
 ///
 /// The current module relies heavily on Move native functions defined
 /// in the `AptosFramework`, for which the `move` CLI's coverage testing

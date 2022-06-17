@@ -267,6 +267,7 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 -  [Struct `MI`](#0xc0deb00c_Registry_MI)
 -  [Resource `MR`](#0xc0deb00c_Registry_MR)
 -  [Constants](#@Constants_9)
+-  [Function `is_registered`](#0xc0deb00c_Registry_is_registered)
 -  [Function `init_b_i_c_c`](#0xc0deb00c_Registry_init_b_i_c_c)
 -  [Function `init_registry`](#0xc0deb00c_Registry_init_registry)
 -  [Function `register_market`](#0xc0deb00c_Registry_register_market)
@@ -1196,6 +1197,38 @@ This module's name
 </code></pre>
 
 
+
+<a name="0xc0deb00c_Registry_is_registered"></a>
+
+## Function `is_registered`
+
+Return <code><b>true</b></code> if given market is registered
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_is_registered">is_registered</a>&lt;B, Q, E&gt;(): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_is_registered">is_registered</a>&lt;B, Q, E&gt;(
+): bool
+<b>acquires</b> <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a> {
+    // Return <b>false</b> <b>if</b> no market registry at Econia account
+    <b>if</b> (!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia)) <b>return</b> <b>false</b>;
+     // Get market info for given type arguments
+    <b>let</b> m_i = <a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>{b: ti_t_o&lt;B&gt;(), q: ti_t_o&lt;Q&gt;(), e: ti_t_o&lt;E&gt;()};
+    // Return <b>if</b> registry table contains market information
+    t_c(&<b>borrow_global</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia).t, m_i)
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_Registry_init_b_i_c_c"></a>
 

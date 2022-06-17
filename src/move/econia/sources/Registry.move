@@ -227,6 +227,12 @@ module Econia::Registry {
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    friend Econia::Collateral;
+
+    // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
@@ -412,6 +418,22 @@ module Econia::Registry {
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return `true` if given market is registered
+    public(friend) fun is_registered<B, Q, E>(
+    ): bool
+    acquires MR {
+        // Return false if no market registry at Econia account
+        if (!exists<MR>(@Econia)) return false;
+         // Get market info for given type arguments
+        let m_i = MI{b: ti_t_o<B>(), q: ti_t_o<Q>(), e: ti_t_o<E>()};
+        // Return if registry table contains market information
+        t_c(&borrow_global<MR>(@Econia).t, m_i)
+    }
+
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Publish `BICC` to Econia acount, aborting for all other accounts
@@ -555,6 +577,18 @@ module Econia::Registry {
         move_to(econia, QCC{m, b});
     }
 
+    #[test_only]
+    /// Register base and quote coin types, with corresponding market
+    public(script) fun register_test_market(
+        econia: &signer
+    ) acquires BICC, MR {
+        init_registry(econia); // Initialize registry
+        init_coin_types(econia); // Initialize test coin types
+        // Initialize book initialization capability container
+        init_b_i_c_c(econia);
+        register_market<BCT, QCT, E0>(econia); // Register market
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -608,6 +642,34 @@ module Econia::Registry {
         init_registry(econia); // Initialize registry
         // Assert exists at Econia account
         assert!(exists<MR>(s_a_o(econia)), 0);
+    }
+
+    #[test]
+    /// Verify false return for market registry not initialized
+    fun is_registered_false_no_mr()
+    acquires MR {
+        // Assert false return
+        assert!(!is_registered<BCT, QCT, E0>(), 0);
+    }
+
+    #[test(econia = @Econia)]
+    /// Verify false return for no such market registered
+    public(script) fun is_registered_false_not_registered(
+        econia: &signer
+    ) acquires MR {
+        init_registry(econia); // Initialize registry
+        // Assert false return for unregistered market
+        assert!(!is_registered<BCT, QCT, E0>(), 0);
+    }
+
+    #[test(econia = @Econia)]
+    /// Verify true return for registered market
+    public(script) fun is_registered_true(
+        econia: &signer
+    ) acquires BICC, MR {
+        register_test_market(econia); // Register test market
+        // Assert true return for registered test market
+        assert!(is_registered<BCT, QCT, E0>(), 0);
     }
 
     #[test]

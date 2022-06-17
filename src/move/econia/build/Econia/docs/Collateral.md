@@ -8,16 +8,13 @@ Collateral management functionality
 
 -  [Resource `CC`](#0xc0deb00c_Collateral_CC)
 -  [Constants](#@Constants_0)
--  [Function `b_a`](#0xc0deb00c_Collateral_b_a)
--  [Function `b_c`](#0xc0deb00c_Collateral_b_c)
 -  [Function `exists_c_c`](#0xc0deb00c_Collateral_exists_c_c)
 -  [Function `init_c_c`](#0xc0deb00c_Collateral_init_c_c)
--  [Function `q_a`](#0xc0deb00c_Collateral_q_a)
--  [Function `q_c`](#0xc0deb00c_Collateral_q_c)
 
 
 <pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
 <b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<b>use</b> <a href="Registry.md#0xc0deb00c_Registry">0xc0deb00c::Registry</a>;
 </code></pre>
 
 
@@ -83,63 +80,15 @@ When order collateral container already exists at given address
 
 
 
-<a name="0xc0deb00c_Collateral_b_a"></a>
+<a name="0xc0deb00c_Collateral_E_NO_MARKET"></a>
 
-## Function `b_a`
-
-Return number of indivisible subunits of base coin collateral
-available for withdraw, for given market, at given address
+When no corresponding market to register collateral for
 
 
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_b_a">b_a</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
+<pre><code><b>const</b> <a href="Collateral.md#0xc0deb00c_Collateral_E_NO_MARKET">E_NO_MARKET</a>: u64 = 1;
 </code></pre>
 
 
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_b_a">b_a</a>&lt;B, Q, E&gt;(
-    addr: <b>address</b>
-): u64
-<b>acquires</b> <a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a> {
-    <b>borrow_global</b>&lt;<a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a>&lt;B, Q, E&gt;&gt;(addr).b_a
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_Collateral_b_c"></a>
-
-## Function `b_c`
-
-Return number of indivisible subunits of base coin collateral,
-for given market, held at given address
-
-
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_b_c">b_c</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_b_c">b_c</a>&lt;B, Q, E&gt;(
-    addr: <b>address</b>
-): u64
-<b>acquires</b> <a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a> {
-    c_v(&<b>borrow_global</b>&lt;<a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a>&lt;B, Q, E&gt;&gt;(addr).b_c)
-}
-</code></pre>
-
-
-
-</details>
 
 <a name="0xc0deb00c_Collateral_exists_c_c"></a>
 
@@ -186,67 +135,11 @@ if already initialized
 ) {
     // Assert user does not already have order collateral for market
     <b>assert</b>!(!<a href="Collateral.md#0xc0deb00c_Collateral_exists_c_c">exists_c_c</a>&lt;B, Q, E&gt;(s_a_o(user)), <a href="Collateral.md#0xc0deb00c_Collateral_E_C_C_EXISTS">E_C_C_EXISTS</a>);
-    // Pack empty order collateral container
+    // Assert given market <b>has</b> actually been registered
+    <b>assert</b>!(r_i_r&lt;B, Q, E&gt;(), <a href="Collateral.md#0xc0deb00c_Collateral_E_NO_MARKET">E_NO_MARKET</a>);
+    // Pack empty collateral container
     <b>let</b> o_c = <a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a>&lt;B, Q, E&gt;{b_c: c_z&lt;B&gt;(), b_a: 0, q_c: c_z&lt;Q&gt;(), q_a: 0};
     <b>move_to</b>&lt;<a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a>&lt;B, Q, E&gt;&gt;(user, o_c); // Move <b>to</b> user account
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_Collateral_q_a"></a>
-
-## Function `q_a`
-
-Return number of indivisible subunits of quote coin collateral
-available for withdraw, for given market, at given address
-
-
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_q_a">q_a</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_q_a">q_a</a>&lt;B, Q, E&gt;(
-    addr: <b>address</b>
-): u64
-<b>acquires</b> <a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a> {
-    <b>borrow_global</b>&lt;<a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a>&lt;B, Q, E&gt;&gt;(addr).q_a
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_Collateral_q_c"></a>
-
-## Function `q_c`
-
-Return number of indivisible subunits of quote coin collateral,
-for given market, held at given address
-
-
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_q_c">q_c</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="Collateral.md#0xc0deb00c_Collateral_q_c">q_c</a>&lt;B, Q, E&gt;(
-    addr: <b>address</b>
-): u64
-<b>acquires</b> <a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a> {
-    c_v(&<b>borrow_global</b>&lt;<a href="Collateral.md#0xc0deb00c_Collateral_CC">CC</a>&lt;B, Q, E&gt;&gt;(addr).q_c)
 }
 </code></pre>
 

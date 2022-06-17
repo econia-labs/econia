@@ -197,7 +197,6 @@ module Econia::Registry {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use AptosFramework::Coin::{
-        Coin as C,
         is_coin_initialized as c_i_c_i
     };
 
@@ -220,10 +219,6 @@ module Econia::Registry {
         BookInitCap as BIC,
         get_book_init_cap as b_g_b_i_c,
         init_book as b_i_b
-    };
-
-    use Econia::CritBit::{
-        CB,
     };
 
     use Std::Signer::{
@@ -303,23 +298,6 @@ module Econia::Registry {
         t: T<MI, address>
     }
 
-    /// Open orders on a user's account
-    struct OO<phantom B, phantom Q, phantom E> has key {
-        /// Scale factor
-        f: u64,
-        /// Asks
-        a: CB<u64>,
-        /// Bids
-        b: CB<u64>,
-        /// Base coins
-        b_c: C<B>,
-        /// Base coins available to withdraw
-        b_a: u64,
-        /// Quote coins
-        q_c: C<Q>,
-        /// Quote coins available to withdraw
-        q_a: u64,
-    }
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

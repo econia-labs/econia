@@ -266,7 +266,6 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 -  [Struct `E19`](#0xc0deb00c_Registry_E19)
 -  [Struct `MI`](#0xc0deb00c_Registry_MI)
 -  [Resource `MR`](#0xc0deb00c_Registry_MR)
--  [Resource `OO`](#0xc0deb00c_Registry_OO)
 -  [Constants](#@Constants_9)
 -  [Function `init_b_i_c_c`](#0xc0deb00c_Registry_init_b_i_c_c)
 -  [Function `init_registry`](#0xc0deb00c_Registry_init_registry)
@@ -283,7 +282,6 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 <b>use</b> <a href="../../../build/AptosFramework/docs/Table.md#0x1_Table">0x1::Table</a>;
 <b>use</b> <a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo">0x1::TypeInfo</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
-<b>use</b> <a href="CritBit.md#0xc0deb00c_CritBit">0xc0deb00c::CritBit</a>;
 </code></pre>
 
 
@@ -918,70 +916,6 @@ Market registry
 </dt>
 <dd>
  Table from <code><a href="Registry.md#0xc0deb00c_Registry_MI">MI</a></code> to address hosting the corresponding <code>MC</code>
-</dd>
-</dl>
-
-
-</details>
-
-<a name="0xc0deb00c_Registry_OO"></a>
-
-## Resource `OO`
-
-Open orders on a user's account
-
-
-<pre><code><b>struct</b> <a href="Registry.md#0xc0deb00c_Registry_OO">OO</a>&lt;B, Q, E&gt; <b>has</b> key
-</code></pre>
-
-
-
-<details>
-<summary>Fields</summary>
-
-
-<dl>
-<dt>
-<code>f: u64</code>
-</dt>
-<dd>
- Scale factor
-</dd>
-<dt>
-<code>a: <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;u64&gt;</code>
-</dt>
-<dd>
- Asks
-</dd>
-<dt>
-<code>b: <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;u64&gt;</code>
-</dt>
-<dd>
- Bids
-</dd>
-<dt>
-<code>b_c: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_Coin">Coin::Coin</a>&lt;B&gt;</code>
-</dt>
-<dd>
- Base coins
-</dd>
-<dt>
-<code>b_a: u64</code>
-</dt>
-<dd>
- Base coins available to withdraw
-</dd>
-<dt>
-<code>q_c: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_Coin">Coin::Coin</a>&lt;Q&gt;</code>
-</dt>
-<dd>
- Quote coins
-</dd>
-<dt>
-<code>q_a: u64</code>
-</dt>
-<dd>
- Quote coins available to withdraw
 </dd>
 </dl>
 

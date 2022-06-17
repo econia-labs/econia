@@ -1,4 +1,4 @@
-/// Pure-move implementation of order book functionality
+/// Pure-Move implementation of order book functionality
 module Econia::Book {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

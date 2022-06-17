@@ -3,7 +3,7 @@
 
 # Module `0xc0deb00c::Book`
 
-Pure-move implementation of order book functionality
+Pure-Move implementation of order book functionality
 
 
 -  [Struct `BookInitCap`](#0xc0deb00c_Book_BookInitCap)

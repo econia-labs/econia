@@ -41,10 +41,10 @@ elif test $1 = cl; then
 elif test $1 = b; then
     move package build
 
-# Run tests with coverage, passing optional argument
-# For example `s tc -f coin`
+# Run tests with coverage, for given filter argument
+# For example `s tc critbit`
 elif test $1 = tc; then
-    move package test --coverage $2 $3
+    move package test --coverage -f $2
 
 # Run aptos CLI test with filter and passed argument
 elif test $1 = tf; then

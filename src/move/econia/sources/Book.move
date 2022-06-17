@@ -122,9 +122,42 @@ module Econia::Book {
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test(account = @TestUser)]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for non-Econia account
+    fun get_book_init_cap_failure(
+        account: &signer
+    ) {
+        // Attempt invalid getter invocation, unpacking result
+        let BookInitCap{} = get_book_init_cap(account);
+    }
+
+    #[test(econia = @Econia)]
+    /// Verify success for Econia account
+    fun get_book_init_cap_success(
+        econia: &signer
+    ) {
+        // Unpack result of valid getter invocation
+        let BookInitCap{} = get_book_init_cap(econia);
+    }
+
+    #[test(host = @TestUser)]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failed re-initialization of order book
+    fun init_book_failure_exists(
+        host: &signer,
+    ) {
+        let b_i_c = BookInitCap{}; // Initialize book init capability
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &b_i_c);
+        // Attempt invalid re-initialization
+        init_book<BT, QT, ET>(host, 1, &b_i_c);
+        let BookInitCap{} = b_i_c; // Unpack init capability
+    }
+
     #[test(host = @TestUser)]
     /// Verify successful initialization of order book
-    public fun init_book_success(
+    fun init_book_success(
         host: &signer,
     ) acquires OB {
         let b_i_c = BookInitCap{}; // Initialize book init capability
@@ -140,6 +173,14 @@ module Econia::Book {
         assert!(o_b.m_a == 0 && o_b.m_b == 0, 1);
         // Assert bid and ask trees init empty
         assert!(cb_i_e(&o_b.a) && cb_i_e(&o_b.b), 2);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for no book
+    fun scale_factor_failure()
+    acquires OB {
+        scale_factor<BT, QT, ET>(@TestUser); // Attempt invalid query
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

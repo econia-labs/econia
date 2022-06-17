@@ -169,25 +169,26 @@
 ///
 /// The current module relies heavily on Move native functions defined
 /// in the `AptosFramework`, for which the `move` CLI's coverage testing
-/// tool does not offer support. Thus, since the `aptos` CLI does not
-/// offer any coverage testing support whatsoever, the current module
-/// cannot be coverage tested per straightforward methods.
+/// tool does not offer general support. Thus, since the `aptos` CLI
+/// does not offer any coverage testing support whatsoever, at least as
+/// of the time of this writing, the current module cannot be coverage
+/// tested per straightforward methods.
 ///
-/// Other modules, however, do not depend as strongly on such native
-/// functions, and as such, whenever possible, they are implemented
-/// purely in Move to enable coverage testing, for example, like
-/// `Econia::CritBit`. Occasionally this approach requires workarounds,
-/// for instance like `BICC`, a cumbersome alternative to the use of
-/// a `public(friend)` function: a more straightforward approach would
-/// involve making `Econia::Book::init_book` only available to friend
-/// modules, but this would involve the declaration of the present
-/// module as a friend, and since the present module relies on
-/// `AptosFramework` native functions, the `move` CLI test compiler
-/// would thus break when attempting to link the corresponding files,
-/// even when only attempting to run coverage tests on `Econia::Book`.
-/// Hence the use of `Econia::Book::BookInitCap` and `BICC`, an approach
-/// that allows `Econia::Book` to be implemented purely in Move and to
-/// be coverage tested using the `move` CLI.
+/// Other modules, however, do not depend as strongly on
+/// `AptosFramework` functions, and as such, whenever possible, they are
+/// implemented purely in Move to enable coverage testing, for example,
+/// like `Econia::CritBit`. Occasionally this approach requires
+/// workarounds, for instance like `BICC`, a cumbersome alternative to
+/// the use of a `public(friend)` function: a more straightforward
+/// approach would involve making `Econia::Book::init_book` only
+/// available to friend modules, but this would involve the declaration
+/// of the present module as a friend, and since the present module
+/// relies on `AptosFramework` native functions, the `move` CLI test
+/// compiler would thus break when attempting to link the corresponding
+/// files, even when only attempting to run coverage tests on
+/// `Econia::Book`. Hence the use of `Econia::Book::BookInitCap` and
+/// `BICC`, an approach that allows `Econia::Book` to be implemented
+/// purely in Move and to be coverage tested using the `move` CLI.
 ///
 /// ---
 ///

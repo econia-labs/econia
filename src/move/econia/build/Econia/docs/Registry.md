@@ -210,25 +210,26 @@ can be represented in a <code>u64</code>
 
 The current module relies heavily on Move native functions defined
 in the <code>AptosFramework</code>, for which the <code><b>move</b></code> CLI's coverage testing
-tool does not offer support. Thus, since the <code>aptos</code> CLI does not
-offer any coverage testing support whatsoever, the current module
-cannot be coverage tested per straightforward methods.
+tool does not offer general support. Thus, since the <code>aptos</code> CLI
+does not offer any coverage testing support whatsoever, at least as
+of the time of this writing, the current module cannot be coverage
+tested per straightforward methods.
 
-Other modules, however, do not depend as strongly on such native
-functions, and as such, whenever possible, they are implemented
-purely in Move to enable coverage testing, for example, like
-<code>Econia::CritBit</code>. Occasionally this approach requires workarounds,
-for instance like <code><a href="Registry.md#0xc0deb00c_Registry_BICC">BICC</a></code>, a cumbersome alternative to the use of
-a <code><b>public</b>(<b>friend</b>)</code> function: a more straightforward approach would
-involve making <code>Econia::Book::init_book</code> only available to friend
-modules, but this would involve the declaration of the present
-module as a friend, and since the present module relies on
-<code>AptosFramework</code> native functions, the <code><b>move</b></code> CLI test compiler
-would thus break when attempting to link the corresponding files,
-even when only attempting to run coverage tests on <code>Econia::Book</code>.
-Hence the use of <code>Econia::Book::BookInitCap</code> and <code><a href="Registry.md#0xc0deb00c_Registry_BICC">BICC</a></code>, an approach
-that allows <code>Econia::Book</code> to be implemented purely in Move and to
-be coverage tested using the <code><b>move</b></code> CLI.
+Other modules, however, do not depend as strongly on
+<code>AptosFramework</code> functions, and as such, whenever possible, they are
+implemented purely in Move to enable coverage testing, for example,
+like <code>Econia::CritBit</code>. Occasionally this approach requires
+workarounds, for instance like <code><a href="Registry.md#0xc0deb00c_Registry_BICC">BICC</a></code>, a cumbersome alternative to
+the use of a <code><b>public</b>(<b>friend</b>)</code> function: a more straightforward
+approach would involve making <code>Econia::Book::init_book</code> only
+available to friend modules, but this would involve the declaration
+of the present module as a friend, and since the present module
+relies on <code>AptosFramework</code> native functions, the <code><b>move</b></code> CLI test
+compiler would thus break when attempting to link the corresponding
+files, even when only attempting to run coverage tests on
+<code>Econia::Book</code>. Hence the use of <code>Econia::Book::BookInitCap</code> and
+<code><a href="Registry.md#0xc0deb00c_Registry_BICC">BICC</a></code>, an approach that allows <code>Econia::Book</code> to be implemented
+purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 
 ---
 

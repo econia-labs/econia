@@ -120,15 +120,15 @@
 /// inappropriate scale factor in the interest of halting activity on an
 /// arbitrary trading pair?
 ///
-/// With regard to choosing an appropriate scale factor, or for that
-/// matter, facilitating trading pairs in general, the present
+/// With regard to choosing an appropriate scale factor, or more broadly
+/// for facilitating trading pairs in general, the present
 /// implementation's solution is to simply "let the market decide", via
 /// a permissionless market registration system that allows anyone to
 /// register any trading pair, with any scale factor of the form
 /// $10^E, E\in \{0, 1, 2, \ldots, 19\}$, as long as the trading pair
 /// has not already been initialized. Hence, when a new coin becomes
 /// available, several trading pairs are likely to be established across
-/// different scale factors, and the correspondingly fractured liquidty
+/// different scale factors, and the correspondingly fractured liquidity
 /// will tend to gravitate towards a preferred scale factor. As prices
 /// go up or down, liquidity will naturally migrate to the most
 /// efficient scale factor, without any input from a centralized entity.
@@ -138,10 +138,17 @@
 /// ## Market info
 ///
 /// A trading pair, or market, is fully specified by a unique `MI`
-/// (Market info) struct, with fields for a base coin type, a quote
+/// (Market info) struct, which has fields for a base coin type, a quote
 /// coin type, and a so-called "scale exponent" (`E` as above,
-/// corresonding to a power of 10). These types are commonly represented
-/// in other functions and structs as `<B, Q, E>`
+/// corresponding to a power of 10). These types are represented in
+/// other functions and structs as `<B, Q, E>`.
+///
+/// Since markets are permissionless, anyone can register a market,
+/// assuming that the correspondingly unique `MI` specifier has not
+/// already been registered under the market registry, `MR`, stored at
+/// the Econia address. The account that registers a market is known as
+/// a "host", because during registration they agree to host under their
+/// account an `Econia::Book::OB` that will facilitate trading.
 ///
 /// ## Scale exponents and factors
 ///
@@ -153,11 +160,38 @@
 /// arithmetic at the matching engine level. From a purely computer
 /// science perspective, it would actually be more straightforward for
 /// scale exponents and factors to correspond to powers of two, but
-/// since this is a financial application, powers of 10 are instead
-/// used. Hence the largest scale factor is `F19` $= 10^{19} =$
-/// `10000000000000000000`, the largest power of ten that can be
-/// represented in a `u64`
-module Econia::Market {
+/// since the present implementation is financially-motivated, powers of
+/// 10 are instead used. Hence the largest scale factor is `F19`
+/// $= 10^{19} =$ `10000000000000000000`, the largest power of ten that
+/// can be represented in a `u64`
+///
+/// # Test-oriented architecture
+///
+/// The current module relies heavily on Move native functions defined
+/// in the `AptosFramework`, for which the `move` CLI's coverage testing
+/// tool does not offer support. Thus, since the `aptos` CLI does not
+/// offer any coverage testing support whatsoever, the current module
+/// cannot be coverage tested per straightforward methods.
+///
+/// Other modules, however, do not depend as strongly on such native
+/// functions, and as such, whenever possible, they are implemented
+/// purely in Move to enable coverage testing, for example, like
+/// `Econia::CritBit`. Occasionally this approach requires workarounds,
+/// for instance like `BICC`, a cumbersome alternative to the use of
+/// a `public(friend)` function: a more straightforward approach would
+/// involve making `Econia::Book::init_book` only available to friend
+/// modules, but this would involve the declaration of the present
+/// module as a friend, and since the present module relies on
+/// `AptosFramework` native functions, the `move` CLI test compiler
+/// would thus break when attempting to link the corresponding files,
+/// even when only attempting to run coverage tests on `Econia::Book`.
+/// Hence the use of `Econia::Book::BookInitCap` and `BICC`, an approach
+/// that allows `Econia::Book` to be implemented purely in Move and to
+/// be coverage tested using the `move` CLI.
+///
+/// ---
+///
+module Econia::Registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -181,9 +215,14 @@ module Econia::Market {
         TypeInfo as TI
     };
 
+    use Econia::Book::{
+        BookInitCap as BIC,
+        get_book_init_cap as b_g_b_i_c,
+        init_book as b_i_b
+    };
+
     use Econia::CritBit::{
         CB,
-        empty as cb_e
     };
 
     use Std::Signer::{
@@ -207,8 +246,8 @@ module Econia::Market {
     };
 
     #[test_only]
-    use Econia::CritBit::{
-        is_empty as cb_i_e
+    use Econia::Book::{
+        scale_factor as b_s_f,
     };
 
     #[test_only]
@@ -219,6 +258,11 @@ module Econia::Market {
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Book initialization capability container
+    struct BICC has key {
+        b_i_c: BIC
+    }
 
     // Scale exponent types
     struct E0{}
@@ -242,12 +286,6 @@ module Econia::Market {
     struct E18{}
     struct E19{}
 
-    /// Market container
-    struct MC<phantom B, phantom Q, phantom E> has key {
-        /// Order book
-        ob: OB<B, Q, E>
-    }
-
     /// Market info
     struct MI has copy, drop {
         /// Base CoinType TypeInfo
@@ -262,16 +300,6 @@ module Econia::Market {
     struct MR has key {
         /// Table from `MI` to address hosting the corresponding `MC`
         t: T<MI, address>
-    }
-
-    /// Order book
-    struct OB<phantom B, phantom Q, phantom E> has store {
-        /// Scale factor
-        f: u64,
-        /// Asks
-        a: CB<P>,
-        /// Bids
-        b: CB<P>
     }
 
     /// Open orders on a user's account
@@ -291,16 +319,6 @@ module Econia::Market {
         /// Quote coins available to withdraw
         q_a: u64,
     }
-
-    /// Position in an order book
-    struct P has store {
-        /// Size of position, in base coin subunits. Corresponds to
-        /// `AptosFramework::Coin::Coin.value`
-        s: u64,
-        /// Address
-        a: address
-    }
-
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -317,6 +335,10 @@ module Econia::Market {
     const E_REGISTERED: u64 = 4;
     /// When a type does not correspond to a coin
     const E_NOT_COIN: u64 = 5;
+    /// When book initialization capability container already published
+    const E_HAS_BICC: u64 = 6;
+    /// When book initialization capability container not published
+    const E_NO_BICC: u64 = 7;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -345,7 +367,7 @@ module Econia::Market {
     const F19: u64 = 10000000000000000000;
 
     /// This module's name
-    const M_NAME: vector<u8> = b"Market";
+    const M_NAME: vector<u8> = b"Registry";
 
     // General constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -384,20 +406,28 @@ module Econia::Market {
 
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test_only]
     /// Base coin type coin name
     const BCT_CN: vector<u8> = b"Base";
+    #[test_only]
     /// Base coin type coin symbol
     const BCT_CS: vector<u8> = b"B";
+    #[test_only]
     /// Base coin type decimal
     const BCT_D: u64 = 4;
+    #[test_only]
     /// Base coin type type name
     const BCT_TN: vector<u8> = b"BCT";
+    #[test_only]
     /// Quote coin type coin name
     const QCT_CN: vector<u8> = b"Quote";
+    #[test_only]
     /// Quote coin type coin symbol
     const QCT_CS: vector<u8> = b"Q";
+    #[test_only]
     /// Base coin type decimal
     const QCT_D: u64 = 8;
+    #[test_only]
     /// Quote coin type type name
     const QCT_TN: vector<u8> = b"QCT";
 
@@ -405,7 +435,19 @@ module Econia::Market {
 
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Publish `MR` to Econia's acount, aborting for all other accounts
+    /// Publish `BICC` to Econia acount, aborting for all other accounts
+    public(script) fun init_b_i_c_c(
+        account: &signer
+    ) {
+        // Assert account is Econia
+        assert!(s_a_o(account) == @Econia, E_NOT_ECONIA);
+        // Assert capability container not already initialized
+        assert!(!exists<BICC>(@Econia), E_HAS_BICC);
+        // Move book initialization capability container to account
+        move_to(account, BICC{b_i_c: b_g_b_i_c(account)});
+    }
+
+    /// Publish `MR` to Econia acount, aborting for all other accounts
     public(script) fun init_registry(
         account: &signer
     ) {
@@ -420,7 +462,7 @@ module Econia::Market {
     /// initialized or if market already registered
     public(script) fun register_market<B, Q, E>(
         host: &signer
-    ) acquires MR {
+    ) acquires BICC, MR {
         verify_market_types<B, Q, E>(); // Verify valid type arguments
         // Assert market registry is initialized at Econia account
         assert!(exists<MR>(@Econia), E_NO_REGISTRY);
@@ -430,10 +472,12 @@ module Econia::Market {
         let r_t = &mut borrow_global_mut<MR>(@Econia).t;
         // Assert requested market not already registered
         assert!(!t_c(r_t, m_i), E_REGISTERED);
-        // Pack empty order book with corresponding scale factor
-        let ob = OB<B, Q, E>{f: scale_factor<E>(), a: cb_e<P>(), b: cb_e<P>()};
-        // Pack market container with order book, move to host
-        move_to<MC<B, Q, E>>(host, MC{ob});
+        // Assert Econia account has book initialization capability
+        assert!(exists<BICC>(@Econia), E_NO_BICC);
+        // Borrow immutable reference to book initialization capability
+        let b_i_c = &borrow_global<BICC>(@Econia).b_i_c;
+        // Initialize empty order book under host account
+        b_i_b<B, Q, E>(host, scale_factor<E>(), b_i_c);
         t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
     }
 
@@ -538,6 +582,38 @@ module Econia::Market {
 
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 0)]
+    /// Verify failed publication of `BICC` for non-Econia account
+    public(script) fun init_b_i_c_c_failure_not_econia(
+        account: &signer
+    ) {
+        // Attempt invalid initialization of container
+        init_b_i_c_c(account); // Initialize capability container
+    }
+
+    #[test(econia = @Econia)]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failed re-publication of `BICC` to Econia account
+    public(script) fun init_b_i_c_c_failure_try_twice(
+        econia: &signer
+    ) {
+        init_b_i_c_c(econia); // Initialize capability container
+        init_b_i_c_c(econia); // Attempt invalid re-initialization
+    }
+
+    #[test(econia = @Econia)]
+    /// Verify successful publication of `BICC`
+    public(script) fun init_b_i_c_c_success(
+        econia: &signer
+    ) acquires BICC {
+        init_b_i_c_c(econia); // Initialize capability container
+        // Assert capability container initialized
+        assert!(exists<BICC>(@Econia), 0);
+        // Assert can invoke book initialization
+        b_i_b<BCT, QCT, E0>(econia, 1, &borrow_global<BICC>(@Econia).b_i_c);
+    }
+
+    #[test(account = @TestUser)]
+    #[expected_failure(abort_code = 0)]
     /// Verify registry publication fails for non-Econia account
     public(script) fun init_registry_failure(
         account: &signer
@@ -570,13 +646,31 @@ module Econia::Market {
         econia = @Econia,
         host = @TestUser
     )]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for uninitialized market registry
+    public(script) fun register_market_failure_no_bicc(
+        econia: &signer,
+        host: &signer
+    ) acquires BICC, MR {
+        init_coin_types(econia); // Initialize coin types
+        init_registry(econia); // Initialize registry
+        // Attempt invalid registration
+        register_market<BCT, QCT, E0>(host);
+    }
+
+    #[test(
+        econia = @Econia,
+        host = @TestUser
+    )]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for uninitialized market registry
     public(script) fun register_market_failure_no_registry(
         econia: &signer,
         host: &signer
-    ) acquires MR {
+    ) acquires BICC, MR {
         init_coin_types(econia); // Initialize coin types
+        // Initialize book initialization capability container
+        init_b_i_c_c(econia);
         // Attempt invalid registration
         register_market<BCT, QCT, E0>(host);
     }
@@ -590,9 +684,11 @@ module Econia::Market {
     public(script) fun register_market_failure_registered(
         econia: &signer,
         host: &signer
-    ) acquires MR {
+    ) acquires BICC, MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
+        // Initialize book initialization capability container
+        init_b_i_c_c(econia);
         register_market<BCT, QCT, E0>(host); // Register market
         // Attempt invalid registration
         register_market<BCT, QCT, E0>(host);
@@ -606,20 +702,20 @@ module Econia::Market {
     public(script) fun register_market_success(
         econia: &signer,
         host: &signer
-    ) acquires MC, MR {
+    ) acquires BICC, MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
+        // Initialize book initialization capability container
+        init_b_i_c_c(econia);
         register_market<BCT, QCT, E4>(host); // Register market
-        // Borrow immutable reference to order book
-        let o_b = &borrow_global<MC<BCT, QCT, E4>>(s_a_o(host)).ob;
-        // Assert order book fields are as expected
-        assert!(o_b.f == F4 && cb_i_e<P>(&o_b.a) && cb_i_e<P>(&o_b.b), 0);
+        // Assert order book has correct scale factor
+        assert!(b_s_f<BCT, QCT, E4>(s_a_o(host)) == scale_factor<E4>(), 0);
         // Borrow immutable referece to market registry
         let r_t = &borrow_global<MR>(@Econia).t;
         // Define market info struct to look up in table
         let m_i = MI{b: ti_t_o<BCT>(), q: ti_t_o<QCT>(), e: ti_t_o<E4>()};
         // Assert registry reflects market-host relationship
-        assert!(*t_b(r_t, m_i) == s_a_o(host), 1);
+        assert!(*t_b(r_t, m_i) == s_a_o(host), 2);
     }
 
     #[test]

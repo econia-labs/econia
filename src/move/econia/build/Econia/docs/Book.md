@@ -28,10 +28,10 @@ Pure-Move implementation of market-side order book functionality
 
 Friend-like capability, administered instead of declaring as a
 friend a module containing Aptos native functions, which would
-inhibit coverage testing via the Move CLI
+inhibit coverage testing via the Move CLI. See <code>Econia::Caps</code>
 
 
-<pre><code><b>struct</b> <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a> <b>has</b> store
+<pre><code><b>struct</b> <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
 
@@ -234,7 +234,7 @@ Return a <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>,
 Initialize order book under host account, provided <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: <a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
 </code></pre>
 
 
@@ -246,7 +246,7 @@ Initialize order book under host account, provided <code><a href="Book.md#0xc0de
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(
     host: &signer,
     f: u64,
-    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+    _c: <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ) {
     // Assert book does not already exist under host account
     <b>assert</b>!(!<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(s_a_o(host)), <a href="Book.md#0xc0deb00c_Book_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);

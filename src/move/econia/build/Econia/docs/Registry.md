@@ -202,35 +202,6 @@ since the present implementation is financially-motivated, powers of
 $= 10^{19} =$ <code>10000000000000000000</code>, the largest power of ten that
 can be represented in a <code>u64</code>
 
-
-<a name="@Test-oriented_architecture_8"></a>
-
-### Test-oriented architecture
-
-
-The current module relies heavily on Move native functions defined
-in the <code>AptosFramework</code>, for which the <code><b>move</b></code> CLI's coverage testing
-tool does not offer general support. Thus, since the <code>aptos</code> CLI
-does not offer any coverage testing support whatsoever, at least as
-of the time of this writing, the current module cannot be coverage
-tested per straightforward methods.
-
-Other modules, however, do not depend as strongly on
-<code>AptosFramework</code> functions, and as such, whenever possible, they are
-implemented purely in Move to enable coverage testing, for example,
-like <code>Econia::CritBit</code>. Occasionally this approach requires
-workarounds, for instance like <code><a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a></code>, a cumbersome alternative to
-the use of a <code><b>public</b>(<b>friend</b>)</code> function: a more straightforward
-approach would involve making <code>Econia::Book::init_book</code> only
-available to friend modules, but this would involve the declaration
-of the present module as a friend, and since the present module
-relies on <code>AptosFramework</code> native functions, the <code><b>move</b></code> CLI test
-compiler would thus break when attempting to link the corresponding
-files, even when only attempting to run coverage tests on
-<code>Econia::Book</code>. Hence the use of <code>Econia::Book::FriendCap</code> and
-<code><a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a></code>, an approach that allows <code>Econia::Book</code> to be implemented
-purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
-
 ---
 
 
@@ -242,8 +213,6 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 -  [Data structures](#@Data_structures_5)
     -  [Market info](#@Market_info_6)
     -  [Scale exponents and factors](#@Scale_exponents_and_factors_7)
-    -  [Test-oriented architecture](#@Test-oriented_architecture_8)
--  [Resource `BFCC`](#0xc0deb00c_Registry_BFCC)
 -  [Struct `E0`](#0xc0deb00c_Registry_E0)
 -  [Struct `E1`](#0xc0deb00c_Registry_E1)
 -  [Struct `E2`](#0xc0deb00c_Registry_E2)
@@ -266,10 +235,9 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 -  [Struct `E19`](#0xc0deb00c_Registry_E19)
 -  [Struct `MI`](#0xc0deb00c_Registry_MI)
 -  [Resource `MR`](#0xc0deb00c_Registry_MR)
--  [Constants](#@Constants_9)
+-  [Constants](#@Constants_8)
 -  [Function `is_registered`](#0xc0deb00c_Registry_is_registered)
 -  [Function `scale_factor`](#0xc0deb00c_Registry_scale_factor)
--  [Function `init_b_f_c_c`](#0xc0deb00c_Registry_init_b_f_c_c)
 -  [Function `init_registry`](#0xc0deb00c_Registry_init_registry)
 -  [Function `register_market`](#0xc0deb00c_Registry_register_market)
 -  [Function `verify_address`](#0xc0deb00c_Registry_verify_address)
@@ -283,37 +251,10 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 <b>use</b> <a href="../../../build/AptosFramework/docs/Table.md#0x1_Table">0x1::Table</a>;
 <b>use</b> <a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo">0x1::TypeInfo</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
+<b>use</b> <a href="Caps.md#0xc0deb00c_Caps">0xc0deb00c::Caps</a>;
 </code></pre>
 
 
-
-<a name="0xc0deb00c_Registry_BFCC"></a>
-
-## Resource `BFCC`
-
-Book friend capability container
-
-
-<pre><code><b>struct</b> <a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a> <b>has</b> key
-</code></pre>
-
-
-
-<details>
-<summary>Fields</summary>
-
-
-<dl>
-<dt>
-<code>b_f_c: <a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a></code>
-</dt>
-<dd>
-
-</dd>
-</dl>
-
-
-</details>
 
 <a name="0xc0deb00c_Registry_E0"></a>
 
@@ -923,7 +864,7 @@ Market registry
 
 </details>
 
-<a name="@Constants_9"></a>
+<a name="@Constants_8"></a>
 
 ## Constants
 
@@ -938,12 +879,12 @@ When account/address is not Econia
 
 
 
-<a name="0xc0deb00c_Registry_E_HAS_BFCC"></a>
+<a name="0xc0deb00c_Registry_E_NO_FC"></a>
 
-When book friend capability container already published
+When Econia does not have friend-like capabilities initialized
 
 
-<pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_E_HAS_BFCC">E_HAS_BFCC</a>: u64 = 6;
+<pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_E_NO_FC">E_NO_FC</a>: u64 = 6;
 </code></pre>
 
 
@@ -954,16 +895,6 @@ When a type does not correspond to a coin
 
 
 <pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_E_NOT_COIN">E_NOT_COIN</a>: u64 = 5;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Registry_E_NO_BFCC"></a>
-
-When book friend capability container not published
-
-
-<pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_E_NO_BFCC">E_NO_BFCC</a>: u64 = 7;
 </code></pre>
 
 
@@ -1283,38 +1214,6 @@ u64 {
 
 </details>
 
-<a name="0xc0deb00c_Registry_init_b_f_c_c"></a>
-
-## Function `init_b_f_c_c`
-
-Publish <code><a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a></code> to Econia acount, aborting for all other accounts
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_b_f_c_c">init_b_f_c_c</a>(account: &signer)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_b_f_c_c">init_b_f_c_c</a>(
-    account: &signer
-) {
-    // Assert account is Econia
-    <b>assert</b>!(s_a_o(account) == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Assert capability container not already initialized
-    <b>assert</b>!(!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a>&gt;(@Econia), <a href="Registry.md#0xc0deb00c_Registry_E_HAS_BFCC">E_HAS_BFCC</a>);
-    // Move book <b>friend</b> capability container <b>to</b> account
-    <b>move_to</b>(account, <a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a>{b_f_c: b_g_f_c(account)});
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_Registry_init_registry"></a>
 
 ## Function `init_registry`
@@ -1365,7 +1264,7 @@ initialized or if market already registered
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_register_market">register_market</a>&lt;B, Q, E&gt;(
     host: &signer
-) <b>acquires</b> <a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a>, <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a> {
+) <b>acquires</b> <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a> {
     <a href="Registry.md#0xc0deb00c_Registry_verify_market_types">verify_market_types</a>&lt;B, Q, E&gt;(); // Verify valid type arguments
     // Assert market registry is initialized at Econia account
     <b>assert</b>!(<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia), <a href="Registry.md#0xc0deb00c_Registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
@@ -1375,12 +1274,10 @@ initialized or if market already registered
     <b>let</b> r_t = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia).t;
     // Assert requested market not already registered
     <b>assert</b>!(!t_c(r_t, m_i), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTERED">E_REGISTERED</a>);
-    // Assert Econia account <b>has</b> book <b>friend</b> capability
-    <b>assert</b>!(<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a>&gt;(@Econia), <a href="Registry.md#0xc0deb00c_Registry_E_NO_BFCC">E_NO_BFCC</a>);
-    // Borrow immutable reference <b>to</b> book <b>friend</b> capability
-    <b>let</b> b_f_c = &<b>borrow_global</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_BFCC">BFCC</a>&gt;(@Econia).b_f_c;
+    // Assert Econia <b>has</b> <b>friend</b> capabilities initialized
+    <b>assert</b>!(c_h_f_c(), <a href="Registry.md#0xc0deb00c_Registry_E_NO_FC">E_NO_FC</a>);
     // Initialize empty order book under host account
-    b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), b_f_c);
+    b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), c_b_f_c());
     t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
 }
 </code></pre>

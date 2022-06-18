@@ -27,8 +27,8 @@ module Econia::Book {
 
     /// Friend-like capability, administered instead of declaring as a
     /// friend a module containing Aptos native functions, which would
-    /// inhibit coverage testing via the Move CLI
-    struct FriendCap has store {}
+    /// inhibit coverage testing via the Move CLI. See `Econia::Caps`
+    struct FriendCap has copy, drop, store {}
 
     /// Order book with base coin type `B`, quote coin type `Q`, and
     /// scale exponent type `E`
@@ -101,7 +101,7 @@ module Econia::Book {
     public fun init_book<B, Q, E>(
         host: &signer,
         f: u64,
-        _c: &FriendCap
+        _c: FriendCap
     ) {
         // Assert book does not already exist under host account
         assert!(!exists_book<B, Q, E>(s_a_o(host)), E_BOOK_EXISTS);
@@ -130,8 +130,8 @@ module Econia::Book {
     fun get_friend_cap_failure(
         account: &signer
     ) {
-        // Attempt invalid getter invocation, unpacking result
-        let FriendCap{} = get_friend_cap(account);
+        // Attempt invalid getter invocation
+        get_friend_cap(account);
     }
 
     #[test(econia = @Econia)]
@@ -149,12 +149,10 @@ module Econia::Book {
     fun init_book_failure_exists(
         host: &signer,
     ) {
-        let f_c = FriendCap{}; // Initialize friend capability
         // Initialize book with scale factor 1
-        init_book<BT, QT, ET>(host, 1, &f_c);
+        init_book<BT, QT, ET>(host, 1, FriendCap{});
         // Attempt invalid re-initialization
-        init_book<BT, QT, ET>(host, 1, &f_c);
-        let FriendCap{} = f_c; // Unpack capability
+        init_book<BT, QT, ET>(host, 1, FriendCap{});
     }
 
     #[test(host = @TestUser)]
@@ -162,10 +160,8 @@ module Econia::Book {
     fun init_book_success(
         host: &signer,
     ) acquires OB {
-        let f_c = FriendCap{}; // Initialize friend capability
         // Initialize book with scale factor 1
-        init_book<BT, QT, ET>(host, 1, &f_c);
-        let FriendCap{} = f_c; // Unpack capability
+        init_book<BT, QT, ET>(host, 1, FriendCap{});
         let host_addr = s_a_o(host); // Get host address
         // Assert book exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(host_addr) == 1, 0);

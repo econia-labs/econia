@@ -268,10 +268,10 @@ purely in Move and to be coverage tested using the <code><b>move</b></code> CLI.
 -  [Resource `MR`](#0xc0deb00c_Registry_MR)
 -  [Constants](#@Constants_9)
 -  [Function `is_registered`](#0xc0deb00c_Registry_is_registered)
+-  [Function `scale_factor`](#0xc0deb00c_Registry_scale_factor)
 -  [Function `init_b_i_c_c`](#0xc0deb00c_Registry_init_b_i_c_c)
 -  [Function `init_registry`](#0xc0deb00c_Registry_init_registry)
 -  [Function `register_market`](#0xc0deb00c_Registry_register_market)
--  [Function `scale_factor`](#0xc0deb00c_Registry_scale_factor)
 -  [Function `verify_address`](#0xc0deb00c_Registry_verify_address)
 -  [Function `verify_bytestring`](#0xc0deb00c_Registry_verify_bytestring)
 -  [Function `verify_market_types`](#0xc0deb00c_Registry_verify_market_types)
@@ -1230,6 +1230,59 @@ Return <code><b>true</b></code> if given market is registered
 
 </details>
 
+<a name="0xc0deb00c_Registry_scale_factor"></a>
+
+## Function `scale_factor`
+
+Return scale factor corresponding to scale exponent type <code>E</code>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;():
+u64 {
+    <b>let</b> t_i = ti_t_o&lt;E&gt;(); // Get type info of exponent type flag
+    // Verify exponent type flag is from Econia <b>address</b>
+    <a href="Registry.md#0xc0deb00c_Registry_verify_address">verify_address</a>(ti_a_a(&t_i), @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Verify exponent type flag is from this <b>module</b>
+    <a href="Registry.md#0xc0deb00c_Registry_verify_bytestring">verify_bytestring</a>(ti_m_n(&t_i), <a href="Registry.md#0xc0deb00c_Registry_M_NAME">M_NAME</a>, <a href="Registry.md#0xc0deb00c_Registry_E_WRONG_MODULE">E_WRONG_MODULE</a>);
+    <b>let</b> s_n = ti_s_n(&t_i); // Get type <b>struct</b> name
+    // Return corresponding scale factor
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E0">E0</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F0">F0</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E1">E1</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F1">F1</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E2">E2</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F2">F2</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E3">E3</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F3">F3</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E4">E4</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F4">F4</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E5">E5</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F5">F5</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E6">E6</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F6">F6</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E7">E7</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F7">F7</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E8">E8</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F8">F8</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E9">E9</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F9">F9</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E10">E10</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F10">F10</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E11">E11</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F11">F11</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E12">E12</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F12">F12</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E13">E13</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F13">F13</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E14">E14</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F14">F14</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E15">E15</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F15">F15</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E16">E16</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F16">F16</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E17">E17</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F17">F17</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E18">E18</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F18">F18</a>;
+    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E19">E19</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F19">F19</a>;
+    <b>abort</b> <a href="Registry.md#0xc0deb00c_Registry_E_WRONG_EXPONENT_T">E_WRONG_EXPONENT_T</a> // Else <b>abort</b>
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_Registry_init_b_i_c_c"></a>
 
 ## Function `init_b_i_c_c`
@@ -1329,59 +1382,6 @@ initialized or if market already registered
     // Initialize empty order book under host account
     b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), b_i_c);
     t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_Registry_scale_factor"></a>
-
-## Function `scale_factor`
-
-Return scale factor corresponding to scale exponent type <code>E</code>
-
-
-<pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;():
-u64 {
-    <b>let</b> t_i = ti_t_o&lt;E&gt;(); // Get type info of exponent type flag
-    // Verify exponent type flag is from Econia <b>address</b>
-    <a href="Registry.md#0xc0deb00c_Registry_verify_address">verify_address</a>(ti_a_a(&t_i), @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Verify exponent type flag is from this <b>module</b>
-    <a href="Registry.md#0xc0deb00c_Registry_verify_bytestring">verify_bytestring</a>(ti_m_n(&t_i), <a href="Registry.md#0xc0deb00c_Registry_M_NAME">M_NAME</a>, <a href="Registry.md#0xc0deb00c_Registry_E_WRONG_MODULE">E_WRONG_MODULE</a>);
-    <b>let</b> s_n = ti_s_n(&t_i); // Get type <b>struct</b> name
-    // Return corresponding scale factor
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E0">E0</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F0">F0</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E1">E1</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F1">F1</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E2">E2</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F2">F2</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E3">E3</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F3">F3</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E4">E4</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F4">F4</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E5">E5</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F5">F5</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E6">E6</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F6">F6</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E7">E7</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F7">F7</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E8">E8</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F8">F8</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E9">E9</a>&gt;() )) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F9">F9</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E10">E10</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F10">F10</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E11">E11</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F11">F11</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E12">E12</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F12">F12</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E13">E13</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F13">F13</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E14">E14</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F14">F14</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E15">E15</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F15">F15</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E16">E16</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F16">F16</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E17">E17</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F17">F17</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E18">E18</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F18">F18</a>;
-    <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E19">E19</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F19">F19</a>;
-    <b>abort</b> <a href="Registry.md#0xc0deb00c_Registry_E_WRONG_EXPONENT_T">E_WRONG_EXPONENT_T</a> // Else <b>abort</b>
 }
 </code></pre>
 

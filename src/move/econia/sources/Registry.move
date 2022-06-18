@@ -432,6 +432,39 @@ module Econia::Registry {
         t_c(&borrow_global<MR>(@Econia).t, m_i)
     }
 
+    /// Return scale factor corresponding to scale exponent type `E`
+    public(friend) fun scale_factor<E>():
+    u64 {
+        let t_i = ti_t_o<E>(); // Get type info of exponent type flag
+        // Verify exponent type flag is from Econia address
+        verify_address(ti_a_a(&t_i), @Econia, E_NOT_ECONIA);
+        // Verify exponent type flag is from this module
+        verify_bytestring(ti_m_n(&t_i), M_NAME, E_WRONG_MODULE);
+        let s_n = ti_s_n(&t_i); // Get type struct name
+        // Return corresponding scale factor
+        if (s_n == ti_s_n(&ti_t_o<E0>() )) return F0;
+        if (s_n == ti_s_n(&ti_t_o<E1>() )) return F1;
+        if (s_n == ti_s_n(&ti_t_o<E2>() )) return F2;
+        if (s_n == ti_s_n(&ti_t_o<E3>() )) return F3;
+        if (s_n == ti_s_n(&ti_t_o<E4>() )) return F4;
+        if (s_n == ti_s_n(&ti_t_o<E5>() )) return F5;
+        if (s_n == ti_s_n(&ti_t_o<E6>() )) return F6;
+        if (s_n == ti_s_n(&ti_t_o<E7>() )) return F7;
+        if (s_n == ti_s_n(&ti_t_o<E8>() )) return F8;
+        if (s_n == ti_s_n(&ti_t_o<E9>() )) return F9;
+        if (s_n == ti_s_n(&ti_t_o<E10>())) return F10;
+        if (s_n == ti_s_n(&ti_t_o<E11>())) return F11;
+        if (s_n == ti_s_n(&ti_t_o<E12>())) return F12;
+        if (s_n == ti_s_n(&ti_t_o<E13>())) return F13;
+        if (s_n == ti_s_n(&ti_t_o<E14>())) return F14;
+        if (s_n == ti_s_n(&ti_t_o<E15>())) return F15;
+        if (s_n == ti_s_n(&ti_t_o<E16>())) return F16;
+        if (s_n == ti_s_n(&ti_t_o<E17>())) return F17;
+        if (s_n == ti_s_n(&ti_t_o<E18>())) return F18;
+        if (s_n == ti_s_n(&ti_t_o<E19>())) return F19;
+        abort E_WRONG_EXPONENT_T // Else abort
+    }
+
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -485,39 +518,6 @@ module Econia::Registry {
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Return scale factor corresponding to scale exponent type `E`
-    fun scale_factor<E>():
-    u64 {
-        let t_i = ti_t_o<E>(); // Get type info of exponent type flag
-        // Verify exponent type flag is from Econia address
-        verify_address(ti_a_a(&t_i), @Econia, E_NOT_ECONIA);
-        // Verify exponent type flag is from this module
-        verify_bytestring(ti_m_n(&t_i), M_NAME, E_WRONG_MODULE);
-        let s_n = ti_s_n(&t_i); // Get type struct name
-        // Return corresponding scale factor
-        if (s_n == ti_s_n(&ti_t_o<E0>() )) return F0;
-        if (s_n == ti_s_n(&ti_t_o<E1>() )) return F1;
-        if (s_n == ti_s_n(&ti_t_o<E2>() )) return F2;
-        if (s_n == ti_s_n(&ti_t_o<E3>() )) return F3;
-        if (s_n == ti_s_n(&ti_t_o<E4>() )) return F4;
-        if (s_n == ti_s_n(&ti_t_o<E5>() )) return F5;
-        if (s_n == ti_s_n(&ti_t_o<E6>() )) return F6;
-        if (s_n == ti_s_n(&ti_t_o<E7>() )) return F7;
-        if (s_n == ti_s_n(&ti_t_o<E8>() )) return F8;
-        if (s_n == ti_s_n(&ti_t_o<E9>() )) return F9;
-        if (s_n == ti_s_n(&ti_t_o<E10>())) return F10;
-        if (s_n == ti_s_n(&ti_t_o<E11>())) return F11;
-        if (s_n == ti_s_n(&ti_t_o<E12>())) return F12;
-        if (s_n == ti_s_n(&ti_t_o<E13>())) return F13;
-        if (s_n == ti_s_n(&ti_t_o<E14>())) return F14;
-        if (s_n == ti_s_n(&ti_t_o<E15>())) return F15;
-        if (s_n == ti_s_n(&ti_t_o<E16>())) return F16;
-        if (s_n == ti_s_n(&ti_t_o<E17>())) return F17;
-        if (s_n == ti_s_n(&ti_t_o<E18>())) return F18;
-        if (s_n == ti_s_n(&ti_t_o<E19>())) return F19;
-        abort E_WRONG_EXPONENT_T // Else abort
-    }
 
     /// Assert `a1` equals `a2`, aborting with code `e` if not
     fun verify_address(

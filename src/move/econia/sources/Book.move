@@ -61,12 +61,12 @@ module Econia::Book {
     struct BT{}
 
     #[test_only]
-    /// Quote coin type
-    struct QT{}
-
-    #[test_only]
     /// Scale exponent type
     struct ET{}
+
+    #[test_only]
+    /// Quote coin type
+    struct QT{}
 
     // Test-only structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

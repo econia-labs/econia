@@ -159,7 +159,7 @@ module Econia::Orders {
         let user_addr = s_a_o(user); // Get user address
         // Assert open orders exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(user_addr) == 1, 0);
-        // Borrow mutable reference to open orders
+        // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(user_addr);
         // Assert bid and ask trees init empty
         assert!(cb_i_e(&o_o.a) && cb_i_e(&o_o.b), 2);

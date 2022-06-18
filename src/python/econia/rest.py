@@ -29,16 +29,17 @@ from econia.defs import (
     rest_response_fields,
     rest_urls,
     seps,
+    test_coins,
     tx_defaults,
     tx_fields,
     tx_sig_fields,
     tx_timeout_granularity
 )
 
-APT = ems.Coin.members.APT
+APT = test_coins.APT.name
 """str: APT coin symbol"""
 
-USD = ems.Coin.members.USD
+USD = test_coins.USD.name
 """str: USD coin symbol"""
 
 Buy = ebms.side[True]

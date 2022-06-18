@@ -367,10 +367,11 @@ def get_bytecode_files(
         os.path.abspath(econia_root),
         ps.move_package_root,
         ps.bytecode_dir
-    )
-    bcs = {}
-    for path in Path(abs_path).iterdir():
-        bcs[path.stem] = path.read_bytes().hex()
+    ) # Get bytecode directory path
+    bcs = {} # Init dict of bytecode files
+    for path in Path(abs_path).iterdir(): # Loop over sub-paths
+        if path.is_file(): # If sub-path is a file
+            bcs[path.stem] = path.read_bytes().hex() # Add to dict
     return bcs
 
 def print_bc_diagnostics(

@@ -46,8 +46,20 @@ econia_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 econia_modules = SimpleNamespace(
+    Book = SimpleNamespace(
+        name = 'Book'
+    ),
     CritBit = SimpleNamespace(
         name = 'CritBit'
+    ),
+    Registry = SimpleNamespace(
+        name = 'Registry'
+    ),
+    Orders = SimpleNamespace(
+        name = 'Orders'
+    ),
+    User = SimpleNamespace(
+        name = 'User'
     ),
 )
 """Econia Move modules with nested member specifiers"""
@@ -55,6 +67,18 @@ econia_modules = SimpleNamespace(
 econia_module_publish_order = [
     [
         econia_modules.CritBit.name,
+    ],
+    [
+        econia_modules.Book.name,
+    ],
+    [
+        econia_modules.Orders.name,
+    ],
+    [
+        econia_modules.User.name,
+    ],
+    [
+        econia_modules.Registry.name,
     ],
 ]
 """
@@ -226,6 +250,16 @@ seps = SimpleNamespace(
 
 single_sig_id = b'\x00'
 """1-byte signature scheme identifier, indicating single signature"""
+
+test_coins = SimpleNamespace(
+    APT = SimpleNamespace(
+        name = 'APT'
+    ),
+    USD = SimpleNamespace(
+        name = 'USD'
+    ),
+)
+"""Test coins"""
 
 toml_section_names = SimpleNamespace(
     addresses = 'addresses'

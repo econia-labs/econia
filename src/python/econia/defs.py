@@ -75,17 +75,17 @@ econia_module_publish_order = [
         econia_modules.Orders.name,
     ],
     [
-        econia_modules.User.name,
-    ],
-    [
         econia_modules.Registry.name,
+        econia_modules.User.name,
     ],
 ]
 """
 Order to publish Move modules bytecode in, with sublists indicating
 batched modules that should be loaded together. Individual modules
-should be defined as the sole element in a list. If order within
-sub-batches is changed, loading may break, for instance among friends
+should be defined as the sole element in a list if they are to be loaded
+alone. If order within sub-batches is changed loading may break, for
+instance among friends, where the module declaring a friend should be
+listed before the declared friend.
 """
 
 econia_paths = SimpleNamespace(

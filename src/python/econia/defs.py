@@ -52,21 +52,27 @@ econia_modules = SimpleNamespace(
     CritBit = SimpleNamespace(
         name = 'CritBit'
     ),
-    Registry = SimpleNamespace(
-        name = 'Registry'
+    ID = SimpleNamespace(
+        name = 'ID'
     ),
     Orders = SimpleNamespace(
         name = 'Orders'
     ),
+    Registry = SimpleNamespace(
+        name = 'Registry'
+    ),
     User = SimpleNamespace(
         name = 'User'
-    ),
+    )
 )
 """Econia Move modules with nested member specifiers"""
 
 econia_module_publish_order = [
     [
         econia_modules.CritBit.name,
+    ],
+    [
+        econia_modules.ID.name,
     ],
     [
         econia_modules.Book.name,

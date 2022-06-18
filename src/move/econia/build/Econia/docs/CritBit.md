@@ -701,6 +701,16 @@ Outer node with key <code>k</code> and value <code>v</code>
 ## Constants
 
 
+<a name="0xc0deb00c_CritBit_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="CritBit.md#0xc0deb00c_CritBit_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_CritBit_E_BIT_NOT_0_OR_1"></a>
 
 When a char in a bytestring is neither 0 nor 1
@@ -787,16 +797,6 @@ When attempting to pop from empty tree
 
 
 <pre><code><b>const</b> <a href="CritBit.md#0xc0deb00c_CritBit_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_CritBit_HI_64"></a>
-
-<code>u64</code> bitmask with all bits set
-
-
-<pre><code><b>const</b> <a href="CritBit.md#0xc0deb00c_CritBit_HI_64">HI_64</a>: u64 = 18446744073709551615;
 </code></pre>
 
 

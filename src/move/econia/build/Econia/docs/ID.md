@@ -115,6 +115,164 @@ order from version number <code>63</code> will be filled second.
 -  [Motivations](#@Motivations_3)
     -  [Market buy example](#@Market_buy_example_4)
     -  [Market sell example](#@Market_sell_example_5)
+-  [Constants](#@Constants_6)
+-  [Function `id_a`](#0xc0deb00c_ID_id_a)
+-  [Function `id_b`](#0xc0deb00c_ID_id_b)
+-  [Function `price`](#0xc0deb00c_ID_price)
+-  [Function `v_n_a`](#0xc0deb00c_ID_v_n_a)
+-  [Function `v_n_b`](#0xc0deb00c_ID_v_n_b)
 
 
 <pre><code></code></pre>
+
+
+
+<a name="@Constants_6"></a>
+
+## Constants
+
+
+<a name="0xc0deb00c_ID_FIRST_64"></a>
+
+Positions to bitshift for operating on first 64 bits
+
+
+<pre><code><b>const</b> <a href="ID.md#0xc0deb00c_ID_FIRST_64">FIRST_64</a>: u8 = 64;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_ID_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="ID.md#0xc0deb00c_ID_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_ID_id_a"></a>
+
+## Function `id_a`
+
+Return order ID for ask with price <code>p</code> and version number <code>v</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_id_a">id_a</a>(p: u64, v: u64): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_id_a">id_a</a>(
+    p: u64,
+    v: u64
+): u128 {
+    (p <b>as</b> u128) &lt;&lt; <a href="ID.md#0xc0deb00c_ID_FIRST_64">FIRST_64</a> | (v <b>as</b> u128)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_ID_id_b"></a>
+
+## Function `id_b`
+
+Return order ID for bid with price <code>p</code> and version number <code>v</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_id_b">id_b</a>(p: u64, v: u64): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_id_b">id_b</a>(
+    p: u64,
+    v: u64
+): u128 {
+    (p <b>as</b> u128) &lt;&lt; <a href="ID.md#0xc0deb00c_ID_FIRST_64">FIRST_64</a> | (v ^ <a href="ID.md#0xc0deb00c_ID_HI_64">HI_64</a> <b>as</b> u128)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_ID_price"></a>
+
+## Function `price`
+
+Return scaled integer price of an order ID, ask or bid
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_price">price</a>(id: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_price">price</a>(id: u128): u64 {(id &gt;&gt; <a href="ID.md#0xc0deb00c_ID_FIRST_64">FIRST_64</a> <b>as</b> u64)}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_ID_v_n_a"></a>
+
+## Function `v_n_a`
+
+Return version number of order ID corresponding to an ask
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_v_n_a">v_n_a</a>(id: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_v_n_a">v_n_a</a>(id: u128): u64 {(id & (<a href="ID.md#0xc0deb00c_ID_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64)}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_ID_v_n_b"></a>
+
+## Function `v_n_b`
+
+Return version number of order ID corresponding to a bid
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_v_n_b">v_n_b</a>(id: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="ID.md#0xc0deb00c_ID_v_n_b">v_n_b</a>(id: u128): u64 {(id & (<a href="ID.md#0xc0deb00c_ID_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64) ^ <a href="ID.md#0xc0deb00c_ID_HI_64">HI_64</a>}
+</code></pre>
+
+
+
+</details>

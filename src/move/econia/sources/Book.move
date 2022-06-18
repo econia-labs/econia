@@ -1,4 +1,4 @@
-/// Pure-Move implementation of order book functionality
+/// Pure-Move implementation of market-side order book functionality
 module Econia::Book {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -37,9 +37,9 @@ module Econia::Book {
         a: CB<P>,
         /// Bids
         b: CB<P>,
-        /// Order id of minimum ask
+        /// Order ID (see `Econia::ID`) of minimum ask
         m_a: u128,
-        /// Order id of maximum bid
+        /// Order ID (see `Econia::ID`) of maximum bid
         m_b: u128
     }
 

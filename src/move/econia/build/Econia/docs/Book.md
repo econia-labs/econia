@@ -3,7 +3,7 @@
 
 # Module `0xc0deb00c::Book`
 
-Pure-Move implementation of order book functionality
+Pure-Move implementation of market-side order book functionality
 
 
 -  [Struct `BookInitCap`](#0xc0deb00c_Book_BookInitCap)
@@ -90,13 +90,13 @@ scale exponent type <code>E</code>
 <code>m_a: u128</code>
 </dt>
 <dd>
- Order id of minimum ask
+ Order ID (see <code>Econia::ID</code>) of minimum ask
 </dd>
 <dt>
 <code>m_b: u128</code>
 </dt>
 <dd>
- Order id of maximum bid
+ Order ID (see <code>Econia::ID</code>) of maximum bid
 </dd>
 </dl>
 

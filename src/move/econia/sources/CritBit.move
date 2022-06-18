@@ -1723,7 +1723,7 @@ module Econia::CritBit {
     /// Return a `u128` corresponding to the provided byte string. The
     /// byte should only contain only "0"s and "1"s, up to 128
     /// characters max (e.g. `b"100101...10101010"`)
-    fun u(
+    public fun u(
         s: vector<u8>
     ): u128 {
         let n = v_l<u8>(&s); // Get number of bits
@@ -1744,7 +1744,7 @@ module Econia::CritBit {
     #[test_only]
     /// Return `u128` corresponding to concatenated result of `a`, `b`,
     /// and `c`. Useful for line-wrapping long byte strings
-    fun u_long(
+    public fun u_long(
         a: vector<u8>,
         b: vector<u8>,
         c: vector<u8>

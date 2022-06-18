@@ -165,6 +165,14 @@
 /// $= 10^{19} =$ `10000000000000000000`, the largest power of ten that
 /// can be represented in a `u64`
 ///
+/// ## Book module
+///
+/// The core order book data structure, `Econia::Book::OB`, is
+/// implemented purely in Move, to facilitate coverage testing per the
+/// `move` CLI, which would not be possible (at least as of the time of
+/// this writing) if it were implemented in a module with Aptos native
+/// functions. See `Econia::Caps` for further discussion.
+///
 /// ---
 ///
 module Econia::Registry {

@@ -3,9 +3,7 @@
 
 # Module `0xc0deb00c::User`
 
-User-side functionality. Like <code>Econia::Registry</code>, relies on
-<code>AptosFramework</code> functions and an associated pure-Move
-module (<code>Econia::Orders</code>) for coverage testing.
+User-facing trading functionality
 
 
 -  [Resource `OC`](#0xc0deb00c_User_OC)

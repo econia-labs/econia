@@ -1,6 +1,4 @@
-/// User-side functionality. Like `Econia::Registry`, relies on
-/// `AptosFramework` functions and an associated pure-Move
-/// module (`Econia::Orders`) for coverage testing.
+/// User-facing trading functionality
 module Econia::User {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -102,12 +100,6 @@ module Econia::User {
         // Initialize empty open orders container under user account
         o_i_o<B, Q, E>(user, r_s_f<E>(), c_o_f_c());
     }
-
-    /*
-
-   Add test for not have friend capabilities initialized
-
-    */
 
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

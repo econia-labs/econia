@@ -46,6 +46,10 @@ elif test $1 = b; then
 elif test $1 = tc; then
     move package test --coverage -f $2
 
+# Run aptos CLI test on all modules
+elif test $1 = ta; then
+    aptos move test
+
 # Run aptos CLI test with filter and passed argument
 elif test $1 = tf; then
     aptos move test --filter $2

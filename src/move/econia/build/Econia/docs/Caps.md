@@ -9,40 +9,63 @@
 ## Test-oriented architecture
 
 
-Some modules, like <code>Econia::Registry</code> rely heavily on Move native
+Some modules, like <code>Econia::Registry</code>, rely heavily on Move native
 functions defined in the <code>AptosFramework</code>, for which the <code><b>move</b></code>
-CLI's coverage testing tool does not offer general support. Thus,
-since the <code>aptos</code> CLI does not offer any coverage testing support
-whatsoever, at least as of the time of this writing, such modules
-cannot be coverage tested per straightforward methods. Other
-modules, however, do not depend as strongly on <code>AptosFramework</code>
-functions, and as such, whenever possible, they are implemented
-purely in Move to enable coverage testing, for example, like
-<code>Econia::CritBit</code>.
+CLI's coverage testing tool does not offer general support (at
+least as of the time of this writing). Thus, since the <code>aptos</code> CLI
+does not offer any coverage testing support whatsoever (again, at
+least as of the time of this writing), such modules cannot be
+coverage tested per straightforward methods. Other modules, however,
+do not depend as strongly on <code>AptosFramework</code> functions, and as
+such, whenever possible, they are implemented purely in Move to
+enable coverage testing, for example, like <code>Econia::CritBit</code>.
 
 The pairing of pure-Move and non-pure-Move modules occasionally
-requires workarounds, for instance, like the capability <code>BFC</code>, a
-cumbersome alternative to the use of a <code><b>public</b>(<b>friend</b>)</code> function: a
-more straightforward approach would involve only exposing
-<code>Econia::Book::init_book</code>, to friend modules, for example, but this
-would involve the declaration of <code>Econia::Registry</code> module as a
-friend, and since <code>Econia::Registry</code> relies on <code>AptosFramework</code>
-native functions, the <code><b>move</b></code> CLI test compiler would thus break when
-attempting to link the corresponding files, even when only
-attempting to run coverage tests on <code>Econia::Book</code>. Hence, the use
-of <code>BFC</code>, a friend-like capability, which allows <code>Econia::Book</code> to
-be implemented purely in Move and to be coverage tested using the
+requires workarounds, for instance, like the pseudo-friend
+capability <code>Econia::Book::FriendCap</code>, a cumbersome alternative to the
+use of a <code><b>public</b>(<b>friend</b>)</code> function: a more straightforward approach
+would involve only exposing <code>Econia::Book::init_book</code>, for example,
+to friend modules, but this would involve the declaration of
+<code>Econia::Registry</code> module as a friend, and since <code>Econia::Registry</code>
+relies on <code>AptosFramework</code> native functions, the <code><b>move</b></code> CLI test
+compiler would thus break when attempting to link the corresponding
+files, even when only attempting to run coverage tests on
+<code>Econia::Book</code>. Hence, the use of <code>Econia::Book:FriendCap</code>, a
+friend-like capability, which allows <code>Econia::Book</code> to be
+implemented purely in Move and to be coverage tested using the
 <code><b>move</b></code> CLI, while also restricting access to friend-like modules.
+
+
+<a name="@Capability_aggregation_1"></a>
+
+## Capability aggregation
+
+
+Rather than having friend-like capabilities managed by individual
+modules, they are aggregated here for ease of use, and are
+initialized all at once per <code><a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>()</code>. As a <code><b>public</b>(<b>friend</b>)</code>
+function, this is only intended to be called by
+<code>Econia::Registry::init_registry()</code>, which essentially configures
+the Econia account, upon inception, to facilitate trading.
+
+Similarly, capability access functions like <code><a href="Caps.md#0xc0deb00c_Caps_book_f_c">book_f_c</a>()</code> are also
+provided as <code><b>public</b>(<b>friend</b>)</code> functions, to be accessed only by
+select modules, namely those which contain Aptos native functions
+and which depend on pure-Move modules offering
+friend-like capabilities: <code>Econia::Registry</code>, for instance, is
+listed as a friend, since it requires access to
+<code>Econia::Book::FriendCap</code>.
 
 ---
 
 
 -  [Test-oriented architecture](#@Test-oriented_architecture_0)
+-  [Capability aggregation](#@Capability_aggregation_1)
 -  [Resource `FC`](#0xc0deb00c_Caps_FC)
--  [Constants](#@Constants_1)
--  [Function `init_caps`](#0xc0deb00c_Caps_init_caps)
+-  [Constants](#@Constants_2)
 -  [Function `book_f_c`](#0xc0deb00c_Caps_book_f_c)
 -  [Function `has_f_c`](#0xc0deb00c_Caps_has_f_c)
+-  [Function `init_caps`](#0xc0deb00c_Caps_init_caps)
 -  [Function `orders_f_c`](#0xc0deb00c_Caps_orders_f_c)
 
 
@@ -87,7 +110,7 @@ Container for friend-like capabilities
 
 </details>
 
-<a name="@Constants_1"></a>
+<a name="@Constants_2"></a>
 
 ## Constants
 
@@ -121,40 +144,6 @@ When no friend-like capabilities container
 </code></pre>
 
 
-
-<a name="0xc0deb00c_Caps_init_caps"></a>
-
-## Function `init_caps`
-
-Initialize friend-like capabilities, storing under Econia
-account, aborting if called by another account or if capability
-container already exists
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>(account: &signer)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>(
-    account: &signer
-) {
-    <b>let</b> addr = s_a_o(account); // Get signer <b>address</b>
-    <b>assert</b>!(addr == @Econia, <a href="Caps.md#0xc0deb00c_Caps_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
-    // Assert <b>friend</b>-like capabilities container does not yet exist
-    <b>assert</b>!(!<b>exists</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(addr), <a href="Caps.md#0xc0deb00c_Caps_E_FC_EXISTS">E_FC_EXISTS</a>);
-    // Move <b>friend</b>-like capabilities container <b>to</b> Econia account
-    <b>move_to</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(account, <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>{b: b_g_f_c(account), o: o_g_f_c(account)});
-}
-</code></pre>
-
-
-
-</details>
 
 <a name="0xc0deb00c_Caps_book_f_c"></a>
 
@@ -201,6 +190,40 @@ Return true if friend capability container initialized
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_has_f_c">has_f_c</a>(): bool {<b>exists</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(@Econia)}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Caps_init_caps"></a>
+
+## Function `init_caps`
+
+Initialize friend-like capabilities, storing under Econia
+account, aborting if called by another account or if capability
+container already exists
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>(account: &signer)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>(
+    account: &signer
+) {
+    <b>let</b> addr = s_a_o(account); // Get signer <b>address</b>
+    <b>assert</b>!(addr == @Econia, <a href="Caps.md#0xc0deb00c_Caps_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
+    // Assert <b>friend</b>-like capabilities container does not yet exist
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(addr), <a href="Caps.md#0xc0deb00c_Caps_E_FC_EXISTS">E_FC_EXISTS</a>);
+    // Move <b>friend</b>-like capabilities container <b>to</b> Econia account
+    <b>move_to</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(account, <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>{b: b_g_f_c(account), o: o_g_f_c(account)});
+}
 </code></pre>
 
 

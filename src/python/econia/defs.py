@@ -49,6 +49,9 @@ econia_modules = SimpleNamespace(
     Book = SimpleNamespace(
         name = 'Book'
     ),
+    Caps = SimpleNamespace(
+        name = 'Caps'
+    ),
     CritBit = SimpleNamespace(
         name = 'CritBit'
     ),
@@ -81,6 +84,7 @@ econia_module_publish_order = [
         econia_modules.Orders.name,
     ],
     [
+        econia_modules.Caps.name,
         econia_modules.Registry.name,
         econia_modules.User.name,
     ],

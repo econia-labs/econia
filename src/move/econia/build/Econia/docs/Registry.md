@@ -202,6 +202,18 @@ since the present implementation is financially-motivated, powers of
 $= 10^{19} =$ <code>10000000000000000000</code>, the largest power of ten that
 can be represented in a <code>u64</code>
 
+
+<a name="@Book_module_8"></a>
+
+### Book module
+
+
+The core order book data structure, <code>Econia::Book::OB</code>, is
+implemented purely in Move, to facilitate coverage testing per the
+<code><b>move</b></code> CLI, which would not be possible (at least as of the time of
+this writing) if it were implemented in a module with Aptos native
+functions. See <code>Econia::Caps</code> for further discussion.
+
 ---
 
 
@@ -213,6 +225,7 @@ can be represented in a <code>u64</code>
 -  [Data structures](#@Data_structures_5)
     -  [Market info](#@Market_info_6)
     -  [Scale exponents and factors](#@Scale_exponents_and_factors_7)
+    -  [Book module](#@Book_module_8)
 -  [Struct `E0`](#0xc0deb00c_Registry_E0)
 -  [Struct `E1`](#0xc0deb00c_Registry_E1)
 -  [Struct `E2`](#0xc0deb00c_Registry_E2)
@@ -235,7 +248,7 @@ can be represented in a <code>u64</code>
 -  [Struct `E19`](#0xc0deb00c_Registry_E19)
 -  [Struct `MI`](#0xc0deb00c_Registry_MI)
 -  [Resource `MR`](#0xc0deb00c_Registry_MR)
--  [Constants](#@Constants_8)
+-  [Constants](#@Constants_9)
 -  [Function `is_registered`](#0xc0deb00c_Registry_is_registered)
 -  [Function `scale_factor`](#0xc0deb00c_Registry_scale_factor)
 -  [Function `init_registry`](#0xc0deb00c_Registry_init_registry)
@@ -864,7 +877,7 @@ Market registry
 
 </details>
 
-<a name="@Constants_8"></a>
+<a name="@Constants_9"></a>
 
 ## Constants
 

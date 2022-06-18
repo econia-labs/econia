@@ -97,7 +97,8 @@ module Econia::Book {
         FriendCap{} // Return requested capability
     }
 
-    /// Initialize order book under host account, provided `FriendCap`
+    /// Initialize order book under host account, provided `FriendCap`,
+    /// with market types `B`, `Q`, `E`, and scale factor `f`
     public fun init_book<B, Q, E>(
         host: &signer,
         f: u64,

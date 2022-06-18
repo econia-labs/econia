@@ -879,16 +879,6 @@ When account/address is not Econia
 
 
 
-<a name="0xc0deb00c_Registry_E_NO_FC"></a>
-
-When Econia does not have friend-like capabilities initialized
-
-
-<pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_E_NO_FC">E_NO_FC</a>: u64 = 6;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_Registry_E_NOT_COIN"></a>
 
 When a type does not correspond to a coin
@@ -915,6 +905,16 @@ When a given market is already registered
 
 
 <pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_E_REGISTERED">E_REGISTERED</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Registry_E_REGISTRY_EXISTS"></a>
+
+When registry already exists
+
+
+<pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>: u64 = 6;
 </code></pre>
 
 
@@ -1218,7 +1218,8 @@ u64 {
 
 ## Function `init_registry`
 
-Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia acount, aborting for all other accounts
+Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia acount and initialize friend-like
+capabilities, aborting for all other accounts
 
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(account: &signer)
@@ -1233,10 +1234,13 @@ Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econ
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(
     account: &signer
 ) {
-    // Assert account is Econia
-    <b>assert</b>!(s_a_o(account) == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    <b>let</b> addr = s_a_o(account); // Get signer <b>address</b>
+    <b>assert</b>!(addr == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
+    // Assert registry does not already exist
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(addr), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
     // Move empty market registry <b>to</b> account
     <b>move_to</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(account, <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>{t: t_n&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>, <b>address</b>&gt;()});
+    c_i_c(account); // Initialize <b>friend</b>-like capabilities
 }
 </code></pre>
 
@@ -1274,8 +1278,6 @@ initialized or if market already registered
     <b>let</b> r_t = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia).t;
     // Assert requested market not already registered
     <b>assert</b>!(!t_c(r_t, m_i), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTERED">E_REGISTERED</a>);
-    // Assert Econia <b>has</b> <b>friend</b> capabilities initialized
-    <b>assert</b>!(c_h_f_c(), <a href="Registry.md#0xc0deb00c_Registry_E_NO_FC">E_NO_FC</a>);
     // Initialize empty order book under host account
     b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), c_b_f_c());
     t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship

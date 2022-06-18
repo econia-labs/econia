@@ -6,11 +6,11 @@
 Pure-Move implementation of user-side open orders functionality
 
 
--  [Struct `OrdersInitCap`](#0xc0deb00c_Orders_OrdersInitCap)
+-  [Struct `FriendCap`](#0xc0deb00c_Orders_FriendCap)
 -  [Resource `OO`](#0xc0deb00c_Orders_OO)
 -  [Constants](#@Constants_0)
 -  [Function `exists_orders`](#0xc0deb00c_Orders_exists_orders)
--  [Function `get_orders_init_cap`](#0xc0deb00c_Orders_get_orders_init_cap)
+-  [Function `get_friend_cap`](#0xc0deb00c_Orders_get_friend_cap)
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
 -  [Function `scale_factor`](#0xc0deb00c_Orders_scale_factor)
 
@@ -21,14 +21,16 @@ Pure-Move implementation of user-side open orders functionality
 
 
 
-<a name="0xc0deb00c_Orders_OrdersInitCap"></a>
+<a name="0xc0deb00c_Orders_FriendCap"></a>
 
-## Struct `OrdersInitCap`
+## Struct `FriendCap`
 
-Open orders initialization capability
+Friend-like capability, administered instead of declaring as a
+friend a module containing Aptos native functions, which would
+inhibit coverage testing via the Move CLI. See <code>Econia::Caps</code>
 
 
-<pre><code><b>struct</b> <a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap</a> <b>has</b> store
+<pre><code><b>struct</b> <a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
 
@@ -151,14 +153,14 @@ Return <code><b>true</b></code> if specified open orders type exists at address
 
 </details>
 
-<a name="0xc0deb00c_Orders_get_orders_init_cap"></a>
+<a name="0xc0deb00c_Orders_get_friend_cap"></a>
 
-## Function `get_orders_init_cap`
+## Function `get_friend_cap`
 
-Return a <code><a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap</a></code>, aborting if not called by Econia
+Return a <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>, aborting if not called by Econia
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_get_orders_init_cap">get_orders_init_cap</a>(account: &signer): <a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">Orders::OrdersInitCap</a>
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_get_friend_cap">get_friend_cap</a>(account: &signer): <a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>
 </code></pre>
 
 
@@ -167,12 +169,12 @@ Return a <code><a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_get_orders_init_cap">get_orders_init_cap</a>(
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_get_friend_cap">get_friend_cap</a>(
     account: &signer
-): <a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap</a> {
+): <a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a> {
     // Assert called by Econia
     <b>assert</b>!(s_a_o(account) == @Econia, <a href="Orders.md#0xc0deb00c_Orders_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    <a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap</a>{} // Return requested capability
+    <a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>{} // Return requested capability
 }
 </code></pre>
 
@@ -184,11 +186,11 @@ Return a <code><a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap
 
 ## Function `init_orders`
 
-Initialize open orders under host account, provided
-<code><a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap</a></code>
+Initialize open orders under host account, provided <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>,
+with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale factor <code>f</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(user: &signer, f: u64, _cap: &<a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">Orders::OrdersInitCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(user: &signer, f: u64, _c: <a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
 </code></pre>
 
 
@@ -200,7 +202,7 @@ Initialize open orders under host account, provided
 <pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(
     user: &signer,
     f: u64,
-    _cap: &<a href="Orders.md#0xc0deb00c_Orders_OrdersInitCap">OrdersInitCap</a>
+    _c: <a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
 ) {
     // Assert open orders does not already exist under user account
     <b>assert</b>!(!<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(s_a_o(user)), <a href="Orders.md#0xc0deb00c_Orders_E_ORDERS_EXISTS">E_ORDERS_EXISTS</a>);

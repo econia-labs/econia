@@ -36,6 +36,11 @@ module Econia::Caps {
         get_friend_cap as b_g_f_c
     };
 
+    use Econia::Orders::{
+        FriendCap as OFC,
+        get_friend_cap as o_g_f_c
+    };
+
     use Std::Signer::{
         address_of as s_a_o
     };
@@ -52,11 +57,16 @@ module Econia::Caps {
         QT
     };
 
+    #[test_only]
+    use Econia::Orders::{
+        init_orders as o_i_o,
+    };
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     friend Econia::Registry;
+    friend Econia::User;
 
     // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -65,7 +75,9 @@ module Econia::Caps {
     /// Container for friend-like capabilities
     struct FC has key {
         /// `Econia::Book` capability
-        b: BFC
+        b: BFC,
+        /// `Econia::Orders` capability
+        o: OFC
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -94,7 +106,7 @@ module Econia::Caps {
         // Assert friend-like capabilities container does not yet exist
         assert!(!exists<FC>(addr), E_FC_EXISTS);
         // Move friend-like capabilities container to Econia account
-        move_to<FC>(account, FC{b: b_g_f_c(account)});
+        move_to<FC>(account, FC{b: b_g_f_c(account), o: o_g_f_c(account)});
     }
 
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -105,15 +117,29 @@ module Econia::Caps {
     public(friend) fun book_f_c():
     BFC
     acquires FC {
-        borrow_global<FC>(@Econia).b
+        assert!(has_f_c(), E_NO_FC); // Assert capabilities initialized
+        borrow_global<FC>(@Econia).b // Return requested capability
     }
 
     /// Return true if friend capability container initialized
     public(friend) fun has_f_c(): bool {exists<FC>(@Econia)}
 
+    /// Return `Econia::Orders` friend-like capability
+    public(friend) fun orders_f_c():
+    OFC
+    acquires FC {
+        assert!(has_f_c(), E_NO_FC); // Assert capabilities initialized
+        borrow_global<FC>(@Econia).o // Return requested capability
+    }
+
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Assert failure for uninitialized capabilities
+    fun book_f_c_failure() acquires FC {book_f_c();}
 
     #[test(econia = @Econia)]
     /// Verify successful returns pre- and post-initialization
@@ -153,7 +179,14 @@ module Econia::Caps {
         init_caps(econia); // Initialize capabilities
         // Invoke function requiring book capability
         b_i_b<BT, QT, ET>(econia, 0, book_f_c());
+        // Invoke function requiring orders capability
+        o_i_o<BT, QT, ET>(econia, 0, orders_f_c());
     }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Assert failure for uninitialized capabilities
+    fun orders_f_c_failure() acquires FC {orders_f_c();}
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 }

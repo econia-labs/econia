@@ -196,7 +196,7 @@ module Econia::Registry {
 
     use Econia::Caps::{
         book_f_c as c_b_f_c,
-        has_f_c as c_h_f_c
+        init_caps as c_i_c
     };
 
     use Std::Signer::{
@@ -232,7 +232,7 @@ module Econia::Registry {
 
     #[test_only]
     use Econia::Caps::{
-        init_caps as c_i_c
+        has_f_c as c_h_f_c
     };
 
     #[test_only]
@@ -298,8 +298,8 @@ module Econia::Registry {
     const E_REGISTERED: u64 = 4;
     /// When a type does not correspond to a coin
     const E_NOT_COIN: u64 = 5;
-    /// When Econia does not have friend-like capabilities initialized
-    const E_NO_FC: u64 = 6;
+    /// When registry already exists
+    const E_REGISTRY_EXISTS: u64 = 6;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -445,14 +445,18 @@ module Econia::Registry {
 
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Publish `MR` to Econia acount, aborting for all other accounts
+    /// Publish `MR` to Econia acount and initialize friend-like
+    /// capabilities, aborting for all other accounts
     public(script) fun init_registry(
         account: &signer
     ) {
-        // Assert account is Econia
-        assert!(s_a_o(account) == @Econia, E_NOT_ECONIA);
+        let addr = s_a_o(account); // Get signer address
+        assert!(addr == @Econia, E_NOT_ECONIA); // Assert Econia signer
+        // Assert registry does not already exist
+        assert!(!exists<MR>(addr), E_REGISTRY_EXISTS);
         // Move empty market registry to account
         move_to<MR>(account, MR{t: t_n<MI, address>()});
+        c_i_c(account); // Initialize friend-like capabilities
     }
 
     /// Register a market for the given base coin type `B`, quote coin
@@ -470,8 +474,6 @@ module Econia::Registry {
         let r_t = &mut borrow_global_mut<MR>(@Econia).t;
         // Assert requested market not already registered
         assert!(!t_c(r_t, m_i), E_REGISTERED);
-        // Assert Econia has friend capabilities initialized
-        assert!(c_h_f_c(), E_NO_FC);
         // Initialize empty order book under host account
         b_i_b<B, Q, E>(host, scale_factor<E>(), c_b_f_c());
         t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
@@ -546,7 +548,6 @@ module Econia::Registry {
     ) acquires MR {
         init_registry(econia); // Initialize registry
         init_coin_types(econia); // Initialize test coin types
-        c_i_c(econia); // Initialize friend-like capabilities
         register_market<BCT, QCT, E0>(econia); // Register market
     }
 
@@ -554,10 +555,20 @@ module Econia::Registry {
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test(econia = @Econia)]
+    #[expected_failure(abort_code = 6)]
+    /// Verify registry publication fails for re-registration
+    public(script) fun init_registry_failure_exists(
+        econia: &signer
+    ) {
+        init_registry(econia); // Initialize
+        init_registry(econia); // Attempt invalid re-initialization
+    }
+
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 0)]
     /// Verify registry publication fails for non-Econia account
-    public(script) fun init_registry_failure(
+    public(script) fun init_registry_failure_not_econia(
         account: &signer
     ) {
         init_registry(account); // Attempt invalid initialization
@@ -571,6 +582,8 @@ module Econia::Registry {
         init_registry(econia); // Initialize registry
         // Assert exists at Econia account
         assert!(exists<MR>(s_a_o(econia)), 0);
+        // Assert friend-like capabilities initialized
+        assert!(c_h_f_c(), 1);
     }
 
     #[test]
@@ -616,22 +629,6 @@ module Econia::Registry {
         econia = @Econia,
         host = @TestUser
     )]
-    #[expected_failure(abort_code = 6)]
-    /// Verify failure for uninitialized friend-like capabilities
-    public(script) fun register_market_failure_no_fc(
-        econia: &signer,
-        host: &signer
-    ) acquires MR {
-        init_coin_types(econia); // Initialize coin types
-        init_registry(econia); // Initialize registry
-        // Attempt invalid registration
-        register_market<BCT, QCT, E0>(host);
-    }
-
-    #[test(
-        econia = @Econia,
-        host = @TestUser
-    )]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for uninitialized market registry
     public(script) fun register_market_failure_no_registry(
@@ -639,7 +636,6 @@ module Econia::Registry {
         host: &signer
     ) acquires MR {
         init_coin_types(econia); // Initialize coin types
-        c_i_c(econia); // Initialize friend-like capabilities
         // Attempt invalid registration
         register_market<BCT, QCT, E0>(host);
     }
@@ -656,7 +652,6 @@ module Econia::Registry {
     ) acquires MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
-        c_i_c(econia); // Initialize friend-like capabilities
         register_market<BCT, QCT, E0>(host); // Register market
         // Attempt invalid registration
         register_market<BCT, QCT, E0>(host);
@@ -673,7 +668,6 @@ module Econia::Registry {
     ) acquires MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
-        c_i_c(econia); // Initialize friend-like capabilities
         register_market<BCT, QCT, E4>(host); // Register market
         // Assert order book has correct scale factor
         assert!(b_s_f<BCT, QCT, E4>(s_a_o(host)) == scale_factor<E4>(), 0);

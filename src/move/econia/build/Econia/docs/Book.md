@@ -231,7 +231,8 @@ Return a <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>,
 
 ## Function `init_book`
 
-Initialize order book under host account, provided <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
+Initialize order book under host account, provided <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>,
+with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale factor <code>f</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: <a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)

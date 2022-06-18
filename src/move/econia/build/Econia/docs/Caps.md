@@ -43,10 +43,12 @@ be implemented purely in Move and to be coverage tested using the
 -  [Function `init_caps`](#0xc0deb00c_Caps_init_caps)
 -  [Function `book_f_c`](#0xc0deb00c_Caps_book_f_c)
 -  [Function `has_f_c`](#0xc0deb00c_Caps_has_f_c)
+-  [Function `orders_f_c`](#0xc0deb00c_Caps_orders_f_c)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
+<b>use</b> <a href="Orders.md#0xc0deb00c_Orders">0xc0deb00c::Orders</a>;
 </code></pre>
 
 
@@ -73,6 +75,12 @@ Container for friend-like capabilities
 </dt>
 <dd>
  <code>Econia::Book</code> capability
+</dd>
+<dt>
+<code>o: <a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a></code>
+</dt>
+<dd>
+ <code>Econia::Orders</code> capability
 </dd>
 </dl>
 
@@ -140,7 +148,7 @@ container already exists
     // Assert <b>friend</b>-like capabilities container does not yet exist
     <b>assert</b>!(!<b>exists</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(addr), <a href="Caps.md#0xc0deb00c_Caps_E_FC_EXISTS">E_FC_EXISTS</a>);
     // Move <b>friend</b>-like capabilities container <b>to</b> Econia account
-    <b>move_to</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(account, <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>{b: b_g_f_c(account)});
+    <b>move_to</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(account, <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>{b: b_g_f_c(account), o: o_g_f_c(account)});
 }
 </code></pre>
 
@@ -167,7 +175,8 @@ Return <code>Econia::Book</code> friend-like capability
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_book_f_c">book_f_c</a>():
 BFC
 <b>acquires</b> <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a> {
-    <b>borrow_global</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(@Econia).b
+    <b>assert</b>!(<a href="Caps.md#0xc0deb00c_Caps_has_f_c">has_f_c</a>(), <a href="Caps.md#0xc0deb00c_Caps_E_NO_FC">E_NO_FC</a>); // Assert capabilities initialized
+    <b>borrow_global</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(@Econia).b // Return requested capability
 }
 </code></pre>
 
@@ -192,6 +201,34 @@ Return true if friend capability container initialized
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_has_f_c">has_f_c</a>(): bool {<b>exists</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(@Econia)}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Caps_orders_f_c"></a>
+
+## Function `orders_f_c`
+
+Return <code>Econia::Orders</code> friend-like capability
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_orders_f_c">orders_f_c</a>(): <a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_orders_f_c">orders_f_c</a>():
+OFC
+<b>acquires</b> <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a> {
+    <b>assert</b>!(<a href="Caps.md#0xc0deb00c_Caps_has_f_c">has_f_c</a>(), <a href="Caps.md#0xc0deb00c_Caps_E_NO_FC">E_NO_FC</a>); // Assert capabilities initialized
+    <b>borrow_global</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(@Econia).o // Return requested capability
+}
 </code></pre>
 
 

@@ -25,8 +25,10 @@ module Econia::Orders {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Open orders initialization capability
-    struct OrdersInitCap has store {}
+    /// Friend-like capability, administered instead of declaring as a
+    /// friend a module containing Aptos native functions, which would
+    /// inhibit coverage testing via the Move CLI. See `Econia::Caps`
+    struct FriendCap has copy, drop, store {}
 
     /// Open orders, for the given market, on a user's account
     struct OO<phantom B, phantom Q, phantom E> has key {
@@ -76,21 +78,21 @@ module Econia::Orders {
         exists<OO<B, Q, E>>(a)
     }
 
-    /// Return a `OrdersInitCap`, aborting if not called by Econia
-    public fun get_orders_init_cap(
+    /// Return a `FriendCap`, aborting if not called by Econia
+    public fun get_friend_cap(
         account: &signer
-    ): OrdersInitCap {
+    ): FriendCap {
         // Assert called by Econia
         assert!(s_a_o(account) == @Econia, E_NOT_ECONIA);
-        OrdersInitCap{} // Return requested capability
+        FriendCap{} // Return requested capability
     }
 
-    /// Initialize open orders under host account, provided
-    /// `OrdersInitCap`
+    /// Initialize open orders under host account, provided `FriendCap`,
+    /// with market types `B`, `Q`, `E`, and scale factor `f`
     public fun init_orders<B, Q, E>(
         user: &signer,
         f: u64,
-        _cap: &OrdersInitCap
+        _c: FriendCap
     ) {
         // Assert open orders does not already exist under user account
         assert!(!exists_orders<B, Q, E>(s_a_o(user)), E_ORDERS_EXISTS);
@@ -117,20 +119,19 @@ module Econia::Orders {
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for non-Econia account
-    fun get_orders_init_cap_failure(
+    fun get_friend_cap_failure(
         account: &signer
     ) {
-        // Attempt invalid getter invocation, unpacking result
-        let OrdersInitCap{} = get_orders_init_cap(account);
+        get_friend_cap(account); // Attempt invalid invocation
     }
 
     #[test(econia = @Econia)]
     /// Verify success for Econia account
-    fun get_orders_init_cap_success(
+    fun get_friend_cap_success(
         econia: &signer
     ) {
-        // Unpack result of valid getter invocation
-        let OrdersInitCap{} = get_orders_init_cap(econia);
+        // Unpack result of valid invocation
+        let FriendCap{} = get_friend_cap(econia);
     }
 
     #[test(user = @TestUser)]
@@ -139,12 +140,10 @@ module Econia::Orders {
     fun init_orders_failure_exists(
         user: &signer,
     ) {
-        let o_i_c = OrdersInitCap{}; // Initialize order init capability
         // Initialize open orders with scale factor 1
-        init_orders<BT, QT, ET>(user, 1, &o_i_c);
+        init_orders<BT, QT, ET>(user, 1, FriendCap{});
         // Attempt invalid re-initialization
-        init_orders<BT, QT, ET>(user, 1, &o_i_c);
-        let OrdersInitCap{} = o_i_c; // Unpack init capability
+        init_orders<BT, QT, ET>(user, 1, FriendCap{});
     }
 
     #[test(user = @TestUser)]
@@ -152,10 +151,8 @@ module Econia::Orders {
     fun init_orders_success(
         user: &signer,
     ) acquires OO {
-        let o_i_c = OrdersInitCap{}; // Initialize order init capability
         // Initialize open orders with scale factor 1
-        init_orders<BT, QT, ET>(user, 1, &o_i_c);
-        let OrdersInitCap{} = o_i_c; // Unpack init capability
+        init_orders<BT, QT, ET>(user, 1, FriendCap{});
         let user_addr = s_a_o(user); // Get user address
         // Assert open orders exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(user_addr) == 1, 0);

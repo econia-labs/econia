@@ -3,9 +3,9 @@
 
 # Module `0xc0deb00c::User`
 
-User-side functionality. Like <code>Econia::Registry</code>, leverages
+User-side functionality. Like <code>Econia::Registry</code>, relies on
 <code>AptosFramework</code> functions and an associated pure-Move
-implementation (<code>Econia::Orders</code>) for coverage testing
+module (<code>Econia::Orders</code>) for coverage testing.
 
 
 -  [Resource `OICC`](#0xc0deb00c_User_OICC)

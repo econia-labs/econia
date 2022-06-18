@@ -1,6 +1,6 @@
-/// User-side functionality. Like `Econia::Registry`, leverages
+/// User-side functionality. Like `Econia::Registry`, relies on
 /// `AptosFramework` functions and an associated pure-Move
-/// implementation (`Econia::Orders`) for coverage testing
+/// module (`Econia::Orders`) for coverage testing.
 module Econia::User {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

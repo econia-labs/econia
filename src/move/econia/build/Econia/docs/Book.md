@@ -6,12 +6,12 @@
 Pure-Move implementation of market-side order book functionality
 
 
--  [Struct `BookInitCap`](#0xc0deb00c_Book_BookInitCap)
+-  [Struct `FriendCap`](#0xc0deb00c_Book_FriendCap)
 -  [Resource `OB`](#0xc0deb00c_Book_OB)
 -  [Struct `P`](#0xc0deb00c_Book_P)
 -  [Constants](#@Constants_0)
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
--  [Function `get_book_init_cap`](#0xc0deb00c_Book_get_book_init_cap)
+-  [Function `get_friend_cap`](#0xc0deb00c_Book_get_friend_cap)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
 -  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 
@@ -22,14 +22,16 @@ Pure-Move implementation of market-side order book functionality
 
 
 
-<a name="0xc0deb00c_Book_BookInitCap"></a>
+<a name="0xc0deb00c_Book_FriendCap"></a>
 
-## Struct `BookInitCap`
+## Struct `FriendCap`
 
-Order book initialization capability
+Friend-like capability, administered instead of declaring as a
+friend a module containing Aptos native functions, which would
+inhibit coverage testing via the Move CLI
 
 
-<pre><code><b>struct</b> <a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a> <b>has</b> store
+<pre><code><b>struct</b> <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a> <b>has</b> store
 </code></pre>
 
 
@@ -196,14 +198,14 @@ Return <code><b>true</b></code> if specified order book type exists at address
 
 </details>
 
-<a name="0xc0deb00c_Book_get_book_init_cap"></a>
+<a name="0xc0deb00c_Book_get_friend_cap"></a>
 
-## Function `get_book_init_cap`
+## Function `get_friend_cap`
 
-Return a <code><a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a></code>, aborting if not called by Econia account
+Return a <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>, aborting if not called by Econia account
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_book_init_cap">get_book_init_cap</a>(account: &signer): <a href="Book.md#0xc0deb00c_Book_BookInitCap">Book::BookInitCap</a>
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_friend_cap">get_friend_cap</a>(account: &signer): <a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>
 </code></pre>
 
 
@@ -212,12 +214,12 @@ Return a <code><a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a></co
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_book_init_cap">get_book_init_cap</a>(
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_friend_cap">get_friend_cap</a>(
     account: &signer
-): <a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a> {
+): <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a> {
     // Assert called by Econia
     <b>assert</b>!(s_a_o(account) == @Econia, <a href="Book.md#0xc0deb00c_Book_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    <a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a>{} // Return requested capability
+    <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>{} // Return requested capability
 }
 </code></pre>
 
@@ -229,10 +231,10 @@ Return a <code><a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a></co
 
 ## Function `init_book`
 
-Initialize order book under host account, provided <code><a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a></code>
+Initialize order book under host account, provided <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _cap: &<a href="Book.md#0xc0deb00c_Book_BookInitCap">Book::BookInitCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
 </code></pre>
 
 
@@ -244,7 +246,7 @@ Initialize order book under host account, provided <code><a href="Book.md#0xc0de
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(
     host: &signer,
     f: u64,
-    _cap: &<a href="Book.md#0xc0deb00c_Book_BookInitCap">BookInitCap</a>
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ) {
     // Assert book does not already exist under host account
     <b>assert</b>!(!<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(s_a_o(host)), <a href="Book.md#0xc0deb00c_Book_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);

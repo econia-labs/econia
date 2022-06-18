@@ -25,8 +25,10 @@ module Econia::Book {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Order book initialization capability
-    struct BookInitCap has store {}
+    /// Friend-like capability, administered instead of declaring as a
+    /// friend a module containing Aptos native functions, which would
+    /// inhibit coverage testing via the Move CLI
+    struct FriendCap has store {}
 
     /// Order book with base coin type `B`, quote coin type `Q`, and
     /// scale exponent type `E`
@@ -86,20 +88,20 @@ module Econia::Book {
     /// Return `true` if specified order book type exists at address
     public fun exists_book<B, Q, E>(a: address): bool {exists<OB<B, Q, E>>(a)}
 
-    /// Return a `BookInitCap`, aborting if not called by Econia account
-    public fun get_book_init_cap(
+    /// Return a `FriendCap`, aborting if not called by Econia account
+    public fun get_friend_cap(
         account: &signer
-    ): BookInitCap {
+    ): FriendCap {
         // Assert called by Econia
         assert!(s_a_o(account) == @Econia, E_NOT_ECONIA);
-        BookInitCap{} // Return requested capability
+        FriendCap{} // Return requested capability
     }
 
-    /// Initialize order book under host account, provided `BookInitCap`
+    /// Initialize order book under host account, provided `FriendCap`
     public fun init_book<B, Q, E>(
         host: &signer,
         f: u64,
-        _cap: &BookInitCap
+        _c: &FriendCap
     ) {
         // Assert book does not already exist under host account
         assert!(!exists_book<B, Q, E>(s_a_o(host)), E_BOOK_EXISTS);
@@ -125,20 +127,20 @@ module Econia::Book {
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for non-Econia account
-    fun get_book_init_cap_failure(
+    fun get_friend_cap_failure(
         account: &signer
     ) {
         // Attempt invalid getter invocation, unpacking result
-        let BookInitCap{} = get_book_init_cap(account);
+        let FriendCap{} = get_friend_cap(account);
     }
 
     #[test(econia = @Econia)]
     /// Verify success for Econia account
-    fun get_book_init_cap_success(
+    fun get_friend_cap_success(
         econia: &signer
     ) {
         // Unpack result of valid getter invocation
-        let BookInitCap{} = get_book_init_cap(econia);
+        let FriendCap{} = get_friend_cap(econia);
     }
 
     #[test(host = @TestUser)]
@@ -147,12 +149,12 @@ module Econia::Book {
     fun init_book_failure_exists(
         host: &signer,
     ) {
-        let b_i_c = BookInitCap{}; // Initialize book init capability
+        let f_c = FriendCap{}; // Initialize friend capability
         // Initialize book with scale factor 1
-        init_book<BT, QT, ET>(host, 1, &b_i_c);
+        init_book<BT, QT, ET>(host, 1, &f_c);
         // Attempt invalid re-initialization
-        init_book<BT, QT, ET>(host, 1, &b_i_c);
-        let BookInitCap{} = b_i_c; // Unpack init capability
+        init_book<BT, QT, ET>(host, 1, &f_c);
+        let FriendCap{} = f_c; // Unpack capability
     }
 
     #[test(host = @TestUser)]
@@ -160,10 +162,10 @@ module Econia::Book {
     fun init_book_success(
         host: &signer,
     ) acquires OB {
-        let b_i_c = BookInitCap{}; // Initialize book init capability
+        let f_c = FriendCap{}; // Initialize friend capability
         // Initialize book with scale factor 1
-        init_book<BT, QT, ET>(host, 1, &b_i_c);
-        let BookInitCap{} = b_i_c; // Unpack init capability
+        init_book<BT, QT, ET>(host, 1, &f_c);
+        let FriendCap{} = f_c; // Unpack capability
         let host_addr = s_a_o(host); // Get host address
         // Assert book exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(host_addr) == 1, 0);

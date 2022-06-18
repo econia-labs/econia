@@ -178,7 +178,7 @@
 /// `AptosFramework` functions, and as such, whenever possible, they are
 /// implemented purely in Move to enable coverage testing, for example,
 /// like `Econia::CritBit`. Occasionally this approach requires
-/// workarounds, for instance like `BICC`, a cumbersome alternative to
+/// workarounds, for instance like `BFCC`, a cumbersome alternative to
 /// the use of a `public(friend)` function: a more straightforward
 /// approach would involve making `Econia::Book::init_book` only
 /// available to friend modules, but this would involve the declaration
@@ -186,8 +186,8 @@
 /// relies on `AptosFramework` native functions, the `move` CLI test
 /// compiler would thus break when attempting to link the corresponding
 /// files, even when only attempting to run coverage tests on
-/// `Econia::Book`. Hence the use of `Econia::Book::BookInitCap` and
-/// `BICC`, an approach that allows `Econia::Book` to be implemented
+/// `Econia::Book`. Hence the use of `Econia::Book::FriendCap` and
+/// `BFCC`, an approach that allows `Econia::Book` to be implemented
 /// purely in Move and to be coverage tested using the `move` CLI.
 ///
 /// ---
@@ -216,8 +216,8 @@ module Econia::Registry {
     };
 
     use Econia::Book::{
-        BookInitCap as BIC,
-        get_book_init_cap as b_g_b_i_c,
+        FriendCap as BFC,
+        get_friend_cap as b_g_f_c,
         init_book as b_i_b
     };
 
@@ -261,9 +261,9 @@ module Econia::Registry {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Book initialization capability container
-    struct BICC has key {
-        b_i_c: BIC
+    /// Book friend capability container
+    struct BFCC has key {
+        b_f_c: BFC
     }
 
     // Scale exponent types
@@ -320,10 +320,10 @@ module Econia::Registry {
     const E_REGISTERED: u64 = 4;
     /// When a type does not correspond to a coin
     const E_NOT_COIN: u64 = 5;
-    /// When book initialization capability container already published
-    const E_HAS_BICC: u64 = 6;
-    /// When book initialization capability container not published
-    const E_NO_BICC: u64 = 7;
+    /// When book friend capability container already published
+    const E_HAS_BFCC: u64 = 6;
+    /// When book friend capability container not published
+    const E_NO_BFCC: u64 = 7;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -469,16 +469,16 @@ module Econia::Registry {
 
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Publish `BICC` to Econia acount, aborting for all other accounts
-    public(script) fun init_b_i_c_c(
+    /// Publish `BFCC` to Econia acount, aborting for all other accounts
+    public(script) fun init_b_f_c_c(
         account: &signer
     ) {
         // Assert account is Econia
         assert!(s_a_o(account) == @Econia, E_NOT_ECONIA);
         // Assert capability container not already initialized
-        assert!(!exists<BICC>(@Econia), E_HAS_BICC);
-        // Move book initialization capability container to account
-        move_to(account, BICC{b_i_c: b_g_b_i_c(account)});
+        assert!(!exists<BFCC>(@Econia), E_HAS_BFCC);
+        // Move book friend capability container to account
+        move_to(account, BFCC{b_f_c: b_g_f_c(account)});
     }
 
     /// Publish `MR` to Econia acount, aborting for all other accounts
@@ -496,7 +496,7 @@ module Econia::Registry {
     /// initialized or if market already registered
     public(script) fun register_market<B, Q, E>(
         host: &signer
-    ) acquires BICC, MR {
+    ) acquires BFCC, MR {
         verify_market_types<B, Q, E>(); // Verify valid type arguments
         // Assert market registry is initialized at Econia account
         assert!(exists<MR>(@Econia), E_NO_REGISTRY);
@@ -506,12 +506,12 @@ module Econia::Registry {
         let r_t = &mut borrow_global_mut<MR>(@Econia).t;
         // Assert requested market not already registered
         assert!(!t_c(r_t, m_i), E_REGISTERED);
-        // Assert Econia account has book initialization capability
-        assert!(exists<BICC>(@Econia), E_NO_BICC);
-        // Borrow immutable reference to book initialization capability
-        let b_i_c = &borrow_global<BICC>(@Econia).b_i_c;
+        // Assert Econia account has book friend capability
+        assert!(exists<BFCC>(@Econia), E_NO_BFCC);
+        // Borrow immutable reference to book friend capability
+        let b_f_c = &borrow_global<BFCC>(@Econia).b_f_c;
         // Initialize empty order book under host account
-        b_i_b<B, Q, E>(host, scale_factor<E>(), b_i_c);
+        b_i_b<B, Q, E>(host, scale_factor<E>(), b_f_c);
         t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
     }
 
@@ -581,11 +581,11 @@ module Econia::Registry {
     /// Register base and quote coin types, with corresponding market
     public(script) fun register_test_market(
         econia: &signer
-    ) acquires BICC, MR {
+    ) acquires BFCC, MR {
         init_registry(econia); // Initialize registry
         init_coin_types(econia); // Initialize test coin types
-        // Initialize book initialization capability container
-        init_b_i_c_c(econia);
+        // Initialize book friend capability container
+        init_b_f_c_c(econia);
         register_market<BCT, QCT, E0>(econia); // Register market
     }
 
@@ -595,34 +595,34 @@ module Econia::Registry {
 
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 0)]
-    /// Verify failed publication of `BICC` for non-Econia account
-    public(script) fun init_b_i_c_c_failure_not_econia(
+    /// Verify failed publication of `BFCC` for non-Econia account
+    public(script) fun init_b_f_c_c_failure_not_econia(
         account: &signer
     ) {
         // Attempt invalid initialization of container
-        init_b_i_c_c(account); // Initialize capability container
+        init_b_f_c_c(account); // Initialize capability container
     }
 
     #[test(econia = @Econia)]
     #[expected_failure(abort_code = 6)]
-    /// Verify failed re-publication of `BICC` to Econia account
-    public(script) fun init_b_i_c_c_failure_try_twice(
+    /// Verify failed re-publication of `BFCC` to Econia account
+    public(script) fun init_b_f_c_c_failure_try_twice(
         econia: &signer
     ) {
-        init_b_i_c_c(econia); // Initialize capability container
-        init_b_i_c_c(econia); // Attempt invalid re-initialization
+        init_b_f_c_c(econia); // Initialize capability container
+        init_b_f_c_c(econia); // Attempt invalid re-initialization
     }
 
     #[test(econia = @Econia)]
-    /// Verify successful publication of `BICC`
-    public(script) fun init_b_i_c_c_success(
+    /// Verify successful publication of `BFCC`
+    public(script) fun init_b_f_c_c_success(
         econia: &signer
-    ) acquires BICC {
-        init_b_i_c_c(econia); // Initialize capability container
+    ) acquires BFCC {
+        init_b_f_c_c(econia); // Initialize capability container
         // Assert capability container initialized
-        assert!(exists<BICC>(@Econia), 0);
+        assert!(exists<BFCC>(@Econia), 0);
         // Assert can invoke book initialization
-        b_i_b<BCT, QCT, E0>(econia, 1, &borrow_global<BICC>(@Econia).b_i_c);
+        b_i_b<BCT, QCT, E0>(econia, 1, &borrow_global<BFCC>(@Econia).b_f_c);
     }
 
     #[test(account = @TestUser)]
@@ -666,7 +666,7 @@ module Econia::Registry {
     /// Verify true return for registered market
     public(script) fun is_registered_true(
         econia: &signer
-    ) acquires BICC, MR {
+    ) acquires BFCC, MR {
         register_test_market(econia); // Register test market
         // Assert true return for registered test market
         assert!(is_registered<BCT, QCT, E0>(), 0);
@@ -689,10 +689,10 @@ module Econia::Registry {
     )]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for uninitialized market registry
-    public(script) fun register_market_failure_no_bicc(
+    public(script) fun register_market_failure_no_bfcc(
         econia: &signer,
         host: &signer
-    ) acquires BICC, MR {
+    ) acquires BFCC, MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
         // Attempt invalid registration
@@ -708,10 +708,10 @@ module Econia::Registry {
     public(script) fun register_market_failure_no_registry(
         econia: &signer,
         host: &signer
-    ) acquires BICC, MR {
+    ) acquires BFCC, MR {
         init_coin_types(econia); // Initialize coin types
-        // Initialize book initialization capability container
-        init_b_i_c_c(econia);
+        // Initialize book friend capability container
+        init_b_f_c_c(econia);
         // Attempt invalid registration
         register_market<BCT, QCT, E0>(host);
     }
@@ -725,11 +725,11 @@ module Econia::Registry {
     public(script) fun register_market_failure_registered(
         econia: &signer,
         host: &signer
-    ) acquires BICC, MR {
+    ) acquires BFCC, MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
-        // Initialize book initialization capability container
-        init_b_i_c_c(econia);
+        // Initialize book friend capability container
+        init_b_f_c_c(econia);
         register_market<BCT, QCT, E0>(host); // Register market
         // Attempt invalid registration
         register_market<BCT, QCT, E0>(host);
@@ -743,11 +743,11 @@ module Econia::Registry {
     public(script) fun register_market_success(
         econia: &signer,
         host: &signer
-    ) acquires BICC, MR {
+    ) acquires BFCC, MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
-        // Initialize book initialization capability container
-        init_b_i_c_c(econia);
+        // Initialize book friend capability container
+        init_b_f_c_c(econia);
         register_market<BCT, QCT, E4>(host); // Register market
         // Assert order book has correct scale factor
         assert!(b_s_f<BCT, QCT, E4>(s_a_o(host)) == scale_factor<E4>(), 0);

@@ -3,6 +3,10 @@ module Econia::User {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use AptosFramework::Account::{
+        get_sequence_number as a_g_s_n
+    };
+
     use AptosFramework::Coin::{
         Coin as C,
         zero as c_z,
@@ -29,6 +33,11 @@ module Econia::User {
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    use AptosFramework::Account::{
+        create_account as a_c_a
+    };
 
     #[test_only]
     use AptosFramework::Coin::{
@@ -64,6 +73,11 @@ module Econia::User {
         q_c: C<Q>
     }
 
+    /// Counter for sequence number of last monitored Econia transaction
+    struct SC has key {
+        i: u64
+    }
+
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -76,6 +90,12 @@ module Econia::User {
     const E_NOT_ECONIA: u64 = 2;
     /// When open orders container already exists
     const E_O_O_EXISTS: u64 = 3;
+    /// When sequence number counter already exists for user
+    const E_S_C_EXISTS: u64 = 4;
+    /// When sequence number counter does not exist for user
+    const E_NO_S_C: u64 = 5;
+    /// When invalid sequence number for current transaction
+    const E_INVALID_S_N: u64 = 6;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -83,16 +103,16 @@ module Econia::User {
 
     /// Initialize a user with `Econia::Orders::OO` and `OC` for market
     /// with base coin type `B`, quote coin type `Q`, and scale exponent
-    /// `E`, aborting if no such market or if user already initialized
-    /// for market
-    public(script) fun init_user<B, Q, E>(
+    /// `E`, aborting if no such market or if containers already
+    /// initialized for market
+    public(script) fun init_containers<B, Q, E>(
         user: &signer
     ) {
         assert!(r_i_r<B, Q, E>(), E_NO_MARKET); // Assert market exists
         let user_addr = s_a_o(user); // Get user address
         // Assert user does not already have collateral container
         assert!(!exists<OC<B, Q, E>>(user_addr), E_O_C_EXISTS);
-        // Assert user does not already have open orders
+        // Assert user does not already have open orders container
         assert!(!o_e_o<B, Q, E>(user_addr), E_O_O_EXISTS);
         // Pack empty collateral container
         let o_c = OC<B, Q, E>{b_c: c_z<B>(), b_a: 0, q_c: c_z<Q>(), q_a: 0};
@@ -101,29 +121,40 @@ module Econia::User {
         o_i_o<B, Q, E>(user, r_s_f<E>(), c_o_f_c());
     }
 
+    /// Initialize an `SC` with the sequence number of the initializing
+    /// transaction, aborting if one already exists
+    public(script) fun init_user(
+        user: &signer
+    ) {
+        let user_addr = s_a_o(user); // Get user address
+        // Assert user has not already initialized a sequence counter
+        assert!(!exists<SC>(user_addr), E_S_C_EXISTS);
+        // Initialize sequence counter with user's sequence number
+        move_to<SC>(user, SC{i: a_g_s_n(user_addr)});
+    }
+
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-/*
-    /// Return number of indivisible subunits of base coin collateral
-    /// available for withdraw, for given market, at given address
-    fun b_a<B, Q, E>(
-        addr: address
-    ): u64
-    acquires CC {
-        borrow_global<CC<B, Q, E>>(addr).b_a
+    /// Update sequence counter for user `u` with the sequence number of
+    /// the current transaction, `s`, aborting if user does not have an
+    /// initialized sequence counter or if `s` not greater than the
+    /// number indicated by the user's `SC`
+    fun update_sequence_counter(
+        u: &signer,
+        s: u64
+    ) acquires SC {
+        let user_addr = s_a_o(u); // Get user address
+        // Assert user has already initialized a sequence counter
+        assert!(exists<SC>(user_addr), E_NO_S_C);
+        // Borrow mutable reference to user's sequence counter
+        let s_c = borrow_global_mut<SC>(user_addr);
+        // Assert new sequence number greater than counter's indicator
+        assert!(s > s_c.i, E_INVALID_S_N);
+        // Update sequence number counter with current sequence number
+        s_c.i = s;
     }
-
-    /// Return number of indivisible subunits of base coin collateral,
-    /// for given market, held at given address
-    fun b_c<B, Q, E>(
-        addr: address
-    ): u64
-    acquires CC {
-        c_v(&borrow_global<CC<B, Q, E>>(addr).b_c)
-    }
-*/
 
     /// Return `true` if address has specified order collateral type
     fun exists_o_c<B, Q, E>(a: address): bool {exists<OC<B, Q, E>>(a)}
@@ -141,26 +172,6 @@ module Econia::User {
         let o_c = OC<B, Q, E>{b_c: c_z<B>(), b_a: 0, q_c: c_z<Q>(), q_a: 0};
         move_to<OC<B, Q, E>>(user, o_c); // Move to user account
     }
-
-/*
-    /// Return number of indivisible subunits of quote coin collateral
-    /// available for withdraw, for given market, at given address
-    fun q_a<B, Q, E>(
-        addr: address
-    ): u64
-    acquires CC {
-        borrow_global<CC<B, Q, E>>(addr).q_a
-    }
-
-    /// Return number of indivisible subunits of quote coin collateral,
-    /// for given market, held at given address
-    fun q_c<B, Q, E>(
-        addr: address
-    ): u64
-    acquires CC {
-        c_v(&borrow_global<CC<B, Q, E>>(addr).q_c)
-    }
-*/
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -216,13 +227,13 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for user having order collateral container
-    public(script) fun init_user_failure_has_o_c(
+    public(script) fun init_containers_failure_has_o_c(
         econia: &signer,
         user: &signer
     ) {
         r_r_t_m(econia); // Register test market
         init_o_c<BCT, QCT, E0>(user); // Init order collateral container
-        init_user<BCT, QCT, E0>(user); // Attempt invalid init
+        init_containers<BCT, QCT, E0>(user); // Attempt invalid init
     }
 
     #[test(
@@ -231,23 +242,23 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for user already having open orders container
-    public(script) fun init_user_failure_has_o_o(
+    public(script) fun init_containers_failure_has_o_o(
         econia: &signer,
         user: &signer
     ) {
         r_r_t_m(econia); // Register test market
         // Initialize empty open orders container under user account
         o_i_o<BCT, QCT, E0>(user, r_s_f<E0>(), c_o_f_c());
-        init_user<BCT, QCT, E0>(user); // Attempt invalid init
+        init_containers<BCT, QCT, E0>(user); // Attempt invalid init
     }
 
     #[test(user = @TestUser)]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for unregistered market
-    public(script) fun init_user_failure_no_market(
+    public(script) fun init_containers_failure_no_market(
         user: &signer
     ) {
-        init_user<BCT, QCT, E0>(user); // Attempt invalid init
+        init_containers<BCT, QCT, E0>(user); // Attempt invalid init
     }
 
     #[test(
@@ -255,12 +266,12 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful user initialization
-    public(script) fun init_user_success(
+    public(script) fun init_containers_success(
         econia: &signer,
         user: &signer
     ) acquires OC {
         r_r_t_m(econia); // Register test market
-        init_user<BCT, QCT, E0>(user); // Init user for test market
+        init_containers<BCT, QCT, E0>(user); // Init user for test market
         let user_addr = s_a_o(user); // Get user address
         // Borrow immutable reference to order collateral container
         let o_c = borrow_global<OC<BCT, QCT, E0>>(user_addr);
@@ -270,6 +281,64 @@ module Econia::User {
         assert!(o_c.b_a == 0 && o_c.q_a == 0, 1);
         // Assert open orders exists and has correct scale factor
         assert!(o_s_f<BCT, QCT, E0>(user_addr) == r_s_f<E0>(), 0);
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for attempted re-initialization
+    public(script) fun init_user_failure(
+        user: &signer
+    ) {
+        a_c_a(s_a_o(user)); // Initialize account resource
+        init_user(user); // Initialize sequence counter for user
+        init_user(user); // Attempt invalid re-initialization
+    }
+
+    #[test(user = @TestUser)]
+    /// Verify successful initialization
+    public(script) fun init_user_success(
+        user: &signer
+    ) {
+        a_c_a(s_a_o(user)); // Initialize account resource
+        init_user(user); // Initialize sequence counter for user
+        // Assert sequence counter initializes to user sequence number
+        assert!(a_g_s_n(s_a_o(user)) == 0, 0);
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for user not having initialized counter
+    fun update_sequence_counter_failure_no_s_c(
+        user: &signer
+    ) acquires SC {
+        update_sequence_counter(user, 0); // Attempt invalid update
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for trying to update twice in same transaction
+    public(script) fun update_sequence_counter_failure_same_s_n(
+        user: &signer
+    ) acquires SC {
+        let user_addr = s_a_o(user); // Get user address
+        a_c_a(user_addr); // Initialize account resource
+        init_user(user); // Initialize sequence counter for user
+        // Attempt invalid, update during same transaction as init
+        update_sequence_counter(user, a_g_s_n(user_addr));
+    }
+
+    #[test(user = @TestUser)]
+    /// Verify successful update for arbitrary (valid) sequence number
+    public(script) fun update_sequence_counter_success(
+        user: &signer
+    ) acquires SC {
+        let user_addr = s_a_o(user); // Get user address
+        a_c_a(user_addr); // Initialize account resource
+        init_user(user); // Initialize sequence counter for user
+        // Update sequence counter, passing mock sequence number
+        update_sequence_counter(user, 500);
+        // Assert sequence counter updated correctly
+        assert!(borrow_global<SC>(user_addr).i == 500, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -13,16 +13,16 @@
 ///
 /// The pairing of pure-Move and non-pure-Move modules occasionally
 /// requires workarounds, for instance, like the pseudo-friend
-/// capability `Econia::Book::FriendCap`, a cumbersome alternative to the
-/// use of a `public(friend)` function: a more straightforward approach
-/// would involve only exposing `Econia::Book::init_book`, for example,
-/// to friend modules, but this would involve the declaration of
-/// `Econia::Registry` module as a friend, and since `Econia::Registry`
-/// relies on `AptosFramework` native functions, the `move` CLI test
-/// compiler would thus break when attempting to link the corresponding
-/// files, even when only attempting to run coverage tests on
-/// `Econia::Book`. Hence, the use of `Econia::Book:FriendCap`, a
-/// friend-like capability, which allows `Econia::Book` to be
+/// capability `Econia::Book::FriendCap`, a cumbersome alternative to
+/// the use of a `public(friend)` function: a more straightforward
+/// approach would involve only exposing `Econia::Book::init_book`, for
+/// example, to friend modules, but this would involve the declaration
+/// of `Econia::Registry` module as a friend, and since
+/// `Econia::Registry` relies on `AptosFramework` native functions, the
+/// `move` CLI test compiler would thus break when attempting to link
+/// the corresponding files, even when only attempting to run coverage
+/// tests on `Econia::Book`. Hence, the use of `Econia::Book:FriendCap`,
+/// a friend-like capability, which allows `Econia::Book` to be
 /// implemented purely in Move and to be coverage tested using the
 /// `move` CLI, while also restricting access to friend-like modules.
 ///
@@ -32,8 +32,8 @@
 /// modules, they are aggregated here for ease of use, and are
 /// initialized all at once per `init_caps()`. As a `public(friend)`
 /// function, this is only intended to be called by
-/// `Econia::Registry::init_registry()`, which essentially configures
-/// the Econia account, upon inception, to facilitate trading.
+/// `Econia::Init::init_econia()`, which essentially configures
+/// the Econia account to facilitate trading.
 ///
 /// Similarly, capability access functions like `book_f_c()` are also
 /// provided as `public(friend)` functions, to be accessed only by
@@ -83,6 +83,7 @@ module Econia::Caps {
 
     // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    friend Econia::Init;
     friend Econia::Registry;
     friend Econia::User;
 

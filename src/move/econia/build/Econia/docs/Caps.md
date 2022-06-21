@@ -22,16 +22,16 @@ enable coverage testing, for example, like <code>Econia::CritBit</code>.
 
 The pairing of pure-Move and non-pure-Move modules occasionally
 requires workarounds, for instance, like the pseudo-friend
-capability <code>Econia::Book::FriendCap</code>, a cumbersome alternative to the
-use of a <code><b>public</b>(<b>friend</b>)</code> function: a more straightforward approach
-would involve only exposing <code>Econia::Book::init_book</code>, for example,
-to friend modules, but this would involve the declaration of
-<code>Econia::Registry</code> module as a friend, and since <code>Econia::Registry</code>
-relies on <code>AptosFramework</code> native functions, the <code><b>move</b></code> CLI test
-compiler would thus break when attempting to link the corresponding
-files, even when only attempting to run coverage tests on
-<code>Econia::Book</code>. Hence, the use of <code>Econia::Book:FriendCap</code>, a
-friend-like capability, which allows <code>Econia::Book</code> to be
+capability <code>Econia::Book::FriendCap</code>, a cumbersome alternative to
+the use of a <code><b>public</b>(<b>friend</b>)</code> function: a more straightforward
+approach would involve only exposing <code>Econia::Book::init_book</code>, for
+example, to friend modules, but this would involve the declaration
+of <code>Econia::Registry</code> module as a friend, and since
+<code>Econia::Registry</code> relies on <code>AptosFramework</code> native functions, the
+<code><b>move</b></code> CLI test compiler would thus break when attempting to link
+the corresponding files, even when only attempting to run coverage
+tests on <code>Econia::Book</code>. Hence, the use of <code>Econia::Book:FriendCap</code>,
+a friend-like capability, which allows <code>Econia::Book</code> to be
 implemented purely in Move and to be coverage tested using the
 <code><b>move</b></code> CLI, while also restricting access to friend-like modules.
 
@@ -45,8 +45,8 @@ Rather than having friend-like capabilities managed by individual
 modules, they are aggregated here for ease of use, and are
 initialized all at once per <code><a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>()</code>. As a <code><b>public</b>(<b>friend</b>)</code>
 function, this is only intended to be called by
-<code>Econia::Registry::init_registry()</code>, which essentially configures
-the Econia account, upon inception, to facilitate trading.
+<code>Econia::Init::init_econia()</code>, which essentially configures
+the Econia account to facilitate trading.
 
 Similarly, capability access functions like <code><a href="Caps.md#0xc0deb00c_Caps_book_f_c">book_f_c</a>()</code> are also
 provided as <code><b>public</b>(<b>friend</b>)</code> functions, to be accessed only by

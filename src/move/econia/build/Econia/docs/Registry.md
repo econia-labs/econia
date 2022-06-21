@@ -1231,8 +1231,8 @@ u64 {
 
 ## Function `init_registry`
 
-Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia acount and initialize friend-like
-capabilities, aborting for all other accounts
+Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia acount, aborting for all other accounts
+or if <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> already exists
 
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(account: &signer)
@@ -1253,7 +1253,6 @@ capabilities, aborting for all other accounts
     <b>assert</b>!(!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(addr), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
     // Move empty market registry <b>to</b> account
     <b>move_to</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(account, <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>{t: t_n&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>, <b>address</b>&gt;()});
-    c_i_c(account); // Initialize <b>friend</b>-like capabilities
 }
 </code></pre>
 

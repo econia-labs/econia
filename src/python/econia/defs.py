@@ -58,6 +58,9 @@ econia_modules = SimpleNamespace(
     ID = SimpleNamespace(
         name = 'ID'
     ),
+    Init = SimpleNamespace(
+        name = 'Init'
+    ),
     Orders = SimpleNamespace(
         name = 'Orders'
     ),
@@ -87,9 +90,10 @@ econia_module_publish_order = [
         econia_modules.Orders.name,
     ],
     [
-        econia_modules.Version.name,
         econia_modules.Caps.name,
+        econia_modules.Version.name,
         econia_modules.Registry.name,
+        econia_modules.Init.name,
         econia_modules.User.name,
     ],
 ]

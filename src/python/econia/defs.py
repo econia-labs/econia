@@ -66,6 +66,9 @@ econia_modules = SimpleNamespace(
     ),
     User = SimpleNamespace(
         name = 'User'
+    ),
+    Version = SimpleNamespace(
+        name = 'Version'
     )
 )
 """Econia Move modules with nested member specifiers"""
@@ -84,6 +87,7 @@ econia_module_publish_order = [
         econia_modules.Orders.name,
     ],
     [
+        econia_modules.Version.name,
         econia_modules.Caps.name,
         econia_modules.Registry.name,
         econia_modules.User.name,

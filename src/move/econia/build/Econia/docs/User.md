@@ -105,22 +105,12 @@ Counter for sequence number of last monitored Econia transaction
 ## Constants
 
 
-<a name="0xc0deb00c_User_E_NOT_ECONIA"></a>
-
-When account/address is not Econia
-
-
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 2;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_User_E_INVALID_S_N"></a>
 
 When invalid sequence number for current transaction
 
 
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>: u64 = 6;
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>: u64 = 5;
 </code></pre>
 
 
@@ -140,7 +130,7 @@ When no corresponding market
 When sequence number counter does not exist for user
 
 
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>: u64 = 5;
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>: u64 = 4;
 </code></pre>
 
 
@@ -160,7 +150,7 @@ When order collateral container already exists
 When open orders container already exists
 
 
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_O_O_EXISTS">E_O_O_EXISTS</a>: u64 = 3;
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_O_O_EXISTS">E_O_O_EXISTS</a>: u64 = 2;
 </code></pre>
 
 
@@ -170,7 +160,7 @@ When open orders container already exists
 When sequence number counter already exists for user
 
 
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_S_C_EXISTS">E_S_C_EXISTS</a>: u64 = 4;
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_S_C_EXISTS">E_S_C_EXISTS</a>: u64 = 3;
 </code></pre>
 
 

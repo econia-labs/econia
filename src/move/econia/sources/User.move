@@ -87,16 +87,14 @@ module Econia::User {
     const E_O_C_EXISTS: u64 = 0;
     /// When no corresponding market
     const E_NO_MARKET: u64 = 1;
-    /// When account/address is not Econia
-    const E_NOT_ECONIA: u64 = 2;
     /// When open orders container already exists
-    const E_O_O_EXISTS: u64 = 3;
+    const E_O_O_EXISTS: u64 = 2;
     /// When sequence number counter already exists for user
-    const E_S_C_EXISTS: u64 = 4;
+    const E_S_C_EXISTS: u64 = 3;
     /// When sequence number counter does not exist for user
-    const E_NO_S_C: u64 = 5;
+    const E_NO_S_C: u64 = 4;
     /// When invalid sequence number for current transaction
-    const E_INVALID_S_N: u64 = 6;
+    const E_INVALID_S_N: u64 = 5;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -240,7 +238,7 @@ module Econia::User {
         econia = @Econia,
         user = @TestUser
     )]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = 2)]
     /// Verify failure for user already having open orders container
     public(script) fun init_containers_failure_has_o_o(
         econia: &signer,
@@ -284,7 +282,7 @@ module Econia::User {
     }
 
     #[test(user = @TestUser)]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = 3)]
     /// Verify failure for attempted re-initialization
     public(script) fun init_user_failure(
         user: &signer
@@ -307,7 +305,7 @@ module Econia::User {
     }
 
     #[test(user = @TestUser)]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = 4)]
     /// Verify failure for user not having initialized counter
     fun update_sequence_counter_failure_no_s_c(
         user: &signer
@@ -316,7 +314,7 @@ module Econia::User {
     }
 
     #[test(user = @TestUser)]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = 5)]
     /// Verify failure for trying to update twice in same transaction
     public(script) fun update_sequence_counter_failure_same_s_n(
         user: &signer

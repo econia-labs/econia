@@ -249,9 +249,9 @@ functions. See <code>Econia::Caps</code> for further discussion.
 -  [Struct `MI`](#0xc0deb00c_Registry_MI)
 -  [Resource `MR`](#0xc0deb00c_Registry_MR)
 -  [Constants](#@Constants_9)
+-  [Function `init_registry`](#0xc0deb00c_Registry_init_registry)
 -  [Function `is_registered`](#0xc0deb00c_Registry_is_registered)
 -  [Function `scale_factor`](#0xc0deb00c_Registry_scale_factor)
--  [Function `init_registry`](#0xc0deb00c_Registry_init_registry)
 -  [Function `register_market`](#0xc0deb00c_Registry_register_market)
 -  [Function `verify_address`](#0xc0deb00c_Registry_verify_address)
 -  [Function `verify_bytestring`](#0xc0deb00c_Registry_verify_bytestring)
@@ -1142,6 +1142,39 @@ This module's name
 
 
 
+<a name="0xc0deb00c_Registry_init_registry"></a>
+
+## Function `init_registry`
+
+Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia acount, aborting for all other accounts
+or if <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> already exists
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(account: &signer)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(
+    account: &signer
+) {
+    <b>let</b> addr = s_a_o(account); // Get signer <b>address</b>
+    <b>assert</b>!(addr == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
+    // Assert registry does not already exist
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(addr), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
+    // Move empty market registry <b>to</b> account
+    <b>move_to</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(account, <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>{t: t_n&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>, <b>address</b>&gt;()});
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_Registry_is_registered"></a>
 
 ## Function `is_registered`
@@ -1220,39 +1253,6 @@ u64 {
     <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E18">E18</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F18">F18</a>;
     <b>if</b> (s_n == ti_s_n(&ti_t_o&lt;<a href="Registry.md#0xc0deb00c_Registry_E19">E19</a>&gt;())) <b>return</b> <a href="Registry.md#0xc0deb00c_Registry_F19">F19</a>;
     <b>abort</b> <a href="Registry.md#0xc0deb00c_Registry_E_WRONG_EXPONENT_T">E_WRONG_EXPONENT_T</a> // Else <b>abort</b>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_Registry_init_registry"></a>
-
-## Function `init_registry`
-
-Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia acount, aborting for all other accounts
-or if <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> already exists
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(account: &signer)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(
-    account: &signer
-) {
-    <b>let</b> addr = s_a_o(account); // Get signer <b>address</b>
-    <b>assert</b>!(addr == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
-    // Assert registry does not already exist
-    <b>assert</b>!(!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(addr), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
-    // Move empty market registry <b>to</b> account
-    <b>move_to</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(account, <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>{t: t_n&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>, <b>address</b>&gt;()});
 }
 </code></pre>
 

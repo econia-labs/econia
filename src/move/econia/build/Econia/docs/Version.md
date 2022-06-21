@@ -11,8 +11,8 @@ Move native function for getting the true database version number
 
 -  [Resource `MC`](#0xc0deb00c_Version_MC)
 -  [Constants](#@Constants_0)
--  [Function `init_mock_version_number`](#0xc0deb00c_Version_init_mock_version_number)
 -  [Function `get_v_n`](#0xc0deb00c_Version_get_v_n)
+-  [Function `init_mock_version_number`](#0xc0deb00c_Version_init_mock_version_number)
 -  [Function `get_updated_mock_version_number`](#0xc0deb00c_Version_get_updated_mock_version_number)
 
 
@@ -74,38 +74,6 @@ When mock version number counter already exists
 
 
 
-<a name="0xc0deb00c_Version_init_mock_version_number"></a>
-
-## Function `init_mock_version_number`
-
-Initialize mock version number counter under Econia account,
-aborting if called by another signer or if counter exists
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Version.md#0xc0deb00c_Version_init_mock_version_number">init_mock_version_number</a>(account: &signer)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Version.md#0xc0deb00c_Version_init_mock_version_number">init_mock_version_number</a>(
-    account: &signer
-) {
-    <b>let</b> addr = s_a_o(account); // Get account <b>address</b>
-    <b>assert</b>!(addr == @Econia, <a href="Version.md#0xc0deb00c_Version_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia called
-    // Assert mock version number counter doesn't exist already
-    <b>assert</b>!(!<b>exists</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(addr), <a href="Version.md#0xc0deb00c_Version_E_MC_EXISTS">E_MC_EXISTS</a>);
-    <b>move_to</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(account, <a href="Version.md#0xc0deb00c_Version_MC">MC</a>{i: 0}); // Move mock counter <b>to</b> Econia
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_Version_get_v_n"></a>
 
 ## Function `get_v_n`
@@ -128,6 +96,38 @@ getter is implemented as a Move native function
 u64
 <b>acquires</b> <a href="Version.md#0xc0deb00c_Version_MC">MC</a> {
     <a href="Version.md#0xc0deb00c_Version_get_updated_mock_version_number">get_updated_mock_version_number</a>()
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Version_init_mock_version_number"></a>
+
+## Function `init_mock_version_number`
+
+Initialize mock version number counter under Econia account,
+aborting if called by another signer or if counter exists
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Version.md#0xc0deb00c_Version_init_mock_version_number">init_mock_version_number</a>(account: &signer)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Version.md#0xc0deb00c_Version_init_mock_version_number">init_mock_version_number</a>(
+    account: &signer
+) {
+    <b>let</b> addr = s_a_o(account); // Get account <b>address</b>
+    <b>assert</b>!(addr == @Econia, <a href="Version.md#0xc0deb00c_Version_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia called
+    // Assert mock version number counter doesn't exist already
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(addr), <a href="Version.md#0xc0deb00c_Version_E_MC_EXISTS">E_MC_EXISTS</a>);
+    <b>move_to</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(account, <a href="Version.md#0xc0deb00c_Version_MC">MC</a>{i: 0}); // Move mock counter <b>to</b> Econia
 }
 </code></pre>
 

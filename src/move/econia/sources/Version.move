@@ -14,6 +14,7 @@ module Econia::Version {
 
     // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    friend Econia::Init;
     friend Econia::User;
 
     // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -36,22 +37,6 @@ module Econia::Version {
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Initialize mock version number counter under Econia account,
-    /// aborting if called by another signer or if counter exists
-    public(script) fun init_mock_version_number(
-        account: &signer
-    ) {
-        let addr = s_a_o(account); // Get account address
-        assert!(addr == @Econia, E_NOT_ECONIA); // Assert Econia called
-        // Assert mock version number counter doesn't exist already
-        assert!(!exists<MC>(addr), E_MC_EXISTS);
-        move_to<MC>(account, MC{i: 0}); // Move mock counter to Econia
-    }
-
-    // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Wrapped get-update function for mock version number counter,
@@ -63,6 +48,17 @@ module Econia::Version {
         get_updated_mock_version_number()
     }
 
+    /// Initialize mock version number counter under Econia account,
+    /// aborting if called by another signer or if counter exists
+    public(friend) fun init_mock_version_number(
+        account: &signer
+    ) {
+        let addr = s_a_o(account); // Get account address
+        assert!(addr == @Econia, E_NOT_ECONIA); // Assert Econia called
+        // Assert mock version number counter doesn't exist already
+        assert!(!exists<MC>(addr), E_MC_EXISTS);
+        move_to<MC>(account, MC{i: 0}); // Move mock counter to Econia
+    }
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

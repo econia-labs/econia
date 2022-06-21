@@ -214,6 +214,7 @@ module Econia::Registry {
 
     // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    friend Econia::Init;
     friend Econia::User;
 
     // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -403,6 +404,19 @@ module Econia::Registry {
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Publish `MR` to Econia acount, aborting for all other accounts
+    /// or if `MR` already exists
+    public(friend) fun init_registry(
+        account: &signer
+    ) {
+        let addr = s_a_o(account); // Get signer address
+        assert!(addr == @Econia, E_NOT_ECONIA); // Assert Econia signer
+        // Assert registry does not already exist
+        assert!(!exists<MR>(addr), E_REGISTRY_EXISTS);
+        // Move empty market registry to account
+        move_to<MR>(account, MR{t: t_n<MI, address>()});
+    }
+
     /// Return `true` if given market is registered
     public(friend) fun is_registered<B, Q, E>(
     ): bool
@@ -451,19 +465,6 @@ module Econia::Registry {
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Publish `MR` to Econia acount, aborting for all other accounts
-    /// or if `MR` already exists
-    public(script) fun init_registry(
-        account: &signer
-    ) {
-        let addr = s_a_o(account); // Get signer address
-        assert!(addr == @Econia, E_NOT_ECONIA); // Assert Econia signer
-        // Assert registry does not already exist
-        assert!(!exists<MR>(addr), E_REGISTRY_EXISTS);
-        // Move empty market registry to account
-        move_to<MR>(account, MR{t: t_n<MI, address>()});
-    }
 
     /// Register a market for the given base coin type `B`, quote coin
     /// type `Q`, and scale exponent `E` , aborting if registry not

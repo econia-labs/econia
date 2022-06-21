@@ -9,6 +9,8 @@ module Econia::User {
 
     use AptosFramework::Coin::{
         Coin as C,
+        deposit as c_d,
+        extract as c_e,
         merge as c_m,
         withdraw as c_w,
         zero as c_z
@@ -107,15 +109,17 @@ module Econia::User {
     const E_INVALID_S_N: u64 = 5;
     /// When no order collateral container
     const E_NO_O_C: u64 = 6;
-    /// When no deposit is indicated
-    const E_NO_DEPOSIT: u64 = 7;
+    /// When no transfer of funds indicated
+    const E_NO_TRANSFER: u64 = 7;
+    /// When attempting to withdraw more than is available
+    const E_WITHDRAW_TOO_MUCH: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Deposit `b_val` base coin and `q_val` quote coin as order
-    /// collateral, from `AptosFramework::Coin::CoinStore` into `OC`
+    /// Deposit `b_val` base coin and `q_val` quote coin into `user`'s
+    /// `OC`, from their `AptosFramework::Coin::CoinStore`
     public(script) fun deposit<B, Q, E>(
         user: &signer,
         b_val: u64,
@@ -125,7 +129,7 @@ module Econia::User {
         // Assert user has order collateral container
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
         // Assert user actually attempting to deposit
-        assert!(b_val > 0 || q_val > 0, E_NO_DEPOSIT);
+        assert!(b_val > 0 || q_val > 0, E_NO_TRANSFER);
         // Borrow mutable reference to user collateral container
         let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
         if (b_val > 0) { // If base coin to be deposited
@@ -169,6 +173,37 @@ module Econia::User {
         assert!(!exists<SC>(user_addr), E_S_C_EXISTS);
         // Initialize sequence counter with user's sequence number
         move_to<SC>(user, SC{i: a_g_s_n(user_addr)});
+    }
+
+    /// Withdraw `b_val` base coin and `q_val` quote coin from `user`'s
+    /// `OC`, into their `AptosFramework::Coin::CoinStore`
+    public(script) fun withdraw<B, Q, E>(
+        user: &signer,
+        b_val: u64,
+        q_val: u64
+    ) acquires OC, SC {
+        let addr = s_a_o(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
+        // Assert user actually attempting to withdraw
+        assert!(b_val > 0 || q_val > 0, E_NO_TRANSFER);
+        // Borrow mutable reference to user collateral container
+        let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
+        if (b_val > 0) { // If base coin to be withdrawn
+            // Assert not trying to withdraw more than available
+            assert!(!(b_val > o_c.b_a), E_WITHDRAW_TOO_MUCH);
+            // Withdraw from order collateral, deposit to coin store
+            c_d<B>(addr, c_e<B>(&mut o_c.b_c, b_val));
+            o_c.b_a = o_c.b_a - b_val; // Update available amount
+        };
+        if (q_val > 0) { // If quote coin to be withdrawn
+            // Assert not trying to withdraw more than available
+            assert!(!(q_val > o_c.q_a), E_WITHDRAW_TOO_MUCH);
+            // Withdraw from order collateral, deposit to coin store
+            c_d<Q>(addr, c_e<Q>(&mut o_c.q_c, q_val));
+            o_c.q_a = o_c.q_a - q_val; // Update available amount
+        };
+        update_s_c(user); // Update user sequence counter
     }
 
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -272,27 +307,27 @@ module Econia::User {
         assert!(c_b<BCT>(addr) == 99 && c_b<QCT>(addr) == 200, 0);
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
-        // Assert correct collateral holdings update correctly
+        // Assert collateral holdings update correctly
         assert!(c_v<BCT>(&o_c.b_c) == 1 && c_v<QCT>(&o_c.q_c) == 0, 1);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 1 && o_c.q_a == 0, 2);
         a_i_s_n(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 0, 2); // Deposit two quote coin
-        // Borrow immutable reference to user's order collateral
-        let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 99 && c_b<QCT>(addr) == 198, 3);
-        // Assert correct collateral holdings update correctly
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
+        // Assert collateral holdings update correctly
         assert!(c_v<BCT>(&o_c.b_c) == 1 && c_v<QCT>(&o_c.q_c) == 2, 4);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 1 && o_c.q_a == 2, 5);
         a_i_s_n(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 5, 5); // Deposit 5 of each coin
-        // Borrow immutable reference to user's order collateral
-        let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 94 && c_b<QCT>(addr) == 193, 6);
-        // Assert correct collateral holdings update correctly
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
+        // Assert collateral holdings update correctly
         assert!(c_v<BCT>(&o_c.b_c) == 6 && c_v<QCT>(&o_c.q_c) == 7, 7);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 6 && o_c.q_a == 7, 8);
@@ -468,6 +503,116 @@ module Econia::User {
         update_s_c(user); // Execute valid counter update
         // Assert sequence counter updated correctly
         assert!(borrow_global<SC>(user_addr).i == 10, 0);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for attempting to withdraw to many base coins
+    public(script) fun withdraw_failure_excess_bct(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        init_test_market_user(econia, user); // Init test market, user
+        let addr = s_a_o(user); // Get user address
+        r_m_bct_to(addr, 100); // Mint 100 base coins to user
+        a_i_s_n(addr); // Increment mock sequence number
+        deposit<BCT, QCT, E0>(user, 50, 0); // Deposit collateral
+        a_i_s_n(addr); // Increment mock sequence number
+        withdraw<BCT, QCT, E0>(user, 51, 0); // Attempt invalid withdraw
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for attempting to withdraw to many quote coins
+    public(script) fun withdraw_failure_excess_qct(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        init_test_market_user(econia, user); // Init test market, user
+        let addr = s_a_o(user); // Get user address
+        r_m_qct_to(addr, 100); // Mint 100 quote coins to user
+        a_i_s_n(addr); // Increment mock sequence number
+        deposit<BCT, QCT, E0>(user, 0, 50); // Deposit collateral
+        a_i_s_n(addr); // Increment mock sequence number
+        withdraw<BCT, QCT, E0>(user, 0, 51); // Attempt invalid withdraw
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for no order collateral container initialized
+    public(script) fun withdraw_failure_no_o_c(
+        user: &signer
+    ) acquires OC, SC {
+        withdraw<BCT, QCT, E0>(user, 1, 2); // Attempt invalid withdraw
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for no withdraw indicated
+    public(script) fun withdraw_failure_no_withdraw(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        init_test_market_user(econia, user); // Init test market, user
+        withdraw<BCT, QCT, E0>(user, 0, 0); // Attempt invalid withdraw
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    /// Verify successful collateral withdrawals
+    public(script) fun withdraw_success(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        init_test_market_user(econia, user); // Init test market, user
+        let addr = s_a_o(user); // Get user address
+        r_m_bct_to(addr, 100); // Mint 100 base coins to user
+        r_m_qct_to(addr, 200); // Mint 200 base coins to user
+        a_i_s_n(addr); // Increment mock sequence number
+        deposit<BCT, QCT, E0>(user, 75, 150); // Deposit collateral
+        a_i_s_n(addr); // Increment mock sequence number
+        withdraw<BCT, QCT, E0>(user, 5, 0); // Withdraw 5 base coins
+        // Assert correct coin store balances
+        assert!(c_b<BCT>(addr) == 30 && c_b<QCT>(addr) == 50, 0);
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
+        // Assert collateral holdings update correctly
+        assert!(c_v<BCT>(&o_c.b_c) == 70 && c_v<QCT>(&o_c.q_c) == 150, 1);
+        // Assert withdraw availability updates correctly
+        assert!(o_c.b_a == 70 && o_c.q_a == 150, 2);
+        // Manually update available quote coins
+        borrow_global_mut<OC<BCT, QCT, E0>>(addr).q_a = 140;
+        a_i_s_n(addr); // Increment mock sequence number
+        withdraw<BCT, QCT, E0>(user, 0, 20); // Withdraw 20 quote coins
+        // Assert correct coin store balances
+        assert!(c_b<BCT>(addr) == 30 && c_b<QCT>(addr) == 70, 3);
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
+        // Assert collateral holdings update correctly
+        assert!(c_v<BCT>(&o_c.b_c) == 70 && c_v<QCT>(&o_c.q_c) == 130, 4);
+        // Assert withdraw availability updates correctly
+        assert!(o_c.b_a == 70 && o_c.q_a == 120, 5);
+        a_i_s_n(addr); // Increment mock sequence number
+        withdraw<BCT, QCT, E0>(user, 70, 120); // Withdraw all possible
+        // Assert correct coin store balances
+        assert!(c_b<BCT>(addr) == 100 && c_b<QCT>(addr) == 190, 6);
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
+        // Assert collateral holdings update correctly
+        assert!(c_v<BCT>(&o_c.b_c) == 0 && c_v<QCT>(&o_c.q_c) == 10, 7);
+        // Assert withdraw availability updates correctly
+        assert!(o_c.b_a == 0 && o_c.q_a == 0, 8);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

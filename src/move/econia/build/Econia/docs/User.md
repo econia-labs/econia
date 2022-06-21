@@ -12,6 +12,7 @@ User-facing trading functionality
 -  [Function `deposit`](#0xc0deb00c_User_deposit)
 -  [Function `init_containers`](#0xc0deb00c_User_init_containers)
 -  [Function `init_user`](#0xc0deb00c_User_init_user)
+-  [Function `withdraw`](#0xc0deb00c_User_withdraw)
 -  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
 
@@ -115,16 +116,6 @@ When invalid sequence number for current transaction
 
 
 
-<a name="0xc0deb00c_User_E_NO_DEPOSIT"></a>
-
-When no deposit is indicated
-
-
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_DEPOSIT">E_NO_DEPOSIT</a>: u64 = 7;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_User_E_NO_MARKET"></a>
 
 When no corresponding market
@@ -151,6 +142,16 @@ When sequence number counter does not exist for user
 
 
 <pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_User_E_NO_TRANSFER"></a>
+
+When no transfer of funds indicated
+
+
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>: u64 = 7;
 </code></pre>
 
 
@@ -185,12 +186,22 @@ When sequence number counter already exists for user
 
 
 
+<a name="0xc0deb00c_User_E_WITHDRAW_TOO_MUCH"></a>
+
+When attempting to withdraw more than is available
+
+
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>: u64 = 8;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_User_deposit"></a>
 
 ## Function `deposit`
 
-Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin as order
-collateral, from <code>AptosFramework::Coin::CoinStore</code> into <code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>
+Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <code>user</code>'s
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>AptosFramework::Coin::CoinStore</code>
 
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64)
@@ -211,7 +222,7 @@ collateral, from <code>AptosFramework::Coin::CoinStore</code> into <code><a href
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
     // Assert user actually attempting <b>to</b> deposit
-    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_DEPOSIT">E_NO_DEPOSIT</a>);
+    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
     // Borrow mutable reference <b>to</b> user collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
     <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be deposited
@@ -295,6 +306,57 @@ transaction, aborting if one already exists
     <b>assert</b>!(!<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_S_C_EXISTS">E_S_C_EXISTS</a>);
     // Initialize sequence counter <b>with</b> user's sequence number
     <b>move_to</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user, <a href="User.md#0xc0deb00c_User_SC">SC</a>{i: a_g_s_n(user_addr)});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_withdraw"></a>
+
+## Function `withdraw`
+
+Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <code>user</code>'s
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>AptosFramework::Coin::CoinStore</code>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw">withdraw</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw">withdraw</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    b_val: u64,
+    q_val: u64
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <b>let</b> addr = s_a_o(user); // Get user <b>address</b>
+    // Assert user <b>has</b> order collateral container
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
+    // Assert user actually attempting <b>to</b> withdraw
+    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
+    // Borrow mutable reference <b>to</b> user collateral container
+    <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
+    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be withdrawn
+        // Assert not trying <b>to</b> withdraw more than available
+        <b>assert</b>!(!(b_val &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
+        // Withdraw from order collateral, deposit <b>to</b> coin store
+        c_d&lt;B&gt;(addr, c_e&lt;B&gt;(&<b>mut</b> o_c.b_c, b_val));
+        o_c.b_a = o_c.b_a - b_val; // Update available amount
+    };
+    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be withdrawn
+        // Assert not trying <b>to</b> withdraw more than available
+        <b>assert</b>!(!(q_val &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
+        // Withdraw from order collateral, deposit <b>to</b> coin store
+        c_d&lt;Q&gt;(addr, c_e&lt;Q&gt;(&<b>mut</b> o_c.q_c, q_val));
+        o_c.q_a = o_c.q_a - q_val; // Update available amount
+    };
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
 }
 </code></pre>
 

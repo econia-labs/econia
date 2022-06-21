@@ -224,8 +224,10 @@ module Econia::Registry {
     #[test_only]
     use AptosFramework::Coin::{
         BurnCapability as CBC,
+        deposit as c_d,
         initialize as c_i,
-        MintCapability as CMC
+        MintCapability as CMC,
+        mint as c_m
     };
 
     #[test_only]
@@ -240,7 +242,7 @@ module Econia::Registry {
 
     #[test_only]
     use Econia::Caps::{
-        has_f_c as c_h_f_c
+        init_caps as c_i_c
     };
 
     #[test_only]
@@ -549,11 +551,33 @@ module Econia::Registry {
     }
 
     #[test_only]
-    /// Register base and quote coin types, with corresponding market
+    /// Mint `amount` of `BCT` to `AptosFramework::Coin::Coinstore` for
+    /// `user`
+    public fun mint_bct_to(
+        user: address,
+        amount: u64
+    ) acquires BCC {
+        // Mint and deposit to user
+        c_d<BCT>(user, c_m<BCT>(amount, &borrow_global<BCC>(@Econia).m));
+    }
+
+    #[test_only]
+    /// Mint `amount` of `QCT` to `AptosFramework::Coin::Coinstore` for
+    /// `user`
+    public fun mint_qct_to(
+        user: address,
+        amount: u64
+    ) acquires QCC {
+        // Mint and deposit to user
+        c_d<QCT>(user, c_m<QCT>(amount, &borrow_global<QCC>(@Econia).m));
+    }
+
+    #[test_only]
+    /// Register base and quote coin types, with corresponding market,
+    /// assuming registry has already been initialized
     public(script) fun register_test_market(
         econia: &signer
     ) acquires MR {
-        init_registry(econia); // Initialize registry
         init_coin_types(econia); // Initialize test coin types
         register_market<BCT, QCT, E0>(econia); // Register market
     }
@@ -589,8 +613,6 @@ module Econia::Registry {
         init_registry(econia); // Initialize registry
         // Assert exists at Econia account
         assert!(exists<MR>(s_a_o(econia)), 0);
-        // Assert friend-like capabilities initialized
-        assert!(c_h_f_c(), 1);
     }
 
     #[test]
@@ -616,6 +638,8 @@ module Econia::Registry {
     public(script) fun is_registered_true(
         econia: &signer
     ) acquires MR {
+        c_i_c(econia); // Initialize friend-like capabilities
+        init_registry(econia); // Initialize registry
         register_test_market(econia); // Register test market
         // Assert true return for registered test market
         assert!(is_registered<BCT, QCT, E0>(), 0);
@@ -658,6 +682,7 @@ module Econia::Registry {
         host: &signer
     ) acquires MR {
         init_coin_types(econia); // Initialize coin types
+        c_i_c(econia); // Initialize friend-like capabilities
         init_registry(econia); // Initialize registry
         register_market<BCT, QCT, E0>(host); // Register market
         // Attempt invalid registration
@@ -675,6 +700,7 @@ module Econia::Registry {
     ) acquires MR {
         init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
+        c_i_c(econia); // Initialize friend-like capabilities
         register_market<BCT, QCT, E4>(host); // Register market
         // Assert order book has correct scale factor
         assert!(b_s_f<BCT, QCT, E4>(s_a_o(host)) == scale_factor<E4>(), 0);

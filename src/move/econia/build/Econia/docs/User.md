@@ -9,10 +9,10 @@ User-facing trading functionality
 -  [Resource `OC`](#0xc0deb00c_User_OC)
 -  [Resource `SC`](#0xc0deb00c_User_SC)
 -  [Constants](#@Constants_0)
+-  [Function `deposit`](#0xc0deb00c_User_deposit)
 -  [Function `init_containers`](#0xc0deb00c_User_init_containers)
 -  [Function `init_user`](#0xc0deb00c_User_init_user)
--  [Function `update_sequence_counter`](#0xc0deb00c_User_update_sequence_counter)
--  [Function `exists_o_c`](#0xc0deb00c_User_exists_o_c)
+-  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
 
 
@@ -115,12 +115,32 @@ When invalid sequence number for current transaction
 
 
 
+<a name="0xc0deb00c_User_E_NO_DEPOSIT"></a>
+
+When no deposit is indicated
+
+
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_DEPOSIT">E_NO_DEPOSIT</a>: u64 = 7;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_User_E_NO_MARKET"></a>
 
 When no corresponding market
 
 
 <pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_User_E_NO_O_C"></a>
+
+When no order collateral container
+
+
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>: u64 = 6;
 </code></pre>
 
 
@@ -164,6 +184,51 @@ When sequence number counter already exists for user
 </code></pre>
 
 
+
+<a name="0xc0deb00c_User_deposit"></a>
+
+## Function `deposit`
+
+Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin as order
+collateral, from <code>AptosFramework::Coin::CoinStore</code> into <code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    b_val: u64,
+    q_val: u64
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <b>let</b> addr = s_a_o(user); // Get user <b>address</b>
+    // Assert user <b>has</b> order collateral container
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
+    // Assert user actually attempting <b>to</b> deposit
+    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_DEPOSIT">E_NO_DEPOSIT</a>);
+    // Borrow mutable reference <b>to</b> user collateral container
+    <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
+    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be deposited
+        c_m&lt;B&gt;(&<b>mut</b> o_c.b_c, c_w&lt;B&gt;(user, b_val)); // Deposit it
+        o_c.b_a = o_c.b_a + b_val; // Increment available base coin
+    };
+    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be deposited
+        c_m&lt;Q&gt;(&<b>mut</b> o_c.q_c, c_w&lt;Q&gt;(user, q_val)); // Deposit it
+        o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
+    };
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_User_init_containers"></a>
 
@@ -237,9 +302,9 @@ transaction, aborting if one already exists
 
 </details>
 
-<a name="0xc0deb00c_User_update_sequence_counter"></a>
+<a name="0xc0deb00c_User_update_s_c"></a>
 
-## Function `update_sequence_counter`
+## Function `update_s_c`
 
 Update sequence counter for user <code>u</code> with the sequence number of
 the current transaction, aborting if user does not have an
@@ -247,7 +312,7 @@ initialized sequence counter or if sequence number is not
 greater than the number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code>
 
 
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_sequence_counter">update_sequence_counter</a>(u: &signer)
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(u: &signer)
 </code></pre>
 
 
@@ -256,7 +321,7 @@ greater than the number indicated by the user's <code><a href="User.md#0xc0deb00
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_sequence_counter">update_sequence_counter</a>(
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(
     u: &signer,
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
     <b>let</b> user_addr = s_a_o(u); // Get user <b>address</b>
@@ -269,29 +334,6 @@ greater than the number indicated by the user's <code><a href="User.md#0xc0deb00
     <b>assert</b>!(s_n &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
     s_c.i = s_n; // Update counter <b>with</b> current sequence number
 }
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_User_exists_o_c"></a>
-
-## Function `exists_o_c`
-
-Return <code><b>true</b></code> if address has specified order collateral type
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_exists_o_c">exists_o_c</a>&lt;B, Q, E&gt;(a: <b>address</b>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_exists_o_c">exists_o_c</a>&lt;B, Q, E&gt;(a: <b>address</b>): bool {<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(a)}
 </code></pre>
 
 
@@ -319,7 +361,7 @@ if already initialized
     user: &signer,
 ) {
     // Assert user does not already have order collateral for market
-    <b>assert</b>!(!<a href="User.md#0xc0deb00c_User_exists_o_c">exists_o_c</a>&lt;B, Q, E&gt;(s_a_o(user)), <a href="User.md#0xc0deb00c_User_E_O_C_EXISTS">E_O_C_EXISTS</a>);
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(s_a_o(user)), <a href="User.md#0xc0deb00c_User_E_O_C_EXISTS">E_O_C_EXISTS</a>);
     // Assert given market <b>has</b> actually been registered
     <b>assert</b>!(r_i_r&lt;B, Q, E&gt;(), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
     // Pack empty order collateral container

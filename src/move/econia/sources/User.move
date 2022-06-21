@@ -36,7 +36,8 @@ module Econia::User {
 
     #[test_only]
     use AptosFramework::Account::{
-        create_account as a_c_a
+        create_account as a_c_a,
+        set_sequence_number as a_s_s_n
     };
 
     #[test_only]
@@ -138,22 +139,21 @@ module Econia::User {
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Update sequence counter for user `u` with the sequence number of
-    /// the current transaction, `s`, aborting if user does not have an
-    /// initialized sequence counter or if `s` not greater than the
-    /// number indicated by the user's `SC`
+    /// the current transaction, aborting if user does not have an
+    /// initialized sequence counter or if sequence number is not
+    /// greater than the number indicated by the user's `SC`
     fun update_sequence_counter(
         u: &signer,
-        s: u64
     ) acquires SC {
         let user_addr = s_a_o(u); // Get user address
         // Assert user has already initialized a sequence counter
         assert!(exists<SC>(user_addr), E_NO_S_C);
         // Borrow mutable reference to user's sequence counter
         let s_c = borrow_global_mut<SC>(user_addr);
-        // Assert new sequence number greater than counter's indicator
-        assert!(s > s_c.i, E_INVALID_S_N);
-        // Update sequence number counter with current sequence number
-        s_c.i = s;
+        let s_n = a_g_s_n(user_addr); // Get current sequence number
+        // Assert new sequence number greater than that of counter
+        assert!(s_n > s_c.i, E_INVALID_S_N);
+        s_c.i = s_n; // Update counter with current sequence number
     }
 
     /// Return `true` if address has specified order collateral type
@@ -299,10 +299,11 @@ module Econia::User {
     public(script) fun init_user_success(
         user: &signer
     ) {
-        a_c_a(s_a_o(user)); // Initialize account resource
+        let user_addr = s_a_o(user); // Get user address
+        a_c_a(user_addr); // Initialize account resource
         init_user(user); // Initialize sequence counter for user
         // Assert sequence counter initializes to user sequence number
-        assert!(a_g_s_n(s_a_o(user)) == 0, 0);
+        assert!(a_g_s_n(user_addr) == 0, 0);
     }
 
     #[test(user = @TestUser)]
@@ -311,7 +312,7 @@ module Econia::User {
     fun update_sequence_counter_failure_no_s_c(
         user: &signer
     ) acquires SC {
-        update_sequence_counter(user, 0); // Attempt invalid update
+        update_sequence_counter(user); // Attempt invalid update
     }
 
     #[test(user = @TestUser)]
@@ -323,8 +324,8 @@ module Econia::User {
         let user_addr = s_a_o(user); // Get user address
         a_c_a(user_addr); // Initialize account resource
         init_user(user); // Initialize sequence counter for user
-        // Attempt invalid, update during same transaction as init
-        update_sequence_counter(user, a_g_s_n(user_addr));
+        // Attempt invalid update during same transaction as init
+        update_sequence_counter(user);
     }
 
     #[test(user = @TestUser)]
@@ -333,12 +334,12 @@ module Econia::User {
         user: &signer
     ) acquires SC {
         let user_addr = s_a_o(user); // Get user address
-        a_c_a(user_addr); // Initialize account resource
+        a_c_a(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
-        // Update sequence counter, passing mock sequence number
-        update_sequence_counter(user, 500);
+        a_s_s_n(user_addr, 10); // Set mock sequence number
+        update_sequence_counter(user); // Execute valid counter update
         // Assert sequence counter updated correctly
-        assert!(borrow_global<SC>(user_addr).i == 500, 0);
+        assert!(borrow_global<SC>(user_addr).i == 10, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

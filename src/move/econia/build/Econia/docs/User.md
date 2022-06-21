@@ -252,12 +252,12 @@ transaction, aborting if one already exists
 ## Function `update_sequence_counter`
 
 Update sequence counter for user <code>u</code> with the sequence number of
-the current transaction, <code>s</code>, aborting if user does not have an
-initialized sequence counter or if <code>s</code> not greater than the
-number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code>
+the current transaction, aborting if user does not have an
+initialized sequence counter or if sequence number is not
+greater than the number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code>
 
 
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_sequence_counter">update_sequence_counter</a>(u: &signer, s: u64)
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_sequence_counter">update_sequence_counter</a>(u: &signer)
 </code></pre>
 
 
@@ -268,17 +268,16 @@ number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a>
 
 <pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_sequence_counter">update_sequence_counter</a>(
     u: &signer,
-    s: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
     <b>let</b> user_addr = s_a_o(u); // Get user <b>address</b>
     // Assert user <b>has</b> already initialized a sequence counter
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>);
     // Borrow mutable reference <b>to</b> user's sequence counter
     <b>let</b> s_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr);
-    // Assert new sequence number greater than counter's indicator
-    <b>assert</b>!(s &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
-    // Update sequence number counter <b>with</b> current sequence number
-    s_c.i = s;
+    <b>let</b> s_n = a_g_s_n(user_addr); // Get current sequence number
+    // Assert new sequence number greater than that of counter
+    <b>assert</b>!(s_n &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
+    s_c.i = s_n; // Update counter <b>with</b> current sequence number
 }
 </code></pre>
 

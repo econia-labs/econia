@@ -9,7 +9,6 @@ Reminder: This is a safe space that welcomes all levels of developers. Econia wi
 Let's build!! &nbsp;:hammer:
 
 ## How to make a contribution
----
 
 If you are interested in contributing to the Econia Protocol and would like to learn more about the technologies we use, look no further and checkout Econia's [README.md](README.md) file.
 
@@ -30,6 +29,5 @@ If you are interested in contributing to the Econia Protocol and would like to l
 - Once merged- high five yourself and celebrate your contribution. The Econia community is cheering you on!! &nbsp;:clap: &nbsp; :tada: 
 
 ## Where to go for help
----
 
 If you run into any issues or need help please reach out to the community via [discord](https://discord.gg/ekN8fUCf). 

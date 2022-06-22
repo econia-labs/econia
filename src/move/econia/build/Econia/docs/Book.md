@@ -235,7 +235,7 @@ Initialize order book under host account, provided <code><a href="Book.md#0xc0de
 with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale factor <code>f</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: <a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
 </code></pre>
 
 
@@ -247,7 +247,7 @@ with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale fact
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(
     host: &signer,
     f: u64,
-    _c: <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ) {
     // Assert book does not already exist under host account
     <b>assert</b>!(!<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(s_a_o(host)), <a href="Book.md#0xc0deb00c_Book_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);

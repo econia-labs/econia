@@ -264,7 +264,7 @@ Initialize open orders under host account, provided <code><a href="Orders.md#0xc
 with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale factor <code>f</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(user: &signer, f: u64, _c: <a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(user: &signer, f: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
 </code></pre>
 
 
@@ -276,7 +276,7 @@ with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale fact
 <pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(
     user: &signer,
     f: u64,
-    _c: <a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
+    _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
 ) {
     // Assert open orders does not already exist under user account
     <b>assert</b>!(!<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(s_a_o(user)), <a href="Orders.md#0xc0deb00c_Orders_E_ORDERS_EXISTS">E_ORDERS_EXISTS</a>);

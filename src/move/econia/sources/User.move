@@ -160,7 +160,7 @@ module Econia::User {
         let o_c = OC<B, Q, E>{b_c: c_z<B>(), b_a: 0, q_c: c_z<Q>(), q_a: 0};
         move_to<OC<B, Q, E>>(user, o_c); // Move to user account
         // Initialize empty open orders container under user account
-        o_i_o<B, Q, E>(user, r_s_f<E>(), c_o_f_c());
+        o_i_o<B, Q, E>(user, r_s_f<E>(), &c_o_f_c());
     }
 
     /// Initialize an `SC` with the sequence number of the initializing
@@ -408,7 +408,7 @@ module Econia::User {
         init_econia(econia); // Initialize Econia core account resources
         r_r_t_m(econia); // Register test market
         // Initialize empty open orders container under user account
-        o_i_o<BCT, QCT, E0>(user, r_s_f<E0>(), c_o_f_c());
+        o_i_o<BCT, QCT, E0>(user, r_s_f<E0>(), &c_o_f_c());
         init_containers<BCT, QCT, E0>(user); // Attempt invalid init
     }
 

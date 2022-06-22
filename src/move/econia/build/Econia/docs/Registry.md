@@ -1291,7 +1291,7 @@ initialized or if market already registered
     // Assert requested market not already registered
     <b>assert</b>!(!t_c(r_t, m_i), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTERED">E_REGISTERED</a>);
     // Initialize empty order book under host account
-    b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), c_b_f_c());
+    b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), &c_b_f_c());
     t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
 }
 </code></pre>

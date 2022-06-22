@@ -273,7 +273,7 @@ initialized for market
     <b>let</b> o_c = <a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;{b_c: c_z&lt;B&gt;(), b_a: 0, q_c: c_z&lt;Q&gt;(), q_a: 0};
     <b>move_to</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user, o_c); // Move <b>to</b> user account
     // Initialize empty open orders container under user account
-    o_i_o&lt;B, Q, E&gt;(user, r_s_f&lt;E&gt;(), c_o_f_c());
+    o_i_o&lt;B, Q, E&gt;(user, r_s_f&lt;E&gt;(), &c_o_f_c());
 }
 </code></pre>
 

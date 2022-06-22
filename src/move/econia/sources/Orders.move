@@ -112,7 +112,7 @@ module Econia::Orders {
     public fun init_orders<B, Q, E>(
         user: &signer,
         f: u64,
-        _c: FriendCap
+        _c: &FriendCap
     ) {
         // Assert open orders does not already exist under user account
         assert!(!exists_orders<B, Q, E>(s_a_o(user)), E_ORDERS_EXISTS);
@@ -207,7 +207,7 @@ module Econia::Orders {
     )
     acquires OO {
         // Init orders with scale factor of 10
-        init_orders<BT, QT, ET>(user, 10, FriendCap{});
+        init_orders<BT, QT, ET>(user, 10, &FriendCap{});
         // Attempt to add invalid order
         add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 15);
     }
@@ -221,7 +221,7 @@ module Econia::Orders {
     )
     acquires OO {
         // Init orders with scale factor of 1
-        init_orders<BT, QT, ET>(user, 1, FriendCap{});
+        init_orders<BT, QT, ET>(user, 1, &FriendCap{});
         // Attempt to add invalid order
         add_order<BT, QT, ET>(@TestUser, ASK, 0, HI_64, 2);
     }
@@ -269,9 +269,9 @@ module Econia::Orders {
         user: &signer,
     ) {
         // Initialize open orders with scale factor 1
-        init_orders<BT, QT, ET>(user, 1, FriendCap{});
+        init_orders<BT, QT, ET>(user, 1, &FriendCap{});
         // Attempt invalid re-initialization
-        init_orders<BT, QT, ET>(user, 1, FriendCap{});
+        init_orders<BT, QT, ET>(user, 1, &FriendCap{});
     }
 
     #[test(user = @TestUser)]
@@ -280,7 +280,7 @@ module Econia::Orders {
         user: &signer,
     ) acquires OO {
         // Initialize open orders with scale factor 1
-        init_orders<BT, QT, ET>(user, 1, FriendCap{});
+        init_orders<BT, QT, ET>(user, 1, &FriendCap{});
         let user_addr = s_a_o(user); // Get user address
         // Assert open orders exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(user_addr) == 1, 0);

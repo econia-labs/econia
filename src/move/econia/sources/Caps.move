@@ -193,9 +193,9 @@ module Econia::Caps {
     ) acquires FC {
         init_caps(econia); // Initialize capabilities
         // Invoke function requiring book capability
-        b_i_b<BT, QT, ET>(econia, 0, book_f_c());
+        b_i_b<BT, QT, ET>(econia, 0, &book_f_c());
         // Invoke function requiring orders capability
-        o_i_o<BT, QT, ET>(econia, 0, orders_f_c());
+        o_i_o<BT, QT, ET>(econia, 0, &orders_f_c());
     }
 
     #[test]

@@ -102,7 +102,7 @@ module Econia::Book {
     public fun init_book<B, Q, E>(
         host: &signer,
         f: u64,
-        _c: FriendCap
+        _c: &FriendCap
     ) {
         // Assert book does not already exist under host account
         assert!(!exists_book<B, Q, E>(s_a_o(host)), E_BOOK_EXISTS);
@@ -151,9 +151,9 @@ module Econia::Book {
         host: &signer,
     ) {
         // Initialize book with scale factor 1
-        init_book<BT, QT, ET>(host, 1, FriendCap{});
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
         // Attempt invalid re-initialization
-        init_book<BT, QT, ET>(host, 1, FriendCap{});
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
     }
 
     #[test(host = @TestUser)]
@@ -162,7 +162,7 @@ module Econia::Book {
         host: &signer,
     ) acquires OB {
         // Initialize book with scale factor 1
-        init_book<BT, QT, ET>(host, 1, FriendCap{});
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
         let host_addr = s_a_o(host); // Get host address
         // Assert book exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(host_addr) == 1, 0);

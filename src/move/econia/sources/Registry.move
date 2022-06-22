@@ -484,7 +484,7 @@ module Econia::Registry {
         // Assert requested market not already registered
         assert!(!t_c(r_t, m_i), E_REGISTERED);
         // Initialize empty order book under host account
-        b_i_b<B, Q, E>(host, scale_factor<E>(), c_b_f_c());
+        b_i_b<B, Q, E>(host, scale_factor<E>(), &c_b_f_c());
         t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
     }
 

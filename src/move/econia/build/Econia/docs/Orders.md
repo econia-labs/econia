@@ -13,6 +13,7 @@ Pure-Move implementation of user-side open orders functionality
 -  [Function `get_friend_cap`](#0xc0deb00c_Orders_get_friend_cap)
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
 -  [Function `scale_factor`](#0xc0deb00c_Orders_scale_factor)
+-  [Function `add_order`](#0xc0deb00c_Orders_add_order)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -96,12 +97,62 @@ Open orders, for the given market, on a user's account
 ## Constants
 
 
+<a name="0xc0deb00c_Orders_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_Orders_E_NOT_ECONIA"></a>
 
 When account/address is not Econia
 
 
 <pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Orders_ASK"></a>
+
+Ask flag
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Orders_BID"></a>
+
+Bid flag
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Orders_E_AMOUNT_NOT_MULTIPLE"></a>
+
+When amount is not an integer multiple of scale factor
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_AMOUNT_NOT_MULTIPLE">E_AMOUNT_NOT_MULTIPLE</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Orders_E_FILL_OVERFLOW"></a>
+
+When amount of quote coins to fill order overflows u64
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_FILL_OVERFLOW">E_FILL_OVERFLOW</a>: u64 = 5;
 </code></pre>
 
 
@@ -122,6 +173,16 @@ When open orders already exists at given address
 
 
 <pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_ORDERS_EXISTS">E_ORDERS_EXISTS</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Orders_E_PRICE_0"></a>
+
+When indicated price indicated 0
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_PRICE_0">E_PRICE_0</a>: u64 = 3;
 </code></pre>
 
 
@@ -240,6 +301,57 @@ Return scale factor of specified open orders at given address
     <b>assert</b>!(<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(addr), <a href="Orders.md#0xc0deb00c_Orders_E_NO_ORDERS">E_NO_ORDERS</a>);
     // Return open order container's scale factor
     <b>borrow_global</b>&lt;<a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;&gt;(addr).f
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Orders_add_order"></a>
+
+## Function `add_order`
+
+Add new order to <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code> at <code>addr</code> for side <code>side</code>, order ID <code>id</code>,
+scaled price <code>price</code>, and unscaled order size <code>size</code>, aborting
+if <code>price</code> is 0, <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code> not initialized at <code>addr</code>, unscaled order
+size is not an integer multiple of price scale factor indicated
+by <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code>, or if the required amount of quote coins to fill the
+order cannot fit in a <code>u64</code>
+
+
+<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128, price: u64, size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    side: bool,
+    id: u128,
+    price: u64,
+    size: u64,
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <b>assert</b>!(price &gt; 0, <a href="Orders.md#0xc0deb00c_Orders_E_PRICE_0">E_PRICE_0</a>); // Assert order <b>has</b> actual price
+    // Assert open orders container <b>exists</b> at given <b>address</b>
+    <b>assert</b>!(<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(addr), <a href="Orders.md#0xc0deb00c_Orders_E_NO_ORDERS">E_NO_ORDERS</a>);
+    // Borrow mutable reference <b>to</b> open orders at given <b>address</b>
+    <b>let</b> o_o = <b>borrow_global_mut</b>&lt;<a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;&gt;(addr);
+    <b>let</b> s_f = o_o.f; // Get price scale factor
+    // Assert order size is integer multiple of price scale factor
+    <b>assert</b>!(size % s_f == 0, <a href="Orders.md#0xc0deb00c_Orders_E_AMOUNT_NOT_MULTIPLE">E_AMOUNT_NOT_MULTIPLE</a>);
+    <b>let</b> scaled_size = size / s_f; // Get scaled order size
+    // Determine amount of quote coins needed <b>to</b> fill order, <b>as</b> u128
+    <b>let</b> fill_amount = (scaled_size <b>as</b> u128) * (price <b>as</b> u128);
+    // Assert that fill amount can fit in a u64
+    <b>assert</b>!(!(fill_amount &gt; (<a href="Orders.md#0xc0deb00c_Orders_HI_64">HI_64</a> <b>as</b> u128)), <a href="Orders.md#0xc0deb00c_Orders_E_FILL_OVERFLOW">E_FILL_OVERFLOW</a>);
+    // Add order <b>to</b> corresponding tree
+    <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) cb_i&lt;u64&gt;(&<b>mut</b> o_o.a, id, scaled_size)
+        <b>else</b> cb_i&lt;u64&gt;(&<b>mut</b> o_o.b, id, scaled_size);
 }
 </code></pre>
 

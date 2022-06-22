@@ -73,6 +73,8 @@ module Econia::Orders {
     const E_AMOUNT_NOT_MULTIPLE: u64 = 4;
     /// When amount of quote coins to fill order overflows u64
     const E_FILL_OVERFLOW: u64 = 5;
+    /// When order size is 0
+    const E_SIZE_0: u64 = 6;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -134,12 +136,29 @@ module Econia::Orders {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Add new order to `OO` at `addr` for side `side`, order ID `id`,
-    /// scaled price `price`, and unscaled order size `size`, aborting
-    /// if `price` is 0, `OO` not initialized at `addr`, unscaled order
-    /// size is not an integer multiple of price scale factor indicated
-    /// by `OO`, or if the required amount of quote coins to fill the
-    /// order cannot fit in a `u64`
+    /// Add new order to users's open orders container for market
+    /// `<B, Q, E>`
+    ///
+    /// # Parameters
+    /// * `addr`: User's address
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID (see `Econia::ID`)
+    /// * `price`: Scaled integer price (see `Econia::ID`)
+    /// * `size`: Unscaled order size, in base coin subunits
+    ///
+    /// # Abort sceniarios
+    /// * If `price` is 0
+    /// * If `size` is 0
+    /// * If `OO<B, Q, E>` not initialized at `addr`
+    /// * If `size` is not an integer multiple of price scale factor for
+    ///   given market (see `Econia::Registry`)
+    /// * If amount of quote coin subunits needed to fill order does not
+    ///   fit in a `u64`
+    ///
+    /// # Assumes
+    /// * Caller has constructed `id` to incorporate `price` as
+    ///   specified in `Econia::ID`, since `id` is not directly operated
+    ///   on or verified (`id` is only used as a tree insertion key)
     fun add_order<B, Q, E>(
         addr: address,
         side: bool,
@@ -148,6 +167,7 @@ module Econia::Orders {
         size: u64,
     ) acquires OO {
         assert!(price > 0, E_PRICE_0); // Assert order has actual price
+        assert!(size > 0, E_SIZE_0); // Assert order has actual size
         // Assert open orders container exists at given address
         assert!(exists_orders<B, Q, E>(addr), E_NO_ORDERS);
         // Borrow mutable reference to open orders at given address
@@ -168,6 +188,61 @@ module Econia::Orders {
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for no open orders container initialized
+    fun add_order_failure_no_orders()
+    acquires OO {
+        // Attempt invalid add
+        add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 1);
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for order size not integer multiple of
+    /// scale factor
+    fun add_order_failure_not_multiple(
+        user: &signer
+    )
+    acquires OO {
+        // Init orders with scale factor of 10
+        init_orders<BT, QT, ET>(user, 10, FriendCap{});
+        // Attempt to add invalid order
+        add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 15);
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for required quote coin fill amount not fitting
+    /// into a `u64`
+    fun add_order_failure_overflow(
+        user: &signer
+    )
+    acquires OO {
+        // Init orders with scale factor of 1
+        init_orders<BT, QT, ET>(user, 1, FriendCap{});
+        // Attempt to add invalid order
+        add_order<BT, QT, ET>(@TestUser, ASK, 0, HI_64, 2);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for order of price 0
+    fun add_order_failure_price_0()
+    acquires OO {
+        // Attempt to add invalid order
+        add_order<BT, QT, ET>(@TestUser, ASK, 0, 0, 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for order of size 0
+    fun add_order_failure_size_0()
+    acquires OO {
+        // Attempt to add invalid order
+        add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 0);
+    }
 
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 2)]

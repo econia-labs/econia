@@ -14,6 +14,9 @@ Pure-Move implementation of user-side open orders functionality
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
 -  [Function `scale_factor`](#0xc0deb00c_Orders_scale_factor)
 -  [Function `add_order`](#0xc0deb00c_Orders_add_order)
+    -  [Parameters](#@Parameters_1)
+    -  [Abort sceniarios](#@Abort_sceniarios_2)
+    -  [Assumes](#@Assumes_3)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -187,6 +190,16 @@ When indicated price indicated 0
 
 
 
+<a name="0xc0deb00c_Orders_E_SIZE_0"></a>
+
+When order size is 0
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_SIZE_0">E_SIZE_0</a>: u64 = 6;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_Orders_exists_orders"></a>
 
 ## Function `exists_orders`
@@ -312,12 +325,41 @@ Return scale factor of specified open orders at given address
 
 ## Function `add_order`
 
-Add new order to <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code> at <code>addr</code> for side <code>side</code>, order ID <code>id</code>,
-scaled price <code>price</code>, and unscaled order size <code>size</code>, aborting
-if <code>price</code> is 0, <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code> not initialized at <code>addr</code>, unscaled order
-size is not an integer multiple of price scale factor indicated
-by <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code>, or if the required amount of quote coins to fill the
-order cannot fit in a <code>u64</code>
+Add new order to users's open orders container for market
+<code>&lt;B, Q, E&gt;</code>
+
+
+<a name="@Parameters_1"></a>
+
+### Parameters
+
+* <code>addr</code>: User's address
+* <code>side</code>: <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code> or <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>
+* <code>id</code>: Order ID (see <code>Econia::ID</code>)
+* <code>price</code>: Scaled integer price (see <code>Econia::ID</code>)
+* <code>size</code>: Unscaled order size, in base coin subunits
+
+
+<a name="@Abort_sceniarios_2"></a>
+
+### Abort sceniarios
+
+* If <code>price</code> is 0
+* If <code>size</code> is 0
+* If <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;</code> not initialized at <code>addr</code>
+* If <code>size</code> is not an integer multiple of price scale factor for
+given market (see <code>Econia::Registry</code>)
+* If amount of quote coin subunits needed to fill order does not
+fit in a <code>u64</code>
+
+
+<a name="@Assumes_3"></a>
+
+### Assumes
+
+* Caller has constructed <code>id</code> to incorporate <code>price</code> as
+specified in <code>Econia::ID</code>, since <code>id</code> is not directly operated
+on or verified (<code>id</code> is only used as a tree insertion key)
 
 
 <pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128, price: u64, size: u64)
@@ -337,6 +379,7 @@ order cannot fit in a <code>u64</code>
     size: u64,
 ) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <b>assert</b>!(price &gt; 0, <a href="Orders.md#0xc0deb00c_Orders_E_PRICE_0">E_PRICE_0</a>); // Assert order <b>has</b> actual price
+    <b>assert</b>!(size &gt; 0, <a href="Orders.md#0xc0deb00c_Orders_E_SIZE_0">E_SIZE_0</a>); // Assert order <b>has</b> actual size
     // Assert open orders container <b>exists</b> at given <b>address</b>
     <b>assert</b>!(<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(addr), <a href="Orders.md#0xc0deb00c_Orders_E_NO_ORDERS">E_NO_ORDERS</a>);
     // Borrow mutable reference <b>to</b> open orders at given <b>address</b>

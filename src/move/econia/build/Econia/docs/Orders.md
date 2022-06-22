@@ -22,12 +22,18 @@ in public functions.
 For a market specified by <code>&lt;B, Q, E&gt;</code> (see <code>Econia::Registry</code>), a
 user's open orders are stored in an <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code>, which has a
 <code>Econia::CritBit::CB</code> for both asks and bids. In each tree,
-key-value pairs have a key formatted per in <code>Econia::ID</code>, and a
-value indicating the order's "scaled size", where scaled size is
-defined as the "unscaled size" of an order divided by the market
-scale factor (See <code>Econia::Registry</code>):
+key-value pairs have a key formatted per <code>Econia::ID</code>, and a value
+indicating the order's "scaled size" remaining to be filled, where
+scaled size is defined as the "unscaled size" of an order divided by
+the market scale factor (See <code>Econia::Registry</code>):
 
 $size_{scaled} = size_{unscaled} / SF$
+
+
+<a name="@Order_placement_2"></a>
+
+### Order placement
+
 
 For example, if a user wants to place a bid for <code>1400</code> indivisible
 subunits of protocol coin <code>PRO</code> in a <code>USDC</code>-denominated market with
@@ -35,19 +41,19 @@ with a scale factor of <code>100</code>, and is willing to pay <code>28014</code
 indivisble subunits of <code>USDC</code>, then their bid has an unscaled size
 of <code>1400</code>, a scaled size of <code>14</code>, and a scaled price of <code>2001</code>. Thus
 when this bid is added to the user's open orders per <code><a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>()</code>,
-the <code>b</code> field of their <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;PRO, USDC, E2&gt;</code> will be updated to
-include a key-value pair of the form $\{id, 14\}$, where $id$
-denotes an order ID (per <code>Econia::ID</code>) indicating a scaled price of
-<code>2001</code>.
+into the <code>b</code> field of their <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;PRO, USDC, E2&gt;</code> will be inserted a
+key-value pair of the form $\{id, 14\}$, where $id$ denotes an order
+ID (per <code>Econia::ID</code>) indicating a scaled price of <code>2001</code>.
 
 ---
 
 
 -  [Test oriented implementation](#@Test_oriented_implementation_0)
 -  [Order structure](#@Order_structure_1)
+    -  [Order placement](#@Order_placement_2)
 -  [Struct `FriendCap`](#0xc0deb00c_Orders_FriendCap)
 -  [Resource `OO`](#0xc0deb00c_Orders_OO)
--  [Constants](#@Constants_2)
+-  [Constants](#@Constants_3)
 -  [Function `add_ask`](#0xc0deb00c_Orders_add_ask)
 -  [Function `add_bid`](#0xc0deb00c_Orders_add_bid)
 -  [Function `exists_orders`](#0xc0deb00c_Orders_exists_orders)
@@ -55,9 +61,10 @@ denotes an order ID (per <code>Econia::ID</code>) indicating a scaled price of
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
 -  [Function `scale_factor`](#0xc0deb00c_Orders_scale_factor)
 -  [Function `add_order`](#0xc0deb00c_Orders_add_order)
-    -  [Parameters](#@Parameters_3)
-    -  [Abort sceniarios](#@Abort_sceniarios_4)
-    -  [Assumes](#@Assumes_5)
+    -  [Parameters](#@Parameters_4)
+    -  [Returns](#@Returns_5)
+    -  [Abort sceniarios](#@Abort_sceniarios_6)
+    -  [Assumes](#@Assumes_7)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -136,7 +143,7 @@ Open orders, for the given market, on a user's account
 
 </details>
 
-<a name="@Constants_2"></a>
+<a name="@Constants_3"></a>
 
 ## Constants
 
@@ -248,7 +255,7 @@ When order size is 0
 Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_ask">add_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_ask">add_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): u64
 </code></pre>
 
 
@@ -263,8 +270,9 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
     price: u64,
     size: u64,
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
-) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
-    <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id, price, size);
+): u64
+<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id, price, size)
 }
 </code></pre>
 
@@ -279,7 +287,7 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
 Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): u64
 </code></pre>
 
 
@@ -294,8 +302,9 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
     price: u64,
     size: u64,
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
-) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
-    <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id, price, size);
+): u64
+<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id, price, size)
 }
 </code></pre>
 
@@ -429,10 +438,10 @@ Return scale factor of specified open orders at given address
 ## Function `add_order`
 
 Add new order to users's open orders container for market
-<code>&lt;B, Q, E&gt;</code>
+<code>&lt;B, Q, E&gt;</code>, returning scaled size of order
 
 
-<a name="@Parameters_3"></a>
+<a name="@Parameters_4"></a>
 
 ### Parameters
 
@@ -443,7 +452,14 @@ Add new order to users's open orders container for market
 * <code>size</code>: Unscaled order size, in base coin subunits
 
 
-<a name="@Abort_sceniarios_4"></a>
+<a name="@Returns_5"></a>
+
+### Returns
+
+* <code>u64</code>: Scaled order size
+
+
+<a name="@Abort_sceniarios_6"></a>
 
 ### Abort sceniarios
 
@@ -456,7 +472,7 @@ given market (see <code>Econia::Registry</code>)
 fit in a <code>u64</code>
 
 
-<a name="@Assumes_5"></a>
+<a name="@Assumes_7"></a>
 
 ### Assumes
 
@@ -465,7 +481,7 @@ in <code>Econia::ID</code>, since <code>id</code> is not directly operated on or
 verified (<code>id</code> is only used as a tree insertion key)
 
 
-<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128, price: u64, size: u64)
+<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128, price: u64, size: u64): u64
 </code></pre>
 
 
@@ -480,7 +496,8 @@ verified (<code>id</code> is only used as a tree insertion key)
     id: u128,
     price: u64,
     size: u64,
-) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+): u64
+<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <b>assert</b>!(price &gt; 0, <a href="Orders.md#0xc0deb00c_Orders_E_PRICE_0">E_PRICE_0</a>); // Assert order <b>has</b> actual price
     <b>assert</b>!(size &gt; 0, <a href="Orders.md#0xc0deb00c_Orders_E_SIZE_0">E_SIZE_0</a>); // Assert order <b>has</b> actual size
     // Assert open orders container <b>exists</b> at given <b>address</b>
@@ -498,6 +515,7 @@ verified (<code>id</code> is only used as a tree insertion key)
     // Add order <b>to</b> corresponding tree
     <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) cb_i&lt;u64&gt;(&<b>mut</b> o_o.a, id, scaled_size)
         <b>else</b> cb_i&lt;u64&gt;(&<b>mut</b> o_o.b, id, scaled_size);
+    scaled_size
 }
 </code></pre>
 

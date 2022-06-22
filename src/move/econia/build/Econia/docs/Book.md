@@ -3,13 +3,46 @@
 
 # Module `0xc0deb00c::Book`
 
-Pure-Move implementation of market-side order book functionality
+
+<a name="@Test_oriented_implementation_0"></a>
+
+## Test oriented implementation
 
 
+The present module is implemented purely in Move, to enable coverage
+testing as described in <code>Econia::Caps</code>. Hence the use of <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
+in public functions.
+
+
+<a name="@Order_structure_1"></a>
+
+## Order structure
+
+
+For a market specified by <code>&lt;B, Q, E&gt;</code> (see <code>Econia::Registry</code>), an
+order book is stored in an <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code>, which has a <code>Econia::CritBit::CB</code>
+for both asks and bids. In each tree, key-value pairs have a key
+formatted per <code>Econia::ID</code>, and a value <code><a href="Book.md#0xc0deb00c_Book_P">P</a></code>, which indicates the
+user holding the corresponding position in the order book, as well
+as the scaled size (see <code>Econia::Orders</code>) of the position remaining
+to be filled.
+
+
+<a name="@Order_placement_2"></a>
+
+### Order placement
+
+
+---
+
+
+-  [Test oriented implementation](#@Test_oriented_implementation_0)
+-  [Order structure](#@Order_structure_1)
+    -  [Order placement](#@Order_placement_2)
 -  [Struct `FriendCap`](#0xc0deb00c_Book_FriendCap)
 -  [Resource `OB`](#0xc0deb00c_Book_OB)
 -  [Struct `P`](#0xc0deb00c_Book_P)
--  [Constants](#@Constants_0)
+-  [Constants](#@Constants_3)
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
 -  [Function `get_friend_cap`](#0xc0deb00c_Book_get_friend_cap)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
@@ -126,21 +159,20 @@ Position in an order book
 <code>s: u64</code>
 </dt>
 <dd>
- Size of position, in base coin subunits. Corresponds to
- <code>AptosFramework::Coin::Coin.value</code>
+ Scaled size (see <code>Econia::Orders</code>) of position to be filled
 </dd>
 <dt>
 <code>a: <b>address</b></code>
 </dt>
 <dd>
- Address
+ Address holding position
 </dd>
 </dl>
 
 
 </details>
 
-<a name="@Constants_0"></a>
+<a name="@Constants_3"></a>
 
 ## Constants
 

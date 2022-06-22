@@ -1,4 +1,23 @@
-/// Pure-Move implementation of market-side order book functionality
+/// # Test oriented implementation
+///
+/// The present module is implemented purely in Move, to enable coverage
+/// testing as described in `Econia::Caps`. Hence the use of `FriendCap`
+/// in public functions.
+///
+/// # Order structure
+///
+/// For a market specified by `<B, Q, E>` (see `Econia::Registry`), an
+/// order book is stored in an `OB`, which has a `Econia::CritBit::CB`
+/// for both asks and bids. In each tree, key-value pairs have a key
+/// formatted per `Econia::ID`, and a value `P`, which indicates the
+/// user holding the corresponding position in the order book, as well
+/// as the scaled size (see `Econia::Orders`) of the position remaining
+/// to be filled.
+///
+/// ## Order placement
+///
+/// ---
+///
 module Econia::Book {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -47,10 +66,9 @@ module Econia::Book {
 
     /// Position in an order book
     struct P has store {
-        /// Size of position, in base coin subunits. Corresponds to
-        /// `AptosFramework::Coin::Coin.value`
+        /// Scaled size (see `Econia::Orders`) of position to be filled
         s: u64,
-        /// Address
+        /// Address holding position
         a: address
     }
 

@@ -9,12 +9,14 @@
 /// For a market specified by `<B, Q, E>` (see `Econia::Registry`), a
 /// user's open orders are stored in an `OO`, which has a
 /// `Econia::CritBit::CB` for both asks and bids. In each tree,
-/// key-value pairs have a key formatted per in `Econia::ID`, and a
-/// value indicating the order's "scaled size", where scaled size is
-/// defined as the "unscaled size" of an order divided by the market
-/// scale factor (See `Econia::Registry`):
+/// key-value pairs have a key formatted per `Econia::ID`, and a value
+/// indicating the order's "scaled size" remaining to be filled, where
+/// scaled size is defined as the "unscaled size" of an order divided by
+/// the market scale factor (See `Econia::Registry`):
 ///
 /// $size_{scaled} = size_{unscaled} / SF$
+///
+/// ## Order placement
 ///
 /// For example, if a user wants to place a bid for `1400` indivisible
 /// subunits of protocol coin `PRO` in a `USDC`-denominated market with
@@ -22,10 +24,9 @@
 /// indivisble subunits of `USDC`, then their bid has an unscaled size
 /// of `1400`, a scaled size of `14`, and a scaled price of `2001`. Thus
 /// when this bid is added to the user's open orders per `add_bid()`,
-/// the `b` field of their `OO<PRO, USDC, E2>` will be updated to
-/// include a key-value pair of the form $\{id, 14\}$, where $id$
-/// denotes an order ID (per `Econia::ID`) indicating a scaled price of
-/// `2001`.
+/// into the `b` field of their `OO<PRO, USDC, E2>` will be inserted a
+/// key-value pair of the form $\{id, 14\}$, where $id$ denotes an order
+/// ID (per `Econia::ID`) indicating a scaled price of `2001`.
 ///
 /// ---
 ///
@@ -129,8 +130,9 @@ module Econia::Orders {
         price: u64,
         size: u64,
         _c: &FriendCap
-    ) acquires OO {
-        add_order<B, Q, E>(addr, ASK, id, price, size);
+    ): u64
+    acquires OO {
+        add_order<B, Q, E>(addr, ASK, id, price, size)
     }
 
     /// Wrapped `add_order()` call for `BID`, requiring `FriendCap`
@@ -140,8 +142,9 @@ module Econia::Orders {
         price: u64,
         size: u64,
         _c: &FriendCap
-    ) acquires OO {
-        add_order<B, Q, E>(addr, BID, id, price, size);
+    ): u64
+    acquires OO {
+        add_order<B, Q, E>(addr, BID, id, price, size)
     }
 
     /// Return `true` if specified open orders type exists at address
@@ -190,7 +193,7 @@ module Econia::Orders {
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Add new order to users's open orders container for market
-    /// `<B, Q, E>`
+    /// `<B, Q, E>`, returning scaled size of order
     ///
     /// # Parameters
     /// * `addr`: User's address
@@ -198,6 +201,9 @@ module Econia::Orders {
     /// * `id`: Order ID (see `Econia::ID`)
     /// * `price`: Scaled integer price (see `Econia::ID`)
     /// * `size`: Unscaled order size, in base coin subunits
+    ///
+    /// # Returns
+    /// * `u64`: Scaled order size
     ///
     /// # Abort sceniarios
     /// * If `price` is 0
@@ -218,7 +224,8 @@ module Econia::Orders {
         id: u128,
         price: u64,
         size: u64,
-    ) acquires OO {
+    ): u64
+    acquires OO {
         assert!(price > 0, E_PRICE_0); // Assert order has actual price
         assert!(size > 0, E_SIZE_0); // Assert order has actual size
         // Assert open orders container exists at given address
@@ -236,6 +243,7 @@ module Econia::Orders {
         // Add order to corresponding tree
         if (side == ASK) cb_i<u64>(&mut o_o.a, id, scaled_size)
             else cb_i<u64>(&mut o_o.b, id, scaled_size);
+        scaled_size
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -261,7 +269,7 @@ module Econia::Orders {
     acquires OO {
         // Init orders with scale factor of 10
         init_orders<BT, QT, ET>(user, 10, &FriendCap{});
-        // Attempt to add invalid order
+        // Attempt invalid add
         add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 15);
     }
 
@@ -275,7 +283,7 @@ module Econia::Orders {
     acquires OO {
         // Init orders with scale factor of 1
         init_orders<BT, QT, ET>(user, 1, &FriendCap{});
-        // Attempt to add invalid order
+        // Attempt invalid add
         add_order<BT, QT, ET>(@TestUser, ASK, 0, HI_64, 2);
     }
 
@@ -284,7 +292,7 @@ module Econia::Orders {
     /// Verify failure for order of price 0
     fun add_order_failure_price_0()
     acquires OO {
-        // Attempt to add invalid order
+        // Attempt invalid add
         add_order<BT, QT, ET>(@TestUser, ASK, 0, 0, 1);
     }
 
@@ -293,7 +301,7 @@ module Econia::Orders {
     /// Verify failure for order of size 0
     fun add_order_failure_size_0()
     acquires OO {
-        // Attempt to add invalid order
+        // Attempt invalid add
         add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 0);
     }
 
@@ -306,14 +314,18 @@ module Econia::Orders {
         let f_c = FriendCap{}; // Initialize friend-like capability
         // Init orders with scale factor of 100
         init_orders<BT, QT, ET>(user, 100, &f_c);
-        add_ask<BT, QT, ET>(@TestUser, 123, 1, 400, &f_c); // Add ask
-        add_bid<BT, QT, ET>(@TestUser, 234, 3, 1400, &f_c); // Add bid
+        let ask_s_s = // Add ask, storing resultant scaled size
+            add_ask<BT, QT, ET>(@TestUser, 123, 1, 400, &f_c);
+        assert!(ask_s_s == 4, 0); // Assert correct scaled size return
+        let bid_s_s = // Add bid, storing resultant scaled size
+            add_bid<BT, QT, ET>(@TestUser, 234, 3, 1400, &f_c);
+        assert!(bid_s_s == 14, 1); // Assert correct scaled size return
         // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert ask added correctly
-        assert!(*cb_b<u64>(&o_o.a, 123) == 4, 0);
+        assert!(*cb_b<u64>(&o_o.a, 123) == 4, 2);
         // Assert bid added correctly
-        assert!(*cb_b<u64>(&o_o.b, 234) == 14, 0);
+        assert!(*cb_b<u64>(&o_o.b, 234) == 14, 3);
     }
 
     #[test(account = @TestUser)]

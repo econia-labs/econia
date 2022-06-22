@@ -1,4 +1,34 @@
-/// Pure-Move implementation of user-side open orders functionality
+/// # Test oriented implementation
+///
+/// The present module is implemented purely in Move, to enable coverage
+/// testing as described in `Econia::Caps`. Hence the use of `FriendCap`
+/// in public functions.
+///
+/// # Order structure
+///
+/// For a market specified by `<B, Q, E>` (see `Econia::Registry`), a
+/// user's open orders are stored in an `OO`, which has a
+/// `Econia::CritBit::CB` for both asks and bids. In each tree,
+/// key-value pairs have a key formatted per in `Econia::ID`, and a
+/// value indicating the order's "scaled size", where scaled size is
+/// defined as the "unscaled size" of an order divided by the market
+/// scale factor (See `Econia::Registry`):
+///
+/// $size_{scaled} = size_{unscaled} / SF$
+///
+/// For example, if a user wants to place a bid for `1400` indivisible
+/// subunits of protocol coin `PRO` in a `USDC`-denominated market with
+/// with a scale factor of `100`, and is willing to pay `28014`
+/// indivisble subunits of `USDC`, then their bid has an unscaled size
+/// of `1400`, a scaled size of `14`, and a scaled price of `2001`. Thus
+/// when this bid is added to the user's open orders per `add_bid()`,
+/// the `b` field of their `OO<PRO, USDC, E2>` will be updated to
+/// include a key-value pair of the form $\{id, 14\}$, where $id$
+/// denotes an order ID (per `Econia::ID`) indicating a scaled price of
+/// `2001`.
+///
+/// ---
+///
 module Econia::Orders {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -19,6 +49,7 @@ module Econia::Orders {
 
     #[test_only]
     use Econia::CritBit::{
+        borrow as cb_b,
         is_empty as cb_i_e
     };
 
@@ -91,6 +122,28 @@ module Econia::Orders {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Wrapped `add_order()` call for `ASK`, requiring `FriendCap`
+    public fun add_ask<B, Q, E>(
+        addr: address,
+        id: u128,
+        price: u64,
+        size: u64,
+        _c: &FriendCap
+    ) acquires OO {
+        add_order<B, Q, E>(addr, ASK, id, price, size);
+    }
+
+    /// Wrapped `add_order()` call for `BID`, requiring `FriendCap`
+    public fun add_bid<B, Q, E>(
+        addr: address,
+        id: u128,
+        price: u64,
+        size: u64,
+        _c: &FriendCap
+    ) acquires OO {
+        add_order<B, Q, E>(addr, BID, id, price, size);
+    }
+
     /// Return `true` if specified open orders type exists at address
     public fun exists_orders<B, Q, E>(
         a: address
@@ -156,9 +209,9 @@ module Econia::Orders {
     ///   fit in a `u64`
     ///
     /// # Assumes
-    /// * Caller has constructed `id` to incorporate `price` as
-    ///   specified in `Econia::ID`, since `id` is not directly operated
-    ///   on or verified (`id` is only used as a tree insertion key)
+    /// * Caller has constructed `id` to indicate `price` as specified
+    ///   in `Econia::ID`, since `id` is not directly operated on or
+    ///   verified (`id` is only used as a tree insertion key)
     fun add_order<B, Q, E>(
         addr: address,
         side: bool,
@@ -242,6 +295,25 @@ module Econia::Orders {
     acquires OO {
         // Attempt to add invalid order
         add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 0);
+    }
+
+    #[test(user = @TestUser)]
+    /// Verify successful adding of orders
+    fun add_orders_success(
+        user: &signer
+    )
+    acquires OO {
+        let f_c = FriendCap{}; // Initialize friend-like capability
+        // Init orders with scale factor of 100
+        init_orders<BT, QT, ET>(user, 100, &f_c);
+        add_ask<BT, QT, ET>(@TestUser, 123, 1, 400, &f_c); // Add ask
+        add_bid<BT, QT, ET>(@TestUser, 234, 3, 1400, &f_c); // Add bid
+        // Borrow immutable reference to open orders
+        let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
+        // Assert ask added correctly
+        assert!(*cb_b<u64>(&o_o.a, 123) == 4, 0);
+        // Assert bid added correctly
+        assert!(*cb_b<u64>(&o_o.b, 234) == 14, 0);
     }
 
     #[test(account = @TestUser)]

@@ -3,20 +3,61 @@
 
 # Module `0xc0deb00c::Orders`
 
-Pure-Move implementation of user-side open orders functionality
+
+<a name="@Test_oriented_implementation_0"></a>
+
+## Test oriented implementation
 
 
+The present module is implemented purely in Move, to enable coverage
+testing as described in <code>Econia::Caps</code>. Hence the use of <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
+in public functions.
+
+
+<a name="@Order_structure_1"></a>
+
+## Order structure
+
+
+For a market specified by <code>&lt;B, Q, E&gt;</code> (see <code>Econia::Registry</code>), a
+user's open orders are stored in an <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code>, which has a
+<code>Econia::CritBit::CB</code> for both asks and bids. In each tree,
+key-value pairs have a key formatted per in <code>Econia::ID</code>, and a
+value indicating the order's "scaled size", where scaled size is
+defined as the "unscaled size" of an order divided by the market
+scale factor (See <code>Econia::Registry</code>):
+
+$size_{scaled} = size_{unscaled} / SF$
+
+For example, if a user wants to place a bid for <code>1400</code> indivisible
+subunits of protocol coin <code>PRO</code> in a <code>USDC</code>-denominated market with
+with a scale factor of <code>100</code>, and is willing to pay <code>28014</code>
+indivisble subunits of <code>USDC</code>, then their bid has an unscaled size
+of <code>1400</code>, a scaled size of <code>14</code>, and a scaled price of <code>2001</code>. Thus
+when this bid is added to the user's open orders per <code><a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>()</code>,
+the <code>b</code> field of their <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;PRO, USDC, E2&gt;</code> will be updated to
+include a key-value pair of the form $\{id, 14\}$, where $id$
+denotes an order ID (per <code>Econia::ID</code>) indicating a scaled price of
+<code>2001</code>.
+
+---
+
+
+-  [Test oriented implementation](#@Test_oriented_implementation_0)
+-  [Order structure](#@Order_structure_1)
 -  [Struct `FriendCap`](#0xc0deb00c_Orders_FriendCap)
 -  [Resource `OO`](#0xc0deb00c_Orders_OO)
--  [Constants](#@Constants_0)
+-  [Constants](#@Constants_2)
+-  [Function `add_ask`](#0xc0deb00c_Orders_add_ask)
+-  [Function `add_bid`](#0xc0deb00c_Orders_add_bid)
 -  [Function `exists_orders`](#0xc0deb00c_Orders_exists_orders)
 -  [Function `get_friend_cap`](#0xc0deb00c_Orders_get_friend_cap)
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
 -  [Function `scale_factor`](#0xc0deb00c_Orders_scale_factor)
 -  [Function `add_order`](#0xc0deb00c_Orders_add_order)
-    -  [Parameters](#@Parameters_1)
-    -  [Abort sceniarios](#@Abort_sceniarios_2)
-    -  [Assumes](#@Assumes_3)
+    -  [Parameters](#@Parameters_3)
+    -  [Abort sceniarios](#@Abort_sceniarios_4)
+    -  [Assumes](#@Assumes_5)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -95,7 +136,7 @@ Open orders, for the given market, on a user's account
 
 </details>
 
-<a name="@Constants_0"></a>
+<a name="@Constants_2"></a>
 
 ## Constants
 
@@ -199,6 +240,68 @@ When order size is 0
 </code></pre>
 
 
+
+<a name="0xc0deb00c_Orders_add_ask"></a>
+
+## Function `add_ask`
+
+Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_ask">add_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_ask">add_ask</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    id: u128,
+    price: u64,
+    size: u64,
+    _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id, price, size);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Orders_add_bid"></a>
+
+## Function `add_bid`
+
+Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    id: u128,
+    price: u64,
+    size: u64,
+    _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id, price, size);
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_Orders_exists_orders"></a>
 
@@ -329,7 +432,7 @@ Add new order to users's open orders container for market
 <code>&lt;B, Q, E&gt;</code>
 
 
-<a name="@Parameters_1"></a>
+<a name="@Parameters_3"></a>
 
 ### Parameters
 
@@ -340,7 +443,7 @@ Add new order to users's open orders container for market
 * <code>size</code>: Unscaled order size, in base coin subunits
 
 
-<a name="@Abort_sceniarios_2"></a>
+<a name="@Abort_sceniarios_4"></a>
 
 ### Abort sceniarios
 
@@ -353,13 +456,13 @@ given market (see <code>Econia::Registry</code>)
 fit in a <code>u64</code>
 
 
-<a name="@Assumes_3"></a>
+<a name="@Assumes_5"></a>
 
 ### Assumes
 
-* Caller has constructed <code>id</code> to incorporate <code>price</code> as
-specified in <code>Econia::ID</code>, since <code>id</code> is not directly operated
-on or verified (<code>id</code> is only used as a tree insertion key)
+* Caller has constructed <code>id</code> to indicate <code>price</code> as specified
+in <code>Econia::ID</code>, since <code>id</code> is not directly operated on or
+verified (<code>id</code> is only used as a tree insertion key)
 
 
 <pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128, price: u64, size: u64)

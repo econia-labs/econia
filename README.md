@@ -1,5 +1,10 @@
 ![](.assets/readme-banner.png)
 
+[![Discord chat](https://img.shields.io/discord/988942344776736830?style=flat)](https://discord.com/invite/ekN8fUCf)
+[![Econia move documentation (move)](https://img.shields.io/badge/docs-move-59f)](src/move/econia/build/Econia/docs)
+[![License](https://img.shields.io/badge/license-Apache_2.0-white.svg)](LICENSE.md)
+
+
 # Econia
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 

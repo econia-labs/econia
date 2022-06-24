@@ -1,12 +1,18 @@
 #  Welcome to Econia’s contributing guide
 
-Thank you for your interest in the Econia Ecosystem! We are grateful to be building the future of DeFi with you. :sparkles:
+Thank you for your interest in the Econia Ecosystem! We are grateful to be building the future of DeFi with you.
+:sparkles:
 
-Before starting, please read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep the Econia community a safe space for all community members. &nbsp;:blush:
+Before starting, please read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep the Econia community a safe space for all community members.
+&nbsp;:blush:
 
-Reminder: This is a safe space that welcomes all levels of developers. Econia will only evolve into its best version by incorporating the contributions of developers from all walks of life. Don't be nervous to contribute, the Econia community is excited to have you here and we thank you for your energy.
+Reminder: 
+This is a safe space that welcomes all levels of developers.
+Econia will only evolve into its best version by incorporating the contributions of developers from all walks of life.
+Don't be nervous to contribute, the Econia community is excited to have you here and we thank you for your energy.
 
-Let's build!! &nbsp;:hammer:
+Let's build!!
+&nbsp;:hammer:
 
 ## How to make a contribution
 
@@ -26,7 +32,10 @@ If you are interested in contributing to the Econia Protocol and would like to l
     - Title the request with short description of the changes made
     - In the description, explain the changes being made and any further issues that may still need to be addressed.
 - Wait for the request to be reviewed and make any changes recommended by the maintainer
-- Once merged- high five yourself and celebrate your contribution. The Econia community is cheering you on!! &nbsp;:clap: &nbsp; :tada:
+- Once merged- high five yourself and celebrate your contribution.
+  The Econia community is cheering you on!!
+  &nbsp;:clap:
+  &nbsp;:tada:
 
 ## Where to go for help
 

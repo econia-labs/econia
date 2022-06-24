@@ -1,4 +1,4 @@
-![](doc/readme-banner.png)
+![](.assets/readme-banner.png)
 
 # Econia
 *Hyper-parallelized on-chain order book for the Aptos blockchain*

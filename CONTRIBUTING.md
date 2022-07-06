@@ -39,4 +39,4 @@ If you are interested in contributing to the Econia Protocol and would like to l
 
 ## Where to go for help
 
-If you run into any issues or need help please reach out to the community via [Discord](https://discord.gg/ekN8fUCf).
+If you run into any issues or need help please reach out to the community via [Discord](https://discord.gg/Z7gXcMgX8A).

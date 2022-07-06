@@ -126,6 +126,30 @@ module Econia::Book {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Wrapped `add_position()` call for `ASK`, requiring `FriendCap`
+    public fun add_ask<B, Q, E>(
+        host: address,
+        user: address,
+        id: u128,
+        price: u64,
+        size: u64,
+        _c: &FriendCap
+    ) acquires OB {
+        add_position<B, Q, E>(host, user, ASK, id, price, size)
+    }
+
+    /// Wrapped `add_position()` call for `BID`, requiring `FriendCap`
+    public fun add_bid<B, Q, E>(
+        host: address,
+        user: address,
+        id: u128,
+        price: u64,
+        size: u64,
+        _c: &FriendCap
+    ) acquires OB {
+        add_position<B, Q, E>(host, user, BID, id, price, size)
+    }
+
     /// Return `true` if specified order book type exists at address
     public fun exists_book<B, Q, E>(a: address): bool {exists<OB<B, Q, E>>(a)}
 
@@ -232,17 +256,17 @@ module Econia::Book {
         let (price, version, size) = (8, 1, 1);
         let id = id_a(price, version); // Get corresponding order id
         // Add position to book
-        add_position<BT, QT, ET>(addr, addr, ASK, id, price, size);
+        add_ask<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
         // Define new bid with price 2, version number 2, size 1
         let (price, version, size) = (2, 2, 1);
         let id = id_b(price, version); // Get corresponding order id
         // Add position to book
-        add_position<BT, QT, ET>(addr, addr, BID, id, price, size);
+        add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
         // Define ask with price 1, version number 3, size 1
         let (price, version, size) = (1, 3, 1);
         let id = id_a(price, version); // Get corresponding order id
         // Attempt to add position to book
-        add_position<BT, QT, ET>(addr, addr, ASK, id, price, size);
+        add_ask<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
     }
 
     #[test(account = @TestUser)]
@@ -258,17 +282,17 @@ module Econia::Book {
         let (price, version, size) = (8, 1, 1);
         let id = id_a(price, version); // Get corresponding order id
         // Add position to book
-        add_position<BT, QT, ET>(addr, addr, ASK, id, price, size);
+        add_ask<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
         // Define new bid with price 2, version number 2, size 1
         let (price, version, size) = (2, 2, 1);
         let id = id_b(price, version); // Get corresponding order id
         // Add position to book
-        add_position<BT, QT, ET>(addr, addr, BID, id, price, size);
+        add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
         // Define bid with price 9, version number 3, size 1
         let (price, version, size) = (9, 3, 1);
         let id = id_b(price, version); // Get corresponding order id
         // Attempt to add position to book
-        add_position<BT, QT, ET>(addr, addr, BID, id, price, size);
+        add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
     }
 
     #[test(account = @TestUser)]

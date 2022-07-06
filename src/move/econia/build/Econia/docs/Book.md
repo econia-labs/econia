@@ -43,6 +43,8 @@ to be filled.
 -  [Resource `OB`](#0xc0deb00c_Book_OB)
 -  [Struct `P`](#0xc0deb00c_Book_P)
 -  [Constants](#@Constants_3)
+-  [Function `add_ask`](#0xc0deb00c_Book_add_ask)
+-  [Function `add_bid`](#0xc0deb00c_Book_add_bid)
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
 -  [Function `get_friend_cap`](#0xc0deb00c_Book_get_friend_cap)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
@@ -241,6 +243,70 @@ When order book does not exist at given address
 </code></pre>
 
 
+
+<a name="0xc0deb00c_Book_add_ask"></a>
+
+## Function `add_ask`
+
+Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()</code> call for <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, requiring <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_ask">add_ask</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_ask">add_ask</a>&lt;B, Q, E&gt;(
+    host: <b>address</b>,
+    user: <b>address</b>,
+    id: u128,
+    price: u64,
+    size: u64,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    <a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>&lt;B, Q, E&gt;(host, user, <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>, id, price, size)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_add_bid"></a>
+
+## Function `add_bid`
+
+Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()</code> call for <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, requiring <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_bid">add_bid</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_bid">add_bid</a>&lt;B, Q, E&gt;(
+    host: <b>address</b>,
+    user: <b>address</b>,
+    id: u128,
+    price: u64,
+    size: u64,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    <a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>&lt;B, Q, E&gt;(host, user, <a href="Book.md#0xc0deb00c_Book_BID">BID</a>, id, price, size)
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_Book_exists_book"></a>
 

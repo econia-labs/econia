@@ -158,16 +158,6 @@ Open orders, for the given market, on a user's account
 
 
 
-<a name="0xc0deb00c_Orders_E_NOT_ECONIA"></a>
-
-When account/address is not Econia
-
-
-<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 2;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_Orders_ASK"></a>
 
 Ask flag
@@ -184,6 +174,16 @@ Bid flag
 
 
 <pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Orders_E_NOT_ECONIA"></a>
+
+When account/address is not Econia
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 2;
 </code></pre>
 
 

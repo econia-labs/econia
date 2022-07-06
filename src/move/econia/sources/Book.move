@@ -193,29 +193,22 @@ module Econia::Book {
         let o_b = borrow_global_mut<OB<B, Q, E>>(host);
         // Get minimum ask price and maximum bid price on book
         let (m_a_p, m_b_p) = (id_p(o_b.m_a), id_p(o_b.m_b));
-        // If new position is ask with price lower than min ask price
-        if (side == ASK && price < m_a_p) {
-            if (price > m_b_p) { // If price above max bid price
-                o_b.m_a = id; // Update min ask id
-                // Insert position into asks tree
+        if (side == ASK) { // If order is an ask
+            if (price > m_b_p) { // If order does not cross spread
+                // Add corresponding position to ask tree
                 cb_i(&mut o_b.a, id, P{s: size, a: user});
-            } else { // Otherwise, if crossing the spread
-                manage_crossed_spread(); // Manage crossed spread
-            }
-        // If new position is bid with price higher than max bid price
-        } else if (side == BID && price > m_b_p) {
-            if (price < m_a_p) { // If price below min ask price
-                o_b.m_b = id; // Update max bid id
-                // Insert position into bids tree
+                // If order is within spread, update min ask id
+                if (price < m_a_p) o_b.m_a = id;
+            // Otherwise manage order that crosses spread
+            } else manage_crossed_spread();
+        } else { // If order is a bid
+            if (price < m_a_p) { // If order does not cross spread
+                // Add corresponding position to bid tree
                 cb_i(&mut o_b.b, id, P{s: size, a: user});
-            } else { // Otherwise, if crossing the spread
-                manage_crossed_spread(); // Manage crossed spread
-            }
-        } else { // If new position does not result in spread incursion
-            // If ask, add corresponding position to ask tree
-            if (side == ASK) cb_i(&mut o_b.a, id, P{s: size, a: user})
-                // Otherwise add corresponding position to bids tree
-                else cb_i(&mut o_b.b, id, P{s: size, a: user});
+                // If order is within spread, update max bid id
+                if (price > m_b_p) o_b.m_b = id;
+            // Otherwise manage order that crosses spread
+            } else manage_crossed_spread();
         }
     }
 

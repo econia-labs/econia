@@ -408,29 +408,22 @@ redundant error checks covered by calling functions
     <b>let</b> o_b = <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host);
     // Get minimum ask price and maximum bid price on book
     <b>let</b> (m_a_p, m_b_p) = (id_p(o_b.m_a), id_p(o_b.m_b));
-    // If new position is ask <b>with</b> price lower than <b>min</b> ask price
-    <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a> && price &lt; m_a_p) {
-        <b>if</b> (price &gt; m_b_p) { // If price above max bid price
-            o_b.m_a = id; // Update <b>min</b> ask id
-            // Insert position into asks tree
+    <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) { // If order is an ask
+        <b>if</b> (price &gt; m_b_p) { // If order does not cross spread
+            // Add corresponding position <b>to</b> ask tree
             cb_i(&<b>mut</b> o_b.a, id, <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: size, a: user});
-        } <b>else</b> { // Otherwise, <b>if</b> crossing the spread
-            <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>(); // Manage crossed spread
-        }
-    // If new position is bid <b>with</b> price higher than max bid price
-    } <b>else</b> <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_BID">BID</a> && price &gt; m_b_p) {
-        <b>if</b> (price &lt; m_a_p) { // If price below <b>min</b> ask price
-            o_b.m_b = id; // Update max bid id
-            // Insert position into bids tree
+            // If order is within spread, <b>update</b> <b>min</b> ask id
+            <b>if</b> (price &lt; m_a_p) o_b.m_a = id;
+        // Otherwise manage order that crosses spread
+        } <b>else</b> <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>();
+    } <b>else</b> { // If order is a bid
+        <b>if</b> (price &lt; m_a_p) { // If order does not cross spread
+            // Add corresponding position <b>to</b> bid tree
             cb_i(&<b>mut</b> o_b.b, id, <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: size, a: user});
-        } <b>else</b> { // Otherwise, <b>if</b> crossing the spread
-            <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>(); // Manage crossed spread
-        }
-    } <b>else</b> { // If new position does not result in spread incursion
-        // If ask, add corresponding position <b>to</b> ask tree
-        <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) cb_i(&<b>mut</b> o_b.a, id, <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: size, a: user})
-            // Otherwise add corresponding position <b>to</b> bids tree
-            <b>else</b> cb_i(&<b>mut</b> o_b.b, id, <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: size, a: user});
+            // If order is within spread, <b>update</b> max bid id
+            <b>if</b> (price &gt; m_b_p) o_b.m_b = id;
+        // Otherwise manage order that crosses spread
+        } <b>else</b> <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>();
     }
 }
 </code></pre>

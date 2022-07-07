@@ -11,4 +11,4 @@
 
 ## Move modules
 
-* [CritBit](../../src/move/econia/build/docs/)
+* [CritBit](../../src/move/econia/build/Econia/docs/CritBit.md)

@@ -7,6 +7,17 @@ fi
 if test $1 = hello; then
     echo Hello, Econia developer
 
+# Git add all and commit from project root, then come back
+elif test $1 = ac; then
+    cd ../../../
+    git add .
+    git commit
+    cd src/move/econia
+
+# Build package via Move command line
+elif test $1 = b; then
+    move package build
+
 # Clear the terminal
 elif test $1 = c; then
     clear
@@ -14,6 +25,24 @@ elif test $1 = c; then
 # Conda activate econia environment
 elif test $1 = ca; then
     conda activate econia
+
+# Clean up temp files and terminal
+elif test $1 = cl; then
+    move sandbox clean
+    clear
+
+# Run test coverage summary against a module
+# For instance, `s cm Coin`
+elif test $1 = cm; then
+    move package coverage source --module $2
+
+# Output test coverage summary
+elif test $1 = cs; then
+    move package coverage summary
+
+# Build documentation
+elif test $1 = d; then
+    move package build --doc
 
 # Go back to Econia project repository root
 elif test $1 = er; then
@@ -32,57 +61,28 @@ elif test $1 = p; then
     # Rebuild docs with named address to avoid git diffs
     move package build --doc >/dev/null
 
-# Clean up temp files and terminal
-elif test $1 = cl; then
-    move sandbox clean
-    clear
+# Run tests in standard form , passing optional argument
+# For example `s ts -f coin`
+elif test $1 = t; then
+    move package test $2 $3
 
-# Build package via Move command line
-elif test $1 = b; then
-    move package build
+# Run aptos CLI test on all modules
+elif test $1 = ta; then
+    aptos move test
 
 # Run tests with coverage, for given filter argument
 # For example `s tc critbit`
 elif test $1 = tc; then
     move package test --coverage -f $2
 
-# Run aptos CLI test on all modules
-elif test $1 = ta; then
-    aptos move test
-
 # Run aptos CLI test with filter and passed argument
 elif test $1 = tf; then
     aptos move test --filter $2
-
-# Run tests in standard form , passing optional argument
-# For example `s ts -f coin`
-elif test $1 = t; then
-    move package test $2 $3
-
-# Output test coverage summary
-elif test $1 = cs; then
-    move package coverage summary
-
-# Run test coverage summary against a module
-# For instance, `s cm Coin`
-elif test $1 = cm; then
-    move package coverage source --module $2
-
-# Build documentation
-elif test $1 = d; then
-    move package build --doc
 
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand
 elif test $1 = wd; then
     ls sources/*.move | entr move package build --doc
-
-# Git add all and commit
-elif test $1 = ac; then
-    cd ../../../
-    git add .
-    git commit
-    cd src/move/econia
 
 else
     echo Invalid option

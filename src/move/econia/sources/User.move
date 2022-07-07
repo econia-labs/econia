@@ -253,24 +253,6 @@ module Econia::User {
         move_to<OC<B, Q, E>>(user, o_c); // Move to user account
     }
 
-    /// Update sequence counter for user `u` with the sequence number of
-    /// the current transaction, aborting if user does not have an
-    /// initialized sequence counter or if sequence number is not
-    /// greater than the number indicated by the user's `SC`
-    fun update_s_c(
-        u: &signer,
-    ) acquires SC {
-        let user_addr = s_a_o(u); // Get user address
-        // Assert user has already initialized a sequence counter
-        assert!(exists<SC>(user_addr), E_NO_S_C);
-        // Borrow mutable reference to user's sequence counter
-        let s_c = borrow_global_mut<SC>(user_addr);
-        let s_n = a_g_s_n(user_addr); // Get current sequence number
-        // Assert new sequence number greater than that of counter
-        assert!(s_n > s_c.i, E_INVALID_S_N);
-        s_c.i = s_n; // Update counter with current sequence number
-    }
-
     /// Submit limit order for market `<B, Q, E>`
     ///
     /// # Parameters
@@ -320,6 +302,24 @@ module Econia::User {
             // Add bid to order book
             b_a_b<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
         };
+    }
+
+    /// Update sequence counter for user `u` with the sequence number of
+    /// the current transaction, aborting if user does not have an
+    /// initialized sequence counter or if sequence number is not
+    /// greater than the number indicated by the user's `SC`
+    fun update_s_c(
+        u: &signer,
+    ) acquires SC {
+        let user_addr = s_a_o(u); // Get user address
+        // Assert user has already initialized a sequence counter
+        assert!(exists<SC>(user_addr), E_NO_S_C);
+        // Borrow mutable reference to user's sequence counter
+        let s_c = borrow_global_mut<SC>(user_addr);
+        let s_n = a_g_s_n(user_addr); // Get current sequence number
+        // Assert new sequence number greater than that of counter
+        assert!(s_n > s_c.i, E_INVALID_S_N);
+        s_c.i = s_n; // Update counter with current sequence number
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

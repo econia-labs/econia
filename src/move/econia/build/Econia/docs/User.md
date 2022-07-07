@@ -14,9 +14,9 @@ User-facing trading functionality
 -  [Function `init_user`](#0xc0deb00c_User_init_user)
 -  [Function `withdraw`](#0xc0deb00c_User_withdraw)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
--  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 -  [Function `submit_limit_order`](#0xc0deb00c_User_submit_limit_order)
     -  [Parameters](#@Parameters_1)
+-  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 
 
 <pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Account.md#0x1_Account">0x1::Account</a>;
@@ -433,44 +433,6 @@ if already initialized
 
 </details>
 
-<a name="0xc0deb00c_User_update_s_c"></a>
-
-## Function `update_s_c`
-
-Update sequence counter for user <code>u</code> with the sequence number of
-the current transaction, aborting if user does not have an
-initialized sequence counter or if sequence number is not
-greater than the number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code>
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(u: &signer)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(
-    u: &signer,
-) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <b>let</b> user_addr = s_a_o(u); // Get user <b>address</b>
-    // Assert user <b>has</b> already initialized a sequence counter
-    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>);
-    // Borrow mutable reference <b>to</b> user's sequence counter
-    <b>let</b> s_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr);
-    <b>let</b> s_n = a_g_s_n(user_addr); // Get current sequence number
-    // Assert new sequence number greater than that of counter
-    <b>assert</b>!(s_n &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
-    s_c.i = s_n; // Update counter <b>with</b> current sequence number
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_User_submit_limit_order"></a>
 
 ## Function `submit_limit_order`
@@ -539,6 +501,44 @@ coin subunits
         // Add bid <b>to</b> order book
         b_a_b&lt;B, Q, E&gt;(host, addr, id, price, scaled_size, &c_b_f_c());
     };
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_update_s_c"></a>
+
+## Function `update_s_c`
+
+Update sequence counter for user <code>u</code> with the sequence number of
+the current transaction, aborting if user does not have an
+initialized sequence counter or if sequence number is not
+greater than the number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code>
+
+
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(u: &signer)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(
+    u: &signer,
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <b>let</b> user_addr = s_a_o(u); // Get user <b>address</b>
+    // Assert user <b>has</b> already initialized a sequence counter
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>);
+    // Borrow mutable reference <b>to</b> user's sequence counter
+    <b>let</b> s_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr);
+    <b>let</b> s_n = a_g_s_n(user_addr); // Get current sequence number
+    // Assert new sequence number greater than that of counter
+    <b>assert</b>!(s_n &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
+    s_c.i = s_n; // Update counter <b>with</b> current sequence number
 }
 </code></pre>
 

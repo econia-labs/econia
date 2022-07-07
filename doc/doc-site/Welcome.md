@@ -12,7 +12,7 @@ Let's build!!
 
 ## How to make a contribution
 
-If you are interested in contributing to the Econia Protocol and would like to learn more about the technologies we use, first have at look at Econia's [README.md](README.md) file.
+If you are interested in contributing to the Econia Protocol and would like to learn more about the technologies we use, first have at look at Econia's [Getting Started](Getting-started.md)) file.
 
 ### Steps for contribution
 

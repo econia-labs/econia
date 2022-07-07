@@ -16,18 +16,36 @@ module Econia::User {
         zero as c_z
     };
 
+    use Econia::Book::{
+        add_ask as b_a_a,
+        add_bid as b_a_b,
+        exists_book as b_e_b
+    };
+
     use Econia::Caps::{
         orders_f_c as c_o_f_c,
+        book_f_c as c_b_f_c
+    };
+
+    use Econia::ID::{
+        id_a as id_a,
+        id_b as id_b
     };
 
     use Econia::Orders::{
+        add_ask as o_a_a,
+        add_bid as o_a_b,
         exists_orders as o_e_o,
-        init_orders as o_i_o,
+        init_orders as o_i_o
     };
 
     use Econia::Registry::{
         is_registered as r_i_r,
         scale_factor as r_s_f
+    };
+
+    use Econia::Version::{
+        get_v_n as v_g_v_n
     };
 
     use Std::Signer::{
@@ -113,8 +131,19 @@ module Econia::User {
     const E_NO_TRANSFER: u64 = 7;
     /// When attempting to withdraw more than is available
     const E_WITHDRAW_TOO_MUCH: u64 = 8;
+    /// When not enough collateral for an operation
+    const E_NOT_ENOUGH_COLLATERAL: u64 = 9;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Ask flag
+    const ASK: bool = true;
+    /// Bid flag
+    const BID: bool = false;
+
+    // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -210,6 +239,20 @@ module Econia::User {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Initialize order collateral container for given user, aborting
+    /// if already initialized
+    fun init_o_c<B, Q, E>(
+        user: &signer,
+    ) {
+        // Assert user does not already have order collateral for market
+        assert!(!exists<OC<B, Q, E>>(s_a_o(user)), E_O_C_EXISTS);
+        // Assert given market has actually been registered
+        assert!(r_i_r<B, Q, E>(), E_NO_MARKET);
+        // Pack empty order collateral container
+        let o_c = OC<B, Q, E>{b_c: c_z<B>(), b_a: 0, q_c: c_z<Q>(), q_a: 0};
+        move_to<OC<B, Q, E>>(user, o_c); // Move to user account
+    }
+
     /// Update sequence counter for user `u` with the sequence number of
     /// the current transaction, aborting if user does not have an
     /// initialized sequence counter or if sequence number is not
@@ -228,18 +271,55 @@ module Econia::User {
         s_c.i = s_n; // Update counter with current sequence number
     }
 
-    /// Initialize order collateral container for given user, aborting
-    /// if already initialized
-    fun init_o_c<B, Q, E>(
+    /// Submit limit order for market `<B, Q, E>`
+    ///
+    /// # Parameters
+    /// * `user`: User submitting a limit order
+    /// * `host`: The market host (See `Econia::Registry`)
+    /// * `side`: `ASK` or `BID`
+    /// * `price`: Scaled integer price (see `Econia::ID`)
+    /// * `size`: Unscaled order size (see `Econia::Orders`), in base
+    ///   coin subunits
+    fun submit_limit_order<B, Q, E>(
         user: &signer,
-    ) {
-        // Assert user does not already have order collateral for market
-        assert!(!exists<OC<B, Q, E>>(s_a_o(user)), E_O_C_EXISTS);
-        // Assert given market has actually been registered
-        assert!(r_i_r<B, Q, E>(), E_NO_MARKET);
-        // Pack empty order collateral container
-        let o_c = OC<B, Q, E>{b_c: c_z<B>(), b_a: 0, q_c: c_z<Q>(), q_a: 0};
-        move_to<OC<B, Q, E>>(user, o_c); // Move to user account
+        host: address,
+        side: bool,
+        price: u64,
+        size: u64
+    ) acquires OC, SC {
+        update_s_c(user); // Update user sequence counter
+        // Assert market exists at given host address
+        assert!(b_e_b<B, Q, E>(host), E_NO_MARKET);
+        let addr = s_a_o(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
+        // Borrow mutable reference to user's order collateral container
+        let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
+        let v_n = v_g_v_n(); // Get transaction version number
+        if (side == ASK) { // If limit order is an ask
+            let id = id_a(price, v_n); // Get corresponding order id
+            // Verify and add to user's open orders, storing scaled size
+            let (scaled_size, _) =
+                o_a_a<B, Q, E>(addr, id, price, size, &c_o_f_c());
+            // Assert user has enough base coins held as collateral
+            assert!(!(size > o_c.b_a), E_NOT_ENOUGH_COLLATERAL);
+            // Decrement amount of base coins available for withdraw
+            o_c.b_a = o_c.b_a - size;
+            // Add ask to order book
+            b_a_a<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
+        } else { // If limit order is a bid
+            let id = id_b(price, v_n); // Get corresponding order id
+            // Verify and add to user's open orders, storing scaled size
+            // and amount of quote coins needed to fill the order
+            let (scaled_size, fill_amount) =
+                o_a_b<B, Q, E>(addr, id, price, size, &c_o_f_c());
+            // Assert user has enough quote coins held as collateral
+            assert!(!(fill_amount > o_c.q_a), E_NOT_ENOUGH_COLLATERAL);
+            // Decrement amount of base coins available for withdraw
+            o_c.q_a = o_c.q_a - fill_amount;
+            // Add bid to order book
+            b_a_b<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
+        };
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

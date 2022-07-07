@@ -130,7 +130,10 @@ module Econia::Orders {
         price: u64,
         size: u64,
         _c: &FriendCap
-    ): u64
+    ): (
+        u64,
+        u64
+    )
     acquires OO {
         add_order<B, Q, E>(addr, ASK, id, price, size)
     }
@@ -142,7 +145,10 @@ module Econia::Orders {
         price: u64,
         size: u64,
         _c: &FriendCap
-    ): u64
+    ): (
+        u64,
+        u64
+    )
     acquires OO {
         add_order<B, Q, E>(addr, BID, id, price, size)
     }
@@ -204,6 +210,7 @@ module Econia::Orders {
     ///
     /// # Returns
     /// * `u64`: Scaled order size
+    /// * `u64`: Number of quote coin subunits needed to fill order
     ///
     /// # Abort sceniarios
     /// * If `price` is 0
@@ -224,8 +231,10 @@ module Econia::Orders {
         id: u128,
         price: u64,
         size: u64,
-    ): u64
-    acquires OO {
+    ): (
+    u64,
+    u64
+    ) acquires OO {
         assert!(price > 0, E_PRICE_0); // Assert order has actual price
         assert!(size > 0, E_SIZE_0); // Assert order has actual size
         // Assert open orders container exists at given address
@@ -243,7 +252,7 @@ module Econia::Orders {
         // Add order to corresponding tree
         if (side == ASK) cb_i<u64>(&mut o_o.a, id, scaled_size)
             else cb_i<u64>(&mut o_o.b, id, scaled_size);
-        scaled_size
+        (scaled_size, (fill_amount as u64))
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -314,12 +323,16 @@ module Econia::Orders {
         let f_c = FriendCap{}; // Initialize friend-like capability
         // Init orders with scale factor of 100
         init_orders<BT, QT, ET>(user, 100, &f_c);
-        let ask_s_s = // Add ask, storing resultant scaled size
-            add_ask<BT, QT, ET>(@TestUser, 123, 1, 400, &f_c);
-        assert!(ask_s_s == 4, 0); // Assert correct scaled size return
-        let bid_s_s = // Add bid, storing resultant scaled size
+        // Add ask, storing resultant scaled size and fill amount
+        let (ask_s_s, ask_f_a) =
+            add_ask<BT, QT, ET>(@TestUser, 123, 2, 400, &f_c);
+        // Assert correct scaled size and fill amount returns
+        assert!(ask_s_s == 4 && ask_f_a == 8, 0);
+        // Add bid, storing resultant scaled size and fill amount
+        let (bid_s_s, bid_f_a) =
             add_bid<BT, QT, ET>(@TestUser, 234, 3, 1400, &f_c);
-        assert!(bid_s_s == 14, 1); // Assert correct scaled size return
+        // Assert correct scaled size and fill amount returns
+        assert!(bid_s_s == 14 && bid_f_a == 42, 1);
         // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert ask added correctly

@@ -255,7 +255,7 @@ When order size is 0
 Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_ask">add_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): u64
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_ask">add_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): (u64, u64)
 </code></pre>
 
 
@@ -270,7 +270,10 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
     price: u64,
     size: u64,
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
-): u64
+): (
+    u64,
+    u64
+)
 <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id, price, size)
 }
@@ -287,7 +290,7 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
 Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): u64
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): (u64, u64)
 </code></pre>
 
 
@@ -302,7 +305,10 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
     price: u64,
     size: u64,
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
-): u64
+): (
+    u64,
+    u64
+)
 <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id, price, size)
 }
@@ -457,6 +463,7 @@ Add new order to users's open orders container for market
 ### Returns
 
 * <code>u64</code>: Scaled order size
+* <code>u64</code>: Number of quote coin subunits needed to fill order
 
 
 <a name="@Abort_sceniarios_6"></a>
@@ -481,7 +488,7 @@ in <code>Econia::ID</code>, since <code>id</code> is not directly operated on or
 verified (<code>id</code> is only used as a tree insertion key)
 
 
-<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128, price: u64, size: u64): u64
+<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128, price: u64, size: u64): (u64, u64)
 </code></pre>
 
 
@@ -496,8 +503,10 @@ verified (<code>id</code> is only used as a tree insertion key)
     id: u128,
     price: u64,
     size: u64,
-): u64
-<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+): (
+u64,
+u64
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <b>assert</b>!(price &gt; 0, <a href="Orders.md#0xc0deb00c_Orders_E_PRICE_0">E_PRICE_0</a>); // Assert order <b>has</b> actual price
     <b>assert</b>!(size &gt; 0, <a href="Orders.md#0xc0deb00c_Orders_E_SIZE_0">E_SIZE_0</a>); // Assert order <b>has</b> actual size
     // Assert open orders container <b>exists</b> at given <b>address</b>
@@ -515,7 +524,7 @@ verified (<code>id</code> is only used as a tree insertion key)
     // Add order <b>to</b> corresponding tree
     <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) cb_i&lt;u64&gt;(&<b>mut</b> o_o.a, id, scaled_size)
         <b>else</b> cb_i&lt;u64&gt;(&<b>mut</b> o_o.b, id, scaled_size);
-    scaled_size
+    (scaled_size, (fill_amount <b>as</b> u64))
 }
 </code></pre>
 

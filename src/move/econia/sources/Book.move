@@ -254,6 +254,62 @@ module Econia::Book {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    // Return `P` fields for ask with specified ID, for specified market
+    public fun check_ask<B, Q, E>(
+        host: address,
+        id: u128,
+    ): (
+        u64,
+        address
+    ) acquires OB {
+        // Borrow immutable reference to order book at host account
+        let o_b = borrow_global<OB<B, Q, E>>(host);
+        // Borrow immutable reference to ask with given id
+        let ask = cb_b<P>(&o_b.a, id);
+        (ask.s, ask.a) // Return size and address of position
+    }
+
+    #[test_only]
+    // Return order ID of ask having minimum price
+    public fun check_ask_min<B, Q, E>(
+        host: address
+    ): (
+        u128
+    ) acquires OB {
+        borrow_global<OB<B, Q, E>>(host).m_a
+    }
+
+    #[test_only]
+    // Return `P` fields for bid with specified ID, on specified market
+    public fun check_bid<B, Q, E>(
+        host: address,
+        id: u128,
+    ): (
+        u64,
+        address
+    ) acquires OB {
+        // Borrow immutable reference to order book at host account
+        let o_b = borrow_global<OB<B, Q, E>>(host);
+        // Borrow immutable reference to bid with given id
+        let bid = cb_b<P>(&o_b.b, id);
+        (bid.s, bid.a) // Return size and address of position
+    }
+
+    #[test_only]
+    // Return order ID of bid having maximum price
+    public fun check_bid_max<B, Q, E>(
+        host: address
+    ): (
+        u128
+    ) acquires OB {
+        borrow_global<OB<B, Q, E>>(host).m_b
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test(account = @TestUser)]

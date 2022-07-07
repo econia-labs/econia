@@ -257,6 +257,32 @@ module Econia::Orders {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    // Return scaled size of ask for given market, user, order ID
+    public fun check_ask<B, Q, E>(
+        user: address,
+        id: u128
+    ): (
+        u64
+    ) acquires OO {
+        *cb_b<u64>(&borrow_global<OO<B, Q, E>>(user).a, id)
+    }
+
+    #[test_only]
+    // Return scaled size of bid for given market, user, order ID
+    public fun check_bid<B, Q, E>(
+        user: address,
+        id: u128
+    ): (
+        u64
+    ) acquires OO {
+        *cb_b<u64>(&borrow_global<OO<B, Q, E>>(user).b, id)
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]

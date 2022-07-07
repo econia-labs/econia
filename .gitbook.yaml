@@ -2,6 +2,3 @@ root: ./doc/doc-site
 
 structure:
     readme: README.md
-
-redirects:
-    ../../../build/MoveStdlib/docs/: https://github.com/move-language/move/tree/main/language/move-stdlib/docs

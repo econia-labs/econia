@@ -1,38 +1,41 @@
+# Shell scripts for common developer workflows
+
 # Return if no arguments passed
 if test "$#" = 0; then
     return
 fi
-
-# Verify that this script can be invoked
-if test $1 = hello; then
-    echo Hello, Econia developer
-
-# Clear terminal
-elif test $1 = c; then
-    clear
-
-# Start a Jupyter notebook server
-elif test $1 = nb; then
-    cd src/jupyter
-    jupyter notebook
 
 # Initiate sphinx-autobuild
 elif test $1 = ab; then
     python -mwebbrowser http://127.0.0.1:8000/
     sphinx-autobuild doc/sphinx/src doc/sphinx/build --watch src/python
 
+# Clear terminal
+elif test $1 = c; then
+    clear
+
 # Run Sphinx doctest
 elif test $1 = dt; then
     make -C doc/sphinx doctest
+
+# Verify that this script can be invoked
+if test $1 = hello; then
+    echo Hello, Econia developer
 
 # Go to Move package folder
 elif test $1 = mp; then
     cd src/move/econia
     move sandbox clean
 
+# Start a Jupyter notebook server
+elif test $1 = nb; then
+    cd src/jupyter
+    jupyter notebook
+
 # Install dependencies and generate relevant files
 # Designed so can be re-run without overwriting/throwing errors
 # Does not fully work, manual setup is easier
+# Scripts included as reference
 elif test $1 = setup; then
 
     # Install homebrew, a package manager
@@ -57,8 +60,8 @@ elif test $1 = setup; then
 
     # Create .secrets directory, which is ignored by git, for keyfiles
     # Do not overwrite if .secrets already exists
-    # Similarly create a directory for old secrets, used by build utils
     if ! test -d .secrets; then mkdir .secrets; fi
+    # Similarly create a directory for old secrets, used by build utils
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
 
     # Generate a random keyfile for publishing bytecode

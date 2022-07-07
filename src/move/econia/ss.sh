@@ -1,11 +1,9 @@
+# Shell scripts for common developer workflows
+
 # Return if no arguments passed
 if test "$#" = 0; then
     return
 fi
-
-# Verify that this script can be invoked
-if test $1 = hello; then
-    echo Hello, Econia developer
 
 # Git add all and commit from project root, then come back
 elif test $1 = ac; then
@@ -47,6 +45,10 @@ elif test $1 = d; then
 # Go back to Econia project repository root
 elif test $1 = er; then
     cd ../../../
+
+# Verify that this script can be invoked
+if test $1 = hello; then
+    echo Hello, Econia developer
 
 # Publish bytecode using a newly-generated address
 elif test $1 = p; then

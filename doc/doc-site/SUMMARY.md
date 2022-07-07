@@ -3,7 +3,7 @@
 * [Welcome](Welcome.md)
 * [Getting Started](Getting-started.md)
 
-## Ecosystem Concepts
+* [Ecosystem Concepts]
   * [Order ID](topic-1/my-file.md)
   * [Market Structure](topic-1/my-file.md)
   * [Order Book](topic-1/my-file.md)

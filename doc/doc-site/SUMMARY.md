@@ -1,6 +1,7 @@
 ‌# Summary​
 
 * [Welcome](Welcome.md)
+* [Getting Started](Getting-started.md)
 
 ## Page group 1
 
@@ -13,4 +14,4 @@
 
 ## Move modules
 
-* [CritBit](../../src/move/econia/build/Econia/docs/CritBit.md)
+* [CritBit](../../src/move/econia/build/Econia/docs/CritBit.md)s

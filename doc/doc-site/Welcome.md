@@ -1,6 +1,14 @@
-# Welcome
+# Welcome!
 
-Thank you for your interest in the Econia Ecosystem! 
+**e·co·ni·a** | *ə-kä-nē-ə*
+
+*Hyper-parallelized on-chain order book for the Aptos blockchain*
+
+Thank you for your interest in the Econia Ecosystem!
+Econia is a hyper-parallelized order book protocol that runs on the Aptos blockchain.
+Engineered for web-scale performance and built to provide equal global access to markets.
+Econia leverages the optimistic concurrency of Aptos’ Block-STM execution engine, scaling up on-chain trading both across and within trading pairs.
+
 We are grateful to be building the future of DeFi with you.
 :sparkles:
 
@@ -12,7 +20,7 @@ Let's build!!
 
 ## How to make a contribution
 
-If you are interested in contributing to the Econia Protocol and would like to learn more about the technologies we use, first have at look at Econia's [Getting Started](Getting-started.md)) file.
+If you are interested in contributing to the Econia Protocol and would like to learn more about the technologies we use, first have at look at Econia's [Getting Started](Getting-started.md) file.
 
 ### Steps for contribution
 

@@ -12,10 +12,13 @@ User-facing trading functionality
 -  [Function `deposit`](#0xc0deb00c_User_deposit)
 -  [Function `init_containers`](#0xc0deb00c_User_init_containers)
 -  [Function `init_user`](#0xc0deb00c_User_init_user)
+-  [Function `submit_ask`](#0xc0deb00c_User_submit_ask)
+-  [Function `submit_bid`](#0xc0deb00c_User_submit_bid)
 -  [Function `withdraw`](#0xc0deb00c_User_withdraw)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
 -  [Function `submit_limit_order`](#0xc0deb00c_User_submit_limit_order)
     -  [Parameters](#@Parameters_1)
+    -  [Abort conditions](#@Abort_conditions_2)
 -  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 
 
@@ -127,6 +130,16 @@ Bid flag
 
 
 <pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_User_E_CROSSES_SPREAD"></a>
+
+When an attempted limit order crosses the spread
+
+
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_CROSSES_SPREAD">E_CROSSES_SPREAD</a>: u64 = 10;
 </code></pre>
 
 
@@ -348,6 +361,66 @@ transaction, aborting if one already exists
 
 </details>
 
+<a name="0xc0deb00c_User_submit_ask"></a>
+
+## Function `submit_ask`
+
+Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_ask">submit_ask</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, price: u64, size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_ask">submit_ask</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    price: u64,
+    size: u64
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>&lt;B, Q, E&gt;(user, host, <a href="User.md#0xc0deb00c_User_ASK">ASK</a>, price, size);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_submit_bid"></a>
+
+## Function `submit_bid`
+
+Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_bid">submit_bid</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, price: u64, size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_bid">submit_bid</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    price: u64,
+    size: u64
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>&lt;B, Q, E&gt;(user, host, <a href="User.md#0xc0deb00c_User_BID">BID</a>, price, size);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_User_withdraw"></a>
 
 ## Function `withdraw`
@@ -452,6 +525,16 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 coin subunits
 
 
+<a name="@Abort_conditions_2"></a>
+
+### Abort conditions
+
+* If no such market exists at host address
+* If user does not have order collateral container for market
+* If user does not have enough collateral
+* If placing an order would cross the spread (temporary)
+
+
 <pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, price: u64, size: u64)
 </code></pre>
 
@@ -477,6 +560,7 @@ coin subunits
     // Borrow mutable reference <b>to</b> user's order collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
     <b>let</b> v_n = v_g_v_n(); // Get transaction version number
+    <b>let</b> c_s: bool; // Define flag for <b>if</b> order crosses the spread
     <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) { // If limit order is an ask
         <b>let</b> id = id_a(price, v_n); // Get corresponding order id
         // Verify and add <b>to</b> user's open orders, storing scaled size
@@ -486,8 +570,9 @@ coin subunits
         <b>assert</b>!(!(size &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Decrement amount of base coins available for withdraw
         o_c.b_a = o_c.b_a - size;
-        // Add ask <b>to</b> order book
-        b_a_a&lt;B, Q, E&gt;(host, addr, id, price, scaled_size, &c_b_f_c());
+        // Try adding <b>to</b> order book, storing crossed spread flag
+        c_s =
+            b_a_a&lt;B, Q, E&gt;(host, addr, id, price, scaled_size, &c_b_f_c());
     } <b>else</b> { // If limit order is a bid
         <b>let</b> id = id_b(price, v_n); // Get corresponding order id
         // Verify and add <b>to</b> user's open orders, storing scaled size
@@ -498,9 +583,11 @@ coin subunits
         <b>assert</b>!(!(fill_amount &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Decrement amount of base coins available for withdraw
         o_c.q_a = o_c.q_a - fill_amount;
-        // Add bid <b>to</b> order book
-        b_a_b&lt;B, Q, E&gt;(host, addr, id, price, scaled_size, &c_b_f_c());
+        // Try adding <b>to</b> order book, storing crossed spread flag
+        c_s =
+            b_a_b&lt;B, Q, E&gt;(host, addr, id, price, scaled_size, &c_b_f_c());
     };
+    <b>assert</b>!(!c_s, <a href="User.md#0xc0deb00c_User_E_CROSSES_SPREAD">E_CROSSES_SPREAD</a>); // Assert uncrossed spread
 }
 </code></pre>
 

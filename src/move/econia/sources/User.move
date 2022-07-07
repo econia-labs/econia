@@ -82,10 +82,12 @@ module Econia::User {
     use Econia::Registry::{
         BCT,
         E0,
+        E1,
         mint_bct_to as r_m_bct_to,
         mint_qct_to as r_m_qct_to,
         QCT,
-        register_test_market as r_r_t_m
+        register_test_market as r_r_t_m,
+        register_scaled_test_market as r_r_s_t_m
     };
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -133,6 +135,8 @@ module Econia::User {
     const E_WITHDRAW_TOO_MUCH: u64 = 8;
     /// When not enough collateral for an operation
     const E_NOT_ENOUGH_COLLATERAL: u64 = 9;
+    /// When an attempted limit order crosses the spread
+    const E_CROSSES_SPREAD: u64 = 10;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -204,6 +208,26 @@ module Econia::User {
         move_to<SC>(user, SC{i: a_g_s_n(user_addr)});
     }
 
+    /// Wrapped `submit_limit_order()` call for `ASK`
+    public(script) fun submit_ask<B, Q, E>(
+        user: &signer,
+        host: address,
+        price: u64,
+        size: u64
+    ) acquires OC, SC {
+        submit_limit_order<B, Q, E>(user, host, ASK, price, size);
+    }
+
+    /// Wrapped `submit_limit_order()` call for `BID`
+    public(script) fun submit_bid<B, Q, E>(
+        user: &signer,
+        host: address,
+        price: u64,
+        size: u64
+    ) acquires OC, SC {
+        submit_limit_order<B, Q, E>(user, host, BID, price, size);
+    }
+
     /// Withdraw `b_val` base coin and `q_val` quote coin from `user`'s
     /// `OC`, into their `AptosFramework::Coin::CoinStore`
     public(script) fun withdraw<B, Q, E>(
@@ -262,6 +286,12 @@ module Econia::User {
     /// * `price`: Scaled integer price (see `Econia::ID`)
     /// * `size`: Unscaled order size (see `Econia::Orders`), in base
     ///   coin subunits
+    ///
+    /// # Abort conditions
+    /// * If no such market exists at host address
+    /// * If user does not have order collateral container for market
+    /// * If user does not have enough collateral
+    /// * If placing an order would cross the spread (temporary)
     fun submit_limit_order<B, Q, E>(
         user: &signer,
         host: address,
@@ -278,6 +308,7 @@ module Econia::User {
         // Borrow mutable reference to user's order collateral container
         let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
         let v_n = v_g_v_n(); // Get transaction version number
+        let c_s: bool; // Define flag for if order crosses the spread
         if (side == ASK) { // If limit order is an ask
             let id = id_a(price, v_n); // Get corresponding order id
             // Verify and add to user's open orders, storing scaled size
@@ -287,8 +318,9 @@ module Econia::User {
             assert!(!(size > o_c.b_a), E_NOT_ENOUGH_COLLATERAL);
             // Decrement amount of base coins available for withdraw
             o_c.b_a = o_c.b_a - size;
-            // Add ask to order book
-            b_a_a<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
+            // Try adding to order book, storing crossed spread flag
+            c_s =
+                b_a_a<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
         } else { // If limit order is a bid
             let id = id_b(price, v_n); // Get corresponding order id
             // Verify and add to user's open orders, storing scaled size
@@ -299,9 +331,11 @@ module Econia::User {
             assert!(!(fill_amount > o_c.q_a), E_NOT_ENOUGH_COLLATERAL);
             // Decrement amount of base coins available for withdraw
             o_c.q_a = o_c.q_a - fill_amount;
-            // Add bid to order book
-            b_a_b<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
+            // Try adding to order book, storing crossed spread flag
+            c_s =
+                b_a_b<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
         };
+        assert!(!c_s, E_CROSSES_SPREAD); // Assert uncrossed spread
     }
 
     /// Update sequence counter for user `u` with the sequence number of
@@ -339,6 +373,31 @@ module Econia::User {
         init_containers<BCT, QCT, E0>(user); // Initialize containers
         c_r<BCT>(user); // Register user with base coin store
         c_r<QCT>(user); // Register user with quote coin store
+    }
+
+    #[test_only]
+    /// Initialize test market with scale exponent `E` hosted by Econia,
+    /// funding a test user with `b_c` base coins and `q_c` quote coins
+    public(script) fun init_test_scaled_market_funded_user<E>(
+        econia: &signer,
+        user: &signer,
+        b_c: u64,
+        q_c: u64
+    ) acquires OC, SC {
+        init_econia(econia); // Initialize Econia core resources
+        r_r_s_t_m<E>(econia); // Register scaled test market
+        a_c_a(s_a_o(user)); // Initialize Account resource
+        init_user(user); // Initialize user
+        let user_addr = s_a_o(user); // Get user address
+        a_i_s_n(user_addr); // Increment mock sequence number
+        init_containers<BCT, QCT, E>(user); // Initialize containers
+        a_i_s_n(user_addr); // Increment mock sequence number
+        c_r<BCT>(user); // Register user with base coin store
+        c_r<QCT>(user); // Register user with quote coin store
+        r_m_bct_to(user_addr, b_c); // Mint base coins to user
+        r_m_qct_to(user_addr, q_c); // Mint quote coins to user
+        deposit<BCT, QCT, E>(user, b_c, q_c); // Deposit all coins
+        a_i_s_n(user_addr); // Increment mock sequence number
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -547,6 +606,125 @@ module Econia::User {
         init_user(user); // Initialize sequence counter for user
         // Assert sequence counter initializes to user sequence number
         assert!(a_g_s_n(user_addr) == 0, 0);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for user having insufficient collateral
+    public(script) fun submit_ask_failure_collateral(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        // Initialize test market with scale exponent 1, fund user with
+        // 100 base coins and 200 quote coins
+        init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
+        // Attempt submitting invalid ask of size 110 base coins
+        submit_ask<BCT, QCT, E1>(user, s_a_o(econia), 1, 110);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for user placing order that crosses spread
+    public(script) fun submit_ask_failure_crossed_spread(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        // Initialize test market with scale exponent 0, fund user with
+        // 100 base coins and 200 quote coins
+        init_test_scaled_market_funded_user<E0>(econia, user, 100, 200);
+        let host = s_a_o(econia); // Get market host address
+        // Submit bid of price 5, size 2
+        submit_bid<BCT, QCT, E0>(user, host, 5, 2);
+        let user_addr = s_a_o(user); // Get user address
+        a_i_s_n(user_addr); // Increment mock sequence number
+        // Submit ask of price 7, size 3
+        submit_ask<BCT, QCT, E0>(user, host, 7, 3);
+        a_i_s_n(user_addr); // Increment mock sequence number
+        // Submit invalid ask of price 4, size 4, crossing the spread
+        submit_ask<BCT, QCT, E0>(user, host, 4, 4);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for user having insufficient collateral
+    public(script) fun submit_bid_failure_collateral(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        // Initialize test market with scale exponent 1, fund user with
+        // 100 base coins and 200 quote coins
+        init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
+        // Attempt submitting invalid bid for 10 base coins at a scaled
+        // price of 201 (201 quote coins for 10 scaled coins)
+        submit_bid<BCT, QCT, E1>(user, s_a_o(econia), 201, 10);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for user placing order that crosses spread
+    public(script) fun submit_bid_failure_crossed_spread(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        // Initialize test market with scale exponent 0, fund user with
+        // 100 base coins and 200 quote coins
+        init_test_scaled_market_funded_user<E0>(econia, user, 100, 200);
+        let host = s_a_o(econia); // Get market host address
+        // Submit bid of price 5, size 2
+        submit_bid<BCT, QCT, E0>(user, host, 5, 2);
+        let user_addr = s_a_o(user); // Get user address
+        a_i_s_n(user_addr); // Increment mock sequence number
+        // Submit ask of price 7, size 3
+        submit_ask<BCT, QCT, E0>(user, host, 7, 3);
+        a_i_s_n(user_addr); // Increment mock sequence number
+        // Submit invalid bid of price 8, size 4, crossing the spread
+        submit_bid<BCT, QCT, E0>(user, host, 8, 4);
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for no such market
+    public(script) fun submit_limit_order_failure_no_market(
+        user: &signer
+    ) acquires OC, SC {
+        let user_addr = s_a_o(user); // Get user address
+        a_c_a(user_addr); // Initialize Account resource
+        init_user(user); // Initialize sequence counter for user
+        a_i_s_n(user_addr); // Increment mock sequence number
+        // Attempt invalid limit order
+        submit_ask<BCT, QCT, E0>(user, s_a_o(user), 1, 1);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for user not having order collateral container
+    public(script) fun submit_limit_order_failure_no_o_c(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        init_econia(econia); // Initialize Econia core resources
+        r_r_t_m(econia); // Register test market
+        let user_addr = s_a_o(user); // Get user address
+        a_c_a(user_addr); // Initialize Account resource
+        init_user(user); // Initialize sequence counter for user
+        a_i_s_n(user_addr); // Increment mock sequence number
+        // Attempt invalid limit order
+        submit_bid<BCT, QCT, E0>(user, s_a_o(econia), 1, 1);
     }
 
     #[test(user = @TestUser)]

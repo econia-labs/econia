@@ -582,6 +582,17 @@ module Econia::Registry {
         register_market<BCT, QCT, E0>(econia); // Register market
     }
 
+    #[test_only]
+    /// Register base and quote coin types, with corresponding market
+    /// having scale expenonet `E`, assuming registry has already been
+    /// initialized
+    public(script) fun register_scaled_test_market<E>(
+        econia: &signer
+    ) acquires MR {
+        init_coin_types(econia); // Initialize test coin types
+        register_market<BCT, QCT, E>(econia); // Register market
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

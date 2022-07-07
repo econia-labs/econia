@@ -1,4 +1,5 @@
 ‌# Summary​
+<!--- Reference: https://docs.gitbook.com/integrations/git-sync/content-configuration -->
 
 * [Welcome](Welcome.md)
 * [Getting Started](Getting-started.md)

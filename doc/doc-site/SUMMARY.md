@@ -20,7 +20,7 @@
 * [Your file](topic-2/our-file.md)
     * [Our file](topic-3/our-file.md)
 
-## Move Modules
+## Header
 
 * [Move Modules](topic-2/file.md)
   * [Book](../../src/move/econia/build/Econia/docs/Book.md)

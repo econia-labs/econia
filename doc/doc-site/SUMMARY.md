@@ -4,11 +4,11 @@
 * [Getting Started](Getting-started.md)
 
 * Ecosystem Concepts
-  * [Order ID](topic-1/my-file.md)
-  * [Market Structure](topic-1/my-file.md)
-  * [Order Book](topic-1/my-file.md)
-  * [User Side](topic-1/my-file.md)
-  * [System Integration](topic-1/my-file.md)
+  * [Order ID](Ecosystem-concepts/order-ID.md)
+  * [Market Structure](Ecosystem-concepts/market-structure.md)
+  * [Order Book](Ecosystem-concepts/order-book.md)
+  * [User Side](Ecosystem-concepts/user-side.md)
+  * [System Integration](Ecosystem-concepts/system-integration.md)
 
 
 ## Build on Econia

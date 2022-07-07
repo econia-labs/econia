@@ -134,7 +134,8 @@ module Econia::Book {
         price: u64,
         size: u64,
         _c: &FriendCap
-    ) acquires OB {
+    ): bool
+    acquires OB {
         add_position<B, Q, E>(host, user, ASK, id, price, size)
     }
 
@@ -146,7 +147,8 @@ module Econia::Book {
         price: u64,
         size: u64,
         _c: &FriendCap
-    ) acquires OB {
+    ): bool
+    acquires OB {
         add_position<B, Q, E>(host, user, BID, id, price, size)
     }
 
@@ -190,8 +192,9 @@ module Econia::Book {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Add new position to book for market `<B, Q, E>`, eliminating
-    /// redundant error checks covered by calling functions
+    /// Add new position to book for market `<B, Q, E>`, as long as
+    /// order does not cross the spread, skipping redundant error checks
+    /// already covered by calling functions
     ///
     /// # Parameters
     /// * `host`: Address of market host
@@ -201,10 +204,22 @@ module Econia::Book {
     /// * `price`: Scaled integer price (see `Econia::ID`)
     /// * `size`: Scaled order size (see `Econia::Orders`)
     ///
+    /// # Returns
+    /// * `true` if the new position crosses the spread, `false`
+    ///   otherwise
+    ///
     /// # Assumes
     /// * Correspondent order has already passed validation checks per
     ///   `Econia::Orders::add_order()`
     /// * `OB` for given market exists at host address
+    ///
+    /// # Spread terminology
+    /// * An order that "encroaches" on the spread may either lie
+    ///   "within" the spread, or may "cross" the spread. For example,
+    ///   if the max bid price is 10 and the min ask price is 15, a bid
+    ///   price of 11 is within the spread, a bid price of 16 crosses
+    ///   the spread, and both such orders encroach on the spread. A bid
+    ///   price of 9, however, does not encroach on the spread
     fun add_position<B, Q, E>(
         host: address,
         user: address,
@@ -212,7 +227,8 @@ module Econia::Book {
         id: u128,
         price: u64,
         size: u64
-    ) acquires OB {
+    ): bool
+    acquires OB {
         // Borrow mutable reference to order book at host address
         let o_b = borrow_global_mut<OB<B, Q, E>>(host);
         // Get minimum ask price and maximum bid price on book
@@ -223,8 +239,7 @@ module Econia::Book {
                 cb_i(&mut o_b.a, id, P{s: size, a: user});
                 // If order is within spread, update min ask id
                 if (price < m_a_p) o_b.m_a = id;
-            // Otherwise manage order that crosses spread
-            } else manage_crossed_spread();
+            } else return true; // Otherwise indicate crossed spread
         } else { // If order is a bid
             if (price < m_a_p) { // If order does not cross spread
                 // Add corresponding position to bid tree
@@ -232,21 +247,18 @@ module Econia::Book {
                 // If order is within spread, update max bid id
                 if (price > m_b_p) o_b.m_b = id;
             // Otherwise manage order that crosses spread
-            } else manage_crossed_spread();
-        }
+            } else return true; // Otherwise indicate crossed spread
+        }; // Order is on now on book, and did not cross spread
+        false // Indicate spread not crossed
     }
-
-    /// Stub function for managing crossed spread, aborts every time
-    fun manage_crossed_spread() {abort 0xff}
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test(account = @TestUser)]
-    #[expected_failure(abort_code = 0xff)]
-    /// Verify failure when placing an ask that crosses the spread
-    fun add_position_failure_crossed_spread_ask(
+    /// Verify return when placing an ask that crosses the spread
+    fun add_position_success_crossed_spread_ask(
         account: &signer,
     ) acquires OB {
         let addr = s_a_o(account); // Get account address
@@ -265,14 +277,15 @@ module Econia::Book {
         // Define ask with price 1, version number 3, size 1
         let (price, version, size) = (1, 3, 1);
         let id = id_a(price, version); // Get corresponding order id
-        // Attempt to add position to book
-        add_ask<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
+        // Add position to book an ask that crosses the spread
+        let crossed =
+            add_ask<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
+        assert!(crossed, 0); // Assert indication of crossed spread
     }
 
     #[test(account = @TestUser)]
-    #[expected_failure(abort_code = 0xff)]
-    /// Verify failure when placing a bid that crosses the spread
-    fun add_position_failure_crossed_spread_bid(
+    /// Verify return when placing a bid that crosses the spread
+    fun add_position_success_crossed_spread_bid(
         account: &signer,
     ) acquires OB {
         let addr = s_a_o(account); // Get account address
@@ -291,14 +304,16 @@ module Econia::Book {
         // Define bid with price 9, version number 3, size 1
         let (price, version, size) = (9, 3, 1);
         let id = id_b(price, version); // Get corresponding order id
-        // Attempt to add position to book
-        add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
+        // Add position to book a bid that crosses the spread
+        let crossed =
+            add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
+        assert!(crossed, 0); // Assert indication of crossed spread
     }
 
     #[test(account = @TestUser)]
     /// Verify positions correctly added for first ask on book, then for
     /// another ask that does not encroach on the spread
-    fun add_position_success_ask_simple(
+    fun add_position_success_simple_ask(
         account: &signer,
     ) acquires OB {
         let addr = s_a_o(account); // Get account address
@@ -307,34 +322,36 @@ module Econia::Book {
         // Define ask with price 8, version number 1, size 1
         let (price, version, size) = (8, 1, 1);
         let id = id_a(price, version); // Get corresponding order id
-        // Add position to book
-        add_position<BT, QT, ET>(addr, addr, ASK, id, price, size);
+        let crossed = // Add position to book, store crossed spread flag
+            add_position<BT, QT, ET>(addr, addr, ASK, id, price, size);
         // Borrow immutable reference to order book
+        assert!(!crossed, 0); // Assert no indication of crossed spread
         let o_b = borrow_global<OB<BT, QT, ET>>(addr);
-        assert!(o_b.m_a == id, 0); // Assert minimum ask id updates
+        assert!(o_b.m_a == id, 1); // Assert minimum ask id updates
         // Borrow immutable reference to new position on book
         let p = cb_b<P>(&o_b.a, id);
         // Assert position size and address stored correctly
-        assert!(p.s == size && p.a == addr, 1);
+        assert!(p.s == size && p.a == addr, 2);
         let m_a = id; // Store minimum ask id
         // Define new ask with price 9, version number 2, size 1
         let (price, version, size) = (9, 2, 1);
         let id = id_a(price, version); // Get corresponding order id
-        // Add position to book
-        add_position<BT, QT, ET>(addr, addr, ASK, id, price, size);
+        let crossed = // Add position to book, store crossed spread flag
+            add_position<BT, QT, ET>(addr, addr, ASK, id, price, size);
+        assert!(!crossed, 3); // Assert no indication of crossed spread
         // Borrow immutable reference to order book
         let o_b = borrow_global<OB<BT, QT, ET>>(addr);
-        assert!(o_b.m_a == m_a, 2); // Assert minimum ask id unchanged
+        assert!(o_b.m_a == m_a, 4); // Assert minimum ask id unchanged
         // Borrow immutable reference to new position on book
         let p = cb_b<P>(&o_b.a, id);
         // Assert position size and address stored correctly
-        assert!(p.s == size && p.a == addr, 3);
+        assert!(p.s == size && p.a == addr, 5);
     }
 
     #[test(account = @TestUser)]
     /// Verify positions correctly added for first bid on book, then for
     /// another bid that does not encroach on the spread
-    fun add_position_success_bid_simple(
+    fun add_position_success_simple_bid(
         account: &signer,
     ) acquires OB {
         let addr = s_a_o(account); // Get account address
@@ -343,28 +360,30 @@ module Econia::Book {
         // Define bid with price 3, version number 1, size 1
         let (price, version, size) = (3, 1, 1);
         let id = id_b(price, version); // Get corresponding order id
-        // Add position to book
-        add_position<BT, QT, ET>(addr, addr, BID, id, price, size);
+        let crossed = // Add position to book, store crossed spread flag
+            add_position<BT, QT, ET>(addr, addr, BID, id, price, size);
+        assert!(!crossed, 0); // Assert no indication of crossed spread
         // Borrow immutable reference to order book
         let o_b = borrow_global<OB<BT, QT, ET>>(addr);
-        assert!(o_b.m_b == id, 0); // Assert maximum bid id updates
+        assert!(o_b.m_b == id, 1); // Assert maximum bid id updates
         // Borrow immutable reference to new position on book
         let p = cb_b<P>(&o_b.b, id);
         // Assert position size and address stored correctly
-        assert!(p.s == size && p.a == addr, 1);
+        assert!(p.s == size && p.a == addr, 2);
         let m_b = id; // Store maximum bid id
         // Define new bid with price 2, version number 2, size 1
         let (price, version, size) = (2, 2, 1);
         let id = id_b(price, version); // Get corresponding order id
-        // Add position to book
-        add_position<BT, QT, ET>(addr, addr, BID, id, price, size);
+        let crossed = // Add position to book, store crossed spread flag
+            add_position<BT, QT, ET>(addr, addr, BID, id, price, size);
+        assert!(!crossed, 3); // Assert no indication of crossed spread
         // Borrow immutable reference to order book
         let o_b = borrow_global<OB<BT, QT, ET>>(addr);
-        assert!(o_b.m_b == m_b, 2); // Assert maximum bid id unchanged
+        assert!(o_b.m_b == m_b, 4); // Assert maximum bid id unchanged
         // Borrow immutable reference to new position on book
         let p = cb_b<P>(&o_b.b, id);
         // Assert position size and address stored correctly
-        assert!(p.s == size && p.a == addr, 3);
+        assert!(p.s == size && p.a == addr, 5);
     }
 
     #[test(account = @TestUser)]

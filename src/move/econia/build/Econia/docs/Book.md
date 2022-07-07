@@ -51,8 +51,9 @@ to be filled.
 -  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 -  [Function `add_position`](#0xc0deb00c_Book_add_position)
     -  [Parameters](#@Parameters_4)
-    -  [Assumes](#@Assumes_5)
--  [Function `manage_crossed_spread`](#0xc0deb00c_Book_manage_crossed_spread)
+    -  [Returns](#@Returns_5)
+    -  [Assumes](#@Assumes_6)
+    -  [Spread terminology](#@Spread_terminology_7)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -251,7 +252,7 @@ When order book does not exist at given address
 Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()</code> call for <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, requiring <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_ask">add_ask</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_ask">add_ask</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): bool
 </code></pre>
 
 
@@ -267,7 +268,8 @@ Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()<
     price: u64,
     size: u64,
     _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
-) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+): bool
+<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
     <a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>&lt;B, Q, E&gt;(host, user, <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>, id, price, size)
 }
 </code></pre>
@@ -283,7 +285,7 @@ Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()<
 Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()</code> call for <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, requiring <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_bid">add_bid</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_bid">add_bid</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, id: u128, price: u64, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): bool
 </code></pre>
 
 
@@ -299,7 +301,8 @@ Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()<
     price: u64,
     size: u64,
     _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
-) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+): bool
+<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
     <a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>&lt;B, Q, E&gt;(host, user, <a href="Book.md#0xc0deb00c_Book_BID">BID</a>, id, price, size)
 }
 </code></pre>
@@ -428,8 +431,9 @@ Return scale factor of specified order book at given address
 
 ## Function `add_position`
 
-Add new position to book for market <code>&lt;B, Q, E&gt;</code>, eliminating
-redundant error checks covered by calling functions
+Add new position to book for market <code>&lt;B, Q, E&gt;</code>, as long as
+order does not cross the spread, skipping redundant error checks
+already covered by calling functions
 
 
 <a name="@Parameters_4"></a>
@@ -444,7 +448,15 @@ redundant error checks covered by calling functions
 * <code>size</code>: Scaled order size (see <code>Econia::Orders</code>)
 
 
-<a name="@Assumes_5"></a>
+<a name="@Returns_5"></a>
+
+### Returns
+
+* <code><b>true</b></code> if the new position crosses the spread, <code><b>false</b></code>
+otherwise
+
+
+<a name="@Assumes_6"></a>
 
 ### Assumes
 
@@ -453,7 +465,19 @@ redundant error checks covered by calling functions
 * <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code> for given market exists at host address
 
 
-<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, side: bool, id: u128, price: u64, size: u64)
+<a name="@Spread_terminology_7"></a>
+
+### Spread terminology
+
+* An order that "encroaches" on the spread may either lie
+"within" the spread, or may "cross" the spread. For example,
+if the max bid price is 10 and the min ask price is 15, a bid
+price of 11 is within the spread, a bid price of 16 crosses
+the spread, and both such orders encroach on the spread. A bid
+price of 9, however, does not encroach on the spread
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>&lt;B, Q, E&gt;(host: <b>address</b>, user: <b>address</b>, side: bool, id: u128, price: u64, size: u64): bool
 </code></pre>
 
 
@@ -469,7 +493,8 @@ redundant error checks covered by calling functions
     id: u128,
     price: u64,
     size: u64
-) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+): bool
+<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
     // Borrow mutable reference <b>to</b> order book at host <b>address</b>
     <b>let</b> o_b = <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host);
     // Get minimum ask price and maximum bid price on book
@@ -480,8 +505,7 @@ redundant error checks covered by calling functions
             cb_i(&<b>mut</b> o_b.a, id, <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: size, a: user});
             // If order is within spread, <b>update</b> <b>min</b> ask id
             <b>if</b> (price &lt; m_a_p) o_b.m_a = id;
-        // Otherwise manage order that crosses spread
-        } <b>else</b> <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>();
+        } <b>else</b> <b>return</b> <b>true</b>; // Otherwise indicate crossed spread
     } <b>else</b> { // If order is a bid
         <b>if</b> (price &lt; m_a_p) { // If order does not cross spread
             // Add corresponding position <b>to</b> bid tree
@@ -489,32 +513,10 @@ redundant error checks covered by calling functions
             // If order is within spread, <b>update</b> max bid id
             <b>if</b> (price &gt; m_b_p) o_b.m_b = id;
         // Otherwise manage order that crosses spread
-        } <b>else</b> <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>();
-    }
+        } <b>else</b> <b>return</b> <b>true</b>; // Otherwise indicate crossed spread
+    }; // Order is on now on book, and did not cross spread
+    <b>false</b> // Indicate spread not crossed
 }
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_Book_manage_crossed_spread"></a>
-
-## Function `manage_crossed_spread`
-
-Stub function for managing crossed spread, aborts every time
-
-
-<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>()
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_manage_crossed_spread">manage_crossed_spread</a>() {<b>abort</b> 0xff}
 </code></pre>
 
 

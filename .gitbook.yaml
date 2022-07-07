@@ -1,7 +1,3 @@
 root: ./doc/doc-site
 structure:
     readme: README.md
-
-redirects:
-    modules: ../../src/move/econia/build/docs/
-

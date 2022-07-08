@@ -1,6 +1,6 @@
 # Welcome!
 
-**e·co·ni·a** | *ə-kä-nē-ə*
+**e·co·ni·a** | /ə'känēə/
 
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 

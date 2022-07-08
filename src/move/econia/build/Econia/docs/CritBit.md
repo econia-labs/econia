@@ -361,7 +361,8 @@ corresponding traversal function, namely <code><a href="CritBit.md#0xc0deb00c_Cr
 would introduce compounding computational overhead. Since traversal
 already requires precise management of loop counter variables and
 node indices, it is assumed that they are managed correctly and thus
-no native error-checking is implemented so as to improve efficiency.
+no redundant error-checking is implemented so as to improve
+efficiency.
 
 
 <a name="@Partial_successor_traversal_18"></a>

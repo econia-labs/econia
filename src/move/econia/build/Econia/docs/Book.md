@@ -45,6 +45,8 @@ to be filled.
 -  [Constants](#@Constants_3)
 -  [Function `add_ask`](#0xc0deb00c_Book_add_ask)
 -  [Function `add_bid`](#0xc0deb00c_Book_add_bid)
+-  [Function `cancel_ask`](#0xc0deb00c_Book_cancel_ask)
+-  [Function `cancel_bid`](#0xc0deb00c_Book_cancel_bid)
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
 -  [Function `get_friend_cap`](#0xc0deb00c_Book_get_friend_cap)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
@@ -54,6 +56,9 @@ to be filled.
     -  [Returns](#@Returns_5)
     -  [Assumes](#@Assumes_6)
     -  [Spread terminology](#@Spread_terminology_7)
+-  [Function `cancel_position`](#0xc0deb00c_Book_cancel_position)
+    -  [Parameters](#@Parameters_8)
+    -  [Assumes](#@Assumes_9)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -245,6 +250,26 @@ When order book does not exist at given address
 
 
 
+<a name="0xc0deb00c_Book_MAX_BID_DEFAULT"></a>
+
+Default value for maximum bid order ID
+
+
+<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>: u128 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Book_MIN_ASK_DEFAULT"></a>
+
+Default value for minimum ask order ID
+
+
+<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>: u128 = 340282366920938463463374607431768211455;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_Book_add_ask"></a>
 
 ## Function `add_ask`
@@ -304,6 +329,64 @@ Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()<
 ): bool
 <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
     <a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>&lt;B, Q, E&gt;(host, user, <a href="Book.md#0xc0deb00c_Book_BID">BID</a>, id, price, size)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_cancel_ask"></a>
+
+## Function `cancel_ask`
+
+Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()</code> call for <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, requiring <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(host: <b>address</b>, id: u128, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(
+    host: <b>address</b>,
+    id: u128,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    <a href="Book.md#0xc0deb00c_Book_cancel_position">cancel_position</a>&lt;B, Q, E&gt;(host, <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>, id);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_cancel_bid"></a>
+
+## Function `cancel_bid`
+
+Wrapped <code><a href="Book.md#0xc0deb00c_Book_add_position">add_position</a>()</code> call for <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, requiring <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(host: <b>address</b>, id: u128, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(
+    host: <b>address</b>,
+    id: u128,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    <a href="Book.md#0xc0deb00c_Book_cancel_position">cancel_position</a>&lt;B, Q, E&gt;(host, <a href="Book.md#0xc0deb00c_Book_BID">BID</a>, id);
 }
 </code></pre>
 
@@ -387,8 +470,10 @@ with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale fact
 ) {
     // Assert book does not already exist under host account
     <b>assert</b>!(!<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(s_a_o(host)), <a href="Book.md#0xc0deb00c_Book_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);
+    <b>let</b> m_a = <a href="Book.md#0xc0deb00c_Book_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>; // Declare <b>min</b> ask default order <a href="ID.md#0xc0deb00c_ID">ID</a>
+    <b>let</b> m_b = <a href="Book.md#0xc0deb00c_Book_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>; // Declare max bid default order <a href="ID.md#0xc0deb00c_ID">ID</a>
     <b>let</b> o_b = // Pack empty order book
-        <a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;{f, a: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), b: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), m_a: <a href="Book.md#0xc0deb00c_Book_HI_128">HI_128</a>, m_b: 0};
+        <a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;{f, a: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), b: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), m_a, m_b};
     <b>move_to</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host, o_b); // Move <b>to</b> host
 }
 </code></pre>
@@ -516,6 +601,72 @@ price of 9, however, does not encroach on the spread
         } <b>else</b> <b>return</b> <b>true</b>; // Otherwise indicate crossed spread
     }; // Order is on now on book, and did not cross spread
     <b>false</b> // Indicate spread not crossed
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_cancel_position"></a>
+
+## Function `cancel_position`
+
+Cancel position on book for market <code>&lt;B, Q, E&gt;</code>, skipping
+redundant error checks already covered by calling functions
+
+
+<a name="@Parameters_8"></a>
+
+### Parameters
+
+* <code>host</code>: Address of market host
+* <code>side</code>: <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> or <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>
+* <code>id</code>: Order ID (see <code>Econia::ID</code>)
+
+
+<a name="@Assumes_9"></a>
+
+### Assumes
+
+* <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code> for given market exists at host address
+* Position has already been placed on book properly, by
+preceding functions that perform their own error-checking
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_cancel_position">cancel_position</a>&lt;B, Q, E&gt;(host: <b>address</b>, side: bool, id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_cancel_position">cancel_position</a>&lt;B, Q, E&gt;(
+    host: <b>address</b>,
+    side: bool,
+    id: u128
+) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    // Borrow mutable reference <b>to</b> order book at host <b>address</b>
+    <b>let</b> o_b = <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host);
+    <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) { // If order is an ask
+        <b>let</b> asks = &<b>mut</b> o_b.a; // Get mutable reference <b>to</b> asks tree
+        <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _} = cb_p&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(asks, id); // Pop/unpack position
+        <b>if</b> (o_b.m_a == id) { // If cancelled order was the <b>min</b> ask
+            // If asks tree now empty, set <b>min</b> ask <a href="ID.md#0xc0deb00c_ID">ID</a> <b>to</b> default
+            o_b.m_a = <b>if</b> (cb_i_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(asks)) <a href="Book.md#0xc0deb00c_Book_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a> <b>else</b>
+                cb_mi_k&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(asks); // Otherwise set <b>to</b> new <b>min</b> ask <a href="ID.md#0xc0deb00c_ID">ID</a>
+        };
+    } <b>else</b> { // If order is a bid
+        <b>let</b> bids = &<b>mut</b> o_b.b; // Get mutable reference <b>to</b> bids tree
+        <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _} = cb_p&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(bids, id); // Pop/unpack position
+        <b>if</b> (o_b.m_b == id) { // If cancelled order was the max bid
+            // If bid tree now empty, set max bid <a href="ID.md#0xc0deb00c_ID">ID</a> <b>to</b> default
+            o_b.m_b = <b>if</b> (cb_i_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(bids)) <a href="Book.md#0xc0deb00c_Book_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a> <b>else</b>
+                cb_ma_k&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(bids); // Otherwise set <b>to</b> new max bid <a href="ID.md#0xc0deb00c_ID">ID</a>
+        };
+    }
 }
 </code></pre>
 

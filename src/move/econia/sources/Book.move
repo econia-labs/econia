@@ -25,7 +25,11 @@ module Econia::Book {
     use Econia::CritBit::{
         CB,
         empty as cb_e,
-        insert as cb_i
+        insert as cb_i,
+        is_empty as cb_i_e,
+        max_key as cb_ma_k,
+        min_key as cb_mi_k,
+        pop as cb_p
     };
 
     use Econia::ID::{
@@ -43,7 +47,7 @@ module Econia::Book {
     #[test_only]
     use Econia::CritBit::{
         borrow as cb_b,
-        is_empty as cb_i_e
+        has_key as cb_h_k
     };
 
     #[test_only]
@@ -121,6 +125,10 @@ module Econia::Book {
     const BID: bool = false;
     /// `u128` bitmask with all bits set
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// Default value for maximum bid order ID
+    const MAX_BID_DEFAULT: u128 = 0;
+    /// Default value for minimum ask order ID
+    const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -152,6 +160,24 @@ module Econia::Book {
         add_position<B, Q, E>(host, user, BID, id, price, size)
     }
 
+    /// Wrapped `add_position()` call for `ASK`, requiring `FriendCap`
+    public fun cancel_ask<B, Q, E>(
+        host: address,
+        id: u128,
+        _c: &FriendCap
+    ) acquires OB {
+        cancel_position<B, Q, E>(host, ASK, id);
+    }
+
+    /// Wrapped `add_position()` call for `BID`, requiring `FriendCap`
+    public fun cancel_bid<B, Q, E>(
+        host: address,
+        id: u128,
+        _c: &FriendCap
+    ) acquires OB {
+        cancel_position<B, Q, E>(host, BID, id);
+    }
+
     /// Return `true` if specified order book type exists at address
     public fun exists_book<B, Q, E>(a: address): bool {exists<OB<B, Q, E>>(a)}
 
@@ -173,8 +199,10 @@ module Econia::Book {
     ) {
         // Assert book does not already exist under host account
         assert!(!exists_book<B, Q, E>(s_a_o(host)), E_BOOK_EXISTS);
+        let m_a = MIN_ASK_DEFAULT; // Declare min ask default order ID
+        let m_b = MAX_BID_DEFAULT; // Declare max bid default order ID
         let o_b = // Pack empty order book
-            OB<B, Q, E>{f, a: cb_e<P>(), b: cb_e<P>(), m_a: HI_128, m_b: 0};
+            OB<B, Q, E>{f, a: cb_e<P>(), b: cb_e<P>(), m_a, m_b};
         move_to<OB<B, Q, E>>(host, o_b); // Move to host
     }
 
@@ -250,6 +278,44 @@ module Econia::Book {
             } else return true; // Otherwise indicate crossed spread
         }; // Order is on now on book, and did not cross spread
         false // Indicate spread not crossed
+    }
+
+    /// Cancel position on book for market `<B, Q, E>`, skipping
+    /// redundant error checks already covered by calling functions
+    ///
+    /// # Parameters
+    /// * `host`: Address of market host
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID (see `Econia::ID`)
+    ///
+    /// # Assumes
+    /// * `OB` for given market exists at host address
+    /// * Position has already been placed on book properly, by
+    ///   preceding functions that perform their own error-checking
+    fun cancel_position<B, Q, E>(
+        host: address,
+        side: bool,
+        id: u128
+    ) acquires OB {
+        // Borrow mutable reference to order book at host address
+        let o_b = borrow_global_mut<OB<B, Q, E>>(host);
+        if (side == ASK) { // If order is an ask
+            let asks = &mut o_b.a; // Get mutable reference to asks tree
+            P{s: _, a: _} = cb_p<P>(asks, id); // Pop/unpack position
+            if (o_b.m_a == id) { // If cancelled order was the min ask
+                // If asks tree now empty, set min ask ID to default
+                o_b.m_a = if (cb_i_e<P>(asks)) MIN_ASK_DEFAULT else
+                    cb_mi_k<P>(asks); // Otherwise set to new min ask ID
+            };
+        } else { // If order is a bid
+            let bids = &mut o_b.b; // Get mutable reference to bids tree
+            P{s: _, a: _} = cb_p<P>(bids, id); // Pop/unpack position
+            if (o_b.m_b == id) { // If cancelled order was the max bid
+                // If bid tree now empty, set max bid ID to default
+                o_b.m_b = if (cb_i_e<P>(bids)) MAX_BID_DEFAULT else
+                    cb_ma_k<P>(bids); // Otherwise set to new max bid ID
+            };
+        }
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -440,6 +506,92 @@ module Econia::Book {
         let p = cb_b<P>(&o_b.b, id);
         // Assert position size and address stored correctly
         assert!(p.s == size && p.a == addr, 5);
+    }
+
+    #[test(account = @TestUser)]
+    /// Verify successful order cancellation and min ask ID updates
+    fun cancel_ask_success(
+        account: &signer,
+    ) acquires OB {
+        let addr = s_a_o(account); // Get account address
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(account, 1, &FriendCap{});
+        // Define ask with price 1, version number 2, size 3
+        let (p_1, v_1, s_1) = (1, 2, 3);
+        let id_1 = id_a(p_1, v_1); // Get corresponding order ID
+        // Add position to book
+        add_ask<BT, QT, ET>(addr, addr, id_1, p_1, s_1, &FriendCap{});
+        // Define ask with price 2, version number 3, size 4
+        let (p_2, v_2, s_2) = (2, 3, 4);
+        let id_2 = id_a(p_2, v_2); // Get corresponding order ID
+        // Add position to book
+        add_ask<BT, QT, ET>(addr, addr, id_2, p_2, s_2, &FriendCap{});
+        // Define ask with price 3, version number 4, size 5
+        let (p_3, v_3, s_3) = (3, 4, 5);
+        let id_3 = id_a(p_3, v_3); // Get corresponding order ID
+        // Add position to book
+        add_ask<BT, QT, ET>(addr, addr, id_3, p_3, s_3, &FriendCap{});
+        // Cancel order having minimum ask ID
+        cancel_ask<BT, QT, ET>(addr, id_1, &FriendCap{});
+        // Borrow immutable reference to order book
+        let o_b = borrow_global<OB<BT, QT, ET>>(addr);
+        // Assert order ID not in asks tree, and correct min ask ID
+        assert!(!cb_h_k<P>(&o_b.a, id_1) && o_b.m_a == id_2, 0);
+        // Cancel order not having minimum ask ID
+        cancel_ask<BT, QT, ET>(addr, id_3, &FriendCap{});
+        // Borrow immutable reference to order book
+        let o_b = borrow_global<OB<BT, QT, ET>>(addr);
+        // Assert order ID not in asks tree, and correct min ask ID
+        assert!(!cb_h_k<P>(&o_b.a, id_3) && o_b.m_a == id_2, 1);
+        // Cancel only ask on book
+        cancel_ask<BT, QT, ET>(addr, id_2, &FriendCap{});
+        // Borrow immutable reference to order book
+        let o_b = borrow_global<OB<BT, QT, ET>>(addr);
+        // Assert order ID not in asks tree, and correct min ask ID
+        assert!(!cb_h_k<P>(&o_b.a, id_2) && o_b.m_a == MIN_ASK_DEFAULT, 2);
+    }
+
+    #[test(account = @TestUser)]
+    /// Verify successful order cancellation and max bid ID updates
+    fun cancel_bid_success(
+        account: &signer,
+    ) acquires OB {
+        let addr = s_a_o(account); // Get account address
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(account, 1, &FriendCap{});
+        // Define bid with price 1, version number 2, size 3
+        let (p_1, v_1, s_1) = (1, 2, 3);
+        let id_1 = id_b(p_1, v_1); // Get corresponding order ID
+        // Add position to book
+        add_bid<BT, QT, ET>(addr, addr, id_1, p_1, s_1, &FriendCap{});
+        // Define bid with price 2, version number 3, size 4
+        let (p_2, v_2, s_2) = (2, 3, 4);
+        let id_2 = id_b(p_2, v_2); // Get corresponding order ID
+        // Add position to book
+        add_bid<BT, QT, ET>(addr, addr, id_2, p_2, s_2, &FriendCap{});
+        // Define bid with price 3, version number 4, size 5
+        let (p_3, v_3, s_3) = (3, 4, 5);
+        let id_3 = id_b(p_3, v_3); // Get corresponding order ID
+        // Add position to book
+        add_bid<BT, QT, ET>(addr, addr, id_3, p_3, s_3, &FriendCap{});
+        // Cancel order having maximum bid ID
+        cancel_bid<BT, QT, ET>(addr, id_3, &FriendCap{});
+        // Borrow immutable reference to order book
+        let o_b = borrow_global<OB<BT, QT, ET>>(addr);
+        // Assert order ID not in bids tree, and correct max bid ID
+        assert!(!cb_h_k<P>(&o_b.b, id_3) && o_b.m_b == id_2, 0);
+        // Cancel order not having maximum bid ID
+        cancel_bid<BT, QT, ET>(addr, id_1, &FriendCap{});
+        // Borrow immutable reference to order book
+        let o_b = borrow_global<OB<BT, QT, ET>>(addr);
+        // Assert order ID not in bids tree, and correct max bid ID
+        assert!(!cb_h_k<P>(&o_b.b, id_1) && o_b.m_b == id_2, 1);
+        // Cancel only bid on book
+        cancel_bid<BT, QT, ET>(addr, id_2, &FriendCap{});
+        // Borrow immutable reference to order book
+        let o_b = borrow_global<OB<BT, QT, ET>>(addr);
+        // Assert order ID not in bids tree, and correct max bid ID
+        assert!(!cb_h_k<P>(&o_b.b, id_2) && o_b.m_b == MAX_BID_DEFAULT, 2);
     }
 
     #[test(account = @TestUser)]

@@ -37,7 +37,9 @@ module Econia::Orders {
     use Econia::CritBit::{
         CB,
         empty as cb_e,
-        insert as cb_i
+        has_key as cb_h_k,
+        insert as cb_i,
+        pop as cb_p
     };
 
     use Std::Signer::{
@@ -107,6 +109,8 @@ module Econia::Orders {
     const E_FILL_OVERFLOW: u64 = 5;
     /// When order size is 0
     const E_SIZE_0: u64 = 6;
+    /// When user does not have open order with specified ID
+    const E_NO_SUCH_ORDER: u64 = 7;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -151,6 +155,24 @@ module Econia::Orders {
     )
     acquires OO {
         add_order<B, Q, E>(addr, BID, id, price, size)
+    }
+
+    /// Wrapped `cancel_order()` call for `ASK`, requiring `FriendCap`
+    public fun cancel_ask<B, Q, E>(
+        addr: address,
+        id: u128,
+        _c: &FriendCap
+    ) acquires OO {
+        cancel_order<B, Q, E>(addr, ASK, id);
+    }
+
+    /// Wrapped `cancel_order()` call for `BID`, requiring `FriendCap`
+    public fun cancel_bid<B, Q, E>(
+        addr: address,
+        id: u128,
+        _c: &FriendCap
+    ) acquires OO {
+        cancel_order<B, Q, E>(addr, BID, id);
     }
 
     /// Return `true` if specified open orders type exists at address
@@ -212,7 +234,7 @@ module Econia::Orders {
     /// * `u64`: Scaled order size
     /// * `u64`: Number of quote coin subunits needed to fill order
     ///
-    /// # Abort sceniarios
+    /// # Abort scenarios
     /// * If `price` is 0
     /// * If `size` is 0
     /// * If `OO<B, Q, E>` not initialized at `addr`
@@ -253,6 +275,36 @@ module Econia::Orders {
         if (side == ASK) cb_i<u64>(&mut o_o.a, id, scaled_size)
             else cb_i<u64>(&mut o_o.b, id, scaled_size);
         (scaled_size, (fill_amount as u64))
+    }
+
+    /// Cancel position in open orders for market `<B, Q, E>`
+    ///
+    /// # Parameters
+    /// * `addr`: User's address
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID (see `Econia::ID`)
+    ///
+    /// # Abort scenarios
+    /// * If `OO<B, Q, E>` not initialized at `addr`
+    /// * If user does not have an open order with given ID
+    fun cancel_order<B, Q, E>(
+        addr: address,
+        side: bool,
+        id: u128
+    ) acquires OO {
+        // Assert open orders container exists at given address
+        assert!(exists_orders<B, Q, E>(addr), E_NO_ORDERS);
+        // Borrow mutable reference to open orders at given address
+        let o_o = borrow_global_mut<OO<B, Q, E>>(addr);
+        if (side == ASK) { // If cancelling an ask
+            // Assert user has an open ask with corresponding ID
+            assert!(cb_h_k<u64>(&o_o.a, id), E_NO_SUCH_ORDER);
+            cb_p<u64>(&mut o_o.a, id); // Pop ask with corresponding ID
+        } else { // If cancelling a bid
+            // Assert user has an open bid with corresponding ID
+            assert!(cb_h_k<u64>(&o_o.b, id), E_NO_SUCH_ORDER);
+            cb_p<u64>(&mut o_o.b, id); // Pop bid with corresponding ID
+        }
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -300,8 +352,7 @@ module Econia::Orders {
     /// scale factor
     fun add_order_failure_not_multiple(
         user: &signer
-    )
-    acquires OO {
+    ) acquires OO {
         // Init orders with scale factor of 10
         init_orders<BT, QT, ET>(user, 10, &FriendCap{});
         // Attempt invalid add
@@ -314,8 +365,7 @@ module Econia::Orders {
     /// into a `u64`
     fun add_order_failure_overflow(
         user: &signer
-    )
-    acquires OO {
+    ) acquires OO {
         // Init orders with scale factor of 1
         init_orders<BT, QT, ET>(user, 1, &FriendCap{});
         // Attempt invalid add
@@ -344,8 +394,7 @@ module Econia::Orders {
     /// Verify successful adding of orders
     fun add_orders_success(
         user: &signer
-    )
-    acquires OO {
+    ) acquires OO {
         let f_c = FriendCap{}; // Initialize friend-like capability
         // Init orders with scale factor of 100
         init_orders<BT, QT, ET>(user, 100, &f_c);
@@ -365,6 +414,77 @@ module Econia::Orders {
         assert!(*cb_b<u64>(&o_o.a, 123) == 4, 2);
         // Assert bid added correctly
         assert!(*cb_b<u64>(&o_o.b, 234) == 14, 3);
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for no such order
+    fun cancel_order_failure_no_such_ask(
+        user: &signer
+    ) acquires OO {
+        let f_c = FriendCap{}; // Initialize friend-like capability
+        // Init orders with scale factor of 1
+        init_orders<BT, QT, ET>(user, 1, &f_c);
+        // Attempt invalid cancellation
+        cancel_ask<BT, QT, ET>(@TestUser, 0, &f_c);
+    }
+
+    #[test(user = @TestUser)]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for no such order
+    fun cancel_order_failure_no_such_bid(
+        user: &signer
+    ) acquires OO {
+        let f_c = FriendCap{}; // Initialize friend-like capability
+        // Init orders with scale factor of 1
+        init_orders<BT, QT, ET>(user, 1, &f_c);
+        // Attempt invalid cancellation
+        cancel_bid<BT, QT, ET>(@TestUser, 0, &f_c);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for no open orders container initialized
+    fun cancel_order_failure_no_orders()
+    acquires OO {
+        // Attempt invalid cancellation
+        cancel_ask<BT, QT, ET>(@TestUser, 0, &FriendCap{});
+    }
+
+    #[test(user = @TestUser)]
+    /// Verify successful cancellation of both ask and bid
+    fun cancel_orders_success(
+        user: &signer
+    ) acquires OO {
+        let f_c = FriendCap{}; // Initialize friend-like capability
+        // Init orders with scale factor of 1
+        init_orders<BT, QT, ET>(user, 1, &f_c);
+        // Declare dummy id, price, size fields
+        let (id, price, size) = (1, 2, 3);
+        // Add ask to open orders
+        add_ask<BT, QT, ET>(@TestUser, id, price, size, &f_c);
+        // Borrow immutable reference to open orders
+        let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
+        // Assert ask registered in open orders
+        assert!(cb_h_k<u64>(&o_o.a, id), 0);
+        // Cancel ask
+        cancel_ask<BT, QT, ET>(@TestUser, id, &FriendCap{});
+        // Borrow immutable reference to open orders
+        let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
+        // Assert ask no longer registered in open orders
+        assert!(!cb_h_k<u64>(&o_o.a, id), 1);
+        // Add bid to open orders
+        add_bid<BT, QT, ET>(@TestUser, id, price, size, &f_c);
+        // Borrow immutable reference to open orders
+        let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
+        // Assert bid registered in open orders
+        assert!(cb_h_k<u64>(&o_o.b, id), 2);
+        // Cancel bid
+        cancel_bid<BT, QT, ET>(@TestUser, id, &FriendCap{});
+        // Borrow immutable reference to open orders
+        let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
+        // Assert bid no longer registered in open orders
+        assert!(!cb_h_k<u64>(&o_o.b, id), 3);
     }
 
     #[test(account = @TestUser)]

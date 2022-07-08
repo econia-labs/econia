@@ -56,6 +56,8 @@ ID (per <code>Econia::ID</code>) indicating a scaled price of <code>2001</code>.
 -  [Constants](#@Constants_3)
 -  [Function `add_ask`](#0xc0deb00c_Orders_add_ask)
 -  [Function `add_bid`](#0xc0deb00c_Orders_add_bid)
+-  [Function `cancel_ask`](#0xc0deb00c_Orders_cancel_ask)
+-  [Function `cancel_bid`](#0xc0deb00c_Orders_cancel_bid)
 -  [Function `exists_orders`](#0xc0deb00c_Orders_exists_orders)
 -  [Function `get_friend_cap`](#0xc0deb00c_Orders_get_friend_cap)
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
@@ -63,8 +65,11 @@ ID (per <code>Econia::ID</code>) indicating a scaled price of <code>2001</code>.
 -  [Function `add_order`](#0xc0deb00c_Orders_add_order)
     -  [Parameters](#@Parameters_4)
     -  [Returns](#@Returns_5)
-    -  [Abort sceniarios](#@Abort_sceniarios_6)
+    -  [Abort scenarios](#@Abort_scenarios_6)
     -  [Assumes](#@Assumes_7)
+-  [Function `cancel_order`](#0xc0deb00c_Orders_cancel_order)
+    -  [Parameters](#@Parameters_8)
+    -  [Abort scenarios](#@Abort_scenarios_9)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -218,6 +223,16 @@ When order book does not exist at given address
 
 
 
+<a name="0xc0deb00c_Orders_E_NO_SUCH_ORDER"></a>
+
+When user does not have open order with specified ID
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_NO_SUCH_ORDER">E_NO_SUCH_ORDER</a>: u64 = 7;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_Orders_E_ORDERS_EXISTS"></a>
 
 When open orders already exists at given address
@@ -311,6 +326,64 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
 )
 <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id, price, size)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Orders_cancel_ask"></a>
+
+## Function `cancel_ask`
+
+Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    id: u128,
+    _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Orders_cancel_bid"></a>
+
+## Function `cancel_bid`
+
+Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    id: u128,
+    _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id);
 }
 </code></pre>
 
@@ -466,9 +539,9 @@ Add new order to users's open orders container for market
 * <code>u64</code>: Number of quote coin subunits needed to fill order
 
 
-<a name="@Abort_sceniarios_6"></a>
+<a name="@Abort_scenarios_6"></a>
 
-### Abort sceniarios
+### Abort scenarios
 
 * If <code>price</code> is 0
 * If <code>size</code> is 0
@@ -525,6 +598,64 @@ u64
     <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) cb_i&lt;u64&gt;(&<b>mut</b> o_o.a, id, scaled_size)
         <b>else</b> cb_i&lt;u64&gt;(&<b>mut</b> o_o.b, id, scaled_size);
     (scaled_size, (fill_amount <b>as</b> u64))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Orders_cancel_order"></a>
+
+## Function `cancel_order`
+
+Cancel position in open orders for market <code>&lt;B, Q, E&gt;</code>
+
+
+<a name="@Parameters_8"></a>
+
+### Parameters
+
+* <code>addr</code>: User's address
+* <code>side</code>: <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code> or <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>
+* <code>id</code>: Order ID (see <code>Econia::ID</code>)
+
+
+<a name="@Abort_scenarios_9"></a>
+
+### Abort scenarios
+
+* If <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;</code> not initialized at <code>addr</code>
+* If user does not have an open order with given ID
+
+
+<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    side: bool,
+    id: u128
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    // Assert open orders container <b>exists</b> at given <b>address</b>
+    <b>assert</b>!(<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(addr), <a href="Orders.md#0xc0deb00c_Orders_E_NO_ORDERS">E_NO_ORDERS</a>);
+    // Borrow mutable reference <b>to</b> open orders at given <b>address</b>
+    <b>let</b> o_o = <b>borrow_global_mut</b>&lt;<a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;&gt;(addr);
+    <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) { // If cancelling an ask
+        // Assert user <b>has</b> an open ask <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
+        <b>assert</b>!(cb_h_k&lt;u64&gt;(&o_o.a, id), <a href="Orders.md#0xc0deb00c_Orders_E_NO_SUCH_ORDER">E_NO_SUCH_ORDER</a>);
+        cb_p&lt;u64&gt;(&<b>mut</b> o_o.a, id); // Pop ask <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
+    } <b>else</b> { // If cancelling a bid
+        // Assert user <b>has</b> an open bid <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
+        <b>assert</b>!(cb_h_k&lt;u64&gt;(&o_o.b, id), <a href="Orders.md#0xc0deb00c_Orders_E_NO_SUCH_ORDER">E_NO_SUCH_ORDER</a>);
+        cb_p&lt;u64&gt;(&<b>mut</b> o_o.b, id); // Pop bid <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
+    }
 }
 </code></pre>
 

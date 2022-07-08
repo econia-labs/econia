@@ -342,9 +342,8 @@ module Econia::Book {
     // Return order ID of ask having minimum price
     public fun check_ask_min<B, Q, E>(
         host: address
-    ): (
-        u128
-    ) acquires OB {
+    ): u128
+    acquires OB {
         borrow_global<OB<B, Q, E>>(host).m_a
     }
 
@@ -368,10 +367,29 @@ module Econia::Book {
     // Return order ID of bid having maximum price
     public fun check_bid_max<B, Q, E>(
         host: address
-    ): (
-        u128
-    ) acquires OB {
+    ): u128
+    acquires OB {
         borrow_global<OB<B, Q, E>>(host).m_b
+    }
+
+    #[test_only]
+    // Return `true` if order book has an ask with the given ID
+    public fun has_ask<B, Q, E>(
+        host: address,
+        id: u128
+    ): bool
+    acquires OB {
+        cb_h_k<P>(&borrow_global<OB<B, Q, E>>(host).a, id)
+    }
+
+    #[test_only]
+    // Return `true` if order book has a bid with the given ID
+    public fun has_bid<B, Q, E>(
+        host: address,
+        id: u128
+    ): bool
+    acquires OB {
+        cb_h_k<P>(&borrow_global<OB<B, Q, E>>(host).b, id)
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

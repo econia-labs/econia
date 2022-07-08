@@ -10,15 +10,19 @@ User-facing trading functionality
 -  [Resource `SC`](#0xc0deb00c_User_SC)
 -  [Constants](#@Constants_0)
 -  [Function `deposit`](#0xc0deb00c_User_deposit)
+-  [Function `cancel_ask`](#0xc0deb00c_User_cancel_ask)
+-  [Function `cancel_bid`](#0xc0deb00c_User_cancel_bid)
 -  [Function `init_containers`](#0xc0deb00c_User_init_containers)
 -  [Function `init_user`](#0xc0deb00c_User_init_user)
 -  [Function `submit_ask`](#0xc0deb00c_User_submit_ask)
 -  [Function `submit_bid`](#0xc0deb00c_User_submit_bid)
 -  [Function `withdraw`](#0xc0deb00c_User_withdraw)
+-  [Function `cancel_order`](#0xc0deb00c_User_cancel_order)
+    -  [Parameters](#@Parameters_1)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
 -  [Function `submit_limit_order`](#0xc0deb00c_User_submit_limit_order)
-    -  [Parameters](#@Parameters_1)
-    -  [Abort conditions](#@Abort_conditions_2)
+    -  [Parameters](#@Parameters_2)
+    -  [Abort conditions](#@Abort_conditions_3)
 -  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 
 
@@ -289,6 +293,64 @@ Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <cod
 
 </details>
 
+<a name="0xc0deb00c_User_cancel_ask"></a>
+
+## Function `cancel_ask`
+
+Wrapped <code><a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    id: u128
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(user, host, <a href="User.md#0xc0deb00c_User_ASK">ASK</a>, id);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_cancel_bid"></a>
+
+## Function `cancel_bid`
+
+Wrapped <code><a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    id: u128
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(user, host, <a href="User.md#0xc0deb00c_User_BID">BID</a>, id);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_User_init_containers"></a>
 
 ## Function `init_containers`
@@ -472,6 +534,70 @@ Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <co
 
 </details>
 
+<a name="0xc0deb00c_User_cancel_order"></a>
+
+## Function `cancel_order`
+
+Cancel order for market <code>&lt;B, Q, E&gt;</code> and update available
+collateral accordingly, aborting if user does not have an order
+collateral container
+
+
+<a name="@Parameters_1"></a>
+
+### Parameters
+
+* <code>user</code>: User cancelling an order
+* <code>host</code>: The market host (See <code>Econia::Registry</code>)
+* <code>side</code>: <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code> or <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
+* <code>id</code>: Order ID (see <code>Econia::ID</code>)
+
+
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    side: bool,
+    id: u128
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a>, <a href="User.md#0xc0deb00c_User_OC">OC</a> {
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+    <b>let</b> addr = s_a_o(user); // Get user <b>address</b>
+    // Assert user <b>has</b> order collateral container
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
+    // Borrow mutable reference <b>to</b> user's order collateral container
+    <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
+    <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) { // If cancelling an ask
+        // Cancel on user's open orders, storing scaled size
+        <b>let</b> s_s = o_c_a&lt;B, Q, E&gt;(addr, id, &c_o_f_c());
+        // Cancel on order book
+        b_c_a&lt;B, Q, E&gt;(host, id, &c_b_f_c());
+        // Increment amount of base coins available for withdraw,
+        // by order scaled size times scale factor on given market
+        o_c.b_a = o_c.b_a + s_s * o_s_f&lt;B, Q, E&gt;(addr);
+    } <b>else</b> { // If cancelling a bid
+        // Cancel on user's open orders, storing scaled size
+        <b>let</b> s_s = o_c_b&lt;B, Q, E&gt;(addr, id, &c_o_f_c());
+        // Cancel on order book
+        b_c_b&lt;B, Q, E&gt;(host, id, &c_b_f_c());
+        // Increment amount of quote coins available for withdraw,
+        // by order scaled size times price from order <a href="ID.md#0xc0deb00c_ID">ID</a>
+        o_c.q_a = o_c.q_a + s_s * id_p(id);
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_User_init_o_c"></a>
 
 ## Function `init_o_c`
@@ -513,7 +639,7 @@ if already initialized
 Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 
 
-<a name="@Parameters_1"></a>
+<a name="@Parameters_2"></a>
 
 ### Parameters
 
@@ -525,7 +651,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 coin subunits
 
 
-<a name="@Abort_conditions_2"></a>
+<a name="@Abort_conditions_3"></a>
 
 ### Abort conditions
 

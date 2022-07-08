@@ -19,6 +19,8 @@ module Econia::User {
     use Econia::Book::{
         add_ask as b_a_a,
         add_bid as b_a_b,
+        cancel_ask as b_c_a,
+        cancel_bid as b_c_b,
         exists_book as b_e_b
     };
 
@@ -29,14 +31,18 @@ module Econia::User {
 
     use Econia::ID::{
         id_a as id_a,
-        id_b as id_b
+        id_b as id_b,
+        price as id_p
     };
 
     use Econia::Orders::{
         add_ask as o_a_a,
         add_bid as o_a_b,
+        cancel_ask as o_c_a,
+        cancel_bid as o_c_b,
         exists_orders as o_e_o,
-        init_orders as o_i_o
+        init_orders as o_i_o,
+        scale_factor as o_s_f
     };
 
     use Econia::Registry::{
@@ -72,10 +78,12 @@ module Econia::User {
 
     #[test_only]
     use Econia::Book::{
-        check_ask as b_c_a,
-        check_ask_min as b_c_a_m,
-        check_bid as b_c_b,
-        check_bid_max as b_c_b_m
+        check_ask as b_ch_a,
+        check_ask_min as b_ch_a_m,
+        check_bid as b_ch_b,
+        check_bid_max as b_ch_b_m,
+        has_ask as b_h_a,
+        has_bid as b_h_b
     };
 
     #[test_only]
@@ -83,9 +91,10 @@ module Econia::User {
 
     #[test_only]
     use Econia::Orders::{
-        check_ask as o_c_a,
-        check_bid as o_c_b,
-        scale_factor as o_s_f
+        check_ask as o_ch_a,
+        check_bid as o_ch_b,
+        has_ask as o_h_a,
+        has_bid as o_h_b
     };
 
     #[test_only]
@@ -186,6 +195,24 @@ module Econia::User {
         update_s_c(user); // Update user sequence counter
     }
 
+    /// Wrapped `cancel_order()` call for `ASK`
+    public(script) fun cancel_ask<B, Q, E>(
+        user: &signer,
+        host: address,
+        id: u128
+    ) acquires OC, SC {
+        cancel_order<B, Q, E>(user, host, ASK, id);
+    }
+
+    /// Wrapped `cancel_order()` call for `BID`
+    public(script) fun cancel_bid<B, Q, E>(
+        user: &signer,
+        host: address,
+        id: u128
+    ) acquires OC, SC {
+        cancel_order<B, Q, E>(user, host, BID, id);
+    }
+
     /// Initialize a user with `Econia::Orders::OO` and `OC` for market
     /// with base coin type `B`, quote coin type `Q`, and scale exponent
     /// `E`, aborting if no such market or if containers already
@@ -272,6 +299,46 @@ module Econia::User {
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Cancel order for market `<B, Q, E>` and update available
+    /// collateral accordingly, aborting if user does not have an order
+    /// collateral container
+    ///
+    /// # Parameters
+    /// * `user`: User cancelling an order
+    /// * `host`: The market host (See `Econia::Registry`)
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID (see `Econia::ID`)
+    fun cancel_order<B, Q, E>(
+        user: &signer,
+        host: address,
+        side: bool,
+        id: u128
+    ) acquires SC, OC {
+        update_s_c(user); // Update user sequence counter
+        let addr = s_a_o(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
+        // Borrow mutable reference to user's order collateral container
+        let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
+        if (side == ASK) { // If cancelling an ask
+            // Cancel on user's open orders, storing scaled size
+            let s_s = o_c_a<B, Q, E>(addr, id, &c_o_f_c());
+            // Cancel on order book
+            b_c_a<B, Q, E>(host, id, &c_b_f_c());
+            // Increment amount of base coins available for withdraw,
+            // by order scaled size times scale factor on given market
+            o_c.b_a = o_c.b_a + s_s * o_s_f<B, Q, E>(addr);
+        } else { // If cancelling a bid
+            // Cancel on user's open orders, storing scaled size
+            let s_s = o_c_b<B, Q, E>(addr, id, &c_o_f_c());
+            // Cancel on order book
+            b_c_b<B, Q, E>(host, id, &c_b_f_c());
+            // Increment amount of quote coins available for withdraw,
+            // by order scaled size times price from order ID
+            o_c.q_a = o_c.q_a + s_s * id_p(id);
+        }
+    }
 
     /// Initialize order collateral container for given user, aborting
     /// if already initialized
@@ -413,6 +480,98 @@ module Econia::User {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for user not having order collateral container
+    public(script) fun cancel_order_failure_no_o_c(
+        user: &signer
+    ) acquires OC, SC {
+        a_c_a(@TestUser); // Initialize Account resource
+        init_user(user); // Initialize sequence counter for user
+        a_i_s_n(@TestUser); // Increment mock sequence number
+        // Attempt invalid order cancellation
+        cancel_bid<BCT, QCT, E0>(user, @TestUser, 1);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    /// Verify successful ask cancellation
+    public(script) fun cancel_ask_success(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        // Initialize test market with scale exponent 1, fund user with
+        // 100 base coins and 200 quote coins
+        init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
+        // Get version number of upcoming order
+        let order_v_n = v_g_v_n() + 1;
+        let (price, size) = (5, 20); // Define order price/unscaled size
+        let id = id_a(price, order_v_n); // Get order ID
+        // Submit ask
+        submit_ask<BCT, QCT, E1>(user, @Econia, price, size);
+        // Assert user has ask registered in open orders
+        assert!(o_h_a<BCT, QCT, E1>(@TestUser, id), 0);
+        // Assert ask registered in order book
+        assert!(b_h_a<BCT, QCT, E1>(@Econia, id), 1);
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert correct collateral available amounts
+        assert!(o_c.b_a == 80 && o_c.q_a == 200, 2);
+        a_i_s_n(@TestUser); // Increment mock sequence number
+        cancel_ask<BCT, QCT, E1>(user, @Econia, id); // Cancel ask
+        // Assert user no longer has ask registered in open orders
+        assert!(!o_h_a<BCT, QCT, E1>(@TestUser, id), 3);
+        // Assert ask no longer registered in order book
+        assert!(!b_h_a<BCT, QCT, E1>(@Econia, id), 4);
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert correct collateral available amounts
+        assert!(o_c.b_a == 100 && o_c.q_a == 200, 5);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    /// Verify successful bid cancellation
+    public(script) fun cancel_bid_success(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        // Initialize test market with scale exponent 1, fund user with
+        // 100 base coins and 200 quote coins
+        init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
+        // Get version number of upcoming order
+        let order_v_n = v_g_v_n() + 1;
+        let (price, size) = (5, 20); // Define order price/unscaled size
+        let id = id_b(price, order_v_n); // Get order ID
+        // Submit bid
+        submit_bid<BCT, QCT, E1>(user, @Econia, price, size);
+        // Assert user has bid registered in open orders
+        assert!(o_h_b<BCT, QCT, E1>(@TestUser, id), 0);
+        // Assert bid registered in order book
+        assert!(b_h_b<BCT, QCT, E1>(@Econia, id), 1);
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert correct collateral available amounts
+        assert!(o_c.b_a == 100 && o_c.q_a == 190, 2);
+        a_i_s_n(@TestUser); // Increment mock sequence number
+        cancel_bid<BCT, QCT, E1>(user, @Econia, id); // Cancel bid
+        // Assert user no longer has bid registered in open orders
+        assert!(!o_h_b<BCT, QCT, E1>(@TestUser, id), 3);
+        // Assert bid no longer registered in order book
+        assert!(!b_h_b<BCT, QCT, E1>(@Econia, id), 4);
+        // Borrow immutable reference to user's order collateral
+        let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert correct collateral available amounts
+        assert!(o_c.b_a == 100 && o_c.q_a == 200, 5);
+    }
 
     #[test(
         econia = @Econia,
@@ -678,17 +837,16 @@ module Econia::User {
         let order_v_n = v_g_v_n() + 1;
         let (price, size) = (5, 20); // Define order price/unscaled size
         let id = id_a(price, order_v_n); // Get order ID
-        // Submit ask
-        submit_ask<BCT, QCT, E1>(user, host, price, size);
+        submit_ask<BCT, QCT, E1>(user, host, price, size); // Submit ask
         let s_size = size / 10; // Get scaled size for scale factor 10
         // Assert added to user's open orders with properly scaled size
-        assert!(o_c_a<BCT, QCT, E1>(user_addr, id) == s_size, 0);
+        assert!(o_ch_a<BCT, QCT, E1>(user_addr, id) == s_size, 0);
         // Get corresponding position size and address on book
-        let (p_s, p_a) = b_c_a<BCT, QCT, E1>(host, id);
+        let (p_s, p_a) = b_ch_a<BCT, QCT, E1>(host, id);
         // Assert added to order book correctly
         assert!(p_s == s_size && p_a == user_addr, 1);
         // Assert min ask ID on book updated correctly
-        assert!(b_c_a_m<BCT, QCT, E1>(host) == id, 2);
+        assert!(b_ch_a_m<BCT, QCT, E1>(host) == id, 2);
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(user_addr);
         // Assert coin holdings in collateral unchanged
@@ -758,17 +916,16 @@ module Econia::User {
         let order_v_n = v_g_v_n() + 1;
         let (price, size) = (5, 20); // Define order price/unscaled size
         let id = id_b(price, order_v_n); // Get order ID
-        // Submit ask
-        submit_bid<BCT, QCT, E1>(user, host, price, size);
+        submit_bid<BCT, QCT, E1>(user, host, price, size); // Submit ask
         let s_size = size / 10; // Get scaled size for scale factor 10
         // Assert added to user's open orders with properly scaled size
-        assert!(o_c_b<BCT, QCT, E1>(user_addr, id) == s_size, 0);
+        assert!(o_ch_b<BCT, QCT, E1>(user_addr, id) == s_size, 0);
         // Get corresponding position size and address on book
-        let (p_s, p_a) = b_c_b<BCT, QCT, E1>(host, id);
+        let (p_s, p_a) = b_ch_b<BCT, QCT, E1>(host, id);
         // Assert added to order book correctly
         assert!(p_s == s_size && p_a == user_addr, 1);
         // Assert max bid ID on book updated correctly
-        assert!(b_c_b_m<BCT, QCT, E1>(host) == id, 2);
+        assert!(b_ch_b_m<BCT, QCT, E1>(host) == id, 2);
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(user_addr);
         // Assert coin holdings in collateral unchanged

@@ -289,8 +289,7 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
 ): (
     u64,
     u64
-)
-<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id, price, size)
 }
 </code></pre>
@@ -324,8 +323,7 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
 ): (
     u64,
     u64
-)
-<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     <a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id, price, size)
 }
 </code></pre>

@@ -137,8 +137,7 @@ module Econia::Orders {
     ): (
         u64,
         u64
-    )
-    acquires OO {
+    ) acquires OO {
         add_order<B, Q, E>(addr, ASK, id, price, size)
     }
 
@@ -152,8 +151,7 @@ module Econia::Orders {
     ): (
         u64,
         u64
-    )
-    acquires OO {
+    ) acquires OO {
         add_order<B, Q, E>(addr, BID, id, price, size)
     }
 
@@ -339,6 +337,28 @@ module Econia::Orders {
         u64
     ) acquires OO {
         *cb_b<u64>(&borrow_global<OO<B, Q, E>>(user).b, id)
+    }
+
+    #[test_only]
+    /// Return `true` if extant open orders container at given address
+    /// has an ask with the given ID
+    public fun has_ask<B, Q, E>(
+        user: address,
+        id: u128
+    ): bool
+    acquires OO {
+        cb_h_k<u64>(&borrow_global<OO<B, Q, E>>(user).a, id)
+    }
+
+    #[test_only]
+    /// Return `true` if extant open orders container at given address
+    /// has a bid with the given ID
+    public fun has_bid<B, Q, E>(
+        user: address,
+        id: u128
+    ): bool
+    acquires OO {
+        cb_h_k<u64>(&borrow_global<OO<B, Q, E>>(user).b, id)
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

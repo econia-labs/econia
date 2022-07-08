@@ -162,8 +162,9 @@ module Econia::Orders {
         addr: address,
         id: u128,
         _c: &FriendCap
-    ) acquires OO {
-        cancel_order<B, Q, E>(addr, ASK, id);
+    ): u64
+    acquires OO {
+        cancel_order<B, Q, E>(addr, ASK, id)
     }
 
     /// Wrapped `cancel_order()` call for `BID`, requiring `FriendCap`
@@ -171,8 +172,9 @@ module Econia::Orders {
         addr: address,
         id: u128,
         _c: &FriendCap
-    ) acquires OO {
-        cancel_order<B, Q, E>(addr, BID, id);
+    ): u64
+    acquires OO {
+        cancel_order<B, Q, E>(addr, BID, id)
     }
 
     /// Return `true` if specified open orders type exists at address
@@ -284,6 +286,9 @@ module Econia::Orders {
     /// * `side`: `ASK` or `BID`
     /// * `id`: Order ID (see `Econia::ID`)
     ///
+    /// # Returns
+    /// * `u64`: Scaled size of order
+    ///
     /// # Abort scenarios
     /// * If `OO<B, Q, E>` not initialized at `addr`
     /// * If user does not have an open order with given ID
@@ -291,7 +296,8 @@ module Econia::Orders {
         addr: address,
         side: bool,
         id: u128
-    ) acquires OO {
+    ): u64
+    acquires OO {
         // Assert open orders container exists at given address
         assert!(exists_orders<B, Q, E>(addr), E_NO_ORDERS);
         // Borrow mutable reference to open orders at given address
@@ -299,11 +305,13 @@ module Econia::Orders {
         if (side == ASK) { // If cancelling an ask
             // Assert user has an open ask with corresponding ID
             assert!(cb_h_k<u64>(&o_o.a, id), E_NO_SUCH_ORDER);
-            cb_p<u64>(&mut o_o.a, id); // Pop ask with corresponding ID
+            // Pop ask with corresponding ID, returning its scaled size
+            return cb_p<u64>(&mut o_o.a, id)
         } else { // If cancelling a bid
             // Assert user has an open bid with corresponding ID
             assert!(cb_h_k<u64>(&o_o.b, id), E_NO_SUCH_ORDER);
-            cb_p<u64>(&mut o_o.b, id); // Pop bid with corresponding ID
+            // Pop bid with corresponding ID, returning its scaled size
+            return cb_p<u64>(&mut o_o.b, id)
         }
     }
 
@@ -467,24 +475,26 @@ module Econia::Orders {
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert ask registered in open orders
         assert!(cb_h_k<u64>(&o_o.a, id), 0);
-        // Cancel ask
-        cancel_ask<BT, QT, ET>(@TestUser, id, &FriendCap{});
+        // Cancel ask, storing scaled size of order
+        let s_s = cancel_ask<BT, QT, ET>(@TestUser, id, &FriendCap{});
+        assert!(s_s == size, 1); // Assert correct scaled size return
         // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert ask no longer registered in open orders
-        assert!(!cb_h_k<u64>(&o_o.a, id), 1);
+        assert!(!cb_h_k<u64>(&o_o.a, id), 2);
         // Add bid to open orders
         add_bid<BT, QT, ET>(@TestUser, id, price, size, &f_c);
         // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert bid registered in open orders
-        assert!(cb_h_k<u64>(&o_o.b, id), 2);
-        // Cancel bid
-        cancel_bid<BT, QT, ET>(@TestUser, id, &FriendCap{});
+        assert!(cb_h_k<u64>(&o_o.b, id), 3);
+        // Cancel bid, storing scaled size of order
+        let s_s = cancel_bid<BT, QT, ET>(@TestUser, id, &FriendCap{});
+        assert!(s_s == size, 4); // Assert correct scaled size return
         // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert bid no longer registered in open orders
-        assert!(!cb_h_k<u64>(&o_o.b, id), 3);
+        assert!(!cb_h_k<u64>(&o_o.b, id), 5);
     }
 
     #[test(account = @TestUser)]

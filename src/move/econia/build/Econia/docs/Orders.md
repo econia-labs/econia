@@ -69,7 +69,8 @@ ID (per <code>Econia::ID</code>) indicating a scaled price of <code>2001</code>.
     -  [Assumes](#@Assumes_7)
 -  [Function `cancel_order`](#0xc0deb00c_Orders_cancel_order)
     -  [Parameters](#@Parameters_8)
-    -  [Abort scenarios](#@Abort_scenarios_9)
+    -  [Returns](#@Returns_9)
+    -  [Abort scenarios](#@Abort_scenarios_10)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -340,7 +341,7 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_add_order">add_order</a>()</c
 Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): u64
 </code></pre>
 
 
@@ -353,8 +354,9 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a
     addr: <b>address</b>,
     id: u128,
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
-) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
-    <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id);
+): u64
+<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>, id)
 }
 </code></pre>
 
@@ -369,7 +371,7 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a
 Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>()</code> call for <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>, requiring <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(addr: <b>address</b>, id: u128, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): u64
 </code></pre>
 
 
@@ -382,8 +384,9 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a
     addr: <b>address</b>,
     id: u128,
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
-) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
-    <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id);
+): u64
+<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr, <a href="Orders.md#0xc0deb00c_Orders_BID">BID</a>, id)
 }
 </code></pre>
 
@@ -621,7 +624,14 @@ Cancel position in open orders for market <code>&lt;B, Q, E&gt;</code>
 * <code>id</code>: Order ID (see <code>Econia::ID</code>)
 
 
-<a name="@Abort_scenarios_9"></a>
+<a name="@Returns_9"></a>
+
+### Returns
+
+* <code>u64</code>: Scaled size of order
+
+
+<a name="@Abort_scenarios_10"></a>
 
 ### Abort scenarios
 
@@ -629,7 +639,7 @@ Cancel position in open orders for market <code>&lt;B, Q, E&gt;</code>
 * If user does not have an open order with given ID
 
 
-<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128)
+<pre><code><b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(addr: <b>address</b>, side: bool, id: u128): u64
 </code></pre>
 
 
@@ -642,7 +652,8 @@ Cancel position in open orders for market <code>&lt;B, Q, E&gt;</code>
     addr: <b>address</b>,
     side: bool,
     id: u128
-) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+): u64
+<b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     // Assert open orders container <b>exists</b> at given <b>address</b>
     <b>assert</b>!(<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(addr), <a href="Orders.md#0xc0deb00c_Orders_E_NO_ORDERS">E_NO_ORDERS</a>);
     // Borrow mutable reference <b>to</b> open orders at given <b>address</b>
@@ -650,11 +661,13 @@ Cancel position in open orders for market <code>&lt;B, Q, E&gt;</code>
     <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) { // If cancelling an ask
         // Assert user <b>has</b> an open ask <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
         <b>assert</b>!(cb_h_k&lt;u64&gt;(&o_o.a, id), <a href="Orders.md#0xc0deb00c_Orders_E_NO_SUCH_ORDER">E_NO_SUCH_ORDER</a>);
-        cb_p&lt;u64&gt;(&<b>mut</b> o_o.a, id); // Pop ask <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
+        // Pop ask <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>, returning its scaled size
+        <b>return</b> cb_p&lt;u64&gt;(&<b>mut</b> o_o.a, id)
     } <b>else</b> { // If cancelling a bid
         // Assert user <b>has</b> an open bid <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
         <b>assert</b>!(cb_h_k&lt;u64&gt;(&o_o.b, id), <a href="Orders.md#0xc0deb00c_Orders_E_NO_SUCH_ORDER">E_NO_SUCH_ORDER</a>);
-        cb_p&lt;u64&gt;(&<b>mut</b> o_o.b, id); // Pop bid <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>
+        // Pop bid <b>with</b> corresponding <a href="ID.md#0xc0deb00c_ID">ID</a>, returning its scaled size
+        <b>return</b> cb_p&lt;u64&gt;(&<b>mut</b> o_o.b, id)
     }
 }
 </code></pre>

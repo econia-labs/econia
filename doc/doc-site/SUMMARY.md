@@ -6,8 +6,6 @@
     * [Philosophy](overview/philosophy.md)
     * [Markets](overview/markets.md)
 
-* Building on Econia
-
 * Move modules
     * [Book](../../src/move/econia/build/Econia/docs/Book.md)
     * [Caps](../../src/move/econia/build/Econia/docs/Caps.md)

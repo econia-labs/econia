@@ -8,11 +8,11 @@ A `FOO/BAR` "price" of `12.34` means that one `FOO` costs 12.34 `BAR`.
 
 ## Scaling
 
-Notably, in the above example the price is listed as a decimal amount, which is what a user would probably see on a front-end web interface, but in Move, `Coin` types are ultimately represented as integers.
+Notably, in the above example values are listed as decimal amounts, which is what a user would probably see on a front-end web interface, but in Move, `Coin` types are ultimately represented as integers.
 More specifically, if a front-end user were to trade 1 `FOO` for 12.34 `BAR`, they would actually be trading a `Coin<FOO>` of `value` 1000 for a `Coin<BAR>` of `value` 1234000000, or perhaps a `Coin<FOO>` of `value` 1000000000 for a `Coin<BAR>` of `value` 123400, depending on the actual `decimals` field defined in each `Coin`'s respective `CoinInfo`.
 
 Since Econia's matching engine operates on the underlying integer values, not decimals, granularity problems can arise when a trading pair involves two assets with disparate valuations relative to one another, because the matching engine similarly denotes price as an integer.
-[Registry.md](https://github.com/econia-labs/econia/blob/main/src/move/econia/build/Econia/docs/Registry.md#dynamic-scaling) contains a more detailed explanation of the problem, omitted here in the interest of brevity.
+[The Registry module documentation](../../src/move/econia/build/Econia/docs/Registry.md) contains a more detailed explanation of the problem, omitted here in the interest of brevity.
 
 Econia thus implements a "scaled price", formally defined as the number of indivisible quote coin subunits (`Coin<BAR>.value`) per `SF` base coin indivisible subunits (`Coin<FOO>.value`), with `SF` denoting scale factor.
 Again, the above reference contains a more detailed description of scaled price with corresponding mathematical equations, but the following practical examples are provided here instead:
@@ -31,6 +31,6 @@ At a scale factor of 100, a user can only transact in parcels of 100 base coin (
 * Scale factor of 10
     * A user submits a bid to buy a `Coin<FOO>` of `value` 120 at a price of 3.
     * The "scaled size" of the order (number of parcels) is 12 (`120 / 10 = 12`), and it takes a `Coin<BAR>` of `value` 36 (`12 * 3 = 36`) to fill the order
-    * Inside the matching engine, the order is stored with scaled price 3 and scaled size 12
+    * The order is stored in memory with a scaled price of 3 and a scaled size 12
 
 ## Market

@@ -77,7 +77,7 @@
 /// * $price_{scaled} = \frac{subunits_{quote}}{subunits_{base} / SF} =$
 ///   $SF(\frac{subunits_{quote}}{subunits_{base}})$
 /// * $subunits_{base} = SF (subunits_{quote} / price_{scaled})$
-/// * $ subunits_{quote} = price_{scaled} (subunits_{base} / SF) $
+/// * \(subunits_{quote} = price_{scaled} (subunits_{base} / SF)\)
 ///
 /// For instance, a scale factor of 1,000 for the current
 /// example yields prices denoting the number of `USDC` subunits

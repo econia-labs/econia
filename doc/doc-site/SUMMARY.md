@@ -13,6 +13,5 @@
     * [ID](../../src/move/econia/build/Econia/docs/ID.md)
     * [Init](../../src/move/econia/build/Econia/docs/Init.md)
     * [Orders](../../src/move/econia/build/Econia/docs/Orders.md)
-    * [Registry](../../src/move/econia/build/Econia/docs/Registry.md)
     * [User](../../src/move/econia/build/Econia/docs/User.md)
     * [Version](../../src/move/econia/build/Econia/docs/Version.md)

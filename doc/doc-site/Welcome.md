@@ -8,6 +8,6 @@ Welcome to the developer documentation site for Econia, a hyper-parallelized on-
 
 ## External resources
 * [Discord](https://discord.com/invite/Z7gXcMgX8A)
-* [GitHub](github.com/econia-labs/econia)
-* [Medium](medium.com/econialabs)
-* [Twitter](twitter.com/econialabs)
+* [GitHub](https://github.com/econia-labs/econia)
+* [Medium](https://medium.com/econialabs)
+* [Twitter](https://twitter.com/econialabs)

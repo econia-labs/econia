@@ -1,29 +1,17 @@
 ‌# Summary​
-<!--- Reference: https://docs.gitbook.com/integrations/git-sync/content-configuration -->
 
 * [Welcome](Welcome.md)
-* [Getting Started](Getting-started.md)
 
-* Architecture
-  * [Order ID](Architecture/order-ID.md)
-  * [Market Structure](Architecture/market-structure.md)
-  * [Order Book](Architecture/order-book.md)
-  * [User Side](Architecture/user-side.md)
-  * [System Integration](Architecture/system-integration.md)
+* System overview
+  * [Order ID](overview/order-ID.md)
+  * [Market Structure](overview/market-structure.md)
+  * [Order Book](overview/order-book.md)
+  * [User Side](overview/user-side.md)
+  * [System Integration](overview/system-integration.md)
 
+* Building on Econia
 
-## Build on Econia
-
-* [My file](topic-1/my-file.md)
-
-## Build with Econia
-
-* [Your file](topic-2/our-file.md)
-    * [Our file](topic-3/our-file.md)
-
-## Header
-
-* [Move Modules](topic-2/file.md)
+* Move modules
   * [Book](../../src/move/econia/build/Econia/docs/Book.md)
   * [Caps](../../src/move/econia/build/Econia/docs/Caps.md)
   * [CritBit](../../src/move/econia/build/Econia/docs/CritBit.md)

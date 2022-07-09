@@ -1,25 +1,13 @@
-![](.assets/readme-banner.png)
-
-[![Discord chat](https://img.shields.io/discord/988942344776736830?style=flat)](https://discord.gg/Z7gXcMgX8A)
-[![Econia move documentation (move)](https://img.shields.io/badge/docs-move-59f)](src/move/econia/build/Econia/docs)
-[![License](https://img.shields.io/badge/license-Apache_2.0-white.svg)](LICENSE.md)
 
 
-# Econia
-
-**e·co·ni·a** | /ə'känēə/
-
-*Hyper-parallelized on-chain order book for the Aptos blockchain*
-
-- [Econia](#econia)
-  - [Developer setup](#developer-setup)
-    - [Shell scripts](#shell-scripts)
-    - [Installing dependencies](#installing-dependencies)
-    - [Conda](#conda)
-  - [Major filetypes](#major-filetypes)
-    - [Python](#python)
-    - [Jupyter](#jupyter)
-    - [Move](#move)
+- [Developer setup](#developer-setup)
+  - [Shell scripts](#shell-scripts)
+  - [Installing dependencies](#installing-dependencies)
+  - [Conda](#conda)
+- [Major filetypes](#major-filetypes)
+  - [Python](#python)
+  - [Jupyter](#jupyter)
+  - [Move](#move)
 
 ## Developer setup
 

@@ -1,1 +1,4 @@
 root: ./doc/doc-site
+
+structure:
+    readme: README.md

@@ -1,5 +1,5 @@
 root: ./doc/doc-site
 
 redirects:
-    mod/book/doc: src/move/econia/build/Econia/docs/Book.md
-    mod/book/src: src/move/econia/sources/Book.move
+    mod/book/doc: ../../src/move/econia/build/Econia/docs/Book.md
+    mod/book/src: ../../src/move/econia/sources/Book.move

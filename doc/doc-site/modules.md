@@ -2,7 +2,7 @@
 
 | Module | Source code | Documentation |
 | ------ | ----------- | ------------- |
-| `Book` | [Book.move](mod/book/src) | [Book.md](mod/book/doc) |
+| `Book` | [Book.move](../../src/move/econia/sources/Book.move) | [Book.md](../../src/move/econia/build/Econia/docs/Book.md) |
 
 * [Caps](../../src/move/econia/build/Econia/docs/Caps.md)
 * [CritBit](../../src/move/econia/build/Econia/docs/CritBit.md)

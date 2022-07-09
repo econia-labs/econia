@@ -4,11 +4,7 @@
 
 * Design overview
     * [Philosophy](overview/philosophy.md)
-    * [Order ID](overview/order-ID.md)
-    * [Market Structure](overview/market-structure.md)
-    * [Order Book](overview/order-book.md)
-    * [User Side](overview/user-side.md)
-    * [System Integration](overview/system-integration.md)
+    * [Markets](overview/markets.md)
 
 * Building on Econia
 

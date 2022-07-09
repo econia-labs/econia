@@ -12,7 +12,7 @@ Notably, in the above example values are listed as decimal amounts, which is wha
 More specifically, if a front-end user were to trade 1 `FOO` for 12.34 `BAR`, they would actually be trading a `Coin<FOO>` of `value` 1000 for a `Coin<BAR>` of `value` 1234000000, or perhaps a `Coin<FOO>` of `value` 1000000000 for a `Coin<BAR>` of `value` 123400, depending on the actual `decimals` field defined in each `Coin`'s respective `CoinInfo`.
 
 Since Econia's matching engine operates on the underlying integer values, not decimals, granularity problems can arise when a trading pair involves two assets with disparate valuations relative to one another, because the matching engine similarly denotes price as an integer.
-The `Econia::Registry` module documentation contains a more detailed explanation of the problem, omitted here in the interest of brevity.
+The [`Econia::Registry`](https://github.com/econia-labs/econia/blob/main/src/move/econia/build/Econia/docs/Registry.md) module documentation contains a more detailed explanation of the problem, omitted here in the interest of brevity.
 
 Econia thus implements a "scaled price", formally defined as the number of indivisible quote coin subunits (`Coin<BAR>.value`) per `SF` base coin indivisible subunits (`Coin<FOO>.value`), with `SF` denoting scale factor.
 Again, the above reference contains a more detailed description of scaled price with corresponding mathematical equations, but the following practical examples are provided here instead:

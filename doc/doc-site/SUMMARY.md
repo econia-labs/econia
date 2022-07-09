@@ -2,7 +2,7 @@
 
 * [Welcome](Welcome.md)
 
-* System overview
+* Design overview
     * [Philosophy](overview/philosophy.md)
     * [Order ID](overview/order-ID.md)
     * [Market Structure](overview/market-structure.md)

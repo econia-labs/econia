@@ -1,7 +1,5 @@
 # Welcome
 
-![](../../.assets/cover-banner.png)
-
 **e·co·ni·a** | /ə'känēə/
 
 Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the Aptos blockchain

@@ -183,11 +183,11 @@ module Econia::Registry {
         is_coin_initialized as c_i_c_i
     };
 
-    use AptosFramework::Table::{
+    use AptosFramework::IterableTable::{
         add as t_a,
         contains as t_c,
         new as t_n,
-        Table as T
+        IterableTable as T
     };
 
     use AptosFramework::TypeInfo::{
@@ -231,7 +231,7 @@ module Econia::Registry {
     };
 
     #[test_only]
-    use AptosFramework::Table::{
+    use AptosFramework::IterableTable::{
         borrow as t_b,
     };
 
@@ -277,7 +277,7 @@ module Econia::Registry {
     struct E19{}
 
     /// Market info
-    struct MI has copy, drop {
+    struct MI has copy, drop, store {
         /// Base CoinType TypeInfo
         b: TI,
         /// Quote CoinType TypeInfo

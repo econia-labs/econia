@@ -1,6 +1,6 @@
 # Welcome
 
-![](../../.assets/readme-banner.png)
+![](../../.assets/banner.png)
 
 **e·co·ni·a** | /ə'känēə/
 

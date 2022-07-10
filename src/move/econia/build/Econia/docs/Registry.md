@@ -260,8 +260,8 @@ functions. See <code>Econia::Caps</code> for further discussion.
 
 
 <pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
+<b>use</b> <a href="../../../build/AptosFramework/docs/IterableTable.md#0x1_IterableTable">0x1::IterableTable</a>;
 <b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
-<b>use</b> <a href="../../../build/AptosFramework/docs/Table.md#0x1_Table">0x1::Table</a>;
 <b>use</b> <a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo">0x1::TypeInfo</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
 <b>use</b> <a href="Caps.md#0xc0deb00c_Caps">0xc0deb00c::Caps</a>;
@@ -816,7 +816,7 @@ functions. See <code>Econia::Caps</code> for further discussion.
 Market info
 
 
-<pre><code><b>struct</b> <a href="Registry.md#0xc0deb00c_Registry_MI">MI</a> <b>has</b> <b>copy</b>, drop
+<pre><code><b>struct</b> <a href="Registry.md#0xc0deb00c_Registry_MI">MI</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
 
@@ -867,7 +867,7 @@ Market registry
 
 <dl>
 <dt>
-<code>t: <a href="../../../build/AptosFramework/docs/Table.md#0x1_Table_Table">Table::Table</a>&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">Registry::MI</a>, <b>address</b>&gt;</code>
+<code>t: <a href="../../../build/AptosFramework/docs/IterableTable.md#0x1_IterableTable_IterableTable">IterableTable::IterableTable</a>&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">Registry::MI</a>, <b>address</b>&gt;</code>
 </dt>
 <dd>
  Table from <code><a href="Registry.md#0xc0deb00c_Registry_MI">MI</a></code> to address hosting the corresponding <code>MC</code>

@@ -87,7 +87,7 @@ Econia's market registration system is permissionless, to the effect that for an
 This is by design, because a permissionless market registration system dispenses with the need for an individual, a panel, or a DAO to dictate others' trading granularity, and instead leaves the decision "up to the market".
 Here, the expectation is that as asset prices drastically change relative to one another, liquidity will naturally migrate to the market with the most appropriate granularity, and as spreads thicken on markets with sub-optimal granularity, a positive feedback cycle will eventually lead users and front-end applications to switch over their orders to the new trading venue.
 Not that users are necessarily forced to migrate their orders over:
-in the above example, if a user wanted to continue placing orders on `PRO, USDC, E3` even when 99% of liquidity had fled to `PRO, USDC, E0`, there would ultimately be nothing stopping them from placing orders on the outdated venue, in parcels of `1.000 PRO` at a time.
+in the above example, if a user wanted to continue placing orders on `<PRO, USDC, E3>` even when 99% of liquidity had fled to `<PRO, USDC, E0>`, there would ultimately be nothing stopping them from placing orders on the outdated venue, in parcels of `1.000 PRO` at a time.
 The uninformed (or perhaps stubborn? idealistic?) user would almost certainly receive a worse price than if they had simply followed the pack and migrated to the new marketplace, but in one sense, it is a form of economic freedom that they are not strictly forced to.
 
 ## Registry lookup

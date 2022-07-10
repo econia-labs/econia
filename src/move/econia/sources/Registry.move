@@ -59,7 +59,7 @@
 /// required, for instance when trading digital assets having a
 /// relatively low valuation:
 ///
-/// Consider recently issued protocol coin `PRO`, which has 3 decimal
+/// Consider recently-issued protocol coin `PRO`, which has 3 decimal
 /// places, a circulating supply of 1 billion, and a `USDC`-denominated
 /// market cap of $100,000. A single user-facing representation of a
 /// coin, `1.000 PRO`, thus corresponds to `1000` indivisible subunits

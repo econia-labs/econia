@@ -33,4 +33,50 @@ At a scale factor of 100, a user can only transact in parcels of 100 base coin (
     * The "scaled size" of the order (number of parcels) is 12 (`120 / 10 = 12`), and it takes a `Coin<BAR>` of `value` 36 (`12 * 3 = 36`) to fill the order
     * The order is stored in memory with a scaled price of 3 and a scaled size 12
 
-## Market
+## Markets
+
+In Econia, a "market" is uniquely specified by 3 type arguments, having the canonical syntax `<B, Q, E>`:
+
+* `B`: Base coin type (`FOO` in above example)
+* `Q`: Quote coin type (`BAR` in above example),
+* `E`: "Scale exponent", denoting the base-10 logarithm of the scale factor used for the market:
+
+    | Scale exponent | Scale factor |
+    |-|-|
+    | 0 | 1 |
+    | 1 | 10 |
+    | 2 | 100 |
+    | 3 | 1000 |
+    | 4 | 10000 |
+    | ... | ... |
+
+In [Registry.move](../../src/move/econia/sources/Registry.move), scale exponents are defined as the types `E0`, `E1`, `E2`, ..., while scale factors are defined as the `u64` values `F0 = 0`, `F1 = 10`, `F2 = 100`, ..., with scale exponent type arguments used to identify markets, and scale factor `u64` values used to perform arithmetic operations pertaining to a given market.
+
+For a user to trade on a market, the market must first be "registered" by a "host", meaning that:
+
+1. An empty order book of type `<B, Q, E>` is initialized under the host's account
+2. A registry is updated with an entry mapping from `<B, Q, E>` to the address of the corresponding host
+
+The registry is an `AptosFramework::Table::Table` that can only be initialized under the Econia account, and the registry must be initialized before hosts can register markets.
+A market can only be registered once, meaning that `<FOOAccount::FOOModule::FOO, BARAccount::BARModuleBAR, E0>`, for instance, can only ever be registered to one host, and markets can only be registered using scale exponents defined in [Registry.move](../../src/move/econia/sources/Registry.move) (e.g. `E0` actually denotes `Econia::Registry::E0`)
+Notably, this does not prevent multiple markets from being initialized using the same trading symbol, because the Aptos VM treats `FOOAccount::FOOModule::FOO` and `ImposterAccount::ImposterModule::FOO` as different types, hence front-end applications are advised to exercise caution accordingly.
+
+## Dynamic scaling
+
+Multiple markets be additionally registered for a given base coin/quote coin trading pair by simply varying the scale exponent, which means that `<A1::M1::FOO, A2::M2::BAR, E0>` and `<A1::M1::FOO, A2::M2::BAR, E3>` can co-exist in the registry, along with any other such market containing a variation on the scale exponent type.
+Essentially this functionality is implemented because:
+
+1. Market registration is permissionless, and
+1. Trading granularity varies as asset prices change relative to one another
+
+The [`Econia::Registry` module documentation](../../../src/move/econia/build/Econia/docs/Registry.md) contains an in-depth explanation of these two concepts, condensed here to the following practical examples:
+
+Recently-issued protocol token `PRO` has 3 decimal places, a circulating supply of 1 billion (`10 ^ 9`), and a market capitalization denominated in `USDC` (6 decimal places) of $100,000.
+Hence the user-facing decimal representation `1.000 PRO` corresponds to `Coin<PRO>.value = 1000`, an amount that trades for `100,000 / 10 ^ 9 = 0.0001 USDC`.
+This means that a single indivisible subunit of `PRO` (`0.001 PRO`, `Coin<PRO>.value = 1`) should trade for only `0.0000001 USDC`, an amount that is actually impossible to represent, since `USDC` only has 6 decimal places.
+Thus a host registers the market `<PRO, USDC, E3>`, corresponding to a scale factor of `1000`, such that `PRO` can only be transacted in parcels of 1000 indivisible subunits, or `1.000 PRO` at a time.
+A user submits a bid to buy `5.000 PRO` (5 parcels) at a scaled price of `99`, for instance, and in return receives `0.000495 USDC` (`Coin<USDC>.value = 495`, `5 * 99 = 495`)
+
+Later, the `USDC`-denominated market capitalization of `PRO` increases to $100B, such that each `1.000 PRO` nominally trades for $100.
+Here, a scale factor of `1000` is no longer appropriate, because users are still limited to transacting in parcels of `Coin<PRO>.value = 1000` (`1.000 PRO`), each having a nominal price of $100, such that it is impossible to place a bid to buy `.5 PRO` ($50 nominal).
+Hence, to re-establish appropriate trading granularity, a host registers the market `<PRO, USDC, E0>`, corresponding to a scale factor of 1, which enables a user to place a bid for `1.234 PRO` (1234 parcels) at a scaled price of `99999`, receiving `123.398766 USDC` in return (`Coin<USDC>.value = 123398766`, `1234 * 99999 = 123398766`).

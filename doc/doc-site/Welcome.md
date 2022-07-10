@@ -1,6 +1,6 @@
 # Welcome
 
-![](https://github.com/econia-labs/econia/blob/main/.assets/cover-banner.png)
+![](../../.assets/cover-banner.png)
 
 **e·co·ni·a** | /ə'känēə/
 

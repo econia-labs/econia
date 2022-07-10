@@ -1,7 +1,5 @@
 ‌# Summary​
 
-![](../../.assets/cover-banner.png)
-
 * [Welcome](welcome.md)
 
 * Design overview

@@ -1,6 +1,8 @@
 ‌# Summary​
 
-* [Welcome](temp.md)
+![](../../.assets/cover-banner.png)
+
+* [Welcome](welcome.md)
 
 * Design overview
     * [Philosophy](overview/philosophy.md)

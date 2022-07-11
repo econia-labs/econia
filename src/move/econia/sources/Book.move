@@ -27,6 +27,7 @@ module Econia::Book {
         empty as cb_e,
         insert as cb_i,
         is_empty as cb_i_e,
+        length as cb_l,
         max_key as cb_ma_k,
         min_key as cb_mi_k,
         pop as cb_p
@@ -204,6 +205,28 @@ module Econia::Book {
         let o_b = // Pack empty order book
             OB<B, Q, E>{f, a: cb_e<P>(), b: cb_e<P>(), m_a, m_b};
         move_to<OB<B, Q, E>>(host, o_b); // Move to host
+    }
+
+    /// Return number of asks on order book, assuming order book exists
+    /// at host address
+    public fun n_asks<B, Q, E>(
+        addr: address,
+        _c: &FriendCap
+    ): u64
+    acquires OB {
+        // Return length of asks tree
+        cb_l<P>(&borrow_global<OB<B, Q, E>>(addr).a)
+    }
+
+    /// Return number of bids on order book, assuming order book exists
+    /// at host address
+    public fun n_bids<B, Q, E>(
+        addr: address,
+        _c: &FriendCap
+    ): u64
+    acquires OB {
+        // Return length of bids tree
+        cb_l<P>(&borrow_global<OB<B, Q, E>>(addr).b)
     }
 
     /// Return scale factor of specified order book at given address
@@ -653,13 +676,51 @@ module Econia::Book {
         let host_addr = s_a_o(host); // Get host address
         // Assert book exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(host_addr) == 1, 0);
-        // Borrow mutable reference to order book
+        // Borrow immutable reference to order book
         let o_b = borrow_global<OB<BT, QT, ET>>(host_addr);
         // Assert minimum ask id inits to max possible value, and
         // maximum bid order id inits to 0
         assert!(o_b.m_a == HI_128 && o_b.m_b == 0, 1);
         // Assert bid and ask trees init empty
         assert!(cb_i_e(&o_b.a) && cb_i_e(&o_b.b), 2);
+    }
+
+    #[test(host = @TestUser)]
+    /// Verify successful lookup
+    fun n_asks_success(
+        host: &signer
+    ) acquires OB {
+        let addr = s_a_o(host); // Get host address
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
+        // Assert 0 asks indicated
+        assert!(n_asks<BT, QT, ET>(addr, &FriendCap{}) == 0, 0);
+        // Define ask with price 8, version number 1, size 1
+        let (price, version, size) = (8, 1, 1);
+        let id = id_a(price, version); // Get corresponding order id
+        // Add position to book
+        add_ask<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
+        // Assert 1 ask indicated
+        assert!(n_asks<BT, QT, ET>(addr, &FriendCap{}) == 1, 1);
+    }
+
+    #[test(host = @TestUser)]
+    /// Verify successful lookup
+    fun n_bids_success(
+        host: &signer
+    ) acquires OB {
+        let addr = s_a_o(host); // Get host address
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
+        // Assert 0 bids indicated
+        assert!(n_bids<BT, QT, ET>(addr, &FriendCap{}) == 0, 0);
+        // Define bid with price 8, version number 1, size 1
+        let (price, version, size) = (8, 1, 1);
+        let id = id_b(price, version); // Get corresponding order id
+        // Add position to book
+        add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
+        // Assert 1 bid indicated
+        assert!(n_bids<BT, QT, ET>(addr, &FriendCap{}) == 1, 1);
     }
 
     #[test]

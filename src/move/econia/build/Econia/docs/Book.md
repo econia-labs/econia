@@ -50,6 +50,8 @@ to be filled.
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
 -  [Function `get_friend_cap`](#0xc0deb00c_Book_get_friend_cap)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
+-  [Function `n_asks`](#0xc0deb00c_Book_n_asks)
+-  [Function `n_bids`](#0xc0deb00c_Book_n_bids)
 -  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 -  [Function `add_position`](#0xc0deb00c_Book_add_position)
     -  [Parameters](#@Parameters_4)
@@ -475,6 +477,68 @@ with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale fact
     <b>let</b> o_b = // Pack empty order book
         <a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;{f, a: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), b: cb_e&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(), m_a, m_b};
     <b>move_to</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host, o_b); // Move <b>to</b> host
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_n_asks"></a>
+
+## Function `n_asks`
+
+Return number of asks on order book, assuming order book exists
+at host address
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_n_asks">n_asks</a>&lt;B, Q, E&gt;(addr: <b>address</b>, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_n_asks">n_asks</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+): u64
+<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    // Return length of asks tree
+    cb_l&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(&<b>borrow_global</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(addr).a)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_n_bids"></a>
+
+## Function `n_bids`
+
+Return number of bids on order book, assuming order book exists
+at host address
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_n_bids">n_bids</a>&lt;B, Q, E&gt;(addr: <b>address</b>, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_n_bids">n_bids</a>&lt;B, Q, E&gt;(
+    addr: <b>address</b>,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+): u64
+<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    // Return length of bids tree
+    cb_l&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(&<b>borrow_global</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(addr).b)
 }
 </code></pre>
 

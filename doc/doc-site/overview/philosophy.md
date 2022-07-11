@@ -5,7 +5,7 @@
 Econia is optimized for a singular purpose:
 to settle trades as fast as possible.
 
-As such, Econia is designed from the ground up leverage the optimistic concurrency of Aptos' Block-STM execution engine, which parallelizes transactions via optimistic concurrency methods.
+As such, Econia is designed from the ground up leverage Aptos' Block-STM execution engine, which parallelizes transactions via optimistic concurrency methods.
 However, optimizing for parallel execution occasionally results in design decisions that may appear bulky or unintuitive to the uninformed developer, like requiring a separate collateral container for each market that a user trades on, or enforcing a single trade per transaction.
 Within the context of execution parallelism, however, these design principles are crucial for optimal performance, as they isolate execution into non-overlapping regions of memory, thus avoiding read/write contention that would otherwise result in degraded performance.
 

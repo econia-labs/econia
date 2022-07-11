@@ -121,10 +121,11 @@
 ///
 /// [Predecessor public functions](#Predecessor-public-functions) and
 /// [successor public functions](#Successor-public-functions) are
-/// wrapped [generic private functions](#Generic-private-functions),
-/// with [generic private function](#Generic-private-functions)
-/// documentation comments detailing the relevant algorithms. See
-/// [walkthrough](#Walkthrough) for canonical implementation syntax.
+/// wrapped [generic public functions](#Generic-public-functions),
+/// with documentation comments from `traverse_c_i()` as well as
+/// [generic public functions](#Generic-public-functions) detailing the
+/// relevant algorithms. See [walkthrough](#Walkthrough) for canonical
+/// implementation syntax.
 ///
 /// ## Predecessor public functions
 /// * `traverse_p_init_mut()`
@@ -136,11 +137,13 @@
 /// * `traverse_s_mut()`
 /// * `traverse_s_pop_mut()`
 ///
-/// ## Generic private functions
-/// * `traverse_c_i()`
+/// ## Generic public functions
 /// * `traverse_init_mut()`
 /// * `traverse_mut()`
 /// * `traverse_pop_mut()`
+///
+/// ## Private traversal function
+/// * `traverse_c_i()`
 ///
 /// ## Walkthrough
 /// * [Syntax motivations](#Syntax-motivations)
@@ -600,6 +603,137 @@ module Econia::CritBit {
         let cb = CB{r: 0, i: v_e<I>(), o: v_e<O<V>>()};
         insert_empty<V>(&mut cb, k, v);
         cb
+    }
+
+    /// Initialize a mutable iterated inorder traversal in a tree having
+    /// at least one outer node. See [traversal](#Traversal)
+    ///
+    /// # Parameters
+    /// * `cb`: A crit-bit tree containing at least one outer node
+    /// * `d`: Direction to traverse. If `L`, initialize predecessor
+    ///   traversal, else successor traversal
+    ///
+    /// # Returns
+    /// * `u128`: Maximum key in `cb` if `d` is `L`, else minimum key
+    /// * `&mut V`: Mutable reference to corresponding node's value
+    /// * `u64`: Parent field of corresponding node
+    /// * `u64`: Child field index of corresponding node
+    ///
+    /// # Considerations
+    /// * Exposes node indices
+    /// * Assumes caller has already verified tree is not empty
+    public fun traverse_init_mut<V>(
+        cb: &mut CB<V>,
+        d: bool,
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        // If predecessor traversal, get child field index of node
+        // having maximum key, else node having minimum key
+        let i_n = if (d == L) max_node_c_i(cb) else min_node_c_i(cb);
+        // Borrow mutable reference to node
+        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_n));
+        // Return node's key, mutable reference to its value, its parent
+        // field, and the child field index of it
+        (n.k, &mut n.v, n.p, i_n)
+    }
+
+    /// Wrapped `traverse_c_i()` call for enumerated return extraction.
+    /// See [traversal](#Traversal)
+    /// # Returns
+    /// * `u128`: Target key
+    /// * `&mut V`: Mutable reference to target node's value
+    /// * `u64`: Target node's parent field
+    /// * `u64`: Child field index of target node
+    public fun traverse_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64,
+        d: bool
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64
+    ) {
+        // Get child field index of target node
+        let i_t = traverse_c_i<V>(cb, k, p_f, d);
+        // Borrow mutable reference to target node
+        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
+        // Return target node's key, mutable reference to its value, its
+        // parent field, and child field index of it
+        (t.k, &mut t.v, t.p, i_t)
+    }
+
+    /// Traverse in the specified direction from the node containing the
+    /// specified key (the "start node" containing the "start key") to
+    /// either the inorder predecessor or the inorder successor to the
+    /// start key (the "target node" containing the "target key"), then
+    /// pop the start node and return its value. See
+    /// [traversal](#Traversal)
+    ///
+    /// # Parameters
+    /// * `cb`: Crit-bit tree containing at least two nodes
+    /// * `k`: Start key. If predecessor traversal, `k` cannot be
+    ///   minimum key in `cb`, since this key does not have a
+    ///   predecessor. Likewise, if successor traversal, `k` cannot be
+    ///   maximum key in `cb`, since this key does not have a successor
+    /// * `p_f`: Start node's parent field
+    /// * `c_i`: Child field index of start node
+    /// * `n_o`: Number of outer nodes in `cb`
+    /// * `d`: Direction to traverse. If `L`, predecessor traversal,
+    ///   else successor traversal
+    ///
+    /// # Returns
+    /// * `u128`: Target key
+    /// * `&mut V`: Mutable reference to target node's value
+    /// * `u64`: Target node's parent field
+    /// * `u64`: Child field index of target node
+    /// * `V`: Popped start node's value
+    ///
+    /// # Considerations
+    /// * Assumes passed start key is not minimum key in tree if
+    ///   predecessor traversal, and that passed start key is not
+    ///   maximum key in tree if successor traversal
+    /// * Takes exposed node indices (`p_f`, `c_i`) as parameters
+    /// * Does not calculate number of outer nodes in `cb`, but rather
+    ///   accepts this number as a parameter (`n_o`), which should be
+    ///   tracked by the caller
+    fun traverse_pop_mut<V>(
+        cb: &mut CB<V>,
+        k: u128,
+        p_f: u64,
+        c_i: u64,
+        n_o: u64,
+        d: bool
+    ): (
+        u128,
+        &mut V,
+        u64,
+        u64,
+        V
+    ) {
+        // Store side on which the start node is a child of its parent
+        let s_s = if(is_set(k, v_b<I>(&cb.i, p_f).c)) R else L;
+        // Store target node's pre-pop child field index
+        let i_t = traverse_c_i(cb, k, p_f, d);
+        // Update relationships for popped start node
+        pop_update_relationships(cb, s_s, p_f);
+        // Store start node value from pop-facilitated node destruction
+        let s_v = pop_destroy_nodes(cb, p_f, c_i, n_o);
+        // If target node was last in outer node vector, then swap
+        // remove will have relocated it, so update its post-pop field
+        // index to the start node's pre-pop field index
+        if (o_v(i_t) == n_o - 1) i_t = c_i;
+        // Borrow mutable reference to target node
+        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
+        // Return target node's key, mutable reference to its value, its
+        // parent field, the child field index of it, and the start
+        // node's popped value
+        (t.k, &mut t.v, t.p, i_t, s_v)
     }
 
     /// Wrapped `traverse_init_mut()` call for predecessor traversal.
@@ -1578,137 +1712,6 @@ module Econia::CritBit {
             c_f = if (d == L) v_b<I>(&cb.i, c_f).r else v_b<I>(&cb.i, c_f).l;
         }; // Child field now indicates target node
         c_f // Return child field index of target node
-    }
-
-    /// Initialize a mutable iterated inorder traversal in a tree having
-    /// at least one outer node. See [traversal](#Traversal)
-    ///
-    /// # Parameters
-    /// * `cb`: A crit-bit tree containing at least one outer node
-    /// * `d`: Direction to traverse. If `L`, initialize predecessor
-    ///   traversal, else successor traversal
-    ///
-    /// # Returns
-    /// * `u128`: Maximum key in `cb` if `d` is `L`, else minimum key
-    /// * `&mut V`: Mutable reference to corresponding node's value
-    /// * `u64`: Parent field of corresponding node
-    /// * `u64`: Child field index of corresponding node
-    ///
-    /// # Considerations
-    /// * Exposes node indices
-    /// * Assumes caller has already verified tree is not empty
-    fun traverse_init_mut<V>(
-        cb: &mut CB<V>,
-        d: bool,
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        // If predecessor traversal, get child field index of node
-        // having maximum key, else node having minimum key
-        let i_n = if (d == L) max_node_c_i(cb) else min_node_c_i(cb);
-        // Borrow mutable reference to node
-        let n = v_b_m<O<V>>(&mut cb.o, o_v(i_n));
-        // Return node's key, mutable reference to its value, its parent
-        // field, and the child field index of it
-        (n.k, &mut n.v, n.p, i_n)
-    }
-
-    /// Wrapped `traverse_c_i()` call for enumerated return extraction.
-    /// See [traversal](#Traversal)
-    /// # Returns
-    /// * `u128`: Target key
-    /// * `&mut V`: Mutable reference to target node's value
-    /// * `u64`: Target node's parent field
-    /// * `u64`: Child field index of target node
-    fun traverse_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64,
-        d: bool
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64
-    ) {
-        // Get child field index of target node
-        let i_t = traverse_c_i<V>(cb, k, p_f, d);
-        // Borrow mutable reference to target node
-        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
-        // Return target node's key, mutable reference to its value, its
-        // parent field, and child field index of it
-        (t.k, &mut t.v, t.p, i_t)
-    }
-
-    /// Traverse in the specified direction from the node containing the
-    /// specified key (the "start node" containing the "start key") to
-    /// either the inorder predecessor or the inorder successor to the
-    /// start key (the "target node" containing the "target key"), then
-    /// pop the start node and return its value. See
-    /// [traversal](#Traversal)
-    ///
-    /// # Parameters
-    /// * `cb`: Crit-bit tree containing at least two nodes
-    /// * `k`: Start key. If predecessor traversal, `k` cannot be
-    ///   minimum key in `cb`, since this key does not have a
-    ///   predecessor. Likewise, if successor traversal, `k` cannot be
-    ///   maximum key in `cb`, since this key does not have a successor
-    /// * `p_f`: Start node's parent field
-    /// * `c_i`: Child field index of start node
-    /// * `n_o`: Number of outer nodes in `cb`
-    /// * `d`: Direction to traverse. If `L`, predecessor traversal,
-    ///   else successor traversal
-    ///
-    /// # Returns
-    /// * `u128`: Target key
-    /// * `&mut V`: Mutable reference to target node's value
-    /// * `u64`: Target node's parent field
-    /// * `u64`: Child field index of target node
-    /// * `V`: Popped start node's value
-    ///
-    /// # Considerations
-    /// * Assumes passed start key is not minimum key in tree if
-    ///   predecessor traversal, and that passed start key is not
-    ///   maximum key in tree if successor traversal
-    /// * Takes exposed node indices (`p_f`, `c_i`) as parameters
-    /// * Does not calculate number of outer nodes in `cb`, but rather
-    ///   accepts this number as a parameter (`n_o`), which should be
-    ///   tracked by the caller
-    fun traverse_pop_mut<V>(
-        cb: &mut CB<V>,
-        k: u128,
-        p_f: u64,
-        c_i: u64,
-        n_o: u64,
-        d: bool
-    ): (
-        u128,
-        &mut V,
-        u64,
-        u64,
-        V
-    ) {
-        // Store side on which the start node is a child of its parent
-        let s_s = if(is_set(k, v_b<I>(&cb.i, p_f).c)) R else L;
-        // Store target node's pre-pop child field index
-        let i_t = traverse_c_i(cb, k, p_f, d);
-        // Update relationships for popped start node
-        pop_update_relationships(cb, s_s, p_f);
-        // Store start node value from pop-facilitated node destruction
-        let s_v = pop_destroy_nodes(cb, p_f, c_i, n_o);
-        // If target node was last in outer node vector, then swap
-        // remove will have relocated it, so update its post-pop field
-        // index to the start node's pre-pop field index
-        if (o_v(i_t) == n_o - 1) i_t = c_i;
-        // Borrow mutable reference to target node
-        let t = v_b_m<O<V>>(&mut cb.o, o_v(i_t));
-        // Return target node's key, mutable reference to its value, its
-        // parent field, the child field index of it, and the start
-        // node's popped value
-        (t.k, &mut t.v, t.p, i_t, s_v)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

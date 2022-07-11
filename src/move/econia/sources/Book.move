@@ -117,6 +117,8 @@ module Econia::Book {
     const E_NO_BOOK: u64 = 1;
     /// When account/address is not Econia
     const E_NOT_ECONIA: u64 = 2;
+    /// When both sides of a trade have same address
+    const E_SELF_MATCH: u64 = 3;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -197,12 +199,29 @@ module Econia::Book {
         FriendCap{} // Return requested capability
     }
 
+    /// Initialize order book under host account, provided `FriendCap`,
+    /// for market `<B, Q, E>` and corresponding scale factor `f`
+    public fun init_book<B, Q, E>(
+        host: &signer,
+        f: u64,
+        _c: &FriendCap
+    ) {
+        // Assert book does not already exist under host account
+        assert!(!exists_book<B, Q, E>(s_a_o(host)), E_BOOK_EXISTS);
+        let m_a = MIN_ASK_DEFAULT; // Declare min ask default order ID
+        let m_b = MAX_BID_DEFAULT; // Declare max bid default order ID
+        let o_b = // Pack empty order book
+            OB<B, Q, E>{f, a: cb_e<P>(), b: cb_e<P>(), m_a, m_b};
+        move_to<OB<B, Q, E>>(host, o_b); // Move to host
+    }
+
     /// Initialize traversal for filling against order book at `host`
-    /// address. If `side` is `ASK`, initialize successor traversal
-    /// starting at the ask with the minimum order ID, and if `side` is
-    /// `BID`, initialize predecessor traversal starting at the bid with
-    /// the maximum order ID. Decrement first position on book by `size`
-    /// if matching results in a partial fill against it.
+    /// address, provided `FriendCap`. If `side` is `ASK`, initialize
+    /// successor traversal starting at the ask with the minimum order
+    /// ID, and if `side` is `BID`, initialize predecessor traversal
+    /// starting at the bid with the maximum order ID. Decrement first
+    /// position on book by `size` if matching results in a partial fill
+    /// against it.
     ///
     /// # Terminology
     /// * "Incoming order" has `size` base coin parcels to be filled
@@ -212,7 +231,7 @@ module Econia::Book {
     /// * Publicly exposes internal tree node indices per canonical
     ///   traversal paradigm described at `Econia::CritBit`
     ///
-    /// # Returns:
+    /// # Returns
     /// * `u128`: Target position order ID
     /// * `address`: User address holding target position (`P.a`)
     /// * `u64`: Parent field of node corresponding to target position
@@ -220,12 +239,15 @@ module Econia::Book {
     ///   position
     /// * `u64`: Amount filled, in base coin parcels
     ///
+    /// # Abort conditions
+    /// * If `i_addr` (incoming address) is same as target address
+    ///
     /// # Assumptions
     /// * Order book has been properly initialized at host address and
-    ///   has at least two positions in corresponding tree (at least
-    ///   one traversal possible)
+    ///   has at least one position in corresponding tree
     public fun init_fill_traversal<B, Q, E>(
         host: address,
+        i_addr: address,
         side: bool,
         size: u64,
         _c: &FriendCap
@@ -247,6 +269,8 @@ module Econia::Book {
         // node, and the child field index of corresponding tree node
         let (t_id, t_p_r, t_p_f, t_c_f_i) = cb_t_i_m(tree, dir);
         let t_addr = t_p_r.a; // Store target position user address
+        // Asert incoming address is not same as target address
+        assert!(i_addr != t_addr, E_SELF_MATCH);
         let filled: u64; // Declare flag for fill amount
         // If incoming order size is less than target position size
         if (size < t_p_r.s) { // If target position partially filled
@@ -261,22 +285,6 @@ module Econia::Book {
         // corresponding node's parent field, corresponding node's child
         // field index, and the number of base coin parcels filled
         (t_id, t_addr, t_p_f, t_c_f_i, filled)
-    }
-
-    /// Initialize order book under host account, provided `FriendCap`,
-    /// for market `<B, Q, E>` and corresponding scale factor `f`
-    public fun init_book<B, Q, E>(
-        host: &signer,
-        f: u64,
-        _c: &FriendCap
-    ) {
-        // Assert book does not already exist under host account
-        assert!(!exists_book<B, Q, E>(s_a_o(host)), E_BOOK_EXISTS);
-        let m_a = MIN_ASK_DEFAULT; // Declare min ask default order ID
-        let m_b = MAX_BID_DEFAULT; // Declare max bid default order ID
-        let o_b = // Pack empty order book
-            OB<B, Q, E>{f, a: cb_e<P>(), b: cb_e<P>(), m_a, m_b};
-        move_to<OB<B, Q, E>>(host, o_b); // Move to host
     }
 
     /// Return number of asks on order book, assuming order book exists
@@ -755,6 +763,106 @@ module Econia::Book {
         assert!(o_b.m_a == HI_128 && o_b.m_b == 0, 1);
         // Assert bid and ask trees init empty
         assert!(cb_i_e(&o_b.a) && cb_i_e(&o_b.b), 2);
+    }
+
+    #[test(host = @Econia)]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for attempted self matching trade
+    fun init_fill_traversal_failure_self_match(
+        host: &signer,
+    ) acquires OB {
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
+        // Define ask with price 1, version number 2, size 3
+        let (p_1, v_1, s_1) = (1, 2, 3);
+        let id_1 = id_a(p_1, v_1); // Get corresponding order ID
+        // Add host-held position to book
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_1, p_1, s_1, &FriendCap{});
+        // Attempt invalid fill traversal init
+        init_fill_traversal<BT, QT, ET>(
+            @Econia, @Econia, ASK, 2, &FriendCap{});
+    }
+
+    #[test(host = @Econia)]
+    /// Verify successful traversal initialization for ask
+    fun init_fill_traversal_success_ask(
+        host: &signer,
+    ) acquires OB {
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
+        // Define ask with price 1, version number 2, size 3
+        let (p_1, v_1, s_1) = (1, 2, 3);
+        let id_1 = id_a(p_1, v_1); // Get corresponding order ID
+        // Add host-held position to book
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_1, p_1, s_1, &FriendCap{});
+        // Define ask with price 2, version number 3, size 4
+        let (p_2, v_2, s_2) = (2, 3, 4);
+        let id_2 = id_a(p_2, v_2); // Get corresponding order ID
+        // Add host-held position to book
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_2, p_2, s_2, &FriendCap{});
+        // Define ask with price 3, version number 4, size 5
+        let (p_3, v_3, s_3) = (3, 4, 5);
+        let id_3 = id_a(p_3, v_3); // Get corresponding order ID
+        // Add host-held position to book
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
+        // Init ask fill traversal for user w/ incoming order of size 2
+        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+                @Econia, @TestUser, ASK, 2, &FriendCap{});
+        // Assert correct returns
+        assert!(t_id == id_1 && t_addr == @Econia && filled == 2, 0);
+        // Get target ask size and address at target position order ID
+        let (t_s, t_a) = check_ask<BT, QT, ET>(@Econia, t_id);
+        assert!(t_s == 1 && t_a == @Econia, 1); // Assert partial fill
+        // Init ask fill traversal for user w/ incoming order of size 5
+        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+                @Econia, @TestUser, ASK, 5, &FriendCap{});
+        // Assert correct returns
+        assert!(t_id == id_1 && t_addr == @Econia && filled == 1, 2);
+        // Get target ask size and address at target position order ID
+        let (t_s, t_a) = check_ask<BT, QT, ET>(@Econia, t_id);
+        // Assert target size unchanged per complete target fill logic
+        assert!(t_s == 1 && t_a == @Econia, 3);
+    }
+
+    #[test(host = @Econia)]
+    /// Verify successful traversal initialization for bid
+    fun init_fill_traversal_success_bid(
+        host: &signer,
+    ) acquires OB {
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
+        // Define bid with price 1, version number 2, size 3
+        let (p_1, v_1, s_1) = (1, 2, 3);
+        let id_1 = id_b(p_1, v_1); // Get corresponding order ID
+        // Add host-held position to book
+        add_bid<BT, QT, ET>(@Econia, @Econia, id_1, p_1, s_1, &FriendCap{});
+        // Define bid with price 2, version number 3, size 4
+        let (p_2, v_2, s_2) = (2, 3, 4);
+        let id_2 = id_b(p_2, v_2); // Get corresponding order ID
+        // Add host-held position to book
+        add_bid<BT, QT, ET>(@Econia, @Econia, id_2, p_2, s_2, &FriendCap{});
+        // Define bid with price 3, version number 4, size 5
+        let (p_3, v_3, s_3) = (3, 4, 5);
+        let id_3 = id_b(p_3, v_3); // Get corresponding order ID
+        // Add host-held position to book
+        add_bid<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
+        // Init bid fill traversal for user w/ incoming order of size 2
+        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+                @Econia, @TestUser, BID, 2, &FriendCap{});
+        // Assert correct returns
+        assert!(t_id == id_3 && t_addr == @Econia && filled == 2, 0);
+        // Get bid size and address at target position order ID
+        let (t_s, t_a) = check_bid<BT, QT, ET>(@Econia, t_id);
+        assert!(t_s == 3 && t_a == @Econia, 1); // Assert partial fill
+        // Init bid fill traversal for user w/ incoming order of size 4
+        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+                @Econia, @TestUser, BID, 4, &FriendCap{});
+        // Assert correct returns
+        assert!(t_id == id_3 && t_addr == @Econia && filled == 3, 2);
+        // Get ask size and address at target position order ID
+        let (t_s, t_a) = check_bid<BT, QT, ET>(@Econia, t_id);
+        // Assert target size unchanged per complete target fill logic
+        assert!(t_s == 3 && t_a == @Econia, 3);
     }
 
     #[test(host = @TestUser)]

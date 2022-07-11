@@ -49,18 +49,23 @@ to be filled.
 -  [Function `cancel_bid`](#0xc0deb00c_Book_cancel_bid)
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
 -  [Function `get_friend_cap`](#0xc0deb00c_Book_get_friend_cap)
+-  [Function `init_fill_traversal`](#0xc0deb00c_Book_init_fill_traversal)
+    -  [Terminology](#@Terminology_4)
+    -  [Considerations](#@Considerations_5)
+    -  [Returns:](#@Returns:_6)
+    -  [Assumptions](#@Assumptions_7)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
 -  [Function `n_asks`](#0xc0deb00c_Book_n_asks)
 -  [Function `n_bids`](#0xc0deb00c_Book_n_bids)
 -  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 -  [Function `add_position`](#0xc0deb00c_Book_add_position)
-    -  [Parameters](#@Parameters_4)
-    -  [Returns](#@Returns_5)
-    -  [Assumes](#@Assumes_6)
-    -  [Spread terminology](#@Spread_terminology_7)
--  [Function `cancel_position`](#0xc0deb00c_Book_cancel_position)
     -  [Parameters](#@Parameters_8)
-    -  [Assumes](#@Assumes_9)
+    -  [Returns](#@Returns_9)
+    -  [Assumes](#@Assumes_10)
+    -  [Spread terminology](#@Spread_terminology_11)
+-  [Function `cancel_position`](#0xc0deb00c_Book_cancel_position)
+    -  [Parameters](#@Parameters_12)
+    -  [Assumes](#@Assumes_13)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -174,7 +179,8 @@ Position in an order book
 <code>s: u64</code>
 </dt>
 <dd>
- Scaled size (see <code>Econia::Orders</code>) of position to be filled
+ Scaled size (see <code>Econia::Orders</code>) of position to be filled,
+ in base coin parcels
 </dd>
 <dt>
 <code>a: <b>address</b></code>
@@ -198,6 +204,26 @@ Position in an order book
 
 
 <pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Book_L"></a>
+
+Left direction, denoting predecessor traversal
+
+
+<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_L">L</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Book_R"></a>
+
+Right direction, denoting successor traversal
+
+
+<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_R">R</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -448,12 +474,114 @@ Return a <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>,
 
 </details>
 
+<a name="0xc0deb00c_Book_init_fill_traversal"></a>
+
+## Function `init_fill_traversal`
+
+Initialize traversal for filling against order book at <code>host</code>
+address. If <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, initialize successor traversal
+starting at the ask with the minimum order ID, and if <code>side</code> is
+<code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, initialize predecessor traversal starting at the bid with
+the maximum order ID. Decrement first position on book by <code>size</code>
+if matching results in a partial fill against it.
+
+
+<a name="@Terminology_4"></a>
+
+### Terminology
+
+* "Incoming order" has <code>size</code> base coin parcels to be filled
+* "Target position" is the first <code><a href="Book.md#0xc0deb00c_Book_P">P</a></code> on the book to fill against
+
+
+<a name="@Considerations_5"></a>
+
+### Considerations
+
+* Publicly exposes internal tree node indices per canonical
+traversal paradigm described at <code>Econia::CritBit</code>
+
+
+<a name="@Returns:_6"></a>
+
+### Returns:
+
+* <code>u128</code>: Target position order ID
+* <code><b>address</b></code>: User address holding target position (<code><a href="Book.md#0xc0deb00c_Book_P">P</a>.a</code>)
+* <code>u64</code>: Parent field of node corresponding to target position
+* <code>u64</code>: Child field index of node corresponding to target
+position
+* <code>u64</code>: Amount filled, in base coin parcels
+
+
+<a name="@Assumptions_7"></a>
+
+### Assumptions
+
+* Order book has been properly initialized at host address and
+has at least two positions in corresponding tree (at least
+one traversal possible)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_fill_traversal">init_fill_traversal</a>&lt;B, Q, E&gt;(host: <b>address</b>, side: bool, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_fill_traversal">init_fill_traversal</a>&lt;B, Q, E&gt;(
+    host: <b>address</b>,
+    side: bool,
+    size: u64,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+): (
+    u128,
+    <b>address</b>,
+    u64,
+    u64,
+    u64
+) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    // Borrow mutable reference <b>to</b> order book at host <b>address</b>
+    <b>let</b> o_b = <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host);
+    // If an ask, define tree <b>as</b> asks tree <b>with</b> successor direction
+    <b>let</b> (tree, dir) = // Otherwise bids tree, predecessor direction
+        <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) (&<b>mut</b> o_b.a, <a href="Book.md#0xc0deb00c_Book_R">R</a>) <b>else</b> (&<b>mut</b> o_b.b, <a href="Book.md#0xc0deb00c_Book_L">L</a>);
+    // Initialize traversal: get the order <a href="ID.md#0xc0deb00c_ID">ID</a> of the target position
+    // <b>to</b> fill against, a mutable reference <b>to</b> the corresponding
+    // position <b>struct</b>, the parent field of the corresponding tree
+    // node, and the child field index of corresponding tree node
+    <b>let</b> (t_id, t_p_r, t_p_f, t_c_f_i) = cb_t_i_m(tree, dir);
+    <b>let</b> t_addr = t_p_r.a; // Store target position user <b>address</b>
+    <b>let</b> filled: u64; // Declare flag for fill amount
+    // If incoming order size is less than target position size
+    <b>if</b> (size &lt; t_p_r.s) { // If target position partially filled
+        // Decrement target position size by incoming order size
+        t_p_r.s = t_p_r.s - size;
+        filled = size; // Flag that entire incoming order was filled
+    // If incoming order size not less than target position size
+    } <b>else</b> { // If target position completely filled
+        filled = t_p_r.s; // Flag partial fill on incoming order
+    };
+    // Return target position <a href="ID.md#0xc0deb00c_ID">ID</a>, target position user <b>address</b>,
+    // corresponding node's parent field, corresponding node's child
+    // field index, and the number of base coin parcels filled
+    (t_id, t_addr, t_p_f, t_c_f_i, filled)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_Book_init_book"></a>
 
 ## Function `init_book`
 
 Initialize order book under host account, provided <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>,
-with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale factor <code>f</code>
+for market <code>&lt;B, Q, E&gt;</code> and corresponding scale factor <code>f</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
@@ -585,7 +713,7 @@ order does not cross the spread, skipping redundant error checks
 already covered by calling functions
 
 
-<a name="@Parameters_4"></a>
+<a name="@Parameters_8"></a>
 
 ### Parameters
 
@@ -597,7 +725,7 @@ already covered by calling functions
 * <code>size</code>: Scaled order size (see <code>Econia::Orders</code>)
 
 
-<a name="@Returns_5"></a>
+<a name="@Returns_9"></a>
 
 ### Returns
 
@@ -605,7 +733,7 @@ already covered by calling functions
 otherwise
 
 
-<a name="@Assumes_6"></a>
+<a name="@Assumes_10"></a>
 
 ### Assumes
 
@@ -614,7 +742,7 @@ otherwise
 * <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code> for given market exists at host address
 
 
-<a name="@Spread_terminology_7"></a>
+<a name="@Spread_terminology_11"></a>
 
 ### Spread terminology
 
@@ -680,7 +808,7 @@ Cancel position on book for market <code>&lt;B, Q, E&gt;</code>, skipping
 redundant error checks already covered by calling functions
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -689,7 +817,7 @@ redundant error checks already covered by calling functions
 * <code>id</code>: Order ID (see <code>Econia::ID</code>)
 
 
-<a name="@Assumes_9"></a>
+<a name="@Assumes_13"></a>
 
 ### Assumes
 

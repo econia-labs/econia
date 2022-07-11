@@ -30,7 +30,8 @@ module Econia::Book {
         length as cb_l,
         max_key as cb_ma_k,
         min_key as cb_mi_k,
-        pop as cb_p
+        pop as cb_p,
+        traverse_init_mut as cb_t_i_m,
     };
 
     use Econia::ID::{
@@ -83,7 +84,8 @@ module Econia::Book {
 
     /// Position in an order book
     struct P has store {
-        /// Scaled size (see `Econia::Orders`) of position to be filled
+        /// Scaled size (see `Econia::Orders`) of position to be filled,
+        /// in base coin parcels
         s: u64,
         /// Address holding position
         a: address
@@ -126,10 +128,14 @@ module Econia::Book {
     const BID: bool = false;
     /// `u128` bitmask with all bits set
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// Left direction, denoting predecessor traversal
+    const L: bool = true;
     /// Default value for maximum bid order ID
     const MAX_BID_DEFAULT: u128 = 0;
     /// Default value for minimum ask order ID
     const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// Right direction, denoting successor traversal
+    const R: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -191,8 +197,74 @@ module Econia::Book {
         FriendCap{} // Return requested capability
     }
 
+    /// Initialize traversal for filling against order book at `host`
+    /// address. If `side` is `ASK`, initialize successor traversal
+    /// starting at the ask with the minimum order ID, and if `side` is
+    /// `BID`, initialize predecessor traversal starting at the bid with
+    /// the maximum order ID. Decrement first position on book by `size`
+    /// if matching results in a partial fill against it.
+    ///
+    /// # Terminology
+    /// * "Incoming order" has `size` base coin parcels to be filled
+    /// * "Target position" is the first `P` on the book to fill against
+    ///
+    /// # Considerations
+    /// * Publicly exposes internal tree node indices per canonical
+    ///   traversal paradigm described at `Econia::CritBit`
+    ///
+    /// # Returns:
+    /// * `u128`: Target position order ID
+    /// * `address`: User address holding target position (`P.a`)
+    /// * `u64`: Parent field of node corresponding to target position
+    /// * `u64`: Child field index of node corresponding to target
+    ///   position
+    /// * `u64`: Amount filled, in base coin parcels
+    ///
+    /// # Assumptions
+    /// * Order book has been properly initialized at host address and
+    ///   has at least two positions in corresponding tree (at least
+    ///   one traversal possible)
+    public fun init_fill_traversal<B, Q, E>(
+        host: address,
+        side: bool,
+        size: u64,
+        _c: &FriendCap
+    ): (
+        u128,
+        address,
+        u64,
+        u64,
+        u64
+    ) acquires OB {
+        // Borrow mutable reference to order book at host address
+        let o_b = borrow_global_mut<OB<B, Q, E>>(host);
+        // If an ask, define tree as asks tree with successor direction
+        let (tree, dir) = // Otherwise bids tree, predecessor direction
+            if (side == ASK) (&mut o_b.a, R) else (&mut o_b.b, L);
+        // Initialize traversal: get the order ID of the target position
+        // to fill against, a mutable reference to the corresponding
+        // position struct, the parent field of the corresponding tree
+        // node, and the child field index of corresponding tree node
+        let (t_id, t_p_r, t_p_f, t_c_f_i) = cb_t_i_m(tree, dir);
+        let t_addr = t_p_r.a; // Store target position user address
+        let filled: u64; // Declare flag for fill amount
+        // If incoming order size is less than target position size
+        if (size < t_p_r.s) { // If target position partially filled
+            // Decrement target position size by incoming order size
+            t_p_r.s = t_p_r.s - size;
+            filled = size; // Flag that entire incoming order was filled
+        // If incoming order size not less than target position size
+        } else { // If target position completely filled
+            filled = t_p_r.s; // Flag partial fill on incoming order
+        };
+        // Return target position ID, target position user address,
+        // corresponding node's parent field, corresponding node's child
+        // field index, and the number of base coin parcels filled
+        (t_id, t_addr, t_p_f, t_c_f_i, filled)
+    }
+
     /// Initialize order book under host account, provided `FriendCap`,
-    /// with market types `B`, `Q`, `E`, and scale factor `f`
+    /// for market `<B, Q, E>` and corresponding scale factor `f`
     public fun init_book<B, Q, E>(
         host: &signer,
         f: u64,

@@ -38,12 +38,14 @@ $size_{scaled} = size_{unscaled} / SF$
 For example, if a user wants to place a bid for <code>1400</code> indivisible
 subunits of protocol coin <code>PRO</code> in a <code>USDC</code>-denominated market with
 with a scale factor of <code>100</code>, and is willing to pay <code>28014</code>
-indivisble subunits of <code>USDC</code>, then their bid has an unscaled size
+indivisible subunits of <code>USDC</code>, then their bid has an unscaled size
 of <code>1400</code>, a scaled size of <code>14</code>, and a scaled price of <code>2001</code>. Thus
 when this bid is added to the user's open orders per <code><a href="Orders.md#0xc0deb00c_Orders_add_bid">add_bid</a>()</code>,
 into the <code>b</code> field of their <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;PRO, USDC, E2&gt;</code> will be inserted a
 key-value pair of the form $\{id, 14\}$, where $id$ denotes an order
-ID (per <code>Econia::ID</code>) indicating a scaled price of <code>2001</code>.
+ID (per <code>Econia::ID</code>) indicating a scaled price of <code>2001</code>. In other
+words, the scaled size is the number of base coin "parcels" in an
+order, where a parcel contains $SF$ subunits.
 
 ---
 
@@ -194,22 +196,12 @@ When account/address is not Econia
 
 
 
-<a name="0xc0deb00c_Orders_E_AMOUNT_NOT_MULTIPLE"></a>
+<a name="0xc0deb00c_Orders_E_BASE_OVERFLOW"></a>
 
-When amount is not an integer multiple of scale factor
-
-
-<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_AMOUNT_NOT_MULTIPLE">E_AMOUNT_NOT_MULTIPLE</a>: u64 = 4;
-</code></pre>
+When base coin subunits required to fill order overflows a u64
 
 
-
-<a name="0xc0deb00c_Orders_E_FILL_OVERFLOW"></a>
-
-When amount of quote coins to fill order overflows u64
-
-
-<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_FILL_OVERFLOW">E_FILL_OVERFLOW</a>: u64 = 5;
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_BASE_OVERFLOW">E_BASE_OVERFLOW</a>: u64 = 4;
 </code></pre>
 
 
@@ -250,6 +242,16 @@ When indicated price indicated 0
 
 
 <pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_PRICE_0">E_PRICE_0</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Orders_E_QUOTE_OVERFLOW"></a>
+
+When quote coin subunits required to fill order overflows a u64
+
+
+<pre><code><b>const</b> <a href="Orders.md#0xc0deb00c_Orders_E_QUOTE_OVERFLOW">E_QUOTE_OVERFLOW</a>: u64 = 5;
 </code></pre>
 
 
@@ -518,7 +520,8 @@ Return scale factor of specified open orders at given address
 ## Function `add_order`
 
 Add new order to users's open orders container for market
-<code>&lt;B, Q, E&gt;</code>, returning scaled size of order
+<code>&lt;B, Q, E&gt;</code>, returning base coin subunits and quote coin
+subunits required to fill the order
 
 
 <a name="@Parameters_4"></a>
@@ -529,15 +532,15 @@ Add new order to users's open orders container for market
 * <code>side</code>: <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code> or <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>
 * <code>id</code>: Order ID (see <code>Econia::ID</code>)
 * <code>price</code>: Scaled integer price (see <code>Econia::ID</code>)
-* <code>size</code>: Unscaled order size, in base coin subunits
+* <code>size</code>: Scaled order size, (number of base coin parcels)
 
 
 <a name="@Returns_5"></a>
 
 ### Returns
 
-* <code>u64</code>: Scaled order size
-* <code>u64</code>: Number of quote coin subunits needed to fill order
+* <code>u64</code>: Base coin subunits required to fill order
+* <code>u64</code>: Quote coin subunits required to fill order
 
 
 <a name="@Abort_scenarios_6"></a>
@@ -547,10 +550,10 @@ Add new order to users's open orders container for market
 * If <code>price</code> is 0
 * If <code>size</code> is 0
 * If <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;</code> not initialized at <code>addr</code>
-* If <code>size</code> is not an integer multiple of price scale factor for
-given market (see <code>Econia::Registry</code>)
-* If amount of quote coin subunits needed to fill order does not
-fit in a <code>u64</code>
+* If the number of base coin subunits required to fill the order
+does not fit in a <code>u64</code>
+* If the number of quote coin subunits required to fill the
+order does not fit in a <code>u64</code>
 
 
 <a name="@Assumes_7"></a>
@@ -588,17 +591,18 @@ u64
     // Borrow mutable reference <b>to</b> open orders at given <b>address</b>
     <b>let</b> o_o = <b>borrow_global_mut</b>&lt;<a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;&gt;(addr);
     <b>let</b> s_f = o_o.f; // Get price scale factor
-    // Assert order size is integer multiple of price scale factor
-    <b>assert</b>!(size % s_f == 0, <a href="Orders.md#0xc0deb00c_Orders_E_AMOUNT_NOT_MULTIPLE">E_AMOUNT_NOT_MULTIPLE</a>);
-    <b>let</b> scaled_size = size / s_f; // Get scaled order size
+    // Determine amount of base coins needed <b>to</b> fill order, <b>as</b> u128
+    <b>let</b> base_subunits = (size <b>as</b> u128) * (s_f <b>as</b> u128);
+    // Assert that amount can fit in a u64
+    <b>assert</b>!(!(base_subunits &gt; (<a href="Orders.md#0xc0deb00c_Orders_HI_64">HI_64</a> <b>as</b> u128)), <a href="Orders.md#0xc0deb00c_Orders_E_BASE_OVERFLOW">E_BASE_OVERFLOW</a>);
     // Determine amount of quote coins needed <b>to</b> fill order, <b>as</b> u128
-    <b>let</b> fill_amount = (scaled_size <b>as</b> u128) * (price <b>as</b> u128);
-    // Assert that fill amount can fit in a u64
-    <b>assert</b>!(!(fill_amount &gt; (<a href="Orders.md#0xc0deb00c_Orders_HI_64">HI_64</a> <b>as</b> u128)), <a href="Orders.md#0xc0deb00c_Orders_E_FILL_OVERFLOW">E_FILL_OVERFLOW</a>);
+    <b>let</b> quote_subunits = (size <b>as</b> u128) * (price <b>as</b> u128);
+    // Assert that amount can fit in a u64
+    <b>assert</b>!(!(quote_subunits &gt; (<a href="Orders.md#0xc0deb00c_Orders_HI_64">HI_64</a> <b>as</b> u128)), <a href="Orders.md#0xc0deb00c_Orders_E_QUOTE_OVERFLOW">E_QUOTE_OVERFLOW</a>);
     // Add order <b>to</b> corresponding tree
-    <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) cb_i&lt;u64&gt;(&<b>mut</b> o_o.a, id, scaled_size)
-        <b>else</b> cb_i&lt;u64&gt;(&<b>mut</b> o_o.b, id, scaled_size);
-    (scaled_size, (fill_amount <b>as</b> u64))
+    <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>) cb_i&lt;u64&gt;(&<b>mut</b> o_o.a, id, size)
+        <b>else</b> cb_i&lt;u64&gt;(&<b>mut</b> o_o.b, id, size);
+    ((base_subunits <b>as</b> u64), (quote_subunits <b>as</b> u64))
 }
 </code></pre>
 

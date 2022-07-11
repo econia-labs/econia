@@ -21,12 +21,14 @@
 /// For example, if a user wants to place a bid for `1400` indivisible
 /// subunits of protocol coin `PRO` in a `USDC`-denominated market with
 /// with a scale factor of `100`, and is willing to pay `28014`
-/// indivisble subunits of `USDC`, then their bid has an unscaled size
+/// indivisible subunits of `USDC`, then their bid has an unscaled size
 /// of `1400`, a scaled size of `14`, and a scaled price of `2001`. Thus
 /// when this bid is added to the user's open orders per `add_bid()`,
 /// into the `b` field of their `OO<PRO, USDC, E2>` will be inserted a
 /// key-value pair of the form $\{id, 14\}$, where $id$ denotes an order
-/// ID (per `Econia::ID`) indicating a scaled price of `2001`.
+/// ID (per `Econia::ID`) indicating a scaled price of `2001`. In other
+/// words, the scaled size is the number of base coin "parcels" in an
+/// order, where a parcel contains $SF$ subunits.
 ///
 /// ---
 ///
@@ -103,10 +105,10 @@ module Econia::Orders {
     const E_NOT_ECONIA: u64 = 2;
     /// When indicated price indicated 0
     const E_PRICE_0: u64 = 3;
-    /// When amount is not an integer multiple of scale factor
-    const E_AMOUNT_NOT_MULTIPLE: u64 = 4;
-    /// When amount of quote coins to fill order overflows u64
-    const E_FILL_OVERFLOW: u64 = 5;
+    /// When base coin subunits required to fill order overflows a u64
+    const E_BASE_OVERFLOW: u64 = 4;
+    /// When quote coin subunits required to fill order overflows a u64
+    const E_QUOTE_OVERFLOW: u64 = 5;
     /// When order size is 0
     const E_SIZE_0: u64 = 6;
     /// When user does not have open order with specified ID
@@ -221,27 +223,28 @@ module Econia::Orders {
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Add new order to users's open orders container for market
-    /// `<B, Q, E>`, returning scaled size of order
+    /// `<B, Q, E>`, returning base coin subunits and quote coin
+    /// subunits required to fill the order
     ///
     /// # Parameters
     /// * `addr`: User's address
     /// * `side`: `ASK` or `BID`
     /// * `id`: Order ID (see `Econia::ID`)
     /// * `price`: Scaled integer price (see `Econia::ID`)
-    /// * `size`: Unscaled order size, in base coin subunits
+    /// * `size`: Scaled order size, (number of base coin parcels)
     ///
     /// # Returns
-    /// * `u64`: Scaled order size
-    /// * `u64`: Number of quote coin subunits needed to fill order
+    /// * `u64`: Base coin subunits required to fill order
+    /// * `u64`: Quote coin subunits required to fill order
     ///
     /// # Abort scenarios
     /// * If `price` is 0
     /// * If `size` is 0
     /// * If `OO<B, Q, E>` not initialized at `addr`
-    /// * If `size` is not an integer multiple of price scale factor for
-    ///   given market (see `Econia::Registry`)
-    /// * If amount of quote coin subunits needed to fill order does not
-    ///   fit in a `u64`
+    /// * If the number of base coin subunits required to fill the order
+    ///   does not fit in a `u64`
+    /// * If the number of quote coin subunits required to fill the
+    ///   order does not fit in a `u64`
     ///
     /// # Assumes
     /// * Caller has constructed `id` to indicate `price` as specified
@@ -264,17 +267,18 @@ module Econia::Orders {
         // Borrow mutable reference to open orders at given address
         let o_o = borrow_global_mut<OO<B, Q, E>>(addr);
         let s_f = o_o.f; // Get price scale factor
-        // Assert order size is integer multiple of price scale factor
-        assert!(size % s_f == 0, E_AMOUNT_NOT_MULTIPLE);
-        let scaled_size = size / s_f; // Get scaled order size
+        // Determine amount of base coins needed to fill order, as u128
+        let base_subunits = (size as u128) * (s_f as u128);
+        // Assert that amount can fit in a u64
+        assert!(!(base_subunits > (HI_64 as u128)), E_BASE_OVERFLOW);
         // Determine amount of quote coins needed to fill order, as u128
-        let fill_amount = (scaled_size as u128) * (price as u128);
-        // Assert that fill amount can fit in a u64
-        assert!(!(fill_amount > (HI_64 as u128)), E_FILL_OVERFLOW);
+        let quote_subunits = (size as u128) * (price as u128);
+        // Assert that amount can fit in a u64
+        assert!(!(quote_subunits > (HI_64 as u128)), E_QUOTE_OVERFLOW);
         // Add order to corresponding tree
-        if (side == ASK) cb_i<u64>(&mut o_o.a, id, scaled_size)
-            else cb_i<u64>(&mut o_o.b, id, scaled_size);
-        (scaled_size, (fill_amount as u64))
+        if (side == ASK) cb_i<u64>(&mut o_o.a, id, size)
+            else cb_i<u64>(&mut o_o.b, id, size);
+        ((base_subunits as u64), (quote_subunits as u64))
     }
 
     /// Cancel position in open orders for market `<B, Q, E>`
@@ -376,28 +380,26 @@ module Econia::Orders {
 
     #[test(user = @TestUser)]
     #[expected_failure(abort_code = 4)]
-    /// Verify failure for order size not integer multiple of
-    /// scale factor
-    fun add_order_failure_not_multiple(
+    /// Verify failure for base subunit fill amount overflow
+    fun add_order_failure_overflow_base(
         user: &signer
     ) acquires OO {
         // Init orders with scale factor of 10
         init_orders<BT, QT, ET>(user, 10, &FriendCap{});
         // Attempt invalid add
-        add_order<BT, QT, ET>(@TestUser, ASK, 0, 1, 15);
+        add_order<BT, QT, ET>(@TestUser, ASK, 0, 2, HI_64 / 9);
     }
 
     #[test(user = @TestUser)]
     #[expected_failure(abort_code = 5)]
-    /// Verify failure for required quote coin fill amount not fitting
-    /// into a `u64`
-    fun add_order_failure_overflow(
+    /// Verify failure for quote subunit fill amount overflow
+    fun add_order_failure_overflow_quote(
         user: &signer
     ) acquires OO {
-        // Init orders with scale factor of 1
-        init_orders<BT, QT, ET>(user, 1, &FriendCap{});
+        // Init orders with scale factor of 10
+        init_orders<BT, QT, ET>(user, 10, &FriendCap{});
         // Attempt invalid add
-        add_order<BT, QT, ET>(@TestUser, ASK, 0, HI_64, 2);
+        add_order<BT, QT, ET>(@TestUser, ASK, 0, 11, HI_64 / 10);
     }
 
     #[test]
@@ -426,16 +428,16 @@ module Econia::Orders {
         let f_c = FriendCap{}; // Initialize friend-like capability
         // Init orders with scale factor of 100
         init_orders<BT, QT, ET>(user, 100, &f_c);
-        // Add ask, storing resultant scaled size and fill amount
-        let (ask_s_s, ask_f_a) =
-            add_ask<BT, QT, ET>(@TestUser, 123, 2, 400, &f_c);
+        // Add ask, storing base/quote coin subunit fill amounts
+        let (ask_b_s, ask_q_s) =
+            add_ask<BT, QT, ET>(@TestUser, 123, 2, 4, &f_c);
+        // Assert correct
+        assert!(ask_b_s == 400 && ask_q_s == 8, 0);
+        // Add bid, storing base/quote coin subunit fill amounts
+        let (bid_b_s, bid_q_s) =
+            add_bid<BT, QT, ET>(@TestUser, 234, 3, 14, &f_c);
         // Assert correct scaled size and fill amount returns
-        assert!(ask_s_s == 4 && ask_f_a == 8, 0);
-        // Add bid, storing resultant scaled size and fill amount
-        let (bid_s_s, bid_f_a) =
-            add_bid<BT, QT, ET>(@TestUser, 234, 3, 1400, &f_c);
-        // Assert correct scaled size and fill amount returns
-        assert!(bid_s_s == 14 && bid_f_a == 42, 1);
+        assert!(bid_b_s == 1400 && bid_q_s == 42, 1);
         // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert ask added correctly

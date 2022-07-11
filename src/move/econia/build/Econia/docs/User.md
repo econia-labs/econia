@@ -647,8 +647,8 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 * <code>host</code>: The market host (See <code>Econia::Registry</code>)
 * <code>side</code>: <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code> or <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
 * <code>price</code>: Scaled integer price (see <code>Econia::ID</code>)
-* <code>size</code>: Unscaled order size (see <code>Econia::Orders</code>), in base
-coin subunits
+* <code>size</code>: Scaled order size (number of base coin parcels per
+<code>Econia::Orders</code>)
 
 
 <a name="@Abort_conditions_3"></a>
@@ -689,29 +689,30 @@ coin subunits
     <b>let</b> c_s: bool; // Define flag for <b>if</b> order crosses the spread
     <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) { // If limit order is an ask
         <b>let</b> id = id_a(price, v_n); // Get corresponding order id
-        // Verify and add <b>to</b> user's open orders, storing scaled size
-        <b>let</b> (scaled_size, _) =
+        // Verify and add <b>to</b> user's open orders, storing amount of
+        // base coin subunits required <b>to</b> fill the trade
+        <b>let</b> (b_c_subs, _) =
             o_a_a&lt;B, Q, E&gt;(addr, id, price, size, &c_o_f_c());
         // Assert user <b>has</b> enough base coins held <b>as</b> collateral
-        <b>assert</b>!(!(size &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
+        <b>assert</b>!(!(b_c_subs &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Decrement amount of base coins available for withdraw
-        o_c.b_a = o_c.b_a - size;
+        o_c.b_a = o_c.b_a - b_c_subs;
         // Try adding <b>to</b> order book, storing crossed spread flag
         c_s =
-            b_a_a&lt;B, Q, E&gt;(host, addr, id, price, scaled_size, &c_b_f_c());
+            b_a_a&lt;B, Q, E&gt;(host, addr, id, price, size, &c_b_f_c());
     } <b>else</b> { // If limit order is a bid
         <b>let</b> id = id_b(price, v_n); // Get corresponding order id
-        // Verify and add <b>to</b> user's open orders, storing scaled size
-        // and amount of quote coins needed <b>to</b> fill the order
-        <b>let</b> (scaled_size, fill_amount) =
+        // Verify and add <b>to</b> user's open orders, storing amoung of
+        // quote coin subunits required <b>to</b> fill the trade
+        <b>let</b> (_, q_c_subs) =
             o_a_b&lt;B, Q, E&gt;(addr, id, price, size, &c_o_f_c());
         // Assert user <b>has</b> enough quote coins held <b>as</b> collateral
-        <b>assert</b>!(!(fill_amount &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
-        // Decrement amount of base coins available for withdraw
-        o_c.q_a = o_c.q_a - fill_amount;
+        <b>assert</b>!(!(q_c_subs &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
+        // Decrement amount of quote coins available for withdraw
+        o_c.q_a = o_c.q_a - q_c_subs;
         // Try adding <b>to</b> order book, storing crossed spread flag
         c_s =
-            b_a_b&lt;B, Q, E&gt;(host, addr, id, price, scaled_size, &c_b_f_c());
+            b_a_b&lt;B, Q, E&gt;(host, addr, id, price, size, &c_b_f_c());
     };
     <b>assert</b>!(!c_s, <a href="User.md#0xc0deb00c_User_E_CROSSES_SPREAD">E_CROSSES_SPREAD</a>); // Assert uncrossed spread
 }

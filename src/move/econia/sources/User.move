@@ -361,8 +361,8 @@ module Econia::User {
     /// * `host`: The market host (See `Econia::Registry`)
     /// * `side`: `ASK` or `BID`
     /// * `price`: Scaled integer price (see `Econia::ID`)
-    /// * `size`: Unscaled order size (see `Econia::Orders`), in base
-    ///   coin subunits
+    /// * `size`: Scaled order size (number of base coin parcels per
+    ///   `Econia::Orders`)
     ///
     /// # Abort conditions
     /// * If no such market exists at host address
@@ -388,29 +388,30 @@ module Econia::User {
         let c_s: bool; // Define flag for if order crosses the spread
         if (side == ASK) { // If limit order is an ask
             let id = id_a(price, v_n); // Get corresponding order id
-            // Verify and add to user's open orders, storing scaled size
-            let (scaled_size, _) =
+            // Verify and add to user's open orders, storing amount of
+            // base coin subunits required to fill the trade
+            let (b_c_subs, _) =
                 o_a_a<B, Q, E>(addr, id, price, size, &c_o_f_c());
             // Assert user has enough base coins held as collateral
-            assert!(!(size > o_c.b_a), E_NOT_ENOUGH_COLLATERAL);
+            assert!(!(b_c_subs > o_c.b_a), E_NOT_ENOUGH_COLLATERAL);
             // Decrement amount of base coins available for withdraw
-            o_c.b_a = o_c.b_a - size;
+            o_c.b_a = o_c.b_a - b_c_subs;
             // Try adding to order book, storing crossed spread flag
             c_s =
-                b_a_a<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
+                b_a_a<B, Q, E>(host, addr, id, price, size, &c_b_f_c());
         } else { // If limit order is a bid
             let id = id_b(price, v_n); // Get corresponding order id
-            // Verify and add to user's open orders, storing scaled size
-            // and amount of quote coins needed to fill the order
-            let (scaled_size, fill_amount) =
+            // Verify and add to user's open orders, storing amoung of
+            // quote coin subunits required to fill the trade
+            let (_, q_c_subs) =
                 o_a_b<B, Q, E>(addr, id, price, size, &c_o_f_c());
             // Assert user has enough quote coins held as collateral
-            assert!(!(fill_amount > o_c.q_a), E_NOT_ENOUGH_COLLATERAL);
-            // Decrement amount of base coins available for withdraw
-            o_c.q_a = o_c.q_a - fill_amount;
+            assert!(!(q_c_subs > o_c.q_a), E_NOT_ENOUGH_COLLATERAL);
+            // Decrement amount of quote coins available for withdraw
+            o_c.q_a = o_c.q_a - q_c_subs;
             // Try adding to order book, storing crossed spread flag
             c_s =
-                b_a_b<B, Q, E>(host, addr, id, price, scaled_size, &c_b_f_c());
+                b_a_b<B, Q, E>(host, addr, id, price, size, &c_b_f_c());
         };
         assert!(!c_s, E_CROSSES_SPREAD); // Assert uncrossed spread
     }
@@ -511,7 +512,8 @@ module Econia::User {
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
         // Get version number of upcoming order
         let order_v_n = v_g_v_n() + 1;
-        let (price, size) = (5, 20); // Define order price/unscaled size
+        // Define order price, number of base coin parcels in order
+        let (price, size) = (5, 3);
         let id = id_a(price, order_v_n); // Get order ID
         // Submit ask
         submit_ask<BCT, QCT, E1>(user, @Econia, price, size);
@@ -522,7 +524,7 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
         // Assert correct collateral available amounts
-        assert!(o_c.b_a == 80 && o_c.q_a == 200, 2);
+        assert!(o_c.b_a == 70 && o_c.q_a == 200, 2);
         a_i_s_n(@TestUser); // Increment mock sequence number
         cancel_ask<BCT, QCT, E1>(user, @Econia, id); // Cancel ask
         // Assert user no longer has ask registered in open orders
@@ -549,7 +551,8 @@ module Econia::User {
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
         // Get version number of upcoming order
         let order_v_n = v_g_v_n() + 1;
-        let (price, size) = (5, 20); // Define order price/unscaled size
+        // Define order price, number of base coin parcels in order
+        let (price, size) = (5, 3);
         let id = id_b(price, order_v_n); // Get order ID
         // Submit bid
         submit_bid<BCT, QCT, E1>(user, @Econia, price, size);
@@ -560,7 +563,7 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
         // Assert correct collateral available amounts
-        assert!(o_c.b_a == 100 && o_c.q_a == 190, 2);
+        assert!(o_c.b_a == 100 && o_c.q_a == 185, 2);
         a_i_s_n(@TestUser); // Increment mock sequence number
         cancel_bid<BCT, QCT, E1>(user, @Econia, id); // Cancel bid
         // Assert user no longer has bid registered in open orders
@@ -835,24 +838,24 @@ module Econia::User {
         let user_addr = s_a_o(user); // Get user address
         // Get version number of upcoming order
         let order_v_n = v_g_v_n() + 1;
-        let (price, size) = (5, 20); // Define order price/unscaled size
+        // Define order price, number of base coin parcels in order
+        let (price, size) = (5, 3);
         let id = id_a(price, order_v_n); // Get order ID
         submit_ask<BCT, QCT, E1>(user, host, price, size); // Submit ask
-        let s_size = size / 10; // Get scaled size for scale factor 10
-        // Assert added to user's open orders with properly scaled size
-        assert!(o_ch_a<BCT, QCT, E1>(user_addr, id) == s_size, 0);
+        // Assert added to user's open orders
+        assert!(o_ch_a<BCT, QCT, E1>(user_addr, id) == size, 0);
         // Get corresponding position size and address on book
         let (p_s, p_a) = b_ch_a<BCT, QCT, E1>(host, id);
         // Assert added to order book correctly
-        assert!(p_s == s_size && p_a == user_addr, 1);
+        assert!(p_s == size && p_a == user_addr, 1);
         // Assert min ask ID on book updated correctly
         assert!(b_ch_a_m<BCT, QCT, E1>(host) == id, 2);
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(user_addr);
         // Assert coin holdings in collateral unchanged
         assert!(c_v<BCT>(&o_c.b_c) == 100 && c_v<QCT>(&o_c.q_c) == 200, 3);
-        // Assert correct collateral available amounts
-        assert!(o_c.b_a == 80 && o_c.q_a == 200, 4);
+        // Assert updated collateral available amounts
+        assert!(o_c.b_a == 70 && o_c.q_a == 200, 4);
     }
 
     #[test(
@@ -914,24 +917,24 @@ module Econia::User {
         let user_addr = s_a_o(user); // Get user address
         // Get version number of upcoming order
         let order_v_n = v_g_v_n() + 1;
-        let (price, size) = (5, 20); // Define order price/unscaled size
+        // Define order price, number of base coin parcels in order
+        let (price, size) = (5, 3);
         let id = id_b(price, order_v_n); // Get order ID
         submit_bid<BCT, QCT, E1>(user, host, price, size); // Submit ask
-        let s_size = size / 10; // Get scaled size for scale factor 10
-        // Assert added to user's open orders with properly scaled size
-        assert!(o_ch_b<BCT, QCT, E1>(user_addr, id) == s_size, 0);
+        // Assert added to user's open orders
+        assert!(o_ch_b<BCT, QCT, E1>(user_addr, id) == size, 0);
         // Get corresponding position size and address on book
         let (p_s, p_a) = b_ch_b<BCT, QCT, E1>(host, id);
         // Assert added to order book correctly
-        assert!(p_s == s_size && p_a == user_addr, 1);
+        assert!(p_s == size && p_a == user_addr, 1);
         // Assert max bid ID on book updated correctly
         assert!(b_ch_b_m<BCT, QCT, E1>(host) == id, 2);
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(user_addr);
         // Assert coin holdings in collateral unchanged
         assert!(c_v<BCT>(&o_c.b_c) == 100 && c_v<QCT>(&o_c.q_c) == 200, 3);
-        // Assert correct collateral available amounts
-        assert!(o_c.b_a == 100 && o_c.q_a == 190, 4);
+        // Assert updated collateral available amounts
+        assert!(o_c.b_a == 100 && o_c.q_a == 185, 4);
     }
 
     #[test(user = @TestUser)]

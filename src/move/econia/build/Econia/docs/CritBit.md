@@ -518,6 +518,10 @@ simply being skipped over:
     -  [Parameters](#@Parameters_26)
     -  [Returns](#@Returns_27)
     -  [Considerations](#@Considerations_28)
+-  [Function `traverse_end_pop`](#0xc0deb00c_CritBit_traverse_end_pop)
+    -  [Returns](#@Returns_29)
+    -  [Parameters](#@Parameters_30)
+    -  [Considerations](#@Considerations_31)
 -  [Function `traverse_p_init_mut`](#0xc0deb00c_CritBit_traverse_p_init_mut)
 -  [Function `traverse_p_mut`](#0xc0deb00c_CritBit_traverse_p_mut)
 -  [Function `traverse_p_pop_mut`](#0xc0deb00c_CritBit_traverse_p_pop_mut)
@@ -528,8 +532,8 @@ simply being skipped over:
 -  [Function `b_s_o_m`](#0xc0deb00c_CritBit_b_s_o_m)
 -  [Function `check_len`](#0xc0deb00c_CritBit_check_len)
 -  [Function `crit_bit`](#0xc0deb00c_CritBit_crit_bit)
-    -  [XOR/AND method](#@XOR/AND_method_29)
-    -  [Binary search method](#@Binary_search_method_30)
+    -  [XOR/AND method](#@XOR/AND_method_32)
+    -  [Binary search method](#@Binary_search_method_33)
 -  [Function `insert_above`](#0xc0deb00c_CritBit_insert_above)
 -  [Function `insert_above_root`](#0xc0deb00c_CritBit_insert_above_root)
 -  [Function `insert_below`](#0xc0deb00c_CritBit_insert_below)
@@ -553,11 +557,11 @@ simply being skipped over:
 -  [Function `stitch_parent_of_child`](#0xc0deb00c_CritBit_stitch_parent_of_child)
 -  [Function `stitch_swap_remove`](#0xc0deb00c_CritBit_stitch_swap_remove)
 -  [Function `traverse_c_i`](#0xc0deb00c_CritBit_traverse_c_i)
-    -  [Method (predecessor)](#@Method_(predecessor)_31)
-    -  [Method (successor)](#@Method_(successor)_32)
-    -  [Parameters](#@Parameters_33)
-    -  [Returns](#@Returns_34)
-    -  [Considerations](#@Considerations_35)
+    -  [Method (predecessor)](#@Method_(predecessor)_34)
+    -  [Method (successor)](#@Method_(successor)_35)
+    -  [Parameters](#@Parameters_36)
+    -  [Returns](#@Returns_37)
+    -  [Considerations](#@Considerations_38)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -1424,8 +1428,9 @@ tracked by the caller
     u64,
     V
 ) {
-    // Store side on which the start node is a child of its parent
-    <b>let</b> s_s = <b>if</b>(<a href="CritBit.md#0xc0deb00c_CritBit_is_set">is_set</a>(k, v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p_f).c)) <a href="CritBit.md#0xc0deb00c_CritBit_R">R</a> <b>else</b> <a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>;
+    // Mark start node's side <b>as</b> a child <b>as</b> `<a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>` (`<b>true</b>`) <b>if</b> node's
+    // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> `<a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>` (`<b>false</b>`)
+    <b>let</b> s_s = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p_f).l == c_i;
     // Store target node's pre-pop child field index
     <b>let</b> i_t = <a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>(cb, k, p_f, d);
     // Update relationships for popped start node
@@ -1442,6 +1447,79 @@ tracked by the caller
     // parent field, the child field index of it, and the start
     // node's popped value
     (t.k, &<b>mut</b> t.v, t.p, i_t, s_v)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_CritBit_traverse_end_pop"></a>
+
+## Function `traverse_end_pop`
+
+Terminate iterated traversal by popping the outer node for the
+current iteration, without traversing further. Implements
+similar algorithms as <code><a href="CritBit.md#0xc0deb00c_CritBit_pop_general">pop_general</a>()</code>, but without having to
+do another search from root.
+
+
+<a name="@Returns_29"></a>
+
+### Returns
+
+* <code>V</code>: Popped value from outer node
+
+
+<a name="@Parameters_30"></a>
+
+### Parameters
+
+* <code>cb</code>: Crit-bit tree containing at least one node
+* <code>p_f</code>: Node's parent field
+* <code>c_i</code>: Child field index of node
+* <code>n_o</code>: Number of outer nodes in <code>cb</code>
+
+
+<a name="@Considerations_31"></a>
+
+### Considerations
+
+* Takes exposed node indices (<code>p_f</code>, <code>c_i</code>) as parameters
+* Does not calculate number of outer nodes in <code>cb</code>, but rather
+accepts this number as a parameter (<code>n_o</code>), which should be
+tracked by the caller
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_end_pop">traverse_end_pop</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, p_f: u64, c_i: u64, n_o: u64): V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_end_pop">traverse_end_pop</a>&lt;V&gt;(
+    cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
+    p_f: u64,
+    c_i: u64,
+    n_o: u64,
+): V {
+    <b>if</b> (n_o == 1) { // If popping only remaining node in tree
+        cb.r = 0; // Update root
+        // Pop off and unpack outer node at root
+        <b>let</b> <a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>{k: _, v, p: _} = v_po_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o);
+        v // Return popped value
+    } <b>else</b> { // If popping from tree <b>with</b> more than 1 outer node
+        // Mark node's side <b>as</b> a child <b>as</b> `<a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>` (`<b>true</b>`) <b>if</b> node's
+        // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> `<a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>` (`<b>false</b>`)
+        <b>let</b> n_s_c = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p_f).l == c_i;
+        // Update sibling, parent, grandparent relationships
+        <a href="CritBit.md#0xc0deb00c_CritBit_pop_update_relationships">pop_update_relationships</a>(cb, n_s_c, p_f);
+        // Destroy <b>old</b> nodes, returning popped value
+        <a href="CritBit.md#0xc0deb00c_CritBit_pop_destroy_nodes">pop_destroy_nodes</a>(cb, p_f, c_i, n_o)
+    }
 }
 </code></pre>
 
@@ -1775,7 +1853,7 @@ Return the number of the most significant bit (0-indexed from
 LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-<a name="@XOR/AND_method_29"></a>
+<a name="@XOR/AND_method_32"></a>
 
 ### XOR/AND method
 
@@ -1844,7 +1922,7 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_30"></a>
+<a name="@Binary_search_method_33"></a>
 
 ### Binary search method
 
@@ -3011,7 +3089,7 @@ return the child field index of the target node. See
 [traversal](#Traversal)
 
 
-<a name="@Method_(predecessor)_31"></a>
+<a name="@Method_(predecessor)_34"></a>
 
 ### Method (predecessor)
 
@@ -3024,7 +3102,7 @@ at target node (the first outer node): walk to apex node's
 left child, then walk along right children
 
 
-<a name="@Method_(successor)_32"></a>
+<a name="@Method_(successor)_35"></a>
 
 ### Method (successor)
 
@@ -3037,7 +3115,7 @@ out at target node (the first outer node): walk to apex
 node's right child, then walk along left children
 
 
-<a name="@Parameters_33"></a>
+<a name="@Parameters_36"></a>
 
 ### Parameters
 
@@ -3051,14 +3129,14 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_34"></a>
+<a name="@Returns_37"></a>
 
 ### Returns
 
 * <code>u64</code>: Child field index of target node
 
 
-<a name="@Considerations_35"></a>
+<a name="@Considerations_38"></a>
 
 ### Considerations
 

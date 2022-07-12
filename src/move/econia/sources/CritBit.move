@@ -716,8 +716,9 @@ module Econia::CritBit {
         u64,
         V
     ) {
-        // Store side on which the start node is a child of its parent
-        let s_s = if(is_set(k, v_b<I>(&cb.i, p_f).c)) R else L;
+        // Mark start node's side as a child as `L` (`true`) if node's
+        // parent has the node as its left child, else `R` (`false`)
+        let s_s = v_b<I>(&cb.i, p_f).l == c_i;
         // Store target node's pre-pop child field index
         let i_t = traverse_c_i(cb, k, p_f, d);
         // Update relationships for popped start node
@@ -735,6 +736,48 @@ module Econia::CritBit {
         // node's popped value
         (t.k, &mut t.v, t.p, i_t, s_v)
     }
+
+    /// Terminate iterated traversal by popping the outer node for the
+    /// current iteration, without traversing further. Implements
+    /// similar algorithms as `pop_general()`, but without having to
+    /// do another search from root.
+    ///
+    /// # Returns
+    /// * `V`: Popped value from outer node
+    ///
+    /// # Parameters
+    /// * `cb`: Crit-bit tree containing at least one node
+    /// * `p_f`: Node's parent field
+    /// * `c_i`: Child field index of node
+    /// * `n_o`: Number of outer nodes in `cb`
+    ///
+    /// # Considerations
+    /// * Takes exposed node indices (`p_f`, `c_i`) as parameters
+    /// * Does not calculate number of outer nodes in `cb`, but rather
+    ///   accepts this number as a parameter (`n_o`), which should be
+    ///   tracked by the caller
+    public fun traverse_end_pop<V>(
+        cb: &mut CB<V>,
+        p_f: u64,
+        c_i: u64,
+        n_o: u64,
+    ): V {
+        if (n_o == 1) { // If popping only remaining node in tree
+            cb.r = 0; // Update root
+            // Pop off and unpack outer node at root
+            let O{k: _, v, p: _} = v_po_b<O<V>>(&mut cb.o);
+            v // Return popped value
+        } else { // If popping from tree with more than 1 outer node
+            // Mark node's side as a child as `L` (`true`) if node's
+            // parent has the node as its left child, else `R` (`false`)
+            let n_s_c = v_b<I>(&cb.i, p_f).l == c_i;
+            // Update sibling, parent, grandparent relationships
+            pop_update_relationships(cb, n_s_c, p_f);
+            // Destroy old nodes, returning popped value
+            pop_destroy_nodes(cb, p_f, c_i, n_o)
+        }
+    }
+
 
     /// Wrapped `traverse_init_mut()` call for predecessor traversal.
     /// See [traversal walkthrough](#Walkthrough)

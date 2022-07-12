@@ -50,7 +50,7 @@ to be filled.
 -  [Function `exists_book`](#0xc0deb00c_Book_exists_book)
 -  [Function `get_friend_cap`](#0xc0deb00c_Book_get_friend_cap)
 -  [Function `init_book`](#0xc0deb00c_Book_init_book)
--  [Function `init_fill_traversal`](#0xc0deb00c_Book_init_fill_traversal)
+-  [Function `init_traverse_fill`](#0xc0deb00c_Book_init_traverse_fill)
     -  [Terminology](#@Terminology_4)
     -  [Parameters](#@Parameters_5)
     -  [Considerations](#@Considerations_6)
@@ -522,9 +522,9 @@ for market <code>&lt;B, Q, E&gt;</code> and corresponding scale factor <code>f</
 
 </details>
 
-<a name="0xc0deb00c_Book_init_fill_traversal"></a>
+<a name="0xc0deb00c_Book_init_traverse_fill"></a>
 
-## Function `init_fill_traversal`
+## Function `init_traverse_fill`
 
 Initialize traversal for filling against order book at <code>host</code>,
 provided <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>. If <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, initialize successor
@@ -591,7 +591,7 @@ position
 has at least one position in corresponding tree
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_fill_traversal">init_fill_traversal</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size: u64, n_p: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_traverse_fill">init_traverse_fill</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size: u64, n_p: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64)
 </code></pre>
 
 
@@ -600,7 +600,7 @@ has at least one position in corresponding tree
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_fill_traversal">init_fill_traversal</a>&lt;B, Q, E&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_traverse_fill">init_traverse_fill</a>&lt;B, Q, E&gt;(
     host: <b>address</b>,
     i_addr: <b>address</b>,
     side: bool,

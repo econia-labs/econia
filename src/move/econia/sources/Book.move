@@ -255,7 +255,7 @@ module Econia::Book {
     /// # Assumptions
     /// * Order book has been properly initialized at host address and
     ///   has at least one position in corresponding tree
-    public fun init_fill_traversal<B, Q, E>(
+    public fun init_traverse_fill<B, Q, E>(
         host: address,
         i_addr: address,
         side: bool,
@@ -781,7 +781,7 @@ module Econia::Book {
     #[test(host = @Econia)]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for attempted self matching trade
-    fun init_fill_traversal_failure_self_match(
+    fun init_traverse_fill_failure_self_match(
         host: &signer,
     ) acquires OB {
         // Initialize book with scale factor 1
@@ -792,13 +792,13 @@ module Econia::Book {
         // Add host-held position to book
         add_ask<BT, QT, ET>(@Econia, @Econia, id_1, p_1, s_1, &FriendCap{});
         // Attempt invalid fill traversal init
-        init_fill_traversal<BT, QT, ET>(
+        init_traverse_fill<BT, QT, ET>(
             @Econia, @Econia, ASK, 2, 1, &FriendCap{});
     }
 
     #[test(host = @Econia)]
     /// Verify successful traversal initialization for ask
-    fun init_fill_traversal_success_ask(
+    fun init_traverse_fill_success_ask(
         host: &signer,
     ) acquires OB {
         // Initialize book with scale factor 1
@@ -819,7 +819,7 @@ module Econia::Book {
         // Add host-held position to book
         add_ask<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
         // Init ask fill traversal for user w/ incoming order of size 2
-        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
                 @Econia, @TestUser, ASK, 2, 3, &FriendCap{});
         // Assert correct returns
         assert!(t_id == id_1 && t_addr == @Econia && filled == 2, 0);
@@ -827,7 +827,7 @@ module Econia::Book {
         let (t_s, t_a) = check_ask<BT, QT, ET>(@Econia, t_id);
         assert!(t_s == 1 && t_a == @Econia, 1); // Assert partial fill
         // Init ask fill traversal for user w/ incoming order of size 5
-        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
                 @Econia, @TestUser, ASK, 5, 3, &FriendCap{});
         // Assert correct returns
         assert!(t_id == id_1 && t_addr == @Econia && filled == 1, 2);
@@ -837,7 +837,7 @@ module Econia::Book {
 
     #[test(host = @Econia)]
     /// Verify successful traversal initialization for bid
-    fun init_fill_traversal_success_bid(
+    fun init_traverse_fill_success_bid(
         host: &signer,
     ) acquires OB {
         // Initialize book with scale factor 1
@@ -858,7 +858,7 @@ module Econia::Book {
         // Add host-held position to book
         add_bid<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
         // Init bid fill traversal for user w/ incoming order of size 2
-        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
                 @Econia, @TestUser, BID, 2, 3, &FriendCap{});
         // Assert correct returns
         assert!(t_id == id_3 && t_addr == @Econia && filled == 2, 0);
@@ -866,7 +866,7 @@ module Econia::Book {
         let (t_s, t_a) = check_bid<BT, QT, ET>(@Econia, t_id);
         assert!(t_s == 3 && t_a == @Econia, 1); // Assert partial fill
         // Init bid fill traversal for user w/ incoming order of size 4
-        let (t_id, t_addr, _, _, filled) = init_fill_traversal<BT, QT, ET>(
+        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
                 @Econia, @TestUser, BID, 4, 3, &FriendCap{});
         // Assert correct returns
         assert!(t_id == id_3 && t_addr == @Econia && filled == 3, 2);

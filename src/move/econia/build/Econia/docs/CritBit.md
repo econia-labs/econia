@@ -1437,7 +1437,7 @@ accepts this number as a parameter (<code>n_o</code>), which should be
 tracked by the caller
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, c_i: u64, n_o: u64, d: bool): (u128, &<b>mut</b> V, u64, u64, V)
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, k: u128, p_f: u64, c_i: u64, n_o: u64, d: bool): (u128, &<b>mut</b> V, u64, u64, V)
 </code></pre>
 
 
@@ -1446,7 +1446,7 @@ tracked by the caller
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>&lt;V&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>&lt;V&gt;(
     cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>&lt;V&gt;,
     k: u128,
     p_f: u64,

@@ -719,7 +719,7 @@ module Econia::CritBit {
     /// * Does not calculate number of outer nodes in `cb`, but rather
     ///   accepts this number as a parameter (`n_o`), which should be
     ///   tracked by the caller
-    fun traverse_pop_mut<V>(
+    public fun traverse_pop_mut<V>(
         cb: &mut CB<V>,
         k: u128,
         p_f: u64,

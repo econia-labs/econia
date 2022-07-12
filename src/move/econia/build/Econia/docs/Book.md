@@ -532,8 +532,10 @@ traversal starting at the ask with the minimum order ID, and if
 <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, initialize predecessor traversal starting at
 the bid with the maximum order ID. Decrement first position on
 book by <code>size</code> if matching results in a partial fill against it,
-and take it off the book if matching results in a complete fill
-against it.
+take it off the book if matching results in a complete fill on
+both sides of the order, and leave it unmodified if matching
+only results in a partial fill against the incoming order (so
+that it may be traverse popped later).
 
 
 <a name="@Terminology_4"></a>
@@ -627,17 +629,20 @@ has at least one position in corresponding tree
     <b>let</b> t_addr = t_p_r.a; // Store target position user <b>address</b>
     // Asert incoming <b>address</b> is not same <b>as</b> target <b>address</b>
     <b>assert</b>!(i_addr != t_addr, <a href="Book.md#0xc0deb00c_Book_E_SELF_MATCH">E_SELF_MATCH</a>);
-    <b>let</b> filled: u64; // Declare flag for fill amount
+    <b>let</b> filled: u64; // Declare fill amount
     // If incoming order size is less than target position size
-    <b>if</b> (size &lt; t_p_r.s) { // If target position partially filled
+    <b>if</b> (size &lt; t_p_r.s) { // If target order partilly fills
         filled = size; // Flag complete fill on incoming order
         // Decrement target position size by incoming order size
         t_p_r.s = t_p_r.s - size;
-    // If incoming order size not less than target position size
-    } <b>else</b> { // If target position completely filled
-        filled = t_p_r.s; // Flag partial fill on incoming order
+    // If incoming order and target position have same size
+    } <b>else</b> <b>if</b> (size == t_p_r.s) { // If complete fill on both sides
+        filled = size; // Flag complete fill on incoming order
         // End traversal by popping order off book, unpacking fields
         <b>let</b> <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);
+    } <b>else</b> { // If incoming order partially fills
+        // Flag incoming order filled by amount in target position
+        filled = t_p_r.s;
     };
     // Return target position <a href="ID.md#0xc0deb00c_ID">ID</a>, target position user <b>address</b>,
     // corresponding node's parent field, corresponding node's child

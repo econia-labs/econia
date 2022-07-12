@@ -32,7 +32,8 @@ module Econia::Book {
         min_key as cb_mi_k,
         pop as cb_p,
         traverse_end_pop as cb_t_e_p,
-        traverse_init_mut as cb_t_i_m
+        traverse_init_mut as cb_t_i_m,
+        traverse_pop_mut as cb_t_p_m
     };
 
     use Econia::ID::{
@@ -257,6 +258,8 @@ module Econia::Book {
     /// # Assumptions
     /// * Order book has been properly initialized at host address and
     ///   has at least one position in corresponding tree
+    /// * Caller has already verified tree is not empty
+    /// * Caller has correctly tracked `n_p`
     public fun init_traverse_fill<B, Q, E>(
         host: address,
         i_addr: address,
@@ -271,34 +274,92 @@ module Econia::Book {
         u64,
         u64
     ) acquires OB {
-        // Borrow mutable reference to order book at host address
-        let o_b = borrow_global_mut<OB<B, Q, E>>(host);
-        // If an ask, define tree as asks tree with successor direction
-        let (tree, dir) = // Otherwise bids tree, predecessor direction
-            if (side == ASK) (&mut o_b.a, R) else (&mut o_b.b, L);
-        // Initialize traversal: get the order ID of the target position
+        let (tree, dir) = if (side == ASK) // If an ask
+            // Define asks tree and successor iteration
+            (&mut borrow_global_mut<OB<B, Q, E>>(host).a, R) else
+            // Otherwise define tree as bids tree, predecessor iteration
+            (&mut borrow_global_mut<OB<B, Q, E>>(host).b, L);
+        // Initialize traversal, storing order ID of the target position
         // to fill against, a mutable reference to the corresponding
         // position struct, the parent field of the corresponding tree
         // node, and the child field index of corresponding tree node
         let (t_id, t_p_r, t_p_f, t_c_i) = cb_t_i_m(tree, dir);
         let t_addr = t_p_r.a; // Store target position user address
-        // Asert incoming address is not same as target address
-        assert!(i_addr != t_addr, E_SELF_MATCH);
-        let filled: u64; // Declare fill amount
-        // If incoming order size is less than target position size
-        if (size < t_p_r.s) { // If target order partilly fills
-            filled = size; // Flag complete fill on incoming order
-            // Decrement target position size by incoming order size
-            t_p_r.s = t_p_r.s - size;
-        // If incoming order and target position have same size
-        } else if (size == t_p_r.s) { // If complete fill on both sides
-            filled = size; // Flag complete fill on incoming order
-            // End traversal by popping order off book, unpacking fields
-            let P{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);
-        } else { // If incoming order partially fills
-            // Flag incoming order filled by amount in target position
-            filled = t_p_r.s;
-        };
+        // Process fill scenarios, storing amount filled and if perfect
+        // match between incoming and target order
+        let (filled, perfect) = process_fill_scenarios(i_addr, t_p_r, size);
+        // If perfect match, pop target position, unpack/discard fields
+        if (perfect) {let P{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);};
+        // Return target position ID, target position user address,
+        // corresponding node's parent field, corresponding node's child
+        // field index, and the number of base coin parcels filled
+        (t_id, t_addr, t_p_f, t_c_i, filled)
+    }
+
+    /// Traverse from start node to target node then pop target node,
+    /// then fill target node as in `init_traverse_fill()`
+    ///
+    /// # Terminology
+    /// * "Incoming order" has `size` base coin parcels to be filled
+    /// * "Target position" is the next position on the book to fill
+    ///   against
+    /// * "Start position" is the position to traverse from
+    ///
+    /// # Parameters
+    /// * `host`: Host of `OB`
+    /// * `i_addr`: Address of incoming order to match against
+    /// * `side`: `ASK` or `BID`
+    /// * `size`: Base coin parcels to be filled on incoming order
+    /// * `n_p`: Number of positions in `OB` for corresponding `side`
+    /// * `s_id`: Order ID of start position. If `side` is `ASK`, cannot
+    ///   be minimum ask in order book, and if `side` is `BID`, cannot
+    ///   be maximum ask in order book (since no traversal possible).
+    /// * `s_p_f`: Start position tree node parent field
+    /// * `s_c_i`: Child field index of start position tree node
+    /// * `_c`: Immutable reference to `FriendCap`
+    ///
+    /// # Returns
+    /// * `u128`: Target position order ID
+    /// * `address`: User address holding target position (`P.a`)
+    /// * `u64`: Parent field of node corresponding to target position
+    /// * `u64`: Child field index of node corresponding to target
+    ///   position
+    /// * `u64`: Amount filled, in base coin parcels
+    public fun traverse_pop_fill<B, Q, E>(
+        host: address,
+        i_addr: address,
+        side: bool,
+        size: u64,
+        n_p: u64,
+        s_id: u128,
+        s_p_f: u64,
+        s_c_i: u64,
+        _c: &FriendCap
+    ): (
+        u128,
+        address,
+        u64,
+        u64,
+        u64
+    ) acquires OB {
+        let (tree, dir) = if (side == ASK) // If an ask
+            // Define traversal tree as asks tree, successor iteration
+            (&mut borrow_global_mut<OB<B, Q, E>>(host).a, R) else
+            // Otherwise define tree as bids tree, predecessor iteration
+            (&mut borrow_global_mut<OB<B, Q, E>>(host).b, L);
+        // Traverse from start position to target position, storing
+        // target position order ID, mutable reference to target
+        // position, target position tree node parent field, target
+        // position tree node child fiend index, start position struct
+        let (t_id, t_p_r, t_p_f, t_c_i, s_p) =
+            cb_t_p_m(tree, s_id, s_p_f, s_c_i, n_p, dir);
+        let P{s: _, a: _} = s_p; // Unpack/discard start position fields
+        let t_addr = t_p_r.a; // Store target position user address
+        // Process fill scenarios, storing amount filled and if perfect
+        // match between incoming and target order
+        let (filled, perfect) = process_fill_scenarios(i_addr, t_p_r, size);
+        // If perfect match, pop target position, unpack/discard fields
+        if (perfect) {let P{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);};
         // Return target position ID, target position user address,
         // corresponding node's parent field, corresponding node's child
         // field index, and the number of base coin parcels filled
@@ -437,6 +498,39 @@ module Econia::Book {
                     cb_ma_k<P>(bids); // Otherwise set to new max bid ID
             };
         }
+    }
+
+    /// Compare incoming order `size` and address `i_addr` against
+    /// fields in target position `t_p_r`, returning fill amount and if
+    /// incoming size is equal to target size. Abort if both have same
+    /// address, and decrement target position size (`P.s`) by `size` if
+    /// target position only gets partially filled.
+    fun process_fill_scenarios(
+        i_addr: address,
+        t_p_r: &mut P,
+        size: u64
+    ): (
+        u64,
+        bool
+    ) {
+        // Assume not a perfect match between incoming/target size
+        let perfect_match = false;
+        // Asert incoming address is not same as target address
+        assert!(i_addr != t_p_r.a, E_SELF_MATCH);
+        let filled: u64; // Declare fill amount
+        // If incoming order size is less than target position size
+        if (size < t_p_r.s) { // If partial target fill
+            filled = size; // Flag complete fill on incoming order
+            // Decrement target position size by incoming order size
+            t_p_r.s = t_p_r.s - size;
+        } else if (size > t_p_r.s) { // If partial incoming fill
+            // Flag incoming order filled by amount in target position
+            filled = t_p_r.s;
+        } else { // If incoming order and target position have same size
+            filled = size; // Flag complete fill on incoming order
+            perfect_match = true; // Flag equal size for both sides
+        };
+        (filled, perfect_match) // Return fill amount & if perfect match
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

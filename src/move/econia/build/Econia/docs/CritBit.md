@@ -9,6 +9,16 @@
 ## Background
 
 
+
+<a name="@Module-level_documentation_comment_sections_1"></a>
+
+## Module-level documentation comment sections
+
+* [Background](#Background)
+* [Implementation](#Implementation)
+* [Basic public functions](#Basic-public-function)
+* [Traversal](#Traversal)
+
 A critical bit (crit-bit) tree is a compact binary prefix tree,
 similar to a binary search tree, that stores a prefix-free set of
 bitstrings, like n-bit integers or variable-length 0-terminated byte
@@ -25,7 +35,7 @@ trees. Crit-bit trees support the following operations, quickly:
 * Iteration
 
 
-<a name="@References_1"></a>
+<a name="@References_2"></a>
 
 ### References
 
@@ -37,13 +47,13 @@ https://www.imperialviolet.org/2008/09/29/critbit-trees.html)
 * [Tcler's Wiki 2021](https://wiki.tcl-lang.org/page/critbit)
 
 
-<a name="@Implementation_2"></a>
+<a name="@Implementation_3"></a>
 
 ## Implementation
 
 
 
-<a name="@Structure_3"></a>
+<a name="@Structure_4"></a>
 
 ### Structure
 
@@ -89,7 +99,7 @@ inner node marked <code>0th</code>, its left child is unset at bit 0, while its
 right child is set at bit 0.
 
 
-<a name="@Node_indices_4"></a>
+<a name="@Node_indices_5"></a>
 
 ### Node indices
 
@@ -119,13 +129,13 @@ contain the field index of the given node, set at bit 63 if the root
 is an outer node.
 
 
-<a name="@Basic_public_functions_5"></a>
+<a name="@Basic_public_functions_6"></a>
 
 ## Basic public functions
 
 
 
-<a name="@Initialization_6"></a>
+<a name="@Initialization_7"></a>
 
 ### Initialization
 
@@ -133,7 +143,7 @@ is an outer node.
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_singleton">singleton</a>()</code>
 
 
-<a name="@Mutation_7"></a>
+<a name="@Mutation_8"></a>
 
 ### Mutation
 
@@ -142,7 +152,7 @@ is an outer node.
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_pop">pop</a>()</code>
 
 
-<a name="@Lookup_8"></a>
+<a name="@Lookup_9"></a>
 
 ### Lookup
 
@@ -152,7 +162,7 @@ is an outer node.
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_min_key">min_key</a>()</code>
 
 
-<a name="@Size_9"></a>
+<a name="@Size_10"></a>
 
 ### Size
 
@@ -160,14 +170,14 @@ is an outer node.
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_length">length</a>()</code>
 
 
-<a name="@Destruction_10"></a>
+<a name="@Destruction_11"></a>
 
 ### Destruction
 
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_destroy_empty">destroy_empty</a>()</code>
 
 
-<a name="@Traversal_11"></a>
+<a name="@Traversal_12"></a>
 
 ## Traversal
 
@@ -181,7 +191,7 @@ relevant algorithms. See [walkthrough](#Walkthrough) for canonical
 implementation syntax.
 
 
-<a name="@Predecessor_public_functions_12"></a>
+<a name="@Predecessor_public_functions_13"></a>
 
 ### Predecessor public functions
 
@@ -190,7 +200,7 @@ implementation syntax.
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_p_pop_mut">traverse_p_pop_mut</a>()</code>
 
 
-<a name="@Successor_public_functions_13"></a>
+<a name="@Successor_public_functions_14"></a>
 
 ### Successor public functions
 
@@ -199,7 +209,7 @@ implementation syntax.
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_s_pop_mut">traverse_s_pop_mut</a>()</code>
 
 
-<a name="@Generic_public_functions_14"></a>
+<a name="@Generic_public_functions_15"></a>
 
 ### Generic public functions
 
@@ -208,14 +218,21 @@ implementation syntax.
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_pop_mut">traverse_pop_mut</a>()</code>
 
 
-<a name="@Private_traversal_function_15"></a>
+<a name="@Public_end_on_pop_function_16"></a>
+
+### Public end on pop function
+
+* <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_end_pop">traverse_end_pop</a>()</code>
+
+
+<a name="@Private_traversal_function_17"></a>
 
 ### Private traversal function
 
 * <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code>
 
 
-<a name="@Walkthrough_16"></a>
+<a name="@Walkthrough_18"></a>
 
 ### Walkthrough
 
@@ -224,9 +241,10 @@ implementation syntax.
 * [Partial successor traversal](#Partial-successor-traversal)
 * [Singleton traversal initialization
 ](#Singleton-traversal-initialization)
+* [Ending traversal on a pop](#Ending-traversal-on-a-pop)
 
 
-<a name="@Syntax_motivations_17"></a>
+<a name="@Syntax_motivations_19"></a>
 
 #### Syntax motivations
 
@@ -258,7 +276,7 @@ on error-checking facilities that have been intentionally excluded
 in the interest of efficiency.
 
 
-<a name="@Full_predecessor_traversal_18"></a>
+<a name="@Full_predecessor_traversal_20"></a>
 
 #### Full predecessor traversal
 
@@ -372,7 +390,7 @@ no redundant error-checking is implemented so as to improve
 efficiency.
 
 
-<a name="@Partial_successor_traversal_19"></a>
+<a name="@Partial_successor_traversal_21"></a>
 
 #### Partial successor traversal
 
@@ -429,7 +447,7 @@ assert!(*borrow(&cb, 9) == 910, 17);
 ```
 
 
-<a name="@Singleton_traversal_initialization_20"></a>
+<a name="@Singleton_traversal_initialization_22"></a>
 
 #### Singleton traversal initialization
 
@@ -468,34 +486,47 @@ simply being skipped over:
 > destroy_empty(cb); // Destroy empty tree
 ```
 
+
+<a name="@Ending_traversal_on_a_pop_23"></a>
+
+#### Ending traversal on a pop
+
+Traversal popping can similarly be executed without traversing any
+further via <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_end_pop">traverse_end_pop</a>()</code>, which can be invoked at any point
+during iterated traversal, thus ending the traversal with a pop.
+See the <code>traverse_end_pop_success()</code> test.
+
 ---
 
 
 -  [Background](#@Background_0)
-    -  [References](#@References_1)
--  [Implementation](#@Implementation_2)
-    -  [Structure](#@Structure_3)
-    -  [Node indices](#@Node_indices_4)
--  [Basic public functions](#@Basic_public_functions_5)
-    -  [Initialization](#@Initialization_6)
-    -  [Mutation](#@Mutation_7)
-    -  [Lookup](#@Lookup_8)
-    -  [Size](#@Size_9)
-    -  [Destruction](#@Destruction_10)
--  [Traversal](#@Traversal_11)
-    -  [Predecessor public functions](#@Predecessor_public_functions_12)
-    -  [Successor public functions](#@Successor_public_functions_13)
-    -  [Generic public functions](#@Generic_public_functions_14)
-    -  [Private traversal function](#@Private_traversal_function_15)
-    -  [Walkthrough](#@Walkthrough_16)
-        -  [Syntax motivations](#@Syntax_motivations_17)
-        -  [Full predecessor traversal](#@Full_predecessor_traversal_18)
-        -  [Partial successor traversal](#@Partial_successor_traversal_19)
-        -  [Singleton traversal initialization](#@Singleton_traversal_initialization_20)
+-  [Module-level documentation comment sections](#@Module-level_documentation_comment_sections_1)
+    -  [References](#@References_2)
+-  [Implementation](#@Implementation_3)
+    -  [Structure](#@Structure_4)
+    -  [Node indices](#@Node_indices_5)
+-  [Basic public functions](#@Basic_public_functions_6)
+    -  [Initialization](#@Initialization_7)
+    -  [Mutation](#@Mutation_8)
+    -  [Lookup](#@Lookup_9)
+    -  [Size](#@Size_10)
+    -  [Destruction](#@Destruction_11)
+-  [Traversal](#@Traversal_12)
+    -  [Predecessor public functions](#@Predecessor_public_functions_13)
+    -  [Successor public functions](#@Successor_public_functions_14)
+    -  [Generic public functions](#@Generic_public_functions_15)
+    -  [Public end on pop function](#@Public_end_on_pop_function_16)
+    -  [Private traversal function](#@Private_traversal_function_17)
+    -  [Walkthrough](#@Walkthrough_18)
+        -  [Syntax motivations](#@Syntax_motivations_19)
+        -  [Full predecessor traversal](#@Full_predecessor_traversal_20)
+        -  [Partial successor traversal](#@Partial_successor_traversal_21)
+        -  [Singleton traversal initialization](#@Singleton_traversal_initialization_22)
+        -  [Ending traversal on a pop](#@Ending_traversal_on_a_pop_23)
 -  [Struct `CB`](#0xc0deb00c_CritBit_CB)
 -  [Struct `I`](#0xc0deb00c_CritBit_I)
 -  [Struct `O`](#0xc0deb00c_CritBit_O)
--  [Constants](#@Constants_21)
+-  [Constants](#@Constants_24)
 -  [Function `borrow`](#0xc0deb00c_CritBit_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_CritBit_borrow_mut)
 -  [Function `destroy_empty`](#0xc0deb00c_CritBit_destroy_empty)
@@ -509,19 +540,19 @@ simply being skipped over:
 -  [Function `pop`](#0xc0deb00c_CritBit_pop)
 -  [Function `singleton`](#0xc0deb00c_CritBit_singleton)
 -  [Function `traverse_init_mut`](#0xc0deb00c_CritBit_traverse_init_mut)
-    -  [Parameters](#@Parameters_22)
-    -  [Returns](#@Returns_23)
-    -  [Considerations](#@Considerations_24)
+    -  [Parameters](#@Parameters_25)
+    -  [Returns](#@Returns_26)
+    -  [Considerations](#@Considerations_27)
 -  [Function `traverse_mut`](#0xc0deb00c_CritBit_traverse_mut)
-    -  [Returns](#@Returns_25)
+    -  [Returns](#@Returns_28)
 -  [Function `traverse_pop_mut`](#0xc0deb00c_CritBit_traverse_pop_mut)
-    -  [Parameters](#@Parameters_26)
-    -  [Returns](#@Returns_27)
-    -  [Considerations](#@Considerations_28)
--  [Function `traverse_end_pop`](#0xc0deb00c_CritBit_traverse_end_pop)
-    -  [Returns](#@Returns_29)
-    -  [Parameters](#@Parameters_30)
+    -  [Parameters](#@Parameters_29)
+    -  [Returns](#@Returns_30)
     -  [Considerations](#@Considerations_31)
+-  [Function `traverse_end_pop`](#0xc0deb00c_CritBit_traverse_end_pop)
+    -  [Parameters](#@Parameters_32)
+    -  [Returns](#@Returns_33)
+    -  [Considerations](#@Considerations_34)
 -  [Function `traverse_p_init_mut`](#0xc0deb00c_CritBit_traverse_p_init_mut)
 -  [Function `traverse_p_mut`](#0xc0deb00c_CritBit_traverse_p_mut)
 -  [Function `traverse_p_pop_mut`](#0xc0deb00c_CritBit_traverse_p_pop_mut)
@@ -532,8 +563,8 @@ simply being skipped over:
 -  [Function `b_s_o_m`](#0xc0deb00c_CritBit_b_s_o_m)
 -  [Function `check_len`](#0xc0deb00c_CritBit_check_len)
 -  [Function `crit_bit`](#0xc0deb00c_CritBit_crit_bit)
-    -  [XOR/AND method](#@XOR/AND_method_32)
-    -  [Binary search method](#@Binary_search_method_33)
+    -  [XOR/AND method](#@XOR/AND_method_35)
+    -  [Binary search method](#@Binary_search_method_36)
 -  [Function `insert_above`](#0xc0deb00c_CritBit_insert_above)
 -  [Function `insert_above_root`](#0xc0deb00c_CritBit_insert_above_root)
 -  [Function `insert_below`](#0xc0deb00c_CritBit_insert_below)
@@ -557,11 +588,11 @@ simply being skipped over:
 -  [Function `stitch_parent_of_child`](#0xc0deb00c_CritBit_stitch_parent_of_child)
 -  [Function `stitch_swap_remove`](#0xc0deb00c_CritBit_stitch_swap_remove)
 -  [Function `traverse_c_i`](#0xc0deb00c_CritBit_traverse_c_i)
-    -  [Method (predecessor)](#@Method_(predecessor)_34)
-    -  [Method (successor)](#@Method_(successor)_35)
-    -  [Parameters](#@Parameters_36)
-    -  [Returns](#@Returns_37)
-    -  [Considerations](#@Considerations_38)
+    -  [Method (predecessor)](#@Method_(predecessor)_37)
+    -  [Method (successor)](#@Method_(successor)_38)
+    -  [Parameters](#@Parameters_39)
+    -  [Returns](#@Returns_40)
+    -  [Considerations](#@Considerations_41)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
@@ -709,7 +740,7 @@ Outer node with key <code>k</code> and value <code>v</code>
 
 </details>
 
-<a name="@Constants_21"></a>
+<a name="@Constants_24"></a>
 
 ## Constants
 
@@ -1242,7 +1273,7 @@ Initialize a mutable iterated inorder traversal in a tree having
 at least one outer node. See [traversal](#Traversal)
 
 
-<a name="@Parameters_22"></a>
+<a name="@Parameters_25"></a>
 
 ### Parameters
 
@@ -1251,7 +1282,7 @@ at least one outer node. See [traversal](#Traversal)
 traversal, else successor traversal
 
 
-<a name="@Returns_23"></a>
+<a name="@Returns_26"></a>
 
 ### Returns
 
@@ -1261,7 +1292,7 @@ traversal, else successor traversal
 * <code>u64</code>: Child field index of corresponding node
 
 
-<a name="@Considerations_24"></a>
+<a name="@Considerations_27"></a>
 
 ### Considerations
 
@@ -1309,7 +1340,7 @@ traversal, else successor traversal
 Wrapped <code><a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>()</code> call for enumerated return extraction.
 See [traversal](#Traversal)
 
-<a name="@Returns_25"></a>
+<a name="@Returns_28"></a>
 
 ### Returns
 
@@ -1365,7 +1396,7 @@ pop the start node and return its value. See
 [traversal](#Traversal)
 
 
-<a name="@Parameters_26"></a>
+<a name="@Parameters_29"></a>
 
 ### Parameters
 
@@ -1381,7 +1412,7 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_27"></a>
+<a name="@Returns_30"></a>
 
 ### Returns
 
@@ -1392,7 +1423,7 @@ else successor traversal
 * <code>V</code>: Popped start node's value
 
 
-<a name="@Considerations_28"></a>
+<a name="@Considerations_31"></a>
 
 ### Considerations
 
@@ -1428,8 +1459,8 @@ tracked by the caller
     u64,
     V
 ) {
-    // Mark start node's side <b>as</b> a child <b>as</b> `<a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>` (`<b>true</b>`) <b>if</b> node's
-    // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> `<a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>` (`<b>false</b>`)
+    // Mark start node's side <b>as</b> a child <b>as</b> left (<b>true</b>) <b>if</b> node's
+    // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> right (<b>false</b>)
     <b>let</b> s_s = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p_f).l == c_i;
     // Store target node's pre-pop child field index
     <b>let</b> i_t = <a href="CritBit.md#0xc0deb00c_CritBit_traverse_c_i">traverse_c_i</a>(cb, k, p_f, d);
@@ -1464,14 +1495,7 @@ similar algorithms as <code><a href="CritBit.md#0xc0deb00c_CritBit_pop_general">
 do another search from root.
 
 
-<a name="@Returns_29"></a>
-
-### Returns
-
-* <code>V</code>: Popped value from outer node
-
-
-<a name="@Parameters_30"></a>
+<a name="@Parameters_32"></a>
 
 ### Parameters
 
@@ -1481,14 +1505,21 @@ do another search from root.
 * <code>n_o</code>: Number of outer nodes in <code>cb</code>
 
 
-<a name="@Considerations_31"></a>
+<a name="@Returns_33"></a>
+
+### Returns
+
+* <code>V</code>: Popped value from outer node
+
+
+<a name="@Considerations_34"></a>
 
 ### Considerations
 
 * Takes exposed node indices (<code>p_f</code>, <code>c_i</code>) as parameters
 * Does not calculate number of outer nodes in <code>cb</code>, but rather
 accepts this number as a parameter (<code>n_o</code>), which should be
-tracked by the caller
+tracked by the caller and should be nonzero
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="CritBit.md#0xc0deb00c_CritBit_traverse_end_pop">traverse_end_pop</a>&lt;V&gt;(cb: &<b>mut</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CritBit::CB</a>&lt;V&gt;, p_f: u64, c_i: u64, n_o: u64): V
@@ -1512,8 +1543,8 @@ tracked by the caller
         <b>let</b> <a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>{k: _, v, p: _} = v_po_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o);
         v // Return popped value
     } <b>else</b> { // If popping from tree <b>with</b> more than 1 outer node
-        // Mark node's side <b>as</b> a child <b>as</b> `<a href="CritBit.md#0xc0deb00c_CritBit_L">L</a>` (`<b>true</b>`) <b>if</b> node's
-        // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> `<a href="CritBit.md#0xc0deb00c_CritBit_R">R</a>` (`<b>false</b>`)
+        // Mark node's side <b>as</b> a child <b>as</b> left (<b>true</b>) <b>if</b> node's
+        // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> right (<b>false</b>)
         <b>let</b> n_s_c = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i, p_f).l == c_i;
         // Update sibling, parent, grandparent relationships
         <a href="CritBit.md#0xc0deb00c_CritBit_pop_update_relationships">pop_update_relationships</a>(cb, n_s_c, p_f);
@@ -1853,7 +1884,7 @@ Return the number of the most significant bit (0-indexed from
 LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-<a name="@XOR/AND_method_32"></a>
+<a name="@XOR/AND_method_35"></a>
 
 ### XOR/AND method
 
@@ -1922,7 +1953,7 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_33"></a>
+<a name="@Binary_search_method_36"></a>
 
 ### Binary search method
 
@@ -3089,7 +3120,7 @@ return the child field index of the target node. See
 [traversal](#Traversal)
 
 
-<a name="@Method_(predecessor)_34"></a>
+<a name="@Method_(predecessor)_37"></a>
 
 ### Method (predecessor)
 
@@ -3102,7 +3133,7 @@ at target node (the first outer node): walk to apex node's
 left child, then walk along right children
 
 
-<a name="@Method_(successor)_35"></a>
+<a name="@Method_(successor)_38"></a>
 
 ### Method (successor)
 
@@ -3115,7 +3146,7 @@ out at target node (the first outer node): walk to apex
 node's right child, then walk along left children
 
 
-<a name="@Parameters_36"></a>
+<a name="@Parameters_39"></a>
 
 ### Parameters
 
@@ -3129,14 +3160,14 @@ maximum key in <code>cb</code>, since this key does not have a successor
 else successor traversal
 
 
-<a name="@Returns_37"></a>
+<a name="@Returns_40"></a>
 
 ### Returns
 
 * <code>u64</code>: Child field index of target node
 
 
-<a name="@Considerations_38"></a>
+<a name="@Considerations_41"></a>
 
 ### Considerations
 

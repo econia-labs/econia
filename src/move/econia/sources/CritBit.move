@@ -1,5 +1,11 @@
 /// # Background
 ///
+/// # Module-level documentation comment sections
+/// * [Background](#Background)
+/// * [Implementation](#Implementation)
+/// * [Basic public functions](#Basic-public-function)
+/// * [Traversal](#Traversal)
+///
 /// A critical bit (crit-bit) tree is a compact binary prefix tree,
 /// similar to a binary search tree, that stores a prefix-free set of
 /// bitstrings, like n-bit integers or variable-length 0-terminated byte
@@ -142,6 +148,9 @@
 /// * `traverse_mut()`
 /// * `traverse_pop_mut()`
 ///
+/// ## Public end on pop function
+/// * `traverse_end_pop()`
+///
 /// ## Private traversal function
 /// * `traverse_c_i()`
 ///
@@ -151,6 +160,7 @@
 /// * [Partial successor traversal](#Partial-successor-traversal)
 /// * [Singleton traversal initialization
 ///   ](#Singleton-traversal-initialization)
+/// * [Ending traversal on a pop](#Ending-traversal-on-a-pop)
 ///
 /// ### Syntax motivations
 ///
@@ -378,6 +388,12 @@
 /// > assert!(pop(&mut cb, 9) == 1234, 19);
 /// > destroy_empty(cb); // Destroy empty tree
 /// ```
+///
+/// ### Ending traversal on a pop
+/// Traversal popping can similarly be executed without traversing any
+/// further via `traverse_end_pop()`, which can be invoked at any point
+/// during iterated traversal, thus ending the traversal with a pop.
+/// See the `traverse_end_pop_success()` test.
 ///
 /// ---
 ///
@@ -716,8 +732,8 @@ module Econia::CritBit {
         u64,
         V
     ) {
-        // Mark start node's side as a child as `L` (`true`) if node's
-        // parent has the node as its left child, else `R` (`false`)
+        // Mark start node's side as a child as left (true) if node's
+        // parent has the node as its left child, else right (false)
         let s_s = v_b<I>(&cb.i, p_f).l == c_i;
         // Store target node's pre-pop child field index
         let i_t = traverse_c_i(cb, k, p_f, d);
@@ -742,20 +758,20 @@ module Econia::CritBit {
     /// similar algorithms as `pop_general()`, but without having to
     /// do another search from root.
     ///
-    /// # Returns
-    /// * `V`: Popped value from outer node
-    ///
     /// # Parameters
     /// * `cb`: Crit-bit tree containing at least one node
     /// * `p_f`: Node's parent field
     /// * `c_i`: Child field index of node
     /// * `n_o`: Number of outer nodes in `cb`
     ///
+    /// # Returns
+    /// * `V`: Popped value from outer node
+    ///
     /// # Considerations
     /// * Takes exposed node indices (`p_f`, `c_i`) as parameters
     /// * Does not calculate number of outer nodes in `cb`, but rather
     ///   accepts this number as a parameter (`n_o`), which should be
-    ///   tracked by the caller
+    ///   tracked by the caller and should be nonzero
     public fun traverse_end_pop<V>(
         cb: &mut CB<V>,
         p_f: u64,
@@ -768,8 +784,8 @@ module Econia::CritBit {
             let O{k: _, v, p: _} = v_po_b<O<V>>(&mut cb.o);
             v // Return popped value
         } else { // If popping from tree with more than 1 outer node
-            // Mark node's side as a child as `L` (`true`) if node's
-            // parent has the node as its left child, else `R` (`false`)
+            // Mark node's side as a child as left (true) if node's
+            // parent has the node as its left child, else right (false)
             let n_s_c = v_b<I>(&cb.i, p_f).l == c_i;
             // Update sibling, parent, grandparent relationships
             pop_update_relationships(cb, n_s_c, p_f);
@@ -2766,6 +2782,119 @@ module Econia::CritBit {
     }
 
     #[test]
+    /// Verify proper traversal end pop for initial tree below, where
+    /// `i_i` indicates inner node vector index and `o_i` indicates
+    /// outer node vector index
+    /// ```
+    /// >                     3rd <- i_i = 3
+    /// >                    /   \
+    /// >     o_i = 4 -> 0000     2nd <- i_i = 0
+    /// >                        /   \
+    /// >         o_i = 1 -> 1000     1st <- i_i = 2
+    /// >                            /   \
+    /// >              i_i = 1 -> 0th     1110 <- o_i = 3
+    /// >                        /   \
+    /// >         o_i = 2 -> 1100     1101 <- o_i = 0
+    /// >
+    /// >                      Pop 1101
+    /// >                      ------->
+    /// >
+    /// >                     3rd
+    /// >                    /   \
+    /// >                0000     2nd
+    /// >                        /   \
+    /// >                    1000     1st
+    /// >                            /   \
+    /// >                        1100     1110
+    /// >
+    /// >                      Pop 1000
+    /// >                      ------->
+    /// >
+    /// >                     3rd
+    /// >                    /   \
+    /// >                0000     1st
+    /// >                        /   \
+    /// >                    1100     1110
+    /// >
+    /// >                      Pop 1110
+    /// >                      ------->
+    /// >
+    /// >                     3rd
+    /// >                    /   \
+    /// >                0000     1100
+    /// >
+    /// >                      Pop 0000
+    /// >                      ------->
+    /// >
+    /// >                      1100
+    /// >
+    /// >                      Pop 1100
+    /// >                      ------->
+    /// ```
+    fun traverse_end_pop_success() {
+        let cb = empty(); // Initialize empty tree
+        // Insert various key-value pairs per above tree
+        insert(&mut cb, u(b"1101"), 10);
+        insert(&mut cb, u(b"1000"), 11);
+        insert(&mut cb, u(b"1100"), 12);
+        insert(&mut cb, u(b"1110"), 13);
+        insert(&mut cb, u(b"0000"), 14);
+        // Initialize predecessor traversal (at 1110)
+        let (k, _, p_f, _) = traverse_p_init_mut(&mut cb);
+        // Traverse to predecessor (to 1101)
+        let (_, _, p_f, c_i) = traverse_p_mut(&mut cb, k, p_f);
+        // End the traversal by popping 1101, assert value of 10
+        assert!(traverse_end_pop(&mut cb, p_f, c_i, 5) == 10, 0);
+        // Initialize successor traversal (at 0000)
+        let (k, v_r, p_f, _) = traverse_s_init_mut(&mut cb);
+        // Assert key-value pair
+        assert!(k == u(b"0000") && *v_r == 14, 1);
+        // Traverse entire tree, assert key-value pairs along the way
+        (k, v_r, p_f, _) = traverse_s_mut(&mut cb, k, p_f);
+        assert!(k == u(b"1000") && *v_r == 11, 2);
+        (k, v_r, p_f, _) = traverse_s_mut(&mut cb, k, p_f);
+        assert!(k == u(b"1100") && *v_r == 12, 3);
+        (k, v_r, _, _) = traverse_s_mut(&mut cb, k, p_f);
+        assert!(k == u(b"1110") && *v_r == 13, 4);
+        // Initialize successor traversal (at 0000)
+        (k, _, p_f, _) = traverse_s_init_mut(&mut cb);
+        // Traverse to successor (to 1000)
+        (_, _, p_f, c_i) = traverse_s_mut(&mut cb, k, p_f);
+        // End the traversal by popping 1000, assert value of 11
+        assert!(traverse_end_pop(&mut cb, p_f, c_i, 4) == 11, 5);
+        // Initialize predecessor traversal (at 1110)
+        (k, v_r, p_f, _) = traverse_p_init_mut(&mut cb);
+        // Assert key-value pair
+        assert!(k == u(b"1110") && *v_r == 13, 6);
+        // Traverse entire tree, assert key-value pairs along the way
+        (k, v_r, p_f, _) = traverse_p_mut(&mut cb, k, p_f);
+        assert!(k == u(b"1100") && *v_r == 12, 7);
+        (k, v_r, _, _) = traverse_p_mut(&mut cb, k, p_f);
+        assert!(k == u(b"0000") && *v_r == 14, 8);
+        // Initialize predecessor traversal (at 1110)
+        (_, _, p_f, c_i) = traverse_p_init_mut(&mut cb);
+        // End the traversal by popping 1110, assert value of 13
+        assert!(traverse_end_pop(&mut cb, p_f, c_i, 3) == 13, 9);
+        // Initialize successor traversal (at 0000)
+        (k, v_r, p_f, _) = traverse_s_init_mut(&mut cb);
+        // Assert key-value pair
+        assert!(k == u(b"0000") && *v_r == 14, 10);
+        // Traverse entire tree, assert key-value pairs along the way
+        (k, v_r, _, _) = traverse_s_mut(&mut cb, k, p_f);
+        assert!(k == u(b"1100") && *v_r == 12, 11);
+        // Initialize successor traversal (at 0000)
+        (_, _, p_f, c_i) = traverse_s_init_mut(&mut cb);
+        // End the traversal by popping 0000, assert value of 14
+        assert!(traverse_end_pop(&mut cb, p_f, c_i, 2) == 14, 12);
+        // Initialize predecessor traversal (at 1100)
+        (_, _, p_f, c_i) = traverse_p_init_mut(&mut cb);
+        // End the traversal by popping 1100, assert value of 12
+        assert!(traverse_end_pop(&mut cb, p_f, c_i, 1) == 12, 13);
+        assert!(cb.r == 0, 14); // Assert root updates
+        destroy_empty(cb); // Destroy empty tree
+    }
+
+    #[test]
     /// Verify proper traversal popping and associated operations for
     /// below sequence diagram, where `i_i` indicates inner node vector
     /// index and `o_i` indicates outer node vector index
@@ -2821,7 +2950,7 @@ module Econia::CritBit {
         insert(&mut cb, u(b"1100"), 12);
         insert(&mut cb, u(b"1110"), 13);
         insert(&mut cb, u(b"0000"), 14);
-       // Initialize predecessor traversal (at 1101)
+        // Initialize predecessor traversal (at 1101)
         let (k, v_r, p_f, i) = traverse_p_init_mut(&mut cb);
         // Assert correct predecessor traversal initialization returns
         assert!(k == u(b"1110") && *v_r == 13 && p_f == 2 && i == o_c(3), 0);

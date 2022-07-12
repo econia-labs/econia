@@ -1,10 +1,11 @@
-/// # Background
+/// # Module-level documentation sections
 ///
-/// # Module-level documentation comment sections
 /// * [Background](#Background)
 /// * [Implementation](#Implementation)
-/// * [Basic public functions](#Basic-public-function)
+/// * [Basic public functions](#Basic-public-functions)
 /// * [Traversal](#Traversal)
+///
+/// # Background
 ///
 /// A critical bit (crit-bit) tree is a compact binary prefix tree,
 /// similar to a binary search tree, that stores a prefix-free set of

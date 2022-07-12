@@ -4,20 +4,21 @@
 # Module `0xc0deb00c::CritBit`
 
 
-<a name="@Background_0"></a>
+<a name="@Module-level_documentation_sections_0"></a>
 
-## Background
+## Module-level documentation sections
 
-
-
-<a name="@Module-level_documentation_comment_sections_1"></a>
-
-## Module-level documentation comment sections
 
 * [Background](#Background)
 * [Implementation](#Implementation)
-* [Basic public functions](#Basic-public-function)
+* [Basic public functions](#Basic-public-functions)
 * [Traversal](#Traversal)
+
+
+<a name="@Background_1"></a>
+
+## Background
+
 
 A critical bit (crit-bit) tree is a compact binary prefix tree,
 similar to a binary search tree, that stores a prefix-free set of
@@ -499,8 +500,8 @@ See the <code>traverse_end_pop_success()</code> test.
 ---
 
 
--  [Background](#@Background_0)
--  [Module-level documentation comment sections](#@Module-level_documentation_comment_sections_1)
+-  [Module-level documentation sections](#@Module-level_documentation_sections_0)
+-  [Background](#@Background_1)
     -  [References](#@References_2)
 -  [Implementation](#@Implementation_3)
     -  [Structure](#@Structure_4)

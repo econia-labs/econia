@@ -37,6 +37,7 @@ module Econia::Orders {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use Econia::CritBit::{
+        borrow_mut,
         CB,
         empty as cb_e,
         has_key as cb_h_k,
@@ -177,7 +178,42 @@ module Econia::Orders {
         cancel_order<B, Q, E>(addr, BID, id)
     }
 
-/// Return `true` if specified open orders type exists at address
+    /// Decrement an open order's size by `amount` parcels. Should only
+    /// be called by the matching engine, and thus skips redundant error
+    /// checking that is already performed if execution has reached this
+    /// step.
+    ///
+    /// # Paremeters
+    /// * `user_addr`: User's address
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID (see `Econia::ID`)
+    /// * `amount`: Amount of base coin parcels to decrement open order
+    ///   size by
+    /// * `_c`: Immutable reference to a `FriendCap`
+    ///
+    /// # Assumptions
+    /// * User already has an `OO` initialized under their account,
+    ///   containing an order of ID `id` on corresponding `side`, of
+    ///   sufficient size to decrement from
+    public fun decrement_order_size<B, Q, E>(
+        user_addr: address,
+        side: bool,
+        id: u128,
+        amount: u64,
+        _c: &FriendCap
+    ) acquires OO {
+        // If side is ask, define tree as user's open orders asks tree
+        let tree = if (side == ASK)
+            &mut borrow_global_mut<OO<B, Q, E>>(user_addr).a else
+            // Else the bids tree
+            &mut borrow_global_mut<OO<B, Q, E>>(user_addr).b;
+        // Borrow mutable reference to order size for given order ID
+        let order_size = borrow_mut<u64>(tree, id);
+        // Decrement order size by specified amount
+        *order_size = *order_size - amount;
+    }
+
+    /// Return `true` if specified open orders type exists at address
     public fun exists_orders<B, Q, E>(
         a: address
     ): bool {
@@ -544,6 +580,28 @@ module Econia::Orders {
         let o_o = borrow_global<OO<BT, QT, ET>>(@TestUser);
         // Assert bid no longer registered in open orders
         assert!(!cb_h_k<u64>(&o_o.b, id), 5);
+    }
+
+    #[test(user = @TestUser)]
+    fun decrement_order_size_success(
+        user: &signer,
+    ) acquires OO {
+        // Initialize open orders with scale factor of 1
+        init_orders<BT, QT, ET>(user, 1, &FriendCap{});
+        // Declare dummy id, price, size fields
+        let (id, price, size) = (1, 2, 3);
+        // Add ask to open orders
+        add_ask<BT, QT, ET>(@TestUser, id, price, size, &FriendCap{});
+        // Decrement order size by 2 parcels
+        decrement_order_size<BT, QT, ET>(@TestUser, ASK, id, 2, &FriendCap{});
+        // Assert size decremented from 3 to 1
+        assert!(check_ask<BT, QT, ET>(@TestUser, id) == 1, 1);
+        // Add bid to open orders
+        add_bid<BT, QT, ET>(@TestUser, id, price, size, &FriendCap{});
+        // Decrement order size by 1 parcel
+        decrement_order_size<BT, QT, ET>(@TestUser, BID, id, 1, &FriendCap{});
+        // Assert size decremented from 3 to 2
+        assert!(check_bid<BT, QT, ET>(@TestUser, id) == 2, 1);
     }
 
     #[test(account = @TestUser)]

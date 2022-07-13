@@ -60,22 +60,25 @@ order, where a parcel contains $SF$ subunits.
 -  [Function `add_bid`](#0xc0deb00c_Orders_add_bid)
 -  [Function `cancel_ask`](#0xc0deb00c_Orders_cancel_ask)
 -  [Function `cancel_bid`](#0xc0deb00c_Orders_cancel_bid)
--  [Function `exists_orders`](#0xc0deb00c_Orders_exists_orders)
--  [Function `remove_order`](#0xc0deb00c_Orders_remove_order)
+-  [Function `decrement_order_size`](#0xc0deb00c_Orders_decrement_order_size)
     -  [Paremeters](#@Paremeters_4)
     -  [Assumptions](#@Assumptions_5)
+-  [Function `exists_orders`](#0xc0deb00c_Orders_exists_orders)
+-  [Function `remove_order`](#0xc0deb00c_Orders_remove_order)
+    -  [Paremeters](#@Paremeters_6)
+    -  [Assumptions](#@Assumptions_7)
 -  [Function `get_friend_cap`](#0xc0deb00c_Orders_get_friend_cap)
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
 -  [Function `scale_factor`](#0xc0deb00c_Orders_scale_factor)
 -  [Function `add_order`](#0xc0deb00c_Orders_add_order)
-    -  [Parameters](#@Parameters_6)
-    -  [Returns](#@Returns_7)
-    -  [Abort scenarios](#@Abort_scenarios_8)
-    -  [Assumes](#@Assumes_9)
+    -  [Parameters](#@Parameters_8)
+    -  [Returns](#@Returns_9)
+    -  [Abort scenarios](#@Abort_scenarios_10)
+    -  [Assumes](#@Assumes_11)
 -  [Function `cancel_order`](#0xc0deb00c_Orders_cancel_order)
-    -  [Parameters](#@Parameters_10)
-    -  [Returns](#@Returns_11)
-    -  [Abort scenarios](#@Abort_scenarios_12)
+    -  [Parameters](#@Parameters_12)
+    -  [Returns](#@Returns_13)
+    -  [Abort scenarios](#@Abort_scenarios_14)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -397,6 +400,69 @@ Wrapped <code><a href="Orders.md#0xc0deb00c_Orders_cancel_order">cancel_order</a
 
 </details>
 
+<a name="0xc0deb00c_Orders_decrement_order_size"></a>
+
+## Function `decrement_order_size`
+
+Decrement an open order's size by <code>amount</code> parcels. Should only
+be called by the matching engine, and thus skips redundant error
+checking that is already performed if execution has reached this
+step.
+
+
+<a name="@Paremeters_4"></a>
+
+### Paremeters
+
+* <code>user_addr</code>: User's address
+* <code>side</code>: <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code> or <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>
+* <code>id</code>: Order ID (see <code>Econia::ID</code>)
+* <code>amount</code>: Amount of base coin parcels to decrement open order
+size by
+* <code>_c</code>: Immutable reference to a <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
+
+
+<a name="@Assumptions_5"></a>
+
+### Assumptions
+
+* User already has an <code><a href="Orders.md#0xc0deb00c_Orders_OO">OO</a></code> initialized under their account,
+containing an order of ID <code>id</code> on corresponding <code>side</code>, of
+sufficient size to decrement from
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_decrement_order_size">decrement_order_size</a>&lt;B, Q, E&gt;(user_addr: <b>address</b>, side: bool, id: u128, amount: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_decrement_order_size">decrement_order_size</a>&lt;B, Q, E&gt;(
+    user_addr: <b>address</b>,
+    side: bool,
+    id: u128,
+    amount: u64,
+    _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
+) <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
+    // If side is ask, define tree <b>as</b> user's open orders asks tree
+    <b>let</b> tree = <b>if</b> (side == <a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a>)
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;&gt;(user_addr).a <b>else</b>
+        // Else the bids tree
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;&gt;(user_addr).b;
+    // Borrow mutable reference <b>to</b> order size for given order <a href="ID.md#0xc0deb00c_ID">ID</a>
+    <b>let</b> order_size = borrow_mut&lt;u64&gt;(tree, id);
+    // Decrement order size by specified amount
+    *order_size = *order_size - amount;
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_Orders_exists_orders"></a>
 
 ## Function `exists_orders`
@@ -434,7 +500,7 @@ a user, and thus skips redundant error checking that is already
 performed when initially placing an order.
 
 
-<a name="@Paremeters_4"></a>
+<a name="@Paremeters_6"></a>
 
 ### Paremeters
 
@@ -444,7 +510,7 @@ performed when initially placing an order.
 * <code>_c</code>: Immutable reference to a <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<a name="@Assumptions_5"></a>
+<a name="@Assumptions_7"></a>
 
 ### Assumptions
 
@@ -582,7 +648,7 @@ Add new order to users's open orders container for market
 subunits required to fill the order
 
 
-<a name="@Parameters_6"></a>
+<a name="@Parameters_8"></a>
 
 ### Parameters
 
@@ -593,7 +659,7 @@ subunits required to fill the order
 * <code>size</code>: Scaled order size, (number of base coin parcels)
 
 
-<a name="@Returns_7"></a>
+<a name="@Returns_9"></a>
 
 ### Returns
 
@@ -601,7 +667,7 @@ subunits required to fill the order
 * <code>u64</code>: Quote coin subunits required to fill order
 
 
-<a name="@Abort_scenarios_8"></a>
+<a name="@Abort_scenarios_10"></a>
 
 ### Abort scenarios
 
@@ -614,7 +680,7 @@ does not fit in a <code>u64</code>
 order does not fit in a <code>u64</code>
 
 
-<a name="@Assumes_9"></a>
+<a name="@Assumes_11"></a>
 
 ### Assumes
 
@@ -675,7 +741,7 @@ u64
 Cancel position in open orders for market <code>&lt;B, Q, E&gt;</code>
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -684,14 +750,14 @@ Cancel position in open orders for market <code>&lt;B, Q, E&gt;</code>
 * <code>id</code>: Order ID (see <code>Econia::ID</code>)
 
 
-<a name="@Returns_11"></a>
+<a name="@Returns_13"></a>
 
 ### Returns
 
 * <code>u64</code>: Scaled size of order
 
 
-<a name="@Abort_scenarios_12"></a>
+<a name="@Abort_scenarios_14"></a>
 
 ### Abort scenarios
 

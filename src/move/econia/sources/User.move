@@ -10,9 +10,9 @@ module Econia::User {
     use AptosFramework::Coin::{
         Coin as C,
         deposit as c_d,
-        extract as c_e,
-        merge as c_m,
-        withdraw as c_w,
+        extract as coin_extract,
+        merge as coin_merge,
+        withdraw as coin_withdraw,
         zero as c_z
     };
 
@@ -25,14 +25,14 @@ module Econia::User {
     };
 
     use Econia::Caps::{
-        orders_f_c as c_o_f_c,
+        orders_f_c as orders_cap,
         book_f_c as c_b_f_c
     };
 
     use Econia::ID::{
         id_a as id_a,
         id_b as id_b,
-        price as id_p
+        price as id_price
     };
 
     use Econia::Orders::{
@@ -40,8 +40,10 @@ module Econia::User {
         add_bid as o_a_b,
         cancel_ask as o_c_a,
         cancel_bid as o_c_b,
+        decrement_order_size,
         exists_orders as o_e_o,
         init_orders as o_i_o,
+        remove_order,
         scale_factor as o_s_f
     };
 
@@ -185,11 +187,13 @@ module Econia::User {
         // Borrow mutable reference to user collateral container
         let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
         if (b_val > 0) { // If base coin to be deposited
-            c_m<B>(&mut o_c.b_c, c_w<B>(user, b_val)); // Deposit it
+            // Withdraw from CoinStore, merge into OC
+            coin_merge<B>(&mut o_c.b_c, coin_withdraw<B>(user, b_val));
             o_c.b_a = o_c.b_a + b_val; // Increment available base coin
         };
         if (q_val > 0) { // If quote coin to be deposited
-            c_m<Q>(&mut o_c.q_c, c_w<Q>(user, q_val)); // Deposit it
+            // Withdraw from CoinStore, merge into OC
+            coin_merge<Q>(&mut o_c.q_c, coin_withdraw<Q>(user, q_val));
             o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
         };
         update_s_c(user); // Update user sequence counter
@@ -230,7 +234,7 @@ module Econia::User {
         let o_c = OC<B, Q, E>{b_c: c_z<B>(), b_a: 0, q_c: c_z<Q>(), q_a: 0};
         move_to<OC<B, Q, E>>(user, o_c); // Move to user account
         // Initialize empty open orders container under user account
-        o_i_o<B, Q, E>(user, r_s_f<E>(), &c_o_f_c());
+        o_i_o<B, Q, E>(user, r_s_f<E>(), &orders_cap());
     }
 
     /// Initialize an `SC` with the sequence number of the initializing
@@ -283,20 +287,96 @@ module Econia::User {
             // Assert not trying to withdraw more than available
             assert!(!(b_val > o_c.b_a), E_WITHDRAW_TOO_MUCH);
             // Withdraw from order collateral, deposit to coin store
-            c_d<B>(addr, c_e<B>(&mut o_c.b_c, b_val));
+            c_d<B>(addr, coin_extract<B>(&mut o_c.b_c, b_val));
             o_c.b_a = o_c.b_a - b_val; // Update available amount
         };
         if (q_val > 0) { // If quote coin to be withdrawn
             // Assert not trying to withdraw more than available
             assert!(!(q_val > o_c.q_a), E_WITHDRAW_TOO_MUCH);
             // Withdraw from order collateral, deposit to coin store
-            c_d<Q>(addr, c_e<Q>(&mut o_c.q_c, q_val));
+            c_d<Q>(addr, coin_extract<Q>(&mut o_c.q_c, q_val));
             o_c.q_a = o_c.q_a - q_val; // Update available amount
         };
         update_s_c(user); // Update user sequence counter
     }
 
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Update open orders for a user who has an order on the book and
+    /// route the corresponding funds between them and a counterparty
+    /// during a match fill, updating available collateral amounts
+    /// accordingly. Should only be called by the matching engine and
+    /// thus skips redundant error checking that should be performed by
+    /// other functions if execution sequence has reached this step.
+    ///
+    /// # Terminology
+    /// * The "target" user has an order that is on the order book
+    /// * The "incoming" user's order has just been matched against the
+    ///   target order by the matching engine
+    ///
+    /// # Parameters
+    /// * `target`: Target user address
+    /// * `incoming`: Incoming user address
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID of target order (See `Econia::ID`)
+    /// * `size`: The fill size, in base coin parcels (See
+    ///   `Econia::Registry`)
+    /// * `scale_factor`: The scale factor for the given market (see
+    ///   `Econia::Registry`)
+    /// * `complete`: If `true`, target user's order is completely
+    ///   filled, else only partially filled
+    ///
+    /// # Assumptions
+    /// * Both users have order collateral containers with sufficient
+    ///   collateral on hand
+    /// * Target user has an open orders having an order with the
+    ///   specified ID on the specified side, of sufficient size
+    public(friend) fun process_fill<B, Q, E>(
+        target: address,
+        incoming: address,
+        side: bool,
+        id: u128,
+        size: u64,
+        scale_factor: u64,
+        complete: bool,
+    ) acquires OC {
+        let orders_cap = orders_cap(); // Get orders friend capability
+        // If target user's order completely filled, remove it from
+        // their open orders
+        if (complete) remove_order<B, Q, E>(target, side, id, &orders_cap) else
+            // Else decrement their order size by the fill amount
+            decrement_order_size<B, Q, E>(target, side, id, size, &orders_cap);
+        // Compute amount of base coin subunits to route
+        let base_to_route = size * scale_factor;
+        // Compute amount of quote coin subunits to route
+        let quote_to_route = size * id_price(id);
+        // If target order is an ask, incoming user gets base coin from
+        // target user
+        let (base_to, base_from) = if (side == ASK) (incoming, target) else
+            (target, incoming); // Flip the polarity if a bid
+        // Get mutable reference to container yielding base coins
+        let yields_base = borrow_global_mut<OC<B, Q, E>>(base_from);
+        // Withdraw base coins from yielding container
+        let base_coins = coin_extract<B>(&mut yields_base.b_c, base_to_route);
+        // Get mutable reference to container receiving base coins
+        let gets_base = borrow_global_mut<OC<B, Q, E>>(base_to);
+        // Merge base coins into receiving container
+        coin_merge<B>(&mut gets_base.b_c, base_coins);
+        // Increment base coin recipient's available amount
+        gets_base.b_a = gets_base.b_a + base_to_route;
+        // Withdraw quote coins from base coin recipient
+        let quote_coins = coin_extract<Q>(&mut gets_base.q_c, quote_to_route);
+        // Get mutable reference to container getting quote coins
+        let gets_quote = borrow_global_mut<OC<B, Q, E>>(base_from);
+        // Merge quote coins into receiving container
+        coin_merge<Q>(&mut gets_quote.q_c, quote_coins);
+        // Increment quote coin recipient's available amount
+        gets_quote.q_a = gets_quote.q_a + quote_to_route;
+    }
+
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -323,7 +403,7 @@ module Econia::User {
         let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
         if (side == ASK) { // If cancelling an ask
             // Cancel on user's open orders, storing scaled size
-            let s_s = o_c_a<B, Q, E>(addr, id, &c_o_f_c());
+            let s_s = o_c_a<B, Q, E>(addr, id, &orders_cap());
             // Cancel on order book
             b_c_a<B, Q, E>(host, id, &c_b_f_c());
             // Increment amount of base coins available for withdraw,
@@ -331,12 +411,12 @@ module Econia::User {
             o_c.b_a = o_c.b_a + s_s * o_s_f<B, Q, E>(addr);
         } else { // If cancelling a bid
             // Cancel on user's open orders, storing scaled size
-            let s_s = o_c_b<B, Q, E>(addr, id, &c_o_f_c());
+            let s_s = o_c_b<B, Q, E>(addr, id, &orders_cap());
             // Cancel on order book
             b_c_b<B, Q, E>(host, id, &c_b_f_c());
             // Increment amount of quote coins available for withdraw,
             // by order scaled size times price from order ID
-            o_c.q_a = o_c.q_a + s_s * id_p(id);
+            o_c.q_a = o_c.q_a + s_s * id_price(id);
         }
     }
 
@@ -391,7 +471,7 @@ module Econia::User {
             // Verify and add to user's open orders, storing amount of
             // base coin subunits required to fill the trade
             let (b_c_subs, _) =
-                o_a_a<B, Q, E>(addr, id, price, size, &c_o_f_c());
+                o_a_a<B, Q, E>(addr, id, price, size, &orders_cap());
             // Assert user has enough base coins held as collateral
             assert!(!(b_c_subs > o_c.b_a), E_NOT_ENOUGH_COLLATERAL);
             // Decrement amount of base coins available for withdraw
@@ -404,7 +484,7 @@ module Econia::User {
             // Verify and add to user's open orders, storing amoung of
             // quote coin subunits required to fill the trade
             let (_, q_c_subs) =
-                o_a_b<B, Q, E>(addr, id, price, size, &c_o_f_c());
+                o_a_b<B, Q, E>(addr, id, price, size, &orders_cap());
             // Assert user has enough quote coins held as collateral
             assert!(!(q_c_subs > o_c.q_a), E_NOT_ENOUGH_COLLATERAL);
             // Decrement amount of quote coins available for withdraw
@@ -719,7 +799,7 @@ module Econia::User {
         init_econia(econia); // Initialize Econia core account resources
         r_r_t_m(econia); // Register test market
         // Initialize empty open orders container under user account
-        o_i_o<BCT, QCT, E0>(user, r_s_f<E0>(), &c_o_f_c());
+        o_i_o<BCT, QCT, E0>(user, r_s_f<E0>(), &orders_cap());
         init_containers<BCT, QCT, E0>(user); // Attempt invalid init
     }
 

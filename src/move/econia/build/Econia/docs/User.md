@@ -17,12 +17,16 @@ User-facing trading functionality
 -  [Function `submit_ask`](#0xc0deb00c_User_submit_ask)
 -  [Function `submit_bid`](#0xc0deb00c_User_submit_bid)
 -  [Function `withdraw`](#0xc0deb00c_User_withdraw)
+-  [Function `process_fill`](#0xc0deb00c_User_process_fill)
+    -  [Terminology](#@Terminology_1)
+    -  [Parameters](#@Parameters_2)
+    -  [Assumptions](#@Assumptions_3)
 -  [Function `cancel_order`](#0xc0deb00c_User_cancel_order)
-    -  [Parameters](#@Parameters_1)
+    -  [Parameters](#@Parameters_4)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
 -  [Function `submit_limit_order`](#0xc0deb00c_User_submit_limit_order)
-    -  [Parameters](#@Parameters_2)
-    -  [Abort conditions](#@Abort_conditions_3)
+    -  [Parameters](#@Parameters_5)
+    -  [Abort conditions](#@Abort_conditions_6)
 -  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 
 
@@ -278,11 +282,13 @@ Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <cod
     // Borrow mutable reference <b>to</b> user collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
     <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be deposited
-        c_m&lt;B&gt;(&<b>mut</b> o_c.b_c, c_w&lt;B&gt;(user, b_val)); // Deposit it
+        // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
+        coin_merge&lt;B&gt;(&<b>mut</b> o_c.b_c, coin_withdraw&lt;B&gt;(user, b_val));
         o_c.b_a = o_c.b_a + b_val; // Increment available base coin
     };
     <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be deposited
-        c_m&lt;Q&gt;(&<b>mut</b> o_c.q_c, c_w&lt;Q&gt;(user, q_val)); // Deposit it
+        // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
+        coin_merge&lt;Q&gt;(&<b>mut</b> o_c.q_c, coin_withdraw&lt;Q&gt;(user, q_val));
         o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
     };
     <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
@@ -383,7 +389,7 @@ initialized for market
     <b>let</b> o_c = <a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;{b_c: c_z&lt;B&gt;(), b_a: 0, q_c: c_z&lt;Q&gt;(), q_a: 0};
     <b>move_to</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user, o_c); // Move <b>to</b> user account
     // Initialize empty open orders container under user account
-    o_i_o&lt;B, Q, E&gt;(user, r_s_f&lt;E&gt;(), &c_o_f_c());
+    o_i_o&lt;B, Q, E&gt;(user, r_s_f&lt;E&gt;(), &orders_cap());
 }
 </code></pre>
 
@@ -516,17 +522,121 @@ Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <co
         // Assert not trying <b>to</b> withdraw more than available
         <b>assert</b>!(!(b_val &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
         // Withdraw from order collateral, deposit <b>to</b> coin store
-        c_d&lt;B&gt;(addr, c_e&lt;B&gt;(&<b>mut</b> o_c.b_c, b_val));
+        c_d&lt;B&gt;(addr, coin_extract&lt;B&gt;(&<b>mut</b> o_c.b_c, b_val));
         o_c.b_a = o_c.b_a - b_val; // Update available amount
     };
     <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be withdrawn
         // Assert not trying <b>to</b> withdraw more than available
         <b>assert</b>!(!(q_val &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
         // Withdraw from order collateral, deposit <b>to</b> coin store
-        c_d&lt;Q&gt;(addr, c_e&lt;Q&gt;(&<b>mut</b> o_c.q_c, q_val));
+        c_d&lt;Q&gt;(addr, coin_extract&lt;Q&gt;(&<b>mut</b> o_c.q_c, q_val));
         o_c.q_a = o_c.q_a - q_val; // Update available amount
     };
     <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_process_fill"></a>
+
+## Function `process_fill`
+
+Update open orders for a user who has an order on the book and
+route the corresponding funds between them and a counterparty
+during a match fill, updating available collateral amounts
+accordingly. Should only be called by the matching engine and
+thus skips redundant error checking that should be performed by
+other functions if execution sequence has reached this step.
+
+
+<a name="@Terminology_1"></a>
+
+### Terminology
+
+* The "target" user has an order that is on the order book
+* The "incoming" user's order has just been matched against the
+target order by the matching engine
+
+
+<a name="@Parameters_2"></a>
+
+### Parameters
+
+* <code>target</code>: Target user address
+* <code>incoming</code>: Incoming user address
+* <code>side</code>: <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code> or <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
+* <code>id</code>: Order ID of target order (See <code>Econia::ID</code>)
+* <code>size</code>: The fill size, in base coin parcels (See
+<code>Econia::Registry</code>)
+* <code>scale_factor</code>: The scale factor for the given market (see
+<code>Econia::Registry</code>)
+* <code>complete</code>: If <code><b>true</b></code>, target user's order is completely
+filled, else only partially filled
+
+
+<a name="@Assumptions_3"></a>
+
+### Assumptions
+
+* Both users have order collateral containers with sufficient
+collateral on hand
+* Target user has an open orders having an order with the
+specified ID on the specified side, of sufficient size
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_process_fill">process_fill</a>&lt;B, Q, E&gt;(target: <b>address</b>, incoming: <b>address</b>, side: bool, id: u128, size: u64, scale_factor: u64, complete: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_process_fill">process_fill</a>&lt;B, Q, E&gt;(
+    target: <b>address</b>,
+    incoming: <b>address</b>,
+    side: bool,
+    id: u128,
+    size: u64,
+    scale_factor: u64,
+    complete: bool,
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a> {
+    <b>let</b> orders_cap = orders_cap(); // Get orders <b>friend</b> capability
+    // If target user's order completely filled, remove it from
+    // their open orders
+    <b>if</b> (complete) remove_order&lt;B, Q, E&gt;(target, side, id, &orders_cap) <b>else</b>
+        // Else decrement their order size by the fill amount
+        decrement_order_size&lt;B, Q, E&gt;(target, side, id, size, &orders_cap);
+    // Compute amount of base coin subunits <b>to</b> route
+    <b>let</b> base_to_route = size * scale_factor;
+    // Compute amount of quote coin subunits <b>to</b> route
+    <b>let</b> quote_to_route = size * id_price(id);
+    // If target order is an ask, incoming user gets base coin from
+    // target user
+    <b>let</b> (base_to, base_from) = <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) (incoming, target) <b>else</b>
+        (target, incoming); // Flip the polarity <b>if</b> a bid
+    // Get mutable reference <b>to</b> container yielding base coins
+    <b>let</b> yields_base = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(base_from);
+    // Withdraw base coins from yielding container
+    <b>let</b> base_coins = coin_extract&lt;B&gt;(&<b>mut</b> yields_base.b_c, base_to_route);
+    // Get mutable reference <b>to</b> container receiving base coins
+    <b>let</b> gets_base = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(base_to);
+    // Merge base coins into receiving container
+    coin_merge&lt;B&gt;(&<b>mut</b> gets_base.b_c, base_coins);
+    // Increment base coin recipient's available amount
+    gets_base.b_a = gets_base.b_a + base_to_route;
+    // Withdraw quote coins from base coin recipient
+    <b>let</b> quote_coins = coin_extract&lt;Q&gt;(&<b>mut</b> gets_base.q_c, quote_to_route);
+    // Get mutable reference <b>to</b> container getting quote coins
+    <b>let</b> gets_quote = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(base_from);
+    // Merge quote coins into receiving container
+    coin_merge&lt;Q&gt;(&<b>mut</b> gets_quote.q_c, quote_coins);
+    // Increment quote coin recipient's available amount
+    gets_quote.q_a = gets_quote.q_a + quote_to_route;
 }
 </code></pre>
 
@@ -543,7 +653,7 @@ collateral accordingly, aborting if user does not have an order
 collateral container
 
 
-<a name="@Parameters_1"></a>
+<a name="@Parameters_4"></a>
 
 ### Parameters
 
@@ -576,7 +686,7 @@ collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
     <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) { // If cancelling an ask
         // Cancel on user's open orders, storing scaled size
-        <b>let</b> s_s = o_c_a&lt;B, Q, E&gt;(addr, id, &c_o_f_c());
+        <b>let</b> s_s = o_c_a&lt;B, Q, E&gt;(addr, id, &orders_cap());
         // Cancel on order book
         b_c_a&lt;B, Q, E&gt;(host, id, &c_b_f_c());
         // Increment amount of base coins available for withdraw,
@@ -584,12 +694,12 @@ collateral container
         o_c.b_a = o_c.b_a + s_s * o_s_f&lt;B, Q, E&gt;(addr);
     } <b>else</b> { // If cancelling a bid
         // Cancel on user's open orders, storing scaled size
-        <b>let</b> s_s = o_c_b&lt;B, Q, E&gt;(addr, id, &c_o_f_c());
+        <b>let</b> s_s = o_c_b&lt;B, Q, E&gt;(addr, id, &orders_cap());
         // Cancel on order book
         b_c_b&lt;B, Q, E&gt;(host, id, &c_b_f_c());
         // Increment amount of quote coins available for withdraw,
         // by order scaled size times price from order <a href="ID.md#0xc0deb00c_ID">ID</a>
-        o_c.q_a = o_c.q_a + s_s * id_p(id);
+        o_c.q_a = o_c.q_a + s_s * id_price(id);
     }
 }
 </code></pre>
@@ -639,7 +749,7 @@ if already initialized
 Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 
 
-<a name="@Parameters_2"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -651,7 +761,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 <code>Econia::Orders</code>)
 
 
-<a name="@Abort_conditions_3"></a>
+<a name="@Abort_conditions_6"></a>
 
 ### Abort conditions
 
@@ -692,7 +802,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
         // Verify and add <b>to</b> user's open orders, storing amount of
         // base coin subunits required <b>to</b> fill the trade
         <b>let</b> (b_c_subs, _) =
-            o_a_a&lt;B, Q, E&gt;(addr, id, price, size, &c_o_f_c());
+            o_a_a&lt;B, Q, E&gt;(addr, id, price, size, &orders_cap());
         // Assert user <b>has</b> enough base coins held <b>as</b> collateral
         <b>assert</b>!(!(b_c_subs &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Decrement amount of base coins available for withdraw
@@ -705,7 +815,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
         // Verify and add <b>to</b> user's open orders, storing amoung of
         // quote coin subunits required <b>to</b> fill the trade
         <b>let</b> (_, q_c_subs) =
-            o_a_b&lt;B, Q, E&gt;(addr, id, price, size, &c_o_f_c());
+            o_a_b&lt;B, Q, E&gt;(addr, id, price, size, &orders_cap());
         // Assert user <b>has</b> enough quote coins held <b>as</b> collateral
         <b>assert</b>!(!(q_c_subs &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Decrement amount of quote coins available for withdraw

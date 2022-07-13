@@ -57,13 +57,13 @@ to be filled.
     -  [Returns](#@Returns_7)
     -  [Abort conditions](#@Abort_conditions_8)
     -  [Assumptions](#@Assumptions_9)
+-  [Function `n_asks`](#0xc0deb00c_Book_n_asks)
+-  [Function `n_bids`](#0xc0deb00c_Book_n_bids)
+-  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 -  [Function `traverse_pop_fill`](#0xc0deb00c_Book_traverse_pop_fill)
     -  [Terminology](#@Terminology_10)
     -  [Parameters](#@Parameters_11)
     -  [Returns](#@Returns_12)
--  [Function `n_asks`](#0xc0deb00c_Book_n_asks)
--  [Function `n_bids`](#0xc0deb00c_Book_n_bids)
--  [Function `scale_factor`](#0xc0deb00c_Book_scale_factor)
 -  [Function `add_position`](#0xc0deb00c_Book_add_position)
     -  [Parameters](#@Parameters_13)
     -  [Returns](#@Returns_14)
@@ -650,108 +650,6 @@ has at least one position in corresponding tree
 
 </details>
 
-<a name="0xc0deb00c_Book_traverse_pop_fill"></a>
-
-## Function `traverse_pop_fill`
-
-Traverse from start node to target node then pop target node,
-then fill target node as in <code><a href="Book.md#0xc0deb00c_Book_init_traverse_fill">init_traverse_fill</a>()</code>
-
-
-<a name="@Terminology_10"></a>
-
-### Terminology
-
-* "Incoming order" has <code>size</code> base coin parcels to be filled
-* "Target position" is the next position on the book to fill
-against
-* "Start position" is the position to traverse from
-
-
-<a name="@Parameters_11"></a>
-
-### Parameters
-
-* <code>host</code>: Host of <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code>
-* <code>i_addr</code>: Address of incoming order to match against
-* <code>side</code>: <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> or <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>
-* <code>size</code>: Base coin parcels to be filled on incoming order
-* <code>n_p</code>: Number of positions in <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code> for corresponding <code>side</code>
-* <code>s_id</code>: Order ID of start position. If <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, cannot
-be minimum ask in order book, and if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, cannot
-be maximum ask in order book (since no traversal possible).
-* <code>s_p_f</code>: Start position tree node parent field
-* <code>s_c_i</code>: Child field index of start position tree node
-* <code>_c</code>: Immutable reference to <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
-
-
-<a name="@Returns_12"></a>
-
-### Returns
-
-* <code>u128</code>: Target position order ID
-* <code><b>address</b></code>: User address holding target position (<code><a href="Book.md#0xc0deb00c_Book_P">P</a>.a</code>)
-* <code>u64</code>: Parent field of node corresponding to target position
-* <code>u64</code>: Child field index of node corresponding to target
-position
-* <code>u64</code>: Amount filled, in base coin parcels
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_traverse_pop_fill">traverse_pop_fill</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size: u64, n_p: u64, s_id: u128, s_p_f: u64, s_c_i: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_traverse_pop_fill">traverse_pop_fill</a>&lt;B, Q, E&gt;(
-    host: <b>address</b>,
-    i_addr: <b>address</b>,
-    side: bool,
-    size: u64,
-    n_p: u64,
-    s_id: u128,
-    s_p_f: u64,
-    s_c_i: u64,
-    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
-): (
-    u128,
-    <b>address</b>,
-    u64,
-    u64,
-    u64
-) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
-    <b>let</b> (tree, dir) = <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) // If an ask
-        // Define traversal tree <b>as</b> asks tree, successor iteration
-        (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host).a, <a href="Book.md#0xc0deb00c_Book_R">R</a>) <b>else</b>
-        // Otherwise define tree <b>as</b> bids tree, predecessor iteration
-        (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host).b, <a href="Book.md#0xc0deb00c_Book_L">L</a>);
-    // Traverse from start position <b>to</b> target position, storing
-    // target position order <a href="ID.md#0xc0deb00c_ID">ID</a>, mutable reference <b>to</b> target
-    // position, target position tree node parent field, target
-    // position tree node child fiend index, start position <b>struct</b>
-    <b>let</b> (t_id, t_p_r, t_p_f, t_c_i, s_p) =
-        cb_t_p_m(tree, s_id, s_p_f, s_c_i, n_p, dir);
-    <b>let</b> <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _} = s_p; // Unpack/discard start position fields
-    <b>let</b> t_addr = t_p_r.a; // Store target position user <b>address</b>
-    // Process fill scenarios, storing amount filled and <b>if</b> perfect
-    // match between incoming and target order
-    <b>let</b> (filled, perfect) = <a href="Book.md#0xc0deb00c_Book_process_fill_scenarios">process_fill_scenarios</a>(i_addr, t_p_r, size);
-    // If perfect match, pop target position, unpack/discard fields
-    <b>if</b> (perfect) {<b>let</b> <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);};
-    // Return target position <a href="ID.md#0xc0deb00c_ID">ID</a>, target position user <b>address</b>,
-    // corresponding node's parent field, corresponding node's child
-    // field index, and the number of base coin parcels filled
-    (t_id, t_addr, t_p_f, t_c_i, filled)
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_Book_n_asks"></a>
 
 ## Function `n_asks`
@@ -837,6 +735,111 @@ Return scale factor of specified order book at given address
     // Assert book <b>exists</b> at given <b>address</b>
     <b>assert</b>!(<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(addr), <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>);
     <b>borrow_global</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(addr).f // Return book's scale factor
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_traverse_pop_fill"></a>
+
+## Function `traverse_pop_fill`
+
+Traverse from start node to target node and pop target node,
+then fill target node as in <code><a href="Book.md#0xc0deb00c_Book_init_traverse_fill">init_traverse_fill</a>()</code>. Should only
+be called if traversal initialization results in a complete
+target fill but partial incoming fill.
+
+
+<a name="@Terminology_10"></a>
+
+### Terminology
+
+* "Incoming order" has <code>size</code> base coin parcels to be filled
+* "Target position" is the next position on the book to fill
+against
+* "Start position" is the position to traverse from
+
+
+<a name="@Parameters_11"></a>
+
+### Parameters
+
+* <code>host</code>: Host of <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code>
+* <code>i_addr</code>: Address of incoming order to match against
+* <code>side</code>: <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> or <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>
+* <code>size</code>: Base coin parcels to be filled on incoming order
+* <code>n_p</code>: Number of positions in <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code> for corresponding <code>side</code>
+* <code>s_id</code>: Order ID of start position. If <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, cannot
+be minimum ask in order book, and if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, cannot
+be maximum ask in order book (since no traversal possible).
+* <code>s_p_f</code>: Start position tree node parent field
+* <code>s_c_i</code>: Child field index of start position tree node
+* <code>_c</code>: Immutable reference to <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
+
+
+<a name="@Returns_12"></a>
+
+### Returns
+
+* <code>u128</code>: Target position order ID
+* <code><b>address</b></code>: User address holding target position (<code><a href="Book.md#0xc0deb00c_Book_P">P</a>.a</code>)
+* <code>u64</code>: Parent field of node corresponding to target position
+* <code>u64</code>: Child field index of node corresponding to target
+position
+* <code>u64</code>: Amount filled, in base coin parcels
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_traverse_pop_fill">traverse_pop_fill</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size: u64, n_p: u64, s_id: u128, s_p_f: u64, s_c_i: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_traverse_pop_fill">traverse_pop_fill</a>&lt;B, Q, E&gt;(
+    host: <b>address</b>,
+    i_addr: <b>address</b>,
+    side: bool,
+    size: u64,
+    n_p: u64,
+    s_id: u128,
+    s_p_f: u64,
+    s_c_i: u64,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+): (
+    u128,
+    <b>address</b>,
+    u64,
+    u64,
+    u64
+) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    <b>let</b> (tree, dir) = <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) // If an ask
+        // Define traversal tree <b>as</b> asks tree, successor iteration
+        (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host).a, <a href="Book.md#0xc0deb00c_Book_R">R</a>) <b>else</b>
+        // Otherwise define tree <b>as</b> bids tree, predecessor iteration
+        (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host).b, <a href="Book.md#0xc0deb00c_Book_L">L</a>);
+    // Traverse pop from start position <b>to</b> target position, storing
+    // target position order <a href="ID.md#0xc0deb00c_ID">ID</a>, mutable reference <b>to</b> target
+    // position, target position tree node parent field, target
+    // position tree node child fiend index, start position <b>struct</b>
+    <b>let</b> (t_id, t_p_r, t_p_f, t_c_i, s_p) =
+        cb_t_p_m(tree, s_id, s_p_f, s_c_i, n_p, dir);
+    // Unpack/discard start position fields, decrement n positions
+    <b>let</b> (<a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _}, n_p) = (s_p, n_p - 1);
+    <b>let</b> t_addr = t_p_r.a; // Store target position user <b>address</b>
+    // Process fill scenarios, storing amount filled and <b>if</b> perfect
+    // match between incoming and target order
+    <b>let</b> (filled, perfect) = <a href="Book.md#0xc0deb00c_Book_process_fill_scenarios">process_fill_scenarios</a>(i_addr, t_p_r, size);
+    // If perfect match, pop target position, unpack/discard fields
+    <b>if</b> (perfect) {<b>let</b> <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);};
+    // Return target position <a href="ID.md#0xc0deb00c_ID">ID</a>, target position user <b>address</b>,
+    // corresponding node's parent field, corresponding node's child
+    // field index, and the number of base coin parcels filled
+    (t_id, t_addr, t_p_f, t_c_i, filled)
 }
 </code></pre>
 

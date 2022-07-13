@@ -41,7 +41,7 @@ module Econia::Orders {
         empty as cb_e,
         has_key as cb_h_k,
         insert as cb_i,
-        pop as cb_p
+        pop
     };
 
     use Std::Signer::{
@@ -177,11 +177,38 @@ module Econia::Orders {
         cancel_order<B, Q, E>(addr, BID, id)
     }
 
-    /// Return `true` if specified open orders type exists at address
+/// Return `true` if specified open orders type exists at address
     public fun exists_orders<B, Q, E>(
         a: address
     ): bool {
         exists<OO<B, Q, E>>(a)
+    }
+
+    /// Remove an order from a user's open orders. Unlike
+    /// `cancel_order()`, is called by the matching engine instead of by
+    /// a user, and thus skips redundant error checking that is already
+    /// performed when initially placing an order.
+    ///
+    /// # Paremeters
+    /// * `user_addr`: User's address
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID (see `Econia::ID`)
+    /// * `_c`: Immutable reference to a `FriendCap`
+    ///
+    /// # Assumptions
+    /// * User already has an `OO` initialized under their account,
+    ///   containing an order of ID `id` on corresponding `side`
+    public fun remove_order<B, Q, E>(
+        user_addr: address,
+        side: bool,
+        id: u128,
+        _c: &FriendCap
+    ) acquires OO {
+        // Borrow mutable reference to user's open orders
+        let open_orders = borrow_global_mut<OO<B, Q, E>>(user_addr);
+        // If side is ask, pop the order from user's asks tree
+        if (side == ASK) pop<u64>(&mut open_orders.a, id)
+            else pop<u64>(&mut open_orders.b, id); // Else the bids tree
     }
 
     /// Return a `FriendCap`, aborting if not called by Econia
@@ -308,12 +335,12 @@ module Econia::Orders {
             // Assert user has an open ask with corresponding ID
             assert!(cb_h_k<u64>(&o_o.a, id), E_NO_SUCH_ORDER);
             // Pop ask with corresponding ID, returning its scaled size
-            return cb_p<u64>(&mut o_o.a, id)
+            return pop<u64>(&mut o_o.a, id)
         } else { // If cancelling a bid
             // Assert user has an open bid with corresponding ID
             assert!(cb_h_k<u64>(&o_o.b, id), E_NO_SUCH_ORDER);
             // Pop bid with corresponding ID, returning its scaled size
-            return cb_p<u64>(&mut o_o.b, id)
+            return pop<u64>(&mut o_o.b, id)
         }
     }
 
@@ -563,6 +590,33 @@ module Econia::Orders {
         let o_o = borrow_global<OO<BT, QT, ET>>(user_addr);
         // Assert bid and ask trees init empty
         assert!(cb_i_e(&o_o.a) && cb_i_e(&o_o.b), 2);
+    }
+
+    #[test(user = @TestUser)]
+    /// Verify successful removal of both ask and bid
+    fun remove_order_success(
+        user: &signer
+    ) acquires OO {
+        // Initialize open orders with scale factor of 1
+        init_orders<BT, QT, ET>(user, 1, &FriendCap{});
+        // Declare dummy id, price, size fields
+        let (id, price, size) = (1, 2, 3);
+        // Add ask to open orders
+        add_ask<BT, QT, ET>(@TestUser, id, price, size, &FriendCap{});
+        // Assert ask registered in open orders
+        assert!(has_ask<BT, QT, ET>(@TestUser, id), 0);
+        // Remove ask from the user's open orders
+        remove_order<BT, QT, ET>(@TestUser, ASK, id, &FriendCap{});
+        // Assert ask no longer registered in open orders
+        assert!(!has_ask<BT, QT, ET>(@TestUser, id), 1);
+        // Add bid to open orders
+        add_bid<BT, QT, ET>(@TestUser, id, price, size, &FriendCap{});
+        // Assert bid registered in open orders
+        assert!(has_bid<BT, QT, ET>(@TestUser, id), 2);
+        // Remove bid from the user's open orders
+        remove_order<BT, QT, ET>(@TestUser, BID, id, &FriendCap{});
+        // Assert bid no longer registered in open orders
+        assert!(!has_bid<BT, QT, ET>(@TestUser, id), 3);
     }
 
     #[test]

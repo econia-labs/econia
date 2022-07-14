@@ -86,6 +86,7 @@ module Econia::Caps {
     friend Econia::Init;
     friend Econia::Registry;
     friend Econia::User;
+    friend Econia::Match;
 
     // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

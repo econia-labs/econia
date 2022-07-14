@@ -53,7 +53,7 @@ module Econia::User {
     };
 
     use Econia::Version::{
-        get_v_n as v_g_v_n
+        get_v_n
     };
 
     use Std::Signer::{
@@ -75,7 +75,7 @@ module Econia::User {
     use AptosFramework::Coin::{
         balance as c_b,
         register as coin_register,
-        value as c_v
+        value as coin_value
     };
 
     #[test_only]
@@ -93,10 +93,10 @@ module Econia::User {
 
     #[test_only]
     use Econia::Orders::{
-        check_ask as o_ch_a,
-        check_bid as o_ch_b,
-        has_ask as o_h_a,
-        has_bid as o_h_b
+        check_ask as orders_check_ask,
+        check_bid as orders_check_bid,
+        has_ask as orders_has_ask,
+        has_bid as orders_has_bid
     };
 
     #[test_only]
@@ -464,7 +464,7 @@ module Econia::User {
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
         // Borrow mutable reference to user's order collateral container
         let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
-        let v_n = v_g_v_n(); // Get transaction version number
+        let v_n = get_v_n(); // Get transaction version number
         let c_s: bool; // Define flag for if order crosses the spread
         if (side == ASK) { // If limit order is an ask
             let id = id_a(price, v_n); // Get corresponding order id
@@ -604,14 +604,14 @@ module Econia::User {
         // 100 base coins and 200 quote coins
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
         // Get version number of upcoming order
-        let order_v_n = v_g_v_n() + 1;
+        let order_v_n = get_v_n() + 1;
         // Define order price, number of base coin parcels in order
         let (price, size) = (5, 3);
         let id = id_a(price, order_v_n); // Get order ID
         // Submit ask
         submit_ask<BCT, QCT, E1>(user, @Econia, price, size);
         // Assert user has ask registered in open orders
-        assert!(o_h_a<BCT, QCT, E1>(@TestUser, id), 0);
+        assert!(orders_has_ask<BCT, QCT, E1>(@TestUser, id), 0);
         // Assert ask registered in order book
         assert!(b_h_a<BCT, QCT, E1>(@Econia, id), 1);
         // Borrow immutable reference to user's order collateral
@@ -621,7 +621,7 @@ module Econia::User {
         inc_seq_number(@TestUser); // Increment mock sequence number
         cancel_ask<BCT, QCT, E1>(user, @Econia, id); // Cancel ask
         // Assert user no longer has ask registered in open orders
-        assert!(!o_h_a<BCT, QCT, E1>(@TestUser, id), 3);
+        assert!(!orders_has_ask<BCT, QCT, E1>(@TestUser, id), 3);
         // Assert ask no longer registered in order book
         assert!(!b_h_a<BCT, QCT, E1>(@Econia, id), 4);
         // Borrow immutable reference to user's order collateral
@@ -643,14 +643,14 @@ module Econia::User {
         // 100 base coins and 200 quote coins
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
         // Get version number of upcoming order
-        let order_v_n = v_g_v_n() + 1;
+        let order_v_n = get_v_n() + 1;
         // Define order price, number of base coin parcels in order
         let (price, size) = (5, 3);
         let id = id_b(price, order_v_n); // Get order ID
         // Submit bid
         submit_bid<BCT, QCT, E1>(user, @Econia, price, size);
         // Assert user has bid registered in open orders
-        assert!(o_h_b<BCT, QCT, E1>(@TestUser, id), 0);
+        assert!(orders_has_bid<BCT, QCT, E1>(@TestUser, id), 0);
         // Assert bid registered in order book
         assert!(b_h_b<BCT, QCT, E1>(@Econia, id), 1);
         // Borrow immutable reference to user's order collateral
@@ -660,7 +660,7 @@ module Econia::User {
         inc_seq_number(@TestUser); // Increment mock sequence number
         cancel_bid<BCT, QCT, E1>(user, @Econia, id); // Cancel bid
         // Assert user no longer has bid registered in open orders
-        assert!(!o_h_b<BCT, QCT, E1>(@TestUser, id), 3);
+        assert!(!orders_has_bid<BCT, QCT, E1>(@TestUser, id), 3);
         // Assert bid no longer registered in order book
         assert!(!b_h_b<BCT, QCT, E1>(@Econia, id), 4);
         // Borrow immutable reference to user's order collateral
@@ -712,7 +712,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert collateral holdings update correctly
-        assert!(c_v<BCT>(&o_c.b_c) == 1 && c_v<QCT>(&o_c.q_c) == 0, 1);
+        assert!(coin_value<BCT>(&o_c.b_c) == 1 &&
+                coin_value<QCT>(&o_c.q_c) == 0, 1);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 1 && o_c.q_a == 0, 2);
         inc_seq_number(addr); // Increment mock sequence number
@@ -722,7 +723,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert collateral holdings update correctly
-        assert!(c_v<BCT>(&o_c.b_c) == 1 && c_v<QCT>(&o_c.q_c) == 2, 4);
+        assert!(coin_value<BCT>(&o_c.b_c) == 1 &&
+                coin_value<QCT>(&o_c.q_c) == 2, 4);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 1 && o_c.q_a == 2, 5);
         inc_seq_number(addr); // Increment mock sequence number
@@ -732,7 +734,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert collateral holdings update correctly
-        assert!(c_v<BCT>(&o_c.b_c) == 6 && c_v<QCT>(&o_c.q_c) == 7, 7);
+        assert!(coin_value<BCT>(&o_c.b_c) == 6 &&
+                coin_value<QCT>(&o_c.q_c) == 7, 7);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 6 && o_c.q_a == 7, 8);
     }
@@ -778,7 +781,8 @@ module Econia::User {
         // Borrow immutable reference to order collateral container
         let o_c = borrow_global<OC<BCT, QCT, E0>>(address_of(user));
         // Assert no base coins or quote coins in collateral container
-        assert!(c_v(&o_c.b_c) == 0 && c_v(&o_c.q_c) == 0, 0);
+        assert!(coin_value(&o_c.b_c) == 0 &&
+                coin_value(&o_c.q_c) == 0, 0);
         // Assert no base coins or quote coins marked available
         assert!(o_c.b_a == 0 && o_c.q_a == 0, 1);
     }
@@ -843,7 +847,8 @@ module Econia::User {
         // Borrow immutable reference to order collateral container
         let o_c = borrow_global<OC<BCT, QCT, E0>>(user_addr);
         // Assert no base coins or quote coins in collateral container
-        assert!(c_v(&o_c.b_c) == 0 && c_v(&o_c.q_c) == 0, 0);
+        assert!(coin_value(&o_c.b_c) == 0 &&
+                coin_value(&o_c.q_c) == 0, 0);
         // Assert no base coins or quote coins marked available
         assert!(o_c.b_a == 0 && o_c.q_a == 0, 1);
         // Assert open orders exists and has correct scale factor
@@ -871,6 +876,260 @@ module Econia::User {
         init_user(user); // Initialize sequence counter for user
         // Assert sequence counter initializes to user sequence number
         assert!(a_g_s_n(user_addr) == 0, 0);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    /// Verify successful processing of filling against position on book
+    public(script) fun process_fill_ask_complete(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        let user_base_start = 100; // Define user's start base coins
+        let user_quote_start = 200; // Define user's start quote coins
+        // Initialize test market with scale exponent 1, fund user
+        init_test_scaled_market_funded_user<E1>(
+            econia, user, user_base_start, user_quote_start);
+        let scale_factor = 10; // Define corresponding scale factor
+        // Initialize Econia as funded user on same market
+        let econia_base_start = 150; // Define Econia start base coins
+        let econia_quote_start = 250; // Define Econia start quote coins
+        init_funded_user<E1>(econia, econia_base_start, econia_quote_start);
+        // Get upcoming order version number
+        let order_v_n = get_v_n() + 1;
+        let order_price = 5; // Define order price
+        let order_size = 3; // Define order size
+        let id = id_a(order_price, order_v_n); // Get order ID
+        // Submit ask from Econia account
+        submit_ask<BCT, QCT, E1>(econia, @Econia, order_price, order_size);
+        let fill_size = order_size; // Define fill size
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Decrement user's availabe quote coins by amount required to
+        // fill trade (simulated market order placement)
+        user_collateral.q_a = user_collateral.q_a - fill_size * order_price;
+        // Process complete fill for incoming user order
+        process_fill<BCT, QCT, E1>(
+            @Econia, @TestUser, ASK, id, fill_size, scale_factor, true);
+        // Assert Econia no longer has open order
+        assert!(!orders_has_ask<BCT, QCT, E1>(@Econia, id), 0);
+        // Borrow immutable reference to Econia's order collateral
+        let econia_collateral = borrow_global<OC<BCT, QCT, E1>>(@Econia);
+        // Assert proper values for Econia available collateral amounts
+        assert!(econia_collateral.b_a ==
+            econia_base_start - order_size * scale_factor, 1);
+        assert!(econia_collateral.q_a ==
+            econia_quote_start + order_price * fill_size, 2);
+        // Assert proper amount of coins in Econia collateral
+        assert!(coin_value(&econia_collateral.b_c) ==
+            econia_base_start - fill_size * scale_factor, 3);
+        assert!(coin_value(&econia_collateral.q_c) ==
+            econia_quote_start + order_price * fill_size, 4);
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert proper values for user available collateral amounts
+        assert!(user_collateral.b_a ==
+            user_base_start + fill_size * scale_factor, 5);
+        assert!(user_collateral.q_a ==
+            user_quote_start - fill_size * order_price, 6);
+        // Assert proper amount of coins in user collateral
+        assert!(coin_value(&user_collateral.b_c) ==
+            user_base_start + fill_size * scale_factor, 7);
+        assert!(coin_value(&user_collateral.q_c) ==
+            user_quote_start - fill_size * order_price, 8);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    /// Verify successful processing of filling against position on book
+    public(script) fun process_fill_ask_partial(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        let user_base_start = 100; // Define user's start base coins
+        let user_quote_start = 200; // Define user's start quote coins
+        // Initialize test market with scale exponent 1, fund user
+        init_test_scaled_market_funded_user<E1>(
+            econia, user, user_base_start, user_quote_start);
+        let scale_factor = 10; // Define corresponding scale factor
+        // Initialize Econia as funded user on same market
+        let econia_base_start = 150; // Define Econia start base coins
+        let econia_quote_start = 250; // Define Econia start quote coins
+        init_funded_user<E1>(econia, econia_base_start, econia_quote_start);
+        // Get upcoming order version number
+        let order_v_n = get_v_n() + 1;
+        let order_price = 5; // Define order price
+        let order_size = 3; // Define order size
+        let id = id_a(order_price, order_v_n); // Get order ID
+        // Submit ask from Econia account
+        submit_ask<BCT, QCT, E1>(econia, @Econia, order_price, order_size);
+        let fill_size = 2; // Define fill size
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Decrement user's availabe quote coins by amount required to
+        // fill trade (simulated market order placement)
+        user_collateral.q_a = user_collateral.q_a - fill_size * order_price;
+        // Process partial fill for incoming user order
+        process_fill<BCT, QCT, E1>(
+            @Econia, @TestUser, ASK, id, fill_size, scale_factor, false);
+        // Assert Econia's open order size decremented accordingly
+        assert!(orders_check_ask<BCT, QCT, E1>(@Econia, id) ==
+            order_size - fill_size, 0);
+        // Borrow immutable reference to Econia's order collateral
+        let econia_collateral = borrow_global<OC<BCT, QCT, E1>>(@Econia);
+        // Assert proper values for Econia available collateral amounts
+        assert!(econia_collateral.b_a ==
+            econia_base_start - order_size * scale_factor, 1);
+        assert!(econia_collateral.q_a ==
+            econia_quote_start + order_price * fill_size, 2);
+        // Assert proper amount of coins in Econia collateral
+        assert!(coin_value(&econia_collateral.b_c) ==
+            econia_base_start - fill_size * scale_factor, 3);
+        assert!(coin_value(&econia_collateral.q_c) ==
+            econia_quote_start + order_price * fill_size, 4);
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert proper values for user available collateral amounts
+        assert!(user_collateral.b_a ==
+            user_base_start + fill_size * scale_factor, 5);
+        assert!(user_collateral.q_a ==
+            user_quote_start - fill_size * order_price, 6);
+        // Assert proper amount of coins in user collateral
+        assert!(coin_value(&user_collateral.b_c) ==
+            user_base_start + fill_size * scale_factor, 7);
+        assert!(coin_value(&user_collateral.q_c) ==
+            user_quote_start - fill_size * order_price, 8);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    /// Verify successful processing of filling against position on book
+    public(script) fun process_fill_bid_complete(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        let user_base_start = 100; // Define user's start base coins
+        let user_quote_start = 200; // Define user's start quote coins
+        // Initialize test market with scale exponent 1, fund user
+        init_test_scaled_market_funded_user<E1>(
+            econia, user, user_base_start, user_quote_start);
+        let scale_factor = 10; // Define corresponding scale factor
+        // Initialize Econia as funded user on same market
+        let econia_base_start = 150; // Define Econia start base coins
+        let econia_quote_start = 250; // Define Econia start quote coins
+        init_funded_user<E1>(econia, econia_base_start, econia_quote_start);
+        // Get upcoming order version number
+        let order_v_n = get_v_n() + 1;
+        let order_price = 5; // Define order price
+        let order_size = 3; // Define order size
+        let id = id_b(order_price, order_v_n); // Get order ID
+        // Submit bid from Econia account
+        submit_bid<BCT, QCT, E1>(econia, @Econia, order_price, order_size);
+        let fill_size = order_size; // Define fill size
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Decrement user's availabe base coins by amount required to
+        // fill trade (simulated market order placement)
+        user_collateral.b_a = user_collateral.b_a - fill_size * scale_factor;
+        // Process complete fill for incoming user order
+        process_fill<BCT, QCT, E1>(
+            @Econia, @TestUser, BID, id, fill_size, scale_factor, true);
+        // Assert Econia no longer has open order
+        assert!(!orders_has_bid<BCT, QCT, E1>(@Econia, id), 0);
+        // Borrow immutable reference to Econia's order collateral
+        let econia_collateral = borrow_global<OC<BCT, QCT, E1>>(@Econia);
+        // Assert proper values for Econia available collateral amounts
+        assert!(econia_collateral.b_a ==
+            econia_base_start + fill_size * scale_factor, 1);
+        assert!(econia_collateral.q_a ==
+            econia_quote_start - order_price * order_size, 2);
+        // Assert proper amount of coins in Econia collateral
+        assert!(coin_value(&econia_collateral.b_c) ==
+            econia_base_start + fill_size * scale_factor, 3);
+        assert!(coin_value(&econia_collateral.q_c) ==
+            econia_quote_start - order_price * order_size, 4);
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert proper values for user available collateral amounts
+        assert!(user_collateral.b_a ==
+            user_base_start - fill_size * scale_factor, 5);
+        assert!(user_collateral.q_a ==
+            user_quote_start + fill_size * order_price, 6);
+        // Assert proper amount of coins in user collateral
+        assert!(coin_value(&user_collateral.b_c) ==
+            user_base_start - fill_size * scale_factor, 7);
+        assert!(coin_value(&user_collateral.q_c) ==
+            user_quote_start + fill_size * order_price, 8);
+    }
+
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
+    /// Verify successful processing of filling against position on book
+    public(script) fun process_fill_bid_partial(
+        econia: &signer,
+        user: &signer
+    ) acquires OC, SC {
+        let user_base_start = 100; // Define user's start base coins
+        let user_quote_start = 200; // Define user's start quote coins
+        // Initialize test market with scale exponent 1, fund user
+        init_test_scaled_market_funded_user<E1>(
+            econia, user, user_base_start, user_quote_start);
+        let scale_factor = 10; // Define corresponding scale factor
+        // Initialize Econia as funded user on same market
+        let econia_base_start = 150; // Define Econia start base coins
+        let econia_quote_start = 250; // Define Econia start quote coins
+        init_funded_user<E1>(econia, econia_base_start, econia_quote_start);
+        // Get upcoming order version number
+        let order_v_n = get_v_n() + 1;
+        let order_price = 5; // Define order price
+        let order_size = 3; // Define order size
+        let id = id_b(order_price, order_v_n); // Get order ID
+        // Submit bid from Econia account
+        submit_bid<BCT, QCT, E1>(econia, @Econia, order_price, order_size);
+        let fill_size = 2; // Define fill size
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Decrement user's availabe base coins by amount required to
+        // fill trade (simulated market order placement)
+        user_collateral.b_a = user_collateral.b_a - fill_size * scale_factor;
+        // Process partial fill for incoming user order
+        process_fill<BCT, QCT, E1>(
+            @Econia, @TestUser, BID, id, fill_size, scale_factor, false);
+        // Assert Econia's open order size decremented accordingly
+        assert!(orders_check_bid<BCT, QCT, E1>(@Econia, id) ==
+            order_size - fill_size, 0);
+        // Borrow immutable reference to Econia's order collateral
+        let econia_collateral = borrow_global<OC<BCT, QCT, E1>>(@Econia);
+        // Assert proper values for Econia available collateral amounts
+        assert!(econia_collateral.b_a ==
+            econia_base_start + fill_size * scale_factor, 1);
+        assert!(econia_collateral.q_a ==
+            econia_quote_start - order_price * order_size, 2);
+        // Assert proper amount of coins in Econia collateral
+        assert!(coin_value(&econia_collateral.b_c) ==
+            econia_base_start + fill_size * scale_factor, 3);
+        assert!(coin_value(&econia_collateral.q_c) ==
+            econia_quote_start - order_price * fill_size, 4);
+        // Borrow mutable reference to user's order collateral
+        let user_collateral = borrow_global_mut<OC<BCT, QCT, E1>>(@TestUser);
+        // Assert proper values for user available collateral amounts
+        assert!(user_collateral.b_a ==
+            user_base_start - fill_size * scale_factor, 5);
+        assert!(user_collateral.q_a ==
+            user_quote_start + fill_size * order_price, 6);
+        // Assert proper amount of coins in user collateral
+        assert!(coin_value(&user_collateral.b_c) ==
+            user_base_start - fill_size * scale_factor, 7);
+        assert!(coin_value(&user_collateral.q_c) ==
+            user_quote_start + fill_size * order_price, 8);
     }
 
     #[test(
@@ -930,13 +1189,13 @@ module Econia::User {
         let host = address_of(econia); // Get market host address
         let user_addr = address_of(user); // Get user address
         // Get version number of upcoming order
-        let order_v_n = v_g_v_n() + 1;
+        let order_v_n = get_v_n() + 1;
         // Define order price, number of base coin parcels in order
         let (price, size) = (5, 3);
         let id = id_a(price, order_v_n); // Get order ID
         submit_ask<BCT, QCT, E1>(user, host, price, size); // Submit ask
         // Assert added to user's open orders
-        assert!(o_ch_a<BCT, QCT, E1>(user_addr, id) == size, 0);
+        assert!(orders_check_ask<BCT, QCT, E1>(user_addr, id) == size, 0);
         // Get corresponding position size and address on book
         let (p_s, p_a) = b_ch_a<BCT, QCT, E1>(host, id);
         // Assert added to order book correctly
@@ -946,7 +1205,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(user_addr);
         // Assert coin holdings in collateral unchanged
-        assert!(c_v<BCT>(&o_c.b_c) == 100 && c_v<QCT>(&o_c.q_c) == 200, 3);
+        assert!(coin_value<BCT>(&o_c.b_c) == 100 &&
+                coin_value<QCT>(&o_c.q_c) == 200, 3);
         // Assert updated collateral available amounts
         assert!(o_c.b_a == 70 && o_c.q_a == 200, 4);
     }
@@ -1009,13 +1269,13 @@ module Econia::User {
         let host = address_of(econia); // Get market host address
         let user_addr = address_of(user); // Get user address
         // Get version number of upcoming order
-        let order_v_n = v_g_v_n() + 1;
+        let order_v_n = get_v_n() + 1;
         // Define order price, number of base coin parcels in order
         let (price, size) = (5, 3);
         let id = id_b(price, order_v_n); // Get order ID
         submit_bid<BCT, QCT, E1>(user, host, price, size); // Submit ask
         // Assert added to user's open orders
-        assert!(o_ch_b<BCT, QCT, E1>(user_addr, id) == size, 0);
+        assert!(orders_check_bid<BCT, QCT, E1>(user_addr, id) == size, 0);
         // Get corresponding position size and address on book
         let (p_s, p_a) = b_ch_b<BCT, QCT, E1>(host, id);
         // Assert added to order book correctly
@@ -1025,7 +1285,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E1>>(user_addr);
         // Assert coin holdings in collateral unchanged
-        assert!(c_v<BCT>(&o_c.b_c) == 100 && c_v<QCT>(&o_c.q_c) == 200, 3);
+        assert!(coin_value<BCT>(&o_c.b_c) == 100 &&
+                coin_value<QCT>(&o_c.q_c) == 200, 3);
         // Assert updated collateral available amounts
         assert!(o_c.b_a == 100 && o_c.q_a == 185, 4);
     }
@@ -1183,7 +1444,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert collateral holdings update correctly
-        assert!(c_v<BCT>(&o_c.b_c) == 70 && c_v<QCT>(&o_c.q_c) == 150, 1);
+        assert!(coin_value<BCT>(&o_c.b_c) == 70 &&
+                coin_value<QCT>(&o_c.q_c) == 150, 1);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 70 && o_c.q_a == 150, 2);
         // Manually update available quote coins
@@ -1195,7 +1457,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert collateral holdings update correctly
-        assert!(c_v<BCT>(&o_c.b_c) == 70 && c_v<QCT>(&o_c.q_c) == 130, 4);
+        assert!(coin_value<BCT>(&o_c.b_c) == 70 &&
+                coin_value<QCT>(&o_c.q_c) == 130, 4);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 70 && o_c.q_a == 120, 5);
         inc_seq_number(addr); // Increment mock sequence number
@@ -1205,7 +1468,8 @@ module Econia::User {
         // Borrow immutable reference to user's order collateral
         let o_c = borrow_global<OC<BCT, QCT, E0>>(addr);
         // Assert collateral holdings update correctly
-        assert!(c_v<BCT>(&o_c.b_c) == 0 && c_v<QCT>(&o_c.q_c) == 10, 7);
+        assert!(coin_value<BCT>(&o_c.b_c) == 0 &&
+                coin_value<QCT>(&o_c.q_c) == 10, 7);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 0 && o_c.q_a == 0, 8);
     }

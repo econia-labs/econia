@@ -795,7 +795,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
     // Borrow mutable reference <b>to</b> user's order collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
-    <b>let</b> v_n = v_g_v_n(); // Get transaction version number
+    <b>let</b> v_n = get_v_n(); // Get transaction version number
     <b>let</b> c_s: bool; // Define flag for <b>if</b> order crosses the spread
     <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) { // If limit order is an ask
         <b>let</b> id = id_a(price, v_n); // Get corresponding order id

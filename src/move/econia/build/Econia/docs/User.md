@@ -274,7 +274,7 @@ Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <cod
     b_val: u64,
     q_val: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <b>let</b> addr = s_a_o(user); // Get user <b>address</b>
+    <b>let</b> addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
     // Assert user actually attempting <b>to</b> deposit
@@ -380,7 +380,7 @@ initialized for market
     user: &signer
 ) {
     <b>assert</b>!(r_i_r&lt;B, Q, E&gt;(), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>); // Assert market <b>exists</b>
-    <b>let</b> user_addr = s_a_o(user); // Get user <b>address</b>
+    <b>let</b> user_addr = address_of(user); // Get user <b>address</b>
     // Assert user does not already have collateral container
     <b>assert</b>!(!<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_O_C_EXISTS">E_O_C_EXISTS</a>);
     // Assert user does not already have open orders container
@@ -417,7 +417,7 @@ transaction, aborting if one already exists
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_init_user">init_user</a>(
     user: &signer
 ) {
-    <b>let</b> user_addr = s_a_o(user); // Get user <b>address</b>
+    <b>let</b> user_addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> not already initialized a sequence counter
     <b>assert</b>!(!<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_S_C_EXISTS">E_S_C_EXISTS</a>);
     // Initialize sequence counter <b>with</b> user's sequence number
@@ -511,7 +511,7 @@ Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <co
     b_val: u64,
     q_val: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <b>let</b> addr = s_a_o(user); // Get user <b>address</b>
+    <b>let</b> addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
     // Assert user actually attempting <b>to</b> withdraw
@@ -679,7 +679,7 @@ collateral container
     id: u128
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a>, <a href="User.md#0xc0deb00c_User_OC">OC</a> {
     <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
-    <b>let</b> addr = s_a_o(user); // Get user <b>address</b>
+    <b>let</b> addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
     // Borrow mutable reference <b>to</b> user's order collateral container
@@ -729,7 +729,7 @@ if already initialized
     user: &signer,
 ) {
     // Assert user does not already have order collateral for market
-    <b>assert</b>!(!<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(s_a_o(user)), <a href="User.md#0xc0deb00c_User_E_O_C_EXISTS">E_O_C_EXISTS</a>);
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(address_of(user)), <a href="User.md#0xc0deb00c_User_E_O_C_EXISTS">E_O_C_EXISTS</a>);
     // Assert given market <b>has</b> actually been registered
     <b>assert</b>!(r_i_r&lt;B, Q, E&gt;(), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
     // Pack empty order collateral container
@@ -790,7 +790,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
     <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
     // Assert market <b>exists</b> at given host <b>address</b>
     <b>assert</b>!(b_e_b&lt;B, Q, E&gt;(host), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
-    <b>let</b> addr = s_a_o(user); // Get user <b>address</b>
+    <b>let</b> addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
     // Borrow mutable reference <b>to</b> user's order collateral container
@@ -854,7 +854,7 @@ greater than the number indicated by the user's <code><a href="User.md#0xc0deb00
 <pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(
     u: &signer,
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <b>let</b> user_addr = s_a_o(u); // Get user <b>address</b>
+    <b>let</b> user_addr = address_of(u); // Get user <b>address</b>
     // Assert user <b>has</b> already initialized a sequence counter
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>);
     // Borrow mutable reference <b>to</b> user's sequence counter

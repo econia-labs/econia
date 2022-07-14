@@ -57,7 +57,7 @@ module Econia::User {
     };
 
     use Std::Signer::{
-        address_of as s_a_o
+        address_of
     };
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -66,15 +66,15 @@ module Econia::User {
 
     #[test_only]
     use AptosFramework::Account::{
-        create_account as a_c_a,
-        increment_sequence_number as a_i_s_n,
+        create_account,
+        increment_sequence_number as inc_seq_number,
         set_sequence_number as a_s_s_n
     };
 
     #[test_only]
     use AptosFramework::Coin::{
         balance as c_b,
-        register as c_r,
+        register as coin_register,
         value as c_v
     };
 
@@ -104,11 +104,11 @@ module Econia::User {
         BCT,
         E0,
         E1,
-        mint_bct_to as r_m_bct_to,
-        mint_qct_to as r_m_qct_to,
+        mint_bct_to,
+        mint_qct_to,
         QCT,
         register_test_market as r_r_t_m,
-        register_scaled_test_market as r_r_s_t_m
+        register_scaled_test_market
     };
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -179,7 +179,7 @@ module Econia::User {
         b_val: u64,
         q_val: u64
     ) acquires OC, SC {
-        let addr = s_a_o(user); // Get user address
+        let addr = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
         // Assert user actually attempting to deposit
@@ -225,7 +225,7 @@ module Econia::User {
         user: &signer
     ) {
         assert!(r_i_r<B, Q, E>(), E_NO_MARKET); // Assert market exists
-        let user_addr = s_a_o(user); // Get user address
+        let user_addr = address_of(user); // Get user address
         // Assert user does not already have collateral container
         assert!(!exists<OC<B, Q, E>>(user_addr), E_O_C_EXISTS);
         // Assert user does not already have open orders container
@@ -242,7 +242,7 @@ module Econia::User {
     public(script) fun init_user(
         user: &signer
     ) {
-        let user_addr = s_a_o(user); // Get user address
+        let user_addr = address_of(user); // Get user address
         // Assert user has not already initialized a sequence counter
         assert!(!exists<SC>(user_addr), E_S_C_EXISTS);
         // Initialize sequence counter with user's sequence number
@@ -276,7 +276,7 @@ module Econia::User {
         b_val: u64,
         q_val: u64
     ) acquires OC, SC {
-        let addr = s_a_o(user); // Get user address
+        let addr = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
         // Assert user actually attempting to withdraw
@@ -396,7 +396,7 @@ module Econia::User {
         id: u128
     ) acquires SC, OC {
         update_s_c(user); // Update user sequence counter
-        let addr = s_a_o(user); // Get user address
+        let addr = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
         // Borrow mutable reference to user's order collateral container
@@ -426,7 +426,7 @@ module Econia::User {
         user: &signer,
     ) {
         // Assert user does not already have order collateral for market
-        assert!(!exists<OC<B, Q, E>>(s_a_o(user)), E_O_C_EXISTS);
+        assert!(!exists<OC<B, Q, E>>(address_of(user)), E_O_C_EXISTS);
         // Assert given market has actually been registered
         assert!(r_i_r<B, Q, E>(), E_NO_MARKET);
         // Pack empty order collateral container
@@ -459,7 +459,7 @@ module Econia::User {
         update_s_c(user); // Update user sequence counter
         // Assert market exists at given host address
         assert!(b_e_b<B, Q, E>(host), E_NO_MARKET);
-        let addr = s_a_o(user); // Get user address
+        let addr = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
         // Borrow mutable reference to user's order collateral container
@@ -503,7 +503,7 @@ module Econia::User {
     fun update_s_c(
         u: &signer,
     ) acquires SC {
-        let user_addr = s_a_o(u); // Get user address
+        let user_addr = address_of(u); // Get user address
         // Assert user has already initialized a sequence counter
         assert!(exists<SC>(user_addr), E_NO_S_C);
         // Borrow mutable reference to user's sequence counter
@@ -526,11 +526,11 @@ module Econia::User {
     ) {
         init_econia(econia); // Initialize Econia core resources
         r_r_t_m(econia); // Register test market
-        a_c_a(s_a_o(user)); // Initialize Account resource
+        create_account(address_of(user)); // Initialize Account resource
         init_user(user); // Initialize user
         init_containers<BCT, QCT, E0>(user); // Initialize containers
-        c_r<BCT>(user); // Register user with base coin store
-        c_r<QCT>(user); // Register user with quote coin store
+        coin_register<BCT>(user); // Register user with base coin store
+        coin_register<QCT>(user); // Register user with quote coin store
     }
 
     #[test_only]
@@ -543,19 +543,32 @@ module Econia::User {
         q_c: u64
     ) acquires OC, SC {
         init_econia(econia); // Initialize Econia core resources
-        r_r_s_t_m<E>(econia); // Register scaled test market
-        a_c_a(s_a_o(user)); // Initialize Account resource
+        // Register scaled test market under Econia registry
+        register_scaled_test_market<E>(econia);
+        init_funded_user<E>(user, b_c, q_c); // Initialize funded user
+    }
+
+    #[test_only]
+    /// Initialize `user` to trade on test market with scale exponent
+    /// `E`, funding with `b_c` base coins and `q_c` quote coins
+    public(script) fun init_funded_user<E>(
+        user: &signer,
+        base_coins: u64,
+        quote_coins: u64
+    ) acquires OC, SC {
+        let user_addr = address_of(user); // Get user address
+        create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize user
-        let user_addr = s_a_o(user); // Get user address
-        a_i_s_n(user_addr); // Increment mock sequence number
+        inc_seq_number(user_addr); // Increment mock sequence number
         init_containers<BCT, QCT, E>(user); // Initialize containers
-        a_i_s_n(user_addr); // Increment mock sequence number
-        c_r<BCT>(user); // Register user with base coin store
-        c_r<QCT>(user); // Register user with quote coin store
-        r_m_bct_to(user_addr, b_c); // Mint base coins to user
-        r_m_qct_to(user_addr, q_c); // Mint quote coins to user
-        deposit<BCT, QCT, E>(user, b_c, q_c); // Deposit all coins
-        a_i_s_n(user_addr); // Increment mock sequence number
+        inc_seq_number(user_addr); // Increment mock sequence number
+        coin_register<BCT>(user); // Register user with base coin store
+        coin_register<QCT>(user); // Register user with quote coin store
+        mint_bct_to(user_addr, base_coins); // Mint base coins to user
+        mint_qct_to(user_addr, quote_coins); // Mint quote coins to user
+        // Deposit all coins into collateral container
+        deposit<BCT, QCT, E>(user, base_coins, quote_coins);
+        inc_seq_number(user_addr); // Increment mock sequence number
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -571,9 +584,9 @@ module Econia::User {
     public(script) fun cancel_order_failure_no_o_c(
         user: &signer
     ) acquires OC, SC {
-        a_c_a(@TestUser); // Initialize Account resource
+        create_account(@TestUser); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
-        a_i_s_n(@TestUser); // Increment mock sequence number
+        inc_seq_number(@TestUser); // Increment mock sequence number
         // Attempt invalid order cancellation
         cancel_bid<BCT, QCT, E0>(user, @TestUser, 1);
     }
@@ -605,7 +618,7 @@ module Econia::User {
         let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
         // Assert correct collateral available amounts
         assert!(o_c.b_a == 70 && o_c.q_a == 200, 2);
-        a_i_s_n(@TestUser); // Increment mock sequence number
+        inc_seq_number(@TestUser); // Increment mock sequence number
         cancel_ask<BCT, QCT, E1>(user, @Econia, id); // Cancel ask
         // Assert user no longer has ask registered in open orders
         assert!(!o_h_a<BCT, QCT, E1>(@TestUser, id), 3);
@@ -644,7 +657,7 @@ module Econia::User {
         let o_c = borrow_global<OC<BCT, QCT, E1>>(@TestUser);
         // Assert correct collateral available amounts
         assert!(o_c.b_a == 100 && o_c.q_a == 185, 2);
-        a_i_s_n(@TestUser); // Increment mock sequence number
+        inc_seq_number(@TestUser); // Increment mock sequence number
         cancel_bid<BCT, QCT, E1>(user, @Econia, id); // Cancel bid
         // Assert user no longer has bid registered in open orders
         assert!(!o_h_b<BCT, QCT, E1>(@TestUser, id), 3);
@@ -689,10 +702,10 @@ module Econia::User {
         user: &signer
     ) acquires OC, SC {
         init_test_market_user(econia, user); // Init test market, user
-        let addr = s_a_o(user); // Get user address
-        r_m_bct_to(addr, 100); // Mint 100 base coins to user
-        r_m_qct_to(addr, 200); // Mint 200 base coins to user
-        a_i_s_n(addr); // Increment mock sequence number
+        let addr = address_of(user); // Get user address
+        mint_bct_to(addr, 100); // Mint 100 base coins to user
+        mint_qct_to(addr, 200); // Mint 200 base coins to user
+        inc_seq_number(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 1, 0); // Deposit one base coin
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 99 && c_b<QCT>(addr) == 200, 0);
@@ -702,7 +715,7 @@ module Econia::User {
         assert!(c_v<BCT>(&o_c.b_c) == 1 && c_v<QCT>(&o_c.q_c) == 0, 1);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 1 && o_c.q_a == 0, 2);
-        a_i_s_n(addr); // Increment mock sequence number
+        inc_seq_number(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 0, 2); // Deposit two quote coin
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 99 && c_b<QCT>(addr) == 198, 3);
@@ -712,7 +725,7 @@ module Econia::User {
         assert!(c_v<BCT>(&o_c.b_c) == 1 && c_v<QCT>(&o_c.q_c) == 2, 4);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 1 && o_c.q_a == 2, 5);
-        a_i_s_n(addr); // Increment mock sequence number
+        inc_seq_number(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 5, 5); // Deposit 5 of each coin
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 94 && c_b<QCT>(addr) == 193, 6);
@@ -763,7 +776,7 @@ module Econia::User {
         r_r_t_m(econia); // Register test market
         init_o_c<BCT, QCT, E0>(user); // Initialize order collateral
         // Borrow immutable reference to order collateral container
-        let o_c = borrow_global<OC<BCT, QCT, E0>>(s_a_o(user));
+        let o_c = borrow_global<OC<BCT, QCT, E0>>(address_of(user));
         // Assert no base coins or quote coins in collateral container
         assert!(c_v(&o_c.b_c) == 0 && c_v(&o_c.q_c) == 0, 0);
         // Assert no base coins or quote coins marked available
@@ -826,7 +839,7 @@ module Econia::User {
         r_r_t_m(econia); // Register test market
         // Init test market user containers
         init_containers<BCT, QCT, E0>(user);
-        let user_addr = s_a_o(user); // Get user address
+        let user_addr = address_of(user); // Get user address
         // Borrow immutable reference to order collateral container
         let o_c = borrow_global<OC<BCT, QCT, E0>>(user_addr);
         // Assert no base coins or quote coins in collateral container
@@ -843,7 +856,7 @@ module Econia::User {
     public(script) fun init_user_failure(
         user: &signer
     ) {
-        a_c_a(s_a_o(user)); // Initialize Account resource
+        create_account(address_of(user)); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
         init_user(user); // Attempt invalid re-initialization
     }
@@ -853,8 +866,8 @@ module Econia::User {
     public(script) fun init_user_success(
         user: &signer
     ) {
-        let user_addr = s_a_o(user); // Get user address
-        a_c_a(user_addr); // Initialize Account resource
+        let user_addr = address_of(user); // Get user address
+        create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
         // Assert sequence counter initializes to user sequence number
         assert!(a_g_s_n(user_addr) == 0, 0);
@@ -874,7 +887,7 @@ module Econia::User {
         // 100 base coins and 200 quote coins
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
         // Attempt submitting invalid ask of size 110 base coins
-        submit_ask<BCT, QCT, E1>(user, s_a_o(econia), 1, 110);
+        submit_ask<BCT, QCT, E1>(user, address_of(econia), 1, 110);
     }
 
     #[test(
@@ -890,14 +903,14 @@ module Econia::User {
         // Initialize test market with scale exponent 0, fund user with
         // 100 base coins and 200 quote coins
         init_test_scaled_market_funded_user<E0>(econia, user, 100, 200);
-        let host = s_a_o(econia); // Get market host address
+        let host = address_of(econia); // Get market host address
         // Submit bid of price 5, size 2
         submit_bid<BCT, QCT, E0>(user, host, 5, 2);
-        let user_addr = s_a_o(user); // Get user address
-        a_i_s_n(user_addr); // Increment mock sequence number
+        let user_addr = address_of(user); // Get user address
+        inc_seq_number(user_addr); // Increment mock sequence number
         // Submit ask of price 7, size 3
         submit_ask<BCT, QCT, E0>(user, host, 7, 3);
-        a_i_s_n(user_addr); // Increment mock sequence number
+        inc_seq_number(user_addr); // Increment mock sequence number
         // Submit invalid ask of price 4, size 4, crossing the spread
         submit_ask<BCT, QCT, E0>(user, host, 4, 4);
     }
@@ -914,8 +927,8 @@ module Econia::User {
         // Initialize test market with scale exponent 1, fund user with
         // 100 base coins and 200 quote coins
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
-        let host = s_a_o(econia); // Get market host address
-        let user_addr = s_a_o(user); // Get user address
+        let host = address_of(econia); // Get market host address
+        let user_addr = address_of(user); // Get user address
         // Get version number of upcoming order
         let order_v_n = v_g_v_n() + 1;
         // Define order price, number of base coin parcels in order
@@ -953,7 +966,7 @@ module Econia::User {
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
         // Attempt submitting invalid bid for 10 base coins at a scaled
         // price of 201 (201 quote coins for 10 scaled coins)
-        submit_bid<BCT, QCT, E1>(user, s_a_o(econia), 201, 10);
+        submit_bid<BCT, QCT, E1>(user, address_of(econia), 201, 10);
     }
 
     #[test(
@@ -969,14 +982,14 @@ module Econia::User {
         // Initialize test market with scale exponent 0, fund user with
         // 100 base coins and 200 quote coins
         init_test_scaled_market_funded_user<E0>(econia, user, 100, 200);
-        let host = s_a_o(econia); // Get market host address
+        let host = address_of(econia); // Get market host address
         // Submit bid of price 5, size 2
         submit_bid<BCT, QCT, E0>(user, host, 5, 2);
-        let user_addr = s_a_o(user); // Get user address
-        a_i_s_n(user_addr); // Increment mock sequence number
+        let user_addr = address_of(user); // Get user address
+        inc_seq_number(user_addr); // Increment mock sequence number
         // Submit ask of price 7, size 3
         submit_ask<BCT, QCT, E0>(user, host, 7, 3);
-        a_i_s_n(user_addr); // Increment mock sequence number
+        inc_seq_number(user_addr); // Increment mock sequence number
         // Submit invalid bid of price 8, size 4, crossing the spread
         submit_bid<BCT, QCT, E0>(user, host, 8, 4);
     }
@@ -993,8 +1006,8 @@ module Econia::User {
         // Initialize test market with scale exponent 1, fund user with
         // 100 base coins and 200 quote coins
         init_test_scaled_market_funded_user<E1>(econia, user, 100, 200);
-        let host = s_a_o(econia); // Get market host address
-        let user_addr = s_a_o(user); // Get user address
+        let host = address_of(econia); // Get market host address
+        let user_addr = address_of(user); // Get user address
         // Get version number of upcoming order
         let order_v_n = v_g_v_n() + 1;
         // Define order price, number of base coin parcels in order
@@ -1023,12 +1036,12 @@ module Econia::User {
     public(script) fun submit_limit_order_failure_no_market(
         user: &signer
     ) acquires OC, SC {
-        let user_addr = s_a_o(user); // Get user address
-        a_c_a(user_addr); // Initialize Account resource
+        let user_addr = address_of(user); // Get user address
+        create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
-        a_i_s_n(user_addr); // Increment mock sequence number
+        inc_seq_number(user_addr); // Increment mock sequence number
         // Attempt invalid limit order
-        submit_ask<BCT, QCT, E0>(user, s_a_o(user), 1, 1);
+        submit_ask<BCT, QCT, E0>(user, address_of(user), 1, 1);
     }
 
     #[test(
@@ -1043,12 +1056,12 @@ module Econia::User {
     ) acquires OC, SC {
         init_econia(econia); // Initialize Econia core resources
         r_r_t_m(econia); // Register test market
-        let user_addr = s_a_o(user); // Get user address
-        a_c_a(user_addr); // Initialize Account resource
+        let user_addr = address_of(user); // Get user address
+        create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
-        a_i_s_n(user_addr); // Increment mock sequence number
+        inc_seq_number(user_addr); // Increment mock sequence number
         // Attempt invalid limit order
-        submit_bid<BCT, QCT, E0>(user, s_a_o(econia), 1, 1);
+        submit_bid<BCT, QCT, E0>(user, address_of(econia), 1, 1);
     }
 
     #[test(user = @TestUser)]
@@ -1066,8 +1079,8 @@ module Econia::User {
     public(script) fun update_s_c_failure_same_s_n(
         user: &signer
     ) acquires SC {
-        let user_addr = s_a_o(user); // Get user address
-        a_c_a(user_addr); // Initialize Account resource
+        let user_addr = address_of(user); // Get user address
+        create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
         // Attempt invalid update during same transaction as init
         update_s_c(user);
@@ -1078,8 +1091,8 @@ module Econia::User {
     public(script) fun update_s_c_success(
         user: &signer
     ) acquires SC {
-        let user_addr = s_a_o(user); // Get user address
-        a_c_a(user_addr); // Initialize Account resource
+        let user_addr = address_of(user); // Get user address
+        create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
         a_s_s_n(user_addr, 10); // Set mock sequence number
         update_s_c(user); // Execute valid counter update
@@ -1098,11 +1111,11 @@ module Econia::User {
         user: &signer
     ) acquires OC, SC {
         init_test_market_user(econia, user); // Init test market, user
-        let addr = s_a_o(user); // Get user address
-        r_m_bct_to(addr, 100); // Mint 100 base coins to user
-        a_i_s_n(addr); // Increment mock sequence number
+        let addr = address_of(user); // Get user address
+        mint_bct_to(addr, 100); // Mint 100 base coins to user
+        inc_seq_number(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 50, 0); // Deposit collateral
-        a_i_s_n(addr); // Increment mock sequence number
+        inc_seq_number(addr); // Increment mock sequence number
         withdraw<BCT, QCT, E0>(user, 51, 0); // Attempt invalid withdraw
     }
 
@@ -1117,11 +1130,11 @@ module Econia::User {
         user: &signer
     ) acquires OC, SC {
         init_test_market_user(econia, user); // Init test market, user
-        let addr = s_a_o(user); // Get user address
-        r_m_qct_to(addr, 100); // Mint 100 quote coins to user
-        a_i_s_n(addr); // Increment mock sequence number
+        let addr = address_of(user); // Get user address
+        mint_qct_to(addr, 100); // Mint 100 quote coins to user
+        inc_seq_number(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 0, 50); // Deposit collateral
-        a_i_s_n(addr); // Increment mock sequence number
+        inc_seq_number(addr); // Increment mock sequence number
         withdraw<BCT, QCT, E0>(user, 0, 51); // Attempt invalid withdraw
     }
 
@@ -1158,12 +1171,12 @@ module Econia::User {
         user: &signer
     ) acquires OC, SC {
         init_test_market_user(econia, user); // Init test market, user
-        let addr = s_a_o(user); // Get user address
-        r_m_bct_to(addr, 100); // Mint 100 base coins to user
-        r_m_qct_to(addr, 200); // Mint 200 base coins to user
-        a_i_s_n(addr); // Increment mock sequence number
+        let addr = address_of(user); // Get user address
+        mint_bct_to(addr, 100); // Mint 100 base coins to user
+        mint_qct_to(addr, 200); // Mint 200 base coins to user
+        inc_seq_number(addr); // Increment mock sequence number
         deposit<BCT, QCT, E0>(user, 75, 150); // Deposit collateral
-        a_i_s_n(addr); // Increment mock sequence number
+        inc_seq_number(addr); // Increment mock sequence number
         withdraw<BCT, QCT, E0>(user, 5, 0); // Withdraw 5 base coins
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 30 && c_b<QCT>(addr) == 50, 0);
@@ -1175,7 +1188,7 @@ module Econia::User {
         assert!(o_c.b_a == 70 && o_c.q_a == 150, 2);
         // Manually update available quote coins
         borrow_global_mut<OC<BCT, QCT, E0>>(addr).q_a = 140;
-        a_i_s_n(addr); // Increment mock sequence number
+        inc_seq_number(addr); // Increment mock sequence number
         withdraw<BCT, QCT, E0>(user, 0, 20); // Withdraw 20 quote coins
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 30 && c_b<QCT>(addr) == 70, 3);
@@ -1185,7 +1198,7 @@ module Econia::User {
         assert!(c_v<BCT>(&o_c.b_c) == 70 && c_v<QCT>(&o_c.q_c) == 130, 4);
         // Assert withdraw availability updates correctly
         assert!(o_c.b_a == 70 && o_c.q_a == 120, 5);
-        a_i_s_n(addr); // Increment mock sequence number
+        inc_seq_number(addr); // Increment mock sequence number
         withdraw<BCT, QCT, E0>(user, 70, 120); // Withdraw all possible
         // Assert correct coin store balances
         assert!(c_b<BCT>(addr) == 100 && c_b<QCT>(addr) == 190, 6);

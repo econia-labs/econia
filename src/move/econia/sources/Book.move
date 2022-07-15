@@ -25,12 +25,12 @@ module Econia::Book {
     use Econia::CritBit::{
         CB,
         empty as cb_e,
-        insert as cb_i,
-        is_empty as cb_i_e,
-        length as cb_l,
-        max_key as cb_ma_k,
-        min_key as cb_mi_k,
-        pop as cb_p,
+        insert,
+        is_empty,
+        length as length,
+        max_key,
+        min_key,
+        pop,
         traverse_init_mut as cb_t_i_m,
         traverse_pop_mut as cb_t_p_m
     };
@@ -40,7 +40,7 @@ module Econia::Book {
     };
 
     use Std::Signer::{
-        address_of as s_a_o
+        address_of
     };
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -168,7 +168,7 @@ module Econia::Book {
         add_position<B, Q, E>(host, user, BID, id, price, size)
     }
 
-    /// Wrapped `add_position()` call for `ASK`
+    /// Wrapped `cancel_position()` call for `ASK`
     public fun cancel_ask<B, Q, E>(
         host: address,
         id: u128,
@@ -177,7 +177,7 @@ module Econia::Book {
         cancel_position<B, Q, E>(host, ASK, id, friend_cap);
     }
 
-    /// Wrapped `add_position()` call for `BID`
+    /// Wrapped `cancel_position()` call for `BID`
     public fun cancel_bid<B, Q, E>(
         host: address,
         id: u128,
@@ -209,19 +209,19 @@ module Econia::Book {
         let o_b = borrow_global_mut<OB<B, Q, E>>(host);
         if (side == ASK) { // If order is an ask
             let asks = &mut o_b.a; // Get mutable reference to asks tree
-            P{s: _, a: _} = cb_p<P>(asks, id); // Pop/unpack position
+            P{s: _, a: _} = pop<P>(asks, id); // Pop/unpack position
             if (o_b.m_a == id) { // If cancelled order was the min ask
                 // If asks tree now empty, set min ask ID to default
-                o_b.m_a = if (cb_i_e<P>(asks)) MIN_ASK_DEFAULT else
-                    cb_mi_k<P>(asks); // Otherwise set to new min ask ID
+                o_b.m_a = if (is_empty<P>(asks)) MIN_ASK_DEFAULT else
+                    min_key<P>(asks); // Otherwise set to new min ask ID
             };
         } else { // If order is a bid
             let bids = &mut o_b.b; // Get mutable reference to bids tree
-            P{s: _, a: _} = cb_p<P>(bids, id); // Pop/unpack position
+            P{s: _, a: _} = pop<P>(bids, id); // Pop/unpack position
             if (o_b.m_b == id) { // If cancelled order was the max bid
                 // If bid tree now empty, set max bid ID to default
-                o_b.m_b = if (cb_i_e<P>(bids)) MAX_BID_DEFAULT else
-                    cb_ma_k<P>(bids); // Otherwise set to new max bid ID
+                o_b.m_b = if (is_empty<P>(bids)) MAX_BID_DEFAULT else
+                    max_key<P>(bids); // Otherwise set to new max bid ID
             };
         }
     }
@@ -234,7 +234,7 @@ module Econia::Book {
         account: &signer
     ): FriendCap {
         // Assert called by Econia
-        assert!(s_a_o(account) == @Econia, E_NOT_ECONIA);
+        assert!(address_of(account) == @Econia, E_NOT_ECONIA);
         FriendCap{} // Return requested capability
     }
 
@@ -246,7 +246,7 @@ module Econia::Book {
         _c: &FriendCap
     ) {
         // Assert book does not already exist under host account
-        assert!(!exists_book<B, Q, E>(s_a_o(host)), E_BOOK_EXISTS);
+        assert!(!exists_book<B, Q, E>(address_of(host)), E_BOOK_EXISTS);
         let m_a = MIN_ASK_DEFAULT; // Declare min ask default order ID
         let m_b = MAX_BID_DEFAULT; // Declare max bid default order ID
         let o_b = // Pack empty order book
@@ -340,7 +340,7 @@ module Econia::Book {
     ): u64
     acquires OB {
         // Return length of asks tree
-        cb_l<P>(&borrow_global<OB<B, Q, E>>(addr).a)
+        length<P>(&borrow_global<OB<B, Q, E>>(addr).a)
     }
 
     /// Return number of bids on order book, assuming order book exists
@@ -351,7 +351,29 @@ module Econia::Book {
     ): u64
     acquires OB {
         // Return length of bids tree
-        cb_l<P>(&borrow_global<OB<B, Q, E>>(addr).b)
+        length<P>(&borrow_global<OB<B, Q, E>>(addr).b)
+    }
+
+    /// If `side` is `ASK`, refresh the minimum ask ID to that of the
+    /// minimum ask in the asks tree in `OB` at `addr`, and if `side`,
+    /// is `BID`, the maximum bid ID, assuming `OB` already exists at
+    /// `addr`. If no positions, use default values.
+    public fun refresh_extreme_order_id<B, Q, E>(
+        addr: address,
+        side: bool,
+        _c: &FriendCap
+    ) acquires OB {
+        // Borrow mutable reference to order book at addres
+        let order_book = borrow_global_mut<OB<B, Q, E>>(addr);
+        if (side == ASK) { // If refreshing for asks
+            // Set min ask ID to default value if empty tree
+            order_book.m_a = if (is_empty(&order_book.a)) MIN_ASK_DEFAULT else
+                min_key(&order_book.a); // Otherwise set to min ask ID
+        } else { // If refreshing for bids
+            // Set max bid ID to default value if empty tree
+            order_book.m_b = if (is_empty(&order_book.b)) MAX_BID_DEFAULT else
+                max_key(&order_book.b); // Otherwise set to max ask ID
+        }
     }
 
     /// Return scale factor of specified order book, assuming order
@@ -485,14 +507,14 @@ module Econia::Book {
         if (side == ASK) { // If order is an ask
             if (price > m_b_p) { // If order does not cross spread
                 // Add corresponding position to ask tree
-                cb_i(&mut o_b.a, id, P{s: size, a: user});
+                insert(&mut o_b.a, id, P{s: size, a: user});
                 // If order is within spread, update min ask id
                 if (price < m_a_p) o_b.m_a = id;
             } else return true; // Otherwise indicate crossed spread
         } else { // If order is a bid
             if (price < m_a_p) { // If order does not cross spread
                 // Add corresponding position to bid tree
-                cb_i(&mut o_b.b, id, P{s: size, a: user});
+                insert(&mut o_b.b, id, P{s: size, a: user});
                 // If order is within spread, update max bid id
                 if (price > m_b_p) o_b.m_b = id;
             // Otherwise manage order that crosses spread
@@ -617,7 +639,7 @@ module Econia::Book {
     fun add_position_success_crossed_spread_ask(
         account: &signer,
     ) acquires OB {
-        let addr = s_a_o(account); // Get account address
+        let addr = address_of(account); // Get account address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(account, 1, &FriendCap{});
         // Define ask with price 8, version number 1, size 1
@@ -644,7 +666,7 @@ module Econia::Book {
     fun add_position_success_crossed_spread_bid(
         account: &signer,
     ) acquires OB {
-        let addr = s_a_o(account); // Get account address
+        let addr = address_of(account); // Get account address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(account, 1, &FriendCap{});
         // Define ask with price 8, version number 1, size 1
@@ -672,7 +694,7 @@ module Econia::Book {
     fun add_position_success_simple_ask(
         account: &signer,
     ) acquires OB {
-        let addr = s_a_o(account); // Get account address
+        let addr = address_of(account); // Get account address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(account, 1, &FriendCap{});
         // Define ask with price 8, version number 1, size 1
@@ -710,7 +732,7 @@ module Econia::Book {
     fun add_position_success_simple_bid(
         account: &signer,
     ) acquires OB {
-        let addr = s_a_o(account); // Get account address
+        let addr = address_of(account); // Get account address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(account, 1, &FriendCap{});
         // Define bid with price 3, version number 1, size 1
@@ -747,7 +769,7 @@ module Econia::Book {
     fun cancel_ask_success(
         account: &signer,
     ) acquires OB {
-        let addr = s_a_o(account); // Get account address
+        let addr = address_of(account); // Get account address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(account, 1, &FriendCap{});
         // Define ask with price 1, version number 2, size 3
@@ -790,7 +812,7 @@ module Econia::Book {
     fun cancel_bid_success(
         account: &signer,
     ) acquires OB {
-        let addr = s_a_o(account); // Get account address
+        let addr = address_of(account); // Get account address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(account, 1, &FriendCap{});
         // Define bid with price 1, version number 2, size 3
@@ -866,7 +888,7 @@ module Econia::Book {
     ) acquires OB {
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(host, 1, &FriendCap{});
-        let host_addr = s_a_o(host); // Get host address
+        let host_addr = address_of(host); // Get host address
         // Assert book exists and has correct scale factor
         assert!(scale_factor<BT, QT, ET>(host_addr, &FriendCap{}) == 1, 0);
         // Borrow immutable reference to order book
@@ -875,7 +897,7 @@ module Econia::Book {
         // maximum bid order id inits to 0
         assert!(o_b.m_a == HI_128 && o_b.m_b == 0, 1);
         // Assert bid and ask trees init empty
-        assert!(cb_i_e(&o_b.a) && cb_i_e(&o_b.b), 2);
+        assert!(is_empty(&o_b.a) && is_empty(&o_b.b), 2);
     }
 
     #[test(host = @Econia)]
@@ -1008,7 +1030,7 @@ module Econia::Book {
     fun n_asks_success(
         host: &signer
     ) acquires OB {
-        let addr = s_a_o(host); // Get host address
+        let addr = address_of(host); // Get host address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(host, 1, &FriendCap{});
         // Assert 0 asks indicated
@@ -1027,7 +1049,7 @@ module Econia::Book {
     fun n_bids_success(
         host: &signer
     ) acquires OB {
-        let addr = s_a_o(host); // Get host address
+        let addr = address_of(host); // Get host address
         // Initialize book with scale factor 1
         init_book<BT, QT, ET>(host, 1, &FriendCap{});
         // Assert 0 bids indicated
@@ -1039,6 +1061,56 @@ module Econia::Book {
         add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
         // Assert 1 bid indicated
         assert!(n_bids<BT, QT, ET>(addr, &FriendCap{}) == 1, 1);
+    }
+
+    #[test(host = @TestUser)]
+    // Verify successful refresh of min ask/max bid ID
+    fun refresh_extreme_order_id_success(
+        host: &signer
+    ) acquires OB {
+        let addr = address_of(host); // Get host address
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
+        // Borrow mutable reference to order book
+        let book = borrow_global_mut<OB<BT, QT, ET>>(addr);
+        // Insert asks with mock order IDs straight to tree
+        insert(&mut book.a, 123, P{s: 1, a: @TestUser});
+        insert(&mut book.a, 456, P{s: 1, a: @TestUser});
+        // Assert min ask default value
+        assert!(book.m_a == MIN_ASK_DEFAULT, 0);
+        // Refresh min ask ID
+        refresh_extreme_order_id<BT, QT, ET>(addr, ASK, &FriendCap{});
+        // Borrow mutable reference to order book
+        let book = borrow_global_mut<OB<BT, QT, ET>>(addr);
+        assert!(book.m_a == 123, 1); // Assert min ask ID update
+        // Pop asks straight from tree
+        let P{s: _, a:_} = pop(&mut book.a, 123);
+        let P{s: _, a:_} = pop(&mut book.a, 456);
+        // Refresh min ask ID
+        refresh_extreme_order_id<BT, QT, ET>(addr, ASK, &FriendCap{});
+        // Borrow mutable reference to order book
+        let book = borrow_global_mut<OB<BT, QT, ET>>(addr);
+        // Assert min ask default value
+        assert!(book.m_a == MIN_ASK_DEFAULT, 2);
+        // Insert bids with mock order IDs straight to tree
+        insert(&mut book.b, 789, P{s: 1, a: @TestUser});
+        insert(&mut book.b, 321, P{s: 1, a: @TestUser});
+        // Assert max bid default value
+        assert!(book.m_b == MAX_BID_DEFAULT, 3);
+        // Refresh max ask ID
+        refresh_extreme_order_id<BT, QT, ET>(addr, BID, &FriendCap{});
+        // Borrow mutable reference to order book
+        let book = borrow_global_mut<OB<BT, QT, ET>>(addr);
+        assert!(book.m_b == 789, 4); // Assert max bid ID update
+        // Pop bids straight from tree
+        let P{s: _, a:_} = pop(&mut book.b, 789);
+        let P{s: _, a:_} = pop(&mut book.b, 321);
+        // Refresh min ask ID
+        refresh_extreme_order_id<BT, QT, ET>(addr, BID, &FriendCap{});
+        // Borrow mutable reference to order book
+        let book = borrow_global_mut<OB<BT, QT, ET>>(addr);
+        // Assert min ask default value
+        assert!(book.m_b == MAX_BID_DEFAULT, 5);
     }
 
     #[test(host = @Econia)]

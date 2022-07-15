@@ -11,6 +11,7 @@ module Econia::Match {
         n_asks,
         n_bids,
         scale_factor,
+        refresh_extreme_order_id,
         traverse_pop_fill
     };
 
@@ -43,6 +44,12 @@ module Econia::Match {
     ///   a market buy, if `BID`, user is submitting a market sell
     /// * `size`: Base coin parcels to be filled
     /// * `book_cap`: Immutable reference to `Econia::Book:FriendCap`
+    ///
+    /// # Terminology
+    /// * "Incoming order" is the market order being matched against
+    ///   the order book
+    /// * "Target position" is the position on the book for each stage
+    ///   of iterated traversal
     ///
     /// # Returns
     /// * `u64`: Amount of base coin parcels left unfilled
@@ -92,7 +99,7 @@ module Econia::Match {
                     cancel_position<B, Q, E>(host, side, target_id, book_cap);
                 };
                 // Refresh the max bid/min ask ID for the order book
-                // refresh_extreme_order_id<B, Q, E>(host, side, book_cap);
+                refresh_extreme_order_id<B, Q, E>(host, side, book_cap);
                 break // Break out of iterated traversal loop
             };
         };

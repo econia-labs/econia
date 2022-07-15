@@ -10,8 +10,9 @@ modules
 -  [Constants](#@Constants_0)
 -  [Function `fill_market_order`](#0xc0deb00c_Match_fill_market_order)
     -  [Parameters](#@Parameters_1)
-    -  [Returns](#@Returns_2)
-    -  [Assumptions](#@Assumptions_3)
+    -  [Terminology](#@Terminology_2)
+    -  [Returns](#@Returns_3)
+    -  [Assumptions](#@Assumptions_4)
 
 
 <pre><code><b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
@@ -67,14 +68,24 @@ a market buy, if <code><a href="Match.md#0xc0deb00c_Match_BID">BID</a></code>, u
 * <code>book_cap</code>: Immutable reference to <code>Econia::Book:FriendCap</code>
 
 
-<a name="@Returns_2"></a>
+<a name="@Terminology_2"></a>
+
+### Terminology
+
+* "Incoming order" is the market order being matched against
+the order book
+* "Target position" is the position on the book for each stage
+of iterated traversal
+
+
+<a name="@Returns_3"></a>
 
 ### Returns
 
 * <code>u64</code>: Amount of base coin parcels left unfilled
 
 
-<a name="@Assumptions_3"></a>
+<a name="@Assumptions_4"></a>
 
 ### Assumptions
 
@@ -133,7 +144,7 @@ a market buy, if <code><a href="Match.md#0xc0deb00c_Match_BID">BID</a></code>, u
                 cancel_position&lt;B, Q, E&gt;(host, side, target_id, book_cap);
             };
             // Refresh the max bid/<b>min</b> ask <a href="ID.md#0xc0deb00c_ID">ID</a> for the order book
-            // refresh_extreme_order_id&lt;B, Q, E&gt;(host, side, book_cap);
+            refresh_extreme_order_id&lt;B, Q, E&gt;(host, side, book_cap);
             <b>break</b> // Break out of iterated traversal <b>loop</b>
         };
     };

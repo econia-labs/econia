@@ -115,12 +115,10 @@ module Econia::Book {
 
     /// When order book already exists at given address
     const E_BOOK_EXISTS: u64 = 0;
-    /// When order book does not exist at given address
-    const E_NO_BOOK: u64 = 1;
     /// When account/address is not Econia
-    const E_NOT_ECONIA: u64 = 2;
+    const E_NOT_ECONIA: u64 = 1;
     /// When both sides of a trade have same address
-    const E_SELF_MATCH: u64 = 3;
+    const E_SELF_MATCH: u64 = 2;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -318,13 +316,13 @@ module Econia::Book {
         cb_l<P>(&borrow_global<OB<B, Q, E>>(addr).b)
     }
 
-    /// Return scale factor of specified order book at given address
+    /// Return scale factor of specified order book, assuming order
+    /// book exists at host address
     public fun scale_factor<B, Q, E>(
-        addr: address
+        addr: address,
+        _c: &FriendCap
     ): u64
     acquires OB {
-        // Assert book exists at given address
-        assert!(exists_book<B, Q, E>(addr), E_NO_BOOK);
         borrow_global<OB<B, Q, E>>(addr).f // Return book's scale factor
     }
 
@@ -831,7 +829,7 @@ module Econia::Book {
     }
 
     #[test(account = @TestUser)]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = 1)]
     /// Verify failure for non-Econia account
     fun get_friend_cap_failure(
         account: &signer
@@ -870,7 +868,7 @@ module Econia::Book {
         init_book<BT, QT, ET>(host, 1, &FriendCap{});
         let host_addr = s_a_o(host); // Get host address
         // Assert book exists and has correct scale factor
-        assert!(scale_factor<BT, QT, ET>(host_addr) == 1, 0);
+        assert!(scale_factor<BT, QT, ET>(host_addr, &FriendCap{}) == 1, 0);
         // Borrow immutable reference to order book
         let o_b = borrow_global<OB<BT, QT, ET>>(host_addr);
         // Assert minimum ask id inits to max possible value, and
@@ -881,7 +879,7 @@ module Econia::Book {
     }
 
     #[test(host = @Econia)]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = 2)]
     /// Verify failure for attempted self matching trade
     fun init_traverse_fill_failure_self_match(
         host: &signer,
@@ -1032,14 +1030,6 @@ module Econia::Book {
         add_bid<BT, QT, ET>(addr, addr, id, price, size, &FriendCap{});
         // Assert 1 bid indicated
         assert!(n_bids<BT, QT, ET>(addr, &FriendCap{}) == 1, 1);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for no book
-    fun scale_factor_failure()
-    acquires OB {
-        scale_factor<BT, QT, ET>(@TestUser); // Attempt invalid query
     }
 
     #[test(host = @Econia)]

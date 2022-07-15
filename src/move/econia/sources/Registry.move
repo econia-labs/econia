@@ -203,11 +203,11 @@ module Econia::Registry {
     };
 
     use Econia::Caps::{
-        book_f_c as c_b_f_c,
+        book_f_c,
     };
 
     use Std::Signer::{
-        address_of as s_a_o
+        address_of
     };
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -237,7 +237,7 @@ module Econia::Registry {
 
     #[test_only]
     use Econia::Book::{
-        scale_factor as b_s_f,
+        scale_factor as book_scale_factor,
     };
 
     #[test_only]
@@ -411,7 +411,7 @@ module Econia::Registry {
     public(friend) fun init_registry(
         account: &signer
     ) {
-        let addr = s_a_o(account); // Get signer address
+        let addr = address_of(account); // Get signer address
         assert!(addr == @Econia, E_NOT_ECONIA); // Assert Econia signer
         // Assert registry does not already exist
         assert!(!exists<MR>(addr), E_REGISTRY_EXISTS);
@@ -484,8 +484,9 @@ module Econia::Registry {
         // Assert requested market not already registered
         assert!(!t_c(r_t, m_i), E_REGISTERED);
         // Initialize empty order book under host account
-        b_i_b<B, Q, E>(host, scale_factor<E>(), &c_b_f_c());
-        t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
+        b_i_b<B, Q, E>(host, scale_factor<E>(), &book_f_c());
+        // Register market-host relationship
+        t_a(r_t, m_i, address_of(host));
     }
 
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -539,7 +540,7 @@ module Econia::Registry {
         econia: &signer
     ) {
         // Assert initializing coin types under Econia account
-        assert!(s_a_o(econia) == @Econia, 0);
+        assert!(address_of(econia) == @Econia, 0);
         // Initialize base coin type, storing mint/burn capabilities
         let(m, b) = c_i<BCT>(econia, a_s(BCT_CN), a_s(BCT_CS), BCT_D, false);
         // Save capabilities in global storage
@@ -623,7 +624,7 @@ module Econia::Registry {
     ) {
         init_registry(econia); // Initialize registry
         // Assert exists at Econia account
-        assert!(exists<MR>(s_a_o(econia)), 0);
+        assert!(exists<MR>(address_of(econia)), 0);
     }
 
     #[test]
@@ -714,13 +715,14 @@ module Econia::Registry {
         c_i_c(econia); // Initialize friend-like capabilities
         register_market<BCT, QCT, E4>(host); // Register market
         // Assert order book has correct scale factor
-        assert!(b_s_f<BCT, QCT, E4>(s_a_o(host)) == scale_factor<E4>(), 0);
+        assert!(book_scale_factor<BCT, QCT, E4>(
+            address_of(host), &book_f_c()) == scale_factor<E4>(), 0);
         // Borrow immutable reference to market registry
         let r_t = &borrow_global<MR>(@Econia).t;
         // Define market info struct to look up in table
         let m_i = MI{b: ti_t_o<BCT>(), q: ti_t_o<QCT>(), e: ti_t_o<E4>()};
         // Assert registry reflects market-host relationship
-        assert!(*t_b(r_t, m_i) == s_a_o(host), 2);
+        assert!(*t_b(r_t, m_i) == address_of(host), 2);
     }
 
     #[test]

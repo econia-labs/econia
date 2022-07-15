@@ -270,17 +270,7 @@ When order book already exists at given address
 When account/address is not Econia
 
 
-<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 2;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_Book_E_NO_BOOK"></a>
-
-When order book does not exist at given address
-
-
-<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>: u64 = 1;
+<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 1;
 </code></pre>
 
 
@@ -290,7 +280,7 @@ When order book does not exist at given address
 When both sides of a trade have same address
 
 
-<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_E_SELF_MATCH">E_SELF_MATCH</a>: u64 = 3;
+<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_E_SELF_MATCH">E_SELF_MATCH</a>: u64 = 2;
 </code></pre>
 
 
@@ -716,10 +706,11 @@ at host address
 
 ## Function `scale_factor`
 
-Return scale factor of specified order book at given address
+Return scale factor of specified order book, assuming order
+book exists at host address
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(addr: <b>address</b>, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): u64
 </code></pre>
 
 
@@ -729,11 +720,10 @@ Return scale factor of specified order book at given address
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(
-    addr: <b>address</b>
+    addr: <b>address</b>,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ): u64
 <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
-    // Assert book <b>exists</b> at given <b>address</b>
-    <b>assert</b>!(<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(addr), <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>);
     <b>borrow_global</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(addr).f // Return book's scale factor
 }
 </code></pre>

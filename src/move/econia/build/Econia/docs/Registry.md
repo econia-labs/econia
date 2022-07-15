@@ -1162,7 +1162,7 @@ or if <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> already e
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(
     account: &signer
 ) {
-    <b>let</b> addr = s_a_o(account); // Get signer <b>address</b>
+    <b>let</b> addr = address_of(account); // Get signer <b>address</b>
     <b>assert</b>!(addr == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
     // Assert registry does not already exist
     <b>assert</b>!(!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(addr), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
@@ -1291,8 +1291,9 @@ initialized or if market already registered
     // Assert requested market not already registered
     <b>assert</b>!(!t_c(r_t, m_i), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTERED">E_REGISTERED</a>);
     // Initialize empty order book under host account
-    b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), &c_b_f_c());
-    t_a(r_t, m_i, s_a_o(host)); // Register market-host relationship
+    b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), &book_f_c());
+    // Register market-host relationship
+    t_a(r_t, m_i, address_of(host));
 }
 </code></pre>
 

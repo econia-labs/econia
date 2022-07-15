@@ -611,6 +611,33 @@ module Econia::Book {
     }
 
     #[test_only]
+    /// If `side` is ASK, return minimum ask order ID on book, else the
+    /// maximum bid order ID on the book
+    public fun check_extreme_order_id<B, Q, E>(
+        host: address,
+        side: bool
+    ): u128
+    acquires OB {
+        if (side == ASK) check_ask_min<B, Q, E>(host) else
+            check_bid_max<B, Q, E>(host)
+    }
+
+    #[test_only]
+    // Return `P` fields for position with specified ID, on specified
+    // market and side
+    public fun check_position<B, Q, E>(
+        host: address,
+        side: bool,
+        id: u128,
+    ): (
+        u64,
+        address
+    ) acquires OB {
+        if (side == ASK) check_ask<B, Q, E>(host, id) else
+            check_bid<B, Q, E>(host, id)
+    }
+
+    #[test_only]
     // Return `true` if order book has an ask with the given ID
     public fun has_ask<B, Q, E>(
         host: address,

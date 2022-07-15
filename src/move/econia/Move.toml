@@ -6,7 +6,10 @@ version = '0.1.0' # Per SemVer
 AptosFramework = '0x1'
 Std = '0x1'
 Econia = '0xc0deb00c'
-TestUser = '0x5678'
+TestUser = '0x1234'
+TestUser1 = '0x2345'
+TestUser2 = '0x3456'
+TestUser3 = '0x4567'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

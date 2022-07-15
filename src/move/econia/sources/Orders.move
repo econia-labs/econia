@@ -389,9 +389,8 @@ module Econia::Orders {
     public fun check_ask<B, Q, E>(
         user: address,
         id: u128
-    ): (
-        u64
-    ) acquires OO {
+    ): u64
+    acquires OO {
         *cb_b<u64>(&borrow_global<OO<B, Q, E>>(user).a, id)
     }
 
@@ -400,10 +399,22 @@ module Econia::Orders {
     public fun check_bid<B, Q, E>(
         user: address,
         id: u128
-    ): (
-        u64
-    ) acquires OO {
+    ): u64
+    acquires OO {
         *cb_b<u64>(&borrow_global<OO<B, Q, E>>(user).b, id)
+    }
+
+    #[test_only]
+    /// Return scaled size of order for given market, user, order ID,
+    /// side
+    public fun check_order<B, Q, E>(
+        user: address,
+        side: bool,
+        id: u128
+    ): u64
+    acquires OO {
+        if (side == ASK) check_ask<B, Q, E>(user, id) else
+            check_bid<B, Q, E>(user, id)
     }
 
     #[test_only]

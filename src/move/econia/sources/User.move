@@ -525,6 +525,30 @@ module Econia::User {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Return field values for extant `OC` under `user` address for
+    /// given market
+    ///
+    /// # Returns
+    /// * `u64`: `OC.b_a`
+    /// * `u64`: Indivisible subunits in `OC.b_c`
+    /// * `u64`: `OC.q_a`
+    /// * `u64`: Indivisible subunits in `OC.q_c`
+    public fun check_collateral<B, Q, E>(
+        user: address,
+    ): (
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires OC {
+        // Borrow immutable reference to user's collateral container
+        let collateral = borrow_global<OC<B, Q, E>>(user);
+        // Return interpreted field values
+        (collateral.b_a, coin_value<B>(&collateral.b_c),
+         collateral.q_a, coin_value<Q>(&collateral.q_c))
+    }
+
+    #[test_only]
     /// Initialize a user with containers for a test market
     public(script) fun init_test_market_user(
         econia: &signer,

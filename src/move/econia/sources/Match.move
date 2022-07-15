@@ -151,6 +151,7 @@ module Econia::Match {
     ///
     /// # Assumptions
     /// * Order book has been properly initialized at host address
+    /// * `size` is nonzero
     public fun fill_market_order<B, Q, E>(
         host: address,
         addr: address,
@@ -172,10 +173,12 @@ module Econia::Match {
         let (target_id, target_addr, target_p_f, target_c_i, filled, exact) =
             init_traverse_fill<B, Q, E>(host, addr, side, size, book_cap);
         loop { // Begin traversal loop
+            size = size - filled; // Decrement size left to match
+            // Determine if target position completely filled
+            let complete = (exact || size > 0);
             // Route funds between conterparties, update open orders
             process_fill<B, Q, E>(target_addr, addr, side, target_id, filled,
-                                  scale_factor, exact);
-            size = size - filled; // Decrement size left to match
+                                  scale_factor, complete);
             // If incoming order unfilled and can traverse
             if (size > 0 && n_positions > 1) {
                 // Traverse pop fill to next position
@@ -476,6 +479,114 @@ module Econia::Match {
             @Econia, side);
         assert!(extreme_order_id == id_2, 0); // Assert correct value
     }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market order is a partial fill
+    /// against user 2's position
+    public(script) fun bid_partial_2(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = BID; // Define book side market order fills against
+        let market_order_size = 5; // Define market order size
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size, storing unfilled size
+        let unfilled = fill_market_order<BCT, QCT, E1>(
+            @Econia, @TestUser, side, market_order_size, &book_cap());
+        assert!(unfilled == 0, 0); // Assert unfilled return
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == USER_0_START_BASE -
+            SCALE_FACTOR * market_order_size, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE +
+            (USER_1_BID_PRICE * USER_1_BID_SIZE) +
+            (USER_2_BID_PRICE * (market_order_size - USER_1_BID_SIZE)), 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE +
+            (USER_1_BID_PRICE * USER_1_BID_SIZE) +
+            (USER_2_BID_PRICE * (market_order_size - USER_1_BID_SIZE)), 0);
+        // Available amount should be decremented prior to calling
+        // matching engine, but is not per this test's setup
+        assert!(u_0_b_available == USER_0_START_BASE, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE +
+            SCALE_FACTOR * USER_1_BID_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE +
+            SCALE_FACTOR * USER_1_BID_SIZE, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE -
+            USER_1_BID_PRICE * USER_1_BID_SIZE, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE -
+            USER_1_BID_PRICE * USER_1_BID_SIZE, 0);
+        // Assert user 1 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_1), 0);
+        // Assert user 1 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_1), 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE +
+            SCALE_FACTOR * (market_order_size - USER_1_BID_SIZE), 0);
+        assert!(u_2_b_coins == USER_2_START_BASE +
+            SCALE_FACTOR * (market_order_size - USER_1_BID_SIZE), 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE -
+            USER_2_BID_PRICE * USER_2_BID_SIZE, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE -
+            USER_2_BID_PRICE * (market_order_size - USER_1_BID_SIZE), 0);
+        // Get user 2's open order size
+        let u_2_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser2, side, id_2);
+        // Assert correct value
+        assert!(u_2_open_order_size == USER_2_BID_SIZE -
+            (market_order_size - USER_1_BID_SIZE), 0);
+        // Get corresponding position on order book
+        let (u_2_position_size, u_2_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_2);
+        // Assert correct fields
+        assert!(u_2_position_size == USER_2_BID_SIZE -
+            (market_order_size - USER_1_BID_SIZE), 0);
+        assert!(u_2_position_address == @TestUser2, 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE -
+            USER_3_BID_PRICE * USER_3_BID_SIZE, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE, 0);
+        // Get user 3's open order size
+        let u_3_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser3, side, id_3);
+        // Assert correct value
+        assert!(u_3_open_order_size == USER_3_BID_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_3_position_size, u_3_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_3);
+        // Assert correct fields
+        assert!(u_3_position_size == USER_3_BID_SIZE, 0);
+        assert!(u_3_position_address == @TestUser3, 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id = check_extreme_order_id<BCT, QCT, E1>(
+            @Econia, side);
+        assert!(extreme_order_id == id_2, 0); // Assert correct value
+    }
+
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 }

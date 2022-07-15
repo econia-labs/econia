@@ -90,6 +90,7 @@ of iterated traversal
 ### Assumptions
 
 * Order book has been properly initialized at host address
+* <code>size</code> is nonzero
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(host: <b>address</b>, addr: <b>address</b>, side: bool, size: u64, book_cap: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): u64
@@ -122,10 +123,12 @@ of iterated traversal
     <b>let</b> (target_id, target_addr, target_p_f, target_c_i, filled, exact) =
         init_traverse_fill&lt;B, Q, E&gt;(host, addr, side, size, book_cap);
     <b>loop</b> { // Begin traversal <b>loop</b>
+        size = size - filled; // Decrement size left <b>to</b> match
+        // Determine <b>if</b> target position completely filled
+        <b>let</b> complete = (exact || size &gt; 0);
         // Route funds between conterparties, <b>update</b> open orders
         process_fill&lt;B, Q, E&gt;(target_addr, addr, side, target_id, filled,
-                              scale_factor, exact);
-        size = size - filled; // Decrement size left <b>to</b> match
+                              scale_factor, complete);
         // If incoming order unfilled and can traverse
         <b>if</b> (size &gt; 0 && n_positions &gt; 1) {
             // Traverse pop fill <b>to</b> next position

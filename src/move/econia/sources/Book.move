@@ -561,7 +561,7 @@ module Econia::Book {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    // Return `P` fields for ask with specified ID, for specified market
+    /// Return `P` fields for ask with specified ID, for specified market
     public fun check_ask<B, Q, E>(
         host: address,
         id: u128,
@@ -577,7 +577,7 @@ module Econia::Book {
     }
 
     #[test_only]
-    // Return order ID of ask having minimum price
+    /// Return order ID of ask having minimum price
     public fun check_ask_min<B, Q, E>(
         host: address
     ): u128
@@ -586,7 +586,7 @@ module Econia::Book {
     }
 
     #[test_only]
-    // Return `P` fields for bid with specified ID, on specified market
+    /// Return `P` fields for bid with specified ID, on specified market
     public fun check_bid<B, Q, E>(
         host: address,
         id: u128,
@@ -602,7 +602,7 @@ module Econia::Book {
     }
 
     #[test_only]
-    // Return order ID of bid having maximum price
+    /// Return order ID of bid having maximum price
     public fun check_bid_max<B, Q, E>(
         host: address
     ): u128
@@ -623,8 +623,8 @@ module Econia::Book {
     }
 
     #[test_only]
-    // Return `P` fields for position with specified ID, on specified
-    // market and side
+    /// Return `P` fields for position with specified ID, on specified
+    /// market and side
     public fun check_position<B, Q, E>(
         host: address,
         side: bool,
@@ -638,7 +638,7 @@ module Econia::Book {
     }
 
     #[test_only]
-    // Return `true` if order book has an ask with the given ID
+    /// Return `true` if order book has an ask with the given ID
     public fun has_ask<B, Q, E>(
         host: address,
         id: u128
@@ -648,13 +648,26 @@ module Econia::Book {
     }
 
     #[test_only]
-    // Return `true` if order book has a bid with the given ID
+    /// Return `true` if order book has a bid with the given ID
     public fun has_bid<B, Q, E>(
         host: address,
         id: u128
     ): bool
     acquires OB {
         cb_h_k<P>(&borrow_global<OB<B, Q, E>>(host).b, id)
+    }
+
+    #[test_only]
+    /// Return `true` if extant order book at `host` has position with
+    /// given `id` on corresponding `side`
+    public fun has_position<B, Q, E>(
+        host: address,
+        side: bool,
+        id: u128
+    ): bool
+    acquires OB {
+        if (side == ASK) has_ask<B, Q, E>(host, id) else
+            has_bid<B, Q, E>(host, id)
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

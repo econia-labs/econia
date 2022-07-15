@@ -439,6 +439,19 @@ module Econia::Orders {
         cb_h_k<u64>(&borrow_global<OO<B, Q, E>>(user).b, id)
     }
 
+    #[test_only]
+    /// Return `true` if extant open orders container at given address
+    /// has an order with the given ID on the given side
+    public fun has_order<B, Q, E>(
+        user: address,
+        side: bool,
+        id: u128
+    ): bool
+    acquires OO {
+        if (side == ASK) has_ask<B, Q, E>(user, id) else
+            has_bid<B, Q, E>(user, id)
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

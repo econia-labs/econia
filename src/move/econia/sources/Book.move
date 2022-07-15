@@ -31,7 +31,6 @@ module Econia::Book {
         max_key as cb_ma_k,
         min_key as cb_mi_k,
         pop as cb_p,
-        traverse_end_pop as cb_t_e_p,
         traverse_init_mut as cb_t_i_m,
         traverse_pop_mut as cb_t_p_m
     };
@@ -169,22 +168,62 @@ module Econia::Book {
         add_position<B, Q, E>(host, user, BID, id, price, size)
     }
 
-    /// Wrapped `add_position()` call for `ASK`, requiring `FriendCap`
+    /// Wrapped `add_position()` call for `ASK`
     public fun cancel_ask<B, Q, E>(
         host: address,
         id: u128,
-        _c: &FriendCap
+        friend_cap: &FriendCap
     ) acquires OB {
-        cancel_position<B, Q, E>(host, ASK, id);
+        cancel_position<B, Q, E>(host, ASK, id, friend_cap);
     }
 
-    /// Wrapped `add_position()` call for `BID`, requiring `FriendCap`
+    /// Wrapped `add_position()` call for `BID`
     public fun cancel_bid<B, Q, E>(
         host: address,
         id: u128,
+        friend_cap: &FriendCap
+    ) acquires OB {
+        cancel_position<B, Q, E>(host, BID, id, friend_cap);
+    }
+
+    /// Cancel position on book for market `<B, Q, E>`, skipping
+    /// redundant error checks already covered by calling functions
+    ///
+    /// # Parameters
+    /// * `host`: Address of market host
+    /// * `side`: `ASK` or `BID`
+    /// * `id`: Order ID (see `Econia::ID`)
+    /// * `_c`: Immutable reference to `FriendCap`
+    ///
+    /// # Assumes
+    /// * `OB` for given market exists at host address
+    /// * Position has already been placed on book properly, by
+    ///   preceding functions that perform their own error-checking
+    public fun cancel_position<B, Q, E>(
+        host: address,
+        side: bool,
+        id: u128,
         _c: &FriendCap
     ) acquires OB {
-        cancel_position<B, Q, E>(host, BID, id);
+        // Borrow mutable reference to order book at host address
+        let o_b = borrow_global_mut<OB<B, Q, E>>(host);
+        if (side == ASK) { // If order is an ask
+            let asks = &mut o_b.a; // Get mutable reference to asks tree
+            P{s: _, a: _} = cb_p<P>(asks, id); // Pop/unpack position
+            if (o_b.m_a == id) { // If cancelled order was the min ask
+                // If asks tree now empty, set min ask ID to default
+                o_b.m_a = if (cb_i_e<P>(asks)) MIN_ASK_DEFAULT else
+                    cb_mi_k<P>(asks); // Otherwise set to new min ask ID
+            };
+        } else { // If order is a bid
+            let bids = &mut o_b.b; // Get mutable reference to bids tree
+            P{s: _, a: _} = cb_p<P>(bids, id); // Pop/unpack position
+            if (o_b.m_b == id) { // If cancelled order was the max bid
+                // If bid tree now empty, set max bid ID to default
+                o_b.m_b = if (cb_i_e<P>(bids)) MAX_BID_DEFAULT else
+                    cb_ma_k<P>(bids); // Otherwise set to new max bid ID
+            };
+        }
     }
 
     /// Return `true` if specified order book type exists at address
@@ -221,10 +260,10 @@ module Econia::Book {
     /// `side` is `BID`, initialize predecessor traversal starting at
     /// the bid with the maximum order ID. Decrement first position on
     /// book by `size` if matching results in a partial fill against it,
-    /// take it off the book if matching results in a complete fill on
+    /// leave it unmodified if matching results in a complete fill on
     /// both sides of the order, and leave it unmodified if matching
-    /// only results in a partial fill against the incoming order (so
-    /// that it may be traverse popped later).
+    /// only results in a partial fill against the incoming order (in
+    /// both of the latter cases so that it may be popped later).
     ///
     /// # Terminology
     /// * "Incoming order" has `size` base coin parcels to be filled
@@ -249,6 +288,8 @@ module Econia::Book {
     /// * `u64`: Child field index of node corresponding to target
     ///   position
     /// * `u64`: Amount filled, in base coin parcels
+    /// * `bool`: If a perfect match between incoming order and target
+    ///   position size
     ///
     /// # Abort conditions
     /// * If `i_addr` (incoming address) is same as target address
@@ -257,20 +298,19 @@ module Econia::Book {
     /// * Order book has been properly initialized at host address and
     ///   has at least one position in corresponding tree
     /// * Caller has already verified tree is not empty
-    /// * Caller has correctly tracked `n_p`
     public fun init_traverse_fill<B, Q, E>(
         host: address,
         i_addr: address,
         side: bool,
         size: u64,
-        n_p: u64,
         _c: &FriendCap
     ): (
         u128,
         address,
         u64,
         u64,
-        u64
+        u64,
+        bool
     ) acquires OB {
         let (tree, dir) = if (side == ASK) // If an ask
             // Define asks tree and successor iteration
@@ -286,12 +326,10 @@ module Econia::Book {
         // Process fill scenarios, storing amount filled and if perfect
         // match between incoming and target order
         let (filled, perfect) = process_fill_scenarios(i_addr, t_p_r, size);
-        // If perfect match, pop target position, unpack/discard fields
-        if (perfect) {let P{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);};
         // Return target position ID, target position user address,
         // corresponding node's parent field, corresponding node's child
         // field index, and the number of base coin parcels filled
-        (t_id, t_addr, t_p_f, t_c_i, filled)
+        (t_id, t_addr, t_p_f, t_c_i, filled, perfect)
     }
 
     /// Return number of asks on order book, assuming order book exists
@@ -357,6 +395,8 @@ module Econia::Book {
     /// * `u64`: Child field index of node corresponding to target
     ///   position
     /// * `u64`: Amount filled, in base coin parcels
+    /// * `bool`: If a perfect match between incoming order and target
+    ///   position size
     public fun traverse_pop_fill<B, Q, E>(
         host: address,
         i_addr: address,
@@ -372,7 +412,8 @@ module Econia::Book {
         address,
         u64,
         u64,
-        u64
+        u64,
+        bool
     ) acquires OB {
         let (tree, dir) = if (side == ASK) // If an ask
             // Define traversal tree as asks tree, successor iteration
@@ -385,18 +426,15 @@ module Econia::Book {
         // position tree node child fiend index, start position struct
         let (t_id, t_p_r, t_p_f, t_c_i, s_p) =
             cb_t_p_m(tree, s_id, s_p_f, s_c_i, n_p, dir);
-        // Unpack/discard start position fields, decrement n positions
-        let (P{s: _, a: _}, n_p) = (s_p, n_p - 1);
+        let P{s: _, a: _} = s_p; // Unpack/discard start position fields
         let t_addr = t_p_r.a; // Store target position user address
         // Process fill scenarios, storing amount filled and if perfect
         // match between incoming and target order
         let (filled, perfect) = process_fill_scenarios(i_addr, t_p_r, size);
-        // If perfect match, pop target position, unpack/discard fields
-        if (perfect) {let P{s: _, a: _} = cb_t_e_p(tree, t_p_f, t_c_i, n_p);};
         // Return target position ID, target position user address,
         // corresponding node's parent field, corresponding node's child
         // field index, and the number of base coin parcels filled
-        (t_id, t_addr, t_p_f, t_c_i, filled)
+        (t_id, t_addr, t_p_f, t_c_i, filled, perfect)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -461,44 +499,6 @@ module Econia::Book {
             } else return true; // Otherwise indicate crossed spread
         }; // Order is on now on book, and did not cross spread
         false // Indicate spread not crossed
-    }
-
-    /// Cancel position on book for market `<B, Q, E>`, skipping
-    /// redundant error checks already covered by calling functions
-    ///
-    /// # Parameters
-    /// * `host`: Address of market host
-    /// * `side`: `ASK` or `BID`
-    /// * `id`: Order ID (see `Econia::ID`)
-    ///
-    /// # Assumes
-    /// * `OB` for given market exists at host address
-    /// * Position has already been placed on book properly, by
-    ///   preceding functions that perform their own error-checking
-    fun cancel_position<B, Q, E>(
-        host: address,
-        side: bool,
-        id: u128
-    ) acquires OB {
-        // Borrow mutable reference to order book at host address
-        let o_b = borrow_global_mut<OB<B, Q, E>>(host);
-        if (side == ASK) { // If order is an ask
-            let asks = &mut o_b.a; // Get mutable reference to asks tree
-            P{s: _, a: _} = cb_p<P>(asks, id); // Pop/unpack position
-            if (o_b.m_a == id) { // If cancelled order was the min ask
-                // If asks tree now empty, set min ask ID to default
-                o_b.m_a = if (cb_i_e<P>(asks)) MIN_ASK_DEFAULT else
-                    cb_mi_k<P>(asks); // Otherwise set to new min ask ID
-            };
-        } else { // If order is a bid
-            let bids = &mut o_b.b; // Get mutable reference to bids tree
-            P{s: _, a: _} = cb_p<P>(bids, id); // Pop/unpack position
-            if (o_b.m_b == id) { // If cancelled order was the max bid
-                // If bid tree now empty, set max bid ID to default
-                o_b.m_b = if (cb_i_e<P>(bids)) MAX_BID_DEFAULT else
-                    cb_ma_k<P>(bids); // Otherwise set to new max bid ID
-            };
-        }
     }
 
     /// Compare incoming order `size` and address `i_addr` against
@@ -892,8 +892,7 @@ module Econia::Book {
         // Add host-held position to book
         add_ask<BT, QT, ET>(@Econia, @Econia, id_1, p_1, s_1, &FriendCap{});
         // Attempt invalid fill traversal init
-        init_traverse_fill<BT, QT, ET>(
-            @Econia, @Econia, ASK, 2, 1, &FriendCap{});
+        init_traverse_fill<BT, QT, ET>(@Econia, @Econia, ASK, 2, &FriendCap{});
     }
 
     #[test(host = @Econia)]
@@ -919,30 +918,35 @@ module Econia::Book {
         // Add host-held position to book
         add_ask<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
         // Init ask fill traversal for user w/ incoming order of size 1
-        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, ASK, 1, 3, &FriendCap{});
+        let (t_id, t_addr, _, _, filled, exact) =
+            init_traverse_fill<BT, QT, ET>(@Econia, @TestUser, ASK, 1,
+            &FriendCap{});
         // Assert correct returns for partial target fill
-        assert!(t_id == id_1 && t_addr == @Econia && filled == 1, 0);
+        assert!(t_id == id_1 && t_addr == @Econia && filled == 1 && !exact, 0);
         // Get size and address for target position order ID
         let (t_s, t_a) = check_ask<BT, QT, ET>(@Econia, t_id);
         // Assert target position size decremented accordingly
         assert!(t_s == 2 && t_a == @Econia, 1);
         // Init ask fill traversal for user w/ incoming order of size 2
-        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, ASK, 2, 3, &FriendCap{});
+        let (t_id, t_addr, _, _, filled, exact) =
+            init_traverse_fill<BT, QT, ET>(@Econia, @TestUser, ASK, 2,
+            &FriendCap{});
         // Assert correct returns for complete fill both sides
-        assert!(t_id == id_1 && t_addr == @Econia && filled == 2, 2);
-        // Assert target position popped off book
-        assert!(!has_ask<BT, QT, ET>(@Econia, t_id), 3);
+        assert!(t_id == id_1 && t_addr == @Econia && filled == 2 && exact, 2);
+        // Get size and address for target position order ID
+        let (t_s, t_a) = check_ask<BT, QT, ET>(@Econia, t_id);
+        // Assert target position size left unmodified
+        assert!(t_s == 2 && t_a == @Econia, 3);
         // Init ask fill traversal for user w/ incoming order of size 10
-        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, ASK, 10, 2, &FriendCap{});
+        let (t_id, t_addr, _, _, filled, exact) =
+            init_traverse_fill<BT, QT, ET>(@Econia, @TestUser, ASK, 10,
+            &FriendCap{});
         // Assert correct returns for partial incoming fill
-        assert!(t_id == id_2 && t_addr == @Econia && filled == 4, 0);
+        assert!(t_id == id_1 && t_addr == @Econia && filled == 2 && !exact, 0);
         // Get size and address for target position order ID
         let (t_s, t_a) = check_ask<BT, QT, ET>(@Econia, t_id);
         // Assert target position size unchanged
-        assert!(t_s == 4 && t_a == @Econia, 1);
+        assert!(t_s == 2 && t_a == @Econia, 1);
     }
 
     #[test(host = @Econia)]
@@ -968,30 +972,35 @@ module Econia::Book {
         // Add host-held position to book
         add_bid<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
         // Init bid fill traversal for user w/ incoming order of size 1
-        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, BID, 1, 3, &FriendCap{});
+        let (t_id, t_addr, _, _, filled, exact) =
+            init_traverse_fill<BT, QT, ET>(
+                @Econia, @TestUser, BID, 1, &FriendCap{});
         // Assert correct returns for partial target fill
-        assert!(t_id == id_3 && t_addr == @Econia && filled == 1, 0);
+        assert!(t_id == id_3 && t_addr == @Econia && filled == 1 && !exact, 0);
         // Get size and address for target position order ID
         let (t_s, t_a) = check_bid<BT, QT, ET>(@Econia, t_id);
         // Assert target position size decremented accordingly
         assert!(t_s == 4 && t_a == @Econia, 1);
         // Init bid fill traversal for user w/ incoming order of size 4
-        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, BID, 4, 3, &FriendCap{});
+        let (t_id, t_addr, _, _, filled, exact) =
+            init_traverse_fill<BT, QT, ET>(
+                @Econia, @TestUser, BID, 4, &FriendCap{});
         // Assert correct returns for complete fill both sides
-        assert!(t_id == id_3 && t_addr == @Econia && filled == 4, 2);
-        // Assert target position popped off book
-        assert!(!has_bid<BT, QT, ET>(@Econia, t_id), 3);
+        assert!(t_id == id_3 && t_addr == @Econia && filled == 4 && exact, 2);
+        // Get size and address for target position order ID
+        let (t_s, t_a) = check_bid<BT, QT, ET>(@Econia, t_id);
+        // Assert target position size unchaged
+        assert!(t_s == 4 && t_a == @Econia, 3);
         // Init bid fill traversal for user w/ incoming order of size 10
-        let (t_id, t_addr, _, _, filled) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, BID, 10, 2, &FriendCap{});
+        let (t_id, t_addr, _, _, filled, exact) =
+            init_traverse_fill<BT, QT, ET>(
+                @Econia, @TestUser, BID, 10, &FriendCap{});
         // Assert correct returns for partial incoming fill
-        assert!(t_id == id_2 && t_addr == @Econia && filled == 4, 0);
+        assert!(t_id == id_3 && t_addr == @Econia && filled == 4 && !exact, 4);
         // Get size and address for target position order ID
         let (t_s, t_a) = check_bid<BT, QT, ET>(@Econia, t_id);
         // Assert target position size unchanged
-        assert!(t_s == 4 && t_a == @Econia, 1);
+        assert!(t_s == 4 && t_a == @Econia, 5);
     }
 
     #[test(host = @TestUser)]
@@ -1055,14 +1064,14 @@ module Econia::Book {
         // Add host-held position to book
         add_ask<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
         // Init ask fill traversal for user w/ incoming order of size 12
-        let (t_id, _, t_p_f, t_c_i, _) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, ASK, 12, 3, &FriendCap{});
+        let (t_id, _, t_p_f, t_c_i, _, _) = init_traverse_fill<BT, QT, ET>(
+            @Econia, @TestUser, ASK, 12, &FriendCap{});
         // Traverse pop to next order and fill against incoming amount
-        let (t_id, t_addr, t_p_f, t_c_i, filled) =
+        let (t_id, t_addr, t_p_f, t_c_i, filled, exact) =
             traverse_pop_fill<BT, QT, ET>(@Econia, @TestUser, ASK, 9, 3, t_id,
                 t_p_f, t_c_i, &FriendCap{});
         // Assert correct returns for partial incoming fill
-        assert!(t_id == id_2 && t_addr == @Econia && filled == 4, 0);
+        assert!(t_id == id_2 && t_addr == @Econia && filled == 4 && !exact, 0);
         // Assert start position popped off book
         assert!(!has_ask<BT, QT, ET>(@Econia, id_1), 1);
         // Get size and address for target position order ID
@@ -1070,14 +1079,16 @@ module Econia::Book {
         // Assert target position size unchanged
         assert!(t_s == 4 && t_a == @Econia, 2);
         // Traverse pop to next order and fill against incoming amount
-        (t_id, t_addr, _, _, filled) = traverse_pop_fill<BT, QT, ET>(
+        (t_id, t_addr, _, _, filled, exact) = traverse_pop_fill<BT, QT, ET>(
             @Econia, @TestUser, ASK, 5, 2, t_id, t_p_f, t_c_i, &FriendCap{});
         // Assert start position popped off book
         assert!(!has_ask<BT, QT, ET>(@Econia, id_2), 3);
         // Assert correct returns for complete fill both sides
-        assert!(t_id == id_3 && t_addr == @Econia && filled == 5, 4);
-        // Assert target position popped off book
-        assert!(!has_ask<BT, QT, ET>(@Econia, t_id), 5);
+        assert!(t_id == id_3 && t_addr == @Econia && filled == 5 && exact, 4);
+        // Get size and address for target position order ID
+        let (t_s, t_a) = check_ask<BT, QT, ET>(@Econia, t_id);
+        // Assert target position size unchanged
+        assert!(t_s == 5 && t_a == @Econia, 2);
     }
 
     #[test(host = @Econia)]
@@ -1103,14 +1114,14 @@ module Econia::Book {
         // Add host-held position to book
         add_bid<BT, QT, ET>(@Econia, @Econia, id_3, p_3, s_3, &FriendCap{});
         // Init bid fill traversal for user w/ incoming order of size 12
-        let (t_id, _, t_p_f, t_c_i, _) = init_traverse_fill<BT, QT, ET>(
-            @Econia, @TestUser, BID, 12, 3, &FriendCap{});
+        let (t_id, _, t_p_f, t_c_i, _, _) = init_traverse_fill<BT, QT, ET>(
+            @Econia, @TestUser, BID, 12, &FriendCap{});
         // Traverse pop to next order and fill against incoming amount
-        let (t_id, t_addr, t_p_f, t_c_i, filled) =
+        let (t_id, t_addr, t_p_f, t_c_i, filled, exact) =
             traverse_pop_fill<BT, QT, ET>(@Econia, @TestUser, BID, 7, 3, t_id,
                 t_p_f, t_c_i, &FriendCap{});
         // Assert correct returns for partial incoming fill
-        assert!(t_id == id_2 && t_addr == @Econia && filled == 4, 0);
+        assert!(t_id == id_2 && t_addr == @Econia && filled == 4 && !exact, 0);
         // Assert start position popped off book
         assert!(!has_bid<BT, QT, ET>(@Econia, id_3), 1);
         // Get size and address for target position order ID
@@ -1118,12 +1129,12 @@ module Econia::Book {
         // Assert target position size unchanged
         assert!(t_s == 4 && t_a == @Econia, 2);
         // Traverse pop to next order and fill against incoming amount
-        (t_id, t_addr, _, _, filled) = traverse_pop_fill<BT, QT, ET>(
+        (t_id, t_addr, _, _, filled, exact) = traverse_pop_fill<BT, QT, ET>(
             @Econia, @TestUser, BID, 3, 2, t_id, t_p_f, t_c_i, &FriendCap{});
         // Assert start position popped off book
         assert!(!has_ask<BT, QT, ET>(@Econia, id_2), 3);
         // Assert correct returns for complete fill both sides
-        assert!(t_id == id_1 && t_addr == @Econia && filled == 3, 4);
+        assert!(t_id == id_1 && t_addr == @Econia && filled == 3 && exact, 4);
         // Assert target position popped off book
         assert!(!has_ask<BT, QT, ET>(@Econia, t_id), 5);
     }

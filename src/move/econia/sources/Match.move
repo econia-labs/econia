@@ -5,6 +5,7 @@ module Econia::Match {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use Econia::Book::{
+        cancel_position,
         FriendCap as BookCap,
         init_traverse_fill,
         n_asks,
@@ -64,46 +65,38 @@ module Econia::Match {
         if (n_positions == 0) return size;
         // Initialize traversal, storing ID of target position, address
         // of user holding it, the parent field of corresponding tree
-        // node, child index of corresponding node, and amount filled
-        let (target_id, target_addr, target_p_f, target_c_i, filled) =
-            init_traverse_fill<B, Q, E>(
-                host, addr, side, size, n_positions, book_cap);
+        // node, child index of corresponding node, amount filled, and
+        // if an exact match between incoming order and target position
+        let (target_id, target_addr, target_p_f, target_c_i, filled, exact) =
+            init_traverse_fill<B, Q, E>(host, addr, side, size, book_cap);
         loop { // Begin traversal loop
-            // Determine if last match was an exact fill against book
-            let exact_match = (filled == size);
             // Route funds between conterparties, update open orders
             process_fill<B, Q, E>(target_addr, addr, side, target_id, filled,
-                                  scale_factor, exact_match);
+                                  scale_factor, exact);
             size = size - filled; // Decrement size left to match
             // If incoming order unfilled and can traverse
             if (size > 0 && n_positions > 1) {
                 // Traverse pop fill to next position
-                (target_id, target_addr, target_p_f, target_c_i, filled) =
-                    traverse_pop_fill<B, Q, E>(
+                (target_id, target_addr, target_p_f, target_c_i, filled, exact)
+                    = traverse_pop_fill<B, Q, E>(
                         host, addr, side, size, n_positions, target_id,
                         target_p_f, target_c_i, book_cap);
                 // Decrement count of positions on book for given side
                 n_positions = n_positions - 1;
             } else { // If should not continute iterated traverse fill
-                // If only a partial target fill, incoming fill complete
-                if (size == 0 && !exact_match) {
-                    // Update either min/max order ID to target ID
-                    // reset_extreme_order_id(book, side, target_id)
-                } else { // If need to pop but not iterate fill
-                    if (n_positions > 1) { // If can traverse
-                        // traverse_pop_set_extreme_id<B, Q, E>(host, side,
-                        //    target_id, target_p_f, target_c_i, book_cap);
-                    } else { // If need to pop only position on book
-                        // Pop position off the book
-                        // pop<B, Q, E>(host, target_id);
-                        // Set default extrema value for given size
-                        // set default_extrema(side)
-                    };
+                // Determine if a partial target fill was made
+                let partial_target_fill = (size == 0 && !exact);
+                // If anything other than a partial target fill made
+                if (!partial_target_fill) {
+                    // Cancel target position
+                    cancel_position<B, Q, E>(host, side, target_id, book_cap);
                 };
-                break // Break out of loop
+                // Refresh the max bid/min ask ID for the order book
+                // refresh_extreme_order_id<B, Q, E>(host, side, book_cap);
+                break // Break out of iterated traversal loop
             };
         };
-        size
+        size // Return unfilled size on market order
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

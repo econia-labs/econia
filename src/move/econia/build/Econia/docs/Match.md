@@ -106,46 +106,38 @@ a market buy, if <code><a href="Match.md#0xc0deb00c_Match_BID">BID</a></code>, u
     <b>if</b> (n_positions == 0) <b>return</b> size;
     // Initialize traversal, storing <a href="ID.md#0xc0deb00c_ID">ID</a> of target position, <b>address</b>
     // of user holding it, the parent field of corresponding tree
-    // node, child index of corresponding node, and amount filled
-    <b>let</b> (target_id, target_addr, target_p_f, target_c_i, filled) =
-        init_traverse_fill&lt;B, Q, E&gt;(
-            host, addr, side, size, n_positions, book_cap);
+    // node, child index of corresponding node, amount filled, and
+    // <b>if</b> an exact match between incoming order and target position
+    <b>let</b> (target_id, target_addr, target_p_f, target_c_i, filled, exact) =
+        init_traverse_fill&lt;B, Q, E&gt;(host, addr, side, size, book_cap);
     <b>loop</b> { // Begin traversal <b>loop</b>
-        // Determine <b>if</b> last match was an exact fill against book
-        <b>let</b> exact_match = (filled == size);
         // Route funds between conterparties, <b>update</b> open orders
         process_fill&lt;B, Q, E&gt;(target_addr, addr, side, target_id, filled,
-                              scale_factor, exact_match);
+                              scale_factor, exact);
         size = size - filled; // Decrement size left <b>to</b> match
         // If incoming order unfilled and can traverse
         <b>if</b> (size &gt; 0 && n_positions &gt; 1) {
             // Traverse pop fill <b>to</b> next position
-            (target_id, target_addr, target_p_f, target_c_i, filled) =
-                traverse_pop_fill&lt;B, Q, E&gt;(
+            (target_id, target_addr, target_p_f, target_c_i, filled, exact)
+                = traverse_pop_fill&lt;B, Q, E&gt;(
                     host, addr, side, size, n_positions, target_id,
                     target_p_f, target_c_i, book_cap);
             // Decrement count of positions on book for given side
             n_positions = n_positions - 1;
         } <b>else</b> { // If should not continute iterated traverse fill
-            // If only a partial target fill, incoming fill complete
-            <b>if</b> (size == 0 && !exact_match) {
-                // Update either <b>min</b>/max order <a href="ID.md#0xc0deb00c_ID">ID</a> <b>to</b> target <a href="ID.md#0xc0deb00c_ID">ID</a>
-                // reset_extreme_order_id(book, side, target_id)
-            } <b>else</b> { // If need <b>to</b> pop but not iterate fill
-                <b>if</b> (n_positions &gt; 1) { // If can traverse
-                    // traverse_pop_set_extreme_id&lt;B, Q, E&gt;(host, side,
-                    //    target_id, target_p_f, target_c_i, book_cap);
-                } <b>else</b> { // If need <b>to</b> pop only position on book
-                    // Pop position off the book
-                    // pop&lt;B, Q, E&gt;(host, target_id);
-                    // Set default extrema value for given size
-                    // set default_extrema(side)
-                };
+            // Determine <b>if</b> a partial target fill was made
+            <b>let</b> partial_target_fill = (size == 0 && !exact);
+            // If anything other than a partial target fill made
+            <b>if</b> (!partial_target_fill) {
+                // Cancel target position
+                cancel_position&lt;B, Q, E&gt;(host, side, target_id, book_cap);
             };
-            <b>break</b> // Break out of <b>loop</b>
+            // Refresh the max bid/<b>min</b> ask <a href="ID.md#0xc0deb00c_ID">ID</a> for the order book
+            // refresh_extreme_order_id&lt;B, Q, E&gt;(host, side, book_cap);
+            <b>break</b> // Break out of iterated traversal <b>loop</b>
         };
     };
-    size
+    size // Return unfilled size on market order
 }
 </code></pre>
 

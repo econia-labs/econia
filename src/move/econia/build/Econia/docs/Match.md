@@ -160,7 +160,7 @@ of iterated traversal
                     target_p_f, target_c_i, book_cap);
             // Decrement count of positions on book for given side
             n_positions = n_positions - 1;
-        } <b>else</b> { // If should not continute iterated traverse fill
+        } <b>else</b> { // If should not <b>continue</b> iterated traverse fill
             // Determine <b>if</b> a partial target fill was made
             <b>let</b> partial_target_fill = (size == 0 && !exact);
             // If anything other than a partial target fill made

@@ -73,6 +73,10 @@ to be filled.
     -  [Returns](#@Returns_16)
     -  [Assumes](#@Assumes_17)
     -  [Spread terminology](#@Spread_terminology_18)
+-  [Function `check_size`](#0xc0deb00c_Book_check_size)
+    -  [Terminology](#@Terminology_19)
+    -  [Parameters](#@Parameters_20)
+    -  [Returns](#@Returns_21)
 -  [Function `process_fill_scenarios`](#0xc0deb00c_Book_process_fill_scenarios)
 
 
@@ -1036,6 +1040,82 @@ price of 9, however, does not encroach on the spread
         } <b>else</b> <b>return</b> <b>true</b>; // Otherwise indicate crossed spread
     }; // Order is on now on book, and did not cross spread
     <b>false</b> // Indicate spread not crossed
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_check_size"></a>
+
+## Function `check_size`
+
+Return immediately if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, otherwise verify that the
+requested size to fill, against a target ask on the book, can
+actually be filled, or in other words, that the user with the
+incoming order has enough quote coins.
+
+
+<a name="@Terminology_19"></a>
+
+### Terminology
+
+* "Incoming order" has <code>requested_size</code> base coin parcels to be
+filled
+* "Target position" is the corresponding <code><a href="Book.md#0xc0deb00c_Book_P">P</a></code> on the book
+
+
+<a name="@Parameters_20"></a>
+
+### Parameters
+
+* <code>side</code>: <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> or <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>
+* <code>target_id</code>: The target <code><a href="Book.md#0xc0deb00c_Book_P">P</a></code>
+* <code>requested_size</code>: The number of base coin parcels requested
+during a market order that is matched against a position
+* <code>quote_available</code>: The number of quote coin subunits that the
+user with the incoming order has available for the trade
+
+
+<a name="@Returns_21"></a>
+
+### Returns
+
+* <code>bool</code>: <code><b>true</b></code> if the requested size was valid, <code><b>false</b></code> if not
+* <code>u64</code>: <code>requested_size</code> if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code> or if <code>side</code> is
+<code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> and user has enough quote coins available, otherwise the
+max number of base coin parcels that can be bought based on
+the price of the target order
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(side: bool, target_id: u128, requested_size: u64, quote_available: u64): (bool, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(
+    side: bool,
+    target_id: u128,
+    requested_size: u64,
+    quote_available: u64,
+): (
+    bool,
+    u64
+) {
+    // Return valid order and confirm size <b>if</b> filling against bids
+    <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_BID">BID</a>) <b>return</b> (<b>true</b>, requested_size);
+    // Otherwise the order fills against an ask, so calculate max
+    // number of base coin parcels that can be bought at current
+    // ask price, based on incoming order's available quote coins
+    <b>let</b> max_size = quote_available / id_p(target_id);
+    // If requested size larger than max size
+    <b>if</b> (requested_size &gt; max_size) <b>return</b> (<b>false</b>, max_size) <b>else</b>
+        <b>return</b> (<b>true</b>, requested_size)
 }
 </code></pre>
 

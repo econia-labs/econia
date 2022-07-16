@@ -523,6 +523,50 @@ module Econia::Book {
         false // Indicate spread not crossed
     }
 
+    /// Return immediately if `side` is `BID`, otherwise verify that the
+    /// requested size to fill, against a target ask on the book, can
+    /// actually be filled, or in other words, that the user with the
+    /// incoming order has enough quote coins.
+    ///
+    /// # Terminology
+    /// * "Incoming order" has `requested_size` base coin parcels to be
+    ///  filled
+    /// * "Target position" is the corresponding `P` on the book
+    ///
+    /// # Parameters
+    /// * `side`: `ASK` or `BID`
+    /// * `target_id`: The target `P`
+    /// * `requested_size`: The number of base coin parcels requested
+    ///   during a market order that is matched against a position
+    /// * `quote_available`: The number of quote coin subunits that the
+    ///   user with the incoming order has available for the trade
+    ///
+    /// # Returns
+    /// * `bool`: `true` if the requested size was valid, `false` if not
+    /// * `u64`: `requested_size` if `side` is `BID` or if `side` is
+    ///   `ASK` and user has enough quote coins available, otherwise the
+    ///   max number of base coin parcels that can be bought based on
+    ///   the price of the target order
+    fun check_size(
+        side: bool,
+        target_id: u128,
+        requested_size: u64,
+        quote_available: u64,
+    ): (
+        bool,
+        u64
+    ) {
+        // Return valid order and confirm size if filling against bids
+        if (side == BID) return (true, requested_size);
+        // Otherwise the order fills against an ask, so calculate max
+        // number of base coin parcels that can be bought at current
+        // ask price, based on incoming order's available quote coins
+        let max_size = quote_available / id_p(target_id);
+        // If requested size larger than max size
+        if (requested_size > max_size) return (false, max_size) else
+            return (true, requested_size)
+    }
+
     /// Compare incoming order `size` and address `i_addr` against
     /// fields in target position `t_p_r`, returning fill amount and if
     /// incoming size is equal to target size. Abort if both have same

@@ -211,7 +211,7 @@ module Econia::Match {
                         target_p_f, target_c_i, book_cap);
                 // Decrement count of positions on book for given side
                 n_positions = n_positions - 1;
-            } else { // If should not continute iterated traverse fill
+            } else { // If should not continue iterated traverse fill
                 // Determine if a partial target fill was made
                 let partial_target_fill = (size == 0 && !exact);
                 // If anything other than a partial target fill made

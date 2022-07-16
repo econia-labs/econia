@@ -32,6 +32,10 @@ module Econia::Match {
         traverse_pop_fill
     };
 
+    use Econia::ID::{
+        price as id_p
+    };
+
     use Econia::User::{
         process_fill
     };
@@ -160,7 +164,9 @@ module Econia::Match {
     /// * `side`: `ASK` or `BID`, denoting the side on the order book
     ///   which should be filled against. If `ASK`, user is submitting
     ///   a market buy, if `BID`, user is submitting a market sell
-    /// * `size`: Base coin parcels to be filled
+    /// * `requested_size`: Base coin parcels to be filled
+    /// * `quote_available`: Quote coin parcels available for filling if
+    ///   filling against asks
     /// * `book_cap`: Immutable reference to `Econia::Book:FriendCap`
     ///
     /// # Terminology
@@ -170,7 +176,8 @@ module Econia::Match {
     ///   of iterated traversal
     ///
     /// # Returns
-    /// * `u64`: Amount of base coin parcels left unfilled
+    /// * `u64`: Amount of base coin subunits filled
+    /// * `u64`: Amount of quote coin subunits filled
     ///
     /// # Assumptions
     /// * Order book has been properly initialized at host address
@@ -179,41 +186,61 @@ module Econia::Match {
         host: address,
         addr: address,
         side: bool,
-        size: u64,
+        requested_size: u64,
+        quote_available: u64,
         book_cap: &BookCap
-    ): u64 {
+    ): (
+        u64,
+        u64,
+    ) {
         // Get number of positions on corresponding order book side
         let n_positions = if (side == ASK) n_asks<B, Q, E>(host, book_cap)
             else n_bids<B, Q, E>(host, book_cap);
+        // Return no fills if no positions on book
+        if (n_positions == 0) return (0, 0);
         // Get scale factor of corresponding order book
         let scale_factor = scale_factor<B, Q, E>(host, book_cap);
-        // Return full order size if no positions on book
-        if (n_positions == 0) return size;
+        // Initialize counters for base coin parcels and quote coin
+        // subunits filled
+        let (base_parcels_filled, quote_coins_filled) = (0, 0);
         // Initialize traversal, storing ID of target position, address
         // of user holding it, the parent field of corresponding tree
-        // node, child index of corresponding node, amount filled, and
-        // if an exact match between incoming order and target position
-        let (target_id, target_addr, target_p_f, target_c_i, filled, exact) =
-            init_traverse_fill<B, Q, E>(host, addr, side, size, book_cap);
+        // node, child index of corresponding node, amount filled, if an
+        // exact match between incoming order and target position, and
+        // if the incoming order has insufficient quote coins in case of
+        // an ask
+        let (target_id, target_addr, target_p_f, target_c_i, filled, exact,
+             insufficient_quote) =
+            init_traverse_fill<B, Q, E>(
+                host, addr, side, requested_size, quote_available, book_cap);
         loop { // Begin traversal loop
-            size = size - filled; // Decrement size left to match
+            // Update counter for number of base parcels filled
+            base_parcels_filled = base_parcels_filled + filled;
+            // Update counter for number of quote coins filled
+            quote_coins_filled = quote_coins_filled + id_p(target_id) * filled;
+            // Decrement requested size left to match
+            requested_size = requested_size - filled;
             // Determine if target position completely filled
-            let complete = (exact || size > 0);
+            let complete = ((exact || requested_size > 0) &&
+                            !insufficient_quote);
             // Route funds between conterparties, update open orders
             process_fill<B, Q, E>(target_addr, addr, side, target_id, filled,
                                   scale_factor, complete);
             // If incoming order unfilled and can traverse
-            if (size > 0 && n_positions > 1) {
+            if (requested_size > 0 && n_positions > 1 && !insufficient_quote) {
                 // Traverse pop fill to next position
-                (target_id, target_addr, target_p_f, target_c_i, filled, exact)
+                (target_id, target_addr, target_p_f, target_c_i, filled, exact,
+                    insufficient_quote)
                     = traverse_pop_fill<B, Q, E>(
-                        host, addr, side, size, n_positions, target_id,
-                        target_p_f, target_c_i, book_cap);
+                        host, addr, side, requested_size, quote_available,
+                        n_positions, target_id, target_p_f, target_c_i,
+                        book_cap);
                 // Decrement count of positions on book for given side
                 n_positions = n_positions - 1;
             } else { // If should not continue iterated traverse fill
                 // Determine if a partial target fill was made
-                let partial_target_fill = (size == 0 && !exact);
+                let partial_target_fill =
+                    (requested_size == 0 && !exact) || insufficient_quote;
                 // If anything other than a partial target fill made
                 if (!partial_target_fill) {
                     // Cancel target position
@@ -224,7 +251,8 @@ module Econia::Match {
                 break // Break out of iterated traversal loop
             };
         };
-        size // Return unfilled size on market order
+        // Return base coin subunits and quote coin subunits filled
+        (base_parcels_filled * scale_factor, quote_coins_filled)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

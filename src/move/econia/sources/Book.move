@@ -263,7 +263,9 @@ module Econia::Book {
     /// leave it unmodified if matching results in a complete fill on
     /// both sides of the order, and leave it unmodified if matching
     /// only results in a partial fill against the incoming order (in
-    /// both of the latter cases so that it may be popped later).
+    /// both of the latter cases so that it may be popped later). If
+    /// `side` is `ASK`, check the fill size per `check_size()`,
+    /// reducing it as needed based on available incoming quote coins.
     ///
     /// # Terminology
     /// * "Incoming order" has `size` base coin parcels to be filled
@@ -273,7 +275,10 @@ module Econia::Book {
     /// * `host`: Host of `OB`
     /// * `i_addr`: Address of incoming order to match against
     /// * `side`: `ASK` or `BID`
-    /// * `size`: Base coin parcels to be filled on incoming order
+    /// * `size_left`: Total base coin parcels left to be filled on
+    ///   incoming order
+    /// * `quote_available`: Quote coin parcels available for filling if
+    ///   filling against asks
     /// * `n_p`: Number of positions in `OB` for corresponding `side`
     /// * `_c`: Immutable reference to `FriendCap`
     ///
@@ -290,19 +295,23 @@ module Econia::Book {
     /// * `u64`: Amount filled, in base coin parcels
     /// * `bool`: If a perfect match between incoming order and target
     ///   position size
-    ///
-    /// # Abort conditions
-    /// * If `i_addr` (incoming address) is same as target address
+    /// * `bool`: If `quote_available` was insufficient for completely
+    ///   filling the target position in the case of an ask
     ///
     /// # Assumptions
     /// * Order book has been properly initialized at host address and
     ///   has at least one position in corresponding tree
     /// * Caller has already verified tree is not empty
+    ///
+    /// # Abort conditions
+    /// * If `i_addr` (incoming address) is same as target address, per
+    ///   `process_fill_scenarios()`
     public fun init_traverse_fill<B, Q, E>(
         host: address,
         i_addr: address,
         side: bool,
-        size: u64,
+        size_left: u64,
+        quote_available: u64,
         _c: &FriendCap
     ): (
         u128,
@@ -310,10 +319,11 @@ module Econia::Book {
         u64,
         u64,
         u64,
+        bool,
         bool
     ) acquires OB {
         let (tree, dir) = if (side == ASK) // If an ask
-            // Define asks tree and successor iteration
+            // Define traversal tree as asks tree, successor iteration
             (&mut borrow_global_mut<OB<B, Q, E>>(host).a, R) else
             // Otherwise define tree as bids tree, predecessor iteration
             (&mut borrow_global_mut<OB<B, Q, E>>(host).b, L);
@@ -323,13 +333,18 @@ module Econia::Book {
         // node, and the child field index of corresponding tree node
         let (t_id, t_p_r, t_p_f, t_c_i) = cb_t_i_m(tree, dir);
         let t_addr = t_p_r.a; // Store target position user address
+        // Flag if insufficient quote coins in case of ask, check size
+        // left to be filled
+        let (insufficient_quote, size) =
+            check_size(side, t_id, t_p_r.s, size_left, quote_available);
         // Process fill scenarios, storing amount filled and if perfect
         // match between incoming and target order
         let (filled, perfect) = process_fill_scenarios(i_addr, t_p_r, size);
         // Return target position ID, target position user address,
         // corresponding node's parent field, corresponding node's child
-        // field index, and the number of base coin parcels filled
-        (t_id, t_addr, t_p_f, t_c_i, filled, perfect)
+        // field index, the number of base coin parcels filled, and if
+        // insufficient quote coins in the case of target ask position
+        (t_id, t_addr, t_p_f, t_c_i, filled, perfect, insufficient_quote)
     }
 
     /// Return number of asks on order book, assuming order book exists
@@ -401,7 +416,10 @@ module Econia::Book {
     /// * `host`: Host of `OB`
     /// * `i_addr`: Address of incoming order to match against
     /// * `side`: `ASK` or `BID`
-    /// * `size`: Base coin parcels to be filled on incoming order
+    /// * `size_left`: Total base coin parcels left to be filled on
+    ///   incoming order
+    /// * `quote_available`: Quote coin parcels available for filling if
+    ///   filling against asks
     /// * `n_p`: Number of positions in `OB` for corresponding `side`
     /// * `s_id`: Order ID of start position. If `side` is `ASK`, cannot
     ///   be minimum ask in order book, and if `side` is `BID`, cannot
@@ -419,11 +437,14 @@ module Econia::Book {
     /// * `u64`: Amount filled, in base coin parcels
     /// * `bool`: If a perfect match between incoming order and target
     ///   position size
+    /// * `bool`: If `quote_available` was insufficient for completely
+    ///   filling the target position in the case of an ask
     public fun traverse_pop_fill<B, Q, E>(
         host: address,
         i_addr: address,
         side: bool,
-        size: u64,
+        size_left: u64,
+        quote_available: u64,
         n_p: u64,
         s_id: u128,
         s_p_f: u64,
@@ -435,6 +456,7 @@ module Econia::Book {
         u64,
         u64,
         u64,
+        bool,
         bool
     ) acquires OB {
         let (tree, dir) = if (side == ASK) // If an ask
@@ -450,13 +472,18 @@ module Econia::Book {
             cb_t_p_m(tree, s_id, s_p_f, s_c_i, n_p, dir);
         let P{s: _, a: _} = s_p; // Unpack/discard start position fields
         let t_addr = t_p_r.a; // Store target position user address
+        // Flag if insufficient quote coins in case of ask, check size
+        // left to be filled
+        let (insufficient_quote, size) =
+            check_size(side, t_id, t_p_r.s, size_left, quote_available);
         // Process fill scenarios, storing amount filled and if perfect
         // match between incoming and target order
         let (filled, perfect) = process_fill_scenarios(i_addr, t_p_r, size);
         // Return target position ID, target position user address,
         // corresponding node's parent field, corresponding node's child
-        // field index, and the number of base coin parcels filled
-        (t_id, t_addr, t_p_f, t_c_i, filled, perfect)
+        // field index, the number of base coin parcels filled, and if
+        // insufficient quote coins in the case of target ask position
+        (t_id, t_addr, t_p_f, t_c_i, filled, perfect, insufficient_quote)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -536,35 +563,44 @@ module Econia::Book {
     /// # Parameters
     /// * `side`: `ASK` or `BID`
     /// * `target_id`: The target `P`
-    /// * `requested_size`: The number of base coin parcels requested
-    ///   during a market order that is matched against a position
+    /// * `size_left`: Total base coin parcels left to be filled on
+    ///   incoming order
     /// * `quote_available`: The number of quote coin subunits that the
     ///   user with the incoming order has available for the trade
     ///
     /// # Returns
-    /// * `bool`: `true` if the requested size was valid, `false` if not
-    /// * `u64`: `requested_size` if `side` is `BID` or if `side` is
-    ///   `ASK` and user has enough quote coins available, otherwise the
-    ///   max number of base coin parcels that can be bought based on
-    ///   the price of the target order
+    /// * `bool`: `true` if use has insufficient quote coins in the case
+    ///   of a filling against an ask, otherwise `false`
+    /// * `u64`: `size_left` if `side` is `BID` or if `side` is `ASK`
+    ///   and user has enough quote coins available to completely match
+    ///   against a target ask, otherwise the max number of base coin
+    ///   parcels that can be filled against the target ask
     fun check_size(
         side: bool,
         target_id: u128,
-        requested_size: u64,
+        target_size: u64,
+        size_left: u64,
         quote_available: u64,
     ): (
         bool,
         u64
     ) {
-        // Return valid order and confirm size if filling against bids
-        if (side == BID) return (true, requested_size);
-        // Otherwise the order fills against an ask, so calculate max
-        // number of base coin parcels that can be bought at current
-        // ask price, based on incoming order's available quote coins
-        let max_size = quote_available / id_p(target_id);
+        // Do not flag insufficient quote coins, and confirm filling
+        // size left
+        if (side == BID) return (false, size_left);
+        // Otherwise incoming order fills against a target ask, so
+        // calculate number of quote coins required for a complete fill
+        let target_price = id_p(target_id); // Get target price
+        // Get quote coins required to completely fill the order
+        let quote_to_fill = target_price * target_size;
         // If requested size larger than max size
-        if (requested_size > max_size) return (false, max_size) else
-            return (true, requested_size)
+        if (quote_to_fill > quote_available) return
+            // Flag insufficient quote coins, and return max fill size
+            // possible
+            (true, quote_available / target_price) else
+            // Otherwise dot no flag insufficient quote coins, and
+            // confirm filling size left
+            return (false, size_left)
     }
 
     /// Compare incoming order `size` and address `i_addr` against
@@ -572,6 +608,9 @@ module Econia::Book {
     /// incoming size is equal to target size. Abort if both have same
     /// address, and decrement target position size (`P.s`) by `size` if
     /// target position only gets partially filled.
+    ///
+    /// # Abort conditions
+    /// * If `i_addr` (incoming address) is same as target address
     fun process_fill_scenarios(
         i_addr: address,
         t_p_r: &mut P,

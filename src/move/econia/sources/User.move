@@ -26,13 +26,17 @@ module Econia::User {
 
     use Econia::Caps::{
         orders_f_c as orders_cap,
-        book_f_c as c_b_f_c
+        book_f_c as book_cap
     };
 
     use Econia::ID::{
         id_a as id_a,
         id_b as id_b,
         price as id_price
+    };
+
+    use Econia::Match::{
+        fill_market_order
     };
 
     use Econia::Orders::{
@@ -415,7 +419,7 @@ module Econia::User {
             // Cancel on user's open orders, storing scaled size
             let s_s = o_c_a<B, Q, E>(addr, id, &orders_cap());
             // Cancel on order book
-            b_c_a<B, Q, E>(host, id, &c_b_f_c());
+            b_c_a<B, Q, E>(host, id, &book_cap());
             // Increment amount of base coins available for withdraw,
             // by order scaled size times scale factor on given market
             o_c.b_a = o_c.b_a +
@@ -424,7 +428,7 @@ module Econia::User {
             // Cancel on user's open orders, storing scaled size
             let s_s = o_c_b<B, Q, E>(addr, id, &orders_cap());
             // Cancel on order book
-            b_c_b<B, Q, E>(host, id, &c_b_f_c());
+            b_c_b<B, Q, E>(host, id, &book_cap());
             // Increment amount of quote coins available for withdraw,
             // by order scaled size times price from order ID
             o_c.q_a = o_c.q_a + s_s * id_price(id);
@@ -489,7 +493,7 @@ module Econia::User {
             o_c.b_a = o_c.b_a - b_c_subs;
             // Try adding to order book, storing crossed spread flag
             c_s =
-                b_a_a<B, Q, E>(host, addr, id, price, size, &c_b_f_c());
+                b_a_a<B, Q, E>(host, addr, id, price, size, &book_cap());
         } else { // If limit order is a bid
             let id = id_b(price, v_n); // Get corresponding order id
             // Verify and add to user's open orders, storing amoung of
@@ -502,7 +506,7 @@ module Econia::User {
             o_c.q_a = o_c.q_a - q_c_subs;
             // Try adding to order book, storing crossed spread flag
             c_s =
-                b_a_b<B, Q, E>(host, addr, id, price, size, &c_b_f_c());
+                b_a_b<B, Q, E>(host, addr, id, price, size, &book_cap());
         };
         assert!(!c_s, E_CROSSES_SPREAD); // Assert uncrossed spread
     }
@@ -515,8 +519,11 @@ module Econia::User {
     /// * `host`: The market host (See `Econia::Registry`)
     /// * `side`: `ASK` or `BID`
     /// * `price`: Scaled integer price (see `Econia::ID`)
-    /// * `size`: Scaled order size (number of base coin parcels per
-    ///   `Econia::Orders`)
+    /// * `requested_size`: Requested number of base coin parcels to be
+    //    filled
+    /// * `max_quote_to_spend`: Maximum number of quote coins that can
+    ///   be spent in the case of a market buy (unused in case of a
+    ///   market sell)
     ///
     /// # Abort conditions
     /// * If no such market exists at host address
@@ -527,7 +534,8 @@ module Econia::User {
         user: &signer,
         host: address,
         side: bool,
-        size: u64
+        requested_size: u64,
+        max_quote_to_spend: u64
     ) acquires OC, SC {
         update_s_c(user); // Update user sequence counter
         // Assert market exists at given host address
@@ -540,19 +548,36 @@ module Econia::User {
         // If submitting a market buy (if filling against ask positions
         // on the order book)
         if (side == BUY) {
-            // Get quote coins available to use for market buy
-            let quote_coins_available = order_collateral.q_a;
-            quote_coins_available;
+            // Assert user has enough quote coins to spend
+            assert!(order_collateral.q_a >= max_quote_to_spend,
+                E_NOT_ENOUGH_COLLATERAL);
+            // Fill a market order through the matching engine, storing
+            // numer of quote coins spent
+            let (_, quote_coins_spent) = fill_market_order<B, Q, E>(
+                host, user_address, ASK, requested_size, max_quote_to_spend,
+                &book_cap());
+            // Borrow mutable reference to user's order collateral
+            let order_collateral =
+                borrow_global_mut<OC<B, Q, E>>(user_address);
+            // Update count of available quote coins
+            order_collateral.q_a = order_collateral.q_a - quote_coins_spent;
         } else { // If submitting a market sell (filling against bids)
             // Get number of base coins required to execute market sell
-            let base_coins_required = size * orders_scale_factor<B, Q, E>(
-               user_address, &orders_cap());
+            let base_coins_required = requested_size *
+                orders_scale_factor<B, Q, E>(user_address, &orders_cap());
             // Assert user has enough available base coins to sell
             assert!(order_collateral.b_a >= base_coins_required,
                 E_NOT_ENOUGH_COLLATERAL);
+            // Fill a market order through the matching engine, storing
+            // numer of base coin subunits sold
+            let (base_coins_sold, _) = fill_market_order<B, Q, E>(
+                host, user_address, BID, requested_size, 0, &book_cap());
+            // Borrow mutable reference to user's order collateral
+            let order_collateral =
+                borrow_global_mut<OC<B, Q, E>>(user_address);
+            // Update count of available base coins
+            order_collateral.b_a = order_collateral.b_a - base_coins_sold;
         }
-        // Decrement collateral amount accordingly, after figuring out
-        // filled return val
     }
 
     /// Update sequence counter for user `u` with the sequence number of

@@ -58,8 +58,8 @@ to be filled.
     -  [Parameters](#@Parameters_7)
     -  [Considerations](#@Considerations_8)
     -  [Returns](#@Returns_9)
-    -  [Abort conditions](#@Abort_conditions_10)
-    -  [Assumptions](#@Assumptions_11)
+    -  [Assumptions](#@Assumptions_10)
+    -  [Abort conditions](#@Abort_conditions_11)
 -  [Function `n_asks`](#0xc0deb00c_Book_n_asks)
 -  [Function `n_bids`](#0xc0deb00c_Book_n_bids)
 -  [Function `refresh_extreme_order_id`](#0xc0deb00c_Book_refresh_extreme_order_id)
@@ -78,6 +78,7 @@ to be filled.
     -  [Parameters](#@Parameters_20)
     -  [Returns](#@Returns_21)
 -  [Function `process_fill_scenarios`](#0xc0deb00c_Book_process_fill_scenarios)
+    -  [Abort conditions](#@Abort_conditions_22)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -603,7 +604,9 @@ book by <code>size</code> if matching results in a partial fill against it,
 leave it unmodified if matching results in a complete fill on
 both sides of the order, and leave it unmodified if matching
 only results in a partial fill against the incoming order (in
-both of the latter cases so that it may be popped later).
+both of the latter cases so that it may be popped later). If
+<code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, check the fill size per <code><a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>()</code>,
+reducing it as needed based on available incoming quote coins.
 
 
 <a name="@Terminology_6"></a>
@@ -621,7 +624,10 @@ both of the latter cases so that it may be popped later).
 * <code>host</code>: Host of <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code>
 * <code>i_addr</code>: Address of incoming order to match against
 * <code>side</code>: <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> or <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>
-* <code>size</code>: Base coin parcels to be filled on incoming order
+* <code>size_left</code>: Total base coin parcels left to be filled on
+incoming order
+* <code>quote_available</code>: Quote coin parcels available for filling if
+filling against asks
 * <code>n_p</code>: Number of positions in <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code> for corresponding <code>side</code>
 * <code>_c</code>: Immutable reference to <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>
 
@@ -646,16 +652,11 @@ position
 * <code>u64</code>: Amount filled, in base coin parcels
 * <code>bool</code>: If a perfect match between incoming order and target
 position size
+* <code>bool</code>: If <code>quote_available</code> was insufficient for completely
+filling the target position in the case of an ask
 
 
-<a name="@Abort_conditions_10"></a>
-
-### Abort conditions
-
-* If <code>i_addr</code> (incoming address) is same as target address
-
-
-<a name="@Assumptions_11"></a>
+<a name="@Assumptions_10"></a>
 
 ### Assumptions
 
@@ -664,7 +665,15 @@ has at least one position in corresponding tree
 * Caller has already verified tree is not empty
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_traverse_fill">init_traverse_fill</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64, bool)
+<a name="@Abort_conditions_11"></a>
+
+### Abort conditions
+
+* If <code>i_addr</code> (incoming address) is same as target address, per
+<code><a href="Book.md#0xc0deb00c_Book_process_fill_scenarios">process_fill_scenarios</a>()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_traverse_fill">init_traverse_fill</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size_left: u64, quote_available: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64, bool, bool)
 </code></pre>
 
 
@@ -677,7 +686,8 @@ has at least one position in corresponding tree
     host: <b>address</b>,
     i_addr: <b>address</b>,
     side: bool,
-    size: u64,
+    size_left: u64,
+    quote_available: u64,
     _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ): (
     u128,
@@ -685,10 +695,11 @@ has at least one position in corresponding tree
     u64,
     u64,
     u64,
+    bool,
     bool
 ) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
     <b>let</b> (tree, dir) = <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) // If an ask
-        // Define asks tree and successor iteration
+        // Define traversal tree <b>as</b> asks tree, successor iteration
         (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host).a, <a href="Book.md#0xc0deb00c_Book_R">R</a>) <b>else</b>
         // Otherwise define tree <b>as</b> bids tree, predecessor iteration
         (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host).b, <a href="Book.md#0xc0deb00c_Book_L">L</a>);
@@ -698,13 +709,18 @@ has at least one position in corresponding tree
     // node, and the child field index of corresponding tree node
     <b>let</b> (t_id, t_p_r, t_p_f, t_c_i) = cb_t_i_m(tree, dir);
     <b>let</b> t_addr = t_p_r.a; // Store target position user <b>address</b>
+    // Flag <b>if</b> insufficient quote coins in case of ask, check size
+    // left <b>to</b> be filled
+    <b>let</b> (insufficient_quote, size) =
+        <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(side, t_id, t_p_r.s, size_left, quote_available);
     // Process fill scenarios, storing amount filled and <b>if</b> perfect
     // match between incoming and target order
     <b>let</b> (filled, perfect) = <a href="Book.md#0xc0deb00c_Book_process_fill_scenarios">process_fill_scenarios</a>(i_addr, t_p_r, size);
     // Return target position <a href="ID.md#0xc0deb00c_ID">ID</a>, target position user <b>address</b>,
     // corresponding node's parent field, corresponding node's child
-    // field index, and the number of base coin parcels filled
-    (t_id, t_addr, t_p_f, t_c_i, filled, perfect)
+    // field index, the number of base coin parcels filled, and <b>if</b>
+    // insufficient quote coins in the case of target ask position
+    (t_id, t_addr, t_p_f, t_c_i, filled, perfect, insufficient_quote)
 }
 </code></pre>
 
@@ -873,7 +889,10 @@ against
 * <code>host</code>: Host of <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code>
 * <code>i_addr</code>: Address of incoming order to match against
 * <code>side</code>: <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> or <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>
-* <code>size</code>: Base coin parcels to be filled on incoming order
+* <code>size_left</code>: Total base coin parcels left to be filled on
+incoming order
+* <code>quote_available</code>: Quote coin parcels available for filling if
+filling against asks
 * <code>n_p</code>: Number of positions in <code><a href="Book.md#0xc0deb00c_Book_OB">OB</a></code> for corresponding <code>side</code>
 * <code>s_id</code>: Order ID of start position. If <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>, cannot
 be minimum ask in order book, and if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, cannot
@@ -895,9 +914,11 @@ position
 * <code>u64</code>: Amount filled, in base coin parcels
 * <code>bool</code>: If a perfect match between incoming order and target
 position size
+* <code>bool</code>: If <code>quote_available</code> was insufficient for completely
+filling the target position in the case of an ask
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_traverse_pop_fill">traverse_pop_fill</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size: u64, n_p: u64, s_id: u128, s_p_f: u64, s_c_i: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64, bool)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_traverse_pop_fill">traverse_pop_fill</a>&lt;B, Q, E&gt;(host: <b>address</b>, i_addr: <b>address</b>, side: bool, size_left: u64, quote_available: u64, n_p: u64, s_id: u128, s_p_f: u64, s_c_i: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): (u128, <b>address</b>, u64, u64, u64, bool, bool)
 </code></pre>
 
 
@@ -910,7 +931,8 @@ position size
     host: <b>address</b>,
     i_addr: <b>address</b>,
     side: bool,
-    size: u64,
+    size_left: u64,
+    quote_available: u64,
     n_p: u64,
     s_id: u128,
     s_p_f: u64,
@@ -922,6 +944,7 @@ position size
     u64,
     u64,
     u64,
+    bool,
     bool
 ) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
     <b>let</b> (tree, dir) = <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) // If an ask
@@ -937,13 +960,18 @@ position size
         cb_t_p_m(tree, s_id, s_p_f, s_c_i, n_p, dir);
     <b>let</b> <a href="Book.md#0xc0deb00c_Book_P">P</a>{s: _, a: _} = s_p; // Unpack/discard start position fields
     <b>let</b> t_addr = t_p_r.a; // Store target position user <b>address</b>
+    // Flag <b>if</b> insufficient quote coins in case of ask, check size
+    // left <b>to</b> be filled
+    <b>let</b> (insufficient_quote, size) =
+        <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(side, t_id, t_p_r.s, size_left, quote_available);
     // Process fill scenarios, storing amount filled and <b>if</b> perfect
     // match between incoming and target order
     <b>let</b> (filled, perfect) = <a href="Book.md#0xc0deb00c_Book_process_fill_scenarios">process_fill_scenarios</a>(i_addr, t_p_r, size);
     // Return target position <a href="ID.md#0xc0deb00c_ID">ID</a>, target position user <b>address</b>,
     // corresponding node's parent field, corresponding node's child
-    // field index, and the number of base coin parcels filled
-    (t_id, t_addr, t_p_f, t_c_i, filled, perfect)
+    // field index, the number of base coin parcels filled, and <b>if</b>
+    // insufficient quote coins in the case of target ask position
+    (t_id, t_addr, t_p_f, t_c_i, filled, perfect, insufficient_quote)
 }
 </code></pre>
 
@@ -1072,8 +1100,8 @@ filled
 
 * <code>side</code>: <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> or <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>
 * <code>target_id</code>: The target <code><a href="Book.md#0xc0deb00c_Book_P">P</a></code>
-* <code>requested_size</code>: The number of base coin parcels requested
-during a market order that is matched against a position
+* <code>size_left</code>: Total base coin parcels left to be filled on
+incoming order
 * <code>quote_available</code>: The number of quote coin subunits that the
 user with the incoming order has available for the trade
 
@@ -1082,14 +1110,15 @@ user with the incoming order has available for the trade
 
 ### Returns
 
-* <code>bool</code>: <code><b>true</b></code> if the requested size was valid, <code><b>false</b></code> if not
-* <code>u64</code>: <code>requested_size</code> if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code> or if <code>side</code> is
-<code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code> and user has enough quote coins available, otherwise the
-max number of base coin parcels that can be bought based on
-the price of the target order
+* <code>bool</code>: <code><b>true</b></code> if use has insufficient quote coins in the case
+of a filling against an ask, otherwise <code><b>false</b></code>
+* <code>u64</code>: <code>size_left</code> if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code> or if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>
+and user has enough quote coins available to completely match
+against a target ask, otherwise the max number of base coin
+parcels that can be filled against the target ask
 
 
-<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(side: bool, target_id: u128, requested_size: u64, quote_available: u64): (bool, u64)
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(side: bool, target_id: u128, target_size: u64, size_left: u64, quote_available: u64): (bool, u64)
 </code></pre>
 
 
@@ -1101,21 +1130,29 @@ the price of the target order
 <pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(
     side: bool,
     target_id: u128,
-    requested_size: u64,
+    target_size: u64,
+    size_left: u64,
     quote_available: u64,
 ): (
     bool,
     u64
 ) {
-    // Return valid order and confirm size <b>if</b> filling against bids
-    <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_BID">BID</a>) <b>return</b> (<b>true</b>, requested_size);
-    // Otherwise the order fills against an ask, so calculate max
-    // number of base coin parcels that can be bought at current
-    // ask price, based on incoming order's available quote coins
-    <b>let</b> max_size = quote_available / id_p(target_id);
+    // Do not flag insufficient quote coins, and confirm filling
+    // size left
+    <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_BID">BID</a>) <b>return</b> (<b>false</b>, size_left);
+    // Otherwise incoming order fills against a target ask, so
+    // calculate number of quote coins required for a complete fill
+    <b>let</b> target_price = id_p(target_id); // Get target price
+    // Get quote coins required <b>to</b> completely fill the order
+    <b>let</b> quote_to_fill = target_price * target_size;
     // If requested size larger than max size
-    <b>if</b> (requested_size &gt; max_size) <b>return</b> (<b>false</b>, max_size) <b>else</b>
-        <b>return</b> (<b>true</b>, requested_size)
+    <b>if</b> (quote_to_fill &gt; quote_available) <b>return</b>
+        // Flag insufficient quote coins, and <b>return</b> max fill size
+        // possible
+        (<b>true</b>, quote_available / target_price) <b>else</b>
+        // Otherwise dot no flag insufficient quote coins, and
+        // confirm filling size left
+        <b>return</b> (<b>false</b>, size_left)
 }
 </code></pre>
 
@@ -1132,6 +1169,13 @@ fields in target position <code>t_p_r</code>, returning fill amount and if
 incoming size is equal to target size. Abort if both have same
 address, and decrement target position size (<code><a href="Book.md#0xc0deb00c_Book_P">P</a>.s</code>) by <code>size</code> if
 target position only gets partially filled.
+
+
+<a name="@Abort_conditions_22"></a>
+
+### Abort conditions
+
+* If <code>i_addr</code> (incoming address) is same as target address
 
 
 <pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_process_fill_scenarios">process_fill_scenarios</a>(i_addr: <b>address</b>, t_p_r: &<b>mut</b> <a href="Book.md#0xc0deb00c_Book_P">Book::P</a>, size: u64): (u64, bool)

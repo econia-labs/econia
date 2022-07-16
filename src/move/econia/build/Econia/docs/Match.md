@@ -7,7 +7,28 @@ Matching engine functionality, integrating user-side and book-side
 modules
 
 
-<a name="@Testing_0"></a>
+<a name="@Sides_0"></a>
+
+## Sides
+
+
+In the case of a market sell (which fills against bids on the book),
+it is possible to verify that the submitting user has enough
+collateral, in the form of base coin subunits, ahead of time,
+because they pre-specify the amount of base coins they are trying to
+sell. They will receive an unspecified amount of quote coins in
+return, but it does not matter that this amount is unknown because
+the value simply gets added to their collateral.
+
+In the case of a market buy (which fills against asks on the book),
+however, it is not possible to verify that the submitting user has
+enough collateral, in the form of quote coin subunits, ahead of
+time: the amount of quote coins required to complete the market buy
+depends on the size and price of each ask position on the book,
+hence a user must pre-specify how many quote coin subunits they are
+willing to pay when submitting their order.
+
+<a name="@Testing_1"></a>
 
 ## Testing
 
@@ -15,10 +36,12 @@ modules
 Test-only constants and functions are used to construct a test
 market with simulated positions. During testing, the "incoming
 market order" fills against the "target position" during iterated
-traversal, with markets constructed so that on either side, user 1's
-position is filled before user 2's, which is filled before user 3's.
-Hence, the following tests exercise logic at sequential milestones
-along the process of clearing out the book:
+traversal, with markets constructed so that for both ask and bid
+trees, user 1's position is filled before user 2's, which is filled
+before user 3's. Hence, the following tests exercise logic at
+sequential milestones along the process of clearing out the book,
+whether via a market buy (filling against asks) or a market sell
+(filling against bids):
 * <code>ask_partial_1()</code>
 * <code>bid_exact_1()</code>
 * <code>bid_partial_2()</code>
@@ -27,18 +50,35 @@ along the process of clearing out the book:
 * <code>bid_exact_3()</code>
 * <code>ask_clear_book()</code>
 
+As described in [sides](#sides), in the case of a market buy
+(filling against asks on the book), the following tests excercise
+logic at sequential milestones of exhausting available quote coins
+along the process of clearing out the book:
+* <code>buy_exhaust_immediately()</code>
+* <code>buy_exhaust_partial_1()</code>
+* <code>buy_exhaust_exact_1()</code>
+* <code>buy_exhaust_partial_2()</code>
+* <code>buy_exhaust_exact_2()</code>
+* <code>buy_exhause_partial_3()</code>
+* <code>buy_exhaust_exact_3()</code>
 
--  [Testing](#@Testing_0)
--  [Constants](#@Constants_1)
--  [Function `submit_market_order`](#0xc0deb00c_Match_submit_market_order)
-    -  [Parameters](#@Parameters_2)
-    -  [Abort conditions](#@Abort_conditions_3)
-    -  [Assumptions](#@Assumptions_4)
+---
+
+
+-  [Sides](#@Sides_0)
+-  [Testing](#@Testing_1)
+-  [Constants](#@Constants_2)
+-  [Function `submit_market_buy`](#0xc0deb00c_Match_submit_market_buy)
+-  [Function `submit_market_sell`](#0xc0deb00c_Match_submit_market_sell)
 -  [Function `fill_market_order`](#0xc0deb00c_Match_fill_market_order)
-    -  [Parameters](#@Parameters_5)
-    -  [Terminology](#@Terminology_6)
-    -  [Returns](#@Returns_7)
-    -  [Assumptions](#@Assumptions_8)
+    -  [Parameters](#@Parameters_3)
+    -  [Terminology](#@Terminology_4)
+    -  [Returns](#@Returns_5)
+    -  [Assumptions](#@Assumptions_6)
+-  [Function `submit_market_order`](#0xc0deb00c_Match_submit_market_order)
+    -  [Parameters](#@Parameters_7)
+    -  [Abort conditions](#@Abort_conditions_8)
+    -  [Assumptions](#@Assumptions_9)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -51,7 +91,7 @@ along the process of clearing out the book:
 
 
 
-<a name="@Constants_1"></a>
+<a name="@Constants_2"></a>
 
 ## Constants
 
@@ -72,6 +112,15 @@ Bid flag
 
 
 <pre><code><b>const</b> <a href="Match.md#0xc0deb00c_Match_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Match_E_SIZE_0"></a>
+
+
+
+<pre><code><b>const</b> <a href="Match.md#0xc0deb00c_Match_E_SIZE_0">E_SIZE_0</a>: u64 = 3;
 </code></pre>
 
 
@@ -116,55 +165,33 @@ Flag for submitting a market buy
 
 
 
+<a name="0xc0deb00c_Match_E_QUOTE_SPEND_0"></a>
+
+
+
+<pre><code><b>const</b> <a href="Match.md#0xc0deb00c_Match_E_QUOTE_SPEND_0">E_QUOTE_SPEND_0</a>: u64 = 4;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_Match_SELL"></a>
 
 Flag for submitting a market sell
 
 
-<pre><code><b>const</b> <a href="Match.md#0xc0deb00c_Match_SELL">SELL</a>: bool = <b>true</b>;
+<pre><code><b>const</b> <a href="Match.md#0xc0deb00c_Match_SELL">SELL</a>: bool = <b>false</b>;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_Match_submit_market_order"></a>
+<a name="0xc0deb00c_Match_submit_market_buy"></a>
 
-## Function `submit_market_order`
+## Function `submit_market_buy`
 
-Submit market order for market <code>&lt;B, Q, E&gt;</code>, filling as much
-as possible against the book
-
-
-<a name="@Parameters_2"></a>
-
-### Parameters
-
-* <code>user</code>: User submitting a limit order
-* <code>host</code>: The market host (See <code>Econia::Registry</code>)
-* <code>side</code>: <code><a href="Match.md#0xc0deb00c_Match_ASK">ASK</a></code> or <code><a href="Match.md#0xc0deb00c_Match_BID">BID</a></code>
-* <code>price</code>: Scaled integer price (see <code>Econia::ID</code>)
-* <code>requested_size</code>: Requested number of base coin parcels to be
-* <code>max_quote_to_spend</code>: Maximum number of quote coins that can
-be spent in the case of a market buy (unused in case of a
-market sell)
+Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>()</code> for side <code><a href="Match.md#0xc0deb00c_Match_BUY">BUY</a></code>
 
 
-<a name="@Abort_conditions_3"></a>
-
-### Abort conditions
-
-* If no such market exists at host address
-* If user does not have order collateral container for market
-* If user does not have enough collateral
-
-
-<a name="@Assumptions_4"></a>
-
-### Assumptions
-
-* <code>requested_size</code> is nonzero
-
-
-<pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, requested_size: u64, max_quote_to_spend: u64)
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_buy">submit_market_buy</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, requested_size: u64, max_quote_to_spend: u64)
 </code></pre>
 
 
@@ -173,54 +200,43 @@ market sell)
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_buy">submit_market_buy</a>&lt;B, Q, E&gt;(
     user: &signer,
     host: <b>address</b>,
-    side: bool,
     requested_size: u64,
     max_quote_to_spend: u64
 ) {
-    // Get book-side and open-orders side capabilities
-    <b>let</b> (book_cap, orders_cap) = (book_cap(), orders_cap());
-    // Update user sequence counter
-    update_user_seq_counter(user, &orders_cap);
-    // Assert market <b>exists</b> at given host <b>address</b>
-    <b>assert</b>!(exists_book&lt;B, Q, E&gt;(host, &book_cap), <a href="Match.md#0xc0deb00c_Match_E_NO_MARKET">E_NO_MARKET</a>);
-    <b>let</b> user_address = address_of(user); // Get user <b>address</b>
-    // Assert user <b>has</b> order collateral container
-    <b>assert</b>!(exists_o_c&lt;B, Q, E&gt;(user_address, &orders_cap), <a href="Match.md#0xc0deb00c_Match_E_NO_O_C">E_NO_O_C</a>);
-    // Get available collateral for user on given market
-    <b>let</b> (base_available, quote_available) =
-        get_available_collateral&lt;B, Q, E&gt;(user_address, &orders_cap);
-    // If submitting a market buy (<b>if</b> filling against ask positions
-    // on the order book)
-    <b>if</b> (side == <a href="Match.md#0xc0deb00c_Match_BUY">BUY</a>) {
-        // Assert user <b>has</b> enough quote coins <b>to</b> spend
-        <b>assert</b>!(quote_available &gt;= max_quote_to_spend,
-            <a href="Match.md#0xc0deb00c_Match_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
-        // Fill a market order through the matching engine, storing
-        // numer of quote coins spent
-        <b>let</b> (_, quote_coins_spent) = <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(
-            host, user_address, <a href="Match.md#0xc0deb00c_Match_ASK">ASK</a>, requested_size, max_quote_to_spend,
-            &book_cap());
-        // Update count of available quote coins
-        dec_available_collateral&lt;B, Q, E&gt;(
-            user_address, 0, quote_coins_spent, &orders_cap);
-    } <b>else</b> { // If submitting a market sell (filling against bids)
-        // Get number of base coins required <b>to</b> execute market sell
-        <b>let</b> base_coins_required = requested_size *
-            orders_scale_factor&lt;B, Q, E&gt;(user_address, &orders_cap());
-        // Assert user <b>has</b> enough available base coins <b>to</b> sell
-        <b>assert</b>!(base_available &gt;= base_coins_required,
-            <a href="Match.md#0xc0deb00c_Match_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
-        // Fill a market order through the matching engine, storing
-        // numer of base coin subunits sold
-        <b>let</b> (base_coins_sold, _) = <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(
-            host, user_address, <a href="Match.md#0xc0deb00c_Match_BID">BID</a>, requested_size, 0, &book_cap());
-        // Update count of available base coins
-        dec_available_collateral&lt;B, Q, E&gt;(
-            user_address, base_coins_sold, 0, &orders_cap);
-    }
+    <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(
+        user, host, <a href="Match.md#0xc0deb00c_Match_BUY">BUY</a>, requested_size, max_quote_to_spend);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Match_submit_market_sell"></a>
+
+## Function `submit_market_sell`
+
+Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>()</code> for side <code><a href="Match.md#0xc0deb00c_Match_SELL">SELL</a></code>,
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_sell">submit_market_sell</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, requested_size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_sell">submit_market_sell</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    requested_size: u64,
+) {
+    <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user, host, <a href="Match.md#0xc0deb00c_Match_SELL">SELL</a>, requested_size, 0);
 }
 </code></pre>
 
@@ -237,7 +253,7 @@ returning when there is no liquidity left or when order is
 completely filled
 
 
-<a name="@Parameters_5"></a>
+<a name="@Parameters_3"></a>
 
 ### Parameters
 
@@ -252,7 +268,7 @@ filling against asks
 * <code>book_cap</code>: Immutable reference to <code>Econia::Book:FriendCap</code>
 
 
-<a name="@Terminology_6"></a>
+<a name="@Terminology_4"></a>
 
 ### Terminology
 
@@ -262,7 +278,7 @@ the order book
 of iterated traversal
 
 
-<a name="@Returns_7"></a>
+<a name="@Returns_5"></a>
 
 ### Returns
 
@@ -270,7 +286,7 @@ of iterated traversal
 * <code>u64</code>: Amount of quote coin subunits filled
 
 
-<a name="@Assumptions_8"></a>
+<a name="@Assumptions_6"></a>
 
 ### Assumptions
 
@@ -358,6 +374,113 @@ of iterated traversal
     };
     // Return base coin subunits and quote coin subunits filled
     (base_parcels_filled * scale_factor, quote_coins_filled)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Match_submit_market_order"></a>
+
+## Function `submit_market_order`
+
+Submit market order for market <code>&lt;B, Q, E&gt;</code>, filling as much
+as possible against the book
+
+
+<a name="@Parameters_7"></a>
+
+### Parameters
+
+* <code>user</code>: User submitting a limit order
+* <code>host</code>: The market host (See <code>Econia::Registry</code>)
+* <code>side</code>: <code><a href="Match.md#0xc0deb00c_Match_ASK">ASK</a></code> or <code><a href="Match.md#0xc0deb00c_Match_BID">BID</a></code>
+* <code>price</code>: Scaled integer price (see <code>Econia::ID</code>)
+* <code>requested_size</code>: Requested number of base coin parcels to be
+* <code>max_quote_to_spend</code>: Maximum number of quote coins that can
+be spent in the case of a market buy (unused in case of a
+market sell)
+
+
+<a name="@Abort_conditions_8"></a>
+
+### Abort conditions
+
+* If no such market exists at host address
+* If user does not have order collateral container for market
+* If user does not have enough collateral
+* If <code>requested_size</code> is 0
+
+
+<a name="@Assumptions_9"></a>
+
+### Assumptions
+
+* <code>requested_size</code> is nonzero
+
+
+<pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, requested_size: u64, max_quote_to_spend: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    side: bool,
+    requested_size: u64,
+    max_quote_to_spend: u64
+) {
+    // Assert order <b>has</b> actual size
+    <b>assert</b>!(requested_size &gt; 0, <a href="Match.md#0xc0deb00c_Match_E_SIZE_0">E_SIZE_0</a>);
+    // If a market buy, <b>assert</b> willing <b>to</b> spend quote coins
+    <b>if</b> (side == <a href="Match.md#0xc0deb00c_Match_BUY">BUY</a>) <b>assert</b>!(max_quote_to_spend &gt; 0, <a href="Match.md#0xc0deb00c_Match_E_QUOTE_SPEND_0">E_QUOTE_SPEND_0</a>);
+    // Get book-side and open-orders side capabilities
+    <b>let</b> (book_cap, orders_cap) = (book_cap(), orders_cap());
+    // Update user sequence counter
+    update_user_seq_counter(user, &orders_cap);
+    // Assert market <b>exists</b> at given host <b>address</b>
+    <b>assert</b>!(exists_book&lt;B, Q, E&gt;(host, &book_cap), <a href="Match.md#0xc0deb00c_Match_E_NO_MARKET">E_NO_MARKET</a>);
+    <b>let</b> user_address = address_of(user); // Get user <b>address</b>
+    // Assert user <b>has</b> order collateral container
+    <b>assert</b>!(exists_o_c&lt;B, Q, E&gt;(user_address, &orders_cap), <a href="Match.md#0xc0deb00c_Match_E_NO_O_C">E_NO_O_C</a>);
+    // Get available collateral for user on given market
+    <b>let</b> (base_available, quote_available) =
+        get_available_collateral&lt;B, Q, E&gt;(user_address, &orders_cap);
+    // If submitting a market buy (<b>if</b> filling against ask positions
+    // on the order book)
+    <b>if</b> (side == <a href="Match.md#0xc0deb00c_Match_BUY">BUY</a>) {
+        // Assert user <b>has</b> enough quote coins <b>to</b> spend
+        <b>assert</b>!(quote_available &gt;= max_quote_to_spend,
+            <a href="Match.md#0xc0deb00c_Match_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
+        // Fill a market order through the matching engine, storing
+        // numer of quote coins spent
+        <b>let</b> (_, quote_coins_spent) = <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(
+            host, user_address, <a href="Match.md#0xc0deb00c_Match_ASK">ASK</a>, requested_size, max_quote_to_spend,
+            &book_cap());
+        // Update count of available quote coins
+        dec_available_collateral&lt;B, Q, E&gt;(
+            user_address, 0, quote_coins_spent, &orders_cap);
+    } <b>else</b> { // If submitting a market sell (filling against bids)
+        // Get number of base coins required <b>to</b> execute market sell
+        <b>let</b> base_coins_required = requested_size *
+            orders_scale_factor&lt;B, Q, E&gt;(user_address, &orders_cap());
+        // Assert user <b>has</b> enough available base coins <b>to</b> sell
+        <b>assert</b>!(base_available &gt;= base_coins_required,
+            <a href="Match.md#0xc0deb00c_Match_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
+        // Fill a market order through the matching engine, storing
+        // numer of base coin subunits sold
+        <b>let</b> (base_coins_sold, _) = <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(
+            host, user_address, <a href="Match.md#0xc0deb00c_Match_BID">BID</a>, requested_size, 0, &book_cap());
+        // Update count of available base coins
+        dec_available_collateral&lt;B, Q, E&gt;(
+            user_address, base_coins_sold, 0, &orders_cap);
+    }
 }
 </code></pre>
 

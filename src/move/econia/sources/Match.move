@@ -1,15 +1,35 @@
 /// Matching engine functionality, integrating user-side and book-side
 /// modules
 ///
+/// # Sides
+///
+/// In the case of a market sell (which fills against bids on the book),
+/// it is possible to verify that the submitting user has enough
+/// collateral, in the form of base coin subunits, ahead of time,
+/// because they pre-specify the amount of base coins they are trying to
+/// sell. They will receive an unspecified amount of quote coins in
+/// return, but it does not matter that this amount is unknown because
+/// the value simply gets added to their collateral.
+///
+/// In the case of a market buy (which fills against asks on the book),
+/// however, it is not possible to verify that the submitting user has
+/// enough collateral, in the form of quote coin subunits, ahead of
+/// time: the amount of quote coins required to complete the market buy
+/// depends on the size and price of each ask position on the book,
+/// hence a user must pre-specify how many quote coin subunits they are
+/// willing to pay when submitting their order.
+
 /// # Testing
 ///
 /// Test-only constants and functions are used to construct a test
 /// market with simulated positions. During testing, the "incoming
 /// market order" fills against the "target position" during iterated
-/// traversal, with markets constructed so that on either side, user 1's
-/// position is filled before user 2's, which is filled before user 3's.
-/// Hence, the following tests exercise logic at sequential milestones
-/// along the process of clearing out the book:
+/// traversal, with markets constructed so that for both ask and bid
+/// trees, user 1's position is filled before user 2's, which is filled
+/// before user 3's. Hence, the following tests exercise logic at
+/// sequential milestones along the process of clearing out the book,
+/// whether via a market buy (filling against asks) or a market sell
+/// (filling against bids):
 /// * `ask_partial_1()`
 /// * `bid_exact_1()`
 /// * `bid_partial_2()`
@@ -17,6 +37,21 @@
 /// * `ask_partial_3()`
 /// * `bid_exact_3()`
 /// * `ask_clear_book()`
+///
+/// As described in [sides](#sides), in the case of a market buy
+/// (filling against asks on the book), the following tests excercise
+/// logic at sequential milestones of exhausting available quote coins
+/// along the process of clearing out the book:
+/// * `buy_exhaust_immediately()`
+/// * `buy_exhaust_partial_1()`
+/// * `buy_exhaust_exact_1()`
+/// * `buy_exhaust_partial_2()`
+/// * `buy_exhaust_exact_2()`
+/// * `buy_exhause_partial_3()`
+/// * `buy_exhaust_exact_3()`
+///
+/// ---
+///
 module Econia::Match {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -107,6 +142,10 @@ module Econia::Match {
     const E_NO_O_C: u64 = 1;
     /// When not enough collateral for an operation
     const E_NOT_ENOUGH_COLLATERAL: u64 = 2;
+    // When an order is placed without a size
+    const E_SIZE_0: u64 = 3;
+    // When a market buy is placed with 0 allocated quote coins to spend
+    const E_QUOTE_SPEND_0: u64 = 4;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -119,7 +158,7 @@ module Econia::Match {
     /// Flag for submitting a market buy
     const BUY: bool = true;
     /// Flag for submitting a market sell
-    const SELL: bool = true;
+    const SELL: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -182,78 +221,31 @@ module Econia::Match {
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Submit market order for market `<B, Q, E>`, filling as much
-    /// as possible against the book
-    ///
-    /// # Parameters
-    /// * `user`: User submitting a limit order
-    /// * `host`: The market host (See `Econia::Registry`)
-    /// * `side`: `ASK` or `BID`
-    /// * `price`: Scaled integer price (see `Econia::ID`)
-    /// * `requested_size`: Requested number of base coin parcels to be
-    //    filled
-    /// * `max_quote_to_spend`: Maximum number of quote coins that can
-    ///   be spent in the case of a market buy (unused in case of a
-    ///   market sell)
-    ///
-    /// # Abort conditions
-    /// * If no such market exists at host address
-    /// * If user does not have order collateral container for market
-    /// * If user does not have enough collateral
-    ///
-    /// # Assumptions
-    /// * `requested_size` is nonzero
-    fun submit_market_order<B, Q, E>(
+    /// Wrapped call to `submit_market_order()` for side `BUY`
+    public(script) fun submit_market_buy<B, Q, E>(
         user: &signer,
         host: address,
-        side: bool,
         requested_size: u64,
         max_quote_to_spend: u64
     ) {
-        // Get book-side and open-orders side capabilities
-        let (book_cap, orders_cap) = (book_cap(), orders_cap());
-        // Update user sequence counter
-        update_user_seq_counter(user, &orders_cap);
-        // Assert market exists at given host address
-        assert!(exists_book<B, Q, E>(host, &book_cap), E_NO_MARKET);
-        let user_address = address_of(user); // Get user address
-        // Assert user has order collateral container
-        assert!(exists_o_c<B, Q, E>(user_address, &orders_cap), E_NO_O_C);
-        // Get available collateral for user on given market
-        let (base_available, quote_available) =
-            get_available_collateral<B, Q, E>(user_address, &orders_cap);
-        // If submitting a market buy (if filling against ask positions
-        // on the order book)
-        if (side == BUY) {
-            // Assert user has enough quote coins to spend
-            assert!(quote_available >= max_quote_to_spend,
-                E_NOT_ENOUGH_COLLATERAL);
-            // Fill a market order through the matching engine, storing
-            // numer of quote coins spent
-            let (_, quote_coins_spent) = fill_market_order<B, Q, E>(
-                host, user_address, ASK, requested_size, max_quote_to_spend,
-                &book_cap());
-            // Update count of available quote coins
-            dec_available_collateral<B, Q, E>(
-                user_address, 0, quote_coins_spent, &orders_cap);
-        } else { // If submitting a market sell (filling against bids)
-            // Get number of base coins required to execute market sell
-            let base_coins_required = requested_size *
-                orders_scale_factor<B, Q, E>(user_address, &orders_cap());
-            // Assert user has enough available base coins to sell
-            assert!(base_available >= base_coins_required,
-                E_NOT_ENOUGH_COLLATERAL);
-            // Fill a market order through the matching engine, storing
-            // numer of base coin subunits sold
-            let (base_coins_sold, _) = fill_market_order<B, Q, E>(
-                host, user_address, BID, requested_size, 0, &book_cap());
-            // Update count of available base coins
-            dec_available_collateral<B, Q, E>(
-                user_address, base_coins_sold, 0, &orders_cap);
-        }
+        submit_market_order<B, Q, E>(
+            user, host, BUY, requested_size, max_quote_to_spend);
     }
+
+    /// Wrapped call to `submit_market_order()` for side `SELL`,
+    public(script) fun submit_market_sell<B, Q, E>(
+        user: &signer,
+        host: address,
+        requested_size: u64,
+    ) {
+        submit_market_order<B, Q, E>(user, host, SELL, requested_size, 0);
+    }
+
+    // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Fill a market order against the book as much as possible,
     /// returning when there is no liquidity left or when order is
@@ -356,6 +348,82 @@ module Econia::Match {
         (base_parcels_filled * scale_factor, quote_coins_filled)
     }
 
+    /// Submit market order for market `<B, Q, E>`, filling as much
+    /// as possible against the book
+    ///
+    /// # Parameters
+    /// * `user`: User submitting a limit order
+    /// * `host`: The market host (See `Econia::Registry`)
+    /// * `side`: `ASK` or `BID`
+    /// * `price`: Scaled integer price (see `Econia::ID`)
+    /// * `requested_size`: Requested number of base coin parcels to be
+    //    filled
+    /// * `max_quote_to_spend`: Maximum number of quote coins that can
+    ///   be spent in the case of a market buy (unused in case of a
+    ///   market sell)
+    ///
+    /// # Abort conditions
+    /// * If no such market exists at host address
+    /// * If user does not have order collateral container for market
+    /// * If user does not have enough collateral
+    /// * If `requested_size` is 0
+    ///
+    /// # Assumptions
+    /// * `requested_size` is nonzero
+    fun submit_market_order<B, Q, E>(
+        user: &signer,
+        host: address,
+        side: bool,
+        requested_size: u64,
+        max_quote_to_spend: u64
+    ) {
+        // Assert order has actual size
+        assert!(requested_size > 0, E_SIZE_0);
+        // If a market buy, assert willing to spend quote coins
+        if (side == BUY) assert!(max_quote_to_spend > 0, E_QUOTE_SPEND_0);
+        // Get book-side and open-orders side capabilities
+        let (book_cap, orders_cap) = (book_cap(), orders_cap());
+        // Update user sequence counter
+        update_user_seq_counter(user, &orders_cap);
+        // Assert market exists at given host address
+        assert!(exists_book<B, Q, E>(host, &book_cap), E_NO_MARKET);
+        let user_address = address_of(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists_o_c<B, Q, E>(user_address, &orders_cap), E_NO_O_C);
+        // Get available collateral for user on given market
+        let (base_available, quote_available) =
+            get_available_collateral<B, Q, E>(user_address, &orders_cap);
+        // If submitting a market buy (if filling against ask positions
+        // on the order book)
+        if (side == BUY) {
+            // Assert user has enough quote coins to spend
+            assert!(quote_available >= max_quote_to_spend,
+                E_NOT_ENOUGH_COLLATERAL);
+            // Fill a market order through the matching engine, storing
+            // numer of quote coins spent
+            let (_, quote_coins_spent) = fill_market_order<B, Q, E>(
+                host, user_address, ASK, requested_size, max_quote_to_spend,
+                &book_cap());
+            // Update count of available quote coins
+            dec_available_collateral<B, Q, E>(
+                user_address, 0, quote_coins_spent, &orders_cap);
+        } else { // If submitting a market sell (filling against bids)
+            // Get number of base coins required to execute market sell
+            let base_coins_required = requested_size *
+                orders_scale_factor<B, Q, E>(user_address, &orders_cap());
+            // Assert user has enough available base coins to sell
+            assert!(base_available >= base_coins_required,
+                E_NOT_ENOUGH_COLLATERAL);
+            // Fill a market order through the matching engine, storing
+            // numer of base coin subunits sold
+            let (base_coins_sold, _) = fill_market_order<B, Q, E>(
+                host, user_address, BID, requested_size, 0, &book_cap());
+            // Update count of available base coins
+            dec_available_collateral<B, Q, E>(
+                user_address, base_coins_sold, 0, &orders_cap);
+        }
+    }
+
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -443,30 +511,27 @@ module Econia::Match {
     ) {
         let side = ASK; // Define book side market order fills against
         let market_order_size = 27; // Define market order size
-        // Compute amount of order left unfilled after clearing book
-        let to_fill = market_order_size -
-            USER_1_ASK_SIZE - USER_2_ASK_SIZE - USER_3_ASK_SIZE;
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
         // Fill the market order of given size
-        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
-            market_order_size, USER_0_START_QUOTE, &book_cap());
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, USER_0_START_QUOTE);
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
+        // Calculate base coins filled
+        let base_filled = SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE + USER_3_ASK_SIZE);
+        // Calculate quote coins filled
+        let quote_filled = USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE +
+            USER_3_ASK_PRICE * USER_3_ASK_SIZE;
         // Assert correct collateral field values
-        assert!(u_0_b_coins == USER_0_START_BASE +
-            SCALE_FACTOR * (market_order_size - to_fill), 0);
-        assert!(u_0_b_available == USER_0_START_BASE +
-            SCALE_FACTOR * (market_order_size - to_fill), 0);
-        assert!(u_0_q_coins == USER_0_START_QUOTE -
-            (USER_1_ASK_PRICE * USER_1_ASK_SIZE) -
-            (USER_2_ASK_PRICE * USER_2_ASK_SIZE) -
-            (USER_3_ASK_PRICE * USER_3_ASK_SIZE), 0);
-        // Available amount should be decremented prior to calling
-        // matching engine, but is not per this test's setup
-        assert!(u_0_q_available == USER_0_START_QUOTE, 0);
+        assert!(u_0_b_coins == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_b_available == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE - quote_filled, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE - quote_filled, 0);
         // Get interpreted collateral field values for user 1
         let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser1);
@@ -544,22 +609,22 @@ module Econia::Match {
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
         // Fill the market order of given size
-        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
-            market_order_size, USER_0_START_QUOTE, &book_cap());
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, USER_0_START_QUOTE);
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
+        // Calculate base coins filled
+        let base_filled = SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE);
+        // Calculate quote coins filled
+        let quote_filled = USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE;
         // Assert correct collateral field values
-        assert!(u_0_b_coins == USER_0_START_BASE +
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_b_available == USER_0_START_BASE +
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_q_coins == USER_0_START_QUOTE -
-            (USER_1_ASK_PRICE * USER_1_ASK_SIZE) -
-            (USER_2_ASK_PRICE * USER_2_ASK_SIZE), 0);
-        // Available amount should be decremented prior to calling
-        // matching engine, but is not per this test's setup
-        assert!(u_0_q_available == USER_0_START_QUOTE, 0);
+        assert!(u_0_b_coins == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_b_available == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE - quote_filled, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE - quote_filled, 0);
         // Get interpreted collateral field values for user 1
         let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser1);
@@ -640,21 +705,20 @@ module Econia::Match {
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
         // Fill the market order of given size
-        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
-            market_order_size, USER_0_START_QUOTE, &book_cap());
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, USER_0_START_QUOTE);
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
+        // Calculate base coins filled
+        let base_filled = SCALE_FACTOR * market_order_size;
+        // Calculate quote coins filled
+        let quote_filled = USER_1_ASK_PRICE * market_order_size;
         // Assert correct collateral field values
-        assert!(u_0_b_available == USER_0_START_BASE +
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_b_coins == USER_0_START_BASE +
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_q_coins == USER_0_START_QUOTE -
-            USER_1_ASK_PRICE * market_order_size, 0);
-        // Available amount should be decremented prior to calling
-        // matching engine, but is not per this test's setup
-        assert!(u_0_q_available == USER_0_START_QUOTE, 0);
+        assert!(u_0_b_coins == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_b_available == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE - quote_filled, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE - quote_filled, 0);
         // Get interpreted collateral field values for user 1
         let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser1);
@@ -749,23 +813,22 @@ module Econia::Match {
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
         // Fill the market order of given size
-        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
-            market_order_size, USER_0_START_QUOTE, &book_cap());
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, USER_0_START_QUOTE);
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
+        // Calculate base coins filled
+        let base_filled = SCALE_FACTOR * market_order_size;
+        // Calculate quote coins filled
+        let quote_filled = USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE +
+            USER_3_ASK_PRICE * user_3_fill_size;
         // Assert correct collateral field values
-        assert!(u_0_b_coins == USER_0_START_BASE +
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_b_available == USER_0_START_BASE +
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_q_coins == USER_0_START_QUOTE -
-            (USER_1_ASK_PRICE * USER_1_ASK_SIZE) -
-            (USER_2_ASK_PRICE * USER_2_ASK_SIZE) -
-            (USER_3_ASK_PRICE * user_3_fill_size), 0);
-        // Available amount should be decremented prior to calling
-        // matching engine, but is not per this test's setup
-        assert!(u_0_q_available == USER_0_START_QUOTE, 0);
+        assert!(u_0_b_coins == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_b_available == USER_0_START_BASE + base_filled, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE - quote_filled, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE - quote_filled, 0);
         // Get interpreted collateral field values for user 1
         let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser1);
@@ -849,21 +912,19 @@ module Econia::Match {
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
         // Fill the market order of given size
-        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
-            market_order_size, USER_0_START_QUOTE, &book_cap());
+        submit_market_sell<BCT, QCT, E1>(user_0, @Econia, market_order_size);
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
+        // Calculate base coins filled
+        let base_filled = SCALE_FACTOR * USER_1_BID_SIZE;
+        // Calculate quote coins filled
+        let quote_filled = USER_1_BID_PRICE * USER_1_BID_SIZE;
         // Assert correct collateral field values
-        assert!(u_0_b_coins == USER_0_START_BASE -
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_q_available == USER_0_START_QUOTE +
-            USER_1_BID_PRICE * market_order_size, 0);
-        assert!(u_0_q_coins == USER_0_START_QUOTE +
-            USER_1_BID_PRICE * market_order_size, 0);
-        // Available amount should be decremented prior to calling
-        // matching engine, but is not per this test's setup
-        assert!(u_0_b_available == USER_0_START_BASE, 0);
+        assert!(u_0_b_coins == USER_0_START_BASE - base_filled, 0);
+        assert!(u_0_b_available == USER_0_START_BASE - base_filled, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE + quote_filled, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE + quote_filled, 0);
         // Get interpreted collateral field values for user 1
         let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser1);
@@ -948,24 +1009,22 @@ module Econia::Match {
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
         // Fill the market order of given size
-        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
-            market_order_size, USER_0_START_QUOTE, &book_cap());
+        submit_market_sell<BCT, QCT, E1>(user_0, @Econia, market_order_size);
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
+        // Calculate base coins filled
+        let base_filled = SCALE_FACTOR *
+            (USER_1_BID_SIZE + USER_2_BID_SIZE + USER_3_BID_SIZE);
+        // Calculate quote coins filled
+        let quote_filled = USER_1_BID_PRICE * USER_1_BID_SIZE +
+            USER_2_BID_PRICE * USER_2_BID_SIZE +
+            USER_3_BID_PRICE * USER_3_BID_SIZE;
         // Assert correct collateral field values
-        assert!(u_0_b_coins == USER_0_START_BASE -
-            SCALE_FACTOR * market_order_size, 0);
-        // Calculate amount of quote coins user 0 ends up with
-        let user_0_end_quote = USER_0_START_QUOTE +
-            (USER_1_BID_PRICE * USER_1_BID_SIZE) +
-            (USER_2_BID_PRICE * USER_2_BID_SIZE) +
-            (USER_3_BID_PRICE * USER_3_BID_SIZE);
-        assert!(u_0_q_available == user_0_end_quote, 0);
-        assert!(u_0_q_coins == user_0_end_quote, 0);
-        // Available amount should be decremented prior to calling
-        // matching engine, but is not per this test's setup
-        assert!(u_0_b_available == USER_0_START_BASE, 0);
+        assert!(u_0_b_coins == USER_0_START_BASE - base_filled, 0);
+        assert!(u_0_b_available == USER_0_START_BASE - base_filled, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE + quote_filled, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE + quote_filled, 0);
         // Get interpreted collateral field values for user 1
         let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser1);
@@ -1043,23 +1102,22 @@ module Econia::Match {
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
         // Fill the market order of given size
-        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
-            market_order_size, USER_0_START_QUOTE, &book_cap());
+        submit_market_sell<BCT, QCT, E1>(user_0, @Econia, market_order_size);
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
+        // Calculate base coins filled against user 2
+        let user_2_fill_size = market_order_size - USER_1_BID_SIZE;
+        // Calculate base coins filled
+        let base_filled = SCALE_FACTOR * (USER_1_BID_SIZE + user_2_fill_size);
+        // Calculate quote coins filled
+        let quote_filled = USER_1_BID_PRICE * USER_1_BID_SIZE +
+            USER_2_BID_PRICE * user_2_fill_size;
         // Assert correct collateral field values
-        assert!(u_0_b_coins == USER_0_START_BASE -
-            SCALE_FACTOR * market_order_size, 0);
-        assert!(u_0_q_available == USER_0_START_QUOTE +
-            (USER_1_BID_PRICE * USER_1_BID_SIZE) +
-            (USER_2_BID_PRICE * (market_order_size - USER_1_BID_SIZE)), 0);
-        assert!(u_0_q_coins == USER_0_START_QUOTE +
-            (USER_1_BID_PRICE * USER_1_BID_SIZE) +
-            (USER_2_BID_PRICE * (market_order_size - USER_1_BID_SIZE)), 0);
-        // Available amount should be decremented prior to calling
-        // matching engine, but is not per this test's setup
-        assert!(u_0_b_available == USER_0_START_BASE, 0);
+        assert!(u_0_b_coins == USER_0_START_BASE - base_filled, 0);
+        assert!(u_0_b_available == USER_0_START_BASE - base_filled, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE + quote_filled, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE + quote_filled, 0);
         // Get interpreted collateral field values for user 1
         let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser1);

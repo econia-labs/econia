@@ -934,6 +934,27 @@ module Econia::Book {
         assert!(!cb_h_k<P>(&o_b.b, id_2) && o_b.m_b == MAX_BID_DEFAULT, 2);
     }
 
+    #[test]
+    /// Verify returns for assorted conditions
+    fun check_size_success() {
+        // Check size for matching against a bid
+        let (valid, new_size) = check_size(BID, 0, 123, 0);
+        // Assert returns
+        assert!(valid && new_size == 123, 0);
+        // Define target ask ID with price 15
+        let target_id = id_a(15, 1);
+        // Check size for matching against an ask when enough quote
+        // coins available
+        (valid, new_size) = check_size(ASK, target_id, 3, 50);
+        // Assert returns
+        assert!(valid && new_size == 3, 0);
+        // Check size for matching against an ask when not enough quote
+        // coins available
+        (valid, new_size) = check_size(ASK, target_id, 3, 44);
+        // Assert returns
+        assert!(!valid && new_size == 2, 0);
+    }
+
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for non-Econia account

@@ -36,7 +36,22 @@ implemented purely in Move and to be coverage tested using the
 <code><b>move</b></code> CLI, while also restricting access to friend-like modules.
 
 
-<a name="@Capability_aggregation_1"></a>
+<a name="@Cyclical_dependency_avoidance_1"></a>
+
+## Cyclical dependency avoidance
+
+
+Capabilities can also be used to avoid cyclical dependencies:
+rather than having two modules try and <code><b>use</b></code> each other, all
+functionality can be aggregated in one module, with getters and
+setters used in another module. Such is the relationship between
+<code>Econia::Match</code> and <code>Econia::User</code>, via <code>Econia::Orders::FriendCap</code>.
+In future versions, it may be appropriate to have one capability for
+pure-Move modules, and another capability for <code>AptosFramework</code>-using
+modules.
+
+
+<a name="@Capability_aggregation_2"></a>
 
 ## Capability aggregation
 
@@ -60,9 +75,10 @@ listed as a friend, since it requires access to
 
 
 -  [Test-oriented architecture](#@Test-oriented_architecture_0)
--  [Capability aggregation](#@Capability_aggregation_1)
+-  [Cyclical dependency avoidance](#@Cyclical_dependency_avoidance_1)
+-  [Capability aggregation](#@Capability_aggregation_2)
 -  [Resource `FC`](#0xc0deb00c_Caps_FC)
--  [Constants](#@Constants_2)
+-  [Constants](#@Constants_3)
 -  [Function `book_f_c`](#0xc0deb00c_Caps_book_f_c)
 -  [Function `has_f_c`](#0xc0deb00c_Caps_has_f_c)
 -  [Function `init_caps`](#0xc0deb00c_Caps_init_caps)
@@ -110,7 +126,7 @@ Container for friend-like capabilities
 
 </details>
 
-<a name="@Constants_2"></a>
+<a name="@Constants_3"></a>
 
 ## Constants
 

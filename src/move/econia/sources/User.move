@@ -35,10 +35,6 @@ module Econia::User {
         price as id_price
     };
 
-    use Econia::Match::{
-        fill_market_order
-    };
-
     use Econia::Orders::{
         add_ask as o_a_a,
         add_bid as o_a_b,
@@ -46,6 +42,7 @@ module Econia::User {
         cancel_bid as o_c_b,
         decrement_order_size,
         exists_orders as o_e_o,
+        FriendCap as OrdersCap,
         init_orders as o_i_o,
         remove_order,
         scale_factor as orders_scale_factor
@@ -177,10 +174,6 @@ module Econia::User {
     const ASK: bool = true;
     /// Bid flag
     const BID: bool = false;
-    /// Flag for submitting a market buy
-    const BUY: bool = true;
-    /// Flag for submitting a market sell
-    const SELL: bool = true;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -210,7 +203,7 @@ module Econia::User {
             coin_merge<Q>(&mut o_c.q_c, coin_withdraw<Q>(user, q_val));
             o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
         };
-        update_s_c(user); // Update user sequence counter
+        update_s_c(user, &orders_cap()); // Update user sequence counter
     }
 
     /// Wrapped `cancel_order()` call for `ASK`
@@ -311,7 +304,7 @@ module Econia::User {
             c_d<Q>(addr, coin_extract<Q>(&mut o_c.q_c, q_val));
             o_c.q_a = o_c.q_a - q_val; // Update available amount
         };
-        update_s_c(user); // Update user sequence counter
+        update_s_c(user, &orders_cap()); // Update user sequence counter
     }
 
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -392,6 +385,71 @@ module Econia::User {
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Decrement `OC.b_a` and `OC.q_a` for extant `OC` at `user` by
+    /// `base` and `quote` subunits, respectively. Does not check for
+    /// underflow, as this should only be called after performing
+    /// relevant sufficiency validity checks
+    public fun dec_available_collateral<B, Q, E>(
+        user: address,
+        base: u64,
+        quote: u64,
+        _c: &OrdersCap
+    ) acquires OC {
+        // Borrow mutable reference to order collateral container
+        let order_collateral = borrow_global_mut<OC<B, Q, E>>(user);
+        // Decrement specified base coin amount
+        order_collateral.b_a = order_collateral.b_a - base;
+        // Decrement specified quote coin amount
+        order_collateral.q_a = order_collateral.q_a - quote;
+    }
+
+    /// Return `true` if specified order collateral container exists at
+    /// address
+    public fun exists_o_c<B, Q, E>(
+        a: address,
+        _c: &OrdersCap
+    ): bool {
+        exists<OC<B, Q, E>>(a)
+    }
+
+    /// Return `OC.b_a` and `OC.q_a` for extant `OC` at `user` address
+    public fun get_available_collateral<B, Q, E>(
+        user: address,
+        _c: &OrdersCap
+    ): (
+        u64,
+        u64
+    ) acquires OC {
+        // Borrow immutable reference to order collateral container
+        let order_collateral = borrow_global<OC<B, Q, E>>(user);
+        (order_collateral.b_a, order_collateral.q_a)
+    }
+
+    /// Update sequence counter for user `u` with the sequence number of
+    /// the current transaction, aborting if user does not have an
+    /// initialized sequence counter or if sequence number is not
+    /// greater than the number indicated by the user's `SC`. Requires
+    /// `OrdersCap` so can be called from external modules without
+    /// invoking a dependency cycle
+    public fun update_s_c(
+        u: &signer,
+        _c: &OrdersCap
+    ) acquires SC {
+        let user_addr = address_of(u); // Get user address
+        // Assert user has already initialized a sequence counter
+        assert!(exists<SC>(user_addr), E_NO_S_C);
+        // Borrow mutable reference to user's sequence counter
+        let s_c = borrow_global_mut<SC>(user_addr);
+        let s_n = a_g_s_n(user_addr); // Get current sequence number
+        // Assert new sequence number greater than that of counter
+        assert!(s_n > s_c.i, E_INVALID_S_N);
+        s_c.i = s_n; // Update counter with current sequence number
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Cancel order for market `<B, Q, E>` and update available
@@ -409,7 +467,7 @@ module Econia::User {
         side: bool,
         id: u128
     ) acquires SC, OC {
-        update_s_c(user); // Update user sequence counter
+        update_s_c(user, &orders_cap()); // Update user sequence counter
         let addr = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
@@ -471,9 +529,9 @@ module Econia::User {
         price: u64,
         size: u64
     ) acquires OC, SC {
-        update_s_c(user); // Update user sequence counter
+        update_s_c(user, &orders_cap()); // Update user sequence counter
         // Assert market exists at given host address
-        assert!(b_e_b<B, Q, E>(host), E_NO_MARKET);
+        assert!(b_e_b<B, Q, E>(host, &book_cap()), E_NO_MARKET);
         let addr = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
@@ -509,93 +567,6 @@ module Econia::User {
                 b_a_b<B, Q, E>(host, addr, id, price, size, &book_cap());
         };
         assert!(!c_s, E_CROSSES_SPREAD); // Assert uncrossed spread
-    }
-
-    /// Submit market order for market `<B, Q, E>`, filling as much
-    /// as possible against the book
-    ///
-    /// # Parameters
-    /// * `user`: User submitting a limit order
-    /// * `host`: The market host (See `Econia::Registry`)
-    /// * `side`: `ASK` or `BID`
-    /// * `price`: Scaled integer price (see `Econia::ID`)
-    /// * `requested_size`: Requested number of base coin parcels to be
-    //    filled
-    /// * `max_quote_to_spend`: Maximum number of quote coins that can
-    ///   be spent in the case of a market buy (unused in case of a
-    ///   market sell)
-    ///
-    /// # Abort conditions
-    /// * If no such market exists at host address
-    /// * If user does not have order collateral container for market
-    /// * If user does not have enough collateral
-    /// * If placing an order would cross the spread (temporary)
-    fun submit_market_order<B, Q, E>(
-        user: &signer,
-        host: address,
-        side: bool,
-        requested_size: u64,
-        max_quote_to_spend: u64
-    ) acquires OC, SC {
-        update_s_c(user); // Update user sequence counter
-        // Assert market exists at given host address
-        assert!(b_e_b<B, Q, E>(host), E_NO_MARKET);
-        let user_address = address_of(user); // Get user address
-        // Assert user has order collateral container
-        assert!(exists<OC<B, Q, E>>(user_address), E_NO_O_C);
-        // Borrow mutable reference to user's order collateral container
-        let order_collateral = borrow_global_mut<OC<B, Q, E>>(user_address);
-        // If submitting a market buy (if filling against ask positions
-        // on the order book)
-        if (side == BUY) {
-            // Assert user has enough quote coins to spend
-            assert!(order_collateral.q_a >= max_quote_to_spend,
-                E_NOT_ENOUGH_COLLATERAL);
-            // Fill a market order through the matching engine, storing
-            // numer of quote coins spent
-            let (_, quote_coins_spent) = fill_market_order<B, Q, E>(
-                host, user_address, ASK, requested_size, max_quote_to_spend,
-                &book_cap());
-            // Borrow mutable reference to user's order collateral
-            let order_collateral =
-                borrow_global_mut<OC<B, Q, E>>(user_address);
-            // Update count of available quote coins
-            order_collateral.q_a = order_collateral.q_a - quote_coins_spent;
-        } else { // If submitting a market sell (filling against bids)
-            // Get number of base coins required to execute market sell
-            let base_coins_required = requested_size *
-                orders_scale_factor<B, Q, E>(user_address, &orders_cap());
-            // Assert user has enough available base coins to sell
-            assert!(order_collateral.b_a >= base_coins_required,
-                E_NOT_ENOUGH_COLLATERAL);
-            // Fill a market order through the matching engine, storing
-            // numer of base coin subunits sold
-            let (base_coins_sold, _) = fill_market_order<B, Q, E>(
-                host, user_address, BID, requested_size, 0, &book_cap());
-            // Borrow mutable reference to user's order collateral
-            let order_collateral =
-                borrow_global_mut<OC<B, Q, E>>(user_address);
-            // Update count of available base coins
-            order_collateral.b_a = order_collateral.b_a - base_coins_sold;
-        }
-    }
-
-    /// Update sequence counter for user `u` with the sequence number of
-    /// the current transaction, aborting if user does not have an
-    /// initialized sequence counter or if sequence number is not
-    /// greater than the number indicated by the user's `SC`
-    fun update_s_c(
-        u: &signer,
-    ) acquires SC {
-        let user_addr = address_of(u); // Get user address
-        // Assert user has already initialized a sequence counter
-        assert!(exists<SC>(user_addr), E_NO_S_C);
-        // Borrow mutable reference to user's sequence counter
-        let s_c = borrow_global_mut<SC>(user_addr);
-        let s_n = a_g_s_n(user_addr); // Get current sequence number
-        // Assert new sequence number greater than that of counter
-        assert!(s_n > s_c.i, E_INVALID_S_N);
-        s_c.i = s_n; // Update counter with current sequence number
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

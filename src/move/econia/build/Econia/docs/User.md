@@ -21,16 +21,16 @@ User-facing trading functionality
     -  [Terminology](#@Terminology_1)
     -  [Parameters](#@Parameters_2)
     -  [Assumptions](#@Assumptions_3)
+-  [Function `dec_available_collateral`](#0xc0deb00c_User_dec_available_collateral)
+-  [Function `exists_o_c`](#0xc0deb00c_User_exists_o_c)
+-  [Function `get_available_collateral`](#0xc0deb00c_User_get_available_collateral)
+-  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 -  [Function `cancel_order`](#0xc0deb00c_User_cancel_order)
     -  [Parameters](#@Parameters_4)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
 -  [Function `submit_limit_order`](#0xc0deb00c_User_submit_limit_order)
     -  [Parameters](#@Parameters_5)
     -  [Abort conditions](#@Abort_conditions_6)
--  [Function `submit_market_order`](#0xc0deb00c_User_submit_market_order)
-    -  [Parameters](#@Parameters_7)
-    -  [Abort conditions](#@Abort_conditions_8)
--  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 
 
 <pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Account.md#0x1_Account">0x1::Account</a>;
@@ -145,16 +145,6 @@ Bid flag
 
 
 
-<a name="0xc0deb00c_User_BUY"></a>
-
-Flag for submitting a market buy
-
-
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_BUY">BUY</a>: bool = <b>true</b>;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_User_E_CROSSES_SPREAD"></a>
 
 When an attempted limit order crosses the spread
@@ -265,16 +255,6 @@ When attempting to withdraw more than is available
 
 
 
-<a name="0xc0deb00c_User_SELL"></a>
-
-Flag for submitting a market sell
-
-
-<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_SELL">SELL</a>: bool = <b>true</b>;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_User_deposit"></a>
 
 ## Function `deposit`
@@ -314,7 +294,7 @@ Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <cod
         coin_merge&lt;Q&gt;(&<b>mut</b> o_c.q_c, coin_withdraw&lt;Q&gt;(user, q_val));
         o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
     };
-    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap()); // Update user sequence counter
 }
 </code></pre>
 
@@ -555,7 +535,7 @@ Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <co
         c_d&lt;Q&gt;(addr, coin_extract&lt;Q&gt;(&<b>mut</b> o_c.q_c, q_val));
         o_c.q_a = o_c.q_a - q_val; // Update available amount
     };
-    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap()); // Update user sequence counter
 }
 </code></pre>
 
@@ -667,6 +647,147 @@ specified ID on the specified side, of sufficient size
 
 </details>
 
+<a name="0xc0deb00c_User_dec_available_collateral"></a>
+
+## Function `dec_available_collateral`
+
+Decrement <code><a href="User.md#0xc0deb00c_User_OC">OC</a>.b_a</code> and <code><a href="User.md#0xc0deb00c_User_OC">OC</a>.q_a</code> for extant <code><a href="User.md#0xc0deb00c_User_OC">OC</a></code> at <code>user</code> by
+<code>base</code> and <code>quote</code> subunits, respectively. Does not check for
+underflow, as this should only be called after performing
+relevant sufficiency validity checks
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_dec_available_collateral">dec_available_collateral</a>&lt;B, Q, E&gt;(user: <b>address</b>, base: u64, quote: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_dec_available_collateral">dec_available_collateral</a>&lt;B, Q, E&gt;(
+    user: <b>address</b>,
+    base: u64,
+    quote: u64,
+    _c: &OrdersCap
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a> {
+    // Borrow mutable reference <b>to</b> order collateral container
+    <b>let</b> order_collateral = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user);
+    // Decrement specified base coin amount
+    order_collateral.b_a = order_collateral.b_a - base;
+    // Decrement specified quote coin amount
+    order_collateral.q_a = order_collateral.q_a - quote;
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_exists_o_c"></a>
+
+## Function `exists_o_c`
+
+Return <code><b>true</b></code> if specified order collateral container exists at
+address
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_exists_o_c">exists_o_c</a>&lt;B, Q, E&gt;(a: <b>address</b>, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_exists_o_c">exists_o_c</a>&lt;B, Q, E&gt;(
+    a: <b>address</b>,
+    _c: &OrdersCap
+): bool {
+    <b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(a)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_get_available_collateral"></a>
+
+## Function `get_available_collateral`
+
+Return <code><a href="User.md#0xc0deb00c_User_OC">OC</a>.b_a</code> and <code><a href="User.md#0xc0deb00c_User_OC">OC</a>.q_a</code> for extant <code><a href="User.md#0xc0deb00c_User_OC">OC</a></code> at <code>user</code> address
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_get_available_collateral">get_available_collateral</a>&lt;B, Q, E&gt;(user: <b>address</b>, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): (u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_get_available_collateral">get_available_collateral</a>&lt;B, Q, E&gt;(
+    user: <b>address</b>,
+    _c: &OrdersCap
+): (
+    u64,
+    u64
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a> {
+    // Borrow immutable reference <b>to</b> order collateral container
+    <b>let</b> order_collateral = <b>borrow_global</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user);
+    (order_collateral.b_a, order_collateral.q_a)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_update_s_c"></a>
+
+## Function `update_s_c`
+
+Update sequence counter for user <code>u</code> with the sequence number of
+the current transaction, aborting if user does not have an
+initialized sequence counter or if sequence number is not
+greater than the number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code>. Requires
+<code>OrdersCap</code> so can be called from external modules without
+invoking a dependency cycle
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(u: &signer, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(
+    u: &signer,
+    _c: &OrdersCap
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <b>let</b> user_addr = address_of(u); // Get user <b>address</b>
+    // Assert user <b>has</b> already initialized a sequence counter
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>);
+    // Borrow mutable reference <b>to</b> user's sequence counter
+    <b>let</b> s_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr);
+    <b>let</b> s_n = a_g_s_n(user_addr); // Get current sequence number
+    // Assert new sequence number greater than that of counter
+    <b>assert</b>!(s_n &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
+    s_c.i = s_n; // Update counter <b>with</b> current sequence number
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_User_cancel_order"></a>
 
 ## Function `cancel_order`
@@ -701,7 +822,7 @@ collateral container
     side: bool,
     id: u128
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a>, <a href="User.md#0xc0deb00c_User_OC">OC</a> {
-    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap()); // Update user sequence counter
     <b>let</b> addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
@@ -711,7 +832,7 @@ collateral container
         // Cancel on user's open orders, storing scaled size
         <b>let</b> s_s = o_c_a&lt;B, Q, E&gt;(addr, id, &orders_cap());
         // Cancel on order book
-        b_c_a&lt;B, Q, E&gt;(host, id, &c_b_f_c());
+        b_c_a&lt;B, Q, E&gt;(host, id, &book_cap());
         // Increment amount of base coins available for withdraw,
         // by order scaled size times scale factor on given market
         o_c.b_a = o_c.b_a +
@@ -720,7 +841,7 @@ collateral container
         // Cancel on user's open orders, storing scaled size
         <b>let</b> s_s = o_c_b&lt;B, Q, E&gt;(addr, id, &orders_cap());
         // Cancel on order book
-        b_c_b&lt;B, Q, E&gt;(host, id, &c_b_f_c());
+        b_c_b&lt;B, Q, E&gt;(host, id, &book_cap());
         // Increment amount of quote coins available for withdraw,
         // by order scaled size times price from order <a href="ID.md#0xc0deb00c_ID">ID</a>
         o_c.q_a = o_c.q_a + s_s * id_price(id);
@@ -811,9 +932,9 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
     price: u64,
     size: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap()); // Update user sequence counter
     // Assert market <b>exists</b> at given host <b>address</b>
-    <b>assert</b>!(b_e_b&lt;B, Q, E&gt;(host), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
+    <b>assert</b>!(b_e_b&lt;B, Q, E&gt;(host, &book_cap()), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
     <b>let</b> addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
@@ -833,7 +954,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
         o_c.b_a = o_c.b_a - b_c_subs;
         // Try adding <b>to</b> order book, storing crossed spread flag
         c_s =
-            b_a_a&lt;B, Q, E&gt;(host, addr, id, price, size, &c_b_f_c());
+            b_a_a&lt;B, Q, E&gt;(host, addr, id, price, size, &book_cap());
     } <b>else</b> { // If limit order is a bid
         <b>let</b> id = id_b(price, v_n); // Get corresponding order id
         // Verify and add <b>to</b> user's open orders, storing amoung of
@@ -846,123 +967,9 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
         o_c.q_a = o_c.q_a - q_c_subs;
         // Try adding <b>to</b> order book, storing crossed spread flag
         c_s =
-            b_a_b&lt;B, Q, E&gt;(host, addr, id, price, size, &c_b_f_c());
+            b_a_b&lt;B, Q, E&gt;(host, addr, id, price, size, &book_cap());
     };
     <b>assert</b>!(!c_s, <a href="User.md#0xc0deb00c_User_E_CROSSES_SPREAD">E_CROSSES_SPREAD</a>); // Assert uncrossed spread
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_User_submit_market_order"></a>
-
-## Function `submit_market_order`
-
-Submit market order for market <code>&lt;B, Q, E&gt;</code>, filling as much
-as possible against the book
-
-
-<a name="@Parameters_7"></a>
-
-### Parameters
-
-* <code>user</code>: User submitting a limit order
-* <code>host</code>: The market host (See <code>Econia::Registry</code>)
-* <code>side</code>: <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code> or <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
-* <code>price</code>: Scaled integer price (see <code>Econia::ID</code>)
-* <code>size</code>: Scaled order size (number of base coin parcels per
-<code>Econia::Orders</code>)
-
-
-<a name="@Abort_conditions_8"></a>
-
-### Abort conditions
-
-* If no such market exists at host address
-* If user does not have order collateral container for market
-* If user does not have enough collateral
-* If placing an order would cross the spread (temporary)
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, size: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(
-    user: &signer,
-    host: <b>address</b>,
-    side: bool,
-    size: u64
-) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
-    // Assert market <b>exists</b> at given host <b>address</b>
-    <b>assert</b>!(b_e_b&lt;B, Q, E&gt;(host), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
-    <b>let</b> user_address = address_of(user); // Get user <b>address</b>
-    // Assert user <b>has</b> order collateral container
-    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user_address), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
-    // Borrow mutable reference <b>to</b> user's order collateral container
-    <b>let</b> order_collateral = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user_address);
-    // If submitting a market buy (<b>if</b> filling against ask positions
-    // on the order book)
-    <b>if</b> (side == <a href="User.md#0xc0deb00c_User_BUY">BUY</a>) {
-        // Get quote coins available <b>to</b> <b>use</b> for market buy
-        <b>let</b> quote_coins_available = order_collateral.q_a;
-        quote_coins_available;
-    } <b>else</b> { // If submitting a market sell (filling against bids)
-        // Get number of base coins required <b>to</b> execute market sell
-        <b>let</b> base_coins_required = size * orders_scale_factor&lt;B, Q, E&gt;(
-           user_address, &orders_cap());
-        // Assert user <b>has</b> enough available base coins <b>to</b> sell
-        <b>assert</b>!(order_collateral.b_a &gt;= base_coins_required,
-            <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
-    }
-    // Decrement collateral amount accordingly, after figuring out
-    // filled <b>return</b> val
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_User_update_s_c"></a>
-
-## Function `update_s_c`
-
-Update sequence counter for user <code>u</code> with the sequence number of
-the current transaction, aborting if user does not have an
-initialized sequence counter or if sequence number is not
-greater than the number indicated by the user's <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code>
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(u: &signer)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(
-    u: &signer,
-) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <b>let</b> user_addr = address_of(u); // Get user <b>address</b>
-    // Assert user <b>has</b> already initialized a sequence counter
-    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_NO_S_C">E_NO_S_C</a>);
-    // Borrow mutable reference <b>to</b> user's sequence counter
-    <b>let</b> s_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(user_addr);
-    <b>let</b> s_n = a_g_s_n(user_addr); // Get current sequence number
-    // Assert new sequence number greater than that of counter
-    <b>assert</b>!(s_n &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
-    s_c.i = s_n; // Update counter <b>with</b> current sequence number
 }
 </code></pre>
 

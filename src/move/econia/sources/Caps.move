@@ -26,6 +26,17 @@
 /// implemented purely in Move and to be coverage tested using the
 /// `move` CLI, while also restricting access to friend-like modules.
 ///
+/// # Cyclical dependency avoidance
+///
+/// Capabilities can also be used to avoid cyclical dependencies:
+/// rather than having two modules try and `use` each other, all
+/// functionality can be aggregated in one module, with getters and
+/// setters used in another module. Such is the relationship between
+/// `Econia::Match` and `Econia::User`, via `Econia::Orders::FriendCap`.
+/// In future versions, it may be appropriate to have one capability for
+/// pure-Move modules, and another capability for `AptosFramework`-using
+/// modules.
+///
 /// # Capability aggregation
 ///
 /// Rather than having friend-like capabilities managed by individual
@@ -79,6 +90,7 @@ module Econia::Caps {
     use Econia::Orders::{
         init_orders as o_i_o,
     };
+
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

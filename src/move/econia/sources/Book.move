@@ -227,7 +227,12 @@ module Econia::Book {
     }
 
     /// Return `true` if specified order book type exists at address
-    public fun exists_book<B, Q, E>(a: address): bool {exists<OB<B, Q, E>>(a)}
+    public fun exists_book<B, Q, E>(
+        a: address,
+        _c: &FriendCap
+    ): bool {
+        exists<OB<B, Q, E>>(a)
+    }
 
     /// Return a `FriendCap`, aborting if not called by Econia account
     public fun get_friend_cap(
@@ -246,7 +251,8 @@ module Econia::Book {
         _c: &FriendCap
     ) {
         // Assert book does not already exist under host account
-        assert!(!exists_book<B, Q, E>(address_of(host)), E_BOOK_EXISTS);
+        assert!(!exists_book<B, Q, E>(address_of(host), &FriendCap{}),
+            E_BOOK_EXISTS);
         let m_a = MIN_ASK_DEFAULT; // Declare min ask default order ID
         let m_b = MAX_BID_DEFAULT; // Declare max bid default order ID
         let o_b = // Pack empty order book

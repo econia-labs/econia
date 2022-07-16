@@ -22,6 +22,7 @@ module Econia::Match {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use Econia::Book::{
+        exists_book,
         cancel_position,
         FriendCap as BookCap,
         init_traverse_fill,
@@ -32,12 +33,29 @@ module Econia::Match {
         traverse_pop_fill
     };
 
+    use Econia::Caps::{
+        book_f_c as book_cap,
+        orders_f_c as orders_cap
+    };
+
     use Econia::ID::{
         price as id_p
     };
 
+    use Econia::Orders::{
+        scale_factor as orders_scale_factor
+    };
+
     use Econia::User::{
-        process_fill
+        exists_o_c,
+        dec_available_collateral,
+        get_available_collateral,
+        process_fill,
+        update_s_c as update_user_seq_counter
+    };
+
+    use Std::Signer::{
+        address_of
     };
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -84,12 +102,27 @@ module Econia::Match {
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// When no corresponding market registered
+    const E_NO_MARKET: u64 = 0;
+    /// When user does not have order collateral container
+    const E_NO_O_C: u64 = 1;
+    /// When not enough collateral for an operation
+    const E_NOT_ENOUGH_COLLATERAL: u64 = 2;
+
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Ask flag
     const ASK: bool = true;
     /// Bid flag
     const BID: bool = false;
+    /// Flag for submitting a market buy
+    const BUY: bool = true;
+    /// Flag for submitting a market sell
+    const SELL: bool = true;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -152,7 +185,76 @@ module Econia::Match {
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Submit market order for market `<B, Q, E>`, filling as much
+    /// as possible against the book
+    ///
+    /// # Parameters
+    /// * `user`: User submitting a limit order
+    /// * `host`: The market host (See `Econia::Registry`)
+    /// * `side`: `ASK` or `BID`
+    /// * `price`: Scaled integer price (see `Econia::ID`)
+    /// * `requested_size`: Requested number of base coin parcels to be
+    //    filled
+    /// * `max_quote_to_spend`: Maximum number of quote coins that can
+    ///   be spent in the case of a market buy (unused in case of a
+    ///   market sell)
+    ///
+    /// # Abort conditions
+    /// * If no such market exists at host address
+    /// * If user does not have order collateral container for market
+    /// * If user does not have enough collateral
+    /// * If placing an order would cross the spread (temporary)
+    fun submit_market_order<B, Q, E>(
+        user: &signer,
+        host: address,
+        side: bool,
+        requested_size: u64,
+        max_quote_to_spend: u64
+    ) {
+        // Get book-side and open-orders side capabilities
+        let (book_cap, orders_cap) = (book_cap(), orders_cap());
+        // Update user sequence counter
+        update_user_seq_counter(user, &orders_cap);
+        // Assert market exists at given host address
+        assert!(exists_book<B, Q, E>(host, &book_cap), E_NO_MARKET);
+        let user_address = address_of(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists_o_c<B, Q, E>(user_address, &orders_cap), E_NO_O_C);
+        // Get available collateral for user on given market
+        let (base_available, quote_available) =
+            get_available_collateral<B, Q, E>(user_address, &orders_cap);
+        // If submitting a market buy (if filling against ask positions
+        // on the order book)
+        if (side == BUY) {
+            // Assert user has enough quote coins to spend
+            assert!(quote_available >= max_quote_to_spend,
+                E_NOT_ENOUGH_COLLATERAL);
+            // Fill a market order through the matching engine, storing
+            // numer of quote coins spent
+            let (_, quote_coins_spent) = fill_market_order<B, Q, E>(
+                host, user_address, ASK, requested_size, max_quote_to_spend,
+                &book_cap());
+            // Update count of available quote coins
+            dec_available_collateral<B, Q, E>(
+                user_address, 0, quote_coins_spent, &orders_cap);
+        } else { // If submitting a market sell (filling against bids)
+            // Get number of base coins required to execute market sell
+            let base_coins_required = requested_size *
+                orders_scale_factor<B, Q, E>(user_address, &orders_cap());
+            // Assert user has enough available base coins to sell
+            assert!(base_available >= base_coins_required,
+                E_NOT_ENOUGH_COLLATERAL);
+            // Fill a market order through the matching engine, storing
+            // numer of base coin subunits sold
+            let (base_coins_sold, _) = fill_market_order<B, Q, E>(
+                host, user_address, BID, requested_size, 0, &book_cap());
+            // Update count of available base coins
+            dec_available_collateral<B, Q, E>(
+                user_address, base_coins_sold, 0, &orders_cap);
+        }
+    }
 
     /// Fill a market order against the book as much as possible,
     /// returning when there is no liquidity left or when order is
@@ -182,7 +284,7 @@ module Econia::Match {
     /// # Assumptions
     /// * Order book has been properly initialized at host address
     /// * `size` is nonzero
-    public fun fill_market_order<B, Q, E>(
+    fun fill_market_order<B, Q, E>(
         host: address,
         addr: address,
         side: bool,
@@ -255,7 +357,7 @@ module Econia::Match {
         (base_parcels_filled * scale_factor, quote_coins_filled)
     }
 
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

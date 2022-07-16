@@ -510,7 +510,7 @@ preceding functions that perform their own error-checking
 Return <code><b>true</b></code> if specified order book type exists at address
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(a: <b>address</b>): bool
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(a: <b>address</b>, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>): bool
 </code></pre>
 
 
@@ -519,7 +519,12 @@ Return <code><b>true</b></code> if specified order book type exists at address
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(a: <b>address</b>): bool {<b>exists</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(a)}
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(
+    a: <b>address</b>,
+    _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
+): bool {
+    <b>exists</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(a)
+}
 </code></pre>
 
 
@@ -578,7 +583,8 @@ for market <code>&lt;B, Q, E&gt;</code> and corresponding scale factor <code>f</
     _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ) {
     // Assert book does not already exist under host account
-    <b>assert</b>!(!<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(address_of(host)), <a href="Book.md#0xc0deb00c_Book_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);
+    <b>assert</b>!(!<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(address_of(host), &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>{}),
+        <a href="Book.md#0xc0deb00c_Book_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);
     <b>let</b> m_a = <a href="Book.md#0xc0deb00c_Book_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>; // Declare <b>min</b> ask default order <a href="ID.md#0xc0deb00c_ID">ID</a>
     <b>let</b> m_b = <a href="Book.md#0xc0deb00c_Book_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>; // Declare max bid default order <a href="ID.md#0xc0deb00c_ID">ID</a>
     <b>let</b> o_b = // Pack empty order book

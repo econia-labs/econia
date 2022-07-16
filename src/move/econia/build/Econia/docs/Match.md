@@ -7,12 +7,34 @@ Matching engine functionality, integrating user-side and book-side
 modules
 
 
--  [Constants](#@Constants_0)
+<a name="@Testing_0"></a>
+
+## Testing
+
+
+Test-only constants and functions are used to construct a test
+market with simulated positions. During testing, the "incoming
+market order" fills against the "target position" during iterated
+traversal, with markets constructed so that on either side, user 1's
+position is filled before user 2's, which is filled before user 3's.
+Hence, the following tests exercise logic at sequential milestones
+along the process of clearing out the book:
+* <code>ask_partial_1()</code>
+* <code>bid_exact_1()</code>
+* <code>bid_partial_2()</code>
+* <code>ask_exact_2()</code>
+* <code>ask_partial_3()</code>
+* <code>bid_exact_3()</code>
+* <code>ask_clear_book()</code>
+
+
+-  [Testing](#@Testing_0)
+-  [Constants](#@Constants_1)
 -  [Function `fill_market_order`](#0xc0deb00c_Match_fill_market_order)
-    -  [Parameters](#@Parameters_1)
-    -  [Terminology](#@Terminology_2)
-    -  [Returns](#@Returns_3)
-    -  [Assumptions](#@Assumptions_4)
+    -  [Parameters](#@Parameters_2)
+    -  [Terminology](#@Terminology_3)
+    -  [Returns](#@Returns_4)
+    -  [Assumptions](#@Assumptions_5)
 
 
 <pre><code><b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
@@ -21,7 +43,7 @@ modules
 
 
 
-<a name="@Constants_0"></a>
+<a name="@Constants_1"></a>
 
 ## Constants
 
@@ -55,7 +77,7 @@ returning when there is no liquidity left or when order is
 completely filled
 
 
-<a name="@Parameters_1"></a>
+<a name="@Parameters_2"></a>
 
 ### Parameters
 
@@ -68,7 +90,7 @@ a market buy, if <code><a href="Match.md#0xc0deb00c_Match_BID">BID</a></code>, u
 * <code>book_cap</code>: Immutable reference to <code>Econia::Book:FriendCap</code>
 
 
-<a name="@Terminology_2"></a>
+<a name="@Terminology_3"></a>
 
 ### Terminology
 
@@ -78,14 +100,14 @@ the order book
 of iterated traversal
 
 
-<a name="@Returns_3"></a>
+<a name="@Returns_4"></a>
 
 ### Returns
 
 * <code>u64</code>: Amount of base coin parcels left unfilled
 
 
-<a name="@Assumptions_4"></a>
+<a name="@Assumptions_5"></a>
 
 ### Assumptions
 

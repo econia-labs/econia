@@ -1086,9 +1086,8 @@ price of 9, however, does not encroach on the spread
 ## Function `check_size`
 
 Return immediately if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, otherwise verify that the
-requested size to fill, against a target ask on the book, can
-actually be filled, or in other words, that the user with the
-incoming order has enough quote coins.
+user with the incoming order has enough quote coins to
+completely fill against the target ask on the book
 
 
 <a name="@Terminology_19"></a>

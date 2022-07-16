@@ -1411,7 +1411,7 @@ module Econia::User {
     fun update_s_c_failure_no_s_c(
         user: &signer
     ) acquires SC {
-        update_s_c(user); // Attempt invalid update
+        update_s_c(user, &orders_cap()); // Attempt invalid update
     }
 
     #[test(user = @TestUser)]
@@ -1424,7 +1424,7 @@ module Econia::User {
         create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
         // Attempt invalid update during same transaction as init
-        update_s_c(user);
+        update_s_c(user, &orders_cap());
     }
 
     #[test(user = @TestUser)]
@@ -1436,7 +1436,7 @@ module Econia::User {
         create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
         a_s_s_n(user_addr, 10); // Set mock sequence number
-        update_s_c(user); // Execute valid counter update
+        update_s_c(user, &orders_cap()); // Execute valid counter update
         // Assert sequence counter updated correctly
         assert!(borrow_global<SC>(user_addr).i == 10, 0);
     }

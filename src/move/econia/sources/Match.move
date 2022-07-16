@@ -383,13 +383,13 @@ module Econia::Match {
         if (side == BUY) assert!(max_quote_to_spend > 0, E_QUOTE_SPEND_0);
         // Get book-side and open-orders side capabilities
         let (book_cap, orders_cap) = (book_cap(), orders_cap());
-        // Update user sequence counter
-        update_user_seq_counter(user, &orders_cap);
         // Assert market exists at given host address
         assert!(exists_book<B, Q, E>(host, &book_cap), E_NO_MARKET);
         let user_address = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists_o_c<B, Q, E>(user_address, &orders_cap), E_NO_O_C);
+        // Update user sequence counter
+        update_user_seq_counter(user, &orders_cap);
         // Get available collateral for user on given market
         let (base_available, quote_available) =
             get_available_collateral<B, Q, E>(user_address, &orders_cap);
@@ -1183,6 +1183,139 @@ module Econia::Match {
         let extreme_order_id = check_extreme_order_id<BCT, QCT, E1>(
             @Econia, side);
         assert!(extreme_order_id == id_2, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure when insufficient base coins to place market sell
+    public(script) fun submit_market_order_failure_insufficient_base(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        // Initialize market with positions
+        init_market(BID, econia, user_0, user_1, user_2, user_3);
+        // Attempt invalid market sell
+        submit_market_sell<BCT, QCT, E1>(user_0, @Econia,
+            USER_0_START_BASE / SCALE_FACTOR + 1);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure when insufficient quote coins to place market buy
+    public(script) fun submit_market_order_failure_insufficient_quote(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        // Initialize market with positions
+        init_market(ASK, econia, user_0, user_1, user_2, user_3);
+        // Attempt invalid market buy
+        submit_market_buy<BCT, QCT, E1>(
+            user_0, @Econia, 1, USER_0_START_QUOTE + 1);
+    }
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure when no collateral container
+    public(script) fun submit_market_order_failure_no_collateral(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        // Initialize market with positions
+        init_market(ASK, econia, user_0, user_1, user_2, user_3);
+        // Attempt invalid market buy
+        submit_market_buy<BCT, QCT, E1>(econia, @Econia, 500, 1);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure when market buy with no quote coins allocated
+    public(script) fun submit_market_order_failure_quote_spend_0(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        // Initialize market with positions
+        init_market(ASK, econia, user_0, user_1, user_2, user_3);
+        // Attempt invalid market buy
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia, 500, 0);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure when market buy with no requested order size
+    public(script) fun submit_market_order_failure_size_0(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        // Initialize market with positions
+        init_market(ASK, econia, user_0, user_1, user_2, user_3);
+        // Attempt invalid market buy
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia, 0, 500);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure when no order book at host address
+    public(script) fun submit_market_order_failure_wrong_host(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        // Initialize market with positions
+        init_market(ASK, econia, user_0, user_1, user_2, user_3);
+        // Attempt invalid market buy
+        submit_market_buy<BCT, QCT, E1>(user_0, @TestUser, 500, 1);
     }
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

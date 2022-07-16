@@ -442,13 +442,13 @@ market sell)
     <b>if</b> (side == <a href="Match.md#0xc0deb00c_Match_BUY">BUY</a>) <b>assert</b>!(max_quote_to_spend &gt; 0, <a href="Match.md#0xc0deb00c_Match_E_QUOTE_SPEND_0">E_QUOTE_SPEND_0</a>);
     // Get book-side and open-orders side capabilities
     <b>let</b> (book_cap, orders_cap) = (book_cap(), orders_cap());
-    // Update user sequence counter
-    update_user_seq_counter(user, &orders_cap);
     // Assert market <b>exists</b> at given host <b>address</b>
     <b>assert</b>!(exists_book&lt;B, Q, E&gt;(host, &book_cap), <a href="Match.md#0xc0deb00c_Match_E_NO_MARKET">E_NO_MARKET</a>);
     <b>let</b> user_address = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> order collateral container
     <b>assert</b>!(exists_o_c&lt;B, Q, E&gt;(user_address, &orders_cap), <a href="Match.md#0xc0deb00c_Match_E_NO_O_C">E_NO_O_C</a>);
+    // Update user sequence counter
+    update_user_seq_counter(user, &orders_cap);
     // Get available collateral for user on given market
     <b>let</b> (base_available, quote_available) =
         get_available_collateral&lt;B, Q, E&gt;(user_address, &orders_cap);

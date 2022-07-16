@@ -96,6 +96,11 @@ module Econia::User {
     };
 
     #[test_only]
+    use Econia::Caps::{
+        init_caps
+    };
+
+    #[test_only]
     use Econia::Init::init_econia;
 
     #[test_only]
@@ -521,7 +526,7 @@ module Econia::User {
     /// * If no such market exists at host address
     /// * If user does not have order collateral container for market
     /// * If user does not have enough collateral
-    /// * If placing an order would cross the spread (temporary)
+    /// * If placing an order would cross the spread
     fun submit_limit_order<B, Q, E>(
         user: &signer,
         host: address,
@@ -661,8 +666,10 @@ module Econia::User {
     #[expected_failure(abort_code = 6)]
     /// Verify failure for user not having order collateral container
     public(script) fun cancel_order_failure_no_o_c(
+        econia: &signer,
         user: &signer
     ) acquires OC, SC {
+        init_caps(econia); // Initialize friend-like capabilities
         create_account(@TestUser); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
         inc_seq_number(@TestUser); // Increment mock sequence number
@@ -1371,12 +1378,17 @@ module Econia::User {
         assert!(o_c.b_a == 100 && o_c.q_a == 185, 4);
     }
 
-    #[test(user = @TestUser)]
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for no such market
     public(script) fun submit_limit_order_failure_no_market(
+        econia: &signer,
         user: &signer
     ) acquires OC, SC {
+        init_caps(econia); // Initialize friend-like capabilities
         let user_addr = address_of(user); // Get user address
         create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
@@ -1405,21 +1417,31 @@ module Econia::User {
         submit_bid<BCT, QCT, E0>(user, address_of(econia), 1, 1);
     }
 
-    #[test(user = @TestUser)]
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for user not having initialized counter
     fun update_s_c_failure_no_s_c(
+        econia: &signer,
         user: &signer
     ) acquires SC {
+        init_caps(econia); // Initialize friend-like capabilities
         update_s_c(user, &orders_cap()); // Attempt invalid update
     }
 
-    #[test(user = @TestUser)]
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for trying to update twice in same transaction
     public(script) fun update_s_c_failure_same_s_n(
+        econia: &signer,
         user: &signer
     ) acquires SC {
+        init_caps(econia); // Initialize friend-like capabilities
         let user_addr = address_of(user); // Get user address
         create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user
@@ -1427,11 +1449,16 @@ module Econia::User {
         update_s_c(user, &orders_cap());
     }
 
-    #[test(user = @TestUser)]
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
     /// Verify successful update for arbitrary (valid) sequence number
     public(script) fun update_s_c_success(
+        econia: &signer,
         user: &signer
     ) acquires SC {
+        init_caps(econia); // Initialize friend-like capabilities
         let user_addr = address_of(user); // Get user address
         create_account(user_addr); // Initialize Account resource
         init_user(user); // Initialize sequence counter for user

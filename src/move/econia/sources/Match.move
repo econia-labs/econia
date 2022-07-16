@@ -70,9 +70,6 @@ module Econia::Match {
     };
 
     #[test_only]
-    use Econia::Caps::book_f_c as book_cap;
-
-    #[test_only]
     use Econia::ID::{
         id_a,
         id_b
@@ -205,7 +202,9 @@ module Econia::Match {
     /// * If no such market exists at host address
     /// * If user does not have order collateral container for market
     /// * If user does not have enough collateral
-    /// * If placing an order would cross the spread (temporary)
+    ///
+    /// # Assumptions
+    /// * `requested_size` is nonzero
     fun submit_market_order<B, Q, E>(
         user: &signer,
         host: address,
@@ -450,10 +449,9 @@ module Econia::Match {
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
-        // Fill the market order of given size, storing unfilled size
-        let unfilled = fill_market_order<BCT, QCT, E1>(
-            @Econia, @TestUser, side, market_order_size, &book_cap());
-        assert!(unfilled == to_fill, 0); // Assert unfilled return
+        // Fill the market order of given size
+        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
+            market_order_size, USER_0_START_QUOTE, &book_cap());
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
@@ -545,10 +543,9 @@ module Econia::Match {
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
-        // Fill the market order of given size, storing unfilled size
-        let unfilled = fill_market_order<BCT, QCT, E1>(
-            @Econia, @TestUser, side, market_order_size, &book_cap());
-        assert!(unfilled == 0, 0); // Assert unfilled return
+        // Fill the market order of given size
+        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
+            market_order_size, USER_0_START_QUOTE, &book_cap());
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
@@ -642,10 +639,9 @@ module Econia::Match {
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
-        // Fill the market order of given size, storing unfilled size
-        let unfilled = fill_market_order<BCT, QCT, E1>(
-            @Econia, @TestUser, side, market_order_size, &book_cap());
-        assert!(unfilled == 0, 0); // Assert unfilled return
+        // Fill the market order of given size
+        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
+            market_order_size, USER_0_START_QUOTE, &book_cap());
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
@@ -752,10 +748,9 @@ module Econia::Match {
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
-        // Fill the market order of given size, storing unfilled size
-        let unfilled = fill_market_order<BCT, QCT, E1>(
-            @Econia, @TestUser, side, market_order_size, &book_cap());
-        assert!(unfilled == 0, 0); // Assert unfilled return
+        // Fill the market order of given size
+        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
+            market_order_size, USER_0_START_QUOTE, &book_cap());
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
@@ -853,10 +848,9 @@ module Econia::Match {
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
-        // Fill the market order of given size, storing unfilled size
-        let unfilled = fill_market_order<BCT, QCT, E1>(
-            @Econia, @TestUser, side, market_order_size, &book_cap());
-        assert!(unfilled == 0, 0); // Assert unfilled return
+        // Fill the market order of given size
+        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
+            market_order_size, USER_0_START_QUOTE, &book_cap());
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
@@ -953,10 +947,9 @@ module Econia::Match {
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
-        // Fill the market order of given size, storing unfilled size
-        let unfilled = fill_market_order<BCT, QCT, E1>(
-            @Econia, @TestUser, side, market_order_size, &book_cap());
-        assert!(unfilled == 0, 0); // Assert unfilled return
+        // Fill the market order of given size
+        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
+            market_order_size, USER_0_START_QUOTE, &book_cap());
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);
@@ -1049,10 +1042,9 @@ module Econia::Match {
         // Initialize market with positions, storing order ids
         let (id_1, id_2, id_3) =
             init_market(side, econia, user_0, user_1, user_2, user_3);
-        // Fill the market order of given size, storing unfilled size
-        let unfilled = fill_market_order<BCT, QCT, E1>(
-            @Econia, @TestUser, side, market_order_size, &book_cap());
-        assert!(unfilled == 0, 0); // Assert unfilled return
+        // Fill the market order of given size
+        fill_market_order<BCT, QCT, E1>(@Econia, @TestUser, side,
+            market_order_size, USER_0_START_QUOTE, &book_cap());
         // Get interpreted collateral field values for user 0
         let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
                 check_collateral<BCT, QCT, E1>(@TestUser);

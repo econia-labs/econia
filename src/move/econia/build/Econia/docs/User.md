@@ -913,7 +913,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 * If no such market exists at host address
 * If user does not have order collateral container for market
 * If user does not have enough collateral
-* If placing an order would cross the spread (temporary)
+* If placing an order would cross the spread
 
 
 <pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, price: u64, size: u64)

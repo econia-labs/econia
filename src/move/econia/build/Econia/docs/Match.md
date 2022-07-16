@@ -33,11 +33,12 @@ along the process of clearing out the book:
 -  [Function `submit_market_order`](#0xc0deb00c_Match_submit_market_order)
     -  [Parameters](#@Parameters_2)
     -  [Abort conditions](#@Abort_conditions_3)
+    -  [Assumptions](#@Assumptions_4)
 -  [Function `fill_market_order`](#0xc0deb00c_Match_fill_market_order)
-    -  [Parameters](#@Parameters_4)
-    -  [Terminology](#@Terminology_5)
-    -  [Returns](#@Returns_6)
-    -  [Assumptions](#@Assumptions_7)
+    -  [Parameters](#@Parameters_5)
+    -  [Terminology](#@Terminology_6)
+    -  [Returns](#@Returns_7)
+    -  [Assumptions](#@Assumptions_8)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -154,7 +155,13 @@ market sell)
 * If no such market exists at host address
 * If user does not have order collateral container for market
 * If user does not have enough collateral
-* If placing an order would cross the spread (temporary)
+
+
+<a name="@Assumptions_4"></a>
+
+### Assumptions
+
+* <code>requested_size</code> is nonzero
 
 
 <pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, requested_size: u64, max_quote_to_spend: u64)
@@ -230,7 +237,7 @@ returning when there is no liquidity left or when order is
 completely filled
 
 
-<a name="@Parameters_4"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -245,7 +252,7 @@ filling against asks
 * <code>book_cap</code>: Immutable reference to <code>Econia::Book:FriendCap</code>
 
 
-<a name="@Terminology_5"></a>
+<a name="@Terminology_6"></a>
 
 ### Terminology
 
@@ -255,7 +262,7 @@ the order book
 of iterated traversal
 
 
-<a name="@Returns_6"></a>
+<a name="@Returns_7"></a>
 
 ### Returns
 
@@ -263,7 +270,7 @@ of iterated traversal
 * <code>u64</code>: Amount of quote coin subunits filled
 
 
-<a name="@Assumptions_7"></a>
+<a name="@Assumptions_8"></a>
 
 ### Assumptions
 

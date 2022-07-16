@@ -270,15 +270,13 @@ module Econia::Orders {
         move_to<OO<B, Q, E>>(user, o_o); // Move to user
     }
 
-    /// Return scale factor of specified open orders at given address,
+    /// Return scale factor of extant open orders at given address,
     /// provided `FriendCap`
     public fun scale_factor<B, Q, E>(
         addr: address,
         _c: &FriendCap
     ): u64
     acquires OO {
-        // Assert open orders container exists at given address
-        assert!(exists_orders<B, Q, E>(addr), E_NO_ORDERS);
         // Return open order container's scale factor
         borrow_global<OO<B, Q, E>>(addr).f
     }

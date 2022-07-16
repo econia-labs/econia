@@ -612,7 +612,7 @@ with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale fact
 
 ## Function `scale_factor`
 
-Return scale factor of specified open orders at given address,
+Return scale factor of extant open orders at given address,
 provided <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
@@ -630,8 +630,6 @@ provided <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></co
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
 ): u64
 <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
-    // Assert open orders container <b>exists</b> at given <b>address</b>
-    <b>assert</b>!(<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(addr), <a href="Orders.md#0xc0deb00c_Orders_E_NO_ORDERS">E_NO_ORDERS</a>);
     // Return open order container's scale factor
     <b>borrow_global</b>&lt;<a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;&gt;(addr).f
 }

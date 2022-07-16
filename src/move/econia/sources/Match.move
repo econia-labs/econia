@@ -309,8 +309,14 @@ module Econia::Match {
         loop { // Begin traversal loop
             // Update counter for number of base parcels filled
             base_parcels_filled = base_parcels_filled + filled;
+            // Calculate number of quote coins just filled
+            let quote_coins_just_filled = id_p(target_id) * filled;
             // Update counter for number of quote coins filled
-            quote_coins_filled = quote_coins_filled + id_p(target_id) * filled;
+            quote_coins_filled = quote_coins_filled + quote_coins_just_filled;
+            // If filling against asks, update counter for quote coins
+            // still available for filling
+            if (side == ASK) quote_available =
+                quote_available - quote_coins_just_filled;
             // Decrement requested size left to match
             requested_size = requested_size - filled;
             // Determine if target position completely filled
@@ -1183,6 +1189,627 @@ module Econia::Match {
         let extreme_order_id = check_extreme_order_id<BCT, QCT, E1>(
             @Econia, side);
         assert!(extreme_order_id == id_2, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market buy has quote coins
+    /// exhausted after exactly filling user 1's ask
+    public(script) fun buy_exhaust_exact_1(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        let market_order_size = 20; // Define market order size
+        // Define max quote coins to spend
+        let max_quote_to_spend = USER_1_ASK_PRICE * USER_1_ASK_SIZE;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base =
+            USER_0_START_BASE + SCALE_FACTOR * USER_1_ASK_SIZE;
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote =
+            USER_0_START_QUOTE - USER_1_ASK_PRICE * USER_1_ASK_SIZE;
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        // Assert user 1 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_1), 0);
+        // Assert user 1 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_1), 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_b_coins == USER_2_START_BASE, 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE, 0);
+        // Get user 2's open order size
+        let u_2_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser2, side, id_2);
+        // Assert correct value
+        assert!(u_2_open_order_size == USER_2_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_2_position_size, u_2_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_2);
+        // Assert correct fields
+        assert!(u_2_position_size == USER_2_ASK_SIZE, 0);
+        assert!(u_2_position_address == @TestUser2, 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE, 0);
+        // Get user 3's open order size
+        let u_3_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser3, side, id_3);
+        // Assert correct value
+        assert!(u_3_open_order_size == USER_3_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_3_position_size, u_3_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_3);
+        // Assert correct fields
+        assert!(u_3_position_size == USER_3_ASK_SIZE, 0);
+        assert!(u_3_position_address == @TestUser3, 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id =
+            check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
+        assert!(extreme_order_id == id_2, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market buy has quote coins
+    /// exhausted after exactly filling user 2's ask
+    public(script) fun buy_exhaust_exact_2(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        let market_order_size = 20; // Define market order size
+        // Define number of parcels filled against user 2's ask
+        // Define max quote coins to spend
+        let max_quote_to_spend =
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base = USER_0_START_BASE + SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE);
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote = USER_0_START_QUOTE -
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE -
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE;
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        // Assert user 1 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_1), 0);
+        // Assert user 1 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_1), 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_b_coins == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE, 0);
+        // Assert user 2 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_2), 0);
+        // Assert user 2 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_2), 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE, 0);
+        // Get user 3's open order size
+        let u_3_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser3, side, id_3);
+        // Assert correct value
+        assert!(u_3_open_order_size == USER_3_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_3_position_size, u_3_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_3);
+        // Assert correct fields
+        assert!(u_3_position_size == USER_3_ASK_SIZE, 0);
+        assert!(u_3_position_address == @TestUser3, 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id =
+            check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
+        assert!(extreme_order_id == id_3, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market buy has quote coins
+    /// exhausted after partially filling user 2's ask
+    public(script) fun buy_exhaust_partial_2(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        let market_order_size = 20; // Define market order size
+        // Define number of parcels filled against user 2's ask
+        let filled_against_2 = USER_2_ASK_SIZE - 1;
+        // Define max quote coins to spend
+        let max_quote_to_spend =
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * filled_against_2;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base = USER_0_START_BASE + SCALE_FACTOR *
+            (USER_1_ASK_SIZE + filled_against_2);
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote = USER_0_START_QUOTE -
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE -
+            USER_2_ASK_PRICE * filled_against_2;
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        // Assert user 1 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_1), 0);
+        // Assert user 1 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_1), 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_b_coins == USER_2_START_BASE -
+            SCALE_FACTOR * filled_against_2, 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * filled_against_2, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * filled_against_2, 0);
+        // Get user 2's open order size
+        let u_2_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser2, side, id_2);
+        // Assert correct value
+        assert!(u_2_open_order_size == USER_2_ASK_SIZE - filled_against_2, 0);
+        // Get corresponding position on order book
+        let (u_2_position_size, u_2_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_2);
+        // Assert correct fields
+        assert!(u_2_position_size == USER_2_ASK_SIZE - filled_against_2, 0);
+        assert!(u_2_position_address == @TestUser2, 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE, 0);
+        // Get user 3's open order size
+        let u_3_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser3, side, id_3);
+        // Assert correct value
+        assert!(u_3_open_order_size == USER_3_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_3_position_size, u_3_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_3);
+        // Assert correct fields
+        assert!(u_3_position_size == USER_3_ASK_SIZE, 0);
+        assert!(u_3_position_address == @TestUser3, 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id =
+            check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
+        assert!(extreme_order_id == id_2, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market buy has quote coins
+    /// exhausted after partially filling user 3's ask.
+    public(script) fun buy_exhaust_partial_3(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        // Define number of parcels filled against user 3's ask
+        let filled_against_3 = USER_3_ASK_SIZE - 3;
+        // Define market fill request size that clears book
+        let market_order_size =
+            USER_1_ASK_SIZE + USER_2_ASK_SIZE + USER_3_ASK_SIZE;
+        // Define max quote coins to spend
+        let max_quote_to_spend =
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE +
+            USER_3_ASK_PRICE * filled_against_3;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base = USER_0_START_BASE + SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE + filled_against_3);
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote = USER_0_START_QUOTE -
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE -
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE -
+            USER_3_ASK_PRICE * filled_against_3;
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        // Assert user 1 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_1), 0);
+        // Assert user 1 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_1), 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_b_coins == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE, 0);
+        // Assert user 2 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_2), 0);
+        // Assert user 2 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_2), 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE -
+            SCALE_FACTOR * filled_against_3, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE +
+            USER_3_ASK_PRICE * filled_against_3, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE +
+            USER_3_ASK_PRICE * filled_against_3, 0);
+        // Get user 3's open order size
+        let u_3_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser3, side, id_3);
+        // Assert correct value
+        assert!(u_3_open_order_size == USER_3_ASK_SIZE - filled_against_3, 0);
+        // Get corresponding position on order book
+        let (u_3_position_size, u_3_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_3);
+        // Assert correct fields
+        assert!(u_3_position_size == USER_3_ASK_SIZE - filled_against_3, 0);
+        assert!(u_3_position_address == @TestUser3, 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id =
+            check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
+        assert!(extreme_order_id == id_3, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market buy has quote coins
+    /// exhausted immediately
+    public(script) fun buy_exhaust_immediately(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        let market_order_size = 20; // Define market order size
+        let max_quote_to_spend = 8; // Define max quote coins to spend
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == USER_0_START_BASE, 0);
+        assert!(u_0_b_available == USER_0_START_BASE, 0);
+        assert!(u_0_q_coins == USER_0_START_QUOTE, 0);
+        assert!(u_0_q_available == USER_0_START_QUOTE, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE, 0);
+        // Get user 1's open order size
+        let u_1_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser1, side, id_1);
+        // Assert correct value
+        assert!(u_1_open_order_size == USER_1_ASK_SIZE, 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_b_coins == USER_2_START_BASE, 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE, 0);
+        // Get user 2's open order size
+        let u_2_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser2, side, id_2);
+        // Assert correct value
+        assert!(u_2_open_order_size == USER_2_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_2_position_size, u_2_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_2);
+        // Assert correct fields
+        assert!(u_2_position_size == USER_2_ASK_SIZE, 0);
+        assert!(u_2_position_address == @TestUser2, 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE, 0);
+        // Get user 3's open order size
+        let u_3_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser3, side, id_3);
+        // Assert correct value
+        assert!(u_3_open_order_size == USER_3_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_3_position_size, u_3_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_3);
+        // Assert correct fields
+        assert!(u_3_position_size == USER_3_ASK_SIZE, 0);
+        assert!(u_3_position_address == @TestUser3, 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id =
+            check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
+        assert!(extreme_order_id == id_1, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market buy has quote coins
+    /// exhausted after partially filling user 1's ask
+    public(script) fun buy_exhaust_partial_1(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        let market_order_size = 20; // Define market order size
+        let max_quote_to_spend = 72; // Define max quote coins to spend
+        // Define parcels filled against user 1's ask
+        let filled_against_1 = max_quote_to_spend / USER_1_ASK_PRICE;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base =
+            USER_0_START_BASE + SCALE_FACTOR * filled_against_1;
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote =
+            USER_0_START_QUOTE - USER_1_ASK_PRICE * filled_against_1;
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE -
+            SCALE_FACTOR * filled_against_1, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * filled_against_1, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * filled_against_1, 0);
+        // Get user 1's open order size
+        let u_1_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser1, side, id_1);
+        // Assert correct value
+        assert!(u_1_open_order_size == USER_1_ASK_SIZE - filled_against_1, 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_b_coins == USER_2_START_BASE, 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE, 0);
+        // Get user 2's open order size
+        let u_2_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser2, side, id_2);
+        // Assert correct value
+        assert!(u_2_open_order_size == USER_2_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_2_position_size, u_2_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_2);
+        // Assert correct fields
+        assert!(u_2_position_size == USER_2_ASK_SIZE, 0);
+        assert!(u_2_position_address == @TestUser2, 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE, 0);
+        // Get user 3's open order size
+        let u_3_open_order_size = check_order<BCT, QCT, E1>(
+            @TestUser3, side, id_3);
+        // Assert correct value
+        assert!(u_3_open_order_size == USER_3_ASK_SIZE, 0);
+        // Get corresponding position on order book
+        let (u_3_position_size, u_3_position_address) =
+            check_position<BCT, QCT, E1>(@Econia, side, id_3);
+        // Assert correct fields
+        assert!(u_3_position_size == USER_3_ASK_SIZE, 0);
+        assert!(u_3_position_address == @TestUser3, 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id =
+            check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
+        assert!(extreme_order_id == id_1, 0); // Assert correct value
     }
 
     #[test(

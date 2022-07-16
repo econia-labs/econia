@@ -1086,8 +1086,9 @@ price of 9, however, does not encroach on the spread
 ## Function `check_size`
 
 Return immediately if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, otherwise verify that the
-user with the incoming order has enough quote coins to
-completely fill against the target ask on the book
+user with the incoming order has enough quote coins to fill
+against the target ask on the book, either completely or
+partially
 
 
 <a name="@Terminology_19"></a>
@@ -1118,9 +1119,9 @@ user with the incoming order has available for the trade
 * <code>bool</code>: <code><b>true</b></code> if use has insufficient quote coins in the case
 of a filling against an ask, otherwise <code><b>false</b></code>
 * <code>u64</code>: <code>size_left</code> if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code> or if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>
-and user has enough quote coins available to completely match
-against a target ask, otherwise the max number of base coin
-parcels that can be filled against the target ask
+and user has enough quote coins available to match against a
+target ask, otherwise the max number of base coin parcels that
+can be filled against the target ask
 
 
 <pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_check_size">check_size</a>(side: bool, target_id: u128, target_size: u64, size_left: u64, quote_available: u64): (bool, u64)
@@ -1148,14 +1149,20 @@ parcels that can be filled against the target ask
     // Otherwise incoming order fills against a target ask, so
     // calculate number of quote coins required for a complete fill
     <b>let</b> target_price = id_p(target_id); // Get target price
-    // Get quote coins required <b>to</b> completely fill the order
-    <b>let</b> quote_to_fill = target_price * target_size;
-    // If requested size larger than max size
+    // Get quote coins required <b>to</b> fill against target ask
+    <b>let</b> quote_to_fill =
+        // If size left on incoming order greater than or equal <b>to</b>
+        // target size, then quote coins needed are for a complete
+        // target fill
+        <b>if</b> (size_left &gt;= target_size) target_price * target_size <b>else</b>
+        // Otherwise quote coins needed for partial target fill
+        target_price * size_left;
+    // If quote coins needed for fill exceed available quote coins
     <b>if</b> (quote_to_fill &gt; quote_available) <b>return</b>
         // Flag insufficient quote coins, and <b>return</b> max fill size
         // possible
         (<b>true</b>, quote_available / target_price) <b>else</b>
-        // Otherwise dot no flag insufficient quote coins, and
+        // Otherwise do not flag insufficient quote coins, and
         // confirm filling size left
         <b>return</b> (<b>false</b>, size_left)
 }

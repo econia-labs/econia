@@ -557,8 +557,9 @@ module Econia::Book {
     }
 
     /// Return immediately if `side` is `BID`, otherwise verify that the
-    /// user with the incoming order has enough quote coins to
-    /// completely fill against the target ask on the book
+    /// user with the incoming order has enough quote coins to fill
+    /// against the target ask on the book, either completely or
+    /// partially
     ///
     /// # Terminology
     /// * "Incoming order" has `requested_size` base coin parcels to be
@@ -577,9 +578,9 @@ module Econia::Book {
     /// * `bool`: `true` if use has insufficient quote coins in the case
     ///   of a filling against an ask, otherwise `false`
     /// * `u64`: `size_left` if `side` is `BID` or if `side` is `ASK`
-    ///   and user has enough quote coins available to completely match
-    ///   against a target ask, otherwise the max number of base coin
-    ///   parcels that can be filled against the target ask
+    ///   and user has enough quote coins available to match against a
+    ///   target ask, otherwise the max number of base coin parcels that
+    ///   can be filled against the target ask
     fun check_size(
         side: bool,
         target_id: u128,
@@ -596,14 +597,20 @@ module Econia::Book {
         // Otherwise incoming order fills against a target ask, so
         // calculate number of quote coins required for a complete fill
         let target_price = id_p(target_id); // Get target price
-        // Get quote coins required to completely fill the order
-        let quote_to_fill = target_price * target_size;
-        // If requested size larger than max size
+        // Get quote coins required to fill against target ask
+        let quote_to_fill =
+            // If size left on incoming order greater than or equal to
+            // target size, then quote coins needed are for a complete
+            // target fill
+            if (size_left >= target_size) target_price * target_size else
+            // Otherwise quote coins needed for partial target fill
+            target_price * size_left;
+        // If quote coins needed for fill exceed available quote coins
         if (quote_to_fill > quote_available) return
             // Flag insufficient quote coins, and return max fill size
             // possible
             (true, quote_available / target_price) else
-            // Otherwise dot no flag insufficient quote coins, and
+            // Otherwise do not flag insufficient quote coins, and
             // confirm filling size left
             return (false, size_left)
     }
@@ -989,17 +996,29 @@ module Econia::Book {
         // Define target ask ID with price 15
         let target_id = id_a(15, 1);
         // Check size for matching against an ask when enough quote
-        // coins available
+        // coins available for a complete target fill
         (insufficient_quote, size_left) =
-            check_size(ASK, target_id, 3, 50, 45);
+            check_size(ASK, target_id, 3, 50, 60);
         // Assert returns
         assert!(!insufficient_quote && size_left == 50, 0);
+        // Check size for matching against an ask when enough quote
+        // coins available for a partial target fill
+        (insufficient_quote, size_left) =
+            check_size(ASK, target_id, 3, 2, 30);
+        // Assert returns
+        assert!(!insufficient_quote && size_left == 2, 0);
         // Check size for matching against an ask when not enough quote
-        // coins available
+        // coins available for a complete target fill
         (insufficient_quote, size_left) =
             check_size(ASK, target_id, 3, 50, 44);
         // Assert returns
         assert!(insufficient_quote && size_left == 2, 0);
+        // Check size for matching against an ask when not enough quote
+        // coins available for a partial target fill
+        (insufficient_quote, size_left) =
+            check_size(ASK, target_id, 3, 2, 29);
+        // Assert returns
+        assert!(insufficient_quote && size_left == 1, 0);
     }
 
     #[test(account = @TestUser)]

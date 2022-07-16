@@ -337,8 +337,14 @@ of iterated traversal
     <b>loop</b> { // Begin traversal <b>loop</b>
         // Update counter for number of base parcels filled
         base_parcels_filled = base_parcels_filled + filled;
+        // Calculate number of quote coins just filled
+        <b>let</b> quote_coins_just_filled = id_p(target_id) * filled;
         // Update counter for number of quote coins filled
-        quote_coins_filled = quote_coins_filled + id_p(target_id) * filled;
+        quote_coins_filled = quote_coins_filled + quote_coins_just_filled;
+        // If filling against asks, <b>update</b> counter for quote coins
+        // still available for filling
+        <b>if</b> (side == <a href="Match.md#0xc0deb00c_Match_ASK">ASK</a>) quote_available =
+            quote_available - quote_coins_just_filled;
         // Decrement requested size left <b>to</b> match
         requested_size = requested_size - filled;
         // Determine <b>if</b> target position completely filled

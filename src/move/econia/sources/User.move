@@ -44,7 +44,7 @@ module Econia::User {
         exists_orders as o_e_o,
         init_orders as o_i_o,
         remove_order,
-        scale_factor as o_s_f
+        scale_factor as orders_scale_factor
     };
 
     use Econia::Registry::{
@@ -173,6 +173,10 @@ module Econia::User {
     const ASK: bool = true;
     /// Bid flag
     const BID: bool = false;
+    /// Flag for submitting a market buy
+    const BUY: bool = true;
+    /// Flag for submitting a market sell
+    const SELL: bool = true;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -414,7 +418,8 @@ module Econia::User {
             b_c_a<B, Q, E>(host, id, &c_b_f_c());
             // Increment amount of base coins available for withdraw,
             // by order scaled size times scale factor on given market
-            o_c.b_a = o_c.b_a + s_s * o_s_f<B, Q, E>(addr);
+            o_c.b_a = o_c.b_a +
+                s_s * orders_scale_factor<B, Q, E>(addr, &orders_cap());
         } else { // If cancelling a bid
             // Cancel on user's open orders, storing scaled size
             let s_s = o_c_b<B, Q, E>(addr, id, &orders_cap());
@@ -500,6 +505,54 @@ module Econia::User {
                 b_a_b<B, Q, E>(host, addr, id, price, size, &c_b_f_c());
         };
         assert!(!c_s, E_CROSSES_SPREAD); // Assert uncrossed spread
+    }
+
+    /// Submit market order for market `<B, Q, E>`, filling as much
+    /// as possible against the book
+    ///
+    /// # Parameters
+    /// * `user`: User submitting a limit order
+    /// * `host`: The market host (See `Econia::Registry`)
+    /// * `side`: `ASK` or `BID`
+    /// * `price`: Scaled integer price (see `Econia::ID`)
+    /// * `size`: Scaled order size (number of base coin parcels per
+    ///   `Econia::Orders`)
+    ///
+    /// # Abort conditions
+    /// * If no such market exists at host address
+    /// * If user does not have order collateral container for market
+    /// * If user does not have enough collateral
+    /// * If placing an order would cross the spread (temporary)
+    fun submit_market_order<B, Q, E>(
+        user: &signer,
+        host: address,
+        side: bool,
+        size: u64
+    ) acquires OC, SC {
+        update_s_c(user); // Update user sequence counter
+        // Assert market exists at given host address
+        assert!(b_e_b<B, Q, E>(host), E_NO_MARKET);
+        let user_address = address_of(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists<OC<B, Q, E>>(user_address), E_NO_O_C);
+        // Borrow mutable reference to user's order collateral container
+        let order_collateral = borrow_global_mut<OC<B, Q, E>>(user_address);
+        // If submitting a market buy (if filling against ask positions
+        // on the order book)
+        if (side == BUY) {
+            // Get quote coins available to use for market buy
+            let quote_coins_available = order_collateral.q_a;
+            quote_coins_available;
+        } else { // If submitting a market sell (filling against bids)
+            // Get number of base coins required to execute market sell
+            let base_coins_required = size * orders_scale_factor<B, Q, E>(
+               user_address, &orders_cap());
+            // Assert user has enough available base coins to sell
+            assert!(order_collateral.b_a >= base_coins_required,
+                E_NOT_ENOUGH_COLLATERAL);
+        }
+        // Decrement collateral amount accordingly, after figuring out
+        // filled return val
     }
 
     /// Update sequence counter for user `u` with the sequence number of
@@ -882,7 +935,8 @@ module Econia::User {
         // Assert no base coins or quote coins marked available
         assert!(o_c.b_a == 0 && o_c.q_a == 0, 1);
         // Assert open orders exists and has correct scale factor
-        assert!(o_s_f<BCT, QCT, E0>(user_addr) == r_s_f<E0>(), 0);
+        assert!(orders_scale_factor<BCT, QCT, E0>(user_addr, &orders_cap()) ==
+            r_s_f<E0>(), 0);
     }
 
     #[test(user = @TestUser)]

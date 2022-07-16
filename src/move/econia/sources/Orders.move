@@ -270,9 +270,11 @@ module Econia::Orders {
         move_to<OO<B, Q, E>>(user, o_o); // Move to user
     }
 
-    /// Return scale factor of specified open orders at given address
+    /// Return scale factor of specified open orders at given address,
+    /// provided `FriendCap`
     public fun scale_factor<B, Q, E>(
-        addr: address
+        addr: address,
+        _c: &FriendCap
     ): u64
     acquires OO {
         // Assert open orders container exists at given address
@@ -667,7 +669,7 @@ module Econia::Orders {
         init_orders<BT, QT, ET>(user, 1, &FriendCap{});
         let user_addr = s_a_o(user); // Get user address
         // Assert open orders exists and has correct scale factor
-        assert!(scale_factor<BT, QT, ET>(user_addr) == 1, 0);
+        assert!(scale_factor<BT, QT, ET>(user_addr, &FriendCap{}) == 1, 0);
         // Borrow immutable reference to open orders
         let o_o = borrow_global<OO<BT, QT, ET>>(user_addr);
         // Assert bid and ask trees init empty
@@ -699,14 +701,6 @@ module Econia::Orders {
         remove_order<BT, QT, ET>(@TestUser, BID, id, &FriendCap{});
         // Assert bid no longer registered in open orders
         assert!(!has_bid<BT, QT, ET>(@TestUser, id), 3);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for no orders
-    fun scale_factor_failure()
-    acquires OO {
-        scale_factor<BT, QT, ET>(@TestUser); // Attempt invalid query
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

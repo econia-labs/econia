@@ -27,6 +27,9 @@ User-facing trading functionality
 -  [Function `submit_limit_order`](#0xc0deb00c_User_submit_limit_order)
     -  [Parameters](#@Parameters_5)
     -  [Abort conditions](#@Abort_conditions_6)
+-  [Function `submit_market_order`](#0xc0deb00c_User_submit_market_order)
+    -  [Parameters](#@Parameters_7)
+    -  [Abort conditions](#@Abort_conditions_8)
 -  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
 
 
@@ -142,6 +145,16 @@ Bid flag
 
 
 
+<a name="0xc0deb00c_User_BUY"></a>
+
+Flag for submitting a market buy
+
+
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_BUY">BUY</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_User_E_CROSSES_SPREAD"></a>
 
 When an attempted limit order crosses the spread
@@ -248,6 +261,16 @@ When attempting to withdraw more than is available
 
 
 <pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>: u64 = 8;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_User_SELL"></a>
+
+Flag for submitting a market sell
+
+
+<pre><code><b>const</b> <a href="User.md#0xc0deb00c_User_SELL">SELL</a>: bool = <b>true</b>;
 </code></pre>
 
 
@@ -691,7 +714,8 @@ collateral container
         b_c_a&lt;B, Q, E&gt;(host, id, &c_b_f_c());
         // Increment amount of base coins available for withdraw,
         // by order scaled size times scale factor on given market
-        o_c.b_a = o_c.b_a + s_s * o_s_f&lt;B, Q, E&gt;(addr);
+        o_c.b_a = o_c.b_a +
+            s_s * orders_scale_factor&lt;B, Q, E&gt;(addr, &orders_cap());
     } <b>else</b> { // If cancelling a bid
         // Cancel on user's open orders, storing scaled size
         <b>let</b> s_s = o_c_b&lt;B, Q, E&gt;(addr, id, &orders_cap());
@@ -825,6 +849,82 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
             b_a_b&lt;B, Q, E&gt;(host, addr, id, price, size, &c_b_f_c());
     };
     <b>assert</b>!(!c_s, <a href="User.md#0xc0deb00c_User_E_CROSSES_SPREAD">E_CROSSES_SPREAD</a>); // Assert uncrossed spread
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_submit_market_order"></a>
+
+## Function `submit_market_order`
+
+Submit market order for market <code>&lt;B, Q, E&gt;</code>, filling as much
+as possible against the book
+
+
+<a name="@Parameters_7"></a>
+
+### Parameters
+
+* <code>user</code>: User submitting a limit order
+* <code>host</code>: The market host (See <code>Econia::Registry</code>)
+* <code>side</code>: <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code> or <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
+* <code>price</code>: Scaled integer price (see <code>Econia::ID</code>)
+* <code>size</code>: Scaled order size (number of base coin parcels per
+<code>Econia::Orders</code>)
+
+
+<a name="@Abort_conditions_8"></a>
+
+### Abort conditions
+
+* If no such market exists at host address
+* If user does not have order collateral container for market
+* If user does not have enough collateral
+* If placing an order would cross the spread (temporary)
+
+
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    host: <b>address</b>,
+    side: bool,
+    size: u64
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user); // Update user sequence counter
+    // Assert market <b>exists</b> at given host <b>address</b>
+    <b>assert</b>!(b_e_b&lt;B, Q, E&gt;(host), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
+    <b>let</b> user_address = address_of(user); // Get user <b>address</b>
+    // Assert user <b>has</b> order collateral container
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user_address), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
+    // Borrow mutable reference <b>to</b> user's order collateral container
+    <b>let</b> order_collateral = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user_address);
+    // If submitting a market buy (<b>if</b> filling against ask positions
+    // on the order book)
+    <b>if</b> (side == <a href="User.md#0xc0deb00c_User_BUY">BUY</a>) {
+        // Get quote coins available <b>to</b> <b>use</b> for market buy
+        <b>let</b> quote_coins_available = order_collateral.q_a;
+        quote_coins_available;
+    } <b>else</b> { // If submitting a market sell (filling against bids)
+        // Get number of base coins required <b>to</b> execute market sell
+        <b>let</b> base_coins_required = size * orders_scale_factor&lt;B, Q, E&gt;(
+           user_address, &orders_cap());
+        // Assert user <b>has</b> enough available base coins <b>to</b> sell
+        <b>assert</b>!(order_collateral.b_a &gt;= base_coins_required,
+            <a href="User.md#0xc0deb00c_User_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
+    }
+    // Decrement collateral amount accordingly, after figuring out
+    // filled <b>return</b> val
 }
 </code></pre>
 

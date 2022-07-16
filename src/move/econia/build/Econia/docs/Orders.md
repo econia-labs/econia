@@ -612,10 +612,11 @@ with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale fact
 
 ## Function `scale_factor`
 
-Return scale factor of specified open orders at given address
+Return scale factor of specified open orders at given address,
+provided <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(addr: <b>address</b>): u64
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(addr: <b>address</b>, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): u64
 </code></pre>
 
 
@@ -625,7 +626,8 @@ Return scale factor of specified open orders at given address
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_scale_factor">scale_factor</a>&lt;B, Q, E&gt;(
-    addr: <b>address</b>
+    addr: <b>address</b>,
+    _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
 ): u64
 <b>acquires</b> <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a> {
     // Assert open orders container <b>exists</b> at given <b>address</b>

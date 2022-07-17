@@ -18,7 +18,20 @@
 /// depends on the size and price of each ask position on the book,
 /// hence a user must pre-specify how many quote coin subunits they are
 /// willing to pay when submitting their order.
-
+///
+/// # Terminology
+/// * An "incoming order" is the market order filling against positions
+///   on the book
+/// * A "target position" is the position on the book being filled
+///   during one fillling iteration of traversal along the tree
+/// * A "partial fill" is one where the target position still has a
+///   nonzero size after the fill
+/// * An "exact fill" is one where the target position and the incoming
+///   order require the same number of base coin parcels to fill
+/// * A "complete fill" is one where the incoming order is completely
+///   filled against the target position, but traversal must continue
+///   because the incoming order still has not been filled
+///
 /// # Testing
 ///
 /// Test-only constants and functions are used to construct a test
@@ -43,12 +56,12 @@
 /// logic at sequential milestones of exhausting available quote coins
 /// along the process of clearing out the book:
 /// * `buy_exhaust_immediately()`
-/// * `buy_exhaust_partial_1()`
-/// * `buy_exhaust_exact_1()`
-/// * `buy_exhaust_partial_2()`
-/// * `buy_exhaust_exact_2()`
-/// * `buy_exhause_partial_3()`
-/// * `buy_exhaust_exact_3()`
+/// * `buy_exhaust_partial_1_complete_requested()`
+/// * `buy_exhaust_exact_1_complete_requested()`
+/// * `buy_exhaust_partial_2_exact_requested()`
+/// * `buy_exhaust_exact_2_exact_requested()`
+/// * `buy_exhaust_partial_3_larger_partial_requested()`
+/// * `buy_exhaust_exact_3_complete_requested()`
 ///
 /// ---
 ///
@@ -1199,8 +1212,10 @@ module Econia::Match {
         user_3 = @TestUser3
     )]
     /// Verify matching when user 0's market buy has quote coins
-    /// exhausted after exactly filling user 1's ask
-    public(script) fun buy_exhaust_exact_1(
+    /// exhausted after exactly filling user 1's ask, when requested
+    /// order size would have resulted in a complete target fill against
+    /// user 1's position if quote coins had not run out first
+    public(script) fun buy_exhaust_exact_1_complete_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1208,10 +1223,12 @@ module Econia::Match {
         user_3: &signer
     ) {
         let side = ASK; // Define book side market order fills against
-        let market_order_size = 20; // Define market order size
+        // Define market order request size that would result in a
+        // complete target fill against user 1, if enough quote coins
+        // were available
+        let market_order_size = USER_1_ASK_SIZE + 1;
         // Define max quote coins to spend
         let max_quote_to_spend = USER_1_ASK_PRICE * USER_1_ASK_SIZE;
-        // Calculate base coins user 0 ends with
         let user_0_end_base =
             USER_0_START_BASE + SCALE_FACTOR * USER_1_ASK_SIZE;
         // Calculate quote coins user 0 ends with
@@ -1301,8 +1318,10 @@ module Econia::Match {
         user_3 = @TestUser3
     )]
     /// Verify matching when user 0's market buy has quote coins
-    /// exhausted after exactly filling user 2's ask
-    public(script) fun buy_exhaust_exact_2(
+    /// exhausted after exactly filling user 2's ask, when requested
+    /// order size also specifies and exact target fill against user 2's
+    /// position
+    public(script) fun buy_exhaust_exact_2_exact_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1310,7 +1329,9 @@ module Econia::Match {
         user_3: &signer
     ) {
         let side = ASK; // Define book side market order fills against
-        let market_order_size = 20; // Define market order size
+        // Define market order request size for exact fill against user
+        // 2's position
+        let market_order_size = USER_1_ASK_SIZE + USER_2_ASK_SIZE;
         // Define number of parcels filled against user 2's ask
         // Define max quote coins to spend
         let max_quote_to_spend =
@@ -1393,6 +1414,108 @@ module Econia::Match {
         let extreme_order_id =
             check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
         assert!(extreme_order_id == id_3, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify matching when user 0's market buy has quote coins
+    /// exhausted after exactly filling user 3's ask, when requested
+    /// order size would have resulted in a complete target fill against
+    /// user 3's position if quote coins had not run out first and if
+    /// there was more depth on the book
+    public(script) fun buy_exhaust_exact_3_complete_requested(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        // Define market fill request size that clears book
+        let market_order_size =
+            USER_1_ASK_SIZE + USER_2_ASK_SIZE + USER_3_ASK_SIZE + 1;
+        // Define max quote coins to spend
+        let max_quote_to_spend =
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE +
+            USER_3_ASK_PRICE * USER_3_ASK_SIZE;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base = USER_0_START_BASE + SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE + USER_3_ASK_SIZE);
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote = USER_0_START_QUOTE - max_quote_to_spend;
+        // Initialize market with positions, storing order ids
+        let (id_1, id_2, id_3) =
+            init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
+        // Get interpreted collateral field values for user 1
+        let (u_1_b_available, u_1_b_coins, u_1_q_available, u_1_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser1);
+        // Assert correct collateral field values
+        assert!(u_1_b_available == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_b_coins == USER_1_START_BASE -
+            SCALE_FACTOR * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_available == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        assert!(u_1_q_coins == USER_1_START_QUOTE +
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE, 0);
+        // Assert user 1 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_1), 0);
+        // Assert user 1 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_1), 0);
+        // Get interpreted collateral field values for user 2
+        let (u_2_b_available, u_2_b_coins, u_2_q_available, u_2_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser2);
+        // Assert correct collateral field values
+        assert!(u_2_b_available == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_b_coins == USER_2_START_BASE -
+            SCALE_FACTOR * USER_2_ASK_SIZE, 0);
+        assert!(u_2_q_available == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE, 0);
+        assert!(u_2_q_coins == USER_2_START_QUOTE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE, 0);
+        // Assert user 2 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_2), 0);
+        // Assert user 2 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_2), 0);
+        // Get interpreted collateral field values for user 3
+        let (u_3_b_available, u_3_b_coins, u_3_q_available, u_3_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser3);
+        // Assert correct collateral field values
+        assert!(u_3_b_available == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_b_coins == USER_3_START_BASE -
+            SCALE_FACTOR * USER_3_ASK_SIZE, 0);
+        assert!(u_3_q_available == USER_3_START_QUOTE +
+            USER_3_ASK_PRICE * USER_3_ASK_SIZE, 0);
+        assert!(u_3_q_coins == USER_3_START_QUOTE +
+            USER_3_ASK_PRICE * USER_3_ASK_SIZE, 0);
+        // Assert user 3 no longer has open order
+        assert!(!has_order<BCT, QCT, E1>(@TestUser1, side, id_3), 0);
+        // Assert user 3 no longer has position on order book
+        assert!(!has_position<BCT, QCT, E1>(@Econia, side, id_3), 0);
+        // Get extreme order id (min ask/max bid)
+        let extreme_order_id =
+            check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
+        // Assert correct value
+        assert!(extreme_order_id == MIN_ASK_DEFAULT, 0);
     }
 
     #[test(
@@ -1496,8 +1619,10 @@ module Econia::Match {
         user_3 = @TestUser3
     )]
     /// Verify matching when user 0's market buy has quote coins
-    /// exhausted after partially filling user 1's ask
-    public(script) fun buy_exhaust_partial_1(
+    /// exhausted after partially filling user 1's ask, when requested
+    /// order size would have resulted in a complete target fill against
+    /// user 1's position if quote coins had not run out first
+    public(script) fun buy_exhaust_partial_1_complete_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1505,10 +1630,14 @@ module Econia::Match {
         user_3: &signer
     ) {
         let side = ASK; // Define book side market order fills against
-        let market_order_size = 20; // Define market order size
-        let max_quote_to_spend = 72; // Define max quote coins to spend
+        // Define market order request size that would result in a
+        // complete target fill against user 1, if enough quote coins
+        // were available
+        let market_order_size = USER_1_ASK_SIZE + 1;
         // Define parcels filled against user 1's ask
-        let filled_against_1 = max_quote_to_spend / USER_1_ASK_PRICE;
+        let filled_against_1 = USER_1_ASK_SIZE - 1;
+        // Define max quote coins to spend
+        let max_quote_to_spend = USER_1_ASK_PRICE * filled_against_1;
         // Calculate base coins user 0 ends with
         let user_0_end_base =
             USER_0_START_BASE + SCALE_FACTOR * filled_against_1;
@@ -1600,8 +1729,10 @@ module Econia::Match {
         user_3 = @TestUser3
     )]
     /// Verify matching when user 0's market buy has quote coins
-    /// exhausted after partially filling user 2's ask
-    public(script) fun buy_exhaust_partial_2(
+    /// exhausted after partially filling user 2's ask, when requested
+    /// order size would have resulted in an exact target fill if quote
+    /// coins had not run out first
+    public(script) fun buy_exhaust_partial_2_exact_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1609,9 +1740,12 @@ module Econia::Match {
         user_3: &signer
     ) {
         let side = ASK; // Define book side market order fills against
-        let market_order_size = 20; // Define market order size
-        // Define number of parcels filled against user 2's ask
-        let filled_against_2 = USER_2_ASK_SIZE - 1;
+        // Define market order request size that would result in an
+        // exact target fill against user 2, if enough quote coins were
+        // available
+        let market_order_size = USER_1_ASK_SIZE + USER_2_ASK_SIZE;
+        // Define number of parcels actually filled against user 2's ask
+        let filled_against_2 = USER_2_ASK_SIZE - 3;
         // Define max quote coins to spend
         let max_quote_to_spend =
             USER_1_ASK_PRICE * USER_1_ASK_SIZE +
@@ -1710,8 +1844,10 @@ module Econia::Match {
         user_3 = @TestUser3
     )]
     /// Verify matching when user 0's market buy has quote coins
-    /// exhausted after partially filling user 3's ask.
-    public(script) fun buy_exhaust_partial_3(
+    /// exhausted after partially filling user 3's ask, when requested
+    /// order size would have resulted in a larger partial target fill
+    /// if quote coins had not run out first
+    public(script) fun buy_exhaust_partial_3_larger_partial_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1719,11 +1855,12 @@ module Econia::Match {
         user_3: &signer
     ) {
         let side = ASK; // Define book side market order fills against
-        // Define number of parcels filled against user 3's ask
-        let filled_against_3 = USER_3_ASK_SIZE - 3;
-        // Define market fill request size that clears book
+        // Define market order request size for the largest possible
+        // partial fill against user 3's order
         let market_order_size =
-            USER_1_ASK_SIZE + USER_2_ASK_SIZE + USER_3_ASK_SIZE;
+            USER_1_ASK_SIZE + USER_2_ASK_SIZE + (USER_3_ASK_SIZE - 1);
+        // Define number of parcels actually filled against user 3's ask
+        let filled_against_3 = USER_3_ASK_SIZE - 3;
         // Define max quote coins to spend
         let max_quote_to_spend =
             USER_1_ASK_PRICE * USER_1_ASK_SIZE +

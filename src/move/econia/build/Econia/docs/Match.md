@@ -28,7 +28,25 @@ depends on the size and price of each ask position on the book,
 hence a user must pre-specify how many quote coin subunits they are
 willing to pay when submitting their order.
 
-<a name="@Testing_1"></a>
+
+<a name="@Terminology_1"></a>
+
+## Terminology
+
+* An "incoming order" is the market order filling against positions
+on the book
+* A "target position" is the position on the book being filled
+during one fillling iteration of traversal along the tree
+* A "partial fill" is one where the target position still has a
+nonzero size after the fill
+* An "exact fill" is one where the target position and the incoming
+order require the same number of base coin parcels to fill
+* A "complete fill" is one where the incoming order is completely
+filled against the target position, but traversal must continue
+because the incoming order still has not been filled
+
+
+<a name="@Testing_2"></a>
 
 ## Testing
 
@@ -55,30 +73,31 @@ As described in [sides](#sides), in the case of a market buy
 logic at sequential milestones of exhausting available quote coins
 along the process of clearing out the book:
 * <code>buy_exhaust_immediately()</code>
-* <code>buy_exhaust_partial_1()</code>
-* <code>buy_exhaust_exact_1()</code>
-* <code>buy_exhaust_partial_2()</code>
-* <code>buy_exhaust_exact_2()</code>
-* <code>buy_exhause_partial_3()</code>
-* <code>buy_exhaust_exact_3()</code>
+* <code>buy_exhaust_partial_1_complete_requested()</code>
+* <code>buy_exhaust_exact_1_complete_requested()</code>
+* <code>buy_exhaust_partial_2_exact_requested()</code>
+* <code>buy_exhaust_exact_2_exact_requested()</code>
+* <code>buy_exhaust_partial_3_larger_partial_requested()</code>
+* <code>buy_exhaust_exact_3_complete_requested()</code>
 
 ---
 
 
 -  [Sides](#@Sides_0)
--  [Testing](#@Testing_1)
--  [Constants](#@Constants_2)
+-  [Terminology](#@Terminology_1)
+-  [Testing](#@Testing_2)
+-  [Constants](#@Constants_3)
 -  [Function `submit_market_buy`](#0xc0deb00c_Match_submit_market_buy)
 -  [Function `submit_market_sell`](#0xc0deb00c_Match_submit_market_sell)
 -  [Function `fill_market_order`](#0xc0deb00c_Match_fill_market_order)
-    -  [Parameters](#@Parameters_3)
-    -  [Terminology](#@Terminology_4)
-    -  [Returns](#@Returns_5)
-    -  [Assumptions](#@Assumptions_6)
+    -  [Parameters](#@Parameters_4)
+    -  [Terminology](#@Terminology_5)
+    -  [Returns](#@Returns_6)
+    -  [Assumptions](#@Assumptions_7)
 -  [Function `submit_market_order`](#0xc0deb00c_Match_submit_market_order)
-    -  [Parameters](#@Parameters_7)
-    -  [Abort conditions](#@Abort_conditions_8)
-    -  [Assumptions](#@Assumptions_9)
+    -  [Parameters](#@Parameters_8)
+    -  [Abort conditions](#@Abort_conditions_9)
+    -  [Assumptions](#@Assumptions_10)
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
@@ -91,7 +110,7 @@ along the process of clearing out the book:
 
 
 
-<a name="@Constants_2"></a>
+<a name="@Constants_3"></a>
 
 ## Constants
 
@@ -253,7 +272,7 @@ returning when there is no liquidity left or when order is
 completely filled
 
 
-<a name="@Parameters_3"></a>
+<a name="@Parameters_4"></a>
 
 ### Parameters
 
@@ -268,7 +287,7 @@ filling against asks
 * <code>book_cap</code>: Immutable reference to <code>Econia::Book:FriendCap</code>
 
 
-<a name="@Terminology_4"></a>
+<a name="@Terminology_5"></a>
 
 ### Terminology
 
@@ -278,7 +297,7 @@ the order book
 of iterated traversal
 
 
-<a name="@Returns_5"></a>
+<a name="@Returns_6"></a>
 
 ### Returns
 
@@ -286,7 +305,7 @@ of iterated traversal
 * <code>u64</code>: Amount of quote coin subunits filled
 
 
-<a name="@Assumptions_6"></a>
+<a name="@Assumptions_7"></a>
 
 ### Assumptions
 
@@ -395,7 +414,7 @@ Submit market order for market <code>&lt;B, Q, E&gt;</code>, filling as much
 as possible against the book
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_8"></a>
 
 ### Parameters
 
@@ -409,7 +428,7 @@ be spent in the case of a market buy (unused in case of a
 market sell)
 
 
-<a name="@Abort_conditions_8"></a>
+<a name="@Abort_conditions_9"></a>
 
 ### Abort conditions
 
@@ -419,7 +438,7 @@ market sell)
 * If <code>requested_size</code> is 0
 
 
-<a name="@Assumptions_9"></a>
+<a name="@Assumptions_10"></a>
 
 ### Assumptions
 

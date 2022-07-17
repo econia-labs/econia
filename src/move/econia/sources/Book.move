@@ -575,8 +575,8 @@ module Econia::Book {
     ///   user with the incoming order has available for the trade
     ///
     /// # Returns
-    /// * `bool`: `true` if use has insufficient quote coins in the case
-    ///   of a filling against an ask, otherwise `false`
+    /// * `bool`: `true` if incoming user has insufficient quote coins
+    ///   in the case of a filling against an ask, otherwise `false`
     /// * `u64`: `size_left` if `side` is `BID` or if `side` is `ASK`
     ///   and user has enough quote coins available to match against a
     ///   target ask, otherwise the max number of base coin parcels that

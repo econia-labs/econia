@@ -1116,8 +1116,8 @@ user with the incoming order has available for the trade
 
 ### Returns
 
-* <code>bool</code>: <code><b>true</b></code> if use has insufficient quote coins in the case
-of a filling against an ask, otherwise <code><b>false</b></code>
+* <code>bool</code>: <code><b>true</b></code> if incoming user has insufficient quote coins
+in the case of a filling against an ask, otherwise <code><b>false</b></code>
 * <code>u64</code>: <code>size_left</code> if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code> or if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>
 and user has enough quote coins available to match against a
 target ask, otherwise the max number of base coin parcels that

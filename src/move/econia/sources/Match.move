@@ -73,11 +73,11 @@ module Econia::Match {
         exists_book,
         cancel_position,
         FriendCap as BookCap,
-        init_traverse_fill,
         n_asks,
         n_bids,
         scale_factor,
         refresh_extreme_order_id,
+        traverse_init_fill,
         traverse_pop_fill
     };
 
@@ -317,7 +317,7 @@ module Econia::Match {
         // an ask
         let (target_id, target_addr, target_p_f, target_c_i, filled, exact,
              insufficient_quote) =
-            init_traverse_fill<B, Q, E>(
+            traverse_init_fill<B, Q, E>(
                 host, addr, side, requested_size, quote_available, book_cap);
         loop { // Begin traversal loop
             // Update counter for number of base parcels filled

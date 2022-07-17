@@ -351,7 +351,7 @@ of iterated traversal
     // an ask
     <b>let</b> (target_id, target_addr, target_p_f, target_c_i, filled, exact,
          insufficient_quote) =
-        init_traverse_fill&lt;B, Q, E&gt;(
+        traverse_init_fill&lt;B, Q, E&gt;(
             host, addr, side, requested_size, quote_available, book_cap);
     <b>loop</b> { // Begin traversal <b>loop</b>
         // Update counter for number of base parcels filled

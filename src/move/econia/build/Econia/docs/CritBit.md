@@ -65,7 +65,7 @@ inner (<code><a href="CritBit.md#0xc0deb00c_CritBit_I">I</a></code>) and outer (
 nodes that have exactly one child. Outer nodes store a key-value
 pair with a 128-bit integer as a key (<code><a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>.k</code>), and an arbitrary value
 of generic type (<code><a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>.v</code>). Inner nodes do not store a key, but rather,
-an 8-bit integer (<code><a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>.c</code>) indicating the most significant critical
+an 8-bit integer (<code><a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>.c</code>) indicating the most-significant critical
 bit (crit-bit) of divergence between keys located within the node's
 two subtrees: keys in the node's left subtree are unset at the
 critical bit, while keys in the node's right subtree are set at the

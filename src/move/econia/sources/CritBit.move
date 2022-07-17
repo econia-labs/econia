@@ -40,7 +40,7 @@
 /// nodes that have exactly one child. Outer nodes store a key-value
 /// pair with a 128-bit integer as a key (`O.k`), and an arbitrary value
 /// of generic type (`O.v`). Inner nodes do not store a key, but rather,
-/// an 8-bit integer (`I.c`) indicating the most significant critical
+/// an 8-bit integer (`I.c`) indicating the most-significant critical
 /// bit (crit-bit) of divergence between keys located within the node's
 /// two subtrees: keys in the node's left subtree are unset at the
 /// critical bit, while keys in the node's right subtree are set at the

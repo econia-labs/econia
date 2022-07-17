@@ -111,6 +111,11 @@ module Econia::Match {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    use AptosFramework::Account::{
+        increment_sequence_number
+    };
+
+    #[test_only]
     use Econia::Book::{
         check_extreme_order_id,
         check_position,
@@ -1947,6 +1952,60 @@ module Econia::Match {
         let extreme_order_id =
             check_extreme_order_id<BCT, QCT, E1>(@Econia, side);
         assert!(extreme_order_id == id_3, 0); // Assert correct value
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    #[expected_failure(abort_code = 2)]
+    /// Verify no funds routed when no positions on book
+    public(script) fun no_positions(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        // Define market order size that completely clears out book
+        let market_order_size =
+            USER_1_ASK_SIZE + USER_2_ASK_SIZE + USER_3_ASK_SIZE;
+        // Calculate user 0's base coins after clearing book
+        let user_0_end_base = USER_0_START_BASE +
+            SCALE_FACTOR * market_order_size;
+        // Calculate quote coins filled
+        let quote_filled = USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE +
+            USER_3_ASK_PRICE * USER_3_ASK_SIZE;
+        // Calculate user 0's quote coins after clearing book
+        let user_0_end_quote = USER_0_START_QUOTE - quote_filled;
+        // Initialize market with positions to be completely cleared
+        init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Fill the market order of given size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, USER_0_START_QUOTE);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
+        // Update user 0 sequence counter so can place another order
+        increment_sequence_number(@TestUser);
+        // Try submitting another market order of same size
+        submit_market_buy<BCT, QCT, E1>(user_0, @Econia,
+            market_order_size, USER_0_START_QUOTE);
+        // Assert collateral field values unchanged
+        assert!(u_0_b_coins == user_0_end_base, 0);
+        assert!(u_0_b_available == user_0_end_base, 0);
+        assert!(u_0_q_coins == user_0_end_quote, 0);
+        assert!(u_0_q_available == user_0_end_quote, 0);
     }
 
     #[test(

@@ -29,7 +29,7 @@
 /// # Cyclical dependency avoidance
 ///
 /// Capabilities can also be used to avoid cyclical dependencies:
-/// rather than having two modules try and `use` each other, all
+/// rather than having two modules try and `use` each other, core
 /// functionality can be aggregated in one module, with getters and
 /// setters used in another module. Such is the relationship between
 /// `Econia::Match` and `Econia::User`, via `Econia::Orders::FriendCap`.

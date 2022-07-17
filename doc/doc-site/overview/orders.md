@@ -59,5 +59,5 @@ This is updated, along with a user's order collateral container ([`Econia::User:
 
 ## Matching engine
 
-When a user submits a market buy or sell, Econia's matching engine ([`Match.move`](../../src/move/econia/sources/Match.move)) loops over positions on the order book, routes funds accordingly between users, and updates the available collateral values for the submitting user.
+When a user submits a market buy or sell, Econia's matching engine ([`Match.move`](../../../src/move/econia/sources/Match.move)) loops over positions on the order book, routes funds accordingly between users, and updates the available collateral values for the submitting user.
 If there is not enough depth on the book or, in the case of a market buy, if the user runs out of quote coins before their requested order size is filled, then the matching engine simply stops attempting to fill the market order.

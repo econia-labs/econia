@@ -3,6 +3,7 @@
 Define all numbers/strings, etc. here so code has no unnamed values
 """
 
+from atexit import register
 from types import SimpleNamespace
 
 account_fields = SimpleNamespace(
@@ -54,6 +55,17 @@ econia_modules = SimpleNamespace(
         structs = SimpleNamespace(
             FC = 'FC'
         ),
+    ),
+    Coins = SimpleNamespace(
+        name = 'Coins',
+        script_functions = SimpleNamespace(
+            init_coin_types = 'init_coin_types',
+            mint_to = 'mint_to'
+        ),
+        structs = SimpleNamespace(
+            BCT = 'BCT',
+            QCT = 'QCT',
+        )
     ),
     CritBit = SimpleNamespace(
         name = 'CritBit'
@@ -113,6 +125,9 @@ econia_module_publish_order = [
         econia_modules.User.name,
         econia_modules.Match.name,
     ],
+    [
+        econia_modules.Coins.name
+    ],
 ]
 """
 Order to publish Move modules bytecode in, with sublists indicating
@@ -161,14 +176,17 @@ max_address_length = SimpleNamespace(
 
 member_names = SimpleNamespace(
     Balance = 'Balance',
-    transfer = 'transfer'
+    transfer = 'transfer',
+    register = 'register',
+    CoinStore = 'CoinStore'
 )
 """Move module member names"""
 
 module_names = SimpleNamespace(
     TestCoin = 'TestCoin',
+    Coin = 'Coin'
 )
-"""Move module names"""
+"""Move module names, non-Econia"""
 
 msg_sig_start_byte = 2
 """

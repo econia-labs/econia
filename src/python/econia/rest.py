@@ -863,49 +863,6 @@ class Client:
                 return resource[r_fields.data]
         return None
 
-    def init_econia(
-        self,
-        econia: Account
-    ) -> str:
-        """Initialize Econia post-publication
-
-        Parameters
-        ----------
-        econia: econia.account.Account
-            Signing account of Econia
-        """
-        init_func = ems.Init.script_functions.init_econia
-        return self.run_script(
-            econia,
-            [econia.address(), ems.Init.name, init_func]
-        )
-
-    def init_structs(
-        self,
-        econia_address: str,
-    ) -> Optional[Dict[str, Any]]:
-        """Return struct resource data from Econia initialization
-
-        Parameters
-        ----------
-        econia_address: str
-            Address of Econia account
-
-        Returns
-        -------
-        dict from str to Any, or None
-            Resource data
-        """
-        resources = [] # Initialize empty resources container
-        for (module, struct) in ( # Loop over init resource specifiers
-            (ems.Caps.name, ems.Caps.structs.FC),
-            (ems.Registry.name, ems.Registry.structs.MR),
-            (ems.Version.name, ems.Version.structs.MC)):
-            # Get resource, append to ongoing list
-            resources.append(self.account_resource(econia_address,
-            move_trio(econia_address, module, struct)))
-        return resources # Return list of resources
-
     def tx_meta(
         self,
         tx_hash: str
@@ -1073,6 +1030,31 @@ class Client:
             signer,
             [n_addrs.Std, modules.TestCoin, members.transfer],
             [hex_leader(recipient), str(amount)]
+        )
+
+    def register_coin_store(
+        self,
+        signer: Account,
+        coin_type: str,
+    ) -> str:
+        """Register signer with `AptosFramework::CoinStore` for coin
+
+        Parameters
+        ----------
+        signer : econia.account.Account
+            Signing account of sender
+        coin_type : str
+            A Move trio per :func:`~rest.move_trio`
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        return self.run_script(
+            signer,
+            [n_addrs.Std, modules.Coin, members.register],
+            type_args=[coin_type]
         )
 
 class EconiaClient(Client):
@@ -1263,6 +1245,24 @@ class EconiaClient(Client):
             [recipient, str(subs(apt, APT)), str(subs(usd, USD))]
         )
 
+    def init_coin_types(
+        self,
+        econia: Account
+    ) -> str:
+
+        """Initialize Econia post-publication
+
+        Parameters
+        ----------
+        econia: econia.account.Account
+            Signing account of Econia
+        """
+        init_func = ems.Coins.script_functions.init_coin_types
+        return self.run_script(
+            econia,
+            [econia.address(), ems.Coins.name, init_func]
+        )
+
     def init_account(
         self,
         signer: Account,
@@ -1286,6 +1286,49 @@ class EconiaClient(Client):
             signer,
             [econia_addr, ems.User.name, ems.User.members.init_account],
         )
+
+    def init_econia(
+        self,
+        econia: Account
+    ) -> str:
+        """Initialize Econia post-publication
+
+        Parameters
+        ----------
+        econia: econia.account.Account
+            Signing account of Econia
+        """
+        init_func = ems.Init.script_functions.init_econia
+        return self.run_script(
+            econia,
+            [econia.address(), ems.Init.name, init_func]
+        )
+
+    def core_structs(
+        self,
+        econia_address: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Return struct resource data from Econia initialization
+
+        Parameters
+        ----------
+        econia_address: str
+            Address of Econia account
+
+        Returns
+        -------
+        dict from str to Any, or None
+            Resource data
+        """
+        resources = [] # Initialize empty resources container
+        for (module, struct) in ( # Loop over init resource specifiers
+            (ems.Caps.name, ems.Caps.structs.FC),
+            (ems.Registry.name, ems.Registry.structs.MR),
+            (ems.Version.name, ems.Version.structs.MC)):
+            # Get resource, append to ongoing list
+            resources.append(self.account_resource(econia_address,
+            move_trio(econia_address, module, struct)))
+        return resources # Return list of resources
 
     def deposit_coins(
         self,
@@ -1508,4 +1551,36 @@ class EconiaClient(Client):
             econia,
             [econia.address(), ems.User.name, trigger],
             [addr, str(id), apt, usd]
+        )
+
+    def coins_mint_to(
+        self,
+        econia: Account,
+        user: str,
+        base_coins: int,
+        quote_coins: int
+    ) -> str:
+        """Mint test coins to specified account
+
+        Parameters
+        ----------
+        econia : econia.account.Account
+            The Econia account
+        user : str
+            Account to mint to
+        base_coins : int
+            Number of base coins to mint
+        quote_coins : int
+            Number of quote coins to mint
+
+        Returns
+        -------
+        str
+            Transaction hash
+        """
+        mint_func = ems.Coins.script_functions.mint_to
+        return self.run_script(
+            econia,
+            [econia.address(), ems.Coins.name, mint_func],
+            [user, str(base_coins), str(quote_coins)]
         )

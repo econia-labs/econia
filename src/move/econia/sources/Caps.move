@@ -217,4 +217,5 @@ module Econia::Caps {
     fun orders_f_c_failure() acquires FC {orders_f_c();}
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 }

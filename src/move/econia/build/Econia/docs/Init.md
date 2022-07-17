@@ -52,7 +52,7 @@ non-Econia account
 
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Init.md#0xc0deb00c_Init_init_econia">init_econia</a>(
-    account:&signer
+    account: &signer
 ) {
     // Verify called by Econia account
     <b>assert</b>!(s_a_o(account) == @Econia, <a href="Init.md#0xc0deb00c_Init_E_NOT_ECONIA">E_NOT_ECONIA</a>);

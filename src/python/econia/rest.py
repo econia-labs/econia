@@ -791,6 +791,32 @@ class Client:
         """
         return self.run_request([rest_path_elems.accounts, account_address])
 
+    def account_resource(
+        self,
+        address: str,
+        resource_type: str,
+    ) -> Dict[str, Any]:
+        """Return specified resource type
+
+        Parameters
+        ----------
+        address : str
+            Account address
+        resource_type: str
+            A Move struct type
+
+        Returns
+        -------
+        dict from str to Any
+            The requested account resource
+        """
+        return self.run_request([
+            rest_path_elems.accounts,
+            address,
+            rest_path_elems.resource,
+            resource_type
+        ])
+
     def account_resources(
         self,
         account_address: str
@@ -836,6 +862,49 @@ class Client:
             if resource[r_fields.type] == trio:
                 return resource[r_fields.data]
         return None
+
+    def init_econia(
+        self,
+        econia: Account
+    ) -> str:
+        """Initialize Econia post-publication
+
+        Parameters
+        ----------
+        econia: econia.account.Account
+            Signing account of Econia
+        """
+        init_func = ems.Init.script_functions.init_econia
+        return self.run_script(
+            econia,
+            [econia.address(), ems.Init.name, init_func]
+        )
+
+    def init_structs(
+        self,
+        econia_address: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Return struct resource data from Econia initialization
+
+        Parameters
+        ----------
+        econia_address: str
+            Address of Econia account
+
+        Returns
+        -------
+        dict from str to Any, or None
+            Resource data
+        """
+        resources = [] # Initialize empty resources container
+        for (module, struct) in ( # Loop over init resource specifiers
+            (ems.Caps.name, ems.Caps.structs.FC),
+            (ems.Registry.name, ems.Registry.structs.MR),
+            (ems.Version.name, ems.Version.structs.MC)):
+            # Get resource, append to ongoing list
+            resources.append(self.account_resource(econia_address,
+            move_trio(econia_address, module, struct)))
+        return resources # Return list of resources
 
     def tx_meta(
         self,

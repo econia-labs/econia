@@ -13,7 +13,7 @@ module Econia::Init {
     /// Initialize Econia core account resources, aborting if called by
     /// non-Econia account
     public(script) fun init_econia(
-        account:&signer
+        account: &signer
     ) {
         // Verify called by Econia account
         assert!(s_a_o(account) == @Econia, E_NOT_ECONIA);

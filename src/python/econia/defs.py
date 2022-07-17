@@ -50,7 +50,10 @@ econia_modules = SimpleNamespace(
         name = 'Book'
     ),
     Caps = SimpleNamespace(
-        name = 'Caps'
+        name = 'Caps',
+        structs = SimpleNamespace(
+            FC = 'FC'
+        ),
     ),
     CritBit = SimpleNamespace(
         name = 'CritBit'
@@ -59,7 +62,10 @@ econia_modules = SimpleNamespace(
         name = 'ID'
     ),
     Init = SimpleNamespace(
-        name = 'Init'
+        name = 'Init',
+        script_functions = SimpleNamespace(
+            init_econia = 'init_econia'
+        )
     ),
     Match = SimpleNamespace(
         name = 'Match'
@@ -68,13 +74,20 @@ econia_modules = SimpleNamespace(
         name = 'Orders'
     ),
     Registry = SimpleNamespace(
-        name = 'Registry'
+        name = 'Registry',
+        structs = SimpleNamespace(
+            MR = 'MR'
+        )
+
     ),
     User = SimpleNamespace(
         name = 'User'
     ),
     Version = SimpleNamespace(
-        name = 'Version'
+        name = 'Version',
+        structs = SimpleNamespace(
+            MC = 'MC'
+        )
     )
 )
 """Econia Move modules with nested member specifiers"""
@@ -211,6 +224,7 @@ rest_codes = SimpleNamespace(
 rest_path_elems = SimpleNamespace(
     accounts = 'accounts',
     mint = 'mint',
+    resource = 'resource',
     resources = 'resources',
     signing_message = 'signing_message',
     transactions = 'transactions',

@@ -80,20 +80,33 @@ econia_modules = SimpleNamespace(
         )
     ),
     Match = SimpleNamespace(
-        name = 'Match'
+        name = 'Match',
+        script_functions = SimpleNamespace(
+            submit_market_buy = 'submit_market_buy'
+        )
     ),
     Orders = SimpleNamespace(
         name = 'Orders'
     ),
     Registry = SimpleNamespace(
         name = 'Registry',
+        script_functions = SimpleNamespace(
+            register_market = 'register_market'
+        ),
         structs = SimpleNamespace(
+            E1 = 'E1',
             MR = 'MR'
         )
 
     ),
     User = SimpleNamespace(
-        name = 'User'
+        name = 'User',
+        script_functions = SimpleNamespace(
+            deposit = 'deposit',
+            init_containers = 'init_containers',
+            init_user = 'init_user',
+            submit_ask = 'submit_ask'
+        ),
     ),
     Version = SimpleNamespace(
         name = 'Version',

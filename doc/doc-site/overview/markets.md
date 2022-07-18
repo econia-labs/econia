@@ -50,7 +50,7 @@ In Econia, a "market" is uniquely specified by 3 type arguments, having the cano
     | 4 | 10000 |
     | ... | ... |
 
-In [`Econia::Registry`](../../src/move/econia/sources/Registry.move), scale exponents are defined as the types `E0`, `E1`, `E2`, ..., while scale factors are defined as the `u64` values `F0 = 0`, `F1 = 10`, `F2 = 100`, ..., with scale exponent type arguments used to identify markets, and scale factor `u64` values used to perform arithmetic operations pertaining to a given market.
+In [`Econia::Registry`](../../../src/move/econia/sources/Registry.move), scale exponents are defined as the types `E0`, `E1`, `E2`, ..., while scale factors are defined as the `u64` values `F0 = 0`, `F1 = 10`, `F2 = 100`, ..., with scale exponent type arguments used to identify markets, and scale factor `u64` values used to perform arithmetic operations pertaining to a given market.
 
 For a user to trade on a market, the market must first be "registered" by a "host", meaning that:
 
@@ -58,7 +58,7 @@ For a user to trade on a market, the market must first be "registered" by a "hos
 2. A registry is updated with an entry mapping from `<B, Q, E>` to the address of the corresponding host
 
 The registry is an `AptosFramework::IterableTable::IterableTable` that can only be initialized under the Econia account, and the registry must be initialized before hosts can register markets.
-A market can only be registered once, meaning that `<FOOAccount::FOOModule::FOO, BARAccount::BARModuleBAR, E0>`, for instance, can only ever be registered to one host, and markets can only be registered using scale exponents defined in [`Econia::Registry`](../../src/move/econia/sources/Registry.move) (e.g. `E0` actually denotes `Econia::Registry::E0`)
+A market can only be registered once, meaning that `<FOOAccount::FOOModule::FOO, BARAccount::BARModuleBAR, E0>`, for instance, can only ever be registered to one host, and markets can only be registered using scale exponents defined in [`Econia::Registry`](../../../src/move/econia/sources/Registry.move) (e.g. `E0` actually denotes `Econia::Registry::E0`)
 Notably, this does not prevent multiple markets from being initialized using the same trading symbol, because the Aptos VM treats `FOOAccount::FOOModule::FOO` and `ImposterAccount::ImposterModule::FOO` as different types, hence front-end applications are advised to exercise caution accordingly.
 
 ## Dynamic scaling

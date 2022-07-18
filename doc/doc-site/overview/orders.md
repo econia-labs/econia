@@ -54,8 +54,8 @@ Again, crit-bit trees keys in Econia are order IDs, and as described in the [`Ec
 
 ## Open orders
 
-As described in the [`Econia::Orders` module documentation](../../../src/move/econia/build/Econia/docs/Orders.md), each user also has an open orders container ([`Econia::Orders::OO`](../../../src/move/econia/build/Econia/docs/Orders.md`)), which stores the order ID and unfilled size of their outstanding asks and bids.
-This is updated, along with a user's order collateral container ([`Econia::User::OC`](../../../src/move/econia/build/Econia/docs/User.md)), each time a user places or cancels a limit order, places a market order, or has an open order filled by someone else.
+As described in the [`Econia::Orders` module documentation](../../../src/move/econia/build/Econia/docs/Orders.md), each user also has an open orders container ([`Econia::Orders::OO`](../../../src/move/econia/build/Econia/docs/Orders.md#0xc0deb00c_Orders_OO)), which stores the order ID and unfilled size of their outstanding asks and bids.
+This is updated, along with a user's order collateral container ([`Econia::User::OC`](../../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_OC)), each time a user places or cancels a limit order, places a market order, or has an open order filled by someone else.
 
 ## Matching engine
 

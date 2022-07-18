@@ -13,11 +13,11 @@ As described in the [`Econia::Version` module documentation](../../../src/move/e
 
 ## Sequence number
 
-Each user has a sequence number counter [`Econia::User::SC`](../../../src/move/econia/build/Econia/docs/User.md) that tracks the sequence number of their last monitored Econia transaction.
-When users submit certain transactions like a limit order, the value in their counter is compared with the current sequence number, and the transaction aborts if the current sequence number is not larger than the counter value (per [`Econia::User::update_s_c`](../../../src/move/econia/build/Econia/docs/User.md))
+Each user has a sequence number counter [`Econia::User::SC`](../../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_SC) that tracks the sequence number of their last monitored Econia transaction.
+When users submit certain transactions like a limit order, the value in their counter is compared with the current sequence number, and the transaction aborts if the current sequence number is not larger than the counter value (per [`Econia::User::update_s_c`](../../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_update_s_c))
 This is to prevent users from submitting orders on multiple markets within a single transaction, an operation that could potentially break parallelism.
 In future versions, this constraint may be lifted it cross-market transaction collisions can be prevented by other means.
 
 ## Core resource initialization
 
-Before trades can be placed, Econia's core account resources must be initialized per [`Econia::Init::init_econia](../../../src/move/econia/build/Econia/docs/Init.md#0xc0deb00c_Init_init_econia).
+Before trades can be placed, Econia's core account resources must be initialized per [`Econia::Init::init_econia`](../../../src/move/econia/build/Econia/docs/Init.md#0xc0deb00c_Init_init_econia).

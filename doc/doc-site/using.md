@@ -8,7 +8,7 @@ After Econia has been initialized, users may interact with it through the follow
 
 ## Public script functions
 
-Don't forget to read the [system overview](econia.dev/design-overview) for a quick explanation of how Econia works!
+Don't forget to read the [system overview](https://econia.dev/design-overview) for a quick explanation of how Econia works!
 
 ### User initialization
 

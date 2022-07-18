@@ -406,7 +406,7 @@ module Econia::Registry {
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Publish `MR` to Econia acount, aborting for all other accounts
+    /// Publish `MR` to Econia account, aborting for all other accounts
     /// or if `MR` already exists
     public(friend) fun init_registry(
         account: &signer

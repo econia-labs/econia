@@ -307,7 +307,7 @@
 /// the last loop, simply check that key count is greater than 0 to
 /// verify tree is not empty. Then re-initialize the remaining traversal
 /// counter, and this time use a value increment counter for a
-/// monotonically increasing multiple of 1. Then initialize sucessor
+/// monotonically increasing multiple of 1. Then initialize successor
 /// traversal:
 ///
 /// ```move
@@ -1382,7 +1382,7 @@ module Econia::CritBit {
         }
     }
 
-    /// Return the chield field index of the outer node containing the
+    /// Return the child field index of the outer node containing the
     /// minimum key in non-empty tree `cb`
     fun min_node_c_i<V>(
         cb: &CB<V>

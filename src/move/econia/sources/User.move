@@ -559,7 +559,7 @@ module Econia::User {
                 b_a_a<B, Q, E>(host, addr, id, price, size, &book_cap());
         } else { // If limit order is a bid
             let id = id_b(price, v_n); // Get corresponding order id
-            // Verify and add to user's open orders, storing amoung of
+            // Verify and add to user's open orders, storing amount of
             // quote coin subunits required to fill the trade
             let (_, q_c_subs) =
                 o_a_b<B, Q, E>(addr, id, price, size, &orders_cap());

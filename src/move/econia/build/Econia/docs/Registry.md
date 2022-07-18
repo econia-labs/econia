@@ -1146,7 +1146,7 @@ This module's name
 
 ## Function `init_registry`
 
-Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia acount, aborting for all other accounts
+Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econia account, aborting for all other accounts
 or if <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> already exists
 
 

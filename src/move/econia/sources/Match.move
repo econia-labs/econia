@@ -23,7 +23,7 @@
 /// * An "incoming order" is the market order filling against positions
 ///   on the book
 /// * A "target position" is the position on the book being filled
-///   during one fillling iteration of traversal along the tree
+///   during one filling iteration of traversal along the tree
 /// * A "partial fill" is one where the target position still has a
 ///   nonzero size after the fill
 /// * An "exact fill" is one where the target position and the incoming
@@ -52,7 +52,7 @@
 /// * `ask_clear_book()`
 ///
 /// As described in [sides](#sides), in the case of a market buy
-/// (filling against asks on the book), the following tests excercise
+/// (filling against asks on the book), the following tests exercise
 /// logic at sequential milestones of exhausting available quote coins
 /// along the process of clearing out the book:
 /// * `buy_exhaust_immediately()`
@@ -340,7 +340,7 @@ module Econia::Match {
             // Determine if target position completely filled
             let complete = ((exact || requested_size > 0) &&
                             !insufficient_quote);
-            // Route funds between conterparties, update open orders
+            // Route funds between counterparties, update open orders
             process_fill<B, Q, E>(target_addr, addr, side, target_id, filled,
                                   scale_factor, complete);
             // If incoming order unfilled and can traverse
@@ -424,7 +424,7 @@ module Econia::Match {
             assert!(quote_available >= max_quote_to_spend,
                 E_NOT_ENOUGH_COLLATERAL);
             // Fill a market order through the matching engine, storing
-            // numer of quote coins spent
+            // number of quote coins spent
             let (_, quote_coins_spent) = fill_market_order<B, Q, E>(
                 host, user_address, ASK, requested_size, max_quote_to_spend,
                 &book_cap());
@@ -439,7 +439,7 @@ module Econia::Match {
             assert!(base_available >= base_coins_required,
                 E_NOT_ENOUGH_COLLATERAL);
             // Fill a market order through the matching engine, storing
-            // numer of base coin subunits sold
+            // number of base coin subunits sold
             let (base_coins_sold, _) = fill_market_order<B, Q, E>(
                 host, user_address, BID, requested_size, 0, &book_cap());
             // Update count of available base coins

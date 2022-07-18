@@ -6,32 +6,31 @@
 User-facing trading functionality
 
 
-- [Module `0xc0deb00c::User`](#module-0xc0deb00cuser)
-  - [Resource `OC`](#resource-oc)
-  - [Resource `SC`](#resource-sc)
-  - [Constants](#constants)
-  - [Function `deposit`](#function-deposit)
-  - [Function `cancel_ask`](#function-cancel_ask)
-  - [Function `cancel_bid`](#function-cancel_bid)
-  - [Function `init_containers`](#function-init_containers)
-  - [Function `init_user`](#function-init_user)
-  - [Function `submit_ask`](#function-submit_ask)
-  - [Function `submit_bid`](#function-submit_bid)
-  - [Function `withdraw`](#function-withdraw)
-  - [Function `process_fill`](#function-process_fill)
-    - [Terminology](#terminology)
-    - [Parameters](#parameters)
-    - [Assumptions](#assumptions)
-  - [Function `dec_available_collateral`](#function-dec_available_collateral)
-  - [Function `exists_o_c`](#function-exists_o_c)
-  - [Function `get_available_collateral`](#function-get_available_collateral)
-  - [Function `update_s_c`](#function-update_s_c)
-  - [Function `cancel_order`](#function-cancel_order)
-    - [Parameters](#parameters-1)
-  - [Function `init_o_c`](#function-init_o_c)
-  - [Function `submit_limit_order`](#function-submit_limit_order)
-    - [Parameters](#parameters-2)
-    - [Abort conditions](#abort-conditions)
+-  [Resource `OC`](#0xc0deb00c_User_OC)
+-  [Resource `SC`](#0xc0deb00c_User_SC)
+-  [Constants](#@Constants_0)
+-  [Function `deposit`](#0xc0deb00c_User_deposit)
+-  [Function `cancel_ask`](#0xc0deb00c_User_cancel_ask)
+-  [Function `cancel_bid`](#0xc0deb00c_User_cancel_bid)
+-  [Function `init_containers`](#0xc0deb00c_User_init_containers)
+-  [Function `init_user`](#0xc0deb00c_User_init_user)
+-  [Function `submit_ask`](#0xc0deb00c_User_submit_ask)
+-  [Function `submit_bid`](#0xc0deb00c_User_submit_bid)
+-  [Function `withdraw`](#0xc0deb00c_User_withdraw)
+-  [Function `process_fill`](#0xc0deb00c_User_process_fill)
+    -  [Terminology](#@Terminology_1)
+    -  [Parameters](#@Parameters_2)
+    -  [Assumptions](#@Assumptions_3)
+-  [Function `dec_available_collateral`](#0xc0deb00c_User_dec_available_collateral)
+-  [Function `exists_o_c`](#0xc0deb00c_User_exists_o_c)
+-  [Function `get_available_collateral`](#0xc0deb00c_User_get_available_collateral)
+-  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
+-  [Function `cancel_order`](#0xc0deb00c_User_cancel_order)
+    -  [Parameters](#@Parameters_4)
+-  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
+-  [Function `submit_limit_order`](#0xc0deb00c_User_submit_limit_order)
+    -  [Parameters](#@Parameters_5)
+    -  [Abort conditions](#@Abort_conditions_6)
 
 
 <pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Account.md#0x1_Account">0x1::Account</a>;
@@ -958,7 +957,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
             b_a_a&lt;B, Q, E&gt;(host, addr, id, price, size, &book_cap());
     } <b>else</b> { // If limit order is a bid
         <b>let</b> id = id_b(price, v_n); // Get corresponding order id
-        // Verify and add <b>to</b> user's open orders, storing amoung of
+        // Verify and add <b>to</b> user's open orders, storing amount of
         // quote coin subunits required <b>to</b> fill the trade
         <b>let</b> (_, q_c_subs) =
             o_a_b&lt;B, Q, E&gt;(addr, id, price, size, &orders_cap());

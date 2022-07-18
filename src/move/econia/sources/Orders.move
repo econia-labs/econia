@@ -183,7 +183,7 @@ module Econia::Orders {
     /// checking that is already performed if execution has reached this
     /// step.
     ///
-    /// # Paremeters
+    /// # Parameters
     /// * `user_addr`: User's address
     /// * `side`: `ASK` or `BID`
     /// * `id`: Order ID (see `Econia::ID`)
@@ -225,7 +225,7 @@ module Econia::Orders {
     /// a user, and thus skips redundant error checking that is already
     /// performed when initially placing an order.
     ///
-    /// # Paremeters
+    /// # Parameters
     /// * `user_addr`: User's address
     /// * `side`: `ASK` or `BID`
     /// * `id`: Order ID (see `Econia::ID`)

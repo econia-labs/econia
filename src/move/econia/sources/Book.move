@@ -291,7 +291,7 @@ module Econia::Book {
         side: bool,
         _c: &FriendCap
     ) acquires OB {
-        // Borrow mutable reference to order book at addres
+        // Borrow mutable reference to order book at address
         let order_book = borrow_global_mut<OB<B, Q, E>>(addr);
         if (side == ASK) { // If refreshing for asks
             // Set min ask ID to default value if empty tree
@@ -504,7 +504,7 @@ module Econia::Book {
     ) {
         // Assume not a perfect match between incoming/target size
         let perfect_match = false;
-        // Asert incoming address is not same as target address
+        // Assert incoming address is not same as target address
         assert!(i_addr != t_p_r.a, E_SELF_MATCH);
         let filled: u64; // Declare fill amount
         // If incoming order size is less than target position size
@@ -621,7 +621,7 @@ module Econia::Book {
         let (target_id, target_position_ref_mut, target_parent_field,
              target_child_index): (u128, &mut P, u64, u64);
         if (init) { // If initializing traversal
-            // Store relevant values from tree traveral initialization
+            // Store relevant values from tree traversal initialization
             (target_id, target_position_ref_mut, target_parent_field,
                 target_child_index) = traverse_init_mut(tree, traversal_dir);
         } else { // If continuing traversal

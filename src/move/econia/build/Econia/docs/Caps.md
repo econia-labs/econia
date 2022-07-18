@@ -42,7 +42,7 @@ implemented purely in Move and to be coverage tested using the
 
 
 Capabilities can also be used to avoid cyclical dependencies:
-rather than having two modules try and <code><b>use</b></code> each other, all
+rather than having two modules try and <code><b>use</b></code> each other, core
 functionality can be aggregated in one module, with getters and
 setters used in another module. Such is the relationship between
 <code>Econia::Match</code> and <code>Econia::User</code>, via <code>Econia::Orders::FriendCap</code>.

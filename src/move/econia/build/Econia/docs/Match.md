@@ -36,7 +36,7 @@ willing to pay when submitting their order.
 * An "incoming order" is the market order filling against positions
 on the book
 * A "target position" is the position on the book being filled
-during one fillling iteration of traversal along the tree
+during one filling iteration of traversal along the tree
 * A "partial fill" is one where the target position still has a
 nonzero size after the fill
 * An "exact fill" is one where the target position and the incoming
@@ -69,7 +69,7 @@ whether via a market buy (filling against asks) or a market sell
 * <code>ask_clear_book()</code>
 
 As described in [sides](#sides), in the case of a market buy
-(filling against asks on the book), the following tests excercise
+(filling against asks on the book), the following tests exercise
 logic at sequential milestones of exhausting available quote coins
 along the process of clearing out the book:
 * <code>buy_exhaust_immediately()</code>
@@ -369,7 +369,7 @@ of iterated traversal
         // Determine <b>if</b> target position completely filled
         <b>let</b> complete = ((exact || requested_size &gt; 0) &&
                         !insufficient_quote);
-        // Route funds between conterparties, <b>update</b> open orders
+        // Route funds between counterparties, <b>update</b> open orders
         process_fill&lt;B, Q, E&gt;(target_addr, addr, side, target_id, filled,
                               scale_factor, complete);
         // If incoming order unfilled and can traverse
@@ -484,7 +484,7 @@ market sell)
         <b>assert</b>!(quote_available &gt;= max_quote_to_spend,
             <a href="Match.md#0xc0deb00c_Match_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Fill a market order through the matching engine, storing
-        // numer of quote coins spent
+        // number of quote coins spent
         <b>let</b> (_, quote_coins_spent) = <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(
             host, user_address, <a href="Match.md#0xc0deb00c_Match_ASK">ASK</a>, requested_size, max_quote_to_spend,
             &book_cap());
@@ -499,7 +499,7 @@ market sell)
         <b>assert</b>!(base_available &gt;= base_coins_required,
             <a href="Match.md#0xc0deb00c_Match_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Fill a market order through the matching engine, storing
-        // numer of base coin subunits sold
+        // number of base coin subunits sold
         <b>let</b> (base_coins_sold, _) = <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(
             host, user_address, <a href="Match.md#0xc0deb00c_Match_BID">BID</a>, requested_size, 0, &book_cap());
         // Update count of available base coins

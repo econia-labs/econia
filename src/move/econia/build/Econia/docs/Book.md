@@ -680,7 +680,7 @@ is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, the maximum bid I
     side: bool,
     _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ) <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
-    // Borrow mutable reference <b>to</b> order book at addres
+    // Borrow mutable reference <b>to</b> order book at <b>address</b>
     <b>let</b> order_book = <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(addr);
     <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) { // If refreshing for asks
         // Set <b>min</b> ask <a href="ID.md#0xc0deb00c_ID">ID</a> <b>to</b> default value <b>if</b> empty tree
@@ -1041,7 +1041,7 @@ target position only gets partially filled.
 ) {
     // Assume not a perfect match between incoming/target size
     <b>let</b> perfect_match = <b>false</b>;
-    // Asert incoming <b>address</b> is not same <b>as</b> target <b>address</b>
+    // Assert incoming <b>address</b> is not same <b>as</b> target <b>address</b>
     <b>assert</b>!(i_addr != t_p_r.a, <a href="Book.md#0xc0deb00c_Book_E_SELF_MATCH">E_SELF_MATCH</a>);
     <b>let</b> filled: u64; // Declare fill amount
     // If incoming order size is less than target position size
@@ -1198,7 +1198,7 @@ has at least one position in corresponding tree in case of
     <b>let</b> (target_id, target_position_ref_mut, target_parent_field,
          target_child_index): (u128, &<b>mut</b> <a href="Book.md#0xc0deb00c_Book_P">P</a>, u64, u64);
     <b>if</b> (init) { // If initializing traversal
-        // Store relevant values from tree traveral initialization
+        // Store relevant values from tree traversal initialization
         (target_id, target_position_ref_mut, target_parent_field,
             target_child_index) = traverse_init_mut(tree, traversal_dir);
     } <b>else</b> { // If continuing traversal

@@ -61,11 +61,11 @@ order, where a parcel contains $SF$ subunits.
 -  [Function `cancel_ask`](#0xc0deb00c_Orders_cancel_ask)
 -  [Function `cancel_bid`](#0xc0deb00c_Orders_cancel_bid)
 -  [Function `decrement_order_size`](#0xc0deb00c_Orders_decrement_order_size)
-    -  [Paremeters](#@Paremeters_4)
+    -  [Parameters](#@Parameters_4)
     -  [Assumptions](#@Assumptions_5)
 -  [Function `exists_orders`](#0xc0deb00c_Orders_exists_orders)
 -  [Function `remove_order`](#0xc0deb00c_Orders_remove_order)
-    -  [Paremeters](#@Paremeters_6)
+    -  [Parameters](#@Parameters_6)
     -  [Assumptions](#@Assumptions_7)
 -  [Function `get_friend_cap`](#0xc0deb00c_Orders_get_friend_cap)
 -  [Function `init_orders`](#0xc0deb00c_Orders_init_orders)
@@ -410,9 +410,9 @@ checking that is already performed if execution has reached this
 step.
 
 
-<a name="@Paremeters_4"></a>
+<a name="@Parameters_4"></a>
 
-### Paremeters
+### Parameters
 
 * <code>user_addr</code>: User's address
 * <code>side</code>: <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code> or <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>
@@ -500,9 +500,9 @@ a user, and thus skips redundant error checking that is already
 performed when initially placing an order.
 
 
-<a name="@Paremeters_6"></a>
+<a name="@Parameters_6"></a>
 
-### Paremeters
+### Parameters
 
 * <code>user_addr</code>: User's address
 * <code>side</code>: <code><a href="Orders.md#0xc0deb00c_Orders_ASK">ASK</a></code> or <code><a href="Orders.md#0xc0deb00c_Orders_BID">BID</a></code>

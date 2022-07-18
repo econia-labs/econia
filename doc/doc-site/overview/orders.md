@@ -21,7 +21,7 @@ As described in the [`Econia::ID` module documentation](../../../src/move/econia
 ## Order book
 
 As described in the [`Econia::Book` module documentation](../../../src/move/econia/build/Econia/docs/Book.md), an order book is represented by two crit-bit trees, one for asks and one for bids.
-Each tree maps from order ID to a corresponding position ([`Econia::Book::P`](../../../src/move/econia/build/Econia/docs/Book.md)) on the book, with each position specifying a scaled size (number of base coin parcels to be filled) and the address of the user holding the position.
+Each tree maps from order ID to a corresponding position ([`Econia::Book::P`](../../../src/move/econia/build/Econia/docs/Book.md#0xc0deb00c_Book_P)) on the book, with each position specifying a scaled size (number of base coin parcels to be filled) and the address of the user holding the position.
 Here, the order ID enables efficient traversal from position to position when filling market sells against the book (described in more detail in the module documentation), due to the underlying properties of crit-bit trees.
 
 As described in the [`Econia::Critbit` module documentation](../../../src/move/econia/build/Econia/docs/CritBit.md), crit-bit trees do not require complex rebalancing algorithms like AVL or red-black binary search trees, and they support rapid predecessor/successor iteration because elements are automatically sorted upon insertion.

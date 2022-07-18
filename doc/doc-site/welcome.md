@@ -4,7 +4,9 @@
 
 **e·co·ni·a** | /ə'känēə/
 
-Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the Aptos blockchain
+Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain CLOB for the Aptos blockchain
+
+## Devnet account
 
 As of 2022-07-17, Econia is initialized on the Aptos devnet at account [0xf538533414430323ccd2d8f8d7ce33819653cac5a7634a80cd2429ab904b6659](https://aptos-explorer.netlify.app/account/0xf538533414430323ccd2d8f8d7ce33819653cac5a7634a80cd2429ab904b6659)
 

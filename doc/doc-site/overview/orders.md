@@ -1,5 +1,13 @@
 # Orders
 
+- [Orders](#orders)
+  - [Order ID](#order-id)
+    - [Example ask](#example-ask)
+    - [Example ask](#example-ask-1)
+  - [Order book](#order-book)
+  - [Open orders](#open-orders)
+  - [Matching engine](#matching-engine)
+
 ## Order ID
 
 As described in the [`Econia::ID` module documentation](../../../src/move/econia/build/Econia/docs/ID.md), each limit order in Econia is assigned a `u128` order ID, with the most-significant ("first") 64 bits indicating the order price, and the least-significant ("last") 64 bits derived from the [Aptos database version number](https://aptos.dev/concepts/basics-txns-states/#versioned-database) at which the order was placed. In the case of an ask, the final 64 bits are simply the database version number itself, while in the case of a bid, the final 64 bits are the bitwise complement (each bit flipped) of the database version number.

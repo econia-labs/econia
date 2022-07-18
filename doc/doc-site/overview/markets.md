@@ -1,5 +1,13 @@
 # Market structure
 
+- [Market structure](#market-structure)
+  - [Trading pairs](#trading-pairs)
+  - [Scaling](#scaling)
+  - [Markets](#markets)
+  - [Dynamic scaling](#dynamic-scaling)
+  - [Social effects](#social-effects)
+  - [Registry lookup](#registry-lookup)
+
 ## Trading pairs
 
 Assets in Econia are represented as `AptosFramework::Coin::Coin<phantom CoinType>`, thus having a `u64` value and associated `CoinInfo` metadata, including `decimals` and `symbol` fields.

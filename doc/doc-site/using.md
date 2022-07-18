@@ -8,7 +8,7 @@ After Econia has been initialized, users may interact with it through the follow
 
 ## Public script functions
 
-Don't forget to read the [system overview](Design-overview) for a quick explanation of how Econia works!
+Don't forget to read the [system overview](econia.dev/design-overview) for a quick explanation of how Econia works!
 
 ### User initialization
 
@@ -16,4 +16,4 @@ Don't forget to read the [system overview](Design-overview) for a quick explanat
 
 ### Market registration
 
-[`Econia::Registry::register_market()](../../src/move/econia/build/Econia/docs/Init.md#0xc0deb00c_Registry_register_market) registers a market in the Econia registry, if it has not already been registered, and moves an order book to the account of the host who registered it
+[`Econia::Registry::register_market()`](../../src/move/econia/build/Econia/docs/Init.md#0xc0deb00c_Registry_register_market) registers a market in the Econia registry, if it has not already been registered, and moves an order book to the account of the host who registered it

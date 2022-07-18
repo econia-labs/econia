@@ -14,7 +14,7 @@ More specifically, Econia is a central limit order book (CLOB), a fundamental fi
 ## Econia is in development
 
 Econia is currently under development, and this is the first iteration that has shipped to the [Aptos](https://aptos.dev) blockchain.
-This version 1 minimum viable prototype (v1 MVP) introduces a key innovation for on-chain trading, Econia's atomic matching engine, which settles trades with finality during the transaction in which they were placed.
+This version 1 minimum viable prototype (v1 MVP) introduces a key innovation for on-chain trading, Econia's atomic matching engine, which settles market orders with finality during the transaction in which they were placed.
 That's right, Econia's v1 MVP implements the world's first on-chain atomic matching engine, and all builders are welcome to try it out for themselves!
 
 If you are a builder and you are interested in working with Econia, first take a look at the [design overview](https://econia.dev/design-overview), as this provides a technical breakdown that will provide some context for the system design.

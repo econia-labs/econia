@@ -32,15 +32,23 @@ module Econia::Book {
         min_key,
         pop,
         traverse_init_mut,
+        traverse_mut,
         traverse_pop_mut
     };
 
     use Econia::ID::{
-        price as id_p,
+        price as id_price,
     };
 
     use Std::Signer::{
         address_of
+    };
+
+    use Std::Vector::{
+        borrow as vector_borrow,
+        empty as empty_vector,
+        length as vector_length,
+        push_back as vector_push_back
     };
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -57,6 +65,11 @@ module Econia::Book {
     use Econia::ID::{
         id_a,
         id_b
+    };
+
+    #[test_only]
+    use Std::Vector::{
+        is_empty as vector_is_empty,
     };
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -92,6 +105,24 @@ module Econia::Book {
         a: address
     }
 
+    /// Anonymized position, used only for SDK-generative functions like
+    /// `get_orders()`
+    struct Order has drop {
+        /// Price from position's order ID
+        price: u64,
+        /// Number of base coin parcels in order
+        size: u64,
+    }
+
+    /// Price level, used only for SDK-generative functions like
+    /// `get_price_levels()`
+    struct PriceLevel has drop {
+        /// Price from position order IDs
+        price: u64,
+        /// Net position size for given price, in base coin parcels
+        size: u64
+    }
+
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -118,6 +149,8 @@ module Econia::Book {
     const E_NOT_ECONIA: u64 = 1;
     /// When both sides of a trade have same address
     const E_SELF_MATCH: u64 = 2;
+    /// When book does not exist at given address
+    const E_NO_BOOK: u64 = 3;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -407,7 +440,7 @@ module Econia::Book {
         // Borrow mutable reference to order book at host address
         let o_b = borrow_global_mut<OB<B, Q, E>>(host);
         // Get minimum ask price and maximum bid price on book
-        let (m_a_p, m_b_p) = (id_p(o_b.m_a), id_p(o_b.m_b));
+        let (m_a_p, m_b_p) = (id_price(o_b.m_a), id_price(o_b.m_b));
         if (side == ASK) { // If order is an ask
             if (price > m_b_p) { // If order does not cross spread
                 // Add corresponding position to ask tree
@@ -467,7 +500,7 @@ module Econia::Book {
         if (side == BID) return (false, size_left);
         // Otherwise incoming order fills against a target ask, so
         // calculate number of quote coins required for a complete fill
-        let target_price = id_p(target_id); // Get target price
+        let target_price = id_price(target_id); // Get target price
         // Get quote coins required to fill against target ask
         let quote_to_fill =
             // If size left on incoming order greater than or equal to
@@ -484,6 +517,92 @@ module Econia::Book {
             // Otherwise do not flag insufficient quote coins, and
             // confirm filling size left
             return (false, size_left)
+    }
+
+    /// Private indexing function for SDK generation: Return a vector
+    /// of `Order` sorted by price-time priority: if `side` is `ASK`,
+    /// first element in vector is the oldest ask at the minimum price,
+    /// and if `side` is `BID`, first element in vector is the oldest
+    /// ask at the maximum price
+    fun get_orders<B, Q, E>(
+        host_address: address,
+        side: bool
+    ): vector<Order>
+    acquires OB {
+        // Assert an order book exists at the given address
+        assert!(exists<OB<B, Q, E>>(host_address), E_NO_BOOK);
+        // Initialize empty vector of orders
+        let orders = empty_vector<Order>();
+        let (tree, traversal_dir) = if (side == ASK) // If an ask
+            // Define traversal tree as asks tree, successor iteration
+            (&mut borrow_global_mut<OB<B, Q, E>>(host_address).a, R) else
+            // Otherwise define tree as bids tree, predecessor iteration
+            (&mut borrow_global_mut<OB<B, Q, E>>(host_address).b, L);
+        // Get number of positions in tree
+        let n_positions = length(tree);
+        // If no positions in tree, return empty vector of orders
+        if (n_positions == 0) return orders;
+        // Calculate number of traversals still remaining
+        let remaining_traversals = n_positions - 1;
+        // Declare target position order ID, mutable reference to
+        // target position, target position tree node parent field,
+        // target position tree node child field index
+        let (target_id, target_position_ref_mut, target_parent_field, _) =
+            traverse_init_mut<P>(tree, traversal_dir);
+        loop { // Loop over all positions in tree
+            let price = id_price(target_id); // Get position price
+            let size = target_position_ref_mut.s; // Get position size
+            // Push corresponding order onto back of orders vector
+            vector_push_back<Order>(&mut orders, Order{price, size});
+            // Return orders vector if unable to traverse further
+            if (remaining_traversals == 0) return orders;
+            // Otherwise traverse to the next position in the tree
+            (target_id, target_position_ref_mut, target_parent_field, _) =
+                traverse_mut<P>(tree, target_id, target_parent_field,
+                    traversal_dir);
+            // Decrement number of remaining traversals
+            remaining_traversals = remaining_traversals - 1;
+        }
+    }
+
+    /// Private indexing function for SDK generation: aggregates result
+    /// of `get_orders()` into a vector of `PriceLevel`
+    fun get_price_levels(
+        orders: &vector<Order>
+    ): vector<PriceLevel> {
+        // Initialize empty vector of price levels
+        let price_levels = empty_vector<PriceLevel>();
+        // Get number of orders to process
+        let n_orders = vector_length<Order>(orders);
+        // If no orders, return empty vector of price levels
+        if (n_orders == 0) return price_levels;
+        // Initialize loop counter, price level price and size
+        let (order_index, level_price, level_size) = (0, 0, 0);
+        loop { // Loop over all orders
+            // Borrow immutable reference to order for current iteration
+            let order = vector_borrow<Order>(orders, order_index);
+            if (order.price != level_price) { // If on new price level
+                if (order_index > 0) { // If not on first order
+                    // Store the last price level in vector
+                    vector_push_back<PriceLevel>(&mut price_levels,
+                        PriceLevel{price: level_price, size: level_size});
+                };
+                // Start tracking a new price level at given order
+                (level_price, level_size) = (order.price, order.size)
+            } else { // If order has same price level as last checked
+                // Increment size of price level by order size
+                level_size = level_size + order.size;
+            };
+            order_index = order_index + 1; // Increment order index
+            // If have looped over all in  0-indexed vector
+            if (order_index == n_orders) { // If no more iterations left
+                // Store final price level in vector
+                vector_push_back<PriceLevel>(&mut price_levels,
+                    PriceLevel{price: level_price, size: level_size});
+                break // Break out of loop
+            };
+        }; // Now done looping over orders
+        price_levels // Return sorted vector of price levels
     }
 
     /// Compare incoming order `size` and address `i_addr` against
@@ -1156,6 +1275,101 @@ module Econia::Book {
         let book = borrow_global_mut<OB<BT, QT, ET>>(addr);
         // Assert min ask default value
         assert!(book.m_b == MAX_BID_DEFAULT, 5);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    fun test_get_orders_no_book():
+    vector<Order>
+    acquires OB {
+        get_orders<BT, QT, ET>(@Econia, ASK)
+    }
+
+    #[test(host = @Econia)]
+    /// Verify price level and order indexing functions
+    fun test_price_levels(
+        host: &signer
+    ) acquires OB {
+        // Initialize book with scale factor 1
+        init_book<BT, QT, ET>(host, 1, &FriendCap{});
+        // Get orders from empty tree
+        let orders = get_orders<BT, QT, ET>(@Econia, ASK);
+        // Assert empty orders vector returned
+        assert!(vector_is_empty<Order>(&orders), 0);
+        // Get price levels from empty orders vector
+        let price_levels = get_price_levels(&orders);
+        // Assert empty price levels vector returned
+        assert!(vector_is_empty<PriceLevel>(&price_levels), 0);
+        // Define a series of asks and add them to the book
+        let (ask_0_price, ask_0_size) = (10, 10);
+        let (ask_1_price, ask_1_size) = (10, 18);
+        let (ask_2_price, ask_2_size) = (12, 5);
+        let (ask_3_price, ask_3_size) = (14, 3);
+        let (ask_4_price, ask_4_size) = (14, 4);
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_a(ask_0_price, 0),
+            ask_0_price, ask_0_size, &FriendCap{});
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_a(ask_1_price, 1),
+            ask_1_price, ask_1_size, &FriendCap{});
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_a(ask_2_price, 2),
+            ask_2_price, ask_2_size, &FriendCap{});
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_a(ask_3_price, 3),
+            ask_3_price, ask_3_size, &FriendCap{});
+        add_ask<BT, QT, ET>(@Econia, @Econia, id_a(ask_4_price, 4),
+            ask_4_price, ask_4_size, &FriendCap{});
+        // Get vector of orders sorted by price-time priority
+        orders = get_orders<BT, QT, ET>(@Econia, ASK);
+        // Borrow all orders in vector and verify price, size
+        let order = vector_borrow<Order>(&orders, 0);
+        let (assert_price, assert_size) = (ask_0_price, ask_0_size);
+        assert!(order.price == assert_price && order.size == assert_size, 0);
+        order = vector_borrow<Order>(&orders, 1);
+        (assert_price, assert_size) = (ask_1_price, ask_1_size);
+        assert!(order.price == assert_price && order.size == assert_size, 0);
+        order = vector_borrow<Order>(&orders, 2);
+        (assert_price, assert_size) = (ask_2_price, ask_2_size);
+        assert!(order.price == assert_price && order.size == assert_size, 0);
+        order = vector_borrow<Order>(&orders, 3);
+        (assert_price, assert_size) = (ask_3_price, ask_3_size);
+        assert!(order.price == assert_price && order.size == assert_size, 0);
+        order = vector_borrow<Order>(&orders, 4);
+        (assert_price, assert_size) = (ask_4_price, ask_4_size);
+        assert!(order.price == assert_price && order.size == assert_size, 0);
+        // Generate price levels vector from orders
+        price_levels = get_price_levels(&orders);
+        // Assert price levels and sizes based on original values
+        let (level_price, level_size) = (ask_0_price, ask_0_size + ask_1_size);
+        let level = vector_borrow<PriceLevel>(&price_levels, 0);
+        assert!(level.price == level_price && level.size == level_size, 0);
+        (level_price, level_size) = (ask_2_price, ask_2_size);
+        level = vector_borrow<PriceLevel>(&price_levels, 1);
+        assert!(level.price == level_price && level.size == level_size, 0);
+        (level_price, level_size) = (ask_3_price, ask_3_size + ask_4_size);
+        level = vector_borrow<PriceLevel>(&price_levels, 2);
+        assert!(level.price == level_price && level.size == level_size, 0);
+        // Define a series of bids and add them to the book
+        let (bid_0_price, bid_0_size) = (9, 20);
+        let (bid_1_price, bid_1_size) = (8, 25);
+        add_bid<BT, QT, ET>(@Econia, @Econia, id_b(bid_0_price, 0),
+            bid_0_price, bid_0_size, &FriendCap{});
+        add_bid<BT, QT, ET>(@Econia, @Econia, id_b(bid_1_price, 1),
+            bid_1_price, bid_1_size, &FriendCap{});
+        // Get vector of orders sorted by price-time priority
+        orders = get_orders<BT, QT, ET>(@Econia, BID);
+        order = vector_borrow<Order>(&orders, 0);
+        (assert_price, assert_size) = (bid_0_price, bid_0_size);
+        assert!(order.price == assert_price && order.size == assert_size, 0);
+        order = vector_borrow<Order>(&orders, 1);
+        (assert_price, assert_size) = (bid_1_price, bid_1_size);
+        assert!(order.price == assert_price && order.size == assert_size, 0);
+        // Generate price levels vector from orders
+        price_levels = get_price_levels(&orders);
+        // Assert price levels and sizes based on original values
+        (level_price, level_size) = (bid_0_price, bid_0_size);
+        level = vector_borrow<PriceLevel>(&price_levels, 0);
+        assert!(level.price == level_price && level.size == level_size, 0);
+        (level_price, level_size) = (bid_1_price, bid_1_size);
+        level = vector_borrow<PriceLevel>(&price_levels, 1);
+        assert!(level.price == level_price && level.size == level_size, 0);
     }
 
     #[test(host = @Econia)]

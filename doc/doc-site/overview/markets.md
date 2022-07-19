@@ -102,4 +102,4 @@ The uninformed (or perhaps stubborn? idealistic?) user would almost certainly re
 
 The Econia registry, implemented as an `AptosFramework::IterableTable::IterableTable`, provides public functions for market registration but does not provide public lookup functions, so as to avoid resource contention that would otherwise likely result from concurrent reads and writes on-chain.
 Instead, registry data consumers are advised to inspect the Econia registry via the Aptos REST API or from a local node's state, then use the results to construct transactions accordingly.
-See [Wayne Culbreth's Table tutorial](https://medium.com/code-community-command/aptos-tutorial-episode-4-lets-table-this-for-now-part-1-2e465707f83d) for more information on API-based table lookups.
+See [Wayne Culbreth's Table tutorial](https://medium.com/code-community-command/aptos-tutorial-episode-4-lets-table-this-for-now-part-1-2e465707f83d) for more information on API-based table lookups, noting that following his pull request of a `MapTable` module to the `AptosFramework`, Econia will likely switch to using that data structure.

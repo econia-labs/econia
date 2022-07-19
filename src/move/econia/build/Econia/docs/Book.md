@@ -42,6 +42,8 @@ to be filled.
 -  [Struct `FriendCap`](#0xc0deb00c_Book_FriendCap)
 -  [Resource `OB`](#0xc0deb00c_Book_OB)
 -  [Struct `P`](#0xc0deb00c_Book_P)
+-  [Struct `Order`](#0xc0deb00c_Book_Order)
+-  [Struct `PriceLevel`](#0xc0deb00c_Book_PriceLevel)
 -  [Constants](#@Constants_3)
 -  [Function `add_ask`](#0xc0deb00c_Book_add_ask)
 -  [Function `add_bid`](#0xc0deb00c_Book_add_bid)
@@ -68,6 +70,8 @@ to be filled.
     -  [Terminology](#@Terminology_10)
     -  [Parameters](#@Parameters_11)
     -  [Returns](#@Returns_12)
+-  [Function `get_orders`](#0xc0deb00c_Book_get_orders)
+-  [Function `get_price_levels`](#0xc0deb00c_Book_get_price_levels)
 -  [Function `process_fill_scenarios`](#0xc0deb00c_Book_process_fill_scenarios)
     -  [Abort conditions](#@Abort_conditions_13)
 -  [Function `traverse_fill`](#0xc0deb00c_Book_traverse_fill)
@@ -79,6 +83,7 @@ to be filled.
 
 
 <pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
 <b>use</b> <a href="CritBit.md#0xc0deb00c_CritBit">0xc0deb00c::CritBit</a>;
 <b>use</b> <a href="ID.md#0xc0deb00c_ID">0xc0deb00c::ID</a>;
 </code></pre>
@@ -203,6 +208,76 @@ Position in an order book
 
 </details>
 
+<a name="0xc0deb00c_Book_Order"></a>
+
+## Struct `Order`
+
+Anonymized position, used only for SDK-generative functions like
+<code><a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>()</code>
+
+
+<pre><code><b>struct</b> <a href="Book.md#0xc0deb00c_Book_Order">Order</a> <b>has</b> drop
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Price from position's order ID
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ Number of base coin parcels in order
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_Book_PriceLevel"></a>
+
+## Struct `PriceLevel`
+
+Price level, used only for SDK-generative functions like
+<code><a href="Book.md#0xc0deb00c_Book_get_price_levels">get_price_levels</a>()</code>
+
+
+<pre><code><b>struct</b> <a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a> <b>has</b> drop
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Price from position order IDs
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ Net position size for given price, in base coin parcels
+</dd>
+</dl>
+
+
+</details>
+
 <a name="@Constants_3"></a>
 
 ## Constants
@@ -274,6 +349,16 @@ When account/address is not Econia
 
 
 <pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_Book_E_NO_BOOK"></a>
+
+When book does not exist at given address
+
+
+<pre><code><b>const</b> <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>: u64 = 3;
 </code></pre>
 
 
@@ -888,7 +973,7 @@ price of 9, however, does not encroach on the spread
     // Borrow mutable reference <b>to</b> order book at host <b>address</b>
     <b>let</b> o_b = <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host);
     // Get minimum ask price and maximum bid price on book
-    <b>let</b> (m_a_p, m_b_p) = (id_p(o_b.m_a), id_p(o_b.m_b));
+    <b>let</b> (m_a_p, m_b_p) = (id_price(o_b.m_a), id_price(o_b.m_b));
     <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) { // If order is an ask
         <b>if</b> (price &gt; m_b_p) { // If order does not cross spread
             // Add corresponding position <b>to</b> ask tree
@@ -904,7 +989,7 @@ price of 9, however, does not encroach on the spread
             <b>if</b> (price &gt; m_b_p) o_b.m_b = id;
         // Otherwise manage order that crosses spread
         } <b>else</b> <b>return</b> <b>true</b>; // Otherwise indicate crossed spread
-    }; // Order is on now on book, and did not cross spread
+    }; // <a href="Book.md#0xc0deb00c_Book_Order">Order</a> is on now on book, and did not cross spread
     <b>false</b> // Indicate spread not crossed
 }
 </code></pre>
@@ -980,7 +1065,7 @@ can be filled against the target ask
     <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_BID">BID</a>) <b>return</b> (<b>false</b>, size_left);
     // Otherwise incoming order fills against a target ask, so
     // calculate number of quote coins required for a complete fill
-    <b>let</b> target_price = id_p(target_id); // Get target price
+    <b>let</b> target_price = id_price(target_id); // Get target price
     // Get quote coins required <b>to</b> fill against target ask
     <b>let</b> quote_to_fill =
         // If size left on incoming order greater than or equal <b>to</b>
@@ -997,6 +1082,132 @@ can be filled against the target ask
         // Otherwise do not flag insufficient quote coins, and
         // confirm filling size left
         <b>return</b> (<b>false</b>, size_left)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_get_orders"></a>
+
+## Function `get_orders`
+
+Private indexing function for SDK generation: Return a vector
+of <code><a href="Book.md#0xc0deb00c_Book_Order">Order</a></code> sorted by price-time priority: if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_ASK">ASK</a></code>,
+first element in vector is the oldest ask at the minimum price,
+and if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a></code>, first element in vector is the oldest
+ask at the maximum price
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>&lt;B, Q, E&gt;(host_address: <b>address</b>, side: bool): vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Book::Order</a>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>&lt;B, Q, E&gt;(
+    host_address: <b>address</b>,
+    side: bool
+): vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;
+<b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
+    // Assert an order book <b>exists</b> at the given <b>address</b>
+    <b>assert</b>!(<b>exists</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host_address), <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>);
+    // Initialize empty vector of orders
+    <b>let</b> orders = empty_vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;();
+    <b>let</b> (tree, traversal_dir) = <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) // If an ask
+        // Define traversal tree <b>as</b> asks tree, successor iteration
+        (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host_address).a, <a href="Book.md#0xc0deb00c_Book_R">R</a>) <b>else</b>
+        // Otherwise define tree <b>as</b> bids tree, predecessor iteration
+        (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host_address).b, <a href="Book.md#0xc0deb00c_Book_L">L</a>);
+    // Get number of positions in tree
+    <b>let</b> n_positions = length(tree);
+    // If no positions in tree, <b>return</b> empty vector of orders
+    <b>if</b> (n_positions == 0) <b>return</b> orders;
+    // Calculate number of traversals still remaining
+    <b>let</b> remaining_traversals = n_positions - 1;
+    // Declare target position order <a href="ID.md#0xc0deb00c_ID">ID</a>, mutable reference <b>to</b>
+    // target position, target position tree node parent field,
+    // target position tree node child field index
+    <b>let</b> (target_id, target_position_ref_mut, target_parent_field, _) =
+        traverse_init_mut&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(tree, traversal_dir);
+    <b>loop</b> { // Loop over all positions in tree
+        <b>let</b> price = id_price(target_id); // Get position price
+        <b>let</b> size = target_position_ref_mut.s; // Get position size
+        // Push corresponding order onto back of orders vector
+        vector_push_back&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;(&<b>mut</b> orders, <a href="Book.md#0xc0deb00c_Book_Order">Order</a>{price, size});
+        // Return orders vector <b>if</b> unable <b>to</b> traverse further
+        <b>if</b> (remaining_traversals == 0) <b>return</b> orders;
+        // Otherwise traverse <b>to</b> the next position in the tree
+        (target_id, target_position_ref_mut, target_parent_field, _) =
+            traverse_mut&lt;<a href="Book.md#0xc0deb00c_Book_P">P</a>&gt;(tree, target_id, target_parent_field,
+                traversal_dir);
+        // Decrement number of remaining traversals
+        remaining_traversals = remaining_traversals - 1;
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_Book_get_price_levels"></a>
+
+## Function `get_price_levels`
+
+Private indexing function for SDK generation: aggregates result
+of <code><a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>()</code> into a vector of <code><a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a></code>
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_price_levels">get_price_levels</a>(orders: &vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Book::Order</a>&gt;): vector&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">Book::PriceLevel</a>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_price_levels">get_price_levels</a>(
+    orders: &vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;
+): vector&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt; {
+    // Initialize empty vector of price levels
+    <b>let</b> price_levels = empty_vector&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt;();
+    // Get number of orders <b>to</b> process
+    <b>let</b> n_orders = vector_length&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;(orders);
+    // If no orders, <b>return</b> empty vector of price levels
+    <b>if</b> (n_orders == 0) <b>return</b> price_levels;
+    // Initialize <b>loop</b> counter, price level price and size
+    <b>let</b> (order_index, level_price, level_size) = (0, 0, 0);
+    <b>loop</b> { // Loop over all orders
+        // Borrow immutable reference <b>to</b> order for current iteration
+        <b>let</b> order = vector_borrow&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;(orders, order_index);
+        <b>if</b> (order.price != level_price) { // If on new price level
+            <b>if</b> (order_index &gt; 0) { // If not on first order
+                // Store the last price level in vector
+                vector_push_back&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt;(&<b>mut</b> price_levels,
+                    <a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>{price: level_price, size: level_size});
+            };
+            // Start tracking a new price level at given order
+            (level_price, level_size) = (order.price, order.size)
+        } <b>else</b> { // If order <b>has</b> same price level <b>as</b> last checked
+            // Increment size of price level by order size
+            level_size = level_size + order.size;
+        };
+        order_index = order_index + 1; // Increment order index
+        // If have looped over all in  0-indexed vector
+        <b>if</b> (order_index == n_orders) { // If no more iterations left
+            // Store final price level in vector
+            vector_push_back&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt;(&<b>mut</b> price_levels,
+                <a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>{price: level_price, size: level_size});
+            <b>break</b> // Break out of <b>loop</b>
+        };
+    }; // Now done looping over orders
+    price_levels // Return sorted vector of price levels
 }
 </code></pre>
 

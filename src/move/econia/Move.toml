@@ -1,6 +1,6 @@
 [package]
 name = 'Econia'
-version = '0.1.0' # Per SemVer
+version = '1.0.0' # Per SemVer
 
 [addresses]
 AptosFramework = '0x1'
@@ -14,9 +14,4 @@ TestUser3 = '0x4567'
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = 'origin/main/HEAD'
-
-[dependencies.MoveStdlib]
-git = 'https://github.com/move-language/move'
-subdir = 'language/move-stdlib'
-rev = 'origin/HEAD'
+rev = 'origin/devnet'

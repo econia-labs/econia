@@ -83,14 +83,20 @@ See `ss.sh` within a given directory for its available options
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
     ```
 
-1. In the future, you may be able to get away with only installing the `aptos` CLI and the `move` CLI:
+1. In the future, you may be able to get away with only installing the `aptos` CLI:
 
     ```zsh
-    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
+    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos --branch devnet
+    ```
+
+    But at the time of the writing of this guide, the potentially-unnecessary steps below were performed too:
+
+1. Install the `move` CLI:
+
+    ```zsh
     cargo install --git https://github.com/diem/move move-cli --branch main
     ```
 
-    But at the time of the writing of this guide, the potentially-unnecessary steps below were performed too
 
 1. Install `aptos-core` and the `aptos` command line tool per the [official instructions](https://aptos.dev/tutorials/your-first-move-module#step-11-download-aptos-core):
 

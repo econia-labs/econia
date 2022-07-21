@@ -287,7 +287,10 @@ module Econia::Match {
 
     /// Submit either a market `BUY` or `SELL`, initializing account
     /// resources as needed, depositing as needed, and withdrawing all
-    /// available collateral after the swap
+    /// available collateral after the swap. Deposits required amounts
+    /// from `user`'s `AptosFramework` coin stores into their Econia
+    /// order collateral cointainer before the swap, executes the swap,
+    /// then withdraws all order collateral back to coin stores.
     ///
     /// # Parameters
     /// * `user`: User performing swap

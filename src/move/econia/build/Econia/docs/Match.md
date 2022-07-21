@@ -279,7 +279,10 @@ Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">su
 
 Submit either a market <code><a href="Match.md#0xc0deb00c_Match_BUY">BUY</a></code> or <code><a href="Match.md#0xc0deb00c_Match_SELL">SELL</a></code>, initializing account
 resources as needed, depositing as needed, and withdrawing all
-available collateral after the swap
+available collateral after the swap. Deposits required amounts
+from <code>user</code>'s <code>AptosFramework</code> coin stores into their Econia
+order collateral cointainer before the swap, executes the swap,
+then withdraws all order collateral back to coin stores.
 
 
 <a name="@Parameters_4"></a>

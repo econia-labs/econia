@@ -57,8 +57,8 @@ elif test $1 = p; then
 # For example `s ts -f coin`
 elif test $1 = t; then move package test $2 $3
 
-# Run aptos CLI test on all modules
-elif test $1 = ta; then aptos move test
+# Run aptos CLI test on all modules, rebuild documentation
+elif test $1 = ta; then aptos move test; move build --doc
 
 # Run tests with coverage, for given filter argument
 # For example `s tc critbit`

@@ -3,8 +3,6 @@ name = 'Econia'
 version = '1.0.1' # Per SemVer
 
 [addresses]
-aptos_framework = '0x1'
-Std = '0x1'
 Econia = '0xc0deb00c'
 TestUser = '0x1234'
 TestUser1 = '0x2345'

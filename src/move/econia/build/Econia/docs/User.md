@@ -22,9 +22,12 @@ User-facing trading functionality
     -  [Parameters](#@Parameters_2)
     -  [Assumptions](#@Assumptions_3)
 -  [Function `dec_available_collateral`](#0xc0deb00c_User_dec_available_collateral)
+-  [Function `deposit_internal`](#0xc0deb00c_User_deposit_internal)
 -  [Function `exists_o_c`](#0xc0deb00c_User_exists_o_c)
+-  [Function `exists_sequence_counter`](#0xc0deb00c_User_exists_sequence_counter)
 -  [Function `get_available_collateral`](#0xc0deb00c_User_get_available_collateral)
 -  [Function `update_s_c`](#0xc0deb00c_User_update_s_c)
+-  [Function `withdraw_internal`](#0xc0deb00c_User_withdraw_internal)
 -  [Function `cancel_order`](#0xc0deb00c_User_cancel_order)
     -  [Parameters](#@Parameters_4)
 -  [Function `init_o_c`](#0xc0deb00c_User_init_o_c)
@@ -260,7 +263,8 @@ When attempting to withdraw more than is available
 ## Function `deposit`
 
 Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <code>user</code>'s
-<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>AptosFramework::Coin::CoinStore</code>
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>AptosFramework::Coin::CoinStore</code>, incrementing
+sequence counter to prevent transaction collisions
 
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64)
@@ -277,24 +281,10 @@ Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <cod
     b_val: u64,
     q_val: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <b>let</b> addr = address_of(user); // Get user <b>address</b>
-    // Assert user <b>has</b> order collateral container
-    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
-    // Assert user actually attempting <b>to</b> deposit
-    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
-    // Borrow mutable reference <b>to</b> user collateral container
-    <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
-    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be deposited
-        // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
-        coin_merge&lt;B&gt;(&<b>mut</b> o_c.b_c, coin_withdraw&lt;B&gt;(user, b_val));
-        o_c.b_a = o_c.b_a + b_val; // Increment available base coin
-    };
-    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be deposited
-        // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
-        coin_merge&lt;Q&gt;(&<b>mut</b> o_c.q_c, coin_withdraw&lt;Q&gt;(user, q_val));
-        o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
-    };
-    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap()); // Update user sequence counter
+    <b>let</b> orders_cap = orders_cap(); // Get orders capability
+    // Deposit into user's account
+    <a href="User.md#0xc0deb00c_User_deposit_internal">deposit_internal</a>&lt;B, Q, E&gt;(user, b_val, q_val, &orders_cap);
+    <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap); // Update user sequence counter
 }
 </code></pre>
 
@@ -497,7 +487,8 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_
 ## Function `withdraw`
 
 Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <code>user</code>'s
-<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>AptosFramework::Coin::CoinStore</code>
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>AptosFramework::Coin::CoinStore</code>, incrementing
+sequence counter to prevent transaction collisions
 
 
 <pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw">withdraw</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64)
@@ -514,27 +505,8 @@ Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <co
     b_val: u64,
     q_val: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
-    <b>let</b> addr = address_of(user); // Get user <b>address</b>
-    // Assert user <b>has</b> order collateral container
-    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
-    // Assert user actually attempting <b>to</b> withdraw
-    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
-    // Borrow mutable reference <b>to</b> user collateral container
-    <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
-    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be withdrawn
-        // Assert not trying <b>to</b> withdraw more than available
-        <b>assert</b>!(!(b_val &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
-        // Withdraw from order collateral, deposit <b>to</b> coin store
-        c_d&lt;B&gt;(addr, coin_extract&lt;B&gt;(&<b>mut</b> o_c.b_c, b_val));
-        o_c.b_a = o_c.b_a - b_val; // Update available amount
-    };
-    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be withdrawn
-        // Assert not trying <b>to</b> withdraw more than available
-        <b>assert</b>!(!(q_val &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
-        // Withdraw from order collateral, deposit <b>to</b> coin store
-        c_d&lt;Q&gt;(addr, coin_extract&lt;Q&gt;(&<b>mut</b> o_c.q_c, q_val));
-        o_c.q_a = o_c.q_a - q_val; // Update available amount
-    };
+    // Execute <b>internal</b> withdraw
+    <a href="User.md#0xc0deb00c_User_withdraw_internal">withdraw_internal</a>&lt;B, Q, E&gt;(user, b_val, q_val, &orders_cap());
     <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap()); // Update user sequence counter
 }
 </code></pre>
@@ -685,6 +657,53 @@ relevant sufficiency validity checks
 
 </details>
 
+<a name="0xc0deb00c_User_deposit_internal"></a>
+
+## Function `deposit_internal`
+
+Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <code>user</code>'s
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>AptosFramework::Coin::CoinStore</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit_internal">deposit_internal</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit_internal">deposit_internal</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    b_val: u64,
+    q_val: u64,
+    _c: &OrdersCap
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a> {
+    <b>let</b> addr = address_of(user); // Get user <b>address</b>
+    // Assert user <b>has</b> order collateral container
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
+    // Assert user actually attempting <b>to</b> deposit
+    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
+    // Borrow mutable reference <b>to</b> user collateral container
+    <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
+    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be deposited
+        // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
+        coin_merge&lt;B&gt;(&<b>mut</b> o_c.b_c, coin_withdraw&lt;B&gt;(user, b_val));
+        o_c.b_a = o_c.b_a + b_val; // Increment available base coin
+    };
+    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be deposited
+        // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
+        coin_merge&lt;Q&gt;(&<b>mut</b> o_c.q_c, coin_withdraw&lt;Q&gt;(user, q_val));
+        o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
+    };
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_User_exists_o_c"></a>
 
 ## Function `exists_o_c`
@@ -707,6 +726,34 @@ address
     _c: &OrdersCap
 ): bool {
     <b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(a)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_exists_sequence_counter"></a>
+
+## Function `exists_sequence_counter`
+
+Return <code><b>true</b></code> if <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code> exists at address
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_exists_sequence_counter">exists_sequence_counter</a>(a: <b>address</b>, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_exists_sequence_counter">exists_sequence_counter</a>(
+    a: <b>address</b>,
+    _c: &OrdersCap
+): bool {
+    <b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_SC">SC</a>&gt;(a)
 }
 </code></pre>
 
@@ -781,6 +828,57 @@ invoking a dependency cycle
     // Assert new sequence number greater than that of counter
     <b>assert</b>!(s_n &gt; s_c.i, <a href="User.md#0xc0deb00c_User_E_INVALID_S_N">E_INVALID_S_N</a>);
     s_c.i = s_n; // Update counter <b>with</b> current sequence number
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_User_withdraw_internal"></a>
+
+## Function `withdraw_internal`
+
+Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <code>user</code>'s
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>AptosFramework::Coin::CoinStore</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw_internal">withdraw_internal</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw_internal">withdraw_internal</a>&lt;B, Q, E&gt;(
+    user: &signer,
+    b_val: u64,
+    q_val: u64,
+    _c: &OrdersCap
+) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a> {
+    <b>let</b> addr = address_of(user); // Get user <b>address</b>
+    // Assert user <b>has</b> order collateral container
+    <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
+    // Assert user actually attempting <b>to</b> withdraw
+    <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
+    // Borrow mutable reference <b>to</b> user collateral container
+    <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
+    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be withdrawn
+        // Assert not trying <b>to</b> withdraw more than available
+        <b>assert</b>!(!(b_val &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
+        // Withdraw from order collateral, deposit <b>to</b> coin store
+        c_d&lt;B&gt;(addr, coin_extract&lt;B&gt;(&<b>mut</b> o_c.b_c, b_val));
+        o_c.b_a = o_c.b_a - b_val; // Update available amount
+    };
+    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be withdrawn
+        // Assert not trying <b>to</b> withdraw more than available
+        <b>assert</b>!(!(q_val &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
+        // Withdraw from order collateral, deposit <b>to</b> coin store
+        c_d&lt;Q&gt;(addr, coin_extract&lt;Q&gt;(&<b>mut</b> o_c.q_c, q_val));
+        o_c.q_a = o_c.q_a - q_val; // Update available amount
+    };
 }
 </code></pre>
 

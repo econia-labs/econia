@@ -18,6 +18,9 @@
   - [Market orders](#market-orders)
     - [Market buy](#market-buy)
     - [Market sell](#market-sell)
+  - [Swap wrappers](#swap-wrappers)
+    - [Swap buy](#swap-buy)
+    - [Swap sell](#swap-sell)
 
 ## Core initialization
 
@@ -81,3 +84,13 @@ Must be executed for each market a user wishes to trade on.
 ### Market sell
 
 [`Econia::Match::submit_market_sell()`](../../src/move/econia/build/Econia/docs/Match.md#0xc0deb00c_Match_submit_market_sell) submits a market sell
+
+## Swap wrappers
+
+### Swap buy
+
+[`Econia::Match::swap_buy()`](../../src/move/econia/build/Econia/docs/Match.md#0xc0deb00c_Match_swap_buy) initializes relevant containers, executes a swap, and withdraws collateral
+
+### Swap sell
+
+[`Econia::Match::swap_sell()`](../../src/move/econia/build/Econia/docs/Match.md#0xc0deb00c_Match_swap_sell) initializes relevant containers, executes a swap, and withdraws collateral

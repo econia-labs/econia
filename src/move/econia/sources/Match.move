@@ -69,6 +69,11 @@ module Econia::Match {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use AptosFramework::Coin::{
+        is_account_registered as exists_coin_store,
+        register as register_coin_store
+    };
+
     use Econia::Book::{
         exists_book,
         cancel_position,
@@ -91,15 +96,22 @@ module Econia::Match {
     };
 
     use Econia::Orders::{
+        FriendCap as OrdersCap,
         scale_factor as orders_scale_factor
     };
 
     use Econia::User::{
         exists_o_c,
+        exists_sequence_counter,
+        exists_o_c as exists_order_collateral,
         dec_available_collateral,
+        deposit_internal as collateral_deposit,
         get_available_collateral,
+        init_containers,
+        init_user,
         process_fill,
-        update_s_c as update_user_seq_counter
+        update_s_c as update_user_seq_counter,
+        withdraw_internal as collateral_withdraw
     };
 
     use Std::Signer::{
@@ -112,7 +124,13 @@ module Econia::Match {
 
     #[test_only]
     use AptosFramework::Account::{
+        create_account,
         increment_sequence_number
+    };
+
+    #[test_only]
+    use AptosFramework::Coin::{
+        balance as coin_store_balance
     };
 
     #[test_only]
@@ -138,6 +156,8 @@ module Econia::Match {
     use Econia::Registry::{
         BCT,
         E1,
+        mint_bct_to,
+        mint_qct_to,
         QCT,
     };
 
@@ -250,6 +270,8 @@ module Econia::Match {
     ) {
         submit_market_order<B, Q, E>(
             user, host, BUY, requested_size, max_quote_to_spend);
+        // Update user sequence counter
+        update_user_seq_counter(user, &orders_cap());
     }
 
     /// Wrapped call to `submit_market_order()` for side `SELL`,
@@ -259,6 +281,90 @@ module Econia::Match {
         requested_size: u64,
     ) {
         submit_market_order<B, Q, E>(user, host, SELL, requested_size, 0);
+        // Update user sequence counter
+        update_user_seq_counter(user, &orders_cap());
+    }
+
+    /// Submit either a market `BUY` or `SELL`, initializing account
+    /// resources as needed, depositing as needed, and withdrawing all
+    /// available collateral after the swap
+    ///
+    /// # Parameters
+    /// * `user`: User performing swap
+    /// * `host`: Market host
+    /// * `side`: `BUY` or `SELL`
+    /// * `requested_size`: Requested number of base coin parcels to be
+    //    filled
+    /// * `max_quote_to_spend`: Maximum number of quote coins that can
+    ///   be spent in the case of a market buy (unused in case of a
+    ///   market sell)
+    /// * `orders_cap`: Mutable reference to `OrdersCap`
+    ///
+    /// # Considerations
+    /// * Designed to be a private function, but calls public script
+    ///   functions, so has to be itself a public script function. Hence
+    ///   the `&OrdersCap` to prevent SDKs from calling this version,
+    ///   ensuring they only call wrapped versions
+    public(script) fun swap<B, Q, E>(
+        user: &signer,
+        host: address,
+        side: bool,
+        requested_size: u64,
+        max_quote_to_spend: u64,
+        orders_cap: &OrdersCap
+    ) {
+        let user_addr = address_of(user); // Get user address
+        // Initialize user if they do not have a sequence counter
+        if (!exists_sequence_counter(user_addr, orders_cap)) init_user(user);
+        // Initialize containers for given market if user has none
+        if (!exists_order_collateral<B, Q ,E>(user_addr, orders_cap))
+            init_containers<B, Q, E>(user);
+        // If user does not have base coin store, register one
+        if (!exists_coin_store<B>(user_addr)) register_coin_store<B>(user);
+        // If user does not have quote coin store, register one
+        if (!exists_coin_store<Q>(user_addr)) register_coin_store<Q>(user);
+        // If a market buy, deposit max quote coins willing to spend
+        if (side == BUY) { // If a market buy
+            // Deposit max amount of quote coins willing to spend
+            collateral_deposit<B, Q, E>(
+                user, 0, max_quote_to_spend, orders_cap);
+        } else { // If a market sell
+            // Calculate base coin subunits needed for order
+            let base_coins_needed = requested_size *
+                orders_scale_factor<B, Q, E>(user_addr, orders_cap);
+            // Deposit base coins as collateral
+            collateral_deposit<B, Q, E>(
+                user, base_coins_needed, 0, orders_cap);
+        };
+        // Submit a market order with corresponding values
+        submit_market_order<B, Q, E>(user, host, side, requested_size,
+            max_quote_to_spend);
+        // Determine amount of availble collateral user has
+        let (base_collateral, quote_collateral) =
+            get_available_collateral<B, Q, E>(user_addr, orders_cap);
+        // Withdraw all available collateral back to user's coin stores
+        collateral_withdraw<B, Q, E>(
+            user, base_collateral, quote_collateral, orders_cap);
+    }
+
+    /// Wrapped call to `swap()` for `BUY`
+    public(script) fun swap_buy<B, Q, E>(
+        user: &signer,
+        host: address,
+        requested_size: u64,
+        max_quote_to_spend: u64,
+    ) {
+        swap<B, Q, E>(user, host, BUY, requested_size, max_quote_to_spend,
+            &orders_cap())
+    }
+
+    /// Wrapped call to `swap()` for `SELL`
+    public(script) fun swap_sell<B, Q, E>(
+        user: &signer,
+        host: address,
+        requested_size: u64,
+    ) {
+        swap<B, Q, E>(user, host, SELL, requested_size, 0, &orders_cap())
     }
 
     // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -379,7 +485,6 @@ module Econia::Match {
     /// * `user`: User submitting a limit order
     /// * `host`: The market host (See `Econia::Registry`)
     /// * `side`: `ASK` or `BID`
-    /// * `price`: Scaled integer price (see `Econia::ID`)
     /// * `requested_size`: Requested number of base coin parcels to be
     //    filled
     /// * `max_quote_to_spend`: Maximum number of quote coins that can
@@ -412,8 +517,6 @@ module Econia::Match {
         let user_address = address_of(user); // Get user address
         // Assert user has order collateral container
         assert!(exists_o_c<B, Q, E>(user_address, &orders_cap), E_NO_O_C);
-        // Update user sequence counter
-        update_user_seq_counter(user, &orders_cap);
         // Get available collateral for user on given market
         let (base_available, quote_available) =
             get_available_collateral<B, Q, E>(user_address, &orders_cap);
@@ -2139,6 +2242,202 @@ module Econia::Match {
         init_market(ASK, econia, user_0, user_1, user_2, user_3);
         // Attempt invalid market buy
         submit_market_buy<BCT, QCT, E1>(user_0, @TestUser, 500, 1);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify swap values for clearing out two positions on book
+    public(script) fun swap_buy_success(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        // Define number of parcels to buy in swap
+        let parcels_to_buy = USER_1_ASK_SIZE + USER_2_ASK_SIZE;
+        // Define max quote coins to spend
+        let max_quote_to_spend =
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base = USER_0_START_BASE + SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE);
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote = USER_0_START_QUOTE -
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE -
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE;
+        // Initialize market with positions
+        init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Withdraw required collateral into user's coin stores, since
+        // swap function takes it from there
+        collateral_withdraw<BCT, QCT, E1>(
+            user_0, 0, max_quote_to_spend, &orders_cap());
+        // Fill the market order of given size
+        swap_buy<BCT, QCT, E1>(user_0, @Econia,
+            parcels_to_buy, max_quote_to_spend);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == 0, 0);
+        assert!(u_0_b_available == 0, 0);
+        assert!(u_0_q_coins == 0, 0);
+        assert!(u_0_q_available == 0, 0);
+        // Assert correct balances in coin store
+        assert!(coin_store_balance<BCT>(@TestUser) == user_0_end_base, 0);
+        assert!(coin_store_balance<QCT>(@TestUser) == user_0_end_quote, 0);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3,
+        user_4 = @TestUser4
+    )]
+    /// Verify swap values for clearing out two positions on book, with
+    /// user who has only quote coin store initialized
+    public(script) fun swap_buy_success_init(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer,
+        user_4: &signer
+    ) {
+        let side = ASK; // Define book side market order fills against
+        // Define number of parcels to buy in swap
+        let parcels_to_buy = USER_1_ASK_SIZE + USER_2_ASK_SIZE;
+        // Define max quote coins to spend
+        let max_quote_to_spend =
+            USER_1_ASK_PRICE * USER_1_ASK_SIZE +
+            USER_2_ASK_PRICE * USER_2_ASK_SIZE;
+        // Calculate base coins user 4 ends with
+        let user_4_end_base = SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE);
+        // Initialize market with positions
+        init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Initialize Account resource under uninitialized user
+        create_account(@TestUser4);
+        // Register uninitialized user with quote coin store
+        register_coin_store<QCT>(user_4);
+        // Mint quote coins to user's coin store
+        mint_qct_to(@TestUser4, max_quote_to_spend);
+        // Fill the market order of given size
+        swap_buy<BCT, QCT, E1>(user_4, @Econia,
+            parcels_to_buy, max_quote_to_spend);
+        // Get interpreted collateral field values for user 4
+        let (u_4_b_available, u_4_b_coins, u_4_q_available, u_4_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser4);
+        // Assert correct collateral field values
+        assert!(u_4_b_coins == 0, 0);
+        assert!(u_4_b_available == 0, 0);
+        assert!(u_4_q_coins == 0, 0);
+        assert!(u_4_q_available == 0, 0);
+        // Assert correct balances in coin store
+        assert!(coin_store_balance<BCT>(@TestUser4) == user_4_end_base, 0);
+        assert!(coin_store_balance<QCT>(@TestUser4) == 0, 0);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3
+    )]
+    /// Verify swap values for clearing out two positions on book
+    public(script) fun swap_sell_success(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) {
+        let side = BID; // Define book side market order fills against
+        // Define number of parcels to sell in swap
+        let parcels_to_sell = USER_1_BID_SIZE + USER_2_BID_SIZE;
+        // Calculate base coins user 0 ends with
+        let user_0_end_base = USER_0_START_BASE - SCALE_FACTOR *
+            (USER_1_BID_SIZE + USER_2_BID_SIZE);
+        // Calculate quote coins user 0 ends with
+        let user_0_end_quote = USER_0_START_QUOTE +
+            USER_1_BID_PRICE * USER_1_BID_SIZE +
+            USER_2_BID_PRICE * USER_2_BID_SIZE;
+        // Initialize market with positions
+        init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Withdraw required collateral into user's coin stores, since
+        // swap function takes it from there
+        collateral_withdraw<BCT, QCT, E1>(
+            user_0, SCALE_FACTOR * parcels_to_sell, 0, &orders_cap());
+        // Fill the market order of given size
+        swap_sell<BCT, QCT, E1>(user_0, @Econia, parcels_to_sell);
+        // Get interpreted collateral field values for user 0
+        let (u_0_b_available, u_0_b_coins, u_0_q_available, u_0_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser);
+        // Assert correct collateral field values
+        assert!(u_0_b_coins == 0, 0);
+        assert!(u_0_b_available == 0, 0);
+        assert!(u_0_q_coins == 0, 0);
+        assert!(u_0_q_available == 0, 0);
+        // Assert correct balances in coin store
+        assert!(coin_store_balance<BCT>(@TestUser) == user_0_end_base, 0);
+        assert!(coin_store_balance<QCT>(@TestUser) == user_0_end_quote, 0);
+    }
+
+    #[test(
+        econia = @Econia,
+        user_0 = @TestUser,
+        user_1 = @TestUser1,
+        user_2 = @TestUser2,
+        user_3 = @TestUser3,
+        user_4 = @TestUser4
+    )]
+    /// Verify swap values for clearing out two positions on book, with
+    /// user who has only base coin store initialized
+    public(script) fun swap_sell_success_init(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer,
+        user_4: &signer
+    ) {
+        let side = BID; // Define book side market order fills against
+        // Define number of parcels to sell in swap
+        let parcels_to_sell = USER_1_BID_SIZE + USER_2_BID_SIZE;
+        // Calculate quote coins user 4 ends with
+        let user_4_end_quote = USER_1_BID_PRICE * USER_1_BID_SIZE +
+            USER_2_BID_PRICE * USER_2_BID_SIZE;
+        // Initialize market with positions
+        init_market(side, econia, user_0, user_1, user_2, user_3);
+        // Initialize Account resource under uninitialized user
+        create_account(@TestUser4);
+        // Register uninitialized user with base coin store
+        register_coin_store<BCT>(user_4);
+        // Mint base coins to user's coin store
+        mint_bct_to(@TestUser4, SCALE_FACTOR * parcels_to_sell);
+        // Fill the market order of given size
+        swap_sell<BCT, QCT, E1>(user_4, @Econia, parcels_to_sell);
+        // Get interpreted collateral field values for user 4
+        let (u_4_b_available, u_4_b_coins, u_4_q_available, u_4_q_coins) =
+                check_collateral<BCT, QCT, E1>(@TestUser4);
+        // Assert correct collateral field values
+        assert!(u_4_b_coins == 0, 0);
+        assert!(u_4_b_available == 0, 0);
+        assert!(u_4_q_coins == 0, 0);
+        assert!(u_4_q_available == 0, 0);
+        // Assert correct balances in coin store
+        assert!(coin_store_balance<BCT>(@TestUser4) == 0, 0);
+        assert!(coin_store_balance<QCT>(@TestUser4) == user_4_end_quote, 0);
     }
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

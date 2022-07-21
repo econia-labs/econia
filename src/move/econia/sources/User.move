@@ -185,30 +185,17 @@ module Econia::User {
     // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Deposit `b_val` base coin and `q_val` quote coin into `user`'s
-    /// `OC`, from their `AptosFramework::Coin::CoinStore`
+    /// `OC`, from their `AptosFramework::Coin::CoinStore`, incrementing
+    /// sequence counter to prevent transaction collisions
     public(script) fun deposit<B, Q, E>(
         user: &signer,
         b_val: u64,
         q_val: u64
     ) acquires OC, SC {
-        let addr = address_of(user); // Get user address
-        // Assert user has order collateral container
-        assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
-        // Assert user actually attempting to deposit
-        assert!(b_val > 0 || q_val > 0, E_NO_TRANSFER);
-        // Borrow mutable reference to user collateral container
-        let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
-        if (b_val > 0) { // If base coin to be deposited
-            // Withdraw from CoinStore, merge into OC
-            coin_merge<B>(&mut o_c.b_c, coin_withdraw<B>(user, b_val));
-            o_c.b_a = o_c.b_a + b_val; // Increment available base coin
-        };
-        if (q_val > 0) { // If quote coin to be deposited
-            // Withdraw from CoinStore, merge into OC
-            coin_merge<Q>(&mut o_c.q_c, coin_withdraw<Q>(user, q_val));
-            o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
-        };
-        update_s_c(user, &orders_cap()); // Update user sequence counter
+        let orders_cap = orders_cap(); // Get orders capability
+        // Deposit into user's account
+        deposit_internal<B, Q, E>(user, b_val, q_val, &orders_cap);
+        update_s_c(user, &orders_cap); // Update user sequence counter
     }
 
     /// Wrapped `cancel_order()` call for `ASK`
@@ -282,33 +269,15 @@ module Econia::User {
     }
 
     /// Withdraw `b_val` base coin and `q_val` quote coin from `user`'s
-    /// `OC`, into their `AptosFramework::Coin::CoinStore`
+    /// `OC`, into their `AptosFramework::Coin::CoinStore`, incrementing
+    /// sequence counter to prevent transaction collisions
     public(script) fun withdraw<B, Q, E>(
         user: &signer,
         b_val: u64,
         q_val: u64
     ) acquires OC, SC {
-        let addr = address_of(user); // Get user address
-        // Assert user has order collateral container
-        assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
-        // Assert user actually attempting to withdraw
-        assert!(b_val > 0 || q_val > 0, E_NO_TRANSFER);
-        // Borrow mutable reference to user collateral container
-        let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
-        if (b_val > 0) { // If base coin to be withdrawn
-            // Assert not trying to withdraw more than available
-            assert!(!(b_val > o_c.b_a), E_WITHDRAW_TOO_MUCH);
-            // Withdraw from order collateral, deposit to coin store
-            c_d<B>(addr, coin_extract<B>(&mut o_c.b_c, b_val));
-            o_c.b_a = o_c.b_a - b_val; // Update available amount
-        };
-        if (q_val > 0) { // If quote coin to be withdrawn
-            // Assert not trying to withdraw more than available
-            assert!(!(q_val > o_c.q_a), E_WITHDRAW_TOO_MUCH);
-            // Withdraw from order collateral, deposit to coin store
-            c_d<Q>(addr, coin_extract<Q>(&mut o_c.q_c, q_val));
-            o_c.q_a = o_c.q_a - q_val; // Update available amount
-        };
+        // Execute internal withdraw
+        withdraw_internal<B, Q, E>(user, b_val, q_val, &orders_cap());
         update_s_c(user, &orders_cap()); // Update user sequence counter
     }
 
@@ -410,6 +379,33 @@ module Econia::User {
         order_collateral.q_a = order_collateral.q_a - quote;
     }
 
+    /// Deposit `b_val` base coin and `q_val` quote coin into `user`'s
+    /// `OC`, from their `AptosFramework::Coin::CoinStore`
+    public fun deposit_internal<B, Q, E>(
+        user: &signer,
+        b_val: u64,
+        q_val: u64,
+        _c: &OrdersCap
+    ) acquires OC {
+        let addr = address_of(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
+        // Assert user actually attempting to deposit
+        assert!(b_val > 0 || q_val > 0, E_NO_TRANSFER);
+        // Borrow mutable reference to user collateral container
+        let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
+        if (b_val > 0) { // If base coin to be deposited
+            // Withdraw from CoinStore, merge into OC
+            coin_merge<B>(&mut o_c.b_c, coin_withdraw<B>(user, b_val));
+            o_c.b_a = o_c.b_a + b_val; // Increment available base coin
+        };
+        if (q_val > 0) { // If quote coin to be deposited
+            // Withdraw from CoinStore, merge into OC
+            coin_merge<Q>(&mut o_c.q_c, coin_withdraw<Q>(user, q_val));
+            o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
+        };
+    }
+
     /// Return `true` if specified order collateral container exists at
     /// address
     public fun exists_o_c<B, Q, E>(
@@ -417,6 +413,14 @@ module Econia::User {
         _c: &OrdersCap
     ): bool {
         exists<OC<B, Q, E>>(a)
+    }
+
+    /// Return `true` if `SC` exists at address
+    public fun exists_sequence_counter(
+        a: address,
+        _c: &OrdersCap
+    ): bool {
+        exists<SC>(a)
     }
 
     /// Return `OC.b_a` and `OC.q_a` for extant `OC` at `user` address
@@ -451,6 +455,37 @@ module Econia::User {
         // Assert new sequence number greater than that of counter
         assert!(s_n > s_c.i, E_INVALID_S_N);
         s_c.i = s_n; // Update counter with current sequence number
+    }
+
+    /// Withdraw `b_val` base coin and `q_val` quote coin from `user`'s
+    /// `OC`, into their `AptosFramework::Coin::CoinStore`
+    public fun withdraw_internal<B, Q, E>(
+        user: &signer,
+        b_val: u64,
+        q_val: u64,
+        _c: &OrdersCap
+    ) acquires OC {
+        let addr = address_of(user); // Get user address
+        // Assert user has order collateral container
+        assert!(exists<OC<B, Q, E>>(addr), E_NO_O_C);
+        // Assert user actually attempting to withdraw
+        assert!(b_val > 0 || q_val > 0, E_NO_TRANSFER);
+        // Borrow mutable reference to user collateral container
+        let o_c = borrow_global_mut<OC<B, Q, E>>(addr);
+        if (b_val > 0) { // If base coin to be withdrawn
+            // Assert not trying to withdraw more than available
+            assert!(!(b_val > o_c.b_a), E_WITHDRAW_TOO_MUCH);
+            // Withdraw from order collateral, deposit to coin store
+            c_d<B>(addr, coin_extract<B>(&mut o_c.b_c, b_val));
+            o_c.b_a = o_c.b_a - b_val; // Update available amount
+        };
+        if (q_val > 0) { // If quote coin to be withdrawn
+            // Assert not trying to withdraw more than available
+            assert!(!(q_val > o_c.q_a), E_WITHDRAW_TOO_MUCH);
+            // Withdraw from order collateral, deposit to coin store
+            c_d<Q>(addr, coin_extract<Q>(&mut o_c.q_c, q_val));
+            o_c.q_a = o_c.q_a - q_val; // Update available amount
+        };
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -769,12 +804,17 @@ module Econia::User {
         deposit<BCT, QCT, E0>(user, 0, 0); // Attempt invalid deposit
     }
 
-    #[test(user = @TestUser)]
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for no order collateral container initialized
     public(script) fun deposit_failure_no_o_c(
+        econia: &signer,
         user: &signer
     ) acquires OC, SC {
+        init_econia(econia); // Initialize Econia core resources
         deposit<BCT, QCT, E0>(user, 1, 2); // Attempt invalid deposit
     }
 
@@ -1473,7 +1513,7 @@ module Econia::User {
         user = @TestUser
     )]
     #[expected_failure(abort_code = 8)]
-    /// Verify failure for attempting to withdraw to many base coins
+    /// Verify failure for attempting to withdraw too many base coins
     public(script) fun withdraw_failure_excess_bct(
         econia: &signer,
         user: &signer
@@ -1492,7 +1532,7 @@ module Econia::User {
         user = @TestUser
     )]
     #[expected_failure(abort_code = 8)]
-    /// Verify failure for attempting to withdraw to many quote coins
+    /// Verify failure for attempting to withdraw too many quote coins
     public(script) fun withdraw_failure_excess_qct(
         econia: &signer,
         user: &signer
@@ -1506,12 +1546,17 @@ module Econia::User {
         withdraw<BCT, QCT, E0>(user, 0, 51); // Attempt invalid withdraw
     }
 
-    #[test(user = @TestUser)]
+    #[test(
+        econia = @Econia,
+        user = @TestUser
+    )]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for no order collateral container initialized
     public(script) fun withdraw_failure_no_o_c(
+        econia: &signer,
         user: &signer
     ) acquires OC, SC {
+        init_econia(econia); // Initialize Econia core resources
         withdraw<BCT, QCT, E0>(user, 1, 2); // Attempt invalid withdraw
     }
 

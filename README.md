@@ -15,8 +15,8 @@
 - [Econia](#econia)
   - [Developer setup](#developer-setup)
     - [Shell scripts](#shell-scripts)
-    - [Installing dependencies](#installing-dependencies)
-    - [Conda](#conda)
+    - [Command line setup](#command-line-setup)
+    - [Using the Python package](#using-the-python-package)
   - [Major filetypes](#major-filetypes)
     - [Jupyter](#jupyter)
     - [Markdown](#markdown)
@@ -45,7 +45,33 @@ Hello, Econia developer
 
 See `ss.sh` within a given directory for its available options
 
-### Installing dependencies
+### Command line setup
+
+1. First install the `aptos` CLI:
+
+    ```zsh
+    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
+    ```
+
+1. Now you should be able to run all Move tests:
+
+    ```zsh
+    # From inside Econia repository root directory
+    s mp # Navigate to Move package
+    s ta # Run all tests
+    INCLUDING DEPENDENCY AptosFramework
+    INCLUDING DEPENDENCY MoveStdlib
+    BUILDING Econia
+    Running Move unit tests
+    ...
+    ```
+
+### Using the Python package
+
+Econia comes with a Python package for assorted build scripting functionality.
+The Python package is not as actively maintained as the Move code, and is mostly used for publishing bytecode to the blockchain, simple on-chain tests, etc.
+It is not necessary to use the Python package to develop Econia, but not all of the shell scripts will work without it.
+To install the `econia` Python package:
 
 1. First install Homebrew:
 
@@ -53,13 +79,13 @@ See `ss.sh` within a given directory for its available options
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     ```
 
-1. Then `brew install` Miniconda:
+2. Then `brew install` Miniconda:
 
     ```zsh
     brew install miniconda # Python package management
     ```
 
-1. Create the `econia` conda environment with the `Econia` Python package inside:
+3. Create the `econia` conda environment with the `Econia` Python package inside:
 
     ```zsh
     conda env create -f env/conda.yml
@@ -73,7 +99,7 @@ See `ss.sh` within a given directory for its available options
     pip install -e src/python
     ```
 
-1. Create the secrets directories as needed:
+4. Create the secrets directories as needed:
 
     ```zsh
     if ! test -d .secrets; then mkdir .secrets; fi
@@ -82,54 +108,6 @@ See `ss.sh` within a given directory for its available options
     ```zsh
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
     ```
-
-1. In the future, you may be able to get away with only installing the `aptos` CLI:
-
-    ```zsh
-    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos --branch devnet
-    ```
-
-    But at the time of the writing of this guide, the potentially-unnecessary steps below were performed too:
-
-1. Install the `move` CLI:
-
-    ```zsh
-    cargo install --git https://github.com/diem/move move-cli --branch main
-    ```
-
-
-1. Install `aptos-core` and the `aptos` command line tool per the [official instructions](https://aptos.dev/tutorials/your-first-move-module#step-11-download-aptos-core):
-
-    ```zsh
-    # In a different directory
-    git clone https://github.com/aptos-labs/aptos-core.git
-    cd aptos-core
-    ./scripts/dev_setup.sh
-    source ~/.cargo/env
-    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
-    ```
-
-1. Install `diem` and `move` per the [official instructions](https://github.com/move-language/move/tree/main/language/documentation/tutorial#step-0-installation) (though the next step will install the `move` CLI and this can probably be skipped):
-
-    ```zsh
-    # In a different directory
-    git clone https://github.com/diem/diem.git
-    git clone https://github.com/diem/move.git
-    cd diem
-    ./scripts/dev_setup.sh -ypt
-    source ~/.profile
-    cd ..
-    cargo install --path diem/diem-move/df-cli
-    cargo install --path move/language/move-analyzer
-    ```
-
-1. Install the `move` command line tool per the [official instructions](https://github.com/diem/move/tree/main/language/tools/move-cli#installation):
-
-    ```zsh
-    cargo install --git https://github.com/diem/move move-cli --branch main
-    ```
-
-### Conda
 
 Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
 If using VS Code, select `econia` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
@@ -141,7 +119,7 @@ If using VS Code, select `econia` as the default Python interpreter, and the int
 (econia) econia % conda deactivate
 ```
 
-With the `econia` conda environment active, you can then build the documentation, explore the provided interactive Jupyter notebook archive, and run Move command line tools:
+With the `econia` conda environment active, you can then build the Python package documentation, explore the provided interactive Jupyter notebook archive, and run Move command line tools:
 
 ```zsh
 # Autobuild Sphinx documentation with realtime updates
@@ -157,7 +135,7 @@ With the `econia` conda environment active, you can then build the documentation
 ```zsh
 # Change directory to the Econia Move package
 # Move package has its own utility shell scripts
-(econia) % s mp
+(econia) % s p # Publish bytecode
 ```
 
 ## Major filetypes

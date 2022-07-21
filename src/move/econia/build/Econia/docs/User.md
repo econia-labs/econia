@@ -36,9 +36,9 @@ User-facing trading functionality
     -  [Abort conditions](#@Abort_conditions_6)
 
 
-<pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Account.md#0x1_Account">0x1::Account</a>;
-<b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
-<b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<pre><code><b>use</b> <a href="">0x1::account</a>;
+<b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
 <b>use</b> <a href="Caps.md#0xc0deb00c_Caps">0xc0deb00c::Caps</a>;
 <b>use</b> <a href="ID.md#0xc0deb00c_ID">0xc0deb00c::ID</a>;
@@ -73,7 +73,7 @@ Order collateral for a given market
  Indivisible subunits of base coins available to withdraw
 </dd>
 <dt>
-<code>b_c: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_Coin">Coin::Coin</a>&lt;B&gt;</code>
+<code>b_c: <a href="_Coin">coin::Coin</a>&lt;B&gt;</code>
 </dt>
 <dd>
  Base coins held as collateral
@@ -85,7 +85,7 @@ Order collateral for a given market
  Indivisible subunits of quote coins available to withdraw
 </dd>
 <dt>
-<code>q_c: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_Coin">Coin::Coin</a>&lt;Q&gt;</code>
+<code>q_c: <a href="_Coin">coin::Coin</a>&lt;Q&gt;</code>
 </dt>
 <dd>
  Quote coins held as collateral
@@ -263,11 +263,11 @@ When attempting to withdraw more than is available
 ## Function `deposit`
 
 Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <code>user</code>'s
-<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>AptosFramework::Coin::CoinStore</code>, incrementing
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>aptos_framework::Coin::CoinStore</code>, incrementing
 sequence counter to prevent transaction collisions
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, b_val: u64, q_val: u64)
 </code></pre>
 
 
@@ -276,13 +276,13 @@ sequence counter to prevent transaction collisions
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit">deposit</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     b_val: u64,
     q_val: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
     <b>let</b> orders_cap = orders_cap(); // Get orders capability
-    // Deposit into user's account
+    // Deposit into user's <a href="">account</a>
     <a href="User.md#0xc0deb00c_User_deposit_internal">deposit_internal</a>&lt;B, Q, E&gt;(user, b_val, q_val, &orders_cap);
     <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(user, &orders_cap); // Update user sequence counter
 }
@@ -299,7 +299,7 @@ sequence counter to prevent transaction collisions
 Wrapped <code><a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, id: u128)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, id: u128)
 </code></pre>
 
 
@@ -308,8 +308,8 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>()<
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_ask">cancel_ask</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     id: u128
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
@@ -328,7 +328,7 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>()<
 Wrapped <code><a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, id: u128)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, id: u128)
 </code></pre>
 
 
@@ -337,8 +337,8 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>()<
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_bid">cancel_bid</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     id: u128
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
@@ -360,7 +360,7 @@ with base coin type <code>B</code>, quote coin type <code>Q</code>, and scale ex
 initialized for market
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_init_containers">init_containers</a>&lt;B, Q, E&gt;(user: &signer)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_init_containers">init_containers</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -369,8 +369,8 @@ initialized for market
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_init_containers">init_containers</a>&lt;B, Q, E&gt;(
-    user: &signer
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_init_containers">init_containers</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>
 ) {
     <b>assert</b>!(r_i_r&lt;B, Q, E&gt;(), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>); // Assert market <b>exists</b>
     <b>let</b> user_addr = address_of(user); // Get user <b>address</b>
@@ -380,8 +380,8 @@ initialized for market
     <b>assert</b>!(!o_e_o&lt;B, Q, E&gt;(user_addr), <a href="User.md#0xc0deb00c_User_E_O_O_EXISTS">E_O_O_EXISTS</a>);
     // Pack empty collateral container
     <b>let</b> o_c = <a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;{b_c: c_z&lt;B&gt;(), b_a: 0, q_c: c_z&lt;Q&gt;(), q_a: 0};
-    <b>move_to</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user, o_c); // Move <b>to</b> user account
-    // Initialize empty open orders container under user account
+    <b>move_to</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user, o_c); // Move <b>to</b> user <a href="">account</a>
+    // Initialize empty open orders container under user <a href="">account</a>
     o_i_o&lt;B, Q, E&gt;(user, r_s_f&lt;E&gt;(), &orders_cap());
 }
 </code></pre>
@@ -398,7 +398,7 @@ Initialize an <code><a href="User.md#0xc0deb00c_User_SC">SC</a></code> with the 
 transaction, aborting if one already exists
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_init_user">init_user</a>(user: &signer)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_init_user">init_user</a>(user: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -407,8 +407,8 @@ transaction, aborting if one already exists
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_init_user">init_user</a>(
-    user: &signer
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_init_user">init_user</a>(
+    user: &<a href="">signer</a>
 ) {
     <b>let</b> user_addr = address_of(user); // Get user <b>address</b>
     // Assert user <b>has</b> not already initialized a sequence counter
@@ -429,7 +429,7 @@ transaction, aborting if one already exists
 Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_ASK">ASK</a></code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_ask">submit_ask</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, price: u64, size: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_ask">submit_ask</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, price: u64, size: u64)
 </code></pre>
 
 
@@ -438,8 +438,8 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_ask">submit_ask</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_ask">submit_ask</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     price: u64,
     size: u64
@@ -459,7 +459,7 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_
 Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>()</code> call for <code><a href="User.md#0xc0deb00c_User_BID">BID</a></code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_bid">submit_bid</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, price: u64, size: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_bid">submit_bid</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, price: u64, size: u64)
 </code></pre>
 
 
@@ -468,8 +468,8 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_bid">submit_bid</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_submit_bid">submit_bid</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     price: u64,
     size: u64
@@ -487,11 +487,11 @@ Wrapped <code><a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_
 ## Function `withdraw`
 
 Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <code>user</code>'s
-<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>AptosFramework::Coin::CoinStore</code>, incrementing
-sequence counter to prevent transaction collisions
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>aptos_framework::Coin::CoinStore</code>,
+incrementing sequence counter to prevent transaction collisions
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw">withdraw</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw">withdraw</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, b_val: u64, q_val: u64)
 </code></pre>
 
 
@@ -500,8 +500,8 @@ sequence counter to prevent transaction collisions
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw">withdraw</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw">withdraw</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     b_val: u64,
     q_val: u64
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a>, <a href="User.md#0xc0deb00c_User_SC">SC</a> {
@@ -586,11 +586,11 @@ specified ID on the specified side, of sufficient size
     <b>if</b> (complete) remove_order&lt;B, Q, E&gt;(target, side, id, &orders_cap) <b>else</b>
         // Else decrement their order size by the fill amount
         decrement_order_size&lt;B, Q, E&gt;(target, side, id, size, &orders_cap);
-    // Compute amount of base coin subunits <b>to</b> route
+    // Compute amount of base <a href="">coin</a> subunits <b>to</b> route
     <b>let</b> base_to_route = size * scale_factor;
-    // Compute amount of quote coin subunits <b>to</b> route
+    // Compute amount of quote <a href="">coin</a> subunits <b>to</b> route
     <b>let</b> quote_to_route = size * id_price(id);
-    // If target order is an ask, incoming user gets base coin from
+    // If target order is an ask, incoming user gets base <a href="">coin</a> from
     // target user
     <b>let</b> (base_to, base_from) = <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) (incoming, target) <b>else</b>
         (target, incoming); // Flip the polarity <b>if</b> a bid
@@ -602,15 +602,15 @@ specified ID on the specified side, of sufficient size
     <b>let</b> gets_base = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(base_to);
     // Merge base coins into receiving container
     coin_merge&lt;B&gt;(&<b>mut</b> gets_base.b_c, base_coins);
-    // Increment base coin recipient's available amount
+    // Increment base <a href="">coin</a> recipient's available amount
     gets_base.b_a = gets_base.b_a + base_to_route;
-    // Withdraw quote coins from base coin recipient
+    // Withdraw quote coins from base <a href="">coin</a> recipient
     <b>let</b> quote_coins = coin_extract&lt;Q&gt;(&<b>mut</b> gets_base.q_c, quote_to_route);
     // Get mutable reference <b>to</b> container getting quote coins
     <b>let</b> gets_quote = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(base_from);
     // Merge quote coins into receiving container
     coin_merge&lt;Q&gt;(&<b>mut</b> gets_quote.q_c, quote_coins);
-    // Increment quote coin recipient's available amount
+    // Increment quote <a href="">coin</a> recipient's available amount
     gets_quote.q_a = gets_quote.q_a + quote_to_route;
 }
 </code></pre>
@@ -646,9 +646,9 @@ relevant sufficiency validity checks
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_OC">OC</a> {
     // Borrow mutable reference <b>to</b> order collateral container
     <b>let</b> order_collateral = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user);
-    // Decrement specified base coin amount
+    // Decrement specified base <a href="">coin</a> amount
     order_collateral.b_a = order_collateral.b_a - base;
-    // Decrement specified quote coin amount
+    // Decrement specified quote <a href="">coin</a> amount
     order_collateral.q_a = order_collateral.q_a - quote;
 }
 </code></pre>
@@ -662,10 +662,10 @@ relevant sufficiency validity checks
 ## Function `deposit_internal`
 
 Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <code>user</code>'s
-<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>AptosFramework::Coin::CoinStore</code>
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, from their <code>aptos_framework::Coin::CoinStore</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit_internal">deposit_internal</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit_internal">deposit_internal</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, b_val: u64, q_val: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
 </code></pre>
 
 
@@ -675,7 +675,7 @@ Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <cod
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_deposit_internal">deposit_internal</a>&lt;B, Q, E&gt;(
-    user: &signer,
+    user: &<a href="">signer</a>,
     b_val: u64,
     q_val: u64,
     _c: &OrdersCap
@@ -687,15 +687,15 @@ Deposit <code>b_val</code> base coin and <code>q_val</code> quote coin into <cod
     <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
     // Borrow mutable reference <b>to</b> user collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
-    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be deposited
+    <b>if</b> (b_val &gt; 0) { // If base <a href="">coin</a> <b>to</b> be deposited
         // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
         coin_merge&lt;B&gt;(&<b>mut</b> o_c.b_c, coin_withdraw&lt;B&gt;(user, b_val));
-        o_c.b_a = o_c.b_a + b_val; // Increment available base coin
+        o_c.b_a = o_c.b_a + b_val; // Increment available base <a href="">coin</a>
     };
-    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be deposited
+    <b>if</b> (q_val &gt; 0) { // If quote <a href="">coin</a> <b>to</b> be deposited
         // Withdraw from CoinStore, merge into <a href="User.md#0xc0deb00c_User_OC">OC</a>
         coin_merge&lt;Q&gt;(&<b>mut</b> o_c.q_c, coin_withdraw&lt;Q&gt;(user, q_val));
-        o_c.q_a = o_c.q_a + q_val; // Increment available quote coin
+        o_c.q_a = o_c.q_a + q_val; // Increment available quote <a href="">coin</a>
     };
 }
 </code></pre>
@@ -806,7 +806,7 @@ greater than the number indicated by the user's <code><a href="User.md#0xc0deb00
 invoking a dependency cycle
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(u: &signer, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(u: &<a href="">signer</a>, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
 </code></pre>
 
 
@@ -816,7 +816,7 @@ invoking a dependency cycle
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_update_s_c">update_s_c</a>(
-    u: &signer,
+    u: &<a href="">signer</a>,
     _c: &OrdersCap
 ) <b>acquires</b> <a href="User.md#0xc0deb00c_User_SC">SC</a> {
     <b>let</b> user_addr = address_of(u); // Get user <b>address</b>
@@ -840,10 +840,10 @@ invoking a dependency cycle
 ## Function `withdraw_internal`
 
 Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <code>user</code>'s
-<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>AptosFramework::Coin::CoinStore</code>
+<code><a href="User.md#0xc0deb00c_User_OC">OC</a></code>, into their <code>aptos_framework::Coin::CoinStore</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw_internal">withdraw_internal</a>&lt;B, Q, E&gt;(user: &signer, b_val: u64, q_val: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw_internal">withdraw_internal</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, b_val: u64, q_val: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
 </code></pre>
 
 
@@ -853,7 +853,7 @@ Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <co
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="User.md#0xc0deb00c_User_withdraw_internal">withdraw_internal</a>&lt;B, Q, E&gt;(
-    user: &signer,
+    user: &<a href="">signer</a>,
     b_val: u64,
     q_val: u64,
     _c: &OrdersCap
@@ -865,17 +865,17 @@ Withdraw <code>b_val</code> base coin and <code>q_val</code> quote coin from <co
     <b>assert</b>!(b_val &gt; 0 || q_val &gt; 0, <a href="User.md#0xc0deb00c_User_E_NO_TRANSFER">E_NO_TRANSFER</a>);
     // Borrow mutable reference <b>to</b> user collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
-    <b>if</b> (b_val &gt; 0) { // If base coin <b>to</b> be withdrawn
+    <b>if</b> (b_val &gt; 0) { // If base <a href="">coin</a> <b>to</b> be withdrawn
         // Assert not trying <b>to</b> withdraw more than available
         <b>assert</b>!(!(b_val &gt; o_c.b_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
-        // Withdraw from order collateral, deposit <b>to</b> coin store
+        // Withdraw from order collateral, deposit <b>to</b> <a href="">coin</a> store
         c_d&lt;B&gt;(addr, coin_extract&lt;B&gt;(&<b>mut</b> o_c.b_c, b_val));
         o_c.b_a = o_c.b_a - b_val; // Update available amount
     };
-    <b>if</b> (q_val &gt; 0) { // If quote coin <b>to</b> be withdrawn
+    <b>if</b> (q_val &gt; 0) { // If quote <a href="">coin</a> <b>to</b> be withdrawn
         // Assert not trying <b>to</b> withdraw more than available
         <b>assert</b>!(!(q_val &gt; o_c.q_a), <a href="User.md#0xc0deb00c_User_E_WITHDRAW_TOO_MUCH">E_WITHDRAW_TOO_MUCH</a>);
-        // Withdraw from order collateral, deposit <b>to</b> coin store
+        // Withdraw from order collateral, deposit <b>to</b> <a href="">coin</a> store
         c_d&lt;Q&gt;(addr, coin_extract&lt;Q&gt;(&<b>mut</b> o_c.q_c, q_val));
         o_c.q_a = o_c.q_a - q_val; // Update available amount
     };
@@ -905,7 +905,7 @@ collateral container
 * <code>id</code>: Order ID (see <code>Econia::ID</code>)
 
 
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, id: u128)
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, side: bool, id: u128)
 </code></pre>
 
 
@@ -915,7 +915,7 @@ collateral container
 
 
 <pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_cancel_order">cancel_order</a>&lt;B, Q, E&gt;(
-    user: &signer,
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     side: bool,
     id: u128
@@ -959,7 +959,7 @@ Initialize order collateral container for given user, aborting
 if already initialized
 
 
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_init_o_c">init_o_c</a>&lt;B, Q, E&gt;(user: &signer)
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_init_o_c">init_o_c</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -969,7 +969,7 @@ if already initialized
 
 
 <pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_init_o_c">init_o_c</a>&lt;B, Q, E&gt;(
-    user: &signer,
+    user: &<a href="">signer</a>,
 ) {
     // Assert user does not already have order collateral for market
     <b>assert</b>!(!<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(address_of(user)), <a href="User.md#0xc0deb00c_User_E_O_C_EXISTS">E_O_C_EXISTS</a>);
@@ -977,7 +977,7 @@ if already initialized
     <b>assert</b>!(r_i_r&lt;B, Q, E&gt;(), <a href="User.md#0xc0deb00c_User_E_NO_MARKET">E_NO_MARKET</a>);
     // Pack empty order collateral container
     <b>let</b> o_c = <a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;{b_c: c_z&lt;B&gt;(), b_a: 0, q_c: c_z&lt;Q&gt;(), q_a: 0};
-    <b>move_to</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user, o_c); // Move <b>to</b> user account
+    <b>move_to</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(user, o_c); // Move <b>to</b> user <a href="">account</a>
 }
 </code></pre>
 
@@ -1014,7 +1014,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 * If placing an order would cross the spread
 
 
-<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, price: u64, size: u64)
+<pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, side: bool, price: u64, size: u64)
 </code></pre>
 
 
@@ -1024,7 +1024,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
 
 
 <pre><code><b>fun</b> <a href="User.md#0xc0deb00c_User_submit_limit_order">submit_limit_order</a>&lt;B, Q, E&gt;(
-    user: &signer,
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     side: bool,
     price: u64,
@@ -1038,12 +1038,12 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
     <b>assert</b>!(<b>exists</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr), <a href="User.md#0xc0deb00c_User_E_NO_O_C">E_NO_O_C</a>);
     // Borrow mutable reference <b>to</b> user's order collateral container
     <b>let</b> o_c = <b>borrow_global_mut</b>&lt;<a href="User.md#0xc0deb00c_User_OC">OC</a>&lt;B, Q, E&gt;&gt;(addr);
-    <b>let</b> v_n = get_v_n(); // Get transaction version number
+    <b>let</b> v_n = get_v_n(); // Get transaction <a href="">version</a> number
     <b>let</b> c_s: bool; // Define flag for <b>if</b> order crosses the spread
     <b>if</b> (side == <a href="User.md#0xc0deb00c_User_ASK">ASK</a>) { // If limit order is an ask
         <b>let</b> id = id_a(price, v_n); // Get corresponding order id
         // Verify and add <b>to</b> user's open orders, storing amount of
-        // base coin subunits required <b>to</b> fill the trade
+        // base <a href="">coin</a> subunits required <b>to</b> fill the trade
         <b>let</b> (b_c_subs, _) =
             o_a_a&lt;B, Q, E&gt;(addr, id, price, size, &orders_cap());
         // Assert user <b>has</b> enough base coins held <b>as</b> collateral
@@ -1056,7 +1056,7 @@ Submit limit order for market <code>&lt;B, Q, E&gt;</code>
     } <b>else</b> { // If limit order is a bid
         <b>let</b> id = id_b(price, v_n); // Get corresponding order id
         // Verify and add <b>to</b> user's open orders, storing amount of
-        // quote coin subunits required <b>to</b> fill the trade
+        // quote <a href="">coin</a> subunits required <b>to</b> fill the trade
         <b>let</b> (_, q_c_subs) =
             o_a_b&lt;B, Q, E&gt;(addr, id, price, size, &orders_cap());
         // Assert user <b>has</b> enough quote coins held <b>as</b> collateral

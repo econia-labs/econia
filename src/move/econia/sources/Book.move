@@ -40,11 +40,11 @@ module Econia::Book {
         price as id_price,
     };
 
-    use Std::Signer::{
+    use std::signer::{
         address_of
     };
 
-    use Std::Vector::{
+    use std::vector::{
         borrow as vector_borrow,
         empty as empty_vector,
         length as vector_length,
@@ -68,7 +68,7 @@ module Econia::Book {
     };
 
     #[test_only]
-    use Std::Vector::{
+    use std::vector::{
         is_empty as vector_is_empty,
     };
 

@@ -105,8 +105,8 @@ along the process of clearing out the book:
     -  [Assumptions](#@Assumptions_12)
 
 
-<pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
-<b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<pre><code><b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
 <b>use</b> <a href="Caps.md#0xc0deb00c_Caps">0xc0deb00c::Caps</a>;
 <b>use</b> <a href="ID.md#0xc0deb00c_ID">0xc0deb00c::ID</a>;
@@ -216,7 +216,7 @@ Flag for submitting a market sell
 Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>()</code> for side <code><a href="Match.md#0xc0deb00c_Match_BUY">BUY</a></code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_buy">submit_market_buy</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, requested_size: u64, max_quote_to_spend: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_buy">submit_market_buy</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, requested_size: u64, max_quote_to_spend: u64)
 </code></pre>
 
 
@@ -225,8 +225,8 @@ Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">su
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_buy">submit_market_buy</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_buy">submit_market_buy</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     requested_size: u64,
     max_quote_to_spend: u64
@@ -249,7 +249,7 @@ Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">su
 Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>()</code> for side <code><a href="Match.md#0xc0deb00c_Match_SELL">SELL</a></code>,
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_sell">submit_market_sell</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, requested_size: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_sell">submit_market_sell</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, requested_size: u64)
 </code></pre>
 
 
@@ -258,8 +258,8 @@ Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_submit_market_order">su
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_sell">submit_market_sell</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_sell">submit_market_sell</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     requested_size: u64,
 ) {
@@ -303,13 +303,13 @@ market sell)
 
 ### Considerations
 
-* Designed to be a private function, but calls public script
-functions, so has to be itself a public script function. Hence
+* Designed to be a private function, but calls public entry
+functions, so has to be itself a public entry function. Hence
 the <code>&OrdersCap</code> to prevent SDKs from calling this version,
 ensuring they only call wrapped versions
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap">swap</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, requested_size: u64, max_quote_to_spend: u64, orders_cap: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap">swap</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, side: bool, requested_size: u64, max_quote_to_spend: u64, orders_cap: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
 </code></pre>
 
 
@@ -318,8 +318,8 @@ ensuring they only call wrapped versions
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap">swap</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap">swap</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     side: bool,
     requested_size: u64,
@@ -332,9 +332,9 @@ ensuring they only call wrapped versions
     // Initialize containers for given market <b>if</b> user <b>has</b> none
     <b>if</b> (!exists_order_collateral&lt;B, Q ,E&gt;(user_addr, orders_cap))
         init_containers&lt;B, Q, E&gt;(user);
-    // If user does not have base coin store, register one
+    // If user does not have base <a href="">coin</a> store, register one
     <b>if</b> (!exists_coin_store&lt;B&gt;(user_addr)) register_coin_store&lt;B&gt;(user);
-    // If user does not have quote coin store, register one
+    // If user does not have quote <a href="">coin</a> store, register one
     <b>if</b> (!exists_coin_store&lt;Q&gt;(user_addr)) register_coin_store&lt;Q&gt;(user);
     // If a market buy, deposit max quote coins willing <b>to</b> spend
     <b>if</b> (side == <a href="Match.md#0xc0deb00c_Match_BUY">BUY</a>) { // If a market buy
@@ -342,7 +342,7 @@ ensuring they only call wrapped versions
         collateral_deposit&lt;B, Q, E&gt;(
             user, 0, max_quote_to_spend, orders_cap);
     } <b>else</b> { // If a market sell
-        // Calculate base coin subunits needed for order
+        // Calculate base <a href="">coin</a> subunits needed for order
         <b>let</b> base_coins_needed = requested_size *
             orders_scale_factor&lt;B, Q, E&gt;(user_addr, orders_cap);
         // Deposit base coins <b>as</b> collateral
@@ -355,7 +355,7 @@ ensuring they only call wrapped versions
     // Determine amount of availble collateral user <b>has</b>
     <b>let</b> (base_collateral, quote_collateral) =
         get_available_collateral&lt;B, Q, E&gt;(user_addr, orders_cap);
-    // Withdraw all available collateral back <b>to</b> user's coin stores
+    // Withdraw all available collateral back <b>to</b> user's <a href="">coin</a> stores
     collateral_withdraw&lt;B, Q, E&gt;(
         user, base_collateral, quote_collateral, orders_cap);
 }
@@ -372,7 +372,7 @@ ensuring they only call wrapped versions
 Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_swap">swap</a>()</code> for <code><a href="Match.md#0xc0deb00c_Match_BUY">BUY</a></code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_buy">swap_buy</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, requested_size: u64, max_quote_to_spend: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_buy">swap_buy</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, requested_size: u64, max_quote_to_spend: u64)
 </code></pre>
 
 
@@ -381,8 +381,8 @@ Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_swap">swap</a>()</code>
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_buy">swap_buy</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_buy">swap_buy</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     requested_size: u64,
     max_quote_to_spend: u64,
@@ -403,7 +403,7 @@ Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_swap">swap</a>()</code>
 Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_swap">swap</a>()</code> for <code><a href="Match.md#0xc0deb00c_Match_SELL">SELL</a></code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_sell">swap_sell</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, requested_size: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_sell">swap_sell</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, requested_size: u64)
 </code></pre>
 
 
@@ -412,8 +412,8 @@ Wrapped call to <code><a href="Match.md#0xc0deb00c_Match_swap">swap</a>()</code>
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_sell">swap_sell</a>&lt;B, Q, E&gt;(
-    user: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="Match.md#0xc0deb00c_Match_swap_sell">swap_sell</a>&lt;B, Q, E&gt;(
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     requested_size: u64,
 ) {
@@ -502,7 +502,7 @@ of iterated traversal
     <b>if</b> (n_positions == 0) <b>return</b> (0, 0);
     // Get scale factor of corresponding order book
     <b>let</b> scale_factor = scale_factor&lt;B, Q, E&gt;(host, book_cap);
-    // Initialize counters for base coin parcels and quote coin
+    // Initialize counters for base <a href="">coin</a> parcels and quote <a href="">coin</a>
     // subunits filled
     <b>let</b> (base_parcels_filled, quote_coins_filled) = (0, 0);
     // Initialize traversal, storing <a href="ID.md#0xc0deb00c_ID">ID</a> of target position, <b>address</b>
@@ -559,7 +559,7 @@ of iterated traversal
             <b>break</b> // Break out of iterated traversal <b>loop</b>
         };
     };
-    // Return base coin subunits and quote coin subunits filled
+    // Return base <a href="">coin</a> subunits and quote <a href="">coin</a> subunits filled
     (base_parcels_filled * scale_factor, quote_coins_filled)
 }
 </code></pre>
@@ -606,7 +606,7 @@ market sell)
 * <code>requested_size</code> is nonzero
 
 
-<pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user: &signer, host: <b>address</b>, side: bool, requested_size: u64, max_quote_to_spend: u64)
+<pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, host: <b>address</b>, side: bool, requested_size: u64, max_quote_to_spend: u64)
 </code></pre>
 
 
@@ -616,7 +616,7 @@ market sell)
 
 
 <pre><code><b>fun</b> <a href="Match.md#0xc0deb00c_Match_submit_market_order">submit_market_order</a>&lt;B, Q, E&gt;(
-    user: &signer,
+    user: &<a href="">signer</a>,
     host: <b>address</b>,
     side: bool,
     requested_size: u64,
@@ -658,7 +658,7 @@ market sell)
         <b>assert</b>!(base_available &gt;= base_coins_required,
             <a href="Match.md#0xc0deb00c_Match_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
         // Fill a market order through the matching engine, storing
-        // number of base coin subunits sold
+        // number of base <a href="">coin</a> subunits sold
         <b>let</b> (base_coins_sold, _) = <a href="Match.md#0xc0deb00c_Match_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(
             host, user_address, <a href="Match.md#0xc0deb00c_Match_BID">BID</a>, requested_size, 0, &book_cap());
         // Update count of available base coins

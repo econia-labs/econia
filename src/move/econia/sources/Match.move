@@ -69,7 +69,7 @@ module Econia::Match {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use AptosFramework::Coin::{
+    use aptos_framework::coin::{
         is_account_registered as exists_coin_store,
         register as register_coin_store
     };
@@ -114,7 +114,7 @@ module Econia::Match {
         withdraw_internal as collateral_withdraw
     };
 
-    use Std::Signer::{
+    use std::signer::{
         address_of
     };
 
@@ -123,13 +123,13 @@ module Econia::Match {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use AptosFramework::Account::{
+    use aptos_framework::account::{
         create_account,
         increment_sequence_number
     };
 
     #[test_only]
-    use AptosFramework::Coin::{
+    use aptos_framework::coin::{
         balance as coin_store_balance
     };
 
@@ -259,10 +259,10 @@ module Econia::Match {
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Wrapped call to `submit_market_order()` for side `BUY`
-    public(script) fun submit_market_buy<B, Q, E>(
+    public entry fun submit_market_buy<B, Q, E>(
         user: &signer,
         host: address,
         requested_size: u64,
@@ -275,7 +275,7 @@ module Econia::Match {
     }
 
     /// Wrapped call to `submit_market_order()` for side `SELL`,
-    public(script) fun submit_market_sell<B, Q, E>(
+    public entry fun submit_market_sell<B, Q, E>(
         user: &signer,
         host: address,
         requested_size: u64,
@@ -304,11 +304,11 @@ module Econia::Match {
     /// * `orders_cap`: Mutable reference to `OrdersCap`
     ///
     /// # Considerations
-    /// * Designed to be a private function, but calls public script
-    ///   functions, so has to be itself a public script function. Hence
+    /// * Designed to be a private function, but calls public entry
+    ///   functions, so has to be itself a public entry function. Hence
     ///   the `&OrdersCap` to prevent SDKs from calling this version,
     ///   ensuring they only call wrapped versions
-    public(script) fun swap<B, Q, E>(
+    public entry fun swap<B, Q, E>(
         user: &signer,
         host: address,
         side: bool,
@@ -351,7 +351,7 @@ module Econia::Match {
     }
 
     /// Wrapped call to `swap()` for `BUY`
-    public(script) fun swap_buy<B, Q, E>(
+    public entry fun swap_buy<B, Q, E>(
         user: &signer,
         host: address,
         requested_size: u64,
@@ -362,7 +362,7 @@ module Econia::Match {
     }
 
     /// Wrapped call to `swap()` for `SELL`
-    public(script) fun swap_sell<B, Q, E>(
+    public entry fun swap_sell<B, Q, E>(
         user: &signer,
         host: address,
         requested_size: u64,
@@ -370,7 +370,7 @@ module Econia::Match {
         swap<B, Q, E>(user, host, SELL, requested_size, 0, &orders_cap())
     }
 
-    // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -563,7 +563,7 @@ module Econia::Match {
     /// `<BCT, QCT, E1>` hosted by `econia`, then place limit orders
     /// for `user_1`, `user_2`, `user_3`, based on `side`, returning
     /// the order ID for each respective position
-    public(script) fun init_market(
+    public entry fun init_market(
         side: bool,
         econia: &signer,
         user_0: &signer,
@@ -632,7 +632,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market order clears out the entire
     /// book and is still left unfilled
-    public(script) fun ask_clear_book(
+    public entry fun ask_clear_book(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -726,7 +726,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market order is an exact fill
     /// against user 2's position
-    public(script) fun ask_exact_2(
+    public entry fun ask_exact_2(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -822,7 +822,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market order is a partial fill
     /// against user 1's position
-    public(script) fun ask_partial_1(
+    public entry fun ask_partial_1(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -927,7 +927,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market order is a partial fill
     /// against user 3's position
-    public(script) fun ask_partial_3(
+    public entry fun ask_partial_3(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1029,7 +1029,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market order is an exact fill
     /// against user 1's position
-    public(script) fun bid_exact_1(
+    public entry fun bid_exact_1(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1126,7 +1126,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market order is an exact fill
     /// against user 3's position
-    public(script) fun bid_exact_3(
+    public entry fun bid_exact_3(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1219,7 +1219,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market order is a partial fill
     /// against user 2's position
-    public(script) fun bid_partial_2(
+    public entry fun bid_partial_2(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1326,7 +1326,7 @@ module Econia::Match {
     /// exhausted after exactly filling user 1's ask, when requested
     /// order size would have resulted in a complete target fill against
     /// user 1's position if quote coins had not run out first
-    public(script) fun buy_exhaust_exact_1_complete_requested(
+    public entry fun buy_exhaust_exact_1_complete_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1432,7 +1432,7 @@ module Econia::Match {
     /// exhausted after exactly filling user 2's ask, when requested
     /// order size also specifies and exact target fill against user 2's
     /// position
-    public(script) fun buy_exhaust_exact_2_exact_requested(
+    public entry fun buy_exhaust_exact_2_exact_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1539,7 +1539,7 @@ module Econia::Match {
     /// order size would have resulted in a complete target fill against
     /// user 3's position if quote coins had not run out first and if
     /// there was more depth on the book
-    public(script) fun buy_exhaust_exact_3_complete_requested(
+    public entry fun buy_exhaust_exact_3_complete_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1638,7 +1638,7 @@ module Econia::Match {
     )]
     /// Verify matching when user 0's market buy has quote coins
     /// exhausted immediately
-    public(script) fun buy_exhaust_immediately(
+    public entry fun buy_exhaust_immediately(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1733,7 +1733,7 @@ module Econia::Match {
     /// exhausted after partially filling user 1's ask, when requested
     /// order size would have resulted in a complete target fill against
     /// user 1's position if quote coins had not run out first
-    public(script) fun buy_exhaust_partial_1_complete_requested(
+    public entry fun buy_exhaust_partial_1_complete_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1843,7 +1843,7 @@ module Econia::Match {
     /// exhausted after partially filling user 2's ask, when requested
     /// order size would have resulted in an exact target fill if quote
     /// coins had not run out first
-    public(script) fun buy_exhaust_partial_2_exact_requested(
+    public entry fun buy_exhaust_partial_2_exact_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -1958,7 +1958,7 @@ module Econia::Match {
     /// exhausted after partially filling user 3's ask, when requested
     /// order size would have resulted in a larger partial target fill
     /// if quote coins had not run out first
-    public(script) fun buy_exhaust_partial_3_larger_partial_requested(
+    public entry fun buy_exhaust_partial_3_larger_partial_requested(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2069,7 +2069,7 @@ module Econia::Match {
     )]
     #[expected_failure(abort_code = 2)]
     /// Verify no funds routed when no positions on book
-    public(script) fun no_positions(
+    public entry fun no_positions(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2123,7 +2123,7 @@ module Econia::Match {
     )]
     #[expected_failure(abort_code = 2)]
     /// Verify failure when insufficient base coins to place market sell
-    public(script) fun submit_market_order_failure_insufficient_base(
+    public entry fun submit_market_order_failure_insufficient_base(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2146,7 +2146,7 @@ module Econia::Match {
     )]
     #[expected_failure(abort_code = 2)]
     /// Verify failure when insufficient quote coins to place market buy
-    public(script) fun submit_market_order_failure_insufficient_quote(
+    public entry fun submit_market_order_failure_insufficient_quote(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2168,7 +2168,7 @@ module Econia::Match {
     )]
     #[expected_failure(abort_code = 1)]
     /// Verify failure when no collateral container
-    public(script) fun submit_market_order_failure_no_collateral(
+    public entry fun submit_market_order_failure_no_collateral(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2190,7 +2190,7 @@ module Econia::Match {
     )]
     #[expected_failure(abort_code = 4)]
     /// Verify failure when market buy with no quote coins allocated
-    public(script) fun submit_market_order_failure_quote_spend_0(
+    public entry fun submit_market_order_failure_quote_spend_0(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2212,7 +2212,7 @@ module Econia::Match {
     )]
     #[expected_failure(abort_code = 3)]
     /// Verify failure when market buy with no requested order size
-    public(script) fun submit_market_order_failure_size_0(
+    public entry fun submit_market_order_failure_size_0(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2234,7 +2234,7 @@ module Econia::Match {
     )]
     #[expected_failure(abort_code = 0)]
     /// Verify failure when no order book at host address
-    public(script) fun submit_market_order_failure_wrong_host(
+    public entry fun submit_market_order_failure_wrong_host(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2255,7 +2255,7 @@ module Econia::Match {
         user_3 = @TestUser3
     )]
     /// Verify swap values for clearing out two positions on book
-    public(script) fun swap_buy_success(
+    public entry fun swap_buy_success(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2308,7 +2308,7 @@ module Econia::Match {
     )]
     /// Verify swap values for clearing out two positions on book, with
     /// user who has only quote coin store initialized
-    public(script) fun swap_buy_success_init(
+    public entry fun swap_buy_success_init(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2358,7 +2358,7 @@ module Econia::Match {
         user_3 = @TestUser3
     )]
     /// Verify swap values for clearing out two positions on book
-    public(script) fun swap_sell_success(
+    public entry fun swap_sell_success(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -2406,7 +2406,7 @@ module Econia::Match {
     )]
     /// Verify swap values for clearing out two positions on book, with
     /// user who has only base coin store initialized
-    public(script) fun swap_sell_success_init(
+    public entry fun swap_sell_success_init(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,

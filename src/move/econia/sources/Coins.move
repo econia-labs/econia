@@ -2,7 +2,7 @@
 
 module Econia::Coins {
 
-    use AptosFramework::Coin::{
+    use aptos_framework::coin::{
         BurnCapability,
         deposit,
         initialize,
@@ -10,11 +10,11 @@ module Econia::Coins {
         mint
     };
 
-    use Std::ASCII::{
-        string
+    use std::string::{
+        utf8
     };
 
-    use Std::Signer::{
+    use std::signer::{
         address_of
     };
 
@@ -61,26 +61,26 @@ module Econia::Coins {
     const E_NOT_ECONIA: u64 = 0;
 
     /// Initialize base and quote coin types under Econia account
-    public(script) fun init_coin_types(
+    public entry fun init_coin_types(
         econia: &signer
     ) {
         // Assert initializing coin types under Econia account
         assert!(address_of(econia) == @Econia, E_NOT_ECONIA);
         // Initialize base coin type, storing mint/burn capabilities
         let(m, b) = initialize<BCT>(
-            econia, string(BCT_CN), string(BCT_CS), BCT_D, false);
+            econia, utf8(BCT_CN), utf8(BCT_CS), BCT_D, false);
         // Save capabilities in global storage
         move_to(econia, BCC{m, b});
         // Initialize quote coin type, storing mint/burn capabilities
         let(m, b) = initialize<QCT>(
-            econia, string(QCT_CN), string(QCT_CS), QCT_D, false);
+            econia, utf8(QCT_CN), utf8(QCT_CS), QCT_D, false);
         // Save capabilities in global storage
         move_to(econia, QCC{m, b});
     }
 
     /// Mint `val_bct` of `BCT` and `val_qct` of `QCT` to `user`'s
-    /// `AptosFramework::Coin::Coinstore`
-    public(script) fun mint_to(
+    /// `aptos_framework::Coin::Coinstore`
+    public entry fun mint_to(
         econia: &signer,
         user: address,
         val_bct: u64,

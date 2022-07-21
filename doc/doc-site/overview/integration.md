@@ -3,7 +3,7 @@
 ## Friend-like capabilities
 
 As described in the [`Econia::Caps` module documentation](../../../src/move/econia/build/Econia/docs/Caps.md), Econia uses friend-like capabilities to circumvent testing difficulties that may arise when attempting to declare a friend modules.
-Basically this is to allow for coverage testing on certain modules when it is possible to implement them without using `AptosFramework` functionality, pending the resolution of [aforementioned pull requests](philosophy.md#Testing).
+Basically this is to allow for coverage testing on certain modules when it is possible to implement them without using `aptos_framework` functionality, pending the resolution of [aforementioned pull requests](philosophy.md#Testing).
 Moreover, friend-like capabilities provide extensible access control that can be used to avoid dependency cycles, for example like that which was detected between `Econia::Match` and `Econia::User` during development.
 Friend-like capabilities can only be administered by Econia modules to other Econia modules, at least as of the time of this writing.
 

@@ -17,9 +17,9 @@ Trade history is still accessible immutably and indefinitely, however, because a
 Whenever possible, Econia source code is coverage tested using the `move` CLI to 100% coverage, to provide robust design assurance and streamline the audit process.
 However, as described in `aptos-core` [#1275](https://github.com/aptos-labs/aptos-core/issues/1275) and [#1835](https://github.com/aptos-labs/aptos-core/issues/1835):
 
-1. The `move` CLI does not support general coverage testing for `AptosFramework` native functions,
+1. The `move` CLI does not support general coverage testing for `aptos_framework` native functions,
 1. The `aptos` CLI does not provide any coverage testing support whatsoever,
 1. And the `af-cli` is broken as of the time of this writing
 
-Hence, functionality that can be accomplished purely in Move is isolated into standalone modules which are then subject to coverage testing, separate from functionality that requires `AptosFramework` native functions.
-Modules incorporating `AptosFramework` functionality are still tested using the `aptos` CLI in an attempt to verify all conditional execution branches (simulated 100% coverage), but per the limitations described above, there is no command line printout to verify that they have actually been tested to 100% coverage.
+Hence, functionality that can be accomplished purely in Move is isolated into standalone modules which are then subject to coverage testing, separate from functionality that requires `aptos_framework` native functions.
+Modules incorporating `aptos_framework` functionality are still tested using the `aptos` CLI in an attempt to verify all conditional execution branches (simulated 100% coverage), but per the limitations described above, there is no command line printout to verify that they have actually been tested to 100% coverage.

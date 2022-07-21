@@ -16,9 +16,9 @@
 
 
 This implementation provides market data structures for trading
-<code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a></code> types ("coins") against one another. Each coin has a
+<code>Coin</code> types ("coins") against one another. Each coin has a
 corresponding <code>CoinType</code> ("coin type"), and each instantiation of a
-coin has an associated <code>u64</code> amount (<code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a>&lt;CoinType&gt;.value</code>).
+coin has an associated <code>u64</code> amount (<code>Coin&lt;CoinType&gt;.value</code>).
 
 Coins can be traded against one another in a "trading pair", which
 contains a "base coin" that is denominated in terms of a "quote
@@ -29,7 +29,7 @@ Dollars (quote "coin"): $29,759.51 per Bitcoin at the time of this
 writing.
 
 Notably, for the above example, neither <code>BTC</code> nor <code>USD</code> actually
-correspond to <code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a></code> types on the Aptos blockchain, but in all
+correspond to <code>Coin</code> types on the Aptos blockchain, but in all
 likelihood these two assets will come to be represented on-chain as
 a wrapped Bitcoin variant (coin type <code>wBTC</code> or similar) and a
 USD-backed stablecoin, respectively, with the latter issued by a
@@ -48,13 +48,13 @@ coin for future examples.
 ### Decimal price
 
 
-While <code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a></code> types have a <code>u64</code> value, the user-facing
+While <code>Coin</code> types have a <code>u64</code> value, the user-facing
 representation of this amount often takes the form of a decimal, for
 example, <code>100.75 USDC</code>, corresponding to 100 dollars and 75 cents.
 More precision is still possible, though, with <code>USDC</code> commonly
 offering up to 6 decimal places on other blockchains, so that a user
 can hold an amount like <code>500.123456 USDC</code>. On Aptos, this would
-correspond to a <code><a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">Coin</a>&lt;USDC&gt;.value</code> of <code>500123456</code> and a
+correspond to a <code>Coin&lt;USDC&gt;.value</code> of <code>500123456</code> and a
 <code>CoinInfo&lt;USDC&gt;.decimals</code> of <code>6</code>. Similarly, base coins may have an
 arbitrary number of decimals, even though their underlying value is
 still stored as a <code>u64</code>.
@@ -259,10 +259,10 @@ functions. See <code>Econia::Caps</code> for further discussion.
 -  [Function `verify_t_i`](#0xc0deb00c_Registry_verify_t_i)
 
 
-<pre><code><b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
-<b>use</b> <a href="../../../build/AptosFramework/docs/IterableTable.md#0x1_IterableTable">0x1::IterableTable</a>;
-<b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
-<b>use</b> <a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo">0x1::TypeInfo</a>;
+<pre><code><b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::iterable_table</a>;
+<b>use</b> <a href="">0x1::signer</a>;
+<b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
 <b>use</b> <a href="Caps.md#0xc0deb00c_Caps">0xc0deb00c::Caps</a>;
 </code></pre>
@@ -827,19 +827,19 @@ Market info
 
 <dl>
 <dt>
-<code>b: <a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a></code>
+<code>b: <a href="_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
  Base CoinType TypeInfo
 </dd>
 <dt>
-<code>q: <a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a></code>
+<code>q: <a href="_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
  Quote CoinType TypeInfo
 </dd>
 <dt>
-<code>e: <a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a></code>
+<code>e: <a href="_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
  Scale exponent TypeInfo
@@ -867,7 +867,7 @@ Market registry
 
 <dl>
 <dt>
-<code>t: <a href="../../../build/AptosFramework/docs/IterableTable.md#0x1_IterableTable_IterableTable">IterableTable::IterableTable</a>&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">Registry::MI</a>, <b>address</b>&gt;</code>
+<code>t: <a href="_IterableTable">iterable_table::IterableTable</a>&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">Registry::MI</a>, <b>address</b>&gt;</code>
 </dt>
 <dd>
  Table from <code><a href="Registry.md#0xc0deb00c_Registry_MI">MI</a></code> to address hosting the corresponding <code>MC</code>
@@ -1137,7 +1137,7 @@ When wrong module
 This module's name
 
 
-<pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_M_NAME">M_NAME</a>: vector&lt;u8&gt; = [82, 101, 103, 105, 115, 116, 114, 121];
+<pre><code><b>const</b> <a href="Registry.md#0xc0deb00c_Registry_M_NAME">M_NAME</a>: <a href="">vector</a>&lt;u8&gt; = [82, 101, 103, 105, 115, 116, 114, 121];
 </code></pre>
 
 
@@ -1150,7 +1150,7 @@ Publish <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> to Econ
 or if <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> already exists
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(account: &signer)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(<a href="">account</a>: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -1160,14 +1160,14 @@ or if <code><a href="Registry.md#0xc0deb00c_Registry_MR">MR</a></code> already e
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_init_registry">init_registry</a>(
-    account: &signer
+    <a href="">account</a>: &<a href="">signer</a>
 ) {
-    <b>let</b> addr = address_of(account); // Get signer <b>address</b>
-    <b>assert</b>!(addr == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
+    <b>let</b> addr = address_of(<a href="">account</a>); // Get <a href="">signer</a> <b>address</b>
+    <b>assert</b>!(addr == @Econia, <a href="Registry.md#0xc0deb00c_Registry_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia <a href="">signer</a>
     // Assert registry does not already exist
     <b>assert</b>!(!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(addr), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
-    // Move empty market registry <b>to</b> account
-    <b>move_to</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(account, <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>{t: t_n&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>, <b>address</b>&gt;()});
+    // Move empty market registry <b>to</b> <a href="">account</a>
+    <b>move_to</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(<a href="">account</a>, <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>{t: t_n&lt;<a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>, <b>address</b>&gt;()});
 }
 </code></pre>
 
@@ -1194,11 +1194,11 @@ Return <code><b>true</b></code> if given market is registered
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_is_registered">is_registered</a>&lt;B, Q, E&gt;(
 ): bool
 <b>acquires</b> <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a> {
-    // Return <b>false</b> <b>if</b> no market registry at Econia account
+    // Return <b>false</b> <b>if</b> no market registry at Econia <a href="">account</a>
     <b>if</b> (!<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia)) <b>return</b> <b>false</b>;
      // Get market info for given type arguments
     <b>let</b> m_i = <a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>{b: ti_t_o&lt;B&gt;(), q: ti_t_o&lt;Q&gt;(), e: ti_t_o&lt;E&gt;()};
-    // Return <b>if</b> registry table contains market information
+    // Return <b>if</b> registry <a href="">table</a> contains market information
     t_c(&<b>borrow_global</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia).t, m_i)
 }
 </code></pre>
@@ -1269,7 +1269,7 @@ type <code>Q</code>, and scale exponent <code>E</code> , aborting if registry no
 initialized or if market already registered
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_register_market">register_market</a>&lt;B, Q, E&gt;(host: &signer)
+<pre><code><b>public</b> <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_register_market">register_market</a>&lt;B, Q, E&gt;(host: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -1278,19 +1278,19 @@ initialized or if market already registered
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_register_market">register_market</a>&lt;B, Q, E&gt;(
-    host: &signer
+<pre><code><b>public</b> entry <b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_register_market">register_market</a>&lt;B, Q, E&gt;(
+    host: &<a href="">signer</a>
 ) <b>acquires</b> <a href="Registry.md#0xc0deb00c_Registry_MR">MR</a> {
     <a href="Registry.md#0xc0deb00c_Registry_verify_market_types">verify_market_types</a>&lt;B, Q, E&gt;(); // Verify valid type arguments
-    // Assert market registry is initialized at Econia account
+    // Assert market registry is initialized at Econia <a href="">account</a>
     <b>assert</b>!(<b>exists</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia), <a href="Registry.md#0xc0deb00c_Registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
     // Get market info for given type arguments
     <b>let</b> m_i = <a href="Registry.md#0xc0deb00c_Registry_MI">MI</a>{b: ti_t_o&lt;B&gt;(), q: ti_t_o&lt;Q&gt;(), e: ti_t_o&lt;E&gt;()};
-    // Borrow mutable reference <b>to</b> market registry table
+    // Borrow mutable reference <b>to</b> market registry <a href="">table</a>
     <b>let</b> r_t = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Registry.md#0xc0deb00c_Registry_MR">MR</a>&gt;(@Econia).t;
     // Assert requested market not already registered
     <b>assert</b>!(!t_c(r_t, m_i), <a href="Registry.md#0xc0deb00c_Registry_E_REGISTERED">E_REGISTERED</a>);
-    // Initialize empty order book under host account
+    // Initialize empty order book under host <a href="">account</a>
     b_i_b&lt;B, Q, E&gt;(host, <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;(), &book_f_c());
     // Register market-host relationship
     t_a(r_t, m_i, address_of(host));
@@ -1337,7 +1337,7 @@ Assert <code>a1</code> equals <code>a2</code>, aborting with code <code>e</code>
 Assert <code>s1</code> equals <code>s2</code>, aborting with code <code>e</code> if not
 
 
-<pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_verify_bytestring">verify_bytestring</a>(bs1: vector&lt;u8&gt;, bs2: vector&lt;u8&gt;, e: u64)
+<pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_verify_bytestring">verify_bytestring</a>(bs1: <a href="">vector</a>&lt;u8&gt;, bs2: <a href="">vector</a>&lt;u8&gt;, e: u64)
 </code></pre>
 
 
@@ -1347,8 +1347,8 @@ Assert <code>s1</code> equals <code>s2</code>, aborting with code <code>e</code>
 
 
 <pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_verify_bytestring">verify_bytestring</a>(
-    bs1: vector&lt;u8&gt;,
-    bs2: vector&lt;u8&gt;,
+    bs1: <a href="">vector</a>&lt;u8&gt;,
+    bs2: <a href="">vector</a>&lt;u8&gt;,
     e: u64
 ) {
     <b>assert</b>!(bs1 == bs2, e); // Assert equality
@@ -1377,7 +1377,7 @@ Assert <code>B</code> and <code>Q</code> are coins, and that <code>E</code> is s
 
 <pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_verify_market_types">verify_market_types</a>&lt;B, Q, E&gt;() {
     <b>assert</b>!(c_i_c_i&lt;B&gt;(), <a href="Registry.md#0xc0deb00c_Registry_E_NOT_COIN">E_NOT_COIN</a>); // Assert base quote type
-    <b>assert</b>!(c_i_c_i&lt;Q&gt;(), <a href="Registry.md#0xc0deb00c_Registry_E_NOT_COIN">E_NOT_COIN</a>); // Assert quote coin type
+    <b>assert</b>!(c_i_c_i&lt;Q&gt;(), <a href="Registry.md#0xc0deb00c_Registry_E_NOT_COIN">E_NOT_COIN</a>); // Assert quote <a href="">coin</a> type
     // Assert scale exponent type <b>has</b> corresponding scale factor
     <a href="Registry.md#0xc0deb00c_Registry_scale_factor">scale_factor</a>&lt;E&gt;();
 }
@@ -1394,7 +1394,7 @@ Assert <code>B</code> and <code>Q</code> are coins, and that <code>E</code> is s
 Assert <code>t1</code> equals <code>t2</code>, aborting with code <code>e</code> if not
 
 
-<pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_verify_t_i">verify_t_i</a>(t1: &<a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a>, t2: &<a href="../../../build/AptosFramework/docs/TypeInfo.md#0x1_TypeInfo_TypeInfo">TypeInfo::TypeInfo</a>, e: u64)
+<pre><code><b>fun</b> <a href="Registry.md#0xc0deb00c_Registry_verify_t_i">verify_t_i</a>(t1: &<a href="_TypeInfo">type_info::TypeInfo</a>, t2: &<a href="_TypeInfo">type_info::TypeInfo</a>, e: u64)
 </code></pre>
 
 

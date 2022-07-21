@@ -6,7 +6,7 @@ module Econia::Version {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use Std::Signer::{
+    use std::signer::{
         address_of as s_a_o
     };
 
@@ -81,7 +81,7 @@ module Econia::Version {
 
     #[test(econia = @Econia)]
     /// Verify successful return sequence
-    public(script) fun get_v_n_success(
+    public entry fun get_v_n_success(
         econia: &signer
     ) acquires MC {
         init_mock_version_number(econia); // Initialize
@@ -93,7 +93,7 @@ module Econia::Version {
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for non-Econia caller
-    public(script) fun init_mock_failure_not_econia(
+    public entry fun init_mock_failure_not_econia(
         account: &signer
     ) {
         init_mock_version_number(account); // Attempt invalid init
@@ -102,7 +102,7 @@ module Econia::Version {
     #[test(econia = @Econia)]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for attempted re-initialization
-    public(script) fun init_mock_failure_exists(
+    public entry fun init_mock_failure_exists(
         econia: &signer
     ) {
         init_mock_version_number(econia); // Initialize
@@ -111,7 +111,7 @@ module Econia::Version {
 
     #[test(econia = @Econia)]
     /// Verify successful initialization of mock counter
-    public(script) fun init_mock_success(
+    public entry fun init_mock_success(
         econia: &signer
     ) acquires MC {
         init_mock_version_number(econia); // Initialize

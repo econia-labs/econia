@@ -16,7 +16,7 @@ Move native function for getting the true database version number
 -  [Function `get_updated_mock_version_number`](#0xc0deb00c_Version_get_updated_mock_version_number)
 
 
-<pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<pre><code><b>use</b> <a href="">0x1::signer</a>;
 </code></pre>
 
 
@@ -111,7 +111,7 @@ Initialize mock version number counter under Econia account,
 aborting if called by another signer or if counter exists
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Version.md#0xc0deb00c_Version_init_mock_version_number">init_mock_version_number</a>(account: &signer)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Version.md#0xc0deb00c_Version_init_mock_version_number">init_mock_version_number</a>(<a href="">account</a>: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -121,13 +121,13 @@ aborting if called by another signer or if counter exists
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Version.md#0xc0deb00c_Version_init_mock_version_number">init_mock_version_number</a>(
-    account: &signer
+    <a href="">account</a>: &<a href="">signer</a>
 ) {
-    <b>let</b> addr = s_a_o(account); // Get account <b>address</b>
+    <b>let</b> addr = s_a_o(<a href="">account</a>); // Get <a href="">account</a> <b>address</b>
     <b>assert</b>!(addr == @Econia, <a href="Version.md#0xc0deb00c_Version_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia called
-    // Assert mock version number counter doesn't exist already
+    // Assert mock <a href="">version</a> number counter doesn't exist already
     <b>assert</b>!(!<b>exists</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(addr), <a href="Version.md#0xc0deb00c_Version_E_MC_EXISTS">E_MC_EXISTS</a>);
-    <b>move_to</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(account, <a href="Version.md#0xc0deb00c_Version_MC">MC</a>{i: 0}); // Move mock counter <b>to</b> Econia
+    <b>move_to</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(<a href="">account</a>, <a href="Version.md#0xc0deb00c_Version_MC">MC</a>{i: 0}); // Move mock counter <b>to</b> Econia
 }
 </code></pre>
 
@@ -155,7 +155,7 @@ To reduce overhead, assume <code><a href="Version.md#0xc0deb00c_Version_MC">MC</
 <pre><code><b>fun</b> <a href="Version.md#0xc0deb00c_Version_get_updated_mock_version_number">get_updated_mock_version_number</a>():
 u64
 <b>acquires</b> <a href="Version.md#0xc0deb00c_Version_MC">MC</a> {
-    // Borrow mutable reference <b>to</b> mock version number counter value
+    // Borrow mutable reference <b>to</b> mock <a href="">version</a> number counter value
     <b>let</b> v_n = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Version.md#0xc0deb00c_Version_MC">MC</a>&gt;(@Econia).i;
     *v_n = *v_n + 1; // Increment by 1
     *v_n // Return new value

@@ -22,7 +22,7 @@ Then try [using Econia](using.md), and let's see what we can build together!
 
 ## Devnet account
 
-As of 2022-07-17, Econia is initialized on the Aptos devnet at account [0xf538533414430323ccd2d8f8d7ce33819653cac5a7634a80cd2429ab904b6659](https://aptos-explorer.netlify.app/account/0xf538533414430323ccd2d8f8d7ce33819653cac5a7634a80cd2429ab904b6659)
+As of 2022-07-21, Econia is initialized on the Aptos devnet at account [0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9](https://aptos-explorer.netlify.app/account/0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9)
 
 ## External resources
 * [Discord](https://discord.com/invite/Z7gXcMgX8A)

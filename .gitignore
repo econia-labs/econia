@@ -34,8 +34,7 @@ src/move/TestExample/*
 src/move/tutorials/*
 
 # Econia Move project ignores
-src/move/econia/build/AptosFramework/*
-src/move/econia/build/MoveStdlib/*
+src/move/econia/build/dependencies/*
 src/move/econia/build/Econia/sources/*
 src/move/econia/build/Econia/*.yaml
 

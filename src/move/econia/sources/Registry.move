@@ -179,18 +179,18 @@ module Econia::Registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use AptosFramework::Coin::{
+    use aptos_framework::coin::{
         is_coin_initialized as c_i_c_i
     };
 
-    use AptosFramework::IterableTable::{
+    use aptos_framework::iterable_table::{
         add as t_a,
         contains as t_c,
         new as t_n,
         IterableTable as T
     };
 
-    use AptosFramework::TypeInfo::{
+    use aptos_framework::type_info::{
         account_address as ti_a_a,
         module_name as ti_m_n,
         struct_name as ti_s_n,
@@ -206,7 +206,7 @@ module Econia::Registry {
         book_f_c,
     };
 
-    use Std::Signer::{
+    use std::signer::{
         address_of
     };
 
@@ -222,7 +222,7 @@ module Econia::Registry {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use AptosFramework::Coin::{
+    use aptos_framework::coin::{
         BurnCapability as CBC,
         deposit as c_d,
         initialize as c_i,
@@ -231,7 +231,7 @@ module Econia::Registry {
     };
 
     #[test_only]
-    use AptosFramework::IterableTable::{
+    use aptos_framework::iterable_table::{
         borrow as t_b,
     };
 
@@ -246,8 +246,8 @@ module Econia::Registry {
     };
 
     #[test_only]
-    use Std::ASCII::{
-        string as a_s
+    use std::string::{
+        utf8
     };
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -466,12 +466,12 @@ module Econia::Registry {
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Register a market for the given base coin type `B`, quote coin
     /// type `Q`, and scale exponent `E` , aborting if registry not
     /// initialized or if market already registered
-    public(script) fun register_market<B, Q, E>(
+    public entry fun register_market<B, Q, E>(
         host: &signer
     ) acquires MR {
         verify_market_types<B, Q, E>(); // Verify valid type arguments
@@ -489,7 +489,7 @@ module Econia::Registry {
         t_a(r_t, m_i, address_of(host));
     }
 
-    // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -542,17 +542,17 @@ module Econia::Registry {
         // Assert initializing coin types under Econia account
         assert!(address_of(econia) == @Econia, 0);
         // Initialize base coin type, storing mint/burn capabilities
-        let(m, b) = c_i<BCT>(econia, a_s(BCT_CN), a_s(BCT_CS), BCT_D, false);
+        let(m, b) = c_i<BCT>(econia, utf8(BCT_CN), utf8(BCT_CS), BCT_D, false);
         // Save capabilities in global storage
         move_to(econia, BCC{m, b});
         // Initialize quote coin type, storing mint/burn capabilities
-        let(m, b) = c_i<QCT>(econia, a_s(QCT_CN), a_s(QCT_CS), QCT_D, false);
+        let(m, b) = c_i<QCT>(econia, utf8(QCT_CN), utf8(QCT_CS), QCT_D, false);
         // Save capabilities in global storage
         move_to(econia, QCC{m, b});
     }
 
     #[test_only]
-    /// Mint `amount` of `BCT` to `AptosFramework::Coin::Coinstore` for
+    /// Mint `amount` of `BCT` to `aptos_framework::Coin::Coinstore` for
     /// `user`
     public fun mint_bct_to(
         user: address,
@@ -563,7 +563,7 @@ module Econia::Registry {
     }
 
     #[test_only]
-    /// Mint `amount` of `QCT` to `AptosFramework::Coin::Coinstore` for
+    /// Mint `amount` of `QCT` to `aptos_framework::Coin::Coinstore` for
     /// `user`
     public fun mint_qct_to(
         user: address,
@@ -576,7 +576,7 @@ module Econia::Registry {
     #[test_only]
     /// Register base and quote coin types, with corresponding market,
     /// assuming registry has already been initialized
-    public(script) fun register_test_market(
+    public entry fun register_test_market(
         econia: &signer
     ) acquires MR {
         init_coin_types(econia); // Initialize test coin types
@@ -587,7 +587,7 @@ module Econia::Registry {
     /// Register base and quote coin types, with corresponding market
     /// having scale expenonet `E`, assuming registry has already been
     /// initialized
-    public(script) fun register_scaled_test_market<E>(
+    public entry fun register_scaled_test_market<E>(
         econia: &signer
     ) acquires MR {
         init_coin_types(econia); // Initialize test coin types
@@ -601,7 +601,7 @@ module Econia::Registry {
     #[test(econia = @Econia)]
     #[expected_failure(abort_code = 6)]
     /// Verify registry publication fails for re-registration
-    public(script) fun init_registry_failure_exists(
+    public entry fun init_registry_failure_exists(
         econia: &signer
     ) {
         init_registry(econia); // Initialize
@@ -611,7 +611,7 @@ module Econia::Registry {
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 0)]
     /// Verify registry publication fails for non-Econia account
-    public(script) fun init_registry_failure_not_econia(
+    public entry fun init_registry_failure_not_econia(
         account: &signer
     ) {
         init_registry(account); // Attempt invalid initialization
@@ -619,7 +619,7 @@ module Econia::Registry {
 
     #[test(econia = @Econia)]
     /// Verify registry publish correctly
-    public(script) fun init_registry_success(
+    public entry fun init_registry_success(
         econia: &signer
     ) {
         init_registry(econia); // Initialize registry
@@ -637,7 +637,7 @@ module Econia::Registry {
 
     #[test(econia = @Econia)]
     /// Verify false return for no such market registered
-    public(script) fun is_registered_false_not_registered(
+    public entry fun is_registered_false_not_registered(
         econia: &signer
     ) acquires MR {
         init_registry(econia); // Initialize registry
@@ -647,7 +647,7 @@ module Econia::Registry {
 
     #[test(econia = @Econia)]
     /// Verify true return for registered market
-    public(script) fun is_registered_true(
+    public entry fun is_registered_true(
         econia: &signer
     ) acquires MR {
         c_i_c(econia); // Initialize friend-like capabilities
@@ -674,7 +674,7 @@ module Econia::Registry {
     )]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for uninitialized market registry
-    public(script) fun register_market_failure_no_registry(
+    public entry fun register_market_failure_no_registry(
         econia: &signer,
         host: &signer
     ) acquires MR {
@@ -689,7 +689,7 @@ module Econia::Registry {
     )]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for attempted re-registration
-    public(script) fun register_market_failure_registered(
+    public entry fun register_market_failure_registered(
         econia: &signer,
         host: &signer
     ) acquires MR {
@@ -706,7 +706,7 @@ module Econia::Registry {
         host = @TestUser
     )]
     /// Verify successful registration
-    public(script) fun register_market_success(
+    public entry fun register_market_success(
         econia: &signer,
         host: &signer
     ) acquires MR {

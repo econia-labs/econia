@@ -81,7 +81,7 @@ order, where a parcel contains $SF$ subunits.
     -  [Abort scenarios](#@Abort_scenarios_14)
 
 
-<pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<pre><code><b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="CritBit.md#0xc0deb00c_CritBit">0xc0deb00c::CritBit</a>;
 </code></pre>
 
@@ -552,7 +552,7 @@ containing an order of ID <code>id</code> on corresponding <code>side</code>
 Return a <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></code>, aborting if not called by Econia
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_get_friend_cap">get_friend_cap</a>(account: &signer): <a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_get_friend_cap">get_friend_cap</a>(<a href="">account</a>: &<a href="">signer</a>): <a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>
 </code></pre>
 
 
@@ -562,10 +562,10 @@ Return a <code><a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a></co
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_get_friend_cap">get_friend_cap</a>(
-    account: &signer
+    <a href="">account</a>: &<a href="">signer</a>
 ): <a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a> {
     // Assert called by Econia
-    <b>assert</b>!(s_a_o(account) == @Econia, <a href="Orders.md#0xc0deb00c_Orders_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    <b>assert</b>!(s_a_o(<a href="">account</a>) == @Econia, <a href="Orders.md#0xc0deb00c_Orders_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>{} // Return requested capability
 }
 </code></pre>
@@ -582,7 +582,7 @@ Initialize open orders under host account, provided <code><a href="Orders.md#0xc
 with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale factor <code>f</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(user: &signer, f: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(user: &<a href="">signer</a>, f: u64, _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">Orders::FriendCap</a>)
 </code></pre>
 
 
@@ -592,11 +592,11 @@ with market types <code>B</code>, <code>Q</code>, <code>E</code>, and scale fact
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Orders.md#0xc0deb00c_Orders_init_orders">init_orders</a>&lt;B, Q, E&gt;(
-    user: &signer,
+    user: &<a href="">signer</a>,
     f: u64,
     _c: &<a href="Orders.md#0xc0deb00c_Orders_FriendCap">FriendCap</a>
 ) {
-    // Assert open orders does not already exist under user account
+    // Assert open orders does not already exist under user <a href="">account</a>
     <b>assert</b>!(!<a href="Orders.md#0xc0deb00c_Orders_exists_orders">exists_orders</a>&lt;B, Q, E&gt;(s_a_o(user)), <a href="Orders.md#0xc0deb00c_Orders_E_ORDERS_EXISTS">E_ORDERS_EXISTS</a>);
     // Pack empty open orders container
     <b>let</b> o_o = <a href="Orders.md#0xc0deb00c_Orders_OO">OO</a>&lt;B, Q, E&gt;{f, a: cb_e&lt;u64&gt;(), b: cb_e&lt;u64&gt;()};

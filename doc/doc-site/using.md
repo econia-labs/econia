@@ -2,7 +2,7 @@
 
 - [Using Econia](#using-econia)
   - [Core initialization](#core-initialization)
-  - [Public script functions](#public-script-functions)
+  - [Public entry functions](#public-entry-functions)
   - [Setup](#setup)
     - [Market registration](#market-registration)
     - [User initialization](#user-initialization)
@@ -26,9 +26,9 @@
 
 Before anyone can trade on Econia, it must first be initialized ([`Econia::Init::init_econia()`](../../src/move/econia/build/Econia/docs/Init.md#0xc0deb00c_Init_init_econia)) by the account that published its bytecode to the Aptos blockchain.
 For now this will be taking place on the Aptos devnet (which is reset about once weekly), so monitor the [welcome page listing](welcome.md#devnet-account) for the most up-to-date Econia devnet account.
-After Econia has been initialized, users may interact with it through the following public script functions:
+After Econia has been initialized, users may interact with it through the following `public entry` functions:
 
-## Public script functions
+## Public entry functions
 
 Don't forget to first read the [design overview](https://econia.dev/design-overview) for a quick explanation of how Econia works!
 

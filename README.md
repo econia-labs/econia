@@ -60,11 +60,31 @@ See `ss.sh` within a given directory for its available options
     s mp # Navigate to Move package
     s ta # Run all tests
     INCLUDING DEPENDENCY AptosFramework
+    INCLUDING DEPENDENCY MoveNursery
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Econia
     Running Move unit tests
     ...
     ```
+1. Then install the `move` CLI:
+
+    ```zsh
+    cargo install --git https://github.com/move-language/move move-cli
+    ```
+
+1. Now you should be able to build the Move documentation:
+
+
+    ```zsh
+    # Still within Move package
+    s d
+    INCLUDING DEPENDENCY AptosFramework
+    INCLUDING DEPENDENCY MoveNursery
+    INCLUDING DEPENDENCY MoveStdlib
+    BUILDING Econia
+    ```
+
+1. Should [`aptos-core` #2142](https://github.com/aptos-labs/aptos-core/issues/2142), be accepted, installing the `move` CLI will no longer be necessary for this step, and the relevant script should be updated to run on the `aptos` CLI alone
 
 ### Using the Python package
 

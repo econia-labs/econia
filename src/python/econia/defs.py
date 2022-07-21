@@ -197,7 +197,7 @@ member_names = SimpleNamespace(
 
 module_names = SimpleNamespace(
     TestCoin = 'TestCoin',
-    Coin = 'Coin'
+    Coin = 'coin'
 )
 """Move module names, non-Econia"""
 

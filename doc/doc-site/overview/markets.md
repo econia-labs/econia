@@ -65,7 +65,7 @@ For a user to trade on a market, the market must first be "registered" by a "hos
 1. An empty order book of type `<B, Q, E>` is initialized under the host's account
 2. A registry is updated with an entry mapping from `<B, Q, E>` to the address of the corresponding host
 
-The registry is an `AptosFramework::IterableTable::IterableTable` that can only be initialized under the Econia account, and the registry must be initialized before hosts can register markets.
+The registry is an `aptos_framework::IterableTable::IterableTable` that can only be initialized under the Econia account, and the registry must be initialized before hosts can register markets.
 A market can only be registered once, meaning that `<FOOAccount::FOOModule::FOO, BARAccount::BARModuleBAR, E0>`, for instance, can only ever be registered to one host, and markets can only be registered using scale exponents defined in [`Econia::Registry`](../../../src/move/econia/sources/Registry.move) (e.g. `E0` actually denotes `Econia::Registry::E0`)
 Notably, this does not prevent multiple markets from being initialized using the same trading symbol, because the Aptos VM treats `FOOAccount::FOOModule::FOO` and `ImposterAccount::ImposterModule::FOO` as different types, hence front-end applications are advised to exercise caution accordingly.
 
@@ -100,6 +100,6 @@ The uninformed (or perhaps stubborn? idealistic?) user would almost certainly re
 
 ## Registry lookup
 
-The Econia registry, implemented as an `AptosFramework::IterableTable::IterableTable`, provides public functions for market registration but does not provide public lookup functions, so as to avoid resource contention that would otherwise likely result from concurrent reads and writes on-chain.
+The Econia registry, implemented as an `aptos_framework::IterableTable::IterableTable`, provides public functions for market registration but does not provide public lookup functions, so as to avoid resource contention that would otherwise likely result from concurrent reads and writes on-chain.
 Instead, registry data consumers are advised to inspect the Econia registry via the Aptos REST API or from a local node's state, then use the results to construct transactions accordingly.
-See [Wayne Culbreth's Table tutorial](https://medium.com/code-community-command/aptos-tutorial-episode-4-lets-table-this-for-now-part-1-2e465707f83d) for more information on API-based table lookups, noting that following his pull request of a `MapTable` module to the `AptosFramework`, Econia will likely switch to using that data structure.
+See [Wayne Culbreth's Table tutorial](https://medium.com/code-community-command/aptos-tutorial-episode-4-lets-table-this-for-now-part-1-2e465707f83d) for more information on API-based table lookups, noting that following his pull request of a `MapTable` module to the `aptos_framework`, Econia will likely switch to using that data structure.

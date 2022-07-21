@@ -596,7 +596,7 @@ See the <code>traverse_end_pop_success()</code> test.
     -  [Considerations](#@Considerations_41)
 
 
-<pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
+<pre><code><b>use</b> <a href="">0x1::vector</a>;
 </code></pre>
 
 
@@ -626,13 +626,13 @@ A crit-bit tree for key-value pairs with value type <code>V</code>
  node. Otherwise root is an inner node. 0 when tree is empty
 </dd>
 <dt>
-<code>i: vector&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">CritBit::I</a>&gt;</code>
+<code>i: <a href="">vector</a>&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">CritBit::I</a>&gt;</code>
 </dt>
 <dd>
  Inner nodes
 </dd>
 <dt>
-<code>o: vector&lt;<a href="CritBit.md#0xc0deb00c_CritBit_O">CritBit::O</a>&lt;V&gt;&gt;</code>
+<code>o: <a href="">vector</a>&lt;<a href="CritBit.md#0xc0deb00c_CritBit_O">CritBit::O</a>&lt;V&gt;&gt;</code>
 </dt>
 <dd>
  Outer nodes
@@ -1001,8 +1001,8 @@ Destroy empty tree <code>cb</code>
 ) {
     <b>assert</b>!(<a href="CritBit.md#0xc0deb00c_CritBit_is_empty">is_empty</a>(&cb), <a href="CritBit.md#0xc0deb00c_CritBit_E_DESTROY_NOT_EMPTY">E_DESTROY_NOT_EMPTY</a>);
     <b>let</b> <a href="CritBit.md#0xc0deb00c_CritBit_CB">CB</a>{r: _, i, o} = cb; // Unpack root index and node vectors
-    v_d_e(i); // Destroy empty inner node vector
-    v_d_e(o); // Destroy empty outer node vector
+    v_d_e(i); // Destroy empty inner node <a href="">vector</a>
+    v_d_e(o); // Destroy empty outer node <a href="">vector</a>
 }
 </code></pre>
 
@@ -1469,7 +1469,7 @@ tracked by the caller
     <a href="CritBit.md#0xc0deb00c_CritBit_pop_update_relationships">pop_update_relationships</a>(cb, s_s, p_f);
     // Store start node value from pop-facilitated node destruction
     <b>let</b> s_v = <a href="CritBit.md#0xc0deb00c_CritBit_pop_destroy_nodes">pop_destroy_nodes</a>(cb, p_f, c_i, n_o);
-    // If target node was last in outer node vector, then swap
+    // If target node was last in outer node <a href="">vector</a>, then swap
     // remove will have relocated it, so <b>update</b> its <b>post</b>-pop field
     // index <b>to</b> the start node's pre-pop field index
     <b>if</b> (<a href="CritBit.md#0xc0deb00c_CritBit_o_v">o_v</a>(i_t) == n_o - 1) i_t = c_i;
@@ -2307,7 +2307,7 @@ Insert key-value pair <code>k</code> and <code>v</code> into an empty <code>cb</
     k: u128,
     v: V
 ) {
-    // Push back outer node onto tree's vector of outer nodes
+    // Push back outer node onto tree's <a href="">vector</a> of outer nodes
     v_pu_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>&lt;V&gt;{k, v, p: <a href="CritBit.md#0xc0deb00c_CritBit_ROOT">ROOT</a>});
     // Set root index field <b>to</b> indicate 0th outer node
     cb.r = <a href="CritBit.md#0xc0deb00c_CritBit_OUT">OUT</a> &lt;&lt; <a href="CritBit.md#0xc0deb00c_CritBit_N_TYPE">N_TYPE</a>;
@@ -2415,7 +2415,7 @@ insert the new inner node below it (<code><a href="CritBit.md#0xc0deb00c_CritBit
     // Get number of inner nodes in tree (index of new inner node)
     <b>let</b> i_n_i = v_l&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i);
     // Get field index of search outer node, its side <b>as</b> a child,
-    // its key, the vector index of its parent, and the critical
+    // its key, the <a href="">vector</a> index of its parent, and the critical
     // bit indicated by the search parent
     <b>let</b> (i_s_o, s_s_o, k_s_o, i_s_p, s_p_c) = <a href="CritBit.md#0xc0deb00c_CritBit_search_outer">search_outer</a>(cb, k);
     <b>assert</b>!(k_s_o != k, <a href="CritBit.md#0xc0deb00c_CritBit_E_HAS_K">E_HAS_K</a>); // Assert key not a duplicate
@@ -2664,12 +2664,12 @@ the outer node
     <b>let</b> n_i = v_l&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&cb.i); // Get number of inner nodes pre-pop
     // Swap remove parent of popped outer node, storing no fields
     <b>let</b> <a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>{c: _, p: _, l: _, r: _} = v_s_r&lt;<a href="CritBit.md#0xc0deb00c_CritBit_I">I</a>&gt;(&<b>mut</b> cb.i, i_i);
-    // If destroyed inner node was not last inner node in vector,
+    // If destroyed inner node was not last inner node in <a href="">vector</a>,
     // repair the parent-child relationship broken by swap remove
     <b>if</b> (i_i &lt; n_i - 1) <a href="CritBit.md#0xc0deb00c_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_i, n_i);
     // Swap remove popped outer node, storing only its value
     <b>let</b> <a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>{k: _, v, p: _} = v_s_r&lt;<a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>&lt;V&gt;&gt;(&<b>mut</b> cb.o, <a href="CritBit.md#0xc0deb00c_CritBit_o_v">o_v</a>(i_o));
-    // If destroyed outer node was not last outer node in vector,
+    // If destroyed outer node was not last outer node in <a href="">vector</a>,
     // repair the parent-child relationship broken by swap remove
     <b>if</b> (<a href="CritBit.md#0xc0deb00c_CritBit_o_v">o_v</a>(i_o) &lt; n_o - 1) <a href="CritBit.md#0xc0deb00c_CritBit_stitch_swap_remove">stitch_swap_remove</a>(cb, i_o, n_o);
     v // Return popped value
@@ -2776,7 +2776,7 @@ Outer node sibling case:
     n_o: u64
 ): V {
     // Get field index of search outer node, its side <b>as</b> a child,
-    // its key, and the vector index of its parent
+    // its key, and the <a href="">vector</a> index of its parent
     <b>let</b> (i_s_o, s_s_o, k_s_o, i_s_p, _) = <a href="CritBit.md#0xc0deb00c_CritBit_search_outer">search_outer</a>(cb, k);
     <b>assert</b>!(k_s_o == k, <a href="CritBit.md#0xc0deb00c_CritBit_E_NOT_HAS_K">E_NOT_HAS_K</a>); // Assert key in tree
     // Update sibling, parent, grandparent relationships
@@ -2972,7 +2972,7 @@ is a child of its parent
             // Borrow immutable reference <b>to</b> it
             <b>let</b> s_o = v_b&lt;<a href="CritBit.md#0xc0deb00c_CritBit_O">O</a>&lt;V&gt;&gt;(&cb.o, <a href="CritBit.md#0xc0deb00c_CritBit_o_v">o_v</a>(i));
             // Return child field index of search outer node, its
-            // side <b>as</b> a child, its key, the vector index of its
+            // side <b>as</b> a child, its key, the <a href="">vector</a> index of its
             // parent, and parent's indicated critical bit
             <b>return</b> (i, s, s_o.k, s_o.p, s_p.c)
         };

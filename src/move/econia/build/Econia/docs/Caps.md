@@ -85,7 +85,7 @@ listed as a friend, since it requires access to
 -  [Function `orders_f_c`](#0xc0deb00c_Caps_orders_f_c)
 
 
-<pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<pre><code><b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="Book.md#0xc0deb00c_Book">0xc0deb00c::Book</a>;
 <b>use</b> <a href="Orders.md#0xc0deb00c_Orders">0xc0deb00c::Orders</a>;
 </code></pre>
@@ -221,7 +221,7 @@ account, aborting if called by another account or if capability
 container already exists
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>(account: &signer)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>(<a href="">account</a>: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -231,14 +231,14 @@ container already exists
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="Caps.md#0xc0deb00c_Caps_init_caps">init_caps</a>(
-    account: &signer
+    <a href="">account</a>: &<a href="">signer</a>
 ) {
-    <b>let</b> addr = s_a_o(account); // Get signer <b>address</b>
-    <b>assert</b>!(addr == @Econia, <a href="Caps.md#0xc0deb00c_Caps_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia signer
+    <b>let</b> addr = s_a_o(<a href="">account</a>); // Get <a href="">signer</a> <b>address</b>
+    <b>assert</b>!(addr == @Econia, <a href="Caps.md#0xc0deb00c_Caps_E_NOT_ECONIA">E_NOT_ECONIA</a>); // Assert Econia <a href="">signer</a>
     // Assert <b>friend</b>-like capabilities container does not yet exist
     <b>assert</b>!(!<b>exists</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(addr), <a href="Caps.md#0xc0deb00c_Caps_E_FC_EXISTS">E_FC_EXISTS</a>);
-    // Move <b>friend</b>-like capabilities container <b>to</b> Econia account
-    <b>move_to</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(account, <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>{b: b_g_f_c(account), o: o_g_f_c(account)});
+    // Move <b>friend</b>-like capabilities container <b>to</b> Econia <a href="">account</a>
+    <b>move_to</b>&lt;<a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>&gt;(<a href="">account</a>, <a href="Caps.md#0xc0deb00c_Caps_FC">FC</a>{b: b_g_f_c(<a href="">account</a>), o: o_g_f_c(<a href="">account</a>)});
 }
 </code></pre>
 

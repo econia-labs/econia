@@ -32,7 +32,7 @@ elif test $1 = cm; then move package coverage source --module $2
 elif test $1 = cs; then move package coverage summary
 
 # Build documentation
-elif test $1 = d; then move package build --doc
+elif test $1 = d; then move build --doc
 
 # Go back to Econia project repository root
 elif test $1 = er; then cd ../../../
@@ -51,7 +51,7 @@ elif test $1 = p; then
     python ../../python/econia/build.py publish \
         ../../../.secrets/"$addr".key ../../../ $2
     # Rebuild docs with named address to avoid git diffs
-    move package build --doc >/dev/null
+    move build --doc > /dev/null
 
 # Run tests in standard form , passing optional argument
 # For example `s ts -f coin`

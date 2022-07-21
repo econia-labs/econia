@@ -5,14 +5,14 @@ module Econia::Init {
     use Econia::Caps::init_caps;
     use Econia::Registry::init_registry;
     use Econia::Version::init_mock_version_number;
-    use Std::Signer::address_of as s_a_o;
+    use std::signer::address_of as s_a_o;
 
     /// When account/address is not Econia
     const E_NOT_ECONIA: u64 = 0;
 
     /// Initialize Econia core account resources, aborting if called by
     /// non-Econia account
-    public(script) fun init_econia(
+    public entry fun init_econia(
         account: &signer
     ) {
         // Verify called by Econia account
@@ -25,7 +25,7 @@ module Econia::Init {
     #[test(account = @TestUser)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for non-Econia caller
-    public(script) fun init_econia_failure_not_econia(
+    public entry fun init_econia_failure_not_econia(
         account: &signer
     ) {
         init_econia(account); // Attempt invalid invocation
@@ -33,7 +33,7 @@ module Econia::Init {
 
     #[test(account = @Econia)]
     /// Verify run-to-completion invocation of sub-initializers
-    public(script) fun init_econia_success(
+    public entry fun init_econia_success(
         account: &signer
     ) {
         init_econia(account); // Invoke initializer

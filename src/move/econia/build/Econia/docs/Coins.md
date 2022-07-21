@@ -14,9 +14,9 @@
 -  [Function `mint_to`](#0xc0deb00c_Coins_mint_to)
 
 
-<pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/ASCII.md#0x1_ASCII">0x1::ASCII</a>;
-<b>use</b> <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin">0x1::Coin</a>;
-<b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<pre><code><b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::signer</a>;
+<b>use</b> <a href="">0x1::string</a>;
 </code></pre>
 
 
@@ -67,13 +67,13 @@ Base coin capabilities
 
 <dl>
 <dt>
-<code>m: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_MintCapability">Coin::MintCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_BCT">Coins::BCT</a>&gt;</code>
+<code>m: <a href="_MintCapability">coin::MintCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_BCT">Coins::BCT</a>&gt;</code>
 </dt>
 <dd>
  Mint capability
 </dd>
 <dt>
-<code>b: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_BurnCapability">Coin::BurnCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_BCT">Coins::BCT</a>&gt;</code>
+<code>b: <a href="_BurnCapability">coin::BurnCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_BCT">Coins::BCT</a>&gt;</code>
 </dt>
 <dd>
  Burn capability
@@ -129,13 +129,13 @@ Quote coin capabilities
 
 <dl>
 <dt>
-<code>m: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_MintCapability">Coin::MintCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_QCT">Coins::QCT</a>&gt;</code>
+<code>m: <a href="_MintCapability">coin::MintCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_QCT">Coins::QCT</a>&gt;</code>
 </dt>
 <dd>
  Mint capability
 </dd>
 <dt>
-<code>b: <a href="../../../build/AptosFramework/docs/Coin.md#0x1_Coin_BurnCapability">Coin::BurnCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_QCT">Coins::QCT</a>&gt;</code>
+<code>b: <a href="_BurnCapability">coin::BurnCapability</a>&lt;<a href="Coins.md#0xc0deb00c_Coins_QCT">Coins::QCT</a>&gt;</code>
 </dt>
 <dd>
  Burn capability
@@ -165,7 +165,7 @@ When access-controlled function called by non-Econia account
 Base coin type coin name
 
 
-<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_BCT_CN">BCT_CN</a>: vector&lt;u8&gt; = [66, 97, 115, 101];
+<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_BCT_CN">BCT_CN</a>: <a href="">vector</a>&lt;u8&gt; = [66, 97, 115, 101];
 </code></pre>
 
 
@@ -175,7 +175,7 @@ Base coin type coin name
 Base coin type coin symbol
 
 
-<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_BCT_CS">BCT_CS</a>: vector&lt;u8&gt; = [66];
+<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_BCT_CS">BCT_CS</a>: <a href="">vector</a>&lt;u8&gt; = [66];
 </code></pre>
 
 
@@ -195,7 +195,7 @@ Base coin type decimal
 Base coin type type name
 
 
-<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_BCT_TN">BCT_TN</a>: vector&lt;u8&gt; = [66, 67, 84];
+<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_BCT_TN">BCT_TN</a>: <a href="">vector</a>&lt;u8&gt; = [66, 67, 84];
 </code></pre>
 
 
@@ -205,7 +205,7 @@ Base coin type type name
 Quote coin type coin name
 
 
-<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_QCT_CN">QCT_CN</a>: vector&lt;u8&gt; = [81, 117, 111, 116, 101];
+<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_QCT_CN">QCT_CN</a>: <a href="">vector</a>&lt;u8&gt; = [81, 117, 111, 116, 101];
 </code></pre>
 
 
@@ -215,7 +215,7 @@ Quote coin type coin name
 Quote coin type coin symbol
 
 
-<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_QCT_CS">QCT_CS</a>: vector&lt;u8&gt; = [81];
+<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_QCT_CS">QCT_CS</a>: <a href="">vector</a>&lt;u8&gt; = [81];
 </code></pre>
 
 
@@ -235,7 +235,7 @@ Base coin type decimal
 Quote coin type type name
 
 
-<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_QCT_TN">QCT_TN</a>: vector&lt;u8&gt; = [81, 67, 84];
+<pre><code><b>const</b> <a href="Coins.md#0xc0deb00c_Coins_QCT_TN">QCT_TN</a>: <a href="">vector</a>&lt;u8&gt; = [81, 67, 84];
 </code></pre>
 
 
@@ -247,7 +247,7 @@ Quote coin type type name
 Initialize base and quote coin types under Econia account
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_init_coin_types">init_coin_types</a>(econia: &signer)
+<pre><code><b>public</b> <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_init_coin_types">init_coin_types</a>(econia: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -256,19 +256,19 @@ Initialize base and quote coin types under Econia account
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_init_coin_types">init_coin_types</a>(
-    econia: &signer
+<pre><code><b>public</b> entry <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_init_coin_types">init_coin_types</a>(
+    econia: &<a href="">signer</a>
 ) {
-    // Assert initializing coin types under Econia account
+    // Assert initializing <a href="">coin</a> types under Econia <a href="">account</a>
     <b>assert</b>!(address_of(econia) == @Econia, <a href="Coins.md#0xc0deb00c_Coins_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Initialize base coin type, storing mint/burn capabilities
+    // Initialize base <a href="">coin</a> type, storing mint/burn capabilities
     <b>let</b>(m, b) = initialize&lt;<a href="Coins.md#0xc0deb00c_Coins_BCT">BCT</a>&gt;(
-        econia, string(<a href="Coins.md#0xc0deb00c_Coins_BCT_CN">BCT_CN</a>), string(<a href="Coins.md#0xc0deb00c_Coins_BCT_CS">BCT_CS</a>), <a href="Coins.md#0xc0deb00c_Coins_BCT_D">BCT_D</a>, <b>false</b>);
+        econia, utf8(<a href="Coins.md#0xc0deb00c_Coins_BCT_CN">BCT_CN</a>), utf8(<a href="Coins.md#0xc0deb00c_Coins_BCT_CS">BCT_CS</a>), <a href="Coins.md#0xc0deb00c_Coins_BCT_D">BCT_D</a>, <b>false</b>);
     // Save capabilities in <b>global</b> storage
     <b>move_to</b>(econia, <a href="Coins.md#0xc0deb00c_Coins_BCC">BCC</a>{m, b});
-    // Initialize quote coin type, storing mint/burn capabilities
+    // Initialize quote <a href="">coin</a> type, storing mint/burn capabilities
     <b>let</b>(m, b) = initialize&lt;<a href="Coins.md#0xc0deb00c_Coins_QCT">QCT</a>&gt;(
-        econia, string(<a href="Coins.md#0xc0deb00c_Coins_QCT_CN">QCT_CN</a>), string(<a href="Coins.md#0xc0deb00c_Coins_QCT_CS">QCT_CS</a>), <a href="Coins.md#0xc0deb00c_Coins_QCT_D">QCT_D</a>, <b>false</b>);
+        econia, utf8(<a href="Coins.md#0xc0deb00c_Coins_QCT_CN">QCT_CN</a>), utf8(<a href="Coins.md#0xc0deb00c_Coins_QCT_CS">QCT_CS</a>), <a href="Coins.md#0xc0deb00c_Coins_QCT_D">QCT_D</a>, <b>false</b>);
     // Save capabilities in <b>global</b> storage
     <b>move_to</b>(econia, <a href="Coins.md#0xc0deb00c_Coins_QCC">QCC</a>{m, b});
 }
@@ -283,10 +283,10 @@ Initialize base and quote coin types under Econia account
 ## Function `mint_to`
 
 Mint <code>val_bct</code> of <code><a href="Coins.md#0xc0deb00c_Coins_BCT">BCT</a></code> and <code>val_qct</code> of <code><a href="Coins.md#0xc0deb00c_Coins_QCT">QCT</a></code> to <code>user</code>'s
-<code>AptosFramework::Coin::Coinstore</code>
+<code>aptos_framework::Coin::Coinstore</code>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_mint_to">mint_to</a>(econia: &signer, user: <b>address</b>, val_bct: u64, val_qct: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_mint_to">mint_to</a>(econia: &<a href="">signer</a>, user: <b>address</b>, val_bct: u64, val_qct: u64)
 </code></pre>
 
 
@@ -295,13 +295,13 @@ Mint <code>val_bct</code> of <code><a href="Coins.md#0xc0deb00c_Coins_BCT">BCT</
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_mint_to">mint_to</a>(
-    econia: &signer,
+<pre><code><b>public</b> entry <b>fun</b> <a href="Coins.md#0xc0deb00c_Coins_mint_to">mint_to</a>(
+    econia: &<a href="">signer</a>,
     user: <b>address</b>,
     val_bct: u64,
     val_qct: u64
 ) <b>acquires</b> <a href="Coins.md#0xc0deb00c_Coins_BCC">BCC</a>, <a href="Coins.md#0xc0deb00c_Coins_QCC">QCC</a> {
-    // Assert called by Econia account
+    // Assert called by Econia <a href="">account</a>
     <b>assert</b>!(address_of(econia) == @Econia, <a href="Coins.md#0xc0deb00c_Coins_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     // Mint and deposit <b>to</b> user
     deposit&lt;<a href="Coins.md#0xc0deb00c_Coins_BCT">BCT</a>&gt;(user, mint&lt;<a href="Coins.md#0xc0deb00c_Coins_BCT">BCT</a>&gt;(val_bct, &<b>borrow_global</b>&lt;<a href="Coins.md#0xc0deb00c_Coins_BCC">BCC</a>&gt;(@Econia).m));

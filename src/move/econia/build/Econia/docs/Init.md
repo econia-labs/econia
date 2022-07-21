@@ -11,7 +11,7 @@ which must be invoked before trades can be placed.
 -  [Function `init_econia`](#0xc0deb00c_Init_init_econia)
 
 
-<pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
+<pre><code><b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="Caps.md#0xc0deb00c_Caps">0xc0deb00c::Caps</a>;
 <b>use</b> <a href="Registry.md#0xc0deb00c_Registry">0xc0deb00c::Registry</a>;
 <b>use</b> <a href="Version.md#0xc0deb00c_Version">0xc0deb00c::Version</a>;
@@ -42,7 +42,7 @@ Initialize Econia core account resources, aborting if called by
 non-Econia account
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Init.md#0xc0deb00c_Init_init_econia">init_econia</a>(account: &signer)
+<pre><code><b>public</b> <b>fun</b> <a href="Init.md#0xc0deb00c_Init_init_econia">init_econia</a>(<a href="">account</a>: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -51,14 +51,14 @@ non-Econia account
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>script</b>) <b>fun</b> <a href="Init.md#0xc0deb00c_Init_init_econia">init_econia</a>(
-    account: &signer
+<pre><code><b>public</b> entry <b>fun</b> <a href="Init.md#0xc0deb00c_Init_init_econia">init_econia</a>(
+    <a href="">account</a>: &<a href="">signer</a>
 ) {
-    // Verify called by Econia account
-    <b>assert</b>!(s_a_o(account) == @Econia, <a href="Init.md#0xc0deb00c_Init_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    init_caps(account); // <a href="Init.md#0xc0deb00c_Init">Init</a> <b>friend</b>-like capabilities
-    init_registry(account); // <a href="Init.md#0xc0deb00c_Init">Init</a> market registry
-    init_mock_version_number(account); // <a href="Init.md#0xc0deb00c_Init">Init</a> mock version number
+    // Verify called by Econia <a href="">account</a>
+    <b>assert</b>!(s_a_o(<a href="">account</a>) == @Econia, <a href="Init.md#0xc0deb00c_Init_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    init_caps(<a href="">account</a>); // <a href="Init.md#0xc0deb00c_Init">Init</a> <b>friend</b>-like capabilities
+    init_registry(<a href="">account</a>); // <a href="Init.md#0xc0deb00c_Init">Init</a> market registry
+    init_mock_version_number(<a href="">account</a>); // <a href="Init.md#0xc0deb00c_Init">Init</a> mock <a href="">version</a> number
 }
 </code></pre>
 

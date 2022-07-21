@@ -82,8 +82,7 @@ to be filled.
     -  [Assumes](#@Assumes_18)
 
 
-<pre><code><b>use</b> <a href="../../../build/MoveStdlib/docs/Signer.md#0x1_Signer">0x1::Signer</a>;
-<b>use</b> <a href="../../../build/MoveStdlib/docs/Vector.md#0x1_Vector">0x1::Vector</a>;
+<pre><code><b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="CritBit.md#0xc0deb00c_CritBit">0xc0deb00c::CritBit</a>;
 <b>use</b> <a href="ID.md#0xc0deb00c_ID">0xc0deb00c::ID</a>;
 </code></pre>
@@ -620,7 +619,7 @@ Return <code><b>true</b></code> if specified order book type exists at address
 Return a <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>, aborting if not called by Econia account
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_friend_cap">get_friend_cap</a>(account: &signer): <a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_friend_cap">get_friend_cap</a>(<a href="">account</a>: &<a href="">signer</a>): <a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>
 </code></pre>
 
 
@@ -630,10 +629,10 @@ Return a <code><a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a></code>,
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_friend_cap">get_friend_cap</a>(
-    account: &signer
+    <a href="">account</a>: &<a href="">signer</a>
 ): <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a> {
     // Assert called by Econia
-    <b>assert</b>!(address_of(account) == @Econia, <a href="Book.md#0xc0deb00c_Book_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    <b>assert</b>!(address_of(<a href="">account</a>) == @Econia, <a href="Book.md#0xc0deb00c_Book_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>{} // Return requested capability
 }
 </code></pre>
@@ -650,7 +649,7 @@ Initialize order book under host account, provided <code><a href="Book.md#0xc0de
 for market <code>&lt;B, Q, E&gt;</code> and corresponding scale factor <code>f</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &signer, f: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(host: &<a href="">signer</a>, f: u64, _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">Book::FriendCap</a>)
 </code></pre>
 
 
@@ -660,11 +659,11 @@ for market <code>&lt;B, Q, E&gt;</code> and corresponding scale factor <code>f</
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="Book.md#0xc0deb00c_Book_init_book">init_book</a>&lt;B, Q, E&gt;(
-    host: &signer,
+    host: &<a href="">signer</a>,
     f: u64,
     _c: &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>
 ) {
-    // Assert book does not already exist under host account
+    // Assert book does not already exist under host <a href="">account</a>
     <b>assert</b>!(!<a href="Book.md#0xc0deb00c_Book_exists_book">exists_book</a>&lt;B, Q, E&gt;(address_of(host), &<a href="Book.md#0xc0deb00c_Book_FriendCap">FriendCap</a>{}),
         <a href="Book.md#0xc0deb00c_Book_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);
     <b>let</b> m_a = <a href="Book.md#0xc0deb00c_Book_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>; // Declare <b>min</b> ask default order <a href="ID.md#0xc0deb00c_ID">ID</a>
@@ -1100,7 +1099,7 @@ and if <code>side</code> is <code><a href="Book.md#0xc0deb00c_Book_BID">BID</a><
 ask at the maximum price
 
 
-<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>&lt;B, Q, E&gt;(host_address: <b>address</b>, side: bool): vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Book::Order</a>&gt;
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>&lt;B, Q, E&gt;(host_address: <b>address</b>, side: bool): <a href="">vector</a>&lt;<a href="Book.md#0xc0deb00c_Book_Order">Book::Order</a>&gt;
 </code></pre>
 
 
@@ -1112,11 +1111,11 @@ ask at the maximum price
 <pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>&lt;B, Q, E&gt;(
     host_address: <b>address</b>,
     side: bool
-): vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;
+): <a href="">vector</a>&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;
 <b>acquires</b> <a href="Book.md#0xc0deb00c_Book_OB">OB</a> {
     // Assert an order book <b>exists</b> at the given <b>address</b>
     <b>assert</b>!(<b>exists</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host_address), <a href="Book.md#0xc0deb00c_Book_E_NO_BOOK">E_NO_BOOK</a>);
-    // Initialize empty vector of orders
+    // Initialize empty <a href="">vector</a> of orders
     <b>let</b> orders = empty_vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;();
     <b>let</b> (tree, traversal_dir) = <b>if</b> (side == <a href="Book.md#0xc0deb00c_Book_ASK">ASK</a>) // If an ask
         // Define traversal tree <b>as</b> asks tree, successor iteration
@@ -1125,7 +1124,7 @@ ask at the maximum price
         (&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="Book.md#0xc0deb00c_Book_OB">OB</a>&lt;B, Q, E&gt;&gt;(host_address).b, <a href="Book.md#0xc0deb00c_Book_L">L</a>);
     // Get number of positions in tree
     <b>let</b> n_positions = length(tree);
-    // If no positions in tree, <b>return</b> empty vector of orders
+    // If no positions in tree, <b>return</b> empty <a href="">vector</a> of orders
     <b>if</b> (n_positions == 0) <b>return</b> orders;
     // Calculate number of traversals still remaining
     <b>let</b> remaining_traversals = n_positions - 1;
@@ -1137,9 +1136,9 @@ ask at the maximum price
     <b>loop</b> { // Loop over all positions in tree
         <b>let</b> price = id_price(target_id); // Get position price
         <b>let</b> size = target_position_ref_mut.s; // Get position size
-        // Push corresponding order onto back of orders vector
+        // Push corresponding order onto back of orders <a href="">vector</a>
         vector_push_back&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;(&<b>mut</b> orders, <a href="Book.md#0xc0deb00c_Book_Order">Order</a>{price, size});
-        // Return orders vector <b>if</b> unable <b>to</b> traverse further
+        // Return orders <a href="">vector</a> <b>if</b> unable <b>to</b> traverse further
         <b>if</b> (remaining_traversals == 0) <b>return</b> orders;
         // Otherwise traverse <b>to</b> the next position in the tree
         (target_id, target_position_ref_mut, target_parent_field, _) =
@@ -1163,7 +1162,7 @@ Private indexing function for SDK generation: aggregates result
 of <code><a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>()</code> into a vector of <code><a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a></code>
 
 
-<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_price_levels">get_price_levels</a>(orders: &vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Book::Order</a>&gt;): vector&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">Book::PriceLevel</a>&gt;
+<pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_price_levels">get_price_levels</a>(orders: &<a href="">vector</a>&lt;<a href="Book.md#0xc0deb00c_Book_Order">Book::Order</a>&gt;): <a href="">vector</a>&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">Book::PriceLevel</a>&gt;
 </code></pre>
 
 
@@ -1173,13 +1172,13 @@ of <code><a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>()</code> in
 
 
 <pre><code><b>fun</b> <a href="Book.md#0xc0deb00c_Book_get_price_levels">get_price_levels</a>(
-    orders: &vector&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;
-): vector&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt; {
-    // Initialize empty vector of price levels
+    orders: &<a href="">vector</a>&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;
+): <a href="">vector</a>&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt; {
+    // Initialize empty <a href="">vector</a> of price levels
     <b>let</b> price_levels = empty_vector&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt;();
     // Get number of orders <b>to</b> process
     <b>let</b> n_orders = vector_length&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;(orders);
-    // If no orders, <b>return</b> empty vector of price levels
+    // If no orders, <b>return</b> empty <a href="">vector</a> of price levels
     <b>if</b> (n_orders == 0) <b>return</b> price_levels;
     // Initialize <b>loop</b> counter, price level price and size
     <b>let</b> (order_index, level_price, level_size) = (0, 0, 0);
@@ -1188,7 +1187,7 @@ of <code><a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>()</code> in
         <b>let</b> order = vector_borrow&lt;<a href="Book.md#0xc0deb00c_Book_Order">Order</a>&gt;(orders, order_index);
         <b>if</b> (order.price != level_price) { // If on new price level
             <b>if</b> (order_index &gt; 0) { // If not on first order
-                // Store the last price level in vector
+                // Store the last price level in <a href="">vector</a>
                 vector_push_back&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt;(&<b>mut</b> price_levels,
                     <a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>{price: level_price, size: level_size});
             };
@@ -1199,15 +1198,15 @@ of <code><a href="Book.md#0xc0deb00c_Book_get_orders">get_orders</a>()</code> in
             level_size = level_size + order.size;
         };
         order_index = order_index + 1; // Increment order index
-        // If have looped over all in  0-indexed vector
+        // If have looped over all in  0-indexed <a href="">vector</a>
         <b>if</b> (order_index == n_orders) { // If no more iterations left
-            // Store final price level in vector
+            // Store final price level in <a href="">vector</a>
             vector_push_back&lt;<a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>&gt;(&<b>mut</b> price_levels,
                 <a href="Book.md#0xc0deb00c_Book_PriceLevel">PriceLevel</a>{price: level_price, size: level_size});
             <b>break</b> // Break out of <b>loop</b>
         };
     }; // Now done looping over orders
-    price_levels // Return sorted vector of price levels
+    price_levels // Return sorted <a href="">vector</a> of price levels
 }
 </code></pre>
 
@@ -1432,7 +1431,7 @@ has at least one position in corresponding tree in case of
         incoming_address, target_position_ref_mut, size);
     // Return target position <a href="ID.md#0xc0deb00c_ID">ID</a>, target position user <b>address</b>,
     // corresponding node's parent field, corresponding node's child
-    // field index, the number of base coin parcels filled, and <b>if</b>
+    // field index, the number of base <a href="">coin</a> parcels filled, and <b>if</b>
     // insufficient quote coins in the case of target ask position
     (target_id, target_address, target_parent_field, target_child_index,
      filled, perfect, insufficient_quote)

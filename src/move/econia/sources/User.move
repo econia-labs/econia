@@ -3,11 +3,11 @@ module Econia::User {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use AptosFramework::Account::{
+    use aptos_framework::account::{
         get_sequence_number as a_g_s_n
     };
 
-    use AptosFramework::Coin::{
+    use aptos_framework::coin::{
         Coin as C,
         deposit as c_d,
         extract as coin_extract,
@@ -57,7 +57,7 @@ module Econia::User {
         get_v_n
     };
 
-    use Std::Signer::{
+    use std::signer::{
         address_of
     };
 
@@ -72,14 +72,14 @@ module Econia::User {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use AptosFramework::Account::{
+    use aptos_framework::account::{
         create_account,
         increment_sequence_number as inc_seq_number,
         set_sequence_number as a_s_s_n
     };
 
     #[test_only]
-    use AptosFramework::Coin::{
+    use aptos_framework::coin::{
         balance as c_b,
         register as coin_register,
         value as coin_value
@@ -182,12 +182,12 @@ module Econia::User {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public script functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Deposit `b_val` base coin and `q_val` quote coin into `user`'s
-    /// `OC`, from their `AptosFramework::Coin::CoinStore`, incrementing
+    /// `OC`, from their `aptos_framework::Coin::CoinStore`, incrementing
     /// sequence counter to prevent transaction collisions
-    public(script) fun deposit<B, Q, E>(
+    public entry fun deposit<B, Q, E>(
         user: &signer,
         b_val: u64,
         q_val: u64
@@ -199,7 +199,7 @@ module Econia::User {
     }
 
     /// Wrapped `cancel_order()` call for `ASK`
-    public(script) fun cancel_ask<B, Q, E>(
+    public entry fun cancel_ask<B, Q, E>(
         user: &signer,
         host: address,
         id: u128
@@ -208,7 +208,7 @@ module Econia::User {
     }
 
     /// Wrapped `cancel_order()` call for `BID`
-    public(script) fun cancel_bid<B, Q, E>(
+    public entry fun cancel_bid<B, Q, E>(
         user: &signer,
         host: address,
         id: u128
@@ -220,7 +220,7 @@ module Econia::User {
     /// with base coin type `B`, quote coin type `Q`, and scale exponent
     /// `E`, aborting if no such market or if containers already
     /// initialized for market
-    public(script) fun init_containers<B, Q, E>(
+    public entry fun init_containers<B, Q, E>(
         user: &signer
     ) {
         assert!(r_i_r<B, Q, E>(), E_NO_MARKET); // Assert market exists
@@ -238,7 +238,7 @@ module Econia::User {
 
     /// Initialize an `SC` with the sequence number of the initializing
     /// transaction, aborting if one already exists
-    public(script) fun init_user(
+    public entry fun init_user(
         user: &signer
     ) {
         let user_addr = address_of(user); // Get user address
@@ -249,7 +249,7 @@ module Econia::User {
     }
 
     /// Wrapped `submit_limit_order()` call for `ASK`
-    public(script) fun submit_ask<B, Q, E>(
+    public entry fun submit_ask<B, Q, E>(
         user: &signer,
         host: address,
         price: u64,
@@ -259,7 +259,7 @@ module Econia::User {
     }
 
     /// Wrapped `submit_limit_order()` call for `BID`
-    public(script) fun submit_bid<B, Q, E>(
+    public entry fun submit_bid<B, Q, E>(
         user: &signer,
         host: address,
         price: u64,
@@ -269,9 +269,9 @@ module Econia::User {
     }
 
     /// Withdraw `b_val` base coin and `q_val` quote coin from `user`'s
-    /// `OC`, into their `AptosFramework::Coin::CoinStore`, incrementing
-    /// sequence counter to prevent transaction collisions
-    public(script) fun withdraw<B, Q, E>(
+    /// `OC`, into their `aptos_framework::Coin::CoinStore`,
+    /// incrementing sequence counter to prevent transaction collisions
+    public entry fun withdraw<B, Q, E>(
         user: &signer,
         b_val: u64,
         q_val: u64
@@ -281,7 +281,7 @@ module Econia::User {
         update_s_c(user, &orders_cap()); // Update user sequence counter
     }
 
-    // Public script functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -380,7 +380,7 @@ module Econia::User {
     }
 
     /// Deposit `b_val` base coin and `q_val` quote coin into `user`'s
-    /// `OC`, from their `AptosFramework::Coin::CoinStore`
+    /// `OC`, from their `aptos_framework::Coin::CoinStore`
     public fun deposit_internal<B, Q, E>(
         user: &signer,
         b_val: u64,
@@ -458,7 +458,7 @@ module Econia::User {
     }
 
     /// Withdraw `b_val` base coin and `q_val` quote coin from `user`'s
-    /// `OC`, into their `AptosFramework::Coin::CoinStore`
+    /// `OC`, into their `aptos_framework::Coin::CoinStore`
     public fun withdraw_internal<B, Q, E>(
         user: &signer,
         b_val: u64,
@@ -639,7 +639,7 @@ module Econia::User {
 
     #[test_only]
     /// Initialize a user with containers for a test market
-    public(script) fun init_test_market_user(
+    public entry fun init_test_market_user(
         econia: &signer,
         user: &signer
     ) {
@@ -655,7 +655,7 @@ module Econia::User {
     #[test_only]
     /// Initialize test market with scale exponent `E` hosted by Econia,
     /// funding a test user with `b_c` base coins and `q_c` quote coins
-    public(script) fun init_test_scaled_market_funded_user<E>(
+    public entry fun init_test_scaled_market_funded_user<E>(
         econia: &signer,
         user: &signer,
         b_c: u64,
@@ -670,7 +670,7 @@ module Econia::User {
     #[test_only]
     /// Initialize `user` to trade on test market with scale exponent
     /// `E`, funding with `b_c` base coins and `q_c` quote coins
-    public(script) fun init_funded_user<E>(
+    public entry fun init_funded_user<E>(
         user: &signer,
         base_coins: u64,
         quote_coins: u64
@@ -700,7 +700,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for user not having order collateral container
-    public(script) fun cancel_order_failure_no_o_c(
+    public entry fun cancel_order_failure_no_o_c(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -717,7 +717,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful ask cancellation
-    public(script) fun cancel_ask_success(
+    public entry fun cancel_ask_success(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -756,7 +756,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful bid cancellation
-    public(script) fun cancel_bid_success(
+    public entry fun cancel_bid_success(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -796,7 +796,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for no deposit indicated
-    public(script) fun deposit_failure_no_deposit(
+    public entry fun deposit_failure_no_deposit(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -810,7 +810,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for no order collateral container initialized
-    public(script) fun deposit_failure_no_o_c(
+    public entry fun deposit_failure_no_o_c(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -823,7 +823,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful collateral deposits
-    public(script) fun deposit_success(
+    public entry fun deposit_success(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -872,7 +872,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for attempting to re-initialize order collateral
-    public(script) fun init_o_c_failure_exists(
+    public entry fun init_o_c_failure_exists(
         econia: &signer,
         user: &signer
     ) {
@@ -897,7 +897,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful initialization of order collateral
-    public(script) fun init_o_c_success(
+    public entry fun init_o_c_success(
         econia: &signer,
         user: &signer
     ) acquires OC {
@@ -919,7 +919,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for user having order collateral container
-    public(script) fun init_containers_failure_has_o_c(
+    public entry fun init_containers_failure_has_o_c(
         econia: &signer,
         user: &signer
     ) {
@@ -935,7 +935,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for user already having open orders container
-    public(script) fun init_containers_failure_has_o_o(
+    public entry fun init_containers_failure_has_o_o(
         econia: &signer,
         user: &signer
     ) {
@@ -949,7 +949,7 @@ module Econia::User {
     #[test(user = @TestUser)]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for unregistered market
-    public(script) fun init_containers_failure_no_market(
+    public entry fun init_containers_failure_no_market(
         user: &signer
     ) {
         init_containers<BCT, QCT, E0>(user); // Attempt invalid init
@@ -961,7 +961,7 @@ module Econia::User {
     )]
 
     /// Verify successful user initialization
-    public(script) fun init_containers_success(
+    public entry fun init_containers_success(
         econia: &signer,
         user: &signer
     ) acquires OC {
@@ -985,7 +985,7 @@ module Econia::User {
     #[test(user = @TestUser)]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for attempted re-initialization
-    public(script) fun init_user_failure(
+    public entry fun init_user_failure(
         user: &signer
     ) {
         create_account(address_of(user)); // Initialize Account resource
@@ -995,7 +995,7 @@ module Econia::User {
 
     #[test(user = @TestUser)]
     /// Verify successful initialization
-    public(script) fun init_user_success(
+    public entry fun init_user_success(
         user: &signer
     ) {
         let user_addr = address_of(user); // Get user address
@@ -1010,7 +1010,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful processing of filling against position on book
-    public(script) fun process_fill_ask_complete(
+    public entry fun process_fill_ask_complete(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1073,7 +1073,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful processing of filling against position on book
-    public(script) fun process_fill_ask_partial(
+    public entry fun process_fill_ask_partial(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1137,7 +1137,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful processing of filling against position on book
-    public(script) fun process_fill_bid_complete(
+    public entry fun process_fill_bid_complete(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1200,7 +1200,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful processing of filling against position on book
-    public(script) fun process_fill_bid_partial(
+    public entry fun process_fill_bid_partial(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1265,7 +1265,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 9)]
     /// Verify failure for user having insufficient collateral
-    public(script) fun submit_ask_failure_collateral(
+    public entry fun submit_ask_failure_collateral(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1282,7 +1282,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 10)]
     /// Verify failure for user placing order that crosses spread
-    public(script) fun submit_ask_failure_crossed_spread(
+    public entry fun submit_ask_failure_crossed_spread(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1306,7 +1306,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful ask submission
-    public(script) fun submit_ask_success(
+    public entry fun submit_ask_success(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1344,7 +1344,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 9)]
     /// Verify failure for user having insufficient collateral
-    public(script) fun submit_bid_failure_collateral(
+    public entry fun submit_bid_failure_collateral(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1362,7 +1362,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 10)]
     /// Verify failure for user placing order that crosses spread
-    public(script) fun submit_bid_failure_crossed_spread(
+    public entry fun submit_bid_failure_crossed_spread(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1386,7 +1386,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful ask submission
-    public(script) fun submit_bid_success(
+    public entry fun submit_bid_success(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1424,7 +1424,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for no such market
-    public(script) fun submit_limit_order_failure_no_market(
+    public entry fun submit_limit_order_failure_no_market(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1443,7 +1443,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for user not having order collateral container
-    public(script) fun submit_limit_order_failure_no_o_c(
+    public entry fun submit_limit_order_failure_no_o_c(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1477,7 +1477,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for trying to update twice in same transaction
-    public(script) fun update_s_c_failure_same_s_n(
+    public entry fun update_s_c_failure_same_s_n(
         econia: &signer,
         user: &signer
     ) acquires SC {
@@ -1494,7 +1494,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful update for arbitrary (valid) sequence number
-    public(script) fun update_s_c_success(
+    public entry fun update_s_c_success(
         econia: &signer,
         user: &signer
     ) acquires SC {
@@ -1514,7 +1514,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 8)]
     /// Verify failure for attempting to withdraw too many base coins
-    public(script) fun withdraw_failure_excess_bct(
+    public entry fun withdraw_failure_excess_bct(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1533,7 +1533,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 8)]
     /// Verify failure for attempting to withdraw too many quote coins
-    public(script) fun withdraw_failure_excess_qct(
+    public entry fun withdraw_failure_excess_qct(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1552,7 +1552,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for no order collateral container initialized
-    public(script) fun withdraw_failure_no_o_c(
+    public entry fun withdraw_failure_no_o_c(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1566,7 +1566,7 @@ module Econia::User {
     )]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for no withdraw indicated
-    public(script) fun withdraw_failure_no_withdraw(
+    public entry fun withdraw_failure_no_withdraw(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {
@@ -1579,7 +1579,7 @@ module Econia::User {
         user = @TestUser
     )]
     /// Verify successful collateral withdrawals
-    public(script) fun withdraw_success(
+    public entry fun withdraw_success(
         econia: &signer,
         user: &signer
     ) acquires OC, SC {

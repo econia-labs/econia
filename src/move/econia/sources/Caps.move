@@ -70,7 +70,7 @@ module Econia::Caps {
         get_friend_cap as o_g_f_c
     };
 
-    use Std::Signer::{
+    use std::signer::{
         address_of as s_a_o
     };
 

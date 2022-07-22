@@ -70,6 +70,6 @@ elif test $1 = tf; then aptos move test --filter $2
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand
 elif test $1 = wd; then
-    ls sources/*.move | entr move package build --doc
+    ls sources/*.move | entr move build --doc
 
 else echo Invalid option; fi

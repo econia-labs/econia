@@ -10,6 +10,7 @@ module Econia::Init {
     /// When account/address is not Econia
     const E_NOT_ECONIA: u64 = 0;
 
+    #[cmd]
     /// Initialize Econia core account resources, aborting if called by
     /// non-Econia account
     public entry fun init_econia(

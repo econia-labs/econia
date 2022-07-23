@@ -286,6 +286,7 @@ module Econia::Registry {
         e: TI
     }
 
+    #[generate(table_loader=true)]
     /// Market registry
     struct MR has key {
         /// Table from `MI` to address hosting the corresponding `MC`
@@ -468,6 +469,7 @@ module Econia::Registry {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd(desc=b"Create a new market B-Q-E")]
     /// Register a market for the given base coin type `B`, quote coin
     /// type `Q`, and scale exponent `E` , aborting if registry not
     /// initialized or if market already registered

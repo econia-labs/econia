@@ -184,6 +184,7 @@ module Econia::User {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd(desc=b"deposit funds into market")]
     /// Deposit `b_val` base coin and `q_val` quote coin into `user`'s
     /// `OC`, from their `aptos_framework::Coin::CoinStore`, incrementing
     /// sequence counter to prevent transaction collisions
@@ -198,6 +199,7 @@ module Econia::User {
         update_s_c(user, &orders_cap); // Update user sequence counter
     }
 
+    #[cmd(desc=b"Cancel bid order with id")]
     /// Wrapped `cancel_order()` call for `ASK`
     public entry fun cancel_ask<B, Q, E>(
         user: &signer,
@@ -207,6 +209,7 @@ module Econia::User {
         cancel_order<B, Q, E>(user, host, ASK, id);
     }
 
+    #[cmd(desc=b"Cancel ask order with id")]
     /// Wrapped `cancel_order()` call for `BID`
     public entry fun cancel_bid<B, Q, E>(
         user: &signer,
@@ -216,6 +219,7 @@ module Econia::User {
         cancel_order<B, Q, E>(user, host, BID, id);
     }
 
+    #[cmd(desc=b"Initialize user for trading on B-Q-E market")]
     /// Initialize a user with `Econia::Orders::OO` and `OC` for market
     /// with base coin type `B`, quote coin type `Q`, and scale exponent
     /// `E`, aborting if no such market or if containers already
@@ -236,6 +240,7 @@ module Econia::User {
         o_i_o<B, Q, E>(user, r_s_f<E>(), &orders_cap());
     }
 
+    #[cmd(desc=b"Initializes account for placing limit orders")]
     /// Initialize an `SC` with the sequence number of the initializing
     /// transaction, aborting if one already exists
     public entry fun init_user(
@@ -248,6 +253,7 @@ module Econia::User {
         move_to<SC>(user, SC{i: a_g_s_n(user_addr)});
     }
 
+    #[cmd(desc=b"Submit limit order to sell B to Q")]
     /// Wrapped `submit_limit_order()` call for `ASK`
     public entry fun submit_ask<B, Q, E>(
         user: &signer,
@@ -258,6 +264,7 @@ module Econia::User {
         submit_limit_order<B, Q, E>(user, host, ASK, price, size);
     }
 
+    #[cmd(desc=b"Submit limit order to buy B with Q")]
     /// Wrapped `submit_limit_order()` call for `BID`
     public entry fun submit_bid<B, Q, E>(
         user: &signer,
@@ -268,6 +275,7 @@ module Econia::User {
         submit_limit_order<B, Q, E>(user, host, BID, price, size);
     }
 
+    #[cmd(desc=b"Withdraw funds from market")]
     /// Withdraw `b_val` base coin and `q_val` quote coin from `user`'s
     /// `OC`, into their `aptos_framework::Coin::CoinStore`,
     /// incrementing sequence counter to prevent transaction collisions

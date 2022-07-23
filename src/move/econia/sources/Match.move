@@ -261,6 +261,7 @@ module Econia::Match {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd(desc=b"Submit market order to buy B with Q")]
     /// Wrapped call to `submit_market_order()` for side `BUY`
     public entry fun submit_market_buy<B, Q, E>(
         user: &signer,
@@ -274,6 +275,7 @@ module Econia::Match {
         update_user_seq_counter(user, &orders_cap());
     }
 
+    #[cmd(desc=b"Submit market order to sell B to Q")]
     /// Wrapped call to `submit_market_order()` for side `SELL`,
     public entry fun submit_market_sell<B, Q, E>(
         user: &signer,
@@ -350,6 +352,7 @@ module Econia::Match {
             user, base_collateral, quote_collateral, orders_cap);
     }
 
+    #[cmd(desc=b"Swap B to Q")]
     /// Wrapped call to `swap()` for `BUY`
     public entry fun swap_buy<B, Q, E>(
         user: &signer,
@@ -361,6 +364,7 @@ module Econia::Match {
             &orders_cap())
     }
 
+    #[cmd(desc=b"Swap Q to B")]
     /// Wrapped call to `swap()` for `SELL`
     public entry fun swap_sell<B, Q, E>(
         user: &signer,

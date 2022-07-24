@@ -429,28 +429,9 @@ module econia::critbit {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use std::vector::{
-        borrow as vector_borrow,
-        borrow_mut as vector_borrow_mut,
-        destroy_empty as vector_destroy_empty,
-        empty as vector_empty,
-        is_empty as vector_is_empty,
-        length as vector_length,
-        pop_back as vector_pop_back,
-        push_back as vector_push_back,
-        swap_remove as vector_swap_remove
-    };
+    use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test_only]
-    use std::vector::{
-        append as vector_append,
-    };
-
-    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -589,9 +570,9 @@ module econia::critbit {
         // Unpack root index and node vectors
         let CritBitTree{root: _, inner_nodes, outer_nodes} = tree;
         // Destroy empty inner node vector
-        vector_destroy_empty(inner_nodes);
+        vector::destroy_empty(inner_nodes);
         // Destroy empty outer node vector
-        vector_destroy_empty(outer_nodes);
+        vector::destroy_empty(outer_nodes);
     }
 
     /// Return an empty tree
@@ -599,8 +580,8 @@ module econia::critbit {
     CritBitTree<V> {
         CritBitTree{
             root: 0,
-            inner_nodes: vector_empty<InnerNode>(),
-            outer_nodes: vector_empty<OuterNode<V>>()
+            inner_nodes: vector::empty<InnerNode>(),
+            outer_nodes: vector::empty<OuterNode<V>>()
         }
     }
 
@@ -633,14 +614,14 @@ module econia::critbit {
     public fun is_empty<V>(
         tree: &CritBitTree<V>
     ): bool {
-        vector_is_empty<OuterNode<V>>(&tree.outer_nodes)
+        vector::is_empty<OuterNode<V>>(&tree.outer_nodes)
     }
 
     /// Return number of keys in `tree` (number of outer nodes)
     public fun length<V>(
         tree: &CritBitTree<V>
     ): u64 {
-        vector_length<OuterNode<V>>(&tree.outer_nodes)
+        vector::length<OuterNode<V>>(&tree.outer_nodes)
     }
 
     /// Return the maximum key in `tree`, aborting if `tree` is empty
@@ -650,7 +631,7 @@ module econia::critbit {
         // Assert tree not empty
         assert!(!is_empty(tree), E_LOOKUP_EMPTY);
         // Return max key
-        vector_borrow<OuterNode<V>>(
+        vector::borrow<OuterNode<V>>(
             &tree.outer_nodes,
             outer_node_vector_index(max_node_child_index<V>(tree))
         ).key
@@ -663,7 +644,7 @@ module econia::critbit {
         // Assert tree not empty
         assert!(!is_empty(tree), E_LOOKUP_EMPTY);
         // Return min key
-        vector_borrow<OuterNode<V>>(
+        vector::borrow<OuterNode<V>>(
             &tree.outer_nodes,
             outer_node_vector_index(min_node_child_index<V>(tree))
         ).key
@@ -690,8 +671,8 @@ module econia::critbit {
     ): CritBitTree<V> {
         let tree = CritBitTree{
             root: 0,
-            inner_nodes: vector_empty<InnerNode>(),
-            outer_nodes: vector_empty<OuterNode<V>>()
+            inner_nodes: vector::empty<InnerNode>(),
+            outer_nodes: vector::empty<OuterNode<V>>()
         };
         insert_empty<V>(&mut tree, key, value);
         tree
@@ -730,7 +711,7 @@ module econia::critbit {
             max_node_child_index(tree) else
             min_node_child_index(tree);
         // Borrow mutable reference to node
-        let node = vector_borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
+        let node = vector::borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
             outer_node_vector_index(child_field_index));
         // Return node's key, mutable reference to its value, its parent
         // field, and the child field index of it
@@ -760,7 +741,7 @@ module econia::critbit {
         let target_child_index =
             traverse_target_child_index<V>(tree, key, parent_index, direction);
         // Borrow mutable reference to target node
-        let node = vector_borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
+        let node = vector::borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
             outer_node_vector_index(target_child_index));
         // Return target node's key, mutable reference to its value, its
         // parent field, and child field index of it
@@ -818,7 +799,7 @@ module econia::critbit {
     ) {
         // Mark start node's side as a child as left (true) if node's
         // parent has the node as its left child, else right (false)
-        let start_child_side = vector_borrow<InnerNode>(
+        let start_child_side = vector::borrow<InnerNode>(
             &tree.inner_nodes, parent_index).left_child_index == child_index;
         // Store target node's pre-pop child field index
         let target_child_index = traverse_target_child_index(
@@ -834,7 +815,7 @@ module econia::critbit {
         if (outer_node_vector_index(target_child_index) == n_outer_nodes - 1)
             target_child_index = child_index;
         // Borrow mutable reference to target node
-        let target_node = vector_borrow_mut<OuterNode<V>>(
+        let target_node = vector::borrow_mut<OuterNode<V>>(
             &mut tree.outer_nodes,
             outer_node_vector_index(target_child_index));
         // Return target node's key, mutable reference to its value, its
@@ -874,12 +855,12 @@ module econia::critbit {
             tree.root = 0; // Update root
             // Pop off and unpack outer node at root
             let OuterNode{key: _, value, parent_index: _} =
-                vector_pop_back<OuterNode<V>>(&mut tree.outer_nodes);
+                vector::pop_back<OuterNode<V>>(&mut tree.outer_nodes);
             value // Return popped value
         } else { // If popping from tree with more than 1 outer node
             // Mark node's side as a child as left (true) if node's
             // parent has the node as its left child, else right (false)
-            let node_child_side = vector_borrow<InnerNode>(&tree.inner_nodes,
+            let node_child_side = vector::borrow<InnerNode>(&tree.inner_nodes,
                 parent_index).left_child_index == child_index;
             // Update sibling, parent, grandparent relationships
             pop_update_relationships(tree, node_child_side, parent_index);
@@ -996,20 +977,21 @@ module econia::critbit {
         key: u128,
     ): &OuterNode<V> {
         // If root is an outer node, return reference to it
-        if (is_outer_node(tree.root)) return (vector_borrow<OuterNode<V>>(
+        if (is_outer_node(tree.root)) return (vector::borrow<OuterNode<V>>(
             &tree.outer_nodes, outer_node_vector_index(tree.root)));
         // Otherwise borrow inner node at root
-        let node = vector_borrow<InnerNode>(&tree.inner_nodes, tree.root);
+        let node = vector::borrow<InnerNode>(&tree.inner_nodes, tree.root);
         loop { // Loop over inner nodes
             // If key is set at critical bit, get index of child on R
             let child_index = if (is_set(key, node.critical_bit))
                 // Otherwise L
                 node.right_child_index else node.left_child_index;
             // If child is outer node, return reference to it
-            if (is_outer_node(child_index)) return vector_borrow<OuterNode<V>>(
-                &tree.outer_nodes, outer_node_vector_index(child_index));
+            if (is_outer_node(child_index)) return
+                vector::borrow<OuterNode<V>>(&tree.outer_nodes,
+                    outer_node_vector_index(child_index));
             // Borrow next inner node to review
-            node = vector_borrow<InnerNode>(&tree.inner_nodes, child_index);
+            node = vector::borrow<InnerNode>(&tree.inner_nodes, child_index);
         }
     }
 
@@ -1019,10 +1001,10 @@ module econia::critbit {
         key: u128,
     ): &mut OuterNode<V> {
         // If root is an outer node, return mutable reference to it
-        if (is_outer_node(tree.root)) return (vector_borrow_mut<OuterNode<V>>(
+        if (is_outer_node(tree.root)) return (vector::borrow_mut<OuterNode<V>>(
             &mut tree.outer_nodes, outer_node_vector_index(tree.root)));
         // Otherwise borrow inner node at root
-        let node = vector_borrow<InnerNode>(&tree.inner_nodes, tree.root);
+        let node = vector::borrow<InnerNode>(&tree.inner_nodes, tree.root);
         loop { // Loop over inner nodes
             // If key is set at critical bit, get index of child on R
             let child_index = if (is_set(key, node.critical_bit))
@@ -1030,10 +1012,10 @@ module econia::critbit {
                 node.right_child_index else node.left_child_index;
             // If child is outer node, return mutable reference to it
             if (is_outer_node(child_index)) return
-                vector_borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
+                vector::borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
                     outer_node_vector_index(child_index));
             // Borrow next inner node to review
-            node = vector_borrow<InnerNode>(&tree.inner_nodes, child_index);
+            node = vector::borrow<InnerNode>(&tree.inner_nodes, child_index);
         }
     }
 
@@ -1216,7 +1198,7 @@ module econia::critbit {
         critical_bit: u8
     ) {
         // Set index of node under review to search parent's parent
-        let node_index = vector_borrow<InnerNode>(&tree.inner_nodes,
+        let node_index = vector::borrow<InnerNode>(&tree.inner_nodes,
             search_parent_index).parent_index;
         loop { // Loop over inner nodes
             if (node_index == ROOT) { // If walk arrives at root
@@ -1225,7 +1207,7 @@ module econia::critbit {
                     n_inner_nodes, critical_bit)
             } else { // If walk has not arrived at root
                 // Borrow mutable reference to node under review
-                let node = vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
+                let node = vector::borrow_mut<InnerNode>(&mut tree.inner_nodes,
                     node_index);
                 // If critical bit between insertion key and search
                 // outer node is less than that of node under review
@@ -1263,7 +1245,7 @@ module econia::critbit {
         // Get index of old root to insert above
         let old_root_index = tree.root;
         // Set old root node to have new inner node as parent
-        vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
+        vector::borrow_mut<InnerNode>(&mut tree.inner_nodes,
             old_root_index).parent_index = n_inner_nodes;
         // Set root field index to indicate new inner node
         tree.root = n_inner_nodes;
@@ -1307,14 +1289,14 @@ module econia::critbit {
         critical_bit: u8
     ) {
         // Borrow mutable reference to search parent
-        let search_parent = vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
-            search_parent_index);
+        let search_parent = vector::borrow_mut<InnerNode>(
+            &mut tree.inner_nodes, search_parent_index);
         // Update search parent to have new inner node as child, on same
         // side that the search outer node was a child at
         if (search_child_side == LEFT) search_parent.left_child_index =
             n_inner_nodes else search_parent.right_child_index = n_inner_nodes;
         // Set search outer node to have new inner node as parent
-        vector_borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
+        vector::borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
             outer_node_vector_index(search_index)).parent_index =
                 n_inner_nodes;
         // Push back new inner and outer nodes, with inner node having
@@ -1348,7 +1330,7 @@ module econia::critbit {
         critical_bit: u8
     ) {
         // Borrow mutable reference to node under review
-        let review_node = vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
+        let review_node = vector::borrow_mut<InnerNode>(&mut tree.inner_nodes,
             review_node_index);
         // If insertion key is set at critical bit indicated by node
         // under review, mark side and index of walked child as its
@@ -1363,7 +1345,7 @@ module econia::critbit {
             review_node.left_child_index = n_inner_nodes else
             review_node.right_child_index = n_inner_nodes;
         // Update walked child to have new inner node as its parent
-        vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
+        vector::borrow_mut<InnerNode>(&mut tree.inner_nodes,
             walked_child_index).parent_index = n_inner_nodes;
         // Push back new inner and outer nodes, with inner node having
         // as its parent the node under review. If insertion key is set
@@ -1382,7 +1364,7 @@ module econia::critbit {
         value: V
     ) {
         // Push back outer node onto tree's vector of outer nodes
-        vector_push_back<OuterNode<V>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<V>>(&mut tree.outer_nodes,
             OuterNode<V>{key, value, parent_index: ROOT});
         // Set root index field to indicate 0th outer node
         tree.root = OUTER << NODE_TYPE;
@@ -1468,7 +1450,7 @@ module econia::critbit {
         n_outer_nodes: u64
     ) {
         // Get number of inner nodes in tree (index of new inner node)
-        let n_inner_nodes = vector_length<InnerNode>(&tree.inner_nodes);
+        let n_inner_nodes = vector::length<InnerNode>(&tree.inner_nodes);
         // Get field index of search outer node, its side as a child,
         // its key, the vector index of its parent, and the critical
         // bit indicated by the search parent
@@ -1498,7 +1480,7 @@ module econia::critbit {
         value: V
     ) {
         // Borrow existing outer node
-        let outer_node = vector_borrow<OuterNode<V>>(&tree.outer_nodes, 0);
+        let outer_node = vector::borrow<OuterNode<V>>(&tree.outer_nodes, 0);
         // Assert insertion key not in tree
         assert!(key != outer_node.key, E_HAS_KEY);
         // Get critical bit between two keys
@@ -1514,7 +1496,7 @@ module econia::critbit {
         // Update tree root field to indicate new inner node
         tree.root = 0;
         // Update existing outer node to have new inner node as parent
-        vector_borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
+        vector::borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
             0).parent_index = 0;
     }
 
@@ -1529,7 +1511,7 @@ module econia::critbit {
             // If search node is outer node return its child field index
             if (is_outer_node(child_field_index)) return child_field_index;
             // Review node's right child next
-            child_field_index = vector_borrow<InnerNode>(&tree.inner_nodes,
+            child_field_index = vector::borrow<InnerNode>(&tree.inner_nodes,
                 child_field_index).right_child_index
         }
     }
@@ -1545,7 +1527,7 @@ module econia::critbit {
             // If search node is outer node return its child field index
             if (is_outer_node(child_field_index)) return child_field_index;
             // Review node's left child next
-            child_field_index = vector_borrow<InnerNode>(&tree.inner_nodes,
+            child_field_index = vector::borrow<InnerNode>(&tree.inner_nodes,
                 child_field_index).left_child_index
         }
     }
@@ -1588,10 +1570,10 @@ module econia::critbit {
         n_outer_nodes: u64
     ): V {
         // Get number of inner nodes pre-pop
-        let n_inner_nodes = vector_length<InnerNode>(&tree.inner_nodes);
+        let n_inner_nodes = vector::length<InnerNode>(&tree.inner_nodes);
         // Swap remove parent of popped outer node, storing no fields
         let InnerNode{critical_bit: _, parent_index: _, left_child_index: _,
-            right_child_index: _} = vector_swap_remove<InnerNode>(
+            right_child_index: _} = vector::swap_remove<InnerNode>(
                 &mut tree.inner_nodes, inner_index);
         // If destroyed inner node was not last inner node in vector,
         // repair the parent-child relationship broken by swap remove
@@ -1599,7 +1581,7 @@ module econia::critbit {
             stitch_swap_remove(tree, inner_index, n_inner_nodes);
         // Swap remove popped outer node, storing only its value
         let OuterNode{key: _, value, parent_index: _} =
-            vector_swap_remove<OuterNode<V>>(&mut tree.outer_nodes,
+            vector::swap_remove<OuterNode<V>>(&mut tree.outer_nodes,
                 outer_node_vector_index(outer_index));
         // If destroyed outer node was not last outer node in vector,
         // repair the parent-child relationship broken by swap remove
@@ -1708,12 +1690,12 @@ module econia::critbit {
         tree: &mut CritBitTree<V>,
         key: u128
     ): V {
-        assert!(vector_borrow<OuterNode<V>>(&tree.outer_nodes, 0).key == key,
+        assert!(vector::borrow<OuterNode<V>>(&tree.outer_nodes, 0).key == key,
             E_NOT_HAS_KEY); // Assert key actually in tree at root node
         tree.root = 0; // Update root
         // Pop off and unpack outer node at root
         let OuterNode{key: _, value, parent_index: _} =
-            vector_pop_back<OuterNode<V>>(&mut tree.outer_nodes);
+            vector::pop_back<OuterNode<V>>(&mut tree.outer_nodes);
         value // Return popped value
     }
 
@@ -1726,7 +1708,7 @@ module econia::critbit {
         parent_index: u64,
     ) {
         // Borrow immutable reference to popped node's parent
-        let parent = vector_borrow<InnerNode>(&tree.inner_nodes,
+        let parent = vector::borrow<InnerNode>(&tree.inner_nodes,
             parent_index);
         // If popped outer node was a left child, store the right child
         // field index of its parent as the child field index of the
@@ -1739,10 +1721,10 @@ module econia::critbit {
         // field the same as that of the popped node's parent, whether
         // the sibling is an inner or outer node
         if (is_outer_node(sibling_index))
-            vector_borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
+            vector::borrow_mut<OuterNode<V>>(&mut tree.outer_nodes,
                 outer_node_vector_index(sibling_index)).parent_index =
                     grandparent_index
-            else vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
+            else vector::borrow_mut<InnerNode>(&mut tree.inner_nodes,
                 sibling_index).parent_index = grandparent_index;
         // If popped node's parent is root
         if (grandparent_index == ROOT) {
@@ -1751,7 +1733,7 @@ module econia::critbit {
             tree.root = sibling_index;
         } else { // If popped node has a grandparent
             // Borrow mutable reference to popped node's grandparent
-            let grandparent = vector_borrow_mut<InnerNode>(
+            let grandparent = vector::borrow_mut<InnerNode>(
                 &mut tree.inner_nodes, grandparent_index);
             // If popped node's parent was a left child, update popped
             // node's grandparent to have as its child the popped node's
@@ -1787,10 +1769,10 @@ module econia::critbit {
             (child_index_1, child_index_2) else // Otherwise flipped
             (child_index_2, child_index_1);
         // Push back new outer node with new inner node as parent
-        vector_push_back<OuterNode<V>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<V>>(&mut tree.outer_nodes,
             OuterNode{key, value, parent_index: inner_index});
         // Push back new inner node with specified parent and children
-        vector_push_back<InnerNode>(&mut tree.inner_nodes,
+        vector::push_back<InnerNode>(&mut tree.inner_nodes,
             InnerNode{critical_bit, parent_index, left_child_index,
                 right_child_index});
     }
@@ -1817,7 +1799,7 @@ module econia::critbit {
         u8,
     ) {
         // Initialize search parent to root
-        let parent = vector_borrow<InnerNode>(&tree.inner_nodes, tree.root);
+        let parent = vector::borrow<InnerNode>(&tree.inner_nodes, tree.root);
         loop { // Loop over inner nodes until branching to outer node
             // If key set at critical bit, track field index and side of
             // right child, else left child
@@ -1826,7 +1808,7 @@ module econia::critbit {
                 (parent.left_child_index, LEFT);
             if (is_outer_node(index)) { // If child is outer node
                 // Borrow immutable reference to it
-                let node = vector_borrow<OuterNode<V>>(&tree.outer_nodes,
+                let node = vector::borrow<OuterNode<V>>(&tree.outer_nodes,
                     outer_node_vector_index(index));
                 // Return child field index of search outer node, its
                 // side as a child, its key, the vector index of its
@@ -1835,7 +1817,7 @@ module econia::critbit {
                     parent.critical_bit)
             };
             // Search next inner node
-            parent = vector_borrow<InnerNode>(&tree.inner_nodes, index);
+            parent = vector::borrow<InnerNode>(&tree.inner_nodes, index);
         }
     }
 
@@ -1848,7 +1830,7 @@ module econia::critbit {
         parent_index: u64,
         old_index: u64
     ) {
-        let parent = vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
+        let parent = vector::borrow_mut<InnerNode>(&mut tree.inner_nodes,
             parent_index); // Borrow mutable reference to parent
         // If relocated node was previously left child, update
         // parent's left child to indicate the relocated node's new
@@ -1867,11 +1849,11 @@ module econia::critbit {
     ) {
         // If child is an outer node, borrow corresponding node and
         // update its parent field index to that of relocated node
-        if (is_outer_node(child_index)) vector_borrow_mut<OuterNode<V>>(
+        if (is_outer_node(child_index)) vector::borrow_mut<OuterNode<V>>(
             &mut tree.outer_nodes, outer_node_vector_index(child_index)
                 ).parent_index = new_index else
             // Otherwise perform update on an inner node
-            vector_borrow_mut<InnerNode>(&mut tree.inner_nodes,
+            vector::borrow_mut<InnerNode>(&mut tree.inner_nodes,
                 child_index).parent_index = new_index;
     }
 
@@ -1888,7 +1870,7 @@ module econia::critbit {
         // If child field index indicates relocated outer node
         if (is_outer_node(node_index)) {
             // Get node's parent field index
-            let parent_index = vector_borrow<OuterNode<V>>(&tree.outer_nodes,
+            let parent_index = vector::borrow<OuterNode<V>>(&tree.outer_nodes,
             outer_node_vector_index(node_index)).parent_index;
             // If root node was relocated, update root field and return
             if (parent_index == ROOT) {tree.root = node_index; return};
@@ -1897,7 +1879,8 @@ module econia::critbit {
                 outer_node_child_index(n_nodes - 1));
         } else { // If child field index indicates relocated inner node
             // Borrow mutable reference to it
-            let node = vector_borrow<InnerNode>(&tree.inner_nodes, node_index);
+            let node =
+                vector::borrow<InnerNode>(&tree.inner_nodes, node_index);
             // Get field index of node's parent and children
             let (parent_index, left_child_index, right_child_index) =
                 (node.parent_index, node.left_child_index,
@@ -1965,7 +1948,8 @@ module econia::critbit {
         direction: bool,
     ): u64 {
         // Borrow immutable reference to start node's parent
-        let parent = vector_borrow<InnerNode>(&tree.inner_nodes, parent_index);
+        let parent =
+            vector::borrow<InnerNode>(&tree.inner_nodes, parent_index);
         // If start key is set at parent node's critical bit, then the
         // upward walk has reach an inner node via its right child. This
         // is the break condition for successor traversal (when
@@ -1975,7 +1959,7 @@ module econia::critbit {
         // to the conditional critbit check
         while (direction != is_set(key, parent.critical_bit)) {
             // Borrow immutable reference to next parent in upward walk
-            parent = vector_borrow<InnerNode>(&tree.inner_nodes,
+            parent = vector::borrow<InnerNode>(&tree.inner_nodes,
                 parent.parent_index);
         }; // Now at apex node
         // If predecessor traversal get left child field of apex node,
@@ -1985,9 +1969,9 @@ module econia::critbit {
         while (!is_outer_node(child_index)) {
             // If predecessor traversal review child's right child next,
             // else review child's left child next
-            child_index = if (direction == LEFT) vector_borrow<InnerNode>(
+            child_index = if (direction == LEFT) vector::borrow<InnerNode>(
                 &tree.inner_nodes, child_index).right_child_index else
-                    vector_borrow<InnerNode>(
+                    vector::borrow<InnerNode>(
                         &tree.inner_nodes, child_index).left_child_index;
         }; // Child field now indicates target node
         child_index // Return child field index of target node
@@ -2009,11 +1993,11 @@ module econia::critbit {
     public fun u(
         s: vector<u8>
     ): u128 {
-        let n = vector_length<u8>(&s); // Get number of bits
+        let n = vector::length<u8>(&s); // Get number of bits
         let r = 0; // Initialize result to 0
         let i = 0; // Start loop at least significant bit
         while (i < n) { // While there are bits left to review
-            let b = *vector_borrow<u8>(&s, n - 1 - i); // Get bit under review
+            let b = *vector::borrow<u8>(&s, n - 1 - i); // Get bit under review
             if (b == 0x31) { // If the bit is 1 (0x31 in ASCII)
                 // OR result with the correspondingly leftshifted bit
                 r = r | 1 << (i as u8);
@@ -2032,8 +2016,8 @@ module econia::critbit {
         b: vector<u8>,
         c: vector<u8>
     ): u128 {
-        vector_append<u8>(&mut b, c); // Append c onto b
-        vector_append<u8>(&mut a, b); // Append b onto a
+        vector::append<u8>(&mut b, c); // Append c onto b
+        vector::append<u8>(&mut a, b); // Append b onto a
         u(a) // Return u128 equivalent of concatenated bytestring
     }
 
@@ -2160,9 +2144,9 @@ module econia::critbit {
         // Unpack root index and node vectors
         let CritBitTree{root, inner_nodes, outer_nodes} = empty<u8>();
         // Assert empty inner node vector
-        assert!(vector_is_empty<InnerNode>(&inner_nodes), 0);
+        assert!(vector::is_empty<InnerNode>(&inner_nodes), 0);
         // Assert empty outer node vector
-        assert!(vector_is_empty<OuterNode<u8>>(&outer_nodes), 0);
+        assert!(vector::is_empty<OuterNode<u8>>(&outer_nodes), 0);
         // Assert root set to 0
         assert!(root == 0, 0);
         (inner_nodes, outer_nodes) // Return rather than unpack
@@ -2208,28 +2192,28 @@ module econia::critbit {
         let value = 0;
         let tree = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             2 ,
             parent_index:                          ROOT ,
             left_child_index:  outer_node_child_index(0),
             right_child_index:                        1 });
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             1 ,
             parent_index:                             0 ,
             left_child_index:  outer_node_child_index(1),
             right_child_index:                        2 });
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             0,
             parent_index:                             1,
             left_child_index:  outer_node_child_index(2),
             right_child_index: outer_node_child_index(3)});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"001"), value, parent_index: 0});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"101"), value, parent_index: 1});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"110"), value, parent_index: 2});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"111"), value, parent_index: 2});
         // Assert correct membership checks
         assert!(has_key(&tree, u(b"001")), 0);
@@ -2277,19 +2261,19 @@ module econia::critbit {
         insert_singleton(&mut tree, u(b"1101"), 5); // Insert to left
         assert!(tree.root == 0, 0); // Assert root is at new inner node
         // Borrow inner node at root
-        let inner_node = vector_borrow<InnerNode>(&tree.inner_nodes, 0);
+        let inner_node = vector::borrow<InnerNode>(&tree.inner_nodes, 0);
         // Assert root inner node values are as expected
         assert!(inner_node.critical_bit == 1 &&
             inner_node.parent_index == ROOT &&
             inner_node.left_child_index == outer_node_child_index(1) &&
             inner_node.right_child_index == outer_node_child_index(0), 1);
         // Borrow original outer node
-        let outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        let outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         // Assert original outer node values are as expected
         assert!(outer_node.key == u(b"1111") &&
             outer_node.value == 4 && outer_node.parent_index == 0, 2);
         // Borrow new outer node
-        let outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
+        let outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
         // Assert new outer node values are as expected
         assert!(outer_node.key == u(b"1101") &&
             outer_node.value == 5 && outer_node.parent_index == 0, 3);
@@ -2309,20 +2293,20 @@ module econia::critbit {
         insert_singleton(&mut tree, u(b"1111"), 7); // Insert to right
         assert!(tree.root == 0, 0); // Assert root is at new inner node
         // Borrow inner node at root
-        let inner_node = vector_borrow<InnerNode>(&tree.inner_nodes, 0);
+        let inner_node = vector::borrow<InnerNode>(&tree.inner_nodes, 0);
         // Assert root inner node values are as expected
         assert!(inner_node.critical_bit == 2 &&
             inner_node.parent_index == ROOT &&
             inner_node.left_child_index == outer_node_child_index(0) &&
             inner_node.right_child_index == outer_node_child_index(1), 1);
         // Borrow original outer node
-        let outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        let outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         // Assert original outer node values are as expected
         assert!(outer_node.key == u(b"1011") &&
             outer_node.value == 6 &&
             outer_node.parent_index == 0, 2);
         // Borrow new outer node
-        let outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
+        let outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
         // Assert new outer node values are as expected
         assert!(outer_node.key == u(b"1111") &&
             outer_node.value == 7 &&
@@ -2378,44 +2362,44 @@ module econia::critbit {
         // Verify root field indicates correct inner node
         assert!(tree.root == 3, 0);
         // Verify inner node fields in ascending order of vector index
-        let inner_node = vector_borrow<InnerNode>(&tree.inner_nodes, 0);
+        let inner_node = vector::borrow<InnerNode>(&tree.inner_nodes, 0);
         assert!(inner_node.critical_bit ==                         2 &&
             inner_node.parent_index ==                             3 &&
             inner_node.left_child_index ==  outer_node_child_index(1) &&
             inner_node.right_child_index ==                        2 , 1);
-        inner_node = vector_borrow<InnerNode>(&tree.inner_nodes, 1);
+        inner_node = vector::borrow<InnerNode>(&tree.inner_nodes, 1);
         assert!(inner_node.critical_bit ==                         0 &&
             inner_node.parent_index ==                             2 &&
             inner_node.left_child_index ==  outer_node_child_index(2) &&
             inner_node.right_child_index == outer_node_child_index(0), 2);
-        inner_node = vector_borrow<InnerNode>(&tree.inner_nodes, 2);
+        inner_node = vector::borrow<InnerNode>(&tree.inner_nodes, 2);
         assert!(inner_node.critical_bit ==                         1 &&
             inner_node.parent_index ==                             0 &&
             inner_node.left_child_index ==                         1 &&
-            inner_node.right_child_index ==  outer_node_child_index(3), 3);
-        inner_node = vector_borrow<InnerNode>(&tree.inner_nodes, 3);
+            inner_node.right_child_index == outer_node_child_index(3), 3);
+        inner_node = vector::borrow<InnerNode>(&tree.inner_nodes, 3);
         assert!(inner_node.critical_bit ==                         3 &&
             inner_node.parent_index ==                          ROOT &&
             inner_node.left_child_index ==  outer_node_child_index(4) &&
             inner_node.right_child_index ==                        0 , 4);
         // Verify outer node fields in ascending order of vector index
-        let outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        let outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         assert!(outer_node.key == u(b"1101") &&
             outer_node.value ==          0 &&
             outer_node.parent_index ==   1, 5);
-        outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
+        outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
         assert!(outer_node.key == u(b"1000") &&
             outer_node.value ==          1 &&
             outer_node.parent_index ==   0, 6);
-        outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 2);
+        outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 2);
         assert!(outer_node.key == u(b"1100") &&
             outer_node.value ==          2 &&
             outer_node.parent_index ==   1, 7);
-        outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 3);
+        outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 3);
         assert!(outer_node.key == u(b"1110") &&
             outer_node.value ==          3 &&
             outer_node.parent_index ==   2, 8);
-        outer_node = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 4);
+        outer_node = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 4);
         assert!(outer_node.key == u(b"0000") &&
             outer_node.value ==          4 &&
             outer_node.parent_index ==   3, 9);
@@ -2468,36 +2452,36 @@ module econia::critbit {
         // Verify root field indicates correct inner node
         assert!(tree.root == 2, 0);
         // Verify inner node fields in ascending order of vector index
-        let i = vector_borrow<InnerNode>(&tree.inner_nodes, 0);
+        let i = vector::borrow<InnerNode>(&tree.inner_nodes, 0);
         assert!(i.critical_bit ==                         2 &&
             i.parent_index ==                             2 &&
             i.left_child_index ==                         3  &&
             i.right_child_index == outer_node_child_index(0), 1);
-        i = vector_borrow<InnerNode>(&tree.inner_nodes, 1);
+        i = vector::borrow<InnerNode>(&tree.inner_nodes, 1);
         assert!(i.critical_bit ==                         0 &&
             i.parent_index ==                             3 &&
             i.left_child_index ==  outer_node_child_index(1) &&
             i.right_child_index == outer_node_child_index(2), 2);
-        i = vector_borrow<InnerNode>(&tree.inner_nodes, 2);
+        i = vector::borrow<InnerNode>(&tree.inner_nodes, 2);
         assert!(i.critical_bit ==                         3 &&
             i.parent_index ==                          ROOT &&
             i.left_child_index ==                         0  &&
             i.right_child_index == outer_node_child_index(3), 3);
-        i = vector_borrow<InnerNode>(&tree.inner_nodes, 3);
+        i = vector::borrow<InnerNode>(&tree.inner_nodes, 3);
         assert!(i.critical_bit ==                         1 &&
             i.parent_index ==                             0 &&
             i.left_child_index ==                         1  &&
             i.right_child_index == outer_node_child_index(4), 4);
         // Verify outer node fields in ascending order of vector index
-        let o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        let o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         assert!(o.key == u(b"0101") && o.value == 0 && o.parent_index == 0, 5);
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
         assert!(o.key == u(b"0000") && o.value == 1 && o.parent_index == 1, 6);
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 2);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 2);
         assert!(o.key == u(b"0001") && o.value == 2 && o.parent_index == 1, 7);
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 3);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 3);
         assert!(o.key == u(b"1000") && o.value == 3 && o.parent_index == 2, 8);
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 4);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 4);
         assert!(o.key == u(b"0011") && o.value == 4 && o.parent_index == 3, 9);
         tree // Return rather than unpack
     }
@@ -2652,20 +2636,20 @@ module econia::critbit {
         assert!(pop_general(&mut tree, u(b"111"), 3) == 7, 0);
         assert!(tree.root == 0, 1); // Assert root field updated
         // Borrow inner node at root
-        let r = vector_borrow<InnerNode>(&mut tree.inner_nodes, 0);
+        let r = vector::borrow<InnerNode>(&mut tree.inner_nodes, 0);
         // Assert root inner node fields are as expected
         assert!(r.critical_bit == 2 &&
             r.parent_index == ROOT &&
             r.left_child_index == outer_node_child_index(0) &&
             r.right_child_index == outer_node_child_index(1), 2);
         // Borrow outer node on left
-        let o_l = vector_borrow<OuterNode<u8>>(&mut tree.outer_nodes, 0);
+        let o_l = vector::borrow<OuterNode<u8>>(&mut tree.outer_nodes, 0);
         // Assert left outer node fields are as expected
         assert!(o_l.key == u(b"001") &&
             o_l.value == 9 &&
             o_l.parent_index == 0, 3);
         // Borrow outer node on right
-        let o_r = vector_borrow<OuterNode<u8>>(&mut tree.outer_nodes, 1);
+        let o_r = vector::borrow<OuterNode<u8>>(&mut tree.outer_nodes, 1);
         // Assert right outer node fields are as expected
         assert!(o_r.key == u(b"101") &&
             o_r.value == 8 &&
@@ -2720,43 +2704,43 @@ module econia::critbit {
         // Assert root field updated correctly
         assert!(tree.root == 1, 1);
         // Verify post-pop inner node fields in ascending order of index
-        let i = vector_borrow<InnerNode>(&tree.inner_nodes, 0);
+        let i = vector::borrow<InnerNode>(&tree.inner_nodes, 0);
         assert!(i.critical_bit ==                         0 &&
             i.parent_index ==                             1 &&
             i.left_child_index ==  outer_node_child_index(1) &&
             i.right_child_index == outer_node_child_index(0), 2);
-        i = vector_borrow<InnerNode>(&tree.inner_nodes, 1);
+        i = vector::borrow<InnerNode>(&tree.inner_nodes, 1);
         assert!(i.critical_bit ==                         2 &&
             i.parent_index ==                          ROOT &&
             i.left_child_index ==                         0 &&
             i.right_child_index == outer_node_child_index(2), 3);
         // Verify outer node fields in ascending order of vector index
-        let o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        let o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         assert!(o.key == u(b"011") && o.value == 5 && o.parent_index == 0, 4);
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
         assert!(o.key == u(b"010") && o.value == 6 && o.parent_index == 0, 5);
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 2);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 2);
         assert!(o.key == u(b"111") && o.value == 8 && o.parent_index == 1, 6);
         assert!(pop(&mut tree, u(b"111")) == 8, 7); // Assert correct pop
         // Assert root field updated correctly
         assert!(tree.root == 0, 8);
         // Verify post-pop inner node fields at root
-        i = vector_borrow<InnerNode>(&tree.inner_nodes, 0);
+        i = vector::borrow<InnerNode>(&tree.inner_nodes, 0);
         assert!(i.critical_bit ==                         0 &&
             i.parent_index ==                          ROOT &&
             i.left_child_index ==  outer_node_child_index(1) &&
             i.right_child_index == outer_node_child_index(0), 9);
         // Verify outer node fields in ascending order of vector index
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         assert!(o.key == u(b"011") && o.value == 5 && o.parent_index == 0, 10);
-        o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
+        o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 1);
         assert!(o.key == u(b"010") && o.value == 6 && o.parent_index == 0, 11);
         // Assert correct pop
         assert!(pop(&mut tree, u(b"011")) == 5, 12);
         // Assert correct root field update
         assert!(tree.root == outer_node_child_index(0), 13);
         // Verify post-pop outer node fields at root
-        let o = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        let o = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         assert!(o.key == u(b"010") &&
             o.value == 6 &&
             o.parent_index == ROOT, 14);
@@ -2798,16 +2782,16 @@ module econia::critbit {
         // Initialize w/ key 2 and value 3
         let tree = singleton<u8>(2, 3);
         // Assert no inner nodes
-        assert!(vector_is_empty<InnerNode>(&tree.inner_nodes), 0);
+        assert!(vector::is_empty<InnerNode>(&tree.inner_nodes), 0);
         // Assert single outer node
-        assert!(vector_length<OuterNode<u8>>(&tree.outer_nodes) == 1, 1);
+        assert!(vector::length<OuterNode<u8>>(&tree.outer_nodes) == 1, 1);
         // Unpack root index and node vectors
         let CritBitTree{root, inner_nodes, outer_nodes} = tree;
         // Assert root index field indicates 0th outer node
         assert!(root == OUTER << NODE_TYPE, 2);
         // Pop and unpack last node from vector of outer nodes
         let OuterNode{key, value, parent_index} =
-            vector_pop_back<OuterNode<u8>>(&mut outer_nodes);
+            vector::pop_back<OuterNode<u8>>(&mut outer_nodes);
         // Assert values in node are as expected
         assert!(key == 2 && value == 3 && parent_index == ROOT, 3);
         (inner_nodes, outer_nodes) // Return rather than unpack
@@ -2830,43 +2814,43 @@ module econia::critbit {
         let tree = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus inner node at
         // vector index 1, which will be swap removed
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             2,
             parent_index:                          ROOT,
             left_child_index:                         2,
             right_child_index: outer_node_child_index(0)});
         // Bogus node
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             0,
             parent_index:                             0,
             left_child_index:                         0,
             right_child_index:                        0 });
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             1,
             parent_index:                             0,
             left_child_index:  outer_node_child_index(1),
             right_child_index: outer_node_child_index(2)});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"100"), value, parent_index: 0});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"001"), value, parent_index: 2});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"011"), value, parent_index: 2});
         // Swap remove and unpack bogus node
         let InnerNode{critical_bit: _, parent_index: _, left_child_index: _,
             right_child_index: _} =
-                vector_swap_remove<InnerNode>(&mut tree.inner_nodes, 1);
+                vector::swap_remove<InnerNode>(&mut tree.inner_nodes, 1);
         // Stitch broken relationships
         stitch_swap_remove(&mut tree, 1, 3);
         // Assert parent to relocated node indicates proper child update
-        assert!(vector_borrow<InnerNode>(&tree.inner_nodes, 0).left_child_index
-            == 1, 0);
+        assert!(vector::borrow<InnerNode>(
+            &tree.inner_nodes, 0).left_child_index == 1, 0);
         // Assert children to relocated node indicate proper parent
         // update
-        assert!(vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1).parent_index
-            == 1, 1); // Left child
-        assert!(vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 2).parent_index
-            == 1, 2); // Right child
+        assert!(vector::borrow<OuterNode<u8>>(
+            &tree.outer_nodes, 1).parent_index == 1, 1); // Left child
+        assert!(vector::borrow<OuterNode<u8>>(
+            &tree.outer_nodes, 2).parent_index == 1, 2); // Right child
         tree // Return rather than unpack
     }
 
@@ -2887,43 +2871,43 @@ module econia::critbit {
         let tree = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus inner node at
         // vector index 1, which will be swap removed
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             2,
             parent_index:                          ROOT,
             left_child_index:  outer_node_child_index(0),
             right_child_index:                        2});
         // Bogus node
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             0,
             parent_index:                             0,
             left_child_index:                         0,
             right_child_index:                        0});
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             1,
             parent_index:                             0,
             left_child_index:  outer_node_child_index(1),
             right_child_index: outer_node_child_index(2)});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"001"), value, parent_index: 0});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"101"), value, parent_index: 2});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"111"), value, parent_index: 2});
         // Swap remove and unpack bogus node
         let InnerNode{critical_bit: _, parent_index: _, left_child_index: _,
-            right_child_index: _} = vector_swap_remove<InnerNode>(
+            right_child_index: _} = vector::swap_remove<InnerNode>(
                 &mut tree.inner_nodes, 1);
         // Stitch broken relationships
         stitch_swap_remove(&mut tree, 1, 3);
         // Assert parent to relocated node indicates proper child update
-        assert!(vector_borrow<InnerNode>(
+        assert!(vector::borrow<InnerNode>(
             &tree.inner_nodes, 0).right_child_index == 1, 0);
         // Assert children to relocated node indicate proper parent
         // update
-        assert!(vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 1).parent_index
-            == 1, 1); // Left child
-        assert!(vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 2).parent_index
-            == 1, 2); // Right child
+        assert!(vector::borrow<OuterNode<u8>>(
+            &tree.outer_nodes, 1).parent_index == 1, 1); // Left child
+        assert!(vector::borrow<OuterNode<u8>>(
+            &tree.outer_nodes, 2).parent_index == 1, 2); // Right child
         tree // Return rather than unpack
     }
 
@@ -2943,32 +2927,32 @@ module econia::critbit {
         let tree = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus outer node at
         // vector index 2, which will be swap removed
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             2,
             parent_index:                          ROOT,
             left_child_index:  outer_node_child_index(0),
             right_child_index:                        1});
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             1,
             parent_index:                             0,
             left_child_index:  outer_node_child_index(3),
             right_child_index: outer_node_child_index(1)});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"001"), value, parent_index: 0});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"111"), value, parent_index: 1});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes, // Bogus
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes, // Bogus
             OuterNode{key:    HI_128, value, parent_index: HI_64});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"101"), value, parent_index: 1});
         // Swap remove and unpack bogus node
         let OuterNode{key: _, value: _, parent_index: _} =
-            vector_swap_remove<OuterNode<u8>>(&mut tree.outer_nodes, 2);
+            vector::swap_remove<OuterNode<u8>>(&mut tree.outer_nodes, 2);
         // Stitch broken relationship
         stitch_swap_remove(&mut tree, outer_node_child_index(2), 4);
         // Assert parent to relocated node indicates proper child update
-        assert!(vector_borrow<InnerNode>(&tree.inner_nodes, 1).left_child_index
-            == outer_node_child_index(2), 0);
+        assert!(vector::borrow<InnerNode>(&tree.inner_nodes, 1).
+            left_child_index == outer_node_child_index(2), 0);
         tree // Return rather than unpack
     }
 
@@ -2989,31 +2973,31 @@ module econia::critbit {
         let tree = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus outer node at
         // vector index 2, which will be swap removed
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             2,
             parent_index:                          ROOT,
             left_child_index:  outer_node_child_index(0),
             right_child_index:                        1});
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             1,
             parent_index:                             0,
             left_child_index:  outer_node_child_index(1),
             right_child_index: outer_node_child_index(3)});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"001"), value, parent_index: 0});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"101"), value, parent_index: 1});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes, // Bogus
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes, // Bogus
             OuterNode{key:    HI_128, value, parent_index: HI_64});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"111"), value, parent_index: 1});
         // Swap remove and unpack bogus node
         let OuterNode{key: _, value: _, parent_index: _} =
-            vector_swap_remove<OuterNode<u8>>(&mut tree.outer_nodes, 2);
+            vector::swap_remove<OuterNode<u8>>(&mut tree.outer_nodes, 2);
         // Stitch broken relationship
         stitch_swap_remove(&mut tree, outer_node_child_index(2), 4);
         // Assert parent to relocated node indicates proper child update
-        assert!(vector_borrow<InnerNode>(
+        assert!(vector::borrow<InnerNode>(
             &tree.inner_nodes, 1).right_child_index ==
             outer_node_child_index(2), 0);
         tree // Return rather than unpack
@@ -3036,31 +3020,31 @@ module econia::critbit {
         let tree = empty<u8>(); // Initialize empty tree
         // Append nodes per above tree, including bogus inner node at
         // vector index 1, which will be swap removed
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             1,
             parent_index:                             2,
             left_child_index:  outer_node_child_index(1),
             right_child_index: outer_node_child_index(2)});
         // Bogus node
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             0,
             parent_index:                             0,
             left_child_index:                         0,
             right_child_index:                        0});
-        vector_push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
+        vector::push_back<InnerNode>(&mut tree.inner_nodes, InnerNode{
             critical_bit:                             2,
             parent_index:                          ROOT,
             left_child_index:  outer_node_child_index(0),
             right_child_index:                        0});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"001"), value, parent_index: 0});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"101"), value, parent_index: 2});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"111"), value, parent_index: 2});
         // Swap remove and unpack bogus node
         let InnerNode{critical_bit: _, parent_index: _, left_child_index: _,
-            right_child_index: _} = vector_swap_remove<InnerNode>(
+            right_child_index: _} = vector::swap_remove<InnerNode>(
                 &mut tree.inner_nodes, 1);
         // Stitch broken relationships
         stitch_swap_remove(&mut tree, 1, 3);
@@ -3068,10 +3052,10 @@ module econia::critbit {
         assert!(tree.root == 1, 0);
         // Assert children to relocated node indicate proper parent
         // update
-        assert!(vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0).parent_index
-            == 1, 1); // Left child
-        assert!(vector_borrow<InnerNode>(&tree.inner_nodes, 0).parent_index ==
-            1, 2); // Right child
+        assert!(vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0).
+            parent_index == 1, 1); // Left child
+        assert!(vector::borrow<InnerNode>(&tree.inner_nodes, 0).
+            parent_index == 1, 2); // Right child
         tree // Return rather than unpack
     }
 
@@ -3087,19 +3071,19 @@ module econia::critbit {
         let tree = empty<u8>(); // Initialize empty tree
         // Append root outer node per above diagram, including bogus
         // outer node at vector index 0, which will be swap removed
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes, // Bogus
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes, // Bogus
             OuterNode{key:    HI_128, value, parent_index: HI_64});
-        vector_push_back<OuterNode<u8>>(&mut tree.outer_nodes,
+        vector::push_back<OuterNode<u8>>(&mut tree.outer_nodes,
             OuterNode{key: u(b"100"), value, parent_index:  ROOT});
         // Swap remove and unpack bogus node
         let OuterNode{key: _, value: _, parent_index: _} =
-            vector_swap_remove<OuterNode<u8>>(&mut tree.outer_nodes, 0);
+            vector::swap_remove<OuterNode<u8>>(&mut tree.outer_nodes, 0);
         // Stitch broken relationships
         stitch_swap_remove(&mut tree, outer_node_child_index(0), 2);
         // Assert root field indicates relocated outer node
         assert!(tree.root == outer_node_child_index(0), 0);
         // Borrow reference to outer node at root
-        let n = vector_borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
+        let n = vector::borrow<OuterNode<u8>>(&tree.outer_nodes, 0);
         // Assert fields are as expected
         assert!(n.key == u(b"100") && n.value == 0 && n.parent_index ==
             ROOT, 1);

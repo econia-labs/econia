@@ -1036,9 +1036,9 @@ Destroy empty tree <code>tree</code>
     // Unpack root index and node vectors
     <b>let</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>{root: _, inner_nodes, outer_nodes} = tree;
     // Destroy empty inner node <a href="">vector</a>
-    vector_destroy_empty(inner_nodes);
+    <a href="_destroy_empty">vector::destroy_empty</a>(inner_nodes);
     // Destroy empty outer node <a href="">vector</a>
-    vector_destroy_empty(outer_nodes);
+    <a href="_destroy_empty">vector::destroy_empty</a>(outer_nodes);
 }
 </code></pre>
 
@@ -1066,8 +1066,8 @@ Return an empty tree
 <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>&lt;V&gt; {
     <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>{
         root: 0,
-        inner_nodes: vector_empty&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(),
-        outer_nodes: vector_empty&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;()
+        inner_nodes: <a href="_empty">vector::empty</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(),
+        outer_nodes: <a href="_empty">vector::empty</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;()
     }
 }
 </code></pre>
@@ -1160,7 +1160,7 @@ Return <code><b>true</b></code> if <code>tree</code> has no outer nodes
 <pre><code><b>public</b> <b>fun</b> <a href="critbit.md#0xc0deb00c_critbit_is_empty">is_empty</a>&lt;V&gt;(
     tree: &<a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>&lt;V&gt;
 ): bool {
-    vector_is_empty&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes)
+    <a href="_is_empty">vector::is_empty</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes)
 }
 </code></pre>
 
@@ -1187,7 +1187,7 @@ Return number of keys in <code>tree</code> (number of outer nodes)
 <pre><code><b>public</b> <b>fun</b> <a href="critbit.md#0xc0deb00c_critbit_length">length</a>&lt;V&gt;(
     tree: &<a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>&lt;V&gt;
 ): u64 {
-    vector_length&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes)
+    <a href="_length">vector::length</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes)
 }
 </code></pre>
 
@@ -1217,7 +1217,7 @@ Return the maximum key in <code>tree</code>, aborting if <code>tree</code> is em
     // Assert tree not empty
     <b>assert</b>!(!<a href="critbit.md#0xc0deb00c_critbit_is_empty">is_empty</a>(tree), <a href="critbit.md#0xc0deb00c_critbit_E_LOOKUP_EMPTY">E_LOOKUP_EMPTY</a>);
     // Return max key
-    vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
+    <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
         &tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(<a href="critbit.md#0xc0deb00c_critbit_max_node_child_index">max_node_child_index</a>&lt;V&gt;(tree))
     ).key
@@ -1250,7 +1250,7 @@ Return the minimum key in <code>tree</code>, aborting if <code>tree</code> is em
     // Assert tree not empty
     <b>assert</b>!(!<a href="critbit.md#0xc0deb00c_critbit_is_empty">is_empty</a>(tree), <a href="critbit.md#0xc0deb00c_critbit_E_LOOKUP_EMPTY">E_LOOKUP_EMPTY</a>);
     // Return <b>min</b> key
-    vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
+    <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
         &tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(<a href="critbit.md#0xc0deb00c_critbit_min_node_child_index">min_node_child_index</a>&lt;V&gt;(tree))
     ).key
@@ -1317,8 +1317,8 @@ Return a tree with one node having <code>key</code> and <code>value</code>
 ): <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>&lt;V&gt; {
     <b>let</b> tree = <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>{
         root: 0,
-        inner_nodes: vector_empty&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(),
-        outer_nodes: vector_empty&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;()
+        inner_nodes: <a href="_empty">vector::empty</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(),
+        outer_nodes: <a href="_empty">vector::empty</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;()
     };
     <a href="critbit.md#0xc0deb00c_critbit_insert_empty">insert_empty</a>&lt;V&gt;(&<b>mut</b> tree, key, value);
     tree
@@ -1389,7 +1389,7 @@ minimum key
         <a href="critbit.md#0xc0deb00c_critbit_max_node_child_index">max_node_child_index</a>(tree) <b>else</b>
         <a href="critbit.md#0xc0deb00c_critbit_min_node_child_index">min_node_child_index</a>(tree);
     // Borrow mutable reference <b>to</b> node
-    <b>let</b> node = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+    <b>let</b> node = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(child_field_index));
     // Return node's key, mutable reference <b>to</b> its value, its parent
     // field, and the child field index of it
@@ -1443,7 +1443,7 @@ return extraction. See [traversal](#Traversal)
     <b>let</b> target_child_index =
         <a href="critbit.md#0xc0deb00c_critbit_traverse_target_child_index">traverse_target_child_index</a>&lt;V&gt;(tree, key, parent_index, direction);
     // Borrow mutable reference <b>to</b> target node
-    <b>let</b> node = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+    <b>let</b> node = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(target_child_index));
     // Return target node's key, mutable reference <b>to</b> its value, its
     // parent field, and child field index of it
@@ -1533,7 +1533,7 @@ should be tracked by the caller
 ) {
     // Mark start node's side <b>as</b> a child <b>as</b> left (<b>true</b>) <b>if</b> node's
     // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> right (<b>false</b>)
-    <b>let</b> start_child_side = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
+    <b>let</b> start_child_side = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
         &tree.inner_nodes, parent_index).left_child_index == child_index;
     // Store target node's pre-pop child field index
     <b>let</b> target_child_index = <a href="critbit.md#0xc0deb00c_critbit_traverse_target_child_index">traverse_target_child_index</a>(
@@ -1549,7 +1549,7 @@ should be tracked by the caller
     <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(target_child_index) == n_outer_nodes - 1)
         target_child_index = child_index;
     // Borrow mutable reference <b>to</b> target node
-    <b>let</b> target_node = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
+    <b>let</b> target_node = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
         &<b>mut</b> tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(target_child_index));
     // Return target node's key, mutable reference <b>to</b> its value, its
@@ -1621,12 +1621,12 @@ should be tracked by the caller and should be nonzero
         tree.root = 0; // Update root
         // Pop off and unpack outer node at root
         <b>let</b> <a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>{key: _, value, parent_index: _} =
-            vector_pop_back&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes);
+            <a href="_pop_back">vector::pop_back</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes);
         value // Return popped value
     } <b>else</b> { // If popping from tree <b>with</b> more than 1 outer node
         // Mark node's side <b>as</b> a child <b>as</b> left (<b>true</b>) <b>if</b> node's
         // parent <b>has</b> the node <b>as</b> its left child, <b>else</b> right (<b>false</b>)
-        <b>let</b> node_child_side = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
+        <b>let</b> node_child_side = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
             parent_index).left_child_index == child_index;
         // Update sibling, parent, grandparent relationships
         <a href="critbit.md#0xc0deb00c_critbit_pop_update_relationships">pop_update_relationships</a>(tree, node_child_side, parent_index);
@@ -1878,20 +1878,21 @@ Then return mutable reference to the found outer node
     key: u128,
 ): &<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt; {
     // If root is an outer node, <b>return</b> reference <b>to</b> it
-    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(tree.root)) <b>return</b> (vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
+    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(tree.root)) <b>return</b> (<a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
         &tree.outer_nodes, <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(tree.root)));
     // Otherwise borrow inner node at root
-    <b>let</b> node = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, tree.root);
+    <b>let</b> node = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, tree.root);
     <b>loop</b> { // Loop over inner nodes
         // If key is set at critical bit, get index of child on R
         <b>let</b> child_index = <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_set">is_set</a>(key, node.critical_bit))
             // Otherwise L
             node.right_child_index <b>else</b> node.left_child_index;
         // If child is outer node, <b>return</b> reference <b>to</b> it
-        <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_index)) <b>return</b> vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
-            &tree.outer_nodes, <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(child_index));
+        <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_index)) <b>return</b>
+            <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes,
+                <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(child_index));
         // Borrow next inner node <b>to</b> review
-        node = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, child_index);
+        node = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, child_index);
     }
 }
 </code></pre>
@@ -1921,10 +1922,10 @@ Like <code><a href="critbit.md#0xc0deb00c_critbit_borrow_closest_outer_node">bor
     key: u128,
 ): &<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt; {
     // If root is an outer node, <b>return</b> mutable reference <b>to</b> it
-    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(tree.root)) <b>return</b> (vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
+    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(tree.root)) <b>return</b> (<a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
         &<b>mut</b> tree.outer_nodes, <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(tree.root)));
     // Otherwise borrow inner node at root
-    <b>let</b> node = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, tree.root);
+    <b>let</b> node = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, tree.root);
     <b>loop</b> { // Loop over inner nodes
         // If key is set at critical bit, get index of child on R
         <b>let</b> child_index = <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_set">is_set</a>(key, node.critical_bit))
@@ -1932,10 +1933,10 @@ Like <code><a href="critbit.md#0xc0deb00c_critbit_borrow_closest_outer_node">bor
             node.right_child_index <b>else</b> node.left_child_index;
         // If child is outer node, <b>return</b> mutable reference <b>to</b> it
         <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_index)) <b>return</b>
-            vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+            <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
                 <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(child_index));
         // Borrow next inner node <b>to</b> review
-        node = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, child_index);
+        node = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, child_index);
     }
 }
 </code></pre>
@@ -2186,7 +2187,7 @@ outer node
     critical_bit: u8
 ) {
     // Set index of node under review <b>to</b> search parent's parent
-    <b>let</b> node_index = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
+    <b>let</b> node_index = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
         search_parent_index).parent_index;
     <b>loop</b> { // Loop over inner nodes
         <b>if</b> (node_index == <a href="critbit.md#0xc0deb00c_critbit_ROOT">ROOT</a>) { // If walk arrives at root
@@ -2195,7 +2196,7 @@ outer node
                 n_inner_nodes, critical_bit)
         } <b>else</b> { // If walk <b>has</b> not arrived at root
             // Borrow mutable reference <b>to</b> node under review
-            <b>let</b> node = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+            <b>let</b> node = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
                 node_index);
             // If critical bit between insertion key and search
             // outer node is less than that of node under review
@@ -2253,7 +2254,7 @@ outer node
     // Get index of <b>old</b> root <b>to</b> insert above
     <b>let</b> old_root_index = tree.root;
     // Set <b>old</b> root node <b>to</b> have new inner node <b>as</b> parent
-    vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+    <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
         old_root_index).parent_index = n_inner_nodes;
     // Set root field index <b>to</b> indicate new inner node
     tree.root = n_inner_nodes;
@@ -2317,14 +2318,14 @@ outer node
     critical_bit: u8
 ) {
     // Borrow mutable reference <b>to</b> search parent
-    <b>let</b> search_parent = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
-        search_parent_index);
+    <b>let</b> search_parent = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
+        &<b>mut</b> tree.inner_nodes, search_parent_index);
     // Update search parent <b>to</b> have new inner node <b>as</b> child, on same
     // side that the search outer node was a child at
     <b>if</b> (search_child_side == <a href="critbit.md#0xc0deb00c_critbit_LEFT">LEFT</a>) search_parent.left_child_index =
         n_inner_nodes <b>else</b> search_parent.right_child_index = n_inner_nodes;
     // Set search outer node <b>to</b> have new inner node <b>as</b> parent
-    vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+    <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(search_index)).parent_index =
             n_inner_nodes;
     // Push back new inner and outer nodes, <b>with</b> inner node having
@@ -2378,7 +2379,7 @@ outer node
     critical_bit: u8
 ) {
     // Borrow mutable reference <b>to</b> node under review
-    <b>let</b> review_node = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+    <b>let</b> review_node = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
         review_node_index);
     // If insertion key is set at critical bit indicated by node
     // under review, mark side and index of walked child <b>as</b> its
@@ -2393,7 +2394,7 @@ outer node
         review_node.left_child_index = n_inner_nodes <b>else</b>
         review_node.right_child_index = n_inner_nodes;
     // Update walked child <b>to</b> have new inner node <b>as</b> its parent
-    vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+    <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
         walked_child_index).parent_index = n_inner_nodes;
     // Push back new inner and outer nodes, <b>with</b> inner node having
     // <b>as</b> its parent the node under review. If insertion key is set
@@ -2432,7 +2433,7 @@ Insert key-value pair <code>key</code> and <code>value</code> into an empty <cod
     value: V
 ) {
     // Push back outer node onto tree's <a href="">vector</a> of outer nodes
-    vector_push_back&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+    <a href="_push_back">vector::push_back</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;{key, value, parent_index: <a href="critbit.md#0xc0deb00c_critbit_ROOT">ROOT</a>});
     // Set root index field <b>to</b> indicate 0th outer node
     tree.root = <a href="critbit.md#0xc0deb00c_critbit_OUTER">OUTER</a> &lt;&lt; <a href="critbit.md#0xc0deb00c_critbit_NODE_TYPE">NODE_TYPE</a>;
@@ -2538,7 +2539,7 @@ insert the new inner node below it (<code><a href="critbit.md#0xc0deb00c_critbit
     n_outer_nodes: u64
 ) {
     // Get number of inner nodes in tree (index of new inner node)
-    <b>let</b> n_inner_nodes = vector_length&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes);
+    <b>let</b> n_inner_nodes = <a href="_length">vector::length</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes);
     // Get field index of search outer node, its side <b>as</b> a child,
     // its key, the <a href="">vector</a> index of its parent, and the critical
     // bit indicated by the search parent
@@ -2588,7 +2589,7 @@ Insert <code>key</code> and <code>value</code> into singleton <code>tree</code>,
     value: V
 ) {
     // Borrow existing outer node
-    <b>let</b> outer_node = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes, 0);
+    <b>let</b> outer_node = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes, 0);
     // Assert insertion key not in tree
     <b>assert</b>!(key != outer_node.key, <a href="critbit.md#0xc0deb00c_critbit_E_HAS_KEY">E_HAS_KEY</a>);
     // Get critical bit between two keys
@@ -2604,7 +2605,7 @@ Insert <code>key</code> and <code>value</code> into singleton <code>tree</code>,
     // Update tree root field <b>to</b> indicate new inner node
     tree.root = 0;
     // Update existing outer node <b>to</b> have new inner node <b>as</b> parent
-    vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+    <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
         0).parent_index = 0;
 }
 </code></pre>
@@ -2639,7 +2640,7 @@ maximum key in non-empty tree <code>tree</code>
         // If search node is outer node <b>return</b> its child field index
         <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_field_index)) <b>return</b> child_field_index;
         // Review node's right child next
-        child_field_index = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
+        child_field_index = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
             child_field_index).right_child_index
     }
 }
@@ -2675,7 +2676,7 @@ minimum key in non-empty tree <code>tree</code>
         // If search node is outer node <b>return</b> its child field index
         <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_field_index)) <b>return</b> child_field_index;
         // Review node's left child next
-        child_field_index = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
+        child_field_index = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
             child_field_index).left_child_index
     }
 }
@@ -2818,10 +2819,10 @@ Then return the popped value from the outer node
     n_outer_nodes: u64
 ): V {
     // Get number of inner nodes pre-pop
-    <b>let</b> n_inner_nodes = vector_length&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes);
+    <b>let</b> n_inner_nodes = <a href="_length">vector::length</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes);
     // Swap remove parent of popped outer node, storing no fields
     <b>let</b> <a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>{critical_bit: _, parent_index: _, left_child_index: _,
-        right_child_index: _} = vector_swap_remove&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
+        right_child_index: _} = <a href="_swap_remove">vector::swap_remove</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
             &<b>mut</b> tree.inner_nodes, inner_index);
     // If destroyed inner node was not last inner node in <a href="">vector</a>,
     // repair the parent-child relationship broken by swap remove
@@ -2829,7 +2830,7 @@ Then return the popped value from the outer node
         <a href="critbit.md#0xc0deb00c_critbit_stitch_swap_remove">stitch_swap_remove</a>(tree, inner_index, n_inner_nodes);
     // Swap remove popped outer node, storing only its value
     <b>let</b> <a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>{key: _, value, parent_index: _} =
-        vector_swap_remove&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+        <a href="_swap_remove">vector::swap_remove</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
             <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(outer_index));
     // If destroyed outer node was not last outer node in <a href="">vector</a>,
     // repair the parent-child relationship broken by swap remove
@@ -2978,12 +2979,12 @@ not in <code>tree</code>
     tree: &<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">CritBitTree</a>&lt;V&gt;,
     key: u128
 ): V {
-    <b>assert</b>!(vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes, 0).key == key,
+    <b>assert</b>!(<a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes, 0).key == key,
         <a href="critbit.md#0xc0deb00c_critbit_E_NOT_HAS_KEY">E_NOT_HAS_KEY</a>); // Assert key actually in tree at root node
     tree.root = 0; // Update root
     // Pop off and unpack outer node at root
     <b>let</b> <a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>{key: _, value, parent_index: _} =
-        vector_pop_back&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes);
+        <a href="_pop_back">vector::pop_back</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes);
     value // Return popped value
 }
 </code></pre>
@@ -3016,7 +3017,7 @@ at index <code>parent_index</code>, per <code><a href="critbit.md#0xc0deb00c_cri
     parent_index: u64,
 ) {
     // Borrow immutable reference <b>to</b> popped node's parent
-    <b>let</b> parent = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
+    <b>let</b> parent = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
         parent_index);
     // If popped outer node was a left child, store the right child
     // field index of its parent <b>as</b> the child field index of the
@@ -3029,10 +3030,10 @@ at index <code>parent_index</code>, per <code><a href="critbit.md#0xc0deb00c_cri
     // field the same <b>as</b> that of the popped node's parent, whether
     // the sibling is an inner or outer node
     <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(sibling_index))
-        vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+        <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
             <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(sibling_index)).parent_index =
                 grandparent_index
-        <b>else</b> vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+        <b>else</b> <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
             sibling_index).parent_index = grandparent_index;
     // If popped node's parent is root
     <b>if</b> (grandparent_index == <a href="critbit.md#0xc0deb00c_critbit_ROOT">ROOT</a>) {
@@ -3041,7 +3042,7 @@ at index <code>parent_index</code>, per <code><a href="critbit.md#0xc0deb00c_cri
         tree.root = sibling_index;
     } <b>else</b> { // If popped node <b>has</b> a grandparent
         // Borrow mutable reference <b>to</b> popped node's grandparent
-        <b>let</b> grandparent = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
+        <b>let</b> grandparent = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
             &<b>mut</b> tree.inner_nodes, grandparent_index);
         // If popped node's parent was a left child, <b>update</b> popped
         // node's grandparent <b>to</b> have <b>as</b> its child the popped node's
@@ -3097,10 +3098,10 @@ the children should be flipped
         (child_index_1, child_index_2) <b>else</b> // Otherwise flipped
         (child_index_2, child_index_1);
     // Push back new outer node <b>with</b> new inner node <b>as</b> parent
-    vector_push_back&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
+    <a href="_push_back">vector::push_back</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&<b>mut</b> tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>{key, value, parent_index: inner_index});
     // Push back new inner node <b>with</b> specified parent and children
-    vector_push_back&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+    <a href="_push_back">vector::push_back</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>{critical_bit, parent_index, left_child_index,
             right_child_index});
 }
@@ -3147,7 +3148,7 @@ node is a child of its parent
     u8,
 ) {
     // Initialize search parent <b>to</b> root
-    <b>let</b> parent = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, tree.root);
+    <b>let</b> parent = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, tree.root);
     <b>loop</b> { // Loop over inner nodes until branching <b>to</b> outer node
         // If key set at critical bit, track field index and side of
         // right child, <b>else</b> left child
@@ -3156,7 +3157,7 @@ node is a child of its parent
             (parent.left_child_index, <a href="critbit.md#0xc0deb00c_critbit_LEFT">LEFT</a>);
         <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(index)) { // If child is outer node
             // Borrow immutable reference <b>to</b> it
-            <b>let</b> node = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes,
+            <b>let</b> node = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes,
                 <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(index));
             // Return child field index of search outer node, its
             // side <b>as</b> a child, its key, the <a href="">vector</a> index of its
@@ -3165,7 +3166,7 @@ node is a child of its parent
                 parent.critical_bit)
         };
         // Search next inner node
-        parent = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, index);
+        parent = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, index);
     }
 }
 </code></pre>
@@ -3198,7 +3199,7 @@ index <code>old_index</code> to new child field index <code>new_index</code>
     parent_index: u64,
     old_index: u64
 ) {
-    <b>let</b> parent = vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+    <b>let</b> parent = <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
         parent_index); // Borrow mutable reference <b>to</b> parent
     // If relocated node was previously left child, <b>update</b>
     // parent's left child <b>to</b> indicate the relocated node's new
@@ -3237,11 +3238,11 @@ child field index <code>new_index</code>
 ) {
     // If child is an outer node, borrow corresponding node and
     // <b>update</b> its parent field index <b>to</b> that of relocated node
-    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_index)) vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
+    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_index)) <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(
         &<b>mut</b> tree.outer_nodes, <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(child_index)
             ).parent_index = new_index <b>else</b>
         // Otherwise perform <b>update</b> on an inner node
-        vector_borrow_mut&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
+        <a href="_borrow_mut">vector::borrow_mut</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&<b>mut</b> tree.inner_nodes,
             child_index).parent_index = new_index;
 }
 </code></pre>
@@ -3278,7 +3279,7 @@ last in vector)
     // If child field index indicates relocated outer node
     <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(node_index)) {
         // Get node's parent field index
-        <b>let</b> parent_index = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes,
+        <b>let</b> parent_index = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_OuterNode">OuterNode</a>&lt;V&gt;&gt;(&tree.outer_nodes,
         <a href="critbit.md#0xc0deb00c_critbit_outer_node_vector_index">outer_node_vector_index</a>(node_index)).parent_index;
         // If root node was relocated, <b>update</b> root field and <b>return</b>
         <b>if</b> (parent_index == <a href="critbit.md#0xc0deb00c_critbit_ROOT">ROOT</a>) {tree.root = node_index; <b>return</b>};
@@ -3287,7 +3288,8 @@ last in vector)
             <a href="critbit.md#0xc0deb00c_critbit_outer_node_child_index">outer_node_child_index</a>(n_nodes - 1));
     } <b>else</b> { // If child field index indicates relocated inner node
         // Borrow mutable reference <b>to</b> it
-        <b>let</b> node = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, node_index);
+        <b>let</b> node =
+            <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, node_index);
         // Get field index of node's parent and children
         <b>let</b> (parent_index, left_child_index, right_child_index) =
             (node.parent_index, node.left_child_index,
@@ -3395,7 +3397,8 @@ maximum key in tree if successor traversal
     direction: bool,
 ): u64 {
     // Borrow immutable reference <b>to</b> start node's parent
-    <b>let</b> parent = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, parent_index);
+    <b>let</b> parent =
+        <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes, parent_index);
     // If start key is set at parent node's critical bit, then the
     // upward walk <b>has</b> reach an inner node via its right child. This
     // is the <b>break</b> condition for successor traversal (when
@@ -3405,7 +3408,7 @@ maximum key in tree if successor traversal
     // <b>to</b> the conditional <a href="critbit.md#0xc0deb00c_critbit">critbit</a> check
     <b>while</b> (direction != <a href="critbit.md#0xc0deb00c_critbit_is_set">is_set</a>(key, parent.critical_bit)) {
         // Borrow immutable reference <b>to</b> next parent in upward walk
-        parent = vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
+        parent = <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(&tree.inner_nodes,
             parent.parent_index);
     }; // Now at apex node
     // If predecessor traversal get left child field of apex node,
@@ -3415,9 +3418,9 @@ maximum key in tree if successor traversal
     <b>while</b> (!<a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_index)) {
         // If predecessor traversal review child's right child next,
         // <b>else</b> review child's left child next
-        child_index = <b>if</b> (direction == <a href="critbit.md#0xc0deb00c_critbit_LEFT">LEFT</a>) vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
+        child_index = <b>if</b> (direction == <a href="critbit.md#0xc0deb00c_critbit_LEFT">LEFT</a>) <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
             &tree.inner_nodes, child_index).right_child_index <b>else</b>
-                vector_borrow&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
+                <a href="_borrow">vector::borrow</a>&lt;<a href="critbit.md#0xc0deb00c_critbit_InnerNode">InnerNode</a>&gt;(
                     &tree.inner_nodes, child_index).left_child_index;
     }; // Child field now indicates target node
     child_index // Return child field index of target node

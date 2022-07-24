@@ -46,12 +46,12 @@ elif test $1 = p; then
     addr=$(python ../../python/econia/build.py gen ../../.. \
         | grep -E -o "(\w+)$")
     # Compile package using new named address
-    aptos move compile --named-addresses "Econia=0x$addr" > /dev/null
+    aptos move compile --named-addresses "econia=0x$addr" > /dev/null
     # Publish under corresponding account (restores named address)
     python ../../python/econia/build.py publish \
         ../../../.secrets/"$addr".key ../../../ $2
     # Rebuild docs with named address to avoid git diffs
-    move build --doc > /dev/null
+    move build --doc &> /dev/null
 
 # Run tests in standard form , passing optional argument
 # For example `s ts -f coin`

@@ -47,99 +47,21 @@ econia_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 econia_modules = SimpleNamespace(
-    Book = SimpleNamespace(
-        name = 'Book'
+    capability = SimpleNamespace(
+        name = 'capability',
     ),
-    Caps = SimpleNamespace(
-        name = 'Caps',
-        structs = SimpleNamespace(
-            FC = 'FC'
-        ),
+    critbit = SimpleNamespace(
+        name = 'critbit'
     ),
-    Coins = SimpleNamespace(
-        name = 'Coins',
-        script_functions = SimpleNamespace(
-            init_coin_types = 'init_coin_types',
-            mint_to = 'mint_to'
-        ),
-        structs = SimpleNamespace(
-            BCT = 'BCT',
-            QCT = 'QCT',
-        )
-    ),
-    CritBit = SimpleNamespace(
-        name = 'CritBit'
-    ),
-    ID = SimpleNamespace(
-        name = 'ID'
-    ),
-    Init = SimpleNamespace(
-        name = 'Init',
-        script_functions = SimpleNamespace(
-            init_econia = 'init_econia'
-        )
-    ),
-    Match = SimpleNamespace(
-        name = 'Match',
-        script_functions = SimpleNamespace(
-            submit_market_buy = 'submit_market_buy'
-        )
-    ),
-    Orders = SimpleNamespace(
-        name = 'Orders'
-    ),
-    Registry = SimpleNamespace(
-        name = 'Registry',
-        script_functions = SimpleNamespace(
-            register_market = 'register_market'
-        ),
-        structs = SimpleNamespace(
-            E1 = 'E1',
-            MR = 'MR'
-        )
-
-    ),
-    User = SimpleNamespace(
-        name = 'User',
-        script_functions = SimpleNamespace(
-            deposit = 'deposit',
-            init_containers = 'init_containers',
-            init_user = 'init_user',
-            submit_ask = 'submit_ask'
-        ),
-    ),
-    Version = SimpleNamespace(
-        name = 'Version',
-        structs = SimpleNamespace(
-            MC = 'MC'
-        )
-    )
 )
 """Econia Move modules with nested member specifiers"""
 
 econia_module_publish_order = [
     [
-        econia_modules.CritBit.name,
+        econia_modules.capability.name,
     ],
     [
-        econia_modules.ID.name,
-    ],
-    [
-        econia_modules.Book.name,
-    ],
-    [
-        econia_modules.Orders.name,
-    ],
-    [
-        econia_modules.Caps.name,
-        econia_modules.Version.name,
-        econia_modules.Registry.name,
-        econia_modules.Init.name,
-        econia_modules.User.name,
-        econia_modules.Match.name,
-    ],
-    [
-        econia_modules.Coins.name
+        econia_modules.critbit.name
     ],
 ]
 """
@@ -208,8 +130,10 @@ data should be signed. Per official Aptos transaction tutorial
 """
 
 named_addrs = SimpleNamespace(
-    Std = '1',
-    Econia = 'c0deb00c' # For command-line testing
+    econia = SimpleNamespace(
+        address = 'c0deb00c',
+        address_name = 'econia',
+    )
 )
 """Named addresses (without leading hex specifier)"""
 

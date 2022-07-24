@@ -606,7 +606,7 @@ def archive_keyfiles(
 def sub_named_toml_address(
     econia_root: str = seps.dot,
     generic: bool = True,
-    named: str = hex_leader(named_addrs.Econia),
+    named: str = hex_leader(named_addrs.econia.address),
 ) -> str:
     """Substitute the named Econia address in Move.toml file
 
@@ -615,7 +615,7 @@ def sub_named_toml_address(
     econia_root : str, optional
         Relative path to econia repository root directory
     generic : bool, optional
-        If a generic named address should be substututed, e.g. '_'
+        If a generic named address should be substituted, e.g. '_'
     named : str, optional
         The named address string to substitute back inside single quotes
 
@@ -624,7 +624,8 @@ def sub_named_toml_address(
     str
         Old value enclosed in single quotes
     """
-    pattern = r'(' + Econia + r'.+' + seps.sq + r')(\w+)(' + seps.sq + r')$'
+    pattern = r'(' + named_addrs.econia.address_name + r'.+' + seps.sq + \
+        r')(\w+)(' + seps.sq + r')$'
     if generic:
         to_sub = seps.us
     else:

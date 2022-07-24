@@ -3,13 +3,13 @@ name = 'Econia'
 version = '2.0.0' # Per SemVer
 
 [addresses]
-Econia = '0xc0deb00c'
+econia = '0xc0deb00c'
 # Mock users for unit tests
-User0 = '0x1234'
-User1 = '0x2345'
-User2 = '0x3456'
-User3 = '0x4567'
-User4 = '0x5678'
+user = '0x1234'
+user0 = '0x2345'
+user1 = '0x3456'
+user2 = '0x4567'
+user3 = '0x5678'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

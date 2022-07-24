@@ -12,6 +12,4 @@
 
 * [Move modules](modules.md)
 
-* [SDK hooks](hooks.md)
-
 * [Logo attribution](logo.md)

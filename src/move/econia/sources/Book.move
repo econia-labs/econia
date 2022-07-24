@@ -106,24 +106,6 @@ module Econia::Book {
         a: address
     }
 
-    /// Anonymized position, used only for SDK-generative functions like
-    /// `get_orders()`
-    struct Order has drop {
-        /// Price from position's order ID
-        price: u64,
-        /// Number of base coin parcels in order
-        size: u64,
-    }
-
-    /// Price level, used only for SDK-generative functions like
-    /// `get_price_levels()`
-    struct PriceLevel has drop {
-        /// Price from position order IDs
-        price: u64,
-        /// Net position size for given price, in base coin parcels
-        size: u64
-    }
-
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -520,118 +502,6 @@ module Econia::Book {
             return (false, size_left)
     }
 
-    /// Private indexing function for SDK generation: Return a vector
-    /// of `Order` sorted by price-time priority: if `side` is `ASK`,
-    /// first element in vector is the oldest ask at the minimum price,
-    /// and if `side` is `BID`, first element in vector is the oldest
-    /// ask at the maximum price
-    fun get_orders<B, Q, E>(
-        host_address: address,
-        side: bool
-    ): vector<Order>
-    acquires OB {
-        // Assert an order book exists at the given address
-        assert!(exists<OB<B, Q, E>>(host_address), E_NO_BOOK);
-        // Initialize empty vector of orders
-        let book = borrow_global_mut<OB<B, Q, E>>(host_address);
-        get_orders_inner(book, side)
-    }
-
-    fun get_orders_inner<B, Q, E>(
-        book: &mut OB<B, Q, E>,
-        side: bool
-    ): vector<Order> {
-        let orders = empty_vector<Order>();
-        let (tree, traversal_dir) = if (side == ASK)
-            // Define traversal tree as asks tree, successor iteration
-            (&mut book.a, R) else
-            // Otherwise define tree as bids tree, predecessor iteration
-            (&mut book.b, L);
-        // Get number of positions in tree
-        let n_positions = length(tree);
-        // If no positions in tree, return empty vector of orders
-        if (n_positions == 0) return orders;
-        // Calculate number of traversals still remaining
-        let remaining_traversals = n_positions - 1;
-        // Declare target position order ID, mutable reference to
-        // target position, target position tree node parent field,
-        // target position tree node child field index
-        let (target_id, target_position_ref_mut, target_parent_field, _) =
-            traverse_init_mut<P>(tree, traversal_dir);
-        loop { // Loop over all positions in tree
-            let price = id_price(target_id); // Get position price
-            let size = target_position_ref_mut.s; // Get position size
-            // Push corresponding order onto back of orders vector
-            vector_push_back<Order>(&mut orders, Order{price, size});
-            // Return orders vector if unable to traverse further
-            if (remaining_traversals == 0) return orders;
-            // Otherwise traverse to the next position in the tree
-            (target_id, target_position_ref_mut, target_parent_field, _) =
-                traverse_mut<P>(tree, target_id, target_parent_field,
-                    traversal_dir);
-            // Decrement number of remaining traversals
-            remaining_traversals = remaining_traversals - 1;
-        }
-    }
-
-    fun show_book_as_orders<B, Q, E>(
-        book: &mut OB<B, Q, E>,
-    ): (vector<Order>, vector<Order>) {
-        let asks = get_orders_inner(book, ASK);
-        let bids = get_orders_inner(book, BID);
-        (asks, bids)
-    }
-
-    fun show_book_as_price_levels<B, Q, E>(
-        book: &mut OB<B, Q, E>,
-    ): (vector<PriceLevel>, vector<PriceLevel>) {
-        let asks = get_orders_inner(book, ASK);
-        let bids = get_orders_inner(book, BID);
-        let ask_levels = get_price_levels(&asks);
-        let bid_levels = get_price_levels(&bids);
-        (ask_levels, bid_levels)
-    }
-
-    /// Private indexing function for SDK generation: aggregates result
-    /// of `get_orders()` into a vector of `PriceLevel`
-    fun get_price_levels(
-        orders: &vector<Order>
-    ): vector<PriceLevel> {
-        // Initialize empty vector of price levels
-        let price_levels = empty_vector<PriceLevel>();
-        // Get number of orders to process
-        let n_orders = vector_length<Order>(orders);
-        // If no orders, return empty vector of price levels
-        if (n_orders == 0) return price_levels;
-        // Initialize loop counter, price level price and size
-        let (order_index, level_price, level_size) = (0, 0, 0);
-        loop { // Loop over all orders
-            // Borrow immutable reference to order for current iteration
-            let order = vector_borrow<Order>(orders, order_index);
-            if (order.price != level_price) { // If on new price level
-                if (order_index > 0) { // If not on first order
-                    // Store the last price level in vector
-                    vector_push_back<PriceLevel>(&mut price_levels,
-                        PriceLevel{price: level_price, size: level_size});
-                };
-                // Start tracking a new price level at given order
-                (level_price, level_size) = (order.price, order.size)
-            } else { // If order has same price level as last checked
-                // Increment size of price level by order size
-                level_size = level_size + order.size;
-            };
-            order_index = order_index + 1; // Increment order index
-            // If have looped over all in  0-indexed vector
-            if (order_index == n_orders) { // If no more iterations left
-                // Store final price level in vector
-                vector_push_back<PriceLevel>(&mut price_levels,
-                    PriceLevel{price: level_price, size: level_size});
-                break // Break out of loop
-            };
-        }; // Now done looping over orders
-        price_levels // Return sorted vector of price levels
-    }
-
     /// Compare incoming order `size` and address `i_addr` against
     /// fields in target position `t_p_r`, returning fill amount and if
     /// incoming size is equal to target size. Abort if both have same
@@ -797,6 +667,142 @@ module Econia::Book {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Anonymized position, used by `get_orders_inner()`
+    struct Order has drop {
+        /// Price from position's order ID
+        price: u64,
+        /// Number of base coin parcels in order
+        size: u64,
+    }
+
+    /// Price level, used by `get_price_levels()`
+    struct PriceLevel has drop {
+        /// Price from position order IDs
+        price: u64,
+        /// Net position size for given price, in base coin parcels
+        size: u64
+    }
+
+    /// Verify an order book exists at `host_address` for given market,
+    /// then index orders on the given `side` into price-time priority
+    fun get_orders<B, Q, E>(
+        host_address: address,
+        side: bool
+    ): vector<Order>
+    acquires OB {
+        // Assert an order book exists at the given address
+        assert!(exists<OB<B, Q, E>>(host_address), E_NO_BOOK);
+        // Initialize empty vector of orders
+        let book = borrow_global_mut<OB<B, Q, E>>(host_address);
+        get_orders_inner(book, side)
+    }
+
+    /// Index the orders in non-empty `book`, returning a vector of
+    /// `Order` sorted by price-time priority: if `side` is `ASK`,
+    /// first element in vector is the oldest ask at the minimum price,
+    /// and if `side` is `BID`, first element in vector is the oldest
+    /// ask at the maximum price
+    fun get_orders_inner<B, Q, E>(
+        book: &mut OB<B, Q, E>,
+        side: bool
+    ): vector<Order> {
+        let orders = empty_vector<Order>();
+        let (tree, traversal_dir) = if (side == ASK) // If managing asks
+            // Define traversal tree as asks tree, successor iteration
+            (&mut book.a, R) else
+            // Otherwise define tree as bids tree, predecessor iteration
+            (&mut book.b, L);
+        // Get number of positions in tree
+        let n_positions = length(tree);
+        // If no positions in tree, return empty vector of orders
+        if (n_positions == 0) return orders;
+        // Calculate number of traversals still remaining
+        let remaining_traversals = n_positions - 1;
+        // Declare target position order ID, mutable reference to
+        // target position, target position tree node parent field,
+        // target position tree node child field index
+        let (target_id, target_position_ref_mut, target_parent_field, _) =
+            traverse_init_mut<P>(tree, traversal_dir);
+        loop { // Loop over all positions in tree
+            let price = id_price(target_id); // Get position price
+            let size = target_position_ref_mut.s; // Get position size
+            // Push corresponding order onto back of orders vector
+            vector_push_back<Order>(&mut orders, Order{price, size});
+            // Return orders vector if unable to traverse further
+            if (remaining_traversals == 0) return orders;
+            // Otherwise traverse to the next position in the tree
+            (target_id, target_position_ref_mut, target_parent_field, _) =
+                traverse_mut<P>(tree, target_id, target_parent_field,
+                    traversal_dir);
+            // Decrement number of remaining traversals
+            remaining_traversals = remaining_traversals - 1;
+        }
+    }
+
+    /// Index the output of `get_orders_inner()` into a vector of
+    /// `PriceLevel`
+    fun get_price_levels(
+        orders: &vector<Order>
+    ): vector<PriceLevel> {
+        // Initialize empty vector of price levels
+        let price_levels = empty_vector<PriceLevel>();
+        // Get number of orders to process
+        let n_orders = vector_length<Order>(orders);
+        // If no orders, return empty vector of price levels
+        if (n_orders == 0) return price_levels;
+        // Initialize loop counter, price level price and size
+        let (order_index, level_price, level_size) = (0, 0, 0);
+        loop { // Loop over all orders
+            // Borrow immutable reference to order for current iteration
+            let order = vector_borrow<Order>(orders, order_index);
+            if (order.price != level_price) { // If on new price level
+                if (order_index > 0) { // If not on first order
+                    // Store the last price level in vector
+                    vector_push_back<PriceLevel>(&mut price_levels,
+                        PriceLevel{price: level_price, size: level_size});
+                };
+                // Start tracking a new price level at given order
+                (level_price, level_size) = (order.price, order.size)
+            } else { // If order has same price level as last checked
+                // Increment size of price level by order size
+                level_size = level_size + order.size;
+            };
+            order_index = order_index + 1; // Increment order index
+            // If have looped over all in  0-indexed vector
+            if (order_index == n_orders) { // If no more iterations left
+                // Store final price level in vector
+                vector_push_back<PriceLevel>(&mut price_levels,
+                    PriceLevel{price: level_price, size: level_size});
+                break // Break out of loop
+            };
+        }; // Now done looping over orders
+        price_levels // Return sorted vector of price levels
+    }
+
+    /// Index `book` into a vector of `Order` for asks and bids
+    fun show_book_as_orders<B, Q, E>(
+        book: &mut OB<B, Q, E>,
+    ): (vector<Order>, vector<Order>) {
+        let asks = get_orders_inner(book, ASK);
+        let bids = get_orders_inner(book, BID);
+        (asks, bids)
+    }
+
+    /// Index `book` into a vector of `PriceLevel` for asks and bids
+    fun show_book_as_price_levels<B, Q, E>(
+        book: &mut OB<B, Q, E>,
+    ): (vector<PriceLevel>, vector<PriceLevel>) {
+        let asks = get_orders_inner(book, ASK);
+        let bids = get_orders_inner(book, BID);
+        let ask_levels = get_price_levels(&asks);
+        let bid_levels = get_price_levels(&bids);
+        (ask_levels, bid_levels)
+    }
+
+    // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

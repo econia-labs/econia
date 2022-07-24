@@ -23,6 +23,7 @@
     - [Markdown](#markdown)
     - [Move](#move)
     - [Python](#python)
+    - [TypeScript](#typescript)
 
 ## Developer setup
 
@@ -161,7 +162,8 @@ With the `econia` conda environment active, you can then build the Python packag
 
 ### Using the TypeScript SDK
 
-See documentation [here](src/move/econia/build/typescript/)
+Econia contains an auto-generated TypeScript SDK, contributed and maintained by @Manahip.
+Documentation is at [`src/move/econia/build/typescript/README.md`](src/move/econia/build/typescript/README.md)
 
 ## Major filetypes
 
@@ -187,3 +189,7 @@ Auto-generated module documentation files are at [`src/move/econia/build/Econia/
 The Econia Python package source code is at [`src/python/econia`](src/python/econia).
 Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into a documentation website via Sphinx.
 Sphinx documentation source files are at [`doc/sphinx`](doc/sphinx).
+
+### TypeScript
+
+As mentioned in [Using the TypeScript SDK](#using-the-typescript-sdk), Econia contains an auto-generated TypeScript SDK at [`src/move/econia/build/typescript`](src/move/econia/build/typescript)

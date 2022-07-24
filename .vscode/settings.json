@@ -28,6 +28,7 @@
         "inplace",
         "linkcheck",
         "loopwise",
+        "Manahip",
         "miniconda",
         "modindex",
         "monospaced",

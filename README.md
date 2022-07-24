@@ -49,7 +49,9 @@ See `ss.sh` within a given directory for its available options
 
 ### Command line setup
 
-1. First install the `aptos` CLI:
+1. First follow the [official Aptos developer setup guide](https://aptos.dev/guides/getting-started)
+
+1. Then install the `aptos` CLI:
 
     ```zsh
     cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
@@ -101,13 +103,13 @@ To install the `econia` Python package:
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     ```
 
-2. Then `brew install` Miniconda:
+1. Then `brew install` Miniconda:
 
     ```zsh
     brew install miniconda # Python package management
     ```
 
-3. Create the `econia` conda environment with the `Econia` Python package inside:
+1. Create the `econia` conda environment with the `Econia` Python package inside:
 
     ```zsh
     conda env create -f env/conda.yml
@@ -121,7 +123,7 @@ To install the `econia` Python package:
     pip install -e src/python
     ```
 
-4. Create the secrets directories as needed:
+1. Create the secrets directories as needed:
 
     ```zsh
     if ! test -d .secrets; then mkdir .secrets; fi

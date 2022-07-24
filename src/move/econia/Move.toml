@@ -3,7 +3,7 @@ name = 'Econia'
 version = '1.1.0' # Per SemVer
 
 [addresses]
-Econia = '0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9'
+Econia = '0xc0deb00c'
 TestUser = '0x1234'
 TestUser1 = '0x2345'
 TestUser2 = '0x3456'

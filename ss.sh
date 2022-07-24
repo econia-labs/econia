@@ -20,7 +20,6 @@ elif test $1 = hello; then echo Hello, Econia developer
 # Go to Move package folder
 elif test $1 = mp; then
     cd src/move/econia
-    move sandbox clean
 
 # Start a Jupyter notebook server
 elif test $1 = nb; then

@@ -88,7 +88,7 @@ See `ss.sh` within a given directory for its available options
     BUILDING Econia
     ```
 
-1. Should [`aptos-core` #2142](https://github.com/aptos-labs/aptos-core/issues/2142), be accepted, installing the `move` CLI will no longer be necessary for this step, and the relevant script should be updated to run on the `aptos` CLI alone
+1. Should [`aptos-core` #2142](https://github.com/aptos-labs/aptos-core/issues/2142) be accepted, installing the `move` CLI will no longer be necessary for this step, and the relevant script should be updated to run on the `aptos` CLI alone
 
 ### Using the Python package
 

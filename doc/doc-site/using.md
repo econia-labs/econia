@@ -100,7 +100,7 @@ Must be executed for each market a user wishes to trade on.
 
 ## TypeScript SDK
 
-Econia contains an auto-generated TypeScript SDK contributed and maintained by @Manahip.
+Econia contains an auto-generated TypeScript SDK contributed and maintained by [Manahip](http:github.com/manahip).
 See [the README](../../src/move/econia/build/typescript/README.md) for a walkthrough.
 Econia Move code includes several private Move functions useful for transpiler-based SDK generation, including:
 

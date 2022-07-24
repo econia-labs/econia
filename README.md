@@ -162,7 +162,7 @@ With the `econia` conda environment active, you can then build the Python packag
 
 ### Using the TypeScript SDK
 
-Econia contains an auto-generated TypeScript SDK, contributed and maintained by @Manahip.
+Econia contains an auto-generated TypeScript SDK, contributed and maintained by [Manahip](http://github.com/manahip).
 Documentation is at [`src/move/econia/build/typescript/README.md`](src/move/econia/build/typescript/README.md)
 
 ## Major filetypes

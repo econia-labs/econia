@@ -286,7 +286,7 @@ module Econia::Registry {
         e: TI
     }
 
-    #[generate(table_loader=true)]
+    #[show_iter_table(t)]
     /// Market registry
     struct MR has key {
         /// Table from `MI` to address hosting the corresponding `MC`

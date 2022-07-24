@@ -1,5 +1,5 @@
 
-import { AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, strToU8, u8str, DummyCache } from "@manahippo/move-to-ts";
+import { AptosParserRepo, getTypeTagFullname, StructTag, parseTypeTagOrThrow, u8, u64, u128, print, strToU8, u8str, DummyCache } from "@manahippo/move-to-ts";
 import { AptosAccount, AptosClient, HexString, Types } from "aptos";
 import { Command } from "commander";
 import { getProjectRepo } from "./";
@@ -64,7 +64,8 @@ const action_init_econia = async () => {
 }
 
 program
-  .command("init_econia")
+  .command("init-econia")
+  .description("")
 
   .action(action_init_econia);
 
@@ -82,7 +83,8 @@ const action_submit_market_buy = async (B: string, Q: string, E: string, host: s
 }
 
 program
-  .command("submit_market_buy")
+  .command("submit-market-buy")
+  .description("Submit market order to buy B with Q")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -104,7 +106,8 @@ const action_submit_market_sell = async (B: string, Q: string, E: string, host: 
 }
 
 program
-  .command("submit_market_sell")
+  .command("submit-market-sell")
+  .description("Submit market order to sell B to Q")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -126,7 +129,8 @@ const action_swap_buy = async (B: string, Q: string, E: string, host: string, re
 }
 
 program
-  .command("swap_buy")
+  .command("swap-buy")
+  .description("Swap B to Q")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -148,7 +152,8 @@ const action_swap_sell = async (B: string, Q: string, E: string, host: string, r
 }
 
 program
-  .command("swap_sell")
+  .command("swap-sell")
+  .description("Swap Q to B")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -167,7 +172,8 @@ const action_register_market = async (B: string, Q: string, E: string) => {
 }
 
 program
-  .command("register_market")
+  .command("register-market")
+  .description("Create a new market B-Q-E")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -186,7 +192,8 @@ const action_cancel_ask = async (B: string, Q: string, E: string, host: string, 
 }
 
 program
-  .command("cancel_ask")
+  .command("cancel-ask")
+  .description("Cancel bid order with id")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -207,7 +214,8 @@ const action_cancel_bid = async (B: string, Q: string, E: string, host: string, 
 }
 
 program
-  .command("cancel_bid")
+  .command("cancel-bid")
+  .description("Cancel ask order with id")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -229,6 +237,7 @@ const action_deposit = async (B: string, Q: string, E: string, b_val: string, q_
 
 program
   .command("deposit")
+  .description("deposit funds into market")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -247,7 +256,8 @@ const action_init_containers = async (B: string, Q: string, E: string) => {
 }
 
 program
-  .command("init_containers")
+  .command("init-containers")
+  .description("Initialize user for trading on B-Q-E market")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -262,7 +272,8 @@ const action_init_user = async () => {
 }
 
 program
-  .command("init_user")
+  .command("init-user")
+  .description("Initializes account for placing limit orders")
 
   .action(action_init_user);
 
@@ -280,7 +291,8 @@ const action_submit_ask = async (B: string, Q: string, E: string, host: string, 
 }
 
 program
-  .command("submit_ask")
+  .command("submit-ask")
+  .description("Submit limit order to sell B to Q")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -303,7 +315,8 @@ const action_submit_bid = async (B: string, Q: string, E: string, host: string, 
 }
 
 program
-  .command("submit_bid")
+  .command("submit-bid")
+  .description("Submit limit order to buy B with Q")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
@@ -326,12 +339,68 @@ const action_withdraw = async (B: string, Q: string, E: string, b_val: string, q
 
 program
   .command("withdraw")
+  .description("Withdraw funds from market")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
   .argument('<b_val>')
   .argument('<q_val>')
   .action(action_withdraw);
+
+
+
+const show_book_as_orders = async (owner: string, B: string, Q: string, E: string) => {
+  const {client} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await Econia$_.Book$_.OB.load(repo, client, owner_, [parseTypeTagOrThrow(B), parseTypeTagOrThrow(Q), parseTypeTagOrThrow(E)])
+  print(value.show_book_as_orders());
+}
+
+program
+  .command("show-book-as-orders")
+  .argument("<ADDRESS:owner>")
+  .argument('<TYPE_B>')
+  .argument('<TYPE_Q>')
+  .argument('<TYPE_E>')
+  .action(show_book_as_orders)
+
+
+const show_book_as_price_levels = async (owner: string, B: string, Q: string, E: string) => {
+  const {client} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await Econia$_.Book$_.OB.load(repo, client, owner_, [parseTypeTagOrThrow(B), parseTypeTagOrThrow(Q), parseTypeTagOrThrow(E)])
+  print(value.show_book_as_price_levels());
+}
+
+program
+  .command("show-book-as-price-levels")
+  .argument("<ADDRESS:owner>")
+  .argument('<TYPE_B>')
+  .argument('<TYPE_Q>')
+  .argument('<TYPE_E>')
+  .action(show_book_as_price_levels)
+
+
+const show_entries_MR_t = async (owner: string) => {
+  const {client} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await Econia$_.Registry$_.MR.load(repo, client, owner_, [])
+  const entries = await value.getIterTableEntries_t(client, repo);
+  for (const entry of entries) {
+    console.log();
+    console.log(`Entry:`);
+    print(entry[0]);
+    print(entry[1]);
+  }
+}
+
+program
+  .command("show-entries-MR-t")
+  .argument("<ADDRESS:owner>")
+  .action(show_entries_MR_t)
 
 
 program.parse();

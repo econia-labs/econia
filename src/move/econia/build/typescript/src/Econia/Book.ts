@@ -1,5 +1,5 @@
 import * as $ from "@manahippo/move-to-ts";
-import {AptosDataCache, AptosParserRepo} from "@manahippo/move-to-ts";
+import {AptosDataCache, AptosParserRepo, DummyCache} from "@manahippo/move-to-ts";
 import {U8, U64, U128} from "@manahippo/move-to-ts";
 import {u8, u64, u128} from "@manahippo/move-to-ts";
 import {TypeParamDeclType, FieldDeclType} from "@manahippo/move-to-ts";
@@ -87,6 +87,19 @@ export class OB
     const result = await repo.loadResource(client, address, OB, typeParams);
     return result as unknown as OB;
   }
+
+  show_book_as_orders() {
+    const cache = new DummyCache();
+    const tags = (this.typeTag as StructTag).typeParams;
+    return show_book_as_orders$(this, cache, tags);
+  }
+
+  show_book_as_price_levels() {
+    const cache = new DummyCache();
+    const tags = (this.typeTag as StructTag).typeParams;
+    return show_book_as_price_levels$(this, cache, tags);
+  }
+
 }
 
 export class Order 
@@ -357,16 +370,27 @@ export function get_orders$ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <B, Q, E>*/
 ): Order[] {
-  let temp$1, temp$2, n_positions, orders, price, remaining_traversals, size, target_id, target_parent_field, target_position_ref_mut, traversal_dir, tree;
+  let book;
   if (!$c.exists(new StructTag(new HexString("0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(host_address))) {
     throw $.abortCode(E_NO_BOOK);
   }
+  book = $c.borrow_global_mut<OB>(new StructTag(new HexString("0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(host_address));
+  return get_orders_inner$(book, side, $c, [$p[0], $p[1], $p[2]] as TypeTag[]);
+}
+
+export function get_orders_inner$ (
+  book: OB,
+  side: boolean,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <B, Q, E>*/
+): Order[] {
+  let temp$1, temp$2, n_positions, orders, price, remaining_traversals, size, target_id, target_parent_field, target_position_ref_mut, traversal_dir, tree;
   orders = std$_.vector$_.empty$($c, [new StructTag(new HexString("0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9"), "Book", "Order", [])] as TypeTag[]);
   if ((side == ASK)) {
-    [temp$1, temp$2] = [$c.borrow_global_mut<OB>(new StructTag(new HexString("0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(host_address)).a, R];
+    [temp$1, temp$2] = [book.a, R];
   }
   else{
-    [temp$1, temp$2] = [$c.borrow_global_mut<OB>(new StructTag(new HexString("0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(host_address)).b, L];
+    [temp$1, temp$2] = [book.b, L];
   }
   [tree, traversal_dir] = [temp$1, temp$2];
   n_positions = CritBit$_.length$(tree, $c, [new StructTag(new HexString("0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9"), "Book", "P", [])] as TypeTag[]);
@@ -530,6 +554,30 @@ export function scale_factor$ (
   $p: TypeTag[], /* <B, Q, E>*/
 ): U64 {
   return $.copy($c.borrow_global<OB>(new StructTag(new HexString("0x366d989b43410749faf89a28742f43935bd91c65070db5b840bc7777be9201f9"), "Book", "OB", [$p[0], $p[1], $p[2]]), $.copy(addr)).f);
+}
+
+export function show_book_as_orders$ (
+  book: OB,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <B, Q, E>*/
+): [Order[], Order[]] {
+  let asks, bids;
+  asks = get_orders_inner$(book, ASK, $c, [$p[0], $p[1], $p[2]] as TypeTag[]);
+  bids = get_orders_inner$(book, BID, $c, [$p[0], $p[1], $p[2]] as TypeTag[]);
+  return [asks, bids];
+}
+
+export function show_book_as_price_levels$ (
+  book: OB,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <B, Q, E>*/
+): [PriceLevel[], PriceLevel[]] {
+  let ask_levels, asks, bid_levels, bids;
+  asks = get_orders_inner$(book, ASK, $c, [$p[0], $p[1], $p[2]] as TypeTag[]);
+  bids = get_orders_inner$(book, BID, $c, [$p[0], $p[1], $p[2]] as TypeTag[]);
+  ask_levels = get_price_levels$(asks, $c);
+  bid_levels = get_price_levels$(bids, $c);
+  return [ask_levels, bid_levels];
 }
 
 export function traverse_fill$ (

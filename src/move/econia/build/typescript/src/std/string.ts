@@ -1,5 +1,5 @@
 import * as $ from "@manahippo/move-to-ts";
-import {AptosDataCache, AptosParserRepo} from "@manahippo/move-to-ts";
+import {AptosDataCache, AptosParserRepo, DummyCache} from "@manahippo/move-to-ts";
 import {U8, U64, U128} from "@manahippo/move-to-ts";
 import {u8, u64, u128} from "@manahippo/move-to-ts";
 import {TypeParamDeclType, FieldDeclType} from "@manahippo/move-to-ts";
@@ -36,6 +36,7 @@ export class String
     const proto = $.parseStructProto(data, typeTag, repo, String);
     return new String(proto, typeTag);
   }
+  str(): string { return $.u8str(this.bytes); }
 
 }
 export function append$ (

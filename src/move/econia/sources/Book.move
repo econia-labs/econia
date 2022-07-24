@@ -81,6 +81,7 @@ module Econia::Book {
     /// inhibit coverage testing via the Move CLI. See `Econia::Caps`
     struct FriendCap has copy, drop, store {}
 
+    #[show(show_book_as_orders, show_book_as_price_levels)]
     /// Order book with base coin type `B`, quote coin type `Q`, and
     /// scale exponent type `E`
     struct OB<phantom B, phantom Q, phantom E> has key {
@@ -532,12 +533,20 @@ module Econia::Book {
         // Assert an order book exists at the given address
         assert!(exists<OB<B, Q, E>>(host_address), E_NO_BOOK);
         // Initialize empty vector of orders
+        let book = borrow_global_mut<OB<B, Q, E>>(host_address);
+        get_orders_inner(book, side)
+    }
+
+    fun get_orders_inner<B, Q, E>(
+        book: &mut OB<B, Q, E>,
+        side: bool
+    ): vector<Order> {
         let orders = empty_vector<Order>();
-        let (tree, traversal_dir) = if (side == ASK) // If an ask
+        let (tree, traversal_dir) = if (side == ASK)
             // Define traversal tree as asks tree, successor iteration
-            (&mut borrow_global_mut<OB<B, Q, E>>(host_address).a, R) else
+            (&mut book.a, R) else
             // Otherwise define tree as bids tree, predecessor iteration
-            (&mut borrow_global_mut<OB<B, Q, E>>(host_address).b, L);
+            (&mut book.b, L);
         // Get number of positions in tree
         let n_positions = length(tree);
         // If no positions in tree, return empty vector of orders
@@ -563,6 +572,24 @@ module Econia::Book {
             // Decrement number of remaining traversals
             remaining_traversals = remaining_traversals - 1;
         }
+    }
+
+    fun show_book_as_orders<B, Q, E>(
+        book: &mut OB<B, Q, E>,
+    ): (vector<Order>, vector<Order>) {
+        let asks = get_orders_inner(book, ASK);
+        let bids = get_orders_inner(book, BID);
+        (asks, bids)
+    }
+
+    fun show_book_as_price_levels<B, Q, E>(
+        book: &mut OB<B, Q, E>,
+    ): (vector<PriceLevel>, vector<PriceLevel>) {
+        let asks = get_orders_inner(book, ASK);
+        let bids = get_orders_inner(book, BID);
+        let ask_levels = get_price_levels(&asks);
+        let bid_levels = get_price_levels(&bids);
+        (ask_levels, bid_levels)
     }
 
     /// Private indexing function for SDK generation: aggregates result

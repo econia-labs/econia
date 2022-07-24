@@ -17,6 +17,7 @@
     - [Shell scripts](#shell-scripts)
     - [Command line setup](#command-line-setup)
     - [Using the Python package](#using-the-python-package)
+    - [Using the TypeScript SDK](#using-the-typescript-sdk)
   - [Major filetypes](#major-filetypes)
     - [Jupyter](#jupyter)
     - [Markdown](#markdown)
@@ -157,6 +158,10 @@ With the `econia` conda environment active, you can then build the Python packag
 # Move package has its own utility shell scripts
 (econia) % s p # Publish bytecode
 ```
+
+### Using the TypeScript SDK
+
+See documentation [here](src/move/econia/build/typescript/)
 
 ## Major filetypes
 

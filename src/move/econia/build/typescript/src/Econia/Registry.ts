@@ -1,5 +1,5 @@
 import * as $ from "@manahippo/move-to-ts";
-import {AptosDataCache, AptosParserRepo} from "@manahippo/move-to-ts";
+import {AptosDataCache, AptosParserRepo, DummyCache} from "@manahippo/move-to-ts";
 import {U8, U64, U128} from "@manahippo/move-to-ts";
 import {u8, u64, u128} from "@manahippo/move-to-ts";
 import {TypeParamDeclType, FieldDeclType} from "@manahippo/move-to-ts";
@@ -539,6 +539,15 @@ export class MR
     const result = await repo.loadResource(client, address, MR, typeParams);
     return result as unknown as MR;
   }
+
+  async getIterTableEntries_t(client: AptosClient, repo: AptosParserRepo) {
+    const cache = new DummyCache();
+    const tags = (this.typeTag as StructTag).typeParams;
+    const iterTableField = MR.fields.filter(f=>f.name === 't')[0]
+    const typedIterTable = this.t.toTypedIterTable<MI,HexString>(iterTableField);
+    return await typedIterTable.fetchAll(client, repo);
+  }
+
 }
 export function init_registry$ (
   account: HexString,

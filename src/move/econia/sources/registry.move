@@ -81,13 +81,13 @@ module econia::registry {
         /// Map from market to the last version number during which a
         /// custodian-facilitated order was placed for the given market.
         /// Only one such order permitted per transaction, per market,
-        /// to ensure that users do not end up submitting orders having
-        /// the same encoded version number within a given order book.
-        /// Without this protocol-wide counter, it would be possible for
-        /// a third party to simply register as a custodian multiple
-        /// times, aggregate multiple `CustodianCapability` instances,
-        /// then pass them in succession to circumvent other forms of
-        /// error-checking.
+        /// to ensure that users do not end up submitting multiple
+        /// orders with order IDs having the same encoded version number
+        /// within a given order book. Without this protocol-wide
+        /// counter, it would be possible for a third party to simply
+        /// register as a custodian multiple times, aggregate multiple
+        /// `CustodianCapability` instances, then pass them in
+        /// succession to circumvent other forms of error-checking.
         custodian_counters: open_table::OpenTable<MarketInfo, u64>
     }
 

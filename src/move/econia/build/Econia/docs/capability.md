@@ -4,8 +4,7 @@
 # Module `0xc0deb00c::capability`
 
 Defines and administers the <code><a href="capability.md#0xc0deb00c_capability_EconiaCapability">EconiaCapability</a></code>, which is required
-during cross-module function calls that should only be invoked by
-Econia (basically an extensible alternative to <code>friends</code>).
+for assorted cross-module function calls internal to Econia.
 
 
 -  [Struct `EconiaCapability`](#0xc0deb00c_capability_EconiaCapability)

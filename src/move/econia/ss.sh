@@ -11,7 +11,7 @@ elif test $1 = ac; then
     cd src/move/econia
 
 # Build package via Move command line
-elif test $1 = b; then move package build
+elif test $1 = b; then move build
 
 # Clear the terminal
 elif test $1 = c; then clear

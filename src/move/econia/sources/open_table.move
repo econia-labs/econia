@@ -54,6 +54,15 @@ module econia::open_table {
         table::borrow(&open_table.base_table, key)
     }
 
+    /// Return `true` if `key` in `open_table`, otherwise `false`
+    public fun contains<K: copy + drop, V>(
+        open_table: &OpenTable<K, V>,
+        key: K
+    ): bool {
+        // Return if key in base table
+        table::contains(&open_table.base_table, key)
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -67,8 +76,13 @@ module econia::open_table {
         assert!(table::empty(&open_table.base_table), 0);
         // Assert keys list is empty
         assert!(vector::is_empty(&open_table.keys), 0);
+        // Assert membership check returns
+        assert!(!contains(&open_table, 1), 0);
         add(&mut open_table, 1, 2); // Add key 1, value 2
         add(&mut open_table, 3, 4); // Add key 3, value 4
+        // Assert membership check returns
+        assert!(contains(&open_table, 1), 0);
+        assert!(contains(&open_table, 3), 0);
         // Assert correct borrow returns
         assert!(*table::borrow(&open_table.base_table, 1) == 2, 0);
         assert!(*table::borrow(&open_table.base_table, 3) == 4, 0);

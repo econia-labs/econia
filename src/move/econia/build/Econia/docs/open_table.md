@@ -12,6 +12,7 @@ all functions.
 -  [Function `empty`](#0xc0deb00c_open_table_empty)
 -  [Function `add`](#0xc0deb00c_open_table_add)
 -  [Function `borrow`](#0xc0deb00c_open_table_borrow)
+-  [Function `contains`](#0xc0deb00c_open_table_contains)
 
 
 <pre><code><b>use</b> <a href="">0x1::table</a>;
@@ -136,6 +137,35 @@ aborting if no entry in <code><a href="open_table.md#0xc0deb00c_open_table">open
 ): &V {
     // Borrow corresponding reference (aborts <b>if</b> no such entry)
     <a href="_borrow">table::borrow</a>(&<a href="open_table.md#0xc0deb00c_open_table">open_table</a>.base_table, key)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_open_table_contains"></a>
+
+## Function `contains`
+
+Return <code><b>true</b></code> if <code>key</code> in <code><a href="open_table.md#0xc0deb00c_open_table">open_table</a></code>, otherwise <code><b>false</b></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="open_table.md#0xc0deb00c_open_table_contains">contains</a>&lt;K: <b>copy</b>, drop, V&gt;(<a href="open_table.md#0xc0deb00c_open_table">open_table</a>: &<a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;K, V&gt;, key: K): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="open_table.md#0xc0deb00c_open_table_contains">contains</a>&lt;K: <b>copy</b> + drop, V&gt;(
+    <a href="open_table.md#0xc0deb00c_open_table">open_table</a>: &<a href="open_table.md#0xc0deb00c_open_table_OpenTable">OpenTable</a>&lt;K, V&gt;,
+    key: K
+): bool {
+    // Return <b>if</b> key in base <a href="">table</a>
+    <a href="_contains">table::contains</a>(&<a href="open_table.md#0xc0deb00c_open_table">open_table</a>.base_table, key)
 }
 </code></pre>
 

@@ -74,7 +74,7 @@ module econia::registry {
     /// Container for core key-value pair maps
     struct Registry has key {
         /// Map from scale exponent type (like `E0` or `E12`) to scale
-        /// factor value (like `F2` or `F17`)
+        /// factor value (like `F0` or `F12`)
         scales: open_table::OpenTable<type_info::TypeInfo, u64>,
         /// Map from market to the order book host address
         hosts: open_table::OpenTable<MarketInfo, address>,

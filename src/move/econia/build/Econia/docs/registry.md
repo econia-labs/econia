@@ -693,7 +693,7 @@ Container for core key-value pair maps
 </dt>
 <dd>
  Map from scale exponent type (like <code><a href="registry.md#0xc0deb00c_registry_E0">E0</a></code> or <code><a href="registry.md#0xc0deb00c_registry_E12">E12</a></code>) to scale
- factor value (like <code><a href="registry.md#0xc0deb00c_registry_F2">F2</a></code> or <code><a href="registry.md#0xc0deb00c_registry_F17">F17</a></code>)
+ factor value (like <code><a href="registry.md#0xc0deb00c_registry_F0">F0</a></code> or <code><a href="registry.md#0xc0deb00c_registry_F12">F12</a></code>)
 </dd>
 <dt>
 <code>hosts: <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, <b>address</b>&gt;</code>

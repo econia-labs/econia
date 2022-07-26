@@ -30,15 +30,18 @@
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
--  [Function `as_market_info`](#0xc0deb00c_registry_as_market_info)
 -  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
+-  [Function `market_info`](#0xc0deb00c_registry_market_info)
 -  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
 -  [Function `scale_factor`](#0xc0deb00c_registry_scale_factor)
+-  [Function `scale_factor_from_type_info`](#0xc0deb00c_registry_scale_factor_from_type_info)
+-  [Function `scale_factor_from_market_info`](#0xc0deb00c_registry_scale_factor_from_market_info)
 -  [Function `is_registered`](#0xc0deb00c_registry_is_registered)
 -  [Function `is_registered_types`](#0xc0deb00c_registry_is_registered_types)
+-  [Function `is_valid_custodian_id`](#0xc0deb00c_registry_is_valid_custodian_id)
 -  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
 -  [Function `register_market`](#0xc0deb00c_registry_register_market)
     -  [Abort conditions](#@Abort_conditions_1)
@@ -704,7 +707,7 @@ Type info for a <code>&lt;B, Q, E&gt;</code>-style market
  Generic <code>CoinType</code> of <code>aptos_framework::coin::Coin</code>
 </dd>
 <dt>
-<code>scale_exponent: <a href="_TypeInfo">type_info::TypeInfo</a></code>
+<code>scale_exponent_type: <a href="_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
  Scale exponent type defined in this module
@@ -1060,36 +1063,6 @@ Corresponds to <code><a href="registry.md#0xc0deb00c_registry_E9">E9</a></code>
 
 
 
-<a name="0xc0deb00c_registry_as_market_info"></a>
-
-## Function `as_market_info`
-
-Pack provided type arguments into a <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code> and return
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_as_market_info">as_market_info</a>&lt;B, Q, E&gt;(): <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_as_market_info">as_market_info</a>&lt;B, Q, E&gt;(
-): <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a> {
-    <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{
-        base_coin_type: <a href="_type_of">type_info::type_of</a>&lt;B&gt;(),
-        quote_coin_type: <a href="_type_of">type_info::type_of</a>&lt;Q&gt;(),
-        scale_exponent: <a href="_type_of">type_info::type_of</a>&lt;E&gt;(),
-    }
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_registry_get_custodian_id"></a>
 
 ## Function `get_custodian_id`
@@ -1239,6 +1212,36 @@ Move empty registry to the Econia account, then add scale map
 
 </details>
 
+<a name="0xc0deb00c_registry_market_info"></a>
+
+## Function `market_info`
+
+Pack provided type arguments into a <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code> and return
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_market_info">market_info</a>&lt;B, Q, E&gt;(): <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_market_info">market_info</a>&lt;B, Q, E&gt;(
+): <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a> {
+    <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{
+        base_coin_type: <a href="_type_of">type_info::type_of</a>&lt;B&gt;(),
+        quote_coin_type: <a href="_type_of">type_info::type_of</a>&lt;Q&gt;(),
+        scale_exponent_type: <a href="_type_of">type_info::type_of</a>&lt;E&gt;(),
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_n_custodians"></a>
 
 ## Function `n_custodians`
@@ -1274,8 +1277,7 @@ u64
 
 ## Function `scale_factor`
 
-Return scale factor corresponding to scale exponent type <code>E</code>,
-aborting if registry not initialized or if an invalid type
+Wrapper for <code><a href="registry.md#0xc0deb00c_registry_scale_factor_from_type_info">scale_factor_from_type_info</a>()</code>, for type argument
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_scale_factor">scale_factor</a>&lt;E&gt;(): u64
@@ -1290,16 +1292,75 @@ aborting if registry not initialized or if an invalid type
 <pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_scale_factor">scale_factor</a>&lt;E&gt;():
 u64
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Pass type info, returning result
+    <a href="registry.md#0xc0deb00c_registry_scale_factor_from_type_info">scale_factor_from_type_info</a>(<a href="_type_of">type_info::type_of</a>&lt;E&gt;())
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_scale_factor_from_type_info"></a>
+
+## Function `scale_factor_from_type_info`
+
+Return scale factor corresponding to <code>scale_exponent_type_info</code>,
+aborting if registry not initialized or if an invalid type
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_scale_factor_from_type_info">scale_factor_from_type_info</a>(scale_exponent_type_info: <a href="_TypeInfo">type_info::TypeInfo</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_scale_factor_from_type_info">scale_factor_from_type_info</a>(
+    scale_exponent_type_info: <a href="_TypeInfo">type_info::TypeInfo</a>
+): u64
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> initialized under Econia account
     <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
-    // Get type info of passed exponent
-    <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;E&gt;();
     // Borrow immutable reference <b>to</b> scales <a href="">table</a>
     <b>let</b> scales = &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).scales;
     // Assert valid exponent type passed
-    <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(scales, <a href="">type_info</a>), <a href="registry.md#0xc0deb00c_registry_E_NOT_EXPONENT_TYPE">E_NOT_EXPONENT_TYPE</a>);
+    <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(scales, scale_exponent_type_info),
+        <a href="registry.md#0xc0deb00c_registry_E_NOT_EXPONENT_TYPE">E_NOT_EXPONENT_TYPE</a>);
     // Return scale factor corresponding <b>to</b> scale exponent type
-    *<a href="open_table.md#0xc0deb00c_open_table_borrow">open_table::borrow</a>(scales, <a href="">type_info</a>)
+    *<a href="open_table.md#0xc0deb00c_open_table_borrow">open_table::borrow</a>(scales, scale_exponent_type_info)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_scale_factor_from_market_info"></a>
+
+## Function `scale_factor_from_market_info`
+
+Wrapper for <code><a href="registry.md#0xc0deb00c_registry_scale_factor_from_type_info">scale_factor_from_type_info</a>()</code>, for <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code>
+reference
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_scale_factor_from_market_info">scale_factor_from_market_info</a>(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_scale_factor_from_market_info">scale_factor_from_market_info</a>(
+    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): u64
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Return query on accessed field
+    <a href="registry.md#0xc0deb00c_registry_scale_factor_from_type_info">scale_factor_from_type_info</a>(market_info.scale_exponent_type)
 }
 </code></pre>
 
@@ -1360,7 +1421,37 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_is_registered">is_reg
 bool
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Pass type argument market info info
-    <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(<a href="registry.md#0xc0deb00c_registry_as_market_info">as_market_info</a>&lt;B, Q, E&gt;())
+    <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(<a href="registry.md#0xc0deb00c_registry_market_info">market_info</a>&lt;B, Q, E&gt;())
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_valid_custodian_id"></a>
+
+## Function `is_valid_custodian_id`
+
+Return <code><b>true</b></code> if <code>custodian_id</code> has already been registered
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_valid_custodian_id">is_valid_custodian_id</a>(custodian_id: u64): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_valid_custodian_id">is_valid_custodian_id</a>(
+    custodian_id: u64
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Return <b>false</b> <b>if</b> <a href="registry.md#0xc0deb00c_registry">registry</a> hasn't been initialized
+    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
+    custodian_id &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>()
 }
 </code></pre>
 
@@ -1458,7 +1549,7 @@ initializing an order book under <code>host</code> account
     <b>let</b> scale_factor = <a href="registry.md#0xc0deb00c_registry_scale_factor">scale_factor</a>&lt;E&gt;();
     // Pack new market info for given types
     <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{base_coin_type, quote_coin_type,
-        scale_exponent: <a href="_type_of">type_info::type_of</a>&lt;E&gt;()};
+        scale_exponent_type: <a href="_type_of">type_info::type_of</a>&lt;E&gt;()};
     // Assert the market is not already registered
     <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(market_info), <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>

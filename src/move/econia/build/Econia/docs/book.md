@@ -45,7 +45,7 @@ An order on the order book
  Number of base parcels to be filled
 </dd>
 <dt>
-<code>user: <b>address</b></code>
+<code><a href="user.md#0xc0deb00c_user">user</a>: <b>address</b></code>
 </dt>
 <dd>
  Address of corresponding user

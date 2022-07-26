@@ -75,7 +75,7 @@ module econia::registry {
         /// Generic `CoinType` of `aptos_framework::coin::Coin`
         quote_coin_type: type_info::TypeInfo,
         /// Scale exponent type defined in this module
-        scale_exponent: type_info::TypeInfo
+        scale_exponent_type: type_info::TypeInfo
     }
 
     /// Container for core key-value pair maps
@@ -164,16 +164,6 @@ module econia::registry {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Pack provided type arguments into a `MarketInfo` and return
-    public fun as_market_info<B, Q, E>(
-    ): MarketInfo {
-        MarketInfo{
-            base_coin_type: type_info::type_of<B>(),
-            quote_coin_type: type_info::type_of<Q>(),
-            scale_exponent: type_info::type_of<E>(),
-        }
-    }
-
     /// Return serial ID of `CustodianCapability`
     public fun get_custodian_id(
         custodian_capability_ref: &CustodianCapability
@@ -243,6 +233,16 @@ module econia::registry {
         open_table::add(scales, type_info::type_of<E19>(), F19);
     }
 
+    /// Pack provided type arguments into a `MarketInfo` and return
+    public fun market_info<B, Q, E>(
+    ): MarketInfo {
+        MarketInfo{
+            base_coin_type: type_info::type_of<B>(),
+            quote_coin_type: type_info::type_of<Q>(),
+            scale_exponent_type: type_info::type_of<E>(),
+        }
+    }
+
     /// Return the number of registered custodians, aborting if registry
     /// is not initialized
     public fun n_custodians():
@@ -254,21 +254,39 @@ module econia::registry {
         borrow_global<Registry>(@econia).n_custodians
     }
 
-    /// Return scale factor corresponding to scale exponent type `E`,
-    /// aborting if registry not initialized or if an invalid type
+    /// Wrapper for `scale_factor_from_type_info()`, for type argument
     public fun scale_factor<E>():
     u64
     acquires Registry {
+        // Pass type info, returning result
+        scale_factor_from_type_info(type_info::type_of<E>())
+    }
+
+    /// Return scale factor corresponding to `scale_exponent_type_info`,
+    /// aborting if registry not initialized or if an invalid type
+    public fun scale_factor_from_type_info(
+        scale_exponent_type_info: type_info::TypeInfo
+    ): u64
+    acquires Registry {
         // Assert registry initialized under Econia account
         assert!(exists<Registry>(@econia), E_NO_REGISTRY);
-        // Get type info of passed exponent
-        let type_info = type_info::type_of<E>();
         // Borrow immutable reference to scales table
         let scales = &borrow_global<Registry>(@econia).scales;
         // Assert valid exponent type passed
-        assert!(open_table::contains(scales, type_info), E_NOT_EXPONENT_TYPE);
+        assert!(open_table::contains(scales, scale_exponent_type_info),
+            E_NOT_EXPONENT_TYPE);
         // Return scale factor corresponding to scale exponent type
-        *open_table::borrow(scales, type_info)
+        *open_table::borrow(scales, scale_exponent_type_info)
+    }
+
+    /// Wrapper for `scale_factor_from_type_info()`, for `MarketInfo`
+    /// reference
+    public fun scale_factor_from_market_info(
+        market_info: &MarketInfo
+    ): u64
+    acquires Registry {
+        // Return query on accessed field
+        scale_factor_from_type_info(market_info.scale_exponent_type)
     }
 
     /// Return `true` if `MarketInfo` is registered, else `false`
@@ -289,7 +307,17 @@ module econia::registry {
     bool
     acquires Registry {
         // Pass type argument market info info
-        is_registered(as_market_info<B, Q, E>())
+        is_registered(market_info<B, Q, E>())
+    }
+
+    /// Return `true` if `custodian_id` has already been registered
+    public fun is_valid_custodian_id(
+        custodian_id: u64
+    ): bool
+    acquires Registry {
+        // Return false if registry hasn't been initialized
+        if (!exists<Registry>(@econia)) return false;
+        custodian_id <= n_custodians()
     }
 
     /// Update the number of registered custodians and issue a
@@ -347,7 +375,7 @@ module econia::registry {
         let scale_factor = scale_factor<E>();
         // Pack new market info for given types
         let market_info = MarketInfo{base_coin_type, quote_coin_type,
-            scale_exponent: type_info::type_of<E>()};
+            scale_exponent_type: type_info::type_of<E>()};
         // Assert the market is not already registered
         assert!(!is_registered(market_info), E_MARKET_EXISTS);
         // Borrow mutable reference to registry
@@ -378,13 +406,23 @@ module econia::registry {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::coins::{
-        BC,
-        init_coin_types,
-        QC
-    };
+    use econia::coins::{BC, init_coin_types, QC};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Initialize registry, register test coin markets
+    public fun register_test_market(
+        econia: &signer
+    ) acquires EconiaCapabilityStore, Registry {
+       init_module(econia); // Initialize module's core resources
+       init_coin_types(econia); // Initialize test coins
+       register_market<BC, QC, E1>(econia); // Register test market
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -460,13 +498,25 @@ module econia::registry {
         CustodianCapability
     )
     acquires Registry {
+        // Verify 0 is invalid custodian ID
+        assert!(!is_valid_custodian_id(0), 0);
         init_registry(econia); // Initialize registry
+        // Verify 0 is valid custodian ID
+        assert!(is_valid_custodian_id(0), 0);
+        // Verify 1 is invalid custodian ID
+        assert!(!is_valid_custodian_id(1), 0);
         assert!(n_custodians() == 0, 0); // Assert custodian count
         // Register custodianship
         let first_cap = register_custodian_capability();
         assert!(n_custodians() == 1, 0); // Assert custodian count
+        // Verify 0 is valid custodian ID
+        assert!(is_valid_custodian_id(0), 0);
+        // Verify 1 is valid custodian ID
+        assert!(is_valid_custodian_id(1), 0);
         // Register custodianship
         let second_cap = register_custodian_capability();
+        // Verify 2 is valid custodian ID
+        assert!(is_valid_custodian_id(2), 0);
         assert!(n_custodians() == 2, 0); // Assert custodian count
         // Assert serial IDs administered correctly
         assert!(get_custodian_id(&first_cap) == 1, 0);
@@ -548,7 +598,7 @@ module econia::registry {
         let market_info = MarketInfo{
             base_coin_type: type_info::type_of<BC>(),
             quote_coin_type: type_info::type_of<QC>(),
-            scale_exponent: type_info::type_of<E2>()};
+            scale_exponent_type: type_info::type_of<E2>()};
         // Borrow immutable reference to market host
         assert!( // Assert correct host registration
             *open_table::borrow(&registry.markets, market_info) == @user, 0);
@@ -601,6 +651,10 @@ module econia::registry {
         assert!(scale_factor<E17>() == F17, 0);
         assert!(scale_factor<E18>() == F18, 0);
         assert!(scale_factor<E19>() == F19, 0);
+        assert!(scale_factor_from_market_info(&MarketInfo{
+            base_coin_type: type_info::type_of<BC>(),
+            quote_coin_type: type_info::type_of<QC>(),
+            scale_exponent_type: type_info::type_of<E19>()}) == F19, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

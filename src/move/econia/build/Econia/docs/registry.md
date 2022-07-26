@@ -31,17 +31,17 @@
 -  [Struct `MarketAffiliates`](#0xc0deb00c_registry_MarketAffiliates)
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
+-  [Function `as_market_info`](#0xc0deb00c_registry_as_market_info)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
 -  [Function `scale_factor`](#0xc0deb00c_registry_scale_factor)
 -  [Function `is_registered`](#0xc0deb00c_registry_is_registered)
-    -  [Parameters](#@Parameters_1)
 -  [Function `is_registered_types`](#0xc0deb00c_registry_is_registered_types)
 -  [Function `register_market`](#0xc0deb00c_registry_register_market)
-    -  [Abort conditions](#@Abort_conditions_2)
+    -  [Abort conditions](#@Abort_conditions_1)
 -  [Function `get_econia_capability`](#0xc0deb00c_registry_get_econia_capability)
-    -  [Assumes](#@Assumes_3)
+    -  [Assumes](#@Assumes_2)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -818,6 +818,16 @@ When a given market is already registered
 
 
 
+<a name="0xc0deb00c_registry_E_MARKET_NOT_REGISTERED"></a>
+
+When no such market exists
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_MARKET_NOT_REGISTERED">E_MARKET_NOT_REGISTERED</a>: u64 = 9;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_registry_E_NOT_COIN_BASE"></a>
 
 When base type is not a valid coin
@@ -1078,6 +1088,36 @@ Corresponds to <code><a href="registry.md#0xc0deb00c_registry_E9">E9</a></code>
 
 
 
+<a name="0xc0deb00c_registry_as_market_info"></a>
+
+## Function `as_market_info`
+
+Pack provided type arguments into a <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code> and return
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_as_market_info">as_market_info</a>&lt;B, Q, E&gt;(): <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_as_market_info">as_market_info</a>&lt;B, Q, E&gt;(
+): <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a> {
+    <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{
+        base_coin_type: <a href="_type_of">type_info::type_of</a>&lt;B&gt;(),
+        quote_coin_type: <a href="_type_of">type_info::type_of</a>&lt;Q&gt;(),
+        scale_exponent: <a href="_type_of">type_info::type_of</a>&lt;E&gt;(),
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_init_econia_capability_store"></a>
 
 ## Function `init_econia_capability_store`
@@ -1240,20 +1280,10 @@ u64
 
 ## Function `is_registered`
 
-Return <code><b>true</b></code> if a market is registered for given specifiers,
-else <code><b>false</b></code>
+Return <code><b>true</b></code> if <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code> is registered, else <code><b>false</b></code>
 
 
-<a name="@Parameters_1"></a>
-
-### Parameters
-
-* <code>base_coin_type</code>: Base coin type info
-* <code>quote_coin_type</code>: Quote coin type info
-* <code>scale_exponent</code>: Scale exponent type info
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(base_coin_type: <a href="_TypeInfo">type_info::TypeInfo</a>, quote_coin_type: <a href="_TypeInfo">type_info::TypeInfo</a>, scale_exponent: <a href="_TypeInfo">type_info::TypeInfo</a>): bool
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
 </code></pre>
 
 
@@ -1263,9 +1293,7 @@ else <code><b>false</b></code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(
-    base_coin_type: <a href="_TypeInfo">type_info::TypeInfo</a>,
-    quote_coin_type: <a href="_TypeInfo">type_info::TypeInfo</a>,
-    scale_exponent: <a href="_TypeInfo">type_info::TypeInfo</a>
+    market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
 ): bool
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Return <b>false</b> <b>if</b> no <a href="registry.md#0xc0deb00c_registry">registry</a> initialized
@@ -1273,8 +1301,7 @@ else <code><b>false</b></code>
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
     // Return <b>if</b> market <a href="registry.md#0xc0deb00c_registry">registry</a> cointains given market info
-    <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets,
-        {<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{base_coin_type, quote_coin_type, scale_exponent}})
+    <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info)
 }
 </code></pre>
 
@@ -1301,11 +1328,8 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_is_registered">is_reg
 <pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_types">is_registered_types</a>&lt;B, Q, E&gt;():
 bool
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>( // Pass type argument type info
-        <a href="_type_of">type_info::type_of</a>&lt;B&gt;(),
-        <a href="_type_of">type_info::type_of</a>&lt;Q&gt;(),
-        <a href="_type_of">type_info::type_of</a>&lt;E&gt;()
-    )
+    // Pass type argument market info info
+    <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(<a href="registry.md#0xc0deb00c_registry_as_market_info">as_market_info</a>&lt;B, Q, E&gt;())
 }
 </code></pre>
 
@@ -1321,7 +1345,7 @@ Register the market for given base, quote, exponent types,
 initializing an order book under <code>host</code> account
 
 
-<a name="@Abort_conditions_2"></a>
+<a name="@Abort_conditions_1"></a>
 
 ### Abort conditions
 
@@ -1367,7 +1391,7 @@ initializing an order book under <code>host</code> account
     <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{base_coin_type, quote_coin_type,
         scale_exponent: <a href="_type_of">type_info::type_of</a>&lt;E&gt;()};
     // Assert the market is not already registered
-    <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered_types">is_registered_types</a>&lt;B, Q, E&gt;(), <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
+    <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(market_info), <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
     // Register host-market relationship, mark 0 custodians
@@ -1389,7 +1413,7 @@ initializing an order book under <code>host</code> account
 Return an <code>EconiaCapability</code>
 
 
-<a name="@Assumes_3"></a>
+<a name="@Assumes_2"></a>
 
 ### Assumes
 

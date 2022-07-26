@@ -47,21 +47,51 @@ econia_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 econia_modules = SimpleNamespace(
+    book = SimpleNamespace(
+        name = 'book',
+    ),
     capability = SimpleNamespace(
         name = 'capability',
+    ),
+    coins = SimpleNamespace(
+        name = 'coins',
     ),
     critbit = SimpleNamespace(
         name = 'critbit'
     ),
+    init = SimpleNamespace(
+        name = 'init'
+    ),
+    open_table = SimpleNamespace(
+        name = 'open_table'
+    ),
+    registry = SimpleNamespace(
+        name = 'registry'
+    )
 )
 """Econia Move modules with nested member specifiers"""
 
 econia_module_publish_order = [
     [
-        econia_modules.capability.name,
+        econia_modules.capability.name
     ],
     [
         econia_modules.critbit.name
+    ],
+    [
+        econia_modules.book.name
+    ],
+    [
+        econia_modules.coins.name,
+    ],
+    [
+        econia_modules.open_table.name
+    ],
+    [
+        econia_modules.registry.name
+    ],
+    [
+        econia_modules.init.name
     ],
 ]
 """
@@ -70,7 +100,8 @@ batched modules that should be loaded together. Individual modules
 should be defined as the sole element in a list if they are to be loaded
 alone. If order within sub-batches is changed loading may break, for
 instance among friends, where the module declaring a friend should be
-listed before the declared friend.
+listed before the declared friend. Additionally, modules that are "used"
+by other modules should be loaded before the modules that use them
 """
 
 econia_paths = SimpleNamespace(

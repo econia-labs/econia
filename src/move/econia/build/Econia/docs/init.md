@@ -35,8 +35,7 @@ When caller is not Econia
 
 ## Function `init_econia`
 
-Initialize Econia with core resources needed to facilitate
-trading
+Initialize Econia with core resources needed for trading
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="init.md#0xc0deb00c_init_init_econia">init_econia</a>(account: &<a href="">signer</a>)

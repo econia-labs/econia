@@ -238,6 +238,39 @@ module econia::registry {
         *open_table::borrow(scales, type_info)
     }
 
+    /// Return `true` if a market is registered for given specifiers,
+    /// else `false`
+    ///
+    /// # Parameters
+    /// * `base_coin_type`: Base coin type info
+    /// * `quote_coin_type`: Quote coin type info
+    /// * `scale_exponent`: Scale exponent type info
+    public fun is_registered(
+        base_coin_type: type_info::TypeInfo,
+        quote_coin_type: type_info::TypeInfo,
+        scale_exponent: type_info::TypeInfo
+    ): bool
+    acquires Registry {
+        // Return false if no registry initialized
+        if (!exists<Registry>(@econia)) return false;
+        // Borrow mutable reference to registry
+        let registry = borrow_global_mut<Registry>(@econia);
+        // Return if market registry cointains given market info
+        open_table::contains(&registry.markets,
+            {MarketInfo{base_coin_type, quote_coin_type, scale_exponent}})
+    }
+
+    /// Wrapper for `is_registered()`, accepting type arguments
+    public fun is_registered_types<B, Q, E>():
+    bool
+    acquires Registry {
+        is_registered( // Pass type argument type info
+            type_info::type_of<B>(),
+            type_info::type_of<Q>(),
+            type_info::type_of<E>()
+        )
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -276,11 +309,10 @@ module econia::registry {
         // Pack new market info for given types
         let market_info = MarketInfo{base_coin_type, quote_coin_type,
             scale_exponent: type_info::type_of<E>()};
+        // Assert the market is not already registered
+        assert!(!is_registered_types<B, Q, E>(), E_MARKET_EXISTS);
         // Borrow mutable reference to registry
         let registry = borrow_global_mut<Registry>(@econia);
-        // Assert the market is not already registered
-        assert!(!open_table::contains(&registry.markets, market_info),
-            E_MARKET_EXISTS);
         // Register host-market relationship, mark 0 custodians
         open_table::add(&mut registry.markets, market_info, MarketAffiliates{
             host: address_of(host), n_custodians: 0});
@@ -345,6 +377,14 @@ module econia::registry {
         account: &signer
     ) acquires Registry {
         init_registry(account); // Attempt invalid init
+    }
+
+    #[test]
+    /// Verify false return for uninitialized registry
+    fun test_is_registered_no_registry()
+    acquires Registry {
+        // Assert false return
+        assert!(!is_registered_types<BC, QC, E0>(), 0);
     }
 
     #[test(econia = @econia)]

@@ -2,8 +2,11 @@ module econia::registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use aptos_framework::coin;
     use aptos_framework::type_info;
+    use econia::book;
     use econia::open_table;
+    use econia::capability::{Self, EconiaCapability};
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -61,6 +64,11 @@ module econia::registry {
         custodian_id: u64
     }
 
+    /// Stores an `EconiaCapability` for cross-module authorization
+    struct EconiaCapabilityStore has key {
+        econia_capability: EconiaCapability
+    }
+
     /// Type info for a `<B, Q, E>`-style market
     struct MarketInfo has copy, drop, store {
         /// Generic `CoinType` of `aptos_framework::coin::Coin`
@@ -71,24 +79,22 @@ module econia::registry {
         scale_exponent: type_info::TypeInfo
     }
 
+    /// Tracks address of order book host and number of registered
+    /// custodians for a given market
+    struct MarketAffiliates has copy, drop, store {
+        /// Where market's order book is hosted
+        host: address,
+        /// Number of custodians registered on the market
+        n_custodians: u64
+    }
+
     /// Container for core key-value pair maps
     struct Registry has key {
         /// Map from scale exponent type (like `E0` or `E12`) to scale
         /// factor value (like `F0` or `F12`)
         scales: open_table::OpenTable<type_info::TypeInfo, u64>,
         /// Map from market to the order book host address
-        hosts: open_table::OpenTable<MarketInfo, address>,
-        /// Map from market to the last version number during which a
-        /// custodian-facilitated order was placed for the given market.
-        /// Only one such order permitted per transaction, per market,
-        /// to ensure that users do not end up submitting multiple
-        /// orders with order IDs having the same encoded version number
-        /// within a given order book. Without this protocol-wide
-        /// counter, it would be possible for a third party to simply
-        /// register as a custodian multiple times, aggregate multiple
-        /// `CustodianCapability` instances, then pass them in
-        /// succession to circumvent other forms of error-checking.
-        custodian_counters: open_table::OpenTable<MarketInfo, u64>
+        markets: open_table::OpenTable<MarketInfo, MarketAffiliates>,
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -103,6 +109,16 @@ module econia::registry {
     const E_NO_REGISTRY: u64 = 2;
     /// When looking up a type that is not a valid scale exponent
     const E_NOT_EXPONENT_TYPE: u64 = 3;
+    /// When `EconiaCapabilityStore` already exists
+    const E_HAS_CAPABILITY: u64 = 4;
+    /// When base type is not a valid coin
+    const E_NOT_COIN_BASE: u64 = 5;
+    /// When quote type is not a valid coin
+    const E_NOT_COIN_QUOTE: u64 = 6;
+    /// When base and quote type are same
+    const E_SAME_COIN_TYPE: u64 = 7;
+    /// When a given market is already registered
+    const E_MARKET_EXISTS: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -154,6 +170,19 @@ module econia::registry {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Initializes an `EconiaCapabilityStore`, aborting if one already
+    /// exists under the Econia account or if caller is not Econia
+    public fun init_econia_capability_store(
+        account: &signer
+    ) {
+        // Assert capability store not already registered
+        assert!(!exists<EconiaCapabilityStore>(@econia), E_HAS_CAPABILITY);
+        // Get new capability instance (aborts if caller is not Econia)
+        let econia_capability = capability::get_econia_capability(account);
+        move_to<EconiaCapabilityStore>(account, EconiaCapabilityStore{
+            econia_capability}); // Move to account capability store
+    }
+
     /// Move empty registry to the Econia account, then add scale map
     public fun init_registry(
         account: &signer,
@@ -165,8 +194,7 @@ module econia::registry {
         // Move an empty registry to the Econia Account
         move_to<Registry>(account, Registry{
             scales: open_table::empty(),
-            hosts: open_table::empty(),
-            custodian_counters: open_table::empty()
+            markets: open_table::empty(),
         });
         // Borrow mutable reference to the scales table
         let scales = &mut borrow_global_mut<Registry>(@econia).scales;
@@ -212,15 +240,94 @@ module econia::registry {
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Test-only structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Register the market for given base, quote, exponent types,
+    /// initializing an order book under `host` account
+    ///
+    /// # Abort conditions
+    /// * If registry is not initialized
+    /// * If either of `B` or `Q` are not valid coin types
+    /// * If `B` and `Q` are the same type
+    /// * If market is already registered
+    /// * If `E` is not a valid scale exponent type
+    public entry fun register_market<B, Q, E>(
+        host: &signer
+    ) acquires EconiaCapabilityStore, Registry {
+        // Assert the registry is already initialized
+        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
+        // Assert base type is a valid coin type
+        assert!(coin::is_coin_initialized<B>(), E_NOT_COIN_BASE);
+        // Assert quote type is a valid coin type
+        assert!(coin::is_coin_initialized<Q>(), E_NOT_COIN_QUOTE);
+        // Get base type type info
+        let base_coin_type = type_info::type_of<B>();
+        // Get quote type type info
+        let quote_coin_type = type_info::type_of<Q>();
+        assert!(!( // Assert base and quote are not same type
+            type_info::account_address(&base_coin_type) ==
+                type_info::account_address(&quote_coin_type) &&
+            type_info::module_name(&base_coin_type) ==
+                type_info::module_name(&quote_coin_type) &&
+            type_info::struct_name(&base_coin_type) ==
+                type_info::struct_name(&quote_coin_type)), E_SAME_COIN_TYPE);
+        // Get scale factor (aborts if not a valid scale exponent type)
+        let scale_factor = scale_factor<E>();
+        // Pack new market info for given types
+        let market_info = MarketInfo{base_coin_type, quote_coin_type,
+            scale_exponent: type_info::type_of<E>()};
+        // Borrow mutable reference to registry
+        let registry = borrow_global_mut<Registry>(@econia);
+        // Assert the market is not already registered
+        assert!(!open_table::contains(&registry.markets, market_info),
+            E_MARKET_EXISTS);
+        // Register host-market relationship, mark 0 custodians
+        open_table::add(&mut registry.markets, market_info, MarketAffiliates{
+            host: address_of(host), n_custodians: 0});
+        // Initialize book under host account
+        book::init_book<B, Q, E>(host, scale_factor, &get_econia_capability());
+    }
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return an `EconiaCapability`
+    ///
+    /// # Assumes
+    /// * `EconiaCapabilityStore` has already been successfully
+    ///   initialized, and thus skips existence checks
+    fun get_econia_capability():
+    EconiaCapability
+    acquires EconiaCapabilityStore {
+        borrow_global<EconiaCapabilityStore>(@econia).econia_capability
+    }
+
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    /// Invalid scale exponent type
-    struct E20{}
+    use econia::coins::{
+        BC,
+        init_coin_types,
+        QC
+    };
 
-    // Test-only structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for attempting to re-init under Econia account
+    fun test_init_econia_capability_store_exists(
+        econia: &signer
+    ) {
+        init_econia_capability_store(econia); // Initialize store
+        init_econia_capability_store(econia); // Attempt invalid re-init
+    }
 
     #[test(account = @econia)]
     #[expected_failure(abort_code = 1)]
@@ -249,7 +356,94 @@ module econia::registry {
     )
     acquires Registry {
         init_registry(econia); // Initialize registry
-        scale_factor<E20>(); // Attempt invalid lookup
+        scale_factor<BC>(); // Attempt invalid lookup
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for base type not a valid coin type
+    fun test_register_market_base_not_coin(
+        econia: &signer
+    ) acquires EconiaCapabilityStore, Registry {
+        init_registry(econia); // Initialize registry
+        init_coin_types(econia); // Initialize coin types
+        register_market<E0, QC, E0>(econia); // Attempt invalid init
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for market already exists
+    fun test_register_market_duplicate(
+        econia: &signer
+    ) acquires EconiaCapabilityStore, Registry {
+        init_registry(econia); // Initialize registry
+        init_coin_types(econia); // Initialize coin types
+        init_econia_capability_store(econia); // Initialize capability
+        register_market<BC, QC, E0>(econia); // Run valid initialization
+        register_market<BC, QC, E0>(econia); // Attempt invalid init
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for registry not yet initialized
+    fun test_register_market_no_registry(
+        user: &signer
+    ) acquires EconiaCapabilityStore, Registry {
+        register_market<BC, QC, E0>(user); // Attempt invalid init
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for quote type not a valid coin type
+    fun test_register_market_quote_not_coin(
+        econia: &signer
+    ) acquires EconiaCapabilityStore, Registry {
+        init_registry(econia); // Initialize registry
+        init_coin_types(econia); // Initialize coin types
+        register_market<BC, E0, E0>(econia); // Attempt invalid init
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for base and quote are same type
+    fun test_register_market_same_coin(
+        econia: &signer
+    ) acquires EconiaCapabilityStore, Registry {
+        init_registry(econia); // Initialize registry
+        init_coin_types(econia); // Initialize coin types
+        register_market<BC, BC, E0>(econia); // Attempt invalid init
+    }
+
+    #[test(
+        econia = @econia,
+        host = @user
+    )]
+    /// Verify successful market registration
+    fun test_register_market_success(
+        econia: &signer,
+        host: &signer
+    ) acquires  EconiaCapabilityStore, Registry {
+        init_registry(econia); // Initialize registry
+        init_coin_types(econia); // Initialize coin types
+        init_econia_capability_store(econia); // Initialize capability
+        register_market<BC, QC, E2>(host); // Run valid initialization
+        // Borrow immutable reference to registry
+        let registry = borrow_global<Registry>(@econia);
+        // Get market info for given market
+        let market_info = MarketInfo{
+            base_coin_type: type_info::type_of<BC>(),
+            quote_coin_type: type_info::type_of<QC>(),
+            scale_exponent: type_info::type_of<E2>()};
+        // Borrow immutable reference to market affiliates
+        let market_affiliates =
+            open_table::borrow(&registry.markets, market_info);
+        // Assert correct host registration
+        assert!(market_affiliates.host == @user, 0);
+        // Assert custodian count initializes to 0
+        assert!(market_affiliates.n_custodians == 0, 0);
+        // Assert scale factor initialized correctly
+        assert!(book::scale_factor<BC, QC, E2>(@user,
+            &get_econia_capability()) == F2, 0);
     }
 
     #[test]

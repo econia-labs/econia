@@ -26,15 +26,25 @@
 -  [Struct `E18`](#0xc0deb00c_registry_E18)
 -  [Struct `E19`](#0xc0deb00c_registry_E19)
 -  [Struct `CustodianCapability`](#0xc0deb00c_registry_CustodianCapability)
+-  [Resource `EconiaCapabilityStore`](#0xc0deb00c_registry_EconiaCapabilityStore)
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
+-  [Struct `MarketAffiliates`](#0xc0deb00c_registry_MarketAffiliates)
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
+-  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
 -  [Function `scale_factor`](#0xc0deb00c_registry_scale_factor)
+-  [Function `register_market`](#0xc0deb00c_registry_register_market)
+    -  [Abort conditions](#@Abort_conditions_1)
+-  [Function `get_econia_capability`](#0xc0deb00c_registry_get_econia_capability)
+    -  [Assumes](#@Assumes_2)
 
 
-<pre><code><b>use</b> <a href="">0x1::signer</a>;
+<pre><code><b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
+<b>use</b> <a href="book.md#0xc0deb00c_book">0xc0deb00c::book</a>;
+<b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
 </code></pre>
 
@@ -631,6 +641,34 @@ store it as they wish.
 
 </details>
 
+<a name="0xc0deb00c_registry_EconiaCapabilityStore"></a>
+
+## Resource `EconiaCapabilityStore`
+
+Stores an <code>EconiaCapability</code> for cross-module authorization
+
+
+<pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a> <b>has</b> key
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>econia_capability: <a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a></code>
+</dt>
+<dd>
+
+</dd>
+</dl>
+
+
+</details>
+
 <a name="0xc0deb00c_registry_MarketInfo"></a>
 
 ## Struct `MarketInfo`
@@ -671,6 +709,41 @@ Type info for a <code>&lt;B, Q, E&gt;</code>-style market
 
 </details>
 
+<a name="0xc0deb00c_registry_MarketAffiliates"></a>
+
+## Struct `MarketAffiliates`
+
+Tracks address of order book host and number of registered
+custodians for a given market
+
+
+<pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_MarketAffiliates">MarketAffiliates</a> <b>has</b> <b>copy</b>, drop, store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>host: <b>address</b></code>
+</dt>
+<dd>
+ Where market's order book is hosted
+</dd>
+<dt>
+<code>n_custodians: u64</code>
+</dt>
+<dd>
+ Number of custodians registered on the market
+</dd>
+</dl>
+
+
+</details>
+
 <a name="0xc0deb00c_registry_Registry"></a>
 
 ## Resource `Registry`
@@ -696,25 +769,10 @@ Container for core key-value pair maps
  factor value (like <code><a href="registry.md#0xc0deb00c_registry_F0">F0</a></code> or <code><a href="registry.md#0xc0deb00c_registry_F12">F12</a></code>)
 </dd>
 <dt>
-<code>hosts: <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, <b>address</b>&gt;</code>
+<code>markets: <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, <a href="registry.md#0xc0deb00c_registry_MarketAffiliates">registry::MarketAffiliates</a>&gt;</code>
 </dt>
 <dd>
  Map from market to the order book host address
-</dd>
-<dt>
-<code>custodian_counters: <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, u64&gt;</code>
-</dt>
-<dd>
- Map from market to the last version number during which a
- custodian-facilitated order was placed for the given market.
- Only one such order permitted per transaction, per market,
- to ensure that users do not end up submitting multiple
- orders with order IDs having the same encoded version number
- within a given order book. Without this protocol-wide
- counter, it would be possible for a third party to simply
- register as a custodian multiple times, aggregate multiple
- <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a></code> instances, then pass them in
- succession to circumvent other forms of error-checking.
 </dd>
 </dl>
 
@@ -732,6 +790,46 @@ When caller is not Econia
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_HAS_CAPABILITY"></a>
+
+When <code><a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a></code> already exists
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_HAS_CAPABILITY">E_HAS_CAPABILITY</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_MARKET_EXISTS"></a>
+
+When a given market is already registered
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>: u64 = 8;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_NOT_COIN_BASE"></a>
+
+When base type is not a valid coin
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_BASE">E_NOT_COIN_BASE</a>: u64 = 5;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_NOT_COIN_QUOTE"></a>
+
+When quote type is not a valid coin
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_QUOTE">E_NOT_COIN_QUOTE</a>: u64 = 6;
 </code></pre>
 
 
@@ -762,6 +860,16 @@ When registry already initialized
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_SAME_COIN_TYPE"></a>
+
+When base and quote type are same
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN_TYPE">E_SAME_COIN_TYPE</a>: u64 = 7;
 </code></pre>
 
 
@@ -966,6 +1074,39 @@ Corresponds to <code><a href="registry.md#0xc0deb00c_registry_E9">E9</a></code>
 
 
 
+<a name="0xc0deb00c_registry_init_econia_capability_store"></a>
+
+## Function `init_econia_capability_store`
+
+Initializes an <code><a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a></code>, aborting if one already
+exists under the Econia account or if caller is not Econia
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_econia_capability_store">init_econia_capability_store</a>(account: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_econia_capability_store">init_econia_capability_store</a>(
+    account: &<a href="">signer</a>
+) {
+    // Assert <a href="capability.md#0xc0deb00c_capability">capability</a> store not already registered
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_HAS_CAPABILITY">E_HAS_CAPABILITY</a>);
+    // Get new <a href="capability.md#0xc0deb00c_capability">capability</a> instance (aborts <b>if</b> caller is not Econia)
+    <b>let</b> econia_capability = <a href="capability.md#0xc0deb00c_capability_get_econia_capability">capability::get_econia_capability</a>(account);
+    <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(account, <a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>{
+        econia_capability}); // Move <b>to</b> account <a href="capability.md#0xc0deb00c_capability">capability</a> store
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_init_registry"></a>
 
 ## Function `init_registry`
@@ -992,8 +1133,7 @@ Move empty registry to the Econia account, then add scale map
     // Move an empty <a href="registry.md#0xc0deb00c_registry">registry</a> <b>to</b> the Econia Account
     <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(account, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
         scales: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>(),
-        hosts: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>(),
-        custodian_counters: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()
+        markets: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>(),
     });
     // Borrow mutable reference <b>to</b> the scales <a href="">table</a>
     <b>let</b> scales = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).scales;
@@ -1055,6 +1195,111 @@ u64
     <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(scales, <a href="">type_info</a>), <a href="registry.md#0xc0deb00c_registry_E_NOT_EXPONENT_TYPE">E_NOT_EXPONENT_TYPE</a>);
     // Return scale factor corresponding <b>to</b> scale exponent type
     *<a href="open_table.md#0xc0deb00c_open_table_borrow">open_table::borrow</a>(scales, <a href="">type_info</a>)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_register_market"></a>
+
+## Function `register_market`
+
+Register the market for given base, quote, exponent types,
+initializing an order book under <code>host</code> account
+
+
+<a name="@Abort_conditions_1"></a>
+
+### Abort conditions
+
+* If registry is not initialized
+* If either of <code>B</code> or <code>Q</code> are not valid coin types
+* If <code>B</code> and <code>Q</code> are the same type
+* If market is already registered
+* If <code>E</code> is not a valid scale exponent type
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market">register_market</a>&lt;B, Q, E&gt;(host: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market">register_market</a>&lt;B, Q, E&gt;(
+    host: &<a href="">signer</a>
+) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Assert the <a href="registry.md#0xc0deb00c_registry">registry</a> is already initialized
+    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
+    // Assert base type is a valid <a href="">coin</a> type
+    <b>assert</b>!(<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;B&gt;(), <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_BASE">E_NOT_COIN_BASE</a>);
+    // Assert quote type is a valid <a href="">coin</a> type
+    <b>assert</b>!(<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;Q&gt;(), <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_QUOTE">E_NOT_COIN_QUOTE</a>);
+    // Get base type type info
+    <b>let</b> base_coin_type = <a href="_type_of">type_info::type_of</a>&lt;B&gt;();
+    // Get quote type type info
+    <b>let</b> quote_coin_type = <a href="_type_of">type_info::type_of</a>&lt;Q&gt;();
+    <b>assert</b>!(!( // Assert base and quote are not same type
+        <a href="_account_address">type_info::account_address</a>(&base_coin_type) ==
+            <a href="_account_address">type_info::account_address</a>(&quote_coin_type) &&
+        <a href="_module_name">type_info::module_name</a>(&base_coin_type) ==
+            <a href="_module_name">type_info::module_name</a>(&quote_coin_type) &&
+        <a href="_struct_name">type_info::struct_name</a>(&base_coin_type) ==
+            <a href="_struct_name">type_info::struct_name</a>(&quote_coin_type)), <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN_TYPE">E_SAME_COIN_TYPE</a>);
+    // Get scale factor (aborts <b>if</b> not a valid scale exponent type)
+    <b>let</b> scale_factor = <a href="registry.md#0xc0deb00c_registry_scale_factor">scale_factor</a>&lt;E&gt;();
+    // Pack new market info for given types
+    <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{base_coin_type, quote_coin_type,
+        scale_exponent: <a href="_type_of">type_info::type_of</a>&lt;E&gt;()};
+    // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
+    <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
+    // Assert the market is not already registered
+    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info),
+        <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
+    // Register host-market relationship, mark 0 custodians
+    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info, <a href="registry.md#0xc0deb00c_registry_MarketAffiliates">MarketAffiliates</a>{
+        host: address_of(host), n_custodians: 0});
+    // Initialize <a href="book.md#0xc0deb00c_book">book</a> under host account
+    <a href="book.md#0xc0deb00c_book_init_book">book::init_book</a>&lt;B, Q, E&gt;(host, scale_factor, &<a href="registry.md#0xc0deb00c_registry_get_econia_capability">get_econia_capability</a>());
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_get_econia_capability"></a>
+
+## Function `get_econia_capability`
+
+Return an <code>EconiaCapability</code>
+
+
+<a name="@Assumes_2"></a>
+
+### Assumes
+
+* <code><a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a></code> has already been successfully
+initialized, and thus skips existence checks
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_econia_capability">get_econia_capability</a>(): <a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_econia_capability">get_econia_capability</a>():
+EconiaCapability
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a> {
+    <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia).econia_capability
 }
 </code></pre>
 

@@ -13,12 +13,12 @@ module econia::book {
 
     /// An order on the order book
     struct Order has store {
-        /// Number of base coin parcels to be filled
+        /// Number of base parcels to be filled
         base_parcels: u64,
         /// Address of corresponding user
         user: address,
-        /// For given user, ID of market account holding the order
-        market_account_id: u8
+        /// For given user, custodian ID of corresponding market account
+        custodian_id: u8
     }
 
     /// An order book for the given market

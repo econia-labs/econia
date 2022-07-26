@@ -42,7 +42,7 @@ An order on the order book
 <code>base_parcels: u64</code>
 </dt>
 <dd>
- Number of base coin parcels to be filled
+ Number of base parcels to be filled
 </dd>
 <dt>
 <code>user: <b>address</b></code>
@@ -51,10 +51,10 @@ An order on the order book
  Address of corresponding user
 </dd>
 <dt>
-<code>market_account_id: u8</code>
+<code>custodian_id: u8</code>
 </dt>
 <dd>
- For given user, ID of market account holding the order
+ For given user, custodian ID of corresponding market account
 </dd>
 </dl>
 

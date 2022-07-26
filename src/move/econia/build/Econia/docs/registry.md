@@ -28,16 +28,18 @@
 -  [Struct `CustodianCapability`](#0xc0deb00c_registry_CustodianCapability)
 -  [Resource `EconiaCapabilityStore`](#0xc0deb00c_registry_EconiaCapabilityStore)
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
--  [Struct `MarketAffiliates`](#0xc0deb00c_registry_MarketAffiliates)
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
 -  [Function `as_market_info`](#0xc0deb00c_registry_as_market_info)
+-  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
+-  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
 -  [Function `scale_factor`](#0xc0deb00c_registry_scale_factor)
 -  [Function `is_registered`](#0xc0deb00c_registry_is_registered)
 -  [Function `is_registered_types`](#0xc0deb00c_registry_is_registered_types)
+-  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
 -  [Function `register_market`](#0xc0deb00c_registry_register_market)
     -  [Abort conditions](#@Abort_conditions_1)
 -  [Function `get_econia_capability`](#0xc0deb00c_registry_get_econia_capability)
@@ -623,7 +625,7 @@ permissions, administered to third-party registrants who may
 store it as they wish.
 
 
-<pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>&lt;B, Q, E&gt; <b>has</b> store
+<pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a> <b>has</b> store
 </code></pre>
 
 
@@ -637,8 +639,7 @@ store it as they wish.
 <code>custodian_id: u64</code>
 </dt>
 <dd>
- Serial ID, for the given market, generated upon registration
- as a custodian
+ Serial ID generated upon registration as a custodian
 </dd>
 </dl>
 
@@ -713,41 +714,6 @@ Type info for a <code>&lt;B, Q, E&gt;</code>-style market
 
 </details>
 
-<a name="0xc0deb00c_registry_MarketAffiliates"></a>
-
-## Struct `MarketAffiliates`
-
-Tracks address of order book host and number of registered
-custodians for a given market
-
-
-<pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_MarketAffiliates">MarketAffiliates</a> <b>has</b> <b>copy</b>, drop, store
-</code></pre>
-
-
-
-<details>
-<summary>Fields</summary>
-
-
-<dl>
-<dt>
-<code>host: <b>address</b></code>
-</dt>
-<dd>
- Where market's order book is hosted
-</dd>
-<dt>
-<code>n_custodians: u64</code>
-</dt>
-<dd>
- Number of custodians registered on the market
-</dd>
-</dl>
-
-
-</details>
-
 <a name="0xc0deb00c_registry_Registry"></a>
 
 ## Resource `Registry`
@@ -773,10 +739,16 @@ Container for core key-value pair maps
  factor value (like <code><a href="registry.md#0xc0deb00c_registry_F0">F0</a></code> or <code><a href="registry.md#0xc0deb00c_registry_F12">F12</a></code>)
 </dd>
 <dt>
-<code>markets: <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, <a href="registry.md#0xc0deb00c_registry_MarketAffiliates">registry::MarketAffiliates</a>&gt;</code>
+<code>markets: <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, <b>address</b>&gt;</code>
 </dt>
 <dd>
  Map from market to the order book host address
+</dd>
+<dt>
+<code>n_custodians: u64</code>
+</dt>
+<dd>
+ Number of custodians who have registered
 </dd>
 </dl>
 
@@ -1118,6 +1090,33 @@ Pack provided type arguments into a <code><a href="registry.md#0xc0deb00c_regist
 
 </details>
 
+<a name="0xc0deb00c_registry_get_custodian_id"></a>
+
+## Function `get_custodian_id`
+
+Return serial ID of <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>(custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>(
+    custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>
+): u64 {
+    custodian_capability_ref.custodian_id // Return serial ID
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_init_econia_capability_store"></a>
 
 ## Function `init_econia_capability_store`
@@ -1208,6 +1207,7 @@ Move empty registry to the Econia account, then add scale map
     <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(account, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
         scales: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>(),
         markets: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>(),
+        n_custodians: 0
     });
     // Borrow mutable reference <b>to</b> the scales <a href="">table</a>
     <b>let</b> scales = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).scales;
@@ -1232,6 +1232,37 @@ Move empty registry to the Econia account, then add scale map
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(scales, <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_E17">E17</a>&gt;(), <a href="registry.md#0xc0deb00c_registry_F17">F17</a>);
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(scales, <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_E18">E18</a>&gt;(), <a href="registry.md#0xc0deb00c_registry_F18">F18</a>);
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(scales, <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_E19">E19</a>&gt;(), <a href="registry.md#0xc0deb00c_registry_F19">F19</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_n_custodians"></a>
+
+## Function `n_custodians`
+
+Return the number of registered custodians, aborting if registry
+is not initialized
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>():
+u64
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> <b>exists</b>
+    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
+    // Return number of registered custodians
+    <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).n_custodians
 }
 </code></pre>
 
@@ -1337,6 +1368,44 @@ bool
 
 </details>
 
+<a name="0xc0deb00c_registry_register_custodian_capability"></a>
+
+## Function `register_custodian_capability`
+
+Update the number of registered custodians and issue a
+<code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a></code> with the corresponding serial ID. Abort if
+registry is not initialized
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_custodian_capability">register_custodian_capability</a>(): <a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_custodian_capability">register_custodian_capability</a>():
+<a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Assert the <a href="registry.md#0xc0deb00c_registry">registry</a> is already initialized
+    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
+    // Borrow mutable reference <b>to</b> registy
+    <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
+    // Set custodian serial ID <b>to</b> the new number of custodians
+    <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry">registry</a>.n_custodians + 1;
+    // Update the <a href="registry.md#0xc0deb00c_registry">registry</a> for the new count
+    <a href="registry.md#0xc0deb00c_registry">registry</a>.n_custodians = custodian_id;
+    // Pack a <b>return</b> corresponding <a href="capability.md#0xc0deb00c_capability">capability</a>
+    <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>{custodian_id}
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_register_market"></a>
 
 ## Function `register_market`
@@ -1394,9 +1463,8 @@ initializing an order book under <code>host</code> account
     <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(market_info), <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
-    // Register host-market relationship, mark 0 custodians
-    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info, <a href="registry.md#0xc0deb00c_registry_MarketAffiliates">MarketAffiliates</a>{
-        host: address_of(host), n_custodians: 0});
+    // Register host-market relationship
+    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info, address_of(host));
     // Initialize <a href="book.md#0xc0deb00c_book">book</a> under host account
     <a href="book.md#0xc0deb00c_book_init_book">book::init_book</a>&lt;B, Q, E&gt;(host, scale_factor, &<a href="registry.md#0xc0deb00c_registry_get_econia_capability">get_econia_capability</a>());
 }

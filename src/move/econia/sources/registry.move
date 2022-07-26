@@ -58,9 +58,8 @@ module econia::registry {
     /// Custodian capability used to manage delegated trading
     /// permissions, administered to third-party registrants who may
     /// store it as they wish.
-    struct CustodianCapability<phantom B, phantom Q, phantom E> has store {
-        /// Serial ID, for the given market, generated upon registration
-        /// as a custodian
+    struct CustodianCapability has store {
+        /// Serial ID generated upon registration as a custodian
         custodian_id: u64
     }
 
@@ -79,22 +78,15 @@ module econia::registry {
         scale_exponent: type_info::TypeInfo
     }
 
-    /// Tracks address of order book host and number of registered
-    /// custodians for a given market
-    struct MarketAffiliates has copy, drop, store {
-        /// Where market's order book is hosted
-        host: address,
-        /// Number of custodians registered on the market
-        n_custodians: u64
-    }
-
     /// Container for core key-value pair maps
     struct Registry has key {
         /// Map from scale exponent type (like `E0` or `E12`) to scale
         /// factor value (like `F0` or `F12`)
         scales: open_table::OpenTable<type_info::TypeInfo, u64>,
         /// Map from market to the order book host address
-        markets: open_table::OpenTable<MarketInfo, MarketAffiliates>,
+        markets: open_table::OpenTable<MarketInfo, address>,
+        /// Number of custodians who have registered
+        n_custodians: u64,
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -182,6 +174,13 @@ module econia::registry {
         }
     }
 
+    /// Return serial ID of `CustodianCapability`
+    public fun get_custodian_id(
+        custodian_capability_ref: &CustodianCapability
+    ): u64 {
+        custodian_capability_ref.custodian_id // Return serial ID
+    }
+
     /// Initializes an `EconiaCapabilityStore`, aborting if one already
     /// exists under the Econia account or if caller is not Econia
     public fun init_econia_capability_store(
@@ -217,6 +216,7 @@ module econia::registry {
         move_to<Registry>(account, Registry{
             scales: open_table::empty(),
             markets: open_table::empty(),
+            n_custodians: 0
         });
         // Borrow mutable reference to the scales table
         let scales = &mut borrow_global_mut<Registry>(@econia).scales;
@@ -241,6 +241,17 @@ module econia::registry {
         open_table::add(scales, type_info::type_of<E17>(), F17);
         open_table::add(scales, type_info::type_of<E18>(), F18);
         open_table::add(scales, type_info::type_of<E19>(), F19);
+    }
+
+    /// Return the number of registered custodians, aborting if registry
+    /// is not initialized
+    public fun n_custodians():
+    u64
+    acquires Registry {
+        // Assert registry exists
+        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
+        // Return number of registered custodians
+        borrow_global<Registry>(@econia).n_custodians
     }
 
     /// Return scale factor corresponding to scale exponent type `E`,
@@ -279,6 +290,24 @@ module econia::registry {
     acquires Registry {
         // Pass type argument market info info
         is_registered(as_market_info<B, Q, E>())
+    }
+
+    /// Update the number of registered custodians and issue a
+    /// `CustodianCapability` with the corresponding serial ID. Abort if
+    /// registry is not initialized
+    public fun register_custodian_capability():
+    CustodianCapability
+    acquires Registry {
+        // Assert the registry is already initialized
+        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
+        // Borrow mutable reference to registy
+        let registry = borrow_global_mut<Registry>(@econia);
+        // Set custodian serial ID to the new number of custodians
+        let custodian_id = registry.n_custodians + 1;
+        // Update the registry for the new count
+        registry.n_custodians = custodian_id;
+        // Pack a return corresponding capability
+        CustodianCapability{custodian_id}
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -323,9 +352,8 @@ module econia::registry {
         assert!(!is_registered(market_info), E_MARKET_EXISTS);
         // Borrow mutable reference to registry
         let registry = borrow_global_mut<Registry>(@econia);
-        // Register host-market relationship, mark 0 custodians
-        open_table::add(&mut registry.markets, market_info, MarketAffiliates{
-            host: address_of(host), n_custodians: 0});
+        // Register host-market relationship
+        open_table::add(&mut registry.markets, market_info, address_of(host));
         // Initialize book under host account
         book::init_book<B, Q, E>(host, scale_factor, &get_econia_capability());
     }
@@ -406,15 +434,46 @@ module econia::registry {
         assert!(!is_registered_types<BC, QC, E0>(), 0);
     }
 
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for registry not initialized
+    fun test_n_custodians_no_registry()
+    acquires Registry {
+        n_custodians(); // Attempt invalid query
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for registry not initialized
+    fun test_register_custodian_capability_no_registry():
+    CustodianCapability
+    acquires Registry {
+        register_custodian_capability() // Attempt invalid registration
+    }
+
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for looking up invalid scale exponent type
-    fun test_scale_factor_invalid_type(
+    /// Verify custodian returns
+    fun test_register_custodian_capability(
         econia: &signer
+    ): (
+        CustodianCapability,
+        CustodianCapability
     )
     acquires Registry {
         init_registry(econia); // Initialize registry
-        scale_factor<BC>(); // Attempt invalid lookup
+        assert!(n_custodians() == 0, 0); // Assert custodian count
+        // Register custodianship
+        let first_cap = register_custodian_capability();
+        assert!(n_custodians() == 1, 0); // Assert custodian count
+        // Register custodianship
+        let second_cap = register_custodian_capability();
+        assert!(n_custodians() == 2, 0); // Assert custodian count
+        // Assert serial IDs administered correctly
+        assert!(get_custodian_id(&first_cap) == 1, 0);
+        assert!(get_custodian_id(&second_cap) == 2, 0);
+        // Assert registry counter correct
+        assert!(borrow_global_mut<Registry>(@econia).n_custodians == 2, 0);
+        (first_cap, second_cap)
     }
 
     #[test(econia = @econia)]
@@ -490,16 +549,23 @@ module econia::registry {
             base_coin_type: type_info::type_of<BC>(),
             quote_coin_type: type_info::type_of<QC>(),
             scale_exponent: type_info::type_of<E2>()};
-        // Borrow immutable reference to market affiliates
-        let market_affiliates =
-            open_table::borrow(&registry.markets, market_info);
-        // Assert correct host registration
-        assert!(market_affiliates.host == @user, 0);
-        // Assert custodian count initializes to 0
-        assert!(market_affiliates.n_custodians == 0, 0);
+        // Borrow immutable reference to market host
+        assert!( // Assert correct host registration
+            *open_table::borrow(&registry.markets, market_info) == @user, 0);
         // Assert scale factor initialized correctly
         assert!(book::scale_factor<BC, QC, E2>(@user,
             &get_econia_capability()) == F2, 0);
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for looking up invalid scale exponent type
+    fun test_scale_factor_invalid_type(
+        econia: &signer
+    )
+    acquires Registry {
+        init_registry(econia); // Initialize registry
+        scale_factor<BC>(); // Attempt invalid lookup
     }
 
     #[test]
@@ -515,7 +581,6 @@ module econia::registry {
     acquires Registry {
         init_registry(econia); // Initialize registry
         // Assert lookup returns
-        assert!(scale_factor<E0>() == F0, 0);
         assert!(scale_factor<E0>() == F0, 0);
         assert!(scale_factor<E1>() == F1, 0);
         assert!(scale_factor<E2>() == F2, 0);

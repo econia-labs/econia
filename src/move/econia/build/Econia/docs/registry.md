@@ -32,6 +32,7 @@
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
+-  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
 -  [Function `scale_factor`](#0xc0deb00c_registry_scale_factor)
 -  [Function `is_registered`](#0xc0deb00c_registry_is_registered)
@@ -1097,12 +1098,42 @@ exists under the Econia account or if caller is not Econia
 <pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_econia_capability_store">init_econia_capability_store</a>(
     account: &<a href="">signer</a>
 ) {
+    // Assert caller is Econia account
+    <b>assert</b>!(address_of(account) == @econia, <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     // Assert <a href="capability.md#0xc0deb00c_capability">capability</a> store not already registered
     <b>assert</b>!(!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_HAS_CAPABILITY">E_HAS_CAPABILITY</a>);
     // Get new <a href="capability.md#0xc0deb00c_capability">capability</a> instance (aborts <b>if</b> caller is not Econia)
     <b>let</b> econia_capability = <a href="capability.md#0xc0deb00c_capability_get_econia_capability">capability::get_econia_capability</a>(account);
     <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(account, <a href="registry.md#0xc0deb00c_registry_EconiaCapabilityStore">EconiaCapabilityStore</a>{
         econia_capability}); // Move <b>to</b> account <a href="capability.md#0xc0deb00c_capability">capability</a> store
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_init_module"></a>
+
+## Function `init_module`
+
+Initialize all resources necessary for module activity
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_module">init_module</a>(account: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_module">init_module</a>(
+    account: &<a href="">signer</a>,
+) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
+    <a href="registry.md#0xc0deb00c_registry_init_econia_capability_store">init_econia_capability_store</a>(account); // Init <a href="capability.md#0xc0deb00c_capability">capability</a> store
+    <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(account); // Init <a href="registry.md#0xc0deb00c_registry">registry</a>
 }
 </code></pre>
 

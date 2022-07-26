@@ -21,9 +21,7 @@ module econia::init {
     ) {
         // Assert caller is Econia account
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Init capability store for registry to make cross-module calls
-        registry::init_econia_capability_store(account);
-        registry::init_registry(account); // Init registry
+        registry::init_module(account); // Init registry module
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

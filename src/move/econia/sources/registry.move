@@ -175,12 +175,22 @@ module econia::registry {
     public fun init_econia_capability_store(
         account: &signer
     ) {
+        // Assert caller is Econia account
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
         // Assert capability store not already registered
         assert!(!exists<EconiaCapabilityStore>(@econia), E_HAS_CAPABILITY);
         // Get new capability instance (aborts if caller is not Econia)
         let econia_capability = capability::get_econia_capability(account);
         move_to<EconiaCapabilityStore>(account, EconiaCapabilityStore{
             econia_capability}); // Move to account capability store
+    }
+
+    /// Initialize all resources necessary for module activity
+    public fun init_module(
+        account: &signer,
+    ) acquires Registry{
+        init_econia_capability_store(account); // Init capability store
+        init_registry(account); // Init registry
     }
 
     /// Move empty registry to the Econia account, then add scale map
@@ -350,6 +360,15 @@ module econia::registry {
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for attempting to init under non-Econia account
+    fun test_init_econia_capability_store_not_econia(
+        account: &signer
+    ) {
+        init_econia_capability_store(account); // Attempt invalid init
+    }
+
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for attempting to re-init under Econia account
@@ -373,7 +392,7 @@ module econia::registry {
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for attempting to init under non-Econia account
-    fun test_init_not_econia(
+    fun test_init_registry_not_econia(
         account: &signer
     ) acquires Registry {
         init_registry(account); // Attempt invalid init
@@ -415,9 +434,8 @@ module econia::registry {
     fun test_register_market_duplicate(
         econia: &signer
     ) acquires EconiaCapabilityStore, Registry {
-        init_registry(econia); // Initialize registry
+        init_module(econia); // Initialize module
         init_coin_types(econia); // Initialize coin types
-        init_econia_capability_store(econia); // Initialize capability
         register_market<BC, QC, E0>(econia); // Run valid initialization
         register_market<BC, QC, E0>(econia); // Attempt invalid init
     }
@@ -462,9 +480,8 @@ module econia::registry {
         econia: &signer,
         host: &signer
     ) acquires  EconiaCapabilityStore, Registry {
-        init_registry(econia); // Initialize registry
+        init_module(econia); // Init module
         init_coin_types(econia); // Initialize coin types
-        init_econia_capability_store(econia); // Initialize capability
         register_market<BC, QC, E2>(host); // Run valid initialization
         // Borrow immutable reference to registry
         let registry = borrow_global<Registry>(@econia);

@@ -18,12 +18,12 @@ entries in both <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a
 -  [Constants](#@Constants_0)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
     -  [Abort conditions](#@Abort_conditions_1)
+-  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
 -  [Function `deposit_collateral`](#0xc0deb00c_user_deposit_collateral)
     -  [Abort conditions](#@Abort_conditions_2)
--  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
 -  [Function `market_account_info`](#0xc0deb00c_user_market_account_info)
 -  [Function `withdraw_collateral_custodian`](#0xc0deb00c_user_withdraw_collateral_custodian)
--  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
+-  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
 -  [Function `register_collateral`](#0xc0deb00c_user_register_collateral)
     -  [Abort conditions](#@Abort_conditions_3)
 -  [Function `register_open_orders`](#0xc0deb00c_user_register_open_orders)
@@ -355,6 +355,42 @@ Register <code><a href="user.md#0xc0deb00c_user">user</a></code> with a market a
 
 </details>
 
+<a name="0xc0deb00c_user_withdraw_collateral_user"></a>
+
+## Function `withdraw_collateral_user`
+
+Return <code>amount</code> of <code>Coin</code> having <code>CoinType</code> withdrawn from
+<code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account specified by <code>market_account_info</code>.
+Aborts if custodian serial ID for given market account is not 0.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64,
+): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> is not trying <b>to</b> override delegated custody
+    <b>assert</b>!(market_account_info.custodian_id == 0, <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
+    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s market account
+    <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_deposit_collateral"></a>
 
 ## Function `deposit_collateral`
@@ -406,41 +442,6 @@ registered
         market_account_collateral.coins_available + <a href="_value">coin::value</a>(&<a href="coins.md#0xc0deb00c_coins">coins</a>);
     // Merge <a href="coins.md#0xc0deb00c_coins">coins</a> into market account collateral
     <a href="_merge">coin::merge</a>(&<b>mut</b> market_account_collateral.<a href="coins.md#0xc0deb00c_coins">coins</a>, <a href="coins.md#0xc0deb00c_coins">coins</a>);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_user_exists_market_account"></a>
-
-## Function `exists_market_account`
-
-Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has an <code><a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a></code> entry for
-<code>market_account_info</code>, otherwise <code><b>false</b></code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(
-    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
-    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>
-): bool
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
-    // Return <b>false</b> <b>if</b> no open orders resource <b>exists</b>
-    <b>if</b>(!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
-    // Borrow immutable ref <b>to</b> open orders market accounts <a href="">table</a>
-    <b>let</b> market_accounts = &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).market_accounts;
-    // Return <b>if</b> market account is registered in <a href="">table</a>
-    <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(market_accounts, market_account_info)
 }
 </code></pre>
 
@@ -520,16 +521,15 @@ correspond to specified <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo
 
 </details>
 
-<a name="0xc0deb00c_user_withdraw_collateral_user"></a>
+<a name="0xc0deb00c_user_exists_market_account"></a>
 
-## Function `withdraw_collateral_user`
+## Function `exists_market_account`
 
-Return <code>amount</code> of <code>Coin</code> having <code>CoinType</code> withdrawn from
-<code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account specified by <code>market_account_info</code>.
-Aborts if custodian serial ID for given market account is not 0.
+Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has an <code><a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a></code> entry for
+<code>market_account_info</code>, otherwise <code><b>false</b></code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): bool
 </code></pre>
 
 
@@ -538,17 +538,17 @@ Aborts if custodian serial ID for given market account is not 0.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
-    amount: u64,
-): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> is not trying <b>to</b> override delegated custody
-    <b>assert</b>!(market_account_info.custodian_id == 0, <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
-    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s market account
-    <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
-        address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>
+): bool
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
+    // Return <b>false</b> <b>if</b> no open orders resource <b>exists</b>
+    <b>if</b>(!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
+    // Borrow immutable ref <b>to</b> open orders market accounts <a href="">table</a>
+    <b>let</b> market_accounts = &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).market_accounts;
+    // Return <b>if</b> market account is registered in <a href="">table</a>
+    <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(market_accounts, market_account_info)
 }
 </code></pre>
 

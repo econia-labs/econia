@@ -117,6 +117,22 @@ module econia::user {
         register_collateral<Q>(user, market_account_info);
     }
 
+    /// Return `amount` of `Coin` having `CoinType` withdrawn from
+    /// `user`'s market account specified by `market_account_info`.
+    /// Aborts if custodian serial ID for given market account is not 0.
+    public entry fun withdraw_collateral_user<CoinType>(
+        user: &signer,
+        market_account_info: MarketAccountInfo,
+        amount: u64,
+    ): coin::Coin<CoinType>
+    acquires Collateral, OpenOrders {
+        // Assert user is not trying to override delegated custody
+        assert!(market_account_info.custodian_id == 0, E_CUSTODIAN_OVERRIDE);
+        // Withdraw collateral from user's market account
+        withdraw_collateral_internal<CoinType>(
+            address_of(user), market_account_info, amount)
+    }
+
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -155,21 +171,6 @@ module econia::user {
         coin::merge(&mut market_account_collateral.coins, coins);
     }
 
-    /// Return `true` if `user` has an `OpenOrders` entry for
-    /// `market_account_info`, otherwise `false`.
-    public fun exists_market_account(
-        market_account_info: MarketAccountInfo,
-        user: address
-    ): bool
-    acquires OpenOrders {
-        // Return false if no open orders resource exists
-        if(!exists<OpenOrders>(user)) return false;
-        // Borrow immutable ref to open orders market accounts table
-        let market_accounts = &borrow_global<OpenOrders>(user).market_accounts;
-        // Return if market account is registered in table
-        open_table::contains(market_accounts, market_account_info)
-    }
-
     /// Get a `MarketInfo` for type arguments, pack with `custodian_id`
     /// into a `MarketAccountInfo` and return
     public fun market_account_info<B, Q, E>(
@@ -202,25 +203,24 @@ module econia::user {
             user, market_account_info, amount)
     }
 
-    /// Return `amount` of `Coin` having `CoinType` withdrawn from
-    /// `user`'s market account specified by `market_account_info`.
-    /// Aborts if custodian serial ID for given market account is not 0.
-    public entry fun withdraw_collateral_user<CoinType>(
-        user: &signer,
-        market_account_info: MarketAccountInfo,
-        amount: u64,
-    ): coin::Coin<CoinType>
-    acquires Collateral, OpenOrders {
-        // Assert user is not trying to override delegated custody
-        assert!(market_account_info.custodian_id == 0, E_CUSTODIAN_OVERRIDE);
-        // Withdraw collateral from user's market account
-        withdraw_collateral_internal<CoinType>(
-            address_of(user), market_account_info, amount)
-    }
-
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return `true` if `user` has an `OpenOrders` entry for
+    /// `market_account_info`, otherwise `false`.
+    fun exists_market_account(
+        market_account_info: MarketAccountInfo,
+        user: address
+    ): bool
+    acquires OpenOrders {
+        // Return false if no open orders resource exists
+        if(!exists<OpenOrders>(user)) return false;
+        // Borrow immutable ref to open orders market accounts table
+        let market_accounts = &borrow_global<OpenOrders>(user).market_accounts;
+        // Return if market account is registered in table
+        open_table::contains(market_accounts, market_account_info)
+    }
 
     /// Register user with a `Collateral` entry for given `CoinType`
     /// and `market_account_info`, initializing `Collateral` if it does

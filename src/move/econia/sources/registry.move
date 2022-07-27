@@ -177,7 +177,7 @@ module econia::registry {
     }
 
     /// Return serial ID of `CustodianCapability`
-    public fun get_custodian_id(
+    public fun custodian_id(
         custodian_capability_ref: &CustodianCapability
     ): u64 {
         custodian_capability_ref.custodian_id // Return serial ID
@@ -547,8 +547,8 @@ module econia::registry {
         assert!(is_valid_custodian_id(2), 0);
         assert!(n_custodians() == 2, 0); // Assert custodian count
         // Assert serial IDs administered correctly
-        assert!(get_custodian_id(&first_cap) == 1, 0);
-        assert!(get_custodian_id(&second_cap) == 2, 0);
+        assert!(custodian_id(&first_cap) == 1, 0);
+        assert!(custodian_id(&second_cap) == 2, 0);
         // Assert registry counter correct
         assert!(borrow_global_mut<Registry>(@econia).n_custodians == 2, 0);
         (first_cap, second_cap)

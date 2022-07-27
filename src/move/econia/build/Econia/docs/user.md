@@ -22,10 +22,14 @@ entries in both <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a
     -  [Abort conditions](#@Abort_conditions_2)
 -  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
 -  [Function `market_account_info`](#0xc0deb00c_user_market_account_info)
+-  [Function `withdraw_collateral_custodian`](#0xc0deb00c_user_withdraw_collateral_custodian)
+-  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
 -  [Function `register_collateral`](#0xc0deb00c_user_register_collateral)
     -  [Abort conditions](#@Abort_conditions_3)
 -  [Function `register_open_orders`](#0xc0deb00c_user_register_open_orders)
     -  [Abort conditions](#@Abort_conditions_4)
+-  [Function `withdraw_collateral_internal`](#0xc0deb00c_user_withdraw_collateral_internal)
+    -  [Abort conditions](#@Abort_conditions_5)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -213,6 +217,16 @@ All open orders across all <code><a href="user.md#0xc0deb00c_user_MarketAccountI
 ## Constants
 
 
+<a name="0xc0deb00c_user_E_CUSTODIAN_OVERRIDE"></a>
+
+When user attempts invalid custodian override
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>: u64 = 8;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_INVALID_CUSTODIAN_ID"></a>
 
 When the passed custodian ID is invalid
@@ -229,6 +243,16 @@ When a market account registered for given market account info
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_MARKET_ACCOUNT_REGISTERED">E_MARKET_ACCOUNT_REGISTERED</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_NOT_ENOUGH_COLLATERAL"></a>
+
+When not enough collateral
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>: u64 = 6;
 </code></pre>
 
 
@@ -270,6 +294,16 @@ When a collateral transfer does not have specified amount
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN"></a>
+
+When unauthorized custodian ID
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>: u64 = 7;
 </code></pre>
 
 
@@ -445,6 +479,83 @@ into a <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountIn
 
 </details>
 
+<a name="0xc0deb00c_user_withdraw_collateral_custodian"></a>
+
+## Function `withdraw_collateral_custodian`
+
+Return <code>amount</code> of <code>Coin</code> having <code>CoinType</code> withdrawn from
+<code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account specified by <code>market_account_info</code>.
+Requires a reference to a <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code> for
+authorization, and aborts if custodian serial ID does not
+correspond to specified <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_custodian">withdraw_collateral_custodian</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64, custodian_capability: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_custodian">withdraw_collateral_custodian</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64,
+    custodian_capability: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>,
+): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
+    // Assert serial custodian ID from <a href="capability.md#0xc0deb00c_capability">capability</a> matches ID from
+    // market account info
+    <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability) ==
+        market_account_info.custodian_id, <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
+    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s market account
+    <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_account_info, amount)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_withdraw_collateral_user"></a>
+
+## Function `withdraw_collateral_user`
+
+Return <code>amount</code> of <code>Coin</code> having <code>CoinType</code> withdrawn from
+<code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account specified by <code>market_account_info</code>.
+Aborts if custodian serial ID for given market account is not 0.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64,
+): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> is not trying <b>to</b> override delegated custody
+    <b>assert</b>!(market_account_info.custodian_id == 0, <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
+    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s market account
+    <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_collateral"></a>
 
 ## Function `register_collateral`
@@ -551,6 +662,69 @@ already exist
             scale_factor,
             asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
             bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>()});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_withdraw_collateral_internal"></a>
+
+## Function `withdraw_collateral_internal`
+
+Return <code>amount</code> of <code>Coin</code> having <code>CoinType</code> withdrawn from
+<code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account specified by <code>market_account_info</code>.
+
+
+<a name="@Abort_conditions_5"></a>
+
+### Abort conditions
+
+* If <code>CoinType</code> is neither base nor quote for market account
+* If <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> has a value of 0
+* If <code><a href="user.md#0xc0deb00c_user">user</a></code> does not have corresponding market account
+registered
+* If <code><a href="user.md#0xc0deb00c_user">user</a></code> has insufficient collateral to withdraw
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64
+): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
+    // Assert <a href="">coin</a> type is either base or quote for market account
+    <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">registry::coin_is_in_market_pair</a>&lt;CoinType&gt;(
+        &market_account_info.market_info), <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>);
+    // Assert attempting <b>to</b> actually withdraw <a href="coins.md#0xc0deb00c_coins">coins</a>
+    <b>assert</b>!(amount != 0, <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>);
+    // Assert market account registered for market account info
+    <b>assert</b>!(<a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info, <a href="user.md#0xc0deb00c_user">user</a>),
+        <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    // Borrow mutable reference <b>to</b> market accounts collateral <a href="">table</a>
+    <b>let</b> market_accounts =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).market_accounts;
+    // Borrow mutable reference <b>to</b> market account collateral
+    <b>let</b> market_account_collateral = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts,
+        market_account_info);
+    // Get mutable reference <b>to</b> available <a href="">coin</a> count
+    <b>let</b> coins_available = &<b>mut</b> market_account_collateral.coins_available;
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> enough available collateral <b>to</b> withdraw
+    <b>assert</b>!(amount &lt;= *coins_available, <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
+    // Decrement withdrawn amount from available <a href="">coin</a> count
+    *coins_available = *coins_available - amount;
+    // Extract collateral from market account and <b>return</b>
+    <a href="_extract">coin::extract</a>(&<b>mut</b> market_account_collateral.<a href="coins.md#0xc0deb00c_coins">coins</a>, amount)
 }
 </code></pre>
 

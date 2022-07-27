@@ -83,6 +83,12 @@ module econia::user {
     /// When specified coin type does not correspond to the trading pair
     /// for a given market
     const E_NOT_IN_MARKET_PAIR: u64 = 5;
+    /// When not enough collateral
+    const E_NOT_ENOUGH_COLLATERAL: u64 = 6;
+    /// When unauthorized custodian ID
+    const E_UNAUTHORIZED_CUSTODIAN: u64 = 7;
+    /// When user attempts invalid custodian override
+    const E_CUSTODIAN_OVERRIDE: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -175,6 +181,43 @@ module econia::user {
         }
     }
 
+    /// Return `amount` of `Coin` having `CoinType` withdrawn from
+    /// `user`'s market account specified by `market_account_info`.
+    /// Requires a reference to a `registry::CustodianCapability` for
+    /// authorization, and aborts if custodian serial ID does not
+    /// correspond to specified `MarketAccountInfo`
+    public fun withdraw_collateral_custodian<CoinType>(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        amount: u64,
+        custodian_capability: &registry::CustodianCapability,
+    ): coin::Coin<CoinType>
+    acquires Collateral, OpenOrders {
+        // Assert serial custodian ID from capability matches ID from
+        // market account info
+        assert!(registry::custodian_id(custodian_capability) ==
+            market_account_info.custodian_id, E_UNAUTHORIZED_CUSTODIAN);
+        // Withdraw collateral from user's market account
+        withdraw_collateral_internal<CoinType>(
+            user, market_account_info, amount)
+    }
+
+    /// Return `amount` of `Coin` having `CoinType` withdrawn from
+    /// `user`'s market account specified by `market_account_info`.
+    /// Aborts if custodian serial ID for given market account is not 0.
+    public entry fun withdraw_collateral_user<CoinType>(
+        user: &signer,
+        market_account_info: MarketAccountInfo,
+        amount: u64,
+    ): coin::Coin<CoinType>
+    acquires Collateral, OpenOrders {
+        // Assert user is not trying to override delegated custody
+        assert!(market_account_info.custodian_id == 0, E_CUSTODIAN_OVERRIDE);
+        // Withdraw collateral from user's market account
+        withdraw_collateral_internal<CoinType>(
+            address_of(user), market_account_info, amount)
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -242,6 +285,45 @@ module econia::user {
                 scale_factor,
                 asks: critbit::empty(),
                 bids: critbit::empty()});
+    }
+
+    /// Return `amount` of `Coin` having `CoinType` withdrawn from
+    /// `user`'s market account specified by `market_account_info`.
+    ///
+    /// # Abort conditions
+    /// * If `CoinType` is neither base nor quote for market account
+    /// * If `coins` has a value of 0
+    /// * If `user` does not have corresponding market account
+    ///   registered
+    /// * If `user` has insufficient collateral to withdraw
+    fun withdraw_collateral_internal<CoinType>(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        amount: u64
+    ): coin::Coin<CoinType>
+    acquires Collateral, OpenOrders {
+        // Assert coin type is either base or quote for market account
+        assert!(registry::coin_is_in_market_pair<CoinType>(
+            &market_account_info.market_info), E_NOT_IN_MARKET_PAIR);
+        // Assert attempting to actually withdraw coins
+        assert!(amount != 0, E_NO_TRANSFER_AMOUNT);
+        // Assert market account registered for market account info
+        assert!(exists_market_account(market_account_info, user),
+            E_NO_MARKET_ACCOUNT);
+        // Borrow mutable reference to market accounts collateral table
+        let market_accounts =
+            &mut borrow_global_mut<Collateral<CoinType>>(user).market_accounts;
+        // Borrow mutable reference to market account collateral
+        let market_account_collateral = open_table::borrow_mut(market_accounts,
+            market_account_info);
+        // Get mutable reference to available coin count
+        let coins_available = &mut market_account_collateral.coins_available;
+        // Assert user has enough available collateral to withdraw
+        assert!(amount <= *coins_available, E_NOT_ENOUGH_COLLATERAL);
+        // Decrement withdrawn amount from available coin count
+        *coins_available = *coins_available - amount;
+        // Extract collateral from market account and return
+        coin::extract(&mut market_account_collateral.coins, amount)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

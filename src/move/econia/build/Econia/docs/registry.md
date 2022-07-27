@@ -31,7 +31,7 @@
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
 -  [Function `coin_is_in_market_pair`](#0xc0deb00c_registry_coin_is_in_market_pair)
--  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
+-  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
@@ -1096,14 +1096,14 @@ Return <code><b>true</b></code> if <code>CoinType</code> is either base or quote
 
 </details>
 
-<a name="0xc0deb00c_registry_get_custodian_id"></a>
+<a name="0xc0deb00c_registry_custodian_id"></a>
 
-## Function `get_custodian_id`
+## Function `custodian_id`
 
 Return serial ID of <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a></code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>(custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): u64
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a>(custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): u64
 </code></pre>
 
 
@@ -1112,7 +1112,7 @@ Return serial ID of <code><a href="registry.md#0xc0deb00c_registry_CustodianCapa
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>(
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a>(
     custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>
 ): u64 {
     custodian_capability_ref.custodian_id // Return serial ID
@@ -1484,7 +1484,7 @@ Return <code><b>true</b></code> if <code>custodian_id</code> has already been re
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Return <b>false</b> <b>if</b> <a href="registry.md#0xc0deb00c_registry">registry</a> hasn't been initialized
     <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
-    custodian_id &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>()
+    <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a> &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>()
 }
 </code></pre>
 

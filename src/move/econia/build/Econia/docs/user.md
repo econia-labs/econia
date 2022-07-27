@@ -18,11 +18,14 @@ entries in both <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a
 -  [Constants](#@Constants_0)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
     -  [Abort conditions](#@Abort_conditions_1)
--  [Function `register_collateral`](#0xc0deb00c_user_register_collateral)
+-  [Function `deposit_collateral`](#0xc0deb00c_user_deposit_collateral)
     -  [Abort conditions](#@Abort_conditions_2)
--  [Function `register_open_orders`](#0xc0deb00c_user_register_open_orders)
-    -  [Abort conditions](#@Abort_conditions_3)
+-  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
 -  [Function `market_account_info`](#0xc0deb00c_user_market_account_info)
+-  [Function `register_collateral`](#0xc0deb00c_user_register_collateral)
+    -  [Abort conditions](#@Abort_conditions_3)
+-  [Function `register_open_orders`](#0xc0deb00c_user_register_open_orders)
+    -  [Abort conditions](#@Abort_conditions_4)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -230,12 +233,43 @@ When a market account registered for given market account info
 
 
 
+<a name="0xc0deb00c_user_E_NOT_IN_MARKET_PAIR"></a>
+
+When specified coin type does not correspond to the trading pair
+for a given market
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>: u64 = 5;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_NO_MARKET"></a>
 
 When no such market has been registered
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET">E_NO_MARKET</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
+
+When a market account is not registered
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_NO_TRANSFER_AMOUNT"></a>
+
+When a collateral transfer does not have specified amount
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>: u64 = 3;
 </code></pre>
 
 
@@ -287,6 +321,130 @@ Register <code><a href="user.md#0xc0deb00c_user">user</a></code> with a market a
 
 </details>
 
+<a name="0xc0deb00c_user_deposit_collateral"></a>
+
+## Function `deposit_collateral`
+
+Deposit <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> as collateral for <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account
+specified by <code>market_account_info</code>.
+
+
+<a name="@Abort_conditions_2"></a>
+
+### Abort conditions
+
+* If <code>CoinType</code> is neither base nor quote for market account
+* If <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> has a value of 0
+* If <code><a href="user.md#0xc0deb00c_user">user</a></code> does not have corresponding market account
+registered
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
+    // Assert <a href="">coin</a> type is either base or quote for market account
+    <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">registry::coin_is_in_market_pair</a>&lt;CoinType&gt;(
+        &market_account_info.market_info), <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>);
+    // Assert attempting <b>to</b> actually deposit <a href="coins.md#0xc0deb00c_coins">coins</a>
+    <b>assert</b>!(<a href="_value">coin::value</a>(&<a href="coins.md#0xc0deb00c_coins">coins</a>) != 0, <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>);
+    // Assert market account registered for market account info
+    <b>assert</b>!(<a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info, <a href="user.md#0xc0deb00c_user">user</a>),
+        <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    // Borrow mutable reference <b>to</b> market accounts collateral <a href="">table</a>
+    <b>let</b> market_accounts =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).market_accounts;
+    // Borrow mutable reference <b>to</b> market account collateral
+    <b>let</b> market_account_collateral = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts,
+        market_account_info);
+    // Increment available <a href="">coin</a> count
+    market_account_collateral.coins_available =
+        market_account_collateral.coins_available + <a href="_value">coin::value</a>(&<a href="coins.md#0xc0deb00c_coins">coins</a>);
+    // Merge <a href="coins.md#0xc0deb00c_coins">coins</a> into market account collateral
+    <a href="_merge">coin::merge</a>(&<b>mut</b> market_account_collateral.<a href="coins.md#0xc0deb00c_coins">coins</a>, <a href="coins.md#0xc0deb00c_coins">coins</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_exists_market_account"></a>
+
+## Function `exists_market_account`
+
+Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has an <code><a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a></code> entry for
+<code>market_account_info</code>, otherwise <code><b>false</b></code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>
+): bool
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a> {
+    // Return <b>false</b> <b>if</b> no open orders resource <b>exists</b>
+    <b>if</b>(!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
+    // Borrow immutable ref <b>to</b> open orders market accounts <a href="">table</a>
+    <b>let</b> market_accounts = &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).market_accounts;
+    // Return <b>if</b> market account is registered in <a href="">table</a>
+    <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(market_accounts, market_account_info)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_market_account_info"></a>
+
+## Function `market_account_info`
+
+Get a <code>MarketInfo</code> for type arguments, pack with <code>custodian_id</code>
+into a <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code> and return
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id: u64): <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(
+    custodian_id: u64
+): <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a> {
+    <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{
+        market_info: <a href="registry.md#0xc0deb00c_registry_market_info">registry::market_info</a>&lt;B, Q, E&gt;(),
+        custodian_id
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_collateral"></a>
 
 ## Function `register_collateral`
@@ -295,7 +453,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_Collateral">Collater
 and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> if it does
 not already exist
 
-<a name="@Abort_conditions_2"></a>
+<a name="@Abort_conditions_3"></a>
 
 ### Abort conditions
 
@@ -350,7 +508,7 @@ Register user with an <code><a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrd
 <code>market_account_info</code>, initializing <code><a href="user.md#0xc0deb00c_user_OpenOrders">OpenOrders</a></code> if it does not
 already exist
 
-<a name="@Abort_conditions_3"></a>
+<a name="@Abort_conditions_4"></a>
 
 ### Abort conditions
 
@@ -393,37 +551,6 @@ already exist
             scale_factor,
             asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
             bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>()});
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_user_market_account_info"></a>
-
-## Function `market_account_info`
-
-Get a <code>MarketInfo</code> for type arguments, pack with <code>custodian_id</code>
-into a <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code> and return
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id: u64): <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(
-    custodian_id: u64
-): <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a> {
-    <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{
-        market_info: <a href="registry.md#0xc0deb00c_registry_market_info">registry::market_info</a>&lt;B, Q, E&gt;(),
-        custodian_id
-    }
 }
 </code></pre>
 

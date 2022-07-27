@@ -60,8 +60,10 @@ module econia::user {
         /// Map from `MarketAccountInfo` to open orders on given market
         /// account. Separated into different table entries to prevent
         /// transaction collisions across markets
-        market_accounts: open_table::OpenTable<MarketAccountInfo,
-            MarketAccountOpenOrders>
+        market_accounts: open_table::OpenTable<
+            MarketAccountInfo,
+            MarketAccountOpenOrders
+        >
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -74,6 +76,13 @@ module econia::user {
     const E_INVALID_CUSTODIAN_ID: u64 = 1;
     /// When a market account registered for given market account info
     const E_MARKET_ACCOUNT_REGISTERED: u64 = 2;
+    /// When a collateral transfer does not have specified amount
+    const E_NO_TRANSFER_AMOUNT: u64 = 3;
+    /// When a market account is not registered
+    const E_NO_MARKET_ACCOUNT: u64 = 4;
+    /// When specified coin type does not correspond to the trading pair
+    /// for a given market
+    const E_NOT_IN_MARKET_PAIR: u64 = 5;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -103,6 +112,70 @@ module econia::user {
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Deposit `coins` as collateral for `user`'s market account
+    /// specified by `market_account_info`.
+    ///
+    /// # Abort conditions
+    /// * If `CoinType` is neither base nor quote for market account
+    /// * If `coins` has a value of 0
+    /// * If `user` does not have corresponding market account
+    ///   registered
+    public fun deposit_collateral<CoinType>(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        coins: coin::Coin<CoinType>
+    ) acquires Collateral, OpenOrders {
+        // Assert coin type is either base or quote for market account
+        assert!(registry::coin_is_in_market_pair<CoinType>(
+            &market_account_info.market_info), E_NOT_IN_MARKET_PAIR);
+        // Assert attempting to actually deposit coins
+        assert!(coin::value(&coins) != 0, E_NO_TRANSFER_AMOUNT);
+        // Assert market account registered for market account info
+        assert!(exists_market_account(market_account_info, user),
+            E_NO_MARKET_ACCOUNT);
+        // Borrow mutable reference to market accounts collateral table
+        let market_accounts =
+            &mut borrow_global_mut<Collateral<CoinType>>(user).market_accounts;
+        // Borrow mutable reference to market account collateral
+        let market_account_collateral = open_table::borrow_mut(market_accounts,
+            market_account_info);
+        // Increment available coin count
+        market_account_collateral.coins_available =
+            market_account_collateral.coins_available + coin::value(&coins);
+        // Merge coins into market account collateral
+        coin::merge(&mut market_account_collateral.coins, coins);
+    }
+
+    /// Return `true` if `user` has an `OpenOrders` entry for
+    /// `market_account_info`, otherwise `false`.
+    public fun exists_market_account(
+        market_account_info: MarketAccountInfo,
+        user: address
+    ): bool
+    acquires OpenOrders {
+        // Return false if no open orders resource exists
+        if(!exists<OpenOrders>(user)) return false;
+        // Borrow immutable ref to open orders market accounts table
+        let market_accounts = &borrow_global<OpenOrders>(user).market_accounts;
+        // Return if market account is registered in table
+        open_table::contains(market_accounts, market_account_info)
+    }
+
+    /// Get a `MarketInfo` for type arguments, pack with `custodian_id`
+    /// into a `MarketAccountInfo` and return
+    public fun market_account_info<B, Q, E>(
+        custodian_id: u64
+    ): MarketAccountInfo {
+        MarketAccountInfo{
+            market_info: registry::market_info<B, Q, E>(),
+            custodian_id
+        }
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -173,31 +246,91 @@ module econia::user {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Get a `MarketInfo` for type arguments, pack with `custodian_id`
-    /// into a `MarketAccountInfo` and return
-    public fun market_account_info<B, Q, E>(
-        custodian_id: u64
-    ): MarketAccountInfo {
-        MarketAccountInfo{
-            market_info: registry::market_info<B, Q, E>(),
-            custodian_id
-        }
-    }
-
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::coins::{BC, QC};
+    use econia::coins::{
+        BC,
+        QC,
+        Self
+    };
+
     #[test_only]
     use econia::registry::{E1, E2};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for attempting to deposit zero amount
+    fun test_deposit_collateral_no_amount()
+    acquires Collateral, OpenOrders {
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<BC, QC, E1>(),
+            custodian_id: 123 }; // Declare market account info
+        // Attempt invalid deposit
+        deposit_collateral<BC>(@user, market_account_info, coin::zero<BC>());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for attempting to deposit coin not in market pair
+    fun test_deposit_collateral_not_in_pair()
+    acquires Collateral, OpenOrders {
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<E1, E1, E1>(),
+            custodian_id: 123 }; // Declare market account info
+        // Attempt invalid deposit
+        deposit_collateral<BC>(@user, market_account_info, coin::zero<BC>());
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for attempting to deposit when no market account
+    fun test_deposit_collateral_no_market_account(
+        econia: &signer
+    ) acquires Collateral, OpenOrders {
+        coins::init_coin_types(econia); // Initialize coin types
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<BC, QC, E1>(),
+            custodian_id: 123 }; // Declare market account info
+        // Attempt invalid deposit
+        deposit_collateral<BC>(@user, market_account_info,
+            coins::mint<BC>(econia, 25));
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful collateral deposit
+    fun test_deposit_collateral(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, OpenOrders {
+        let deposit_amount = 25; // Declare deposit amount
+        // Register a test market for trading
+        registry::register_test_market(econia);
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<BC, QC, E1>(),
+            custodian_id: 0}; // Declare market account info
+        // Register user with market account
+        register_market_account<BC, QC, E1>(user, 0);
+        // Attempt make valid deposit
+        deposit_collateral<BC>(@user, market_account_info,
+            coins::mint<BC>(econia, deposit_amount));
+        // Borrow immutable ref to collateral market accounts table
+        let market_accounts =
+            &borrow_global<Collateral<BC>>(@user).market_accounts;
+        // Borrow immutable ref to collateral for market account
+        let market_collateral = open_table::borrow(market_accounts,
+            market_account_info);
+        // Assert fields
+        assert!(coin::value(&market_collateral.coins) == deposit_amount, 0);
+        assert!(market_collateral.coins_available == deposit_amount, 0);
+    }
 
     #[test(user = @user)]
     /// Verify registration for multiple market accounts

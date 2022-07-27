@@ -30,6 +30,7 @@
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
+-  [Function `coin_is_in_market_pair`](#0xc0deb00c_registry_coin_is_in_market_pair)
 -  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
@@ -55,6 +56,7 @@
 <b>use</b> <a href="book.md#0xc0deb00c_book">0xc0deb00c::book</a>;
 <b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
+<b>use</b> <a href="util.md#0xc0deb00c_util">0xc0deb00c::util</a>;
 </code></pre>
 
 
@@ -1062,6 +1064,37 @@ Corresponds to <code><a href="registry.md#0xc0deb00c_registry_E9">E9</a></code>
 </code></pre>
 
 
+
+<a name="0xc0deb00c_registry_coin_is_in_market_pair"></a>
+
+## Function `coin_is_in_market_pair`
+
+Return <code><b>true</b></code> if <code>CoinType</code> is either base or quote coin in
+<code>market_info</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">coin_is_in_market_pair</a>&lt;CoinType&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">coin_is_in_market_pair</a>&lt;CoinType&gt;(
+    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): bool {
+    // Get <a href="">coin</a> type info
+    <b>let</b> coin_type_info = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;();
+    are_same_type_info(&coin_type_info, &market_info.base_coin_type) ||
+    are_same_type_info(&coin_type_info, &market_info.quote_coin_type)
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_registry_get_custodian_id"></a>
 

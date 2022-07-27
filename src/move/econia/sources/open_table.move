@@ -54,6 +54,16 @@ module econia::open_table {
         table::borrow(&open_table.base_table, key)
     }
 
+    /// Return mutable reference to the value which `key` maps to,
+    /// aborting if no entry in `open_table`
+    public fun borrow_mut<K: copy + drop, V>(
+        open_table: &mut OpenTable<K, V>,
+        key: K
+    ): &mut V {
+        // Borrow corresponding reference (aborts if no such entry)
+        table::borrow_mut(&mut open_table.base_table, key)
+    }
+
     /// Return `true` if `key` in `open_table`, otherwise `false`
     public fun contains<K: copy + drop, V>(
         open_table: &OpenTable<K, V>,
@@ -88,6 +98,11 @@ module econia::open_table {
         assert!(*table::borrow(&open_table.base_table, 3) == 4, 0);
         assert!(*vector::borrow(&open_table.keys, 0) == 1, 0);
         assert!(*vector::borrow(&open_table.keys, 1) == 3, 0);
+        // Borrow mutabl reference to value for key 1
+        let key_1_ref_mut = borrow_mut(&mut open_table, 1);
+        *key_1_ref_mut = 8; // Modify value
+        // Assert correct borrow return
+        assert!(*borrow(&open_table, 1) == 8, 0);
         open_table // Return rather than unpack
     }
 

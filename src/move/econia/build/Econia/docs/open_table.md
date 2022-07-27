@@ -12,6 +12,7 @@ all functions.
 -  [Function `empty`](#0xc0deb00c_open_table_empty)
 -  [Function `add`](#0xc0deb00c_open_table_add)
 -  [Function `borrow`](#0xc0deb00c_open_table_borrow)
+-  [Function `borrow_mut`](#0xc0deb00c_open_table_borrow_mut)
 -  [Function `contains`](#0xc0deb00c_open_table_contains)
 
 
@@ -137,6 +138,36 @@ aborting if no entry in <code><a href="open_table.md#0xc0deb00c_open_table">open
 ): &V {
     // Borrow corresponding reference (aborts <b>if</b> no such entry)
     <a href="_borrow">table::borrow</a>(&<a href="open_table.md#0xc0deb00c_open_table">open_table</a>.base_table, key)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_open_table_borrow_mut"></a>
+
+## Function `borrow_mut`
+
+Return mutable reference to the value which <code>key</code> maps to,
+aborting if no entry in <code><a href="open_table.md#0xc0deb00c_open_table">open_table</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">borrow_mut</a>&lt;K: <b>copy</b>, drop, V&gt;(<a href="open_table.md#0xc0deb00c_open_table">open_table</a>: &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;K, V&gt;, key: K): &<b>mut</b> V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">borrow_mut</a>&lt;K: <b>copy</b> + drop, V&gt;(
+    <a href="open_table.md#0xc0deb00c_open_table">open_table</a>: &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">OpenTable</a>&lt;K, V&gt;,
+    key: K
+): &<b>mut</b> V {
+    // Borrow corresponding reference (aborts <b>if</b> no such entry)
+    <a href="_borrow_mut">table::borrow_mut</a>(&<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table">open_table</a>.base_table, key)
 }
 </code></pre>
 

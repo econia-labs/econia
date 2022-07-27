@@ -7,6 +7,7 @@ module econia::registry {
     use econia::book;
     use econia::open_table;
     use econia::capability::{Self, EconiaCapability};
+    use econia::util::are_same_type_info;
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -163,6 +164,17 @@ module econia::registry {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return `true` if `CoinType` is either base or quote coin in
+    /// `market_info`
+    public fun coin_is_in_market_pair<CoinType>(
+        market_info: &MarketInfo
+    ): bool {
+        // Get coin type info
+        let coin_type_info = type_info::type_of<CoinType>();
+        are_same_type_info(&coin_type_info, &market_info.base_coin_type) ||
+        are_same_type_info(&coin_type_info, &market_info.quote_coin_type)
+    }
 
     /// Return serial ID of `CustodianCapability`
     public fun get_custodian_id(
@@ -425,6 +437,22 @@ module econia::registry {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify correct returns
+    fun test_coin_is_in_market_pair() {
+        // Define mock market info
+        let market_info = MarketInfo{
+            base_coin_type: type_info::type_of<BC>(),
+            quote_coin_type: type_info::type_of<QC>(),
+            scale_exponent_type: type_info::type_of<E1>()};
+        // Assert base coin returns true
+        assert!(coin_is_in_market_pair<BC>(&market_info), 0);
+        // Assert quote coin returns true
+        assert!(coin_is_in_market_pair<QC>(&market_info), 0);
+        // Assert scale exponent type returns false
+        assert!(!coin_is_in_market_pair<E1>(&market_info), 0);
+    }
 
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]

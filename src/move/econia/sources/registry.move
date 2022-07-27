@@ -114,6 +114,8 @@ module econia::registry {
     const E_MARKET_EXISTS: u64 = 8;
     /// When no such market exists
     const E_MARKET_NOT_REGISTERED: u64 = 9;
+    /// When a coin is neither base nor quote on given market
+    const E_NOT_IN_MARKET_PAIR: u64 = 10;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -172,8 +174,23 @@ module econia::registry {
     ): bool {
         // Get coin type info
         let coin_type_info = type_info::type_of<CoinType>();
+        // Return if coin is either base or quote
         are_same_type_info(&coin_type_info, &market_info.base_coin_type) ||
         are_same_type_info(&coin_type_info, &market_info.quote_coin_type)
+    }
+
+    /// Return `true` if `CoinType` is base coin in `market_info`,
+    /// `false` if is quote coin, and abort otherwise
+    public fun coin_is_base_coin<CoinType>(
+        market_info: &MarketInfo
+    ): bool {
+        // Get coin type info
+        let coin_type_info = type_info::type_of<CoinType>();
+        if (are_same_type_info(&coin_type_info, &market_info.base_coin_type))
+            return true; // Return true if base coin match
+        if (are_same_type_info(&coin_type_info, &market_info.quote_coin_type))
+            return false; // Return false if quote coin match
+        abort E_NOT_IN_MARKET_PAIR // Else abort
     }
 
     /// Return serial ID of `CustodianCapability`
@@ -452,6 +469,33 @@ module econia::registry {
         assert!(coin_is_in_market_pair<QC>(&market_info), 0);
         // Assert scale exponent type returns false
         assert!(!coin_is_in_market_pair<E1>(&market_info), 0);
+    }
+
+    #[test]
+    /// Verify correct returns
+    fun test_coin_is_base_coin() {
+        // Define mock market info
+        let market_info = MarketInfo{
+            base_coin_type: type_info::type_of<BC>(),
+            quote_coin_type: type_info::type_of<QC>(),
+            scale_exponent_type: type_info::type_of<E1>()};
+        // Assert base coin returns true
+        assert!(coin_is_base_coin<BC>(&market_info), 0);
+        // Assert quote coin returns false
+        assert!(!coin_is_base_coin<QC>(&market_info), 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for neither base nor quote coin match
+    fun test_coin_is_base_coin_neither() {
+        // Define mock market info
+        let market_info = MarketInfo{
+            base_coin_type: type_info::type_of<BC>(),
+            quote_coin_type: type_info::type_of<QC>(),
+            scale_exponent_type: type_info::type_of<E1>()};
+        // Attempt invalid check
+        coin_is_base_coin<E1>(&market_info);
     }
 
     #[test(account = @user)]

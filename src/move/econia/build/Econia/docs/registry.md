@@ -31,6 +31,7 @@
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
 -  [Function `coin_is_in_market_pair`](#0xc0deb00c_registry_coin_is_in_market_pair)
+-  [Function `coin_is_base_coin`](#0xc0deb00c_registry_coin_is_base_coin)
 -  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_registry_init_econia_capability_store)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
@@ -835,6 +836,16 @@ When looking up a type that is not a valid scale exponent
 
 
 
+<a name="0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR"></a>
+
+When a coin is neither base nor quote on given market
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>: u64 = 10;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_registry_E_NO_REGISTRY"></a>
 
 When registry not already initialized
@@ -1087,8 +1098,43 @@ Return <code><b>true</b></code> if <code>CoinType</code> is either base or quote
 ): bool {
     // Get <a href="">coin</a> type info
     <b>let</b> coin_type_info = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;();
+    // Return <b>if</b> <a href="">coin</a> is either base or quote
     are_same_type_info(&coin_type_info, &market_info.base_coin_type) ||
     are_same_type_info(&coin_type_info, &market_info.quote_coin_type)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_coin_is_base_coin"></a>
+
+## Function `coin_is_base_coin`
+
+Return <code><b>true</b></code> if <code>CoinType</code> is base coin in <code>market_info</code>,
+<code><b>false</b></code> if is quote coin, and abort otherwise
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_base_coin">coin_is_base_coin</a>&lt;CoinType&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_base_coin">coin_is_base_coin</a>&lt;CoinType&gt;(
+    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): bool {
+    // Get <a href="">coin</a> type info
+    <b>let</b> coin_type_info = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;();
+    <b>if</b> (are_same_type_info(&coin_type_info, &market_info.base_coin_type))
+        <b>return</b> <b>true</b>; // Return <b>true</b> <b>if</b> base <a href="">coin</a> match
+    <b>if</b> (are_same_type_info(&coin_type_info, &market_info.quote_coin_type))
+        <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> quote <a href="">coin</a> match
+    <b>abort</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a> // Else <b>abort</b>
 }
 </code></pre>
 

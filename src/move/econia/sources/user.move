@@ -159,22 +159,15 @@ module econia::user {
         // Assert market account registered for market account info
         assert!(exists_market_account(market_account_info, user),
             E_NO_MARKET_ACCOUNT);
-        // Determine if coin is base coin for market (aborts if is
-        // neither base nor quote)
-        let is_base_coin = registry::coin_is_base_coin<CoinType>(
-            &market_account_info.market_info);
         // Borrow mutable reference to market accounts map
         let market_accounts_map =
             &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to market account
-        let market_account =
-            open_table::borrow_mut(market_accounts_map, market_account_info);
-        // Get mutable reference to corresponding available coins field
-        let coins_available = if (is_base_coin)
-            &mut market_account.base_coins_available else
-            &mut market_account.quote_coins_available;
-        // Increment available coin count
-        *coins_available = *coins_available + coin::value(&coins);
+        // Borrow mutable reference to available coin count (aborts if
+        // coin type is neither base nor quote for given market account)
+        let coins_available_ref_mut = borrow_coins_available_mut<CoinType>(
+            market_accounts_map, market_account_info);
+        *coins_available_ref_mut = // Increment available coin count
+            *coins_available_ref_mut + coin::value(&coins);
         // Borrow mutable reference to collateral map
         let collateral_map =
             &mut borrow_global_mut<Collateral<CoinType>>(user).map;
@@ -220,6 +213,33 @@ module econia::user {
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Look up the `MarketAccount` in `market_accounts_map` having
+    /// `market_account_info`, then return a mutable reference to the
+    /// number of available coins of `CoinType`.
+    ///
+    /// # Abort conditions
+    /// * If `CoinType` is neither base nor quote coin in
+    ///   `market_account_info`.
+    ///
+    /// # Assumes
+    /// * `market_accounts_map` has an entry with `market_account_info`
+    fun borrow_coins_available_mut<CoinType>(
+        market_accounts_map:
+            &mut open_table::OpenTable<MarketAccountInfo, MarketAccount>,
+        market_account_info: MarketAccountInfo
+    ): &mut u64 {
+        // Determine if coin is base coin for market (aborts if is
+        // neither base nor quote
+        let is_base_coin = registry::coin_is_base_coin<CoinType>(
+            &market_account_info.market_info);
+        // Borrow mutable reference to market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // If is base coin, return mutable ref to base coins available
+        (if (is_base_coin) &mut market_account.base_coins_available else
+            &mut market_account.quote_coins_available) // Else quote
+    }
 
     /// Return `true` if `user` has an `MarketAccounts` entry for
     /// `market_account_info`, otherwise `false`.
@@ -319,24 +339,17 @@ module econia::user {
         // Assert market account registered for market account info
         assert!(exists_market_account(market_account_info, user),
             E_NO_MARKET_ACCOUNT);
-        // Determine if coin is base coin for market (aborts if is
-        // neither base nor quote)
-        let is_base_coin = registry::coin_is_base_coin<CoinType>(
-            &market_account_info.market_info);
         // Borrow mutable reference to market accounts map
         let market_accounts_map =
             &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to market account
-        let market_account =
-            open_table::borrow_mut(market_accounts_map, market_account_info);
-        // Get mutable reference to corresponding available coins field
-        let coins_available = if (is_base_coin)
-            &mut market_account.base_coins_available else
-            &mut market_account.quote_coins_available;
+        // Borrow mutable reference to available coin count (aborts if
+        // coin type is neither base nor quote for given market account)
+        let coins_available_ref_mut = borrow_coins_available_mut<CoinType>(
+            market_accounts_map, market_account_info);
         // Assert user has enough available collateral to withdraw
-        assert!(amount <= *coins_available, E_NOT_ENOUGH_COLLATERAL);
+        assert!(amount <= *coins_available_ref_mut, E_NOT_ENOUGH_COLLATERAL);
         // Decrement withdrawn amount from available coin count
-        *coins_available = *coins_available - amount;
+        *coins_available_ref_mut = *coins_available_ref_mut - amount;
         // Borrow mutable reference to collateral map
         let collateral_map =
             &mut borrow_global_mut<Collateral<CoinType>>(user).map;

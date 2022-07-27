@@ -451,6 +451,23 @@ module econia::registry {
        register_market<BC, QC, E1>(econia); // Register test market
     }
 
+    #[test_only]
+    /// Destroy `custodian_capability`
+    public fun destroy_custodian_capability(
+        custodian_capability: CustodianCapability
+    ) {
+        // Unpack passed capability
+        CustodianCapability{custodian_id: _} = custodian_capability;
+    }
+
+    #[test_only]
+    /// Return `CustodianCapability` with `custodian_id`
+    public fun get_custodian_capability(
+        custodian_id: u64
+    ): CustodianCapability {
+        CustodianCapability{custodian_id} // Pack and return capability
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

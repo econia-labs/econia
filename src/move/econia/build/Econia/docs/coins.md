@@ -10,6 +10,8 @@ Mock coin types for on- and off-chain testing
 -  [Struct `BC`](#0xc0deb00c_coins_BC)
 -  [Struct `QC`](#0xc0deb00c_coins_QC)
 -  [Constants](#@Constants_0)
+-  [Function `burn`](#0xc0deb00c_coins_burn)
+    -  [Assumes](#@Assumes_1)
 -  [Function `init_coin_types`](#0xc0deb00c_coins_init_coin_types)
 -  [Function `mint`](#0xc0deb00c_coins_mint)
 -  [Function `init_coin_type`](#0xc0deb00c_coins_init_coin_type)
@@ -207,6 +209,44 @@ Quote coin symbol
 
 
 
+<a name="0xc0deb00c_coins_burn"></a>
+
+## Function `burn`
+
+Burn <code><a href="coins.md#0xc0deb00c_coins">coins</a></code>
+
+
+<a name="@Assumes_1"></a>
+
+### Assumes
+
+* That since <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> exist in the first place, that
+<code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a></code> must exist in the Econia account
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(<a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(
+    <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+) <b>acquires</b> <a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a> {
+    // Borrow immutable reference <b>to</b> burn <a href="capability.md#0xc0deb00c_capability">capability</a>
+    <b>let</b> burn_capability = &<b>borrow_global</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
+            @econia).burn_capability;
+    <a href="_burn">coin::burn</a>&lt;CoinType&gt;(<a href="coins.md#0xc0deb00c_coins">coins</a>, burn_capability); // Burn <a href="coins.md#0xc0deb00c_coins">coins</a>
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_coins_init_coin_types"></a>
 
 ## Function `init_coin_types`
@@ -241,7 +281,7 @@ Initialize mock base and quote coin types under Econia account
 
 ## Function `mint`
 
-Mint new <code>amount</code> of new <code>CoinType</code>, aborting if not called by
+Mint new <code>amount</code> of <code>CoinType</code>, aborting if not called by
 Econia account or if <code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a></code> uninitialized
 
 

@@ -84,7 +84,7 @@ module econia::user {
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Custodian ID flag for no delegated custodian
-    const E_NO_CUSTODIAN: u64 = 0;
+    const NO_CUSTODIAN: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -130,7 +130,7 @@ module econia::user {
     ): coin::Coin<CoinType>
     acquires Collateral, MarketAccounts {
         // Assert user is not trying to override delegated custody
-        assert!(market_account_info.custodian_id == E_NO_CUSTODIAN,
+        assert!(market_account_info.custodian_id == NO_CUSTODIAN,
             E_CUSTODIAN_OVERRIDE);
         // Withdraw collateral from user's market account
         withdraw_collateral_internal<CoinType>(
@@ -616,6 +616,168 @@ module econia::user {
         register_market_accounts_entry(user, market_account_info);
         // Attempt invalid re-registration
         register_market_accounts_entry(user, market_account_info);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful withdraw
+    fun test_withdraw_collateral_success(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        let deposit_amount = 20; // Declare first deposit amount
+        let withdraw_amount_1 = 15; // Declare first withdraw amount
+        let withdraw_amount_2 = 5; // Declare second withdraw amount
+        // Register test market
+        registry::register_test_market(econia);
+        // Register market account for user without custodian
+        register_market_account<BC, QC, E1>(user, NO_CUSTODIAN);
+        let market_account_info = MarketAccountInfo{
+                market_info: registry::market_info<BC, QC, registry::E1>(),
+                custodian_id: NO_CUSTODIAN
+        }; // Declare market account info
+        // Mint coins to deposit
+        let coins = coins::mint<QC>(econia, deposit_amount);
+        // Deposit coins as collateral
+        deposit_collateral<QC>(@user, market_account_info, coins);
+        // Withdraw first withdraw amount
+        let coins = withdraw_collateral_user<QC>(
+            user, market_account_info, withdraw_amount_1);
+        // Assert correct amount withdrawn
+        assert!(coin::value(&coins) == withdraw_amount_1, 0);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(@user).map;
+        // Borrow mutable reference to market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Assert available coin amounts
+        assert!(market_account.base_coins_available == 0, 0);
+        assert!(market_account.quote_coins_available ==
+            deposit_amount - withdraw_amount_1, 0);
+        // Borrow mutable reference to collateral map
+        let collateral_map =
+            &mut borrow_global_mut<Collateral<QC>>(@user).map;
+        // Borrow immutable reference to collateral for market account
+        let collateral =
+            open_table::borrow(collateral_map, market_account_info);
+        assert!( // Assert correct value
+            coin::value(collateral) == deposit_amount - withdraw_amount_1, 0);
+        coins::burn(coins); // Burn withdrawn coins
+        // Withdraw second withdraw amount
+        let coins = withdraw_collateral_user<QC>(
+            user, market_account_info, withdraw_amount_2);
+        // Assert correct amount withdrawn
+        assert!(coin::value(&coins) == withdraw_amount_2, 0);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(@user).map;
+        // Borrow mutable reference to market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Assert available coin amounts
+        assert!(market_account.base_coins_available == 0, 0);
+        assert!(market_account.quote_coins_available == 0, 0);
+        // Borrow mutable reference to collateral map
+        let collateral_map =
+            &mut borrow_global_mut<Collateral<QC>>(@user).map;
+        // Borrow immutable reference to collateral for market account
+        let collateral =
+            open_table::borrow(collateral_map, market_account_info);
+        // Assert correct value
+        assert!(coin::value(collateral) == 0, 0);
+        coins::burn(coins); // Burn withdrawn coins
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for unauthorized custodian withdraw
+    fun test_withdraw_collateral_custodian_unauthorized():
+    Coin<BC>
+    acquires Collateral, MarketAccounts {
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<BC, QC, registry::E1>(),
+            custodian_id: 123 }; // Declare market account info
+        // Get a custodian capability
+        let custodian_capability = registry::get_custodian_capability(1);
+        // Attempt invalid withdraw
+        let coins = withdraw_collateral_custodian<BC>(
+            @user, market_account_info, 100, &custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability(custodian_capability);
+        coins // Return coins (or signal to compiler as much)
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no withdraw amount
+    fun test_withdraw_collateral_no_amount(
+        user: &signer
+    ): Coin<BC>
+    acquires Collateral, MarketAccounts {
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<BC, QC, registry::E1>(),
+            custodian_id: 0 }; // Declare market account info
+        withdraw_collateral_user<BC>(user, market_account_info, 0)
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for no registered market account
+    fun test_withdraw_collateral_no_market_account(
+        user: &signer
+    ): Coin<BC>
+    acquires Collateral, MarketAccounts {
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<BC, QC, registry::E1>(),
+            custodian_id: 0 }; // Declare market account info
+        // Attempt invalid withdraw
+        withdraw_collateral_user<BC>(user, market_account_info, 10)
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for not enough collateral
+    fun test_withdraw_collateral_not_enough_collateral(
+        econia: &signer,
+        user: &signer
+    ): Coin<BC>
+    acquires Collateral, MarketAccounts {
+        // Register test market
+        registry::register_test_market(econia);
+        // Register custodian, store capability
+        let custodian_capability = registry::register_custodian_capability();
+        // Register market account for user w/ custodian ID 1
+        register_market_account<BC, QC, E1>(user, 1);
+        let market_account_info = MarketAccountInfo{
+                market_info: registry::market_info<BC, QC, registry::E1>(),
+                custodian_id: 1
+        }; // Declare market account info
+        // Attempt invalid withdraw
+        let coins = withdraw_collateral_custodian<BC>(
+            @user, market_account_info, 1, &custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability(custodian_capability);
+        coins // Return coins (or signal to compiler as much)
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for attempting to override custodian
+    fun test_withdraw_collateral_user_override(
+        user: &signer
+    ): Coin<BC>
+    acquires Collateral, MarketAccounts {
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<BC, QC, registry::E1>(),
+            custodian_id: 123 }; // Declare market account info
+        // Attempt invalid withdraw
+        withdraw_collateral_user<BC>(user, market_account_info, 100)
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

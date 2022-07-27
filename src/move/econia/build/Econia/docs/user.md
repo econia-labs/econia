@@ -237,16 +237,6 @@ When not enough collateral
 
 
 
-<a name="0xc0deb00c_user_E_NO_CUSTODIAN"></a>
-
-Custodian ID flag for no delegated custodian
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_CUSTODIAN">E_NO_CUSTODIAN</a>: u64 = 0;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_E_NO_MARKET"></a>
 
 When no such market has been registered
@@ -283,6 +273,16 @@ When unauthorized custodian ID
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>: u64 = 6;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_NO_CUSTODIAN"></a>
+
+Custodian ID flag for no delegated custodian
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
 </code></pre>
 
 
@@ -366,7 +366,7 @@ Aborts if custodian serial ID for given market account is not 0.
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Assert <a href="user.md#0xc0deb00c_user">user</a> is not trying <b>to</b> override delegated custody
-    <b>assert</b>!(market_account_info.custodian_id == <a href="user.md#0xc0deb00c_user_E_NO_CUSTODIAN">E_NO_CUSTODIAN</a>,
+    <b>assert</b>!(market_account_info.custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
     // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s market account
     <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(

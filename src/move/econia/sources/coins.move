@@ -53,6 +53,24 @@ module econia::coins {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    /// Burn `coins`
+    ///
+    /// # Assumes
+    /// * That since `coins` exist in the first place, that
+    ///   `CoinCapabilities` must exist in the Econia account
+    public fun burn<CoinType>(
+        coins: coin::Coin<CoinType>
+    ) acquires CoinCapabilities {
+        // Borrow immutable reference to burn capability
+        let burn_capability = &borrow_global<CoinCapabilities<CoinType>>(
+                @econia).burn_capability;
+        coin::burn<CoinType>(coins, burn_capability); // Burn coins
+    }
+
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Initialize mock base and quote coin types under Econia account
@@ -65,7 +83,7 @@ module econia::coins {
             QUOTE_COIN_DECIMALS); // Initialize mock quote coin
     }
 
-    /// Mint new `amount` of new `CoinType`, aborting if not called by
+    /// Mint new `amount` of `CoinType`, aborting if not called by
     /// Econia account or if `CoinCapabilities` uninitialized
     public entry fun mint<CoinType>(
         account: &signer,
@@ -133,16 +151,15 @@ module econia::coins {
     }
 
     #[test(account = @econia)]
-    /// Verify successful mint
-    fun test_mint(
+    /// Verify successful mint, then burn
+    fun test_mint_and_burn(
         account: &signer
-    ): coin::Coin<BC>
-    acquires CoinCapabilities {
+    ) acquires CoinCapabilities {
         init_coin_types(account); // Initialize both coin types
         let base_coin = mint<BC>(account, 20); // Mint base coin
         // Assert correct value minted
         assert!(coin::value(&base_coin) == 20, 0);
-        base_coin
+        burn<BC>(base_coin); // Burn coins
     }
 
     #[test(account = @user)]

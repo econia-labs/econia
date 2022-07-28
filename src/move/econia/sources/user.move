@@ -8,6 +8,7 @@ module econia::user {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::coin::{Self, Coin};
+    use econia::capability::EconiaCapability;
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
     use econia::registry;
@@ -88,6 +89,8 @@ module econia::user {
     const E_UNAUTHORIZED_CUSTODIAN: u64 = 6;
     /// When user attempts invalid custodian override
     const E_CUSTODIAN_OVERRIDE: u64 = 7;
+    /// When a user does not a market accounts map
+    const E_NO_MARKET_ACCOUNTS: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -95,6 +98,10 @@ module econia::user {
 
     /// Custodian ID flag for no delegated custodian
     const NO_CUSTODIAN: u64 = 0;
+    /// Flag for asks side
+    const ASK: bool = true;
+    /// Flag for asks side
+    const BID: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -150,6 +157,111 @@ module econia::user {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Add an order to a user's market account, provided an immutable
+    /// reference to an `EconiaCapability`.
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `custodian_id`: Serial ID of delegated custodian for given
+    ///   market account
+    /// * `side`: `ASK` or `BID`
+    /// * `order_id`: Order ID for given order
+    /// * `base_parcels`: Number of base parcels the order is for
+    /// * `price`: Order price
+    ///
+    /// # Abort conditions
+    /// * If user does not have a `MarketAccounts`
+    /// * If user does not have a corresponding `MarketAccount` for
+    ///   given type arguments and `custodian_id`
+    /// * If user does not have sufficient collateral to cover the order
+    public fun add_order_internal<B, Q, E>(
+        user: address,
+        custodian_id: u64,
+        side: bool,
+        order_id: u128,
+        base_parcels: u64,
+        price: u64,
+        _econia_capability: &EconiaCapability
+    ) acquires MarketAccounts {
+        // Assert user has a market accounts map
+        assert!(exists<MarketAccounts>(user), E_NO_MARKET_ACCOUNTS);
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<B, Q, E>(),
+            custodian_id
+        }; // Declare market account info
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Assert user has market account for given market info
+        assert!(open_table::contains(market_accounts_map, market_account_info),
+            E_NO_MARKET_ACCOUNT);
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Get mutable reference to corresponding tree, mutable
+        // reference to corresponding coins available field, and
+        // base parcel multiplier based on given side
+        let (tree_ref_mut, coins_available_ref_mut, base_parcel_multiplier) =
+            order_change_field_prep(market_account, side, price);
+        // Determine number of coins required as order collateral
+        let coins_required = base_parcels * base_parcel_multiplier;
+        // Assert user has enough collateral to place the order
+        assert!(coins_required <= *coins_available_ref_mut,
+            E_NOT_ENOUGH_COLLATERAL);
+        // Decrement available coin amount
+        *coins_available_ref_mut = *coins_available_ref_mut - coins_required;
+        // Add order to corresponding tree
+        critbit::insert(tree_ref_mut, order_id, base_parcels);
+    }
+
+    /// Cancel an order from a user's market account, provided an
+    /// immutable reference to an `EconiaCapability`.
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `custodian_id`: Serial ID of delegated custodian for given
+    ///   market account
+    /// * `side`: `ASK` or `BID`
+    /// * `order_id`: Order ID for given order
+    ///
+    /// # Assumes
+    /// * That order has already been cancelled from the order book, and
+    ///   as such that user necessarily has an open order as specified:
+    ///   if an order has been cancelled from the book, then it had to
+    ///   have been placed on the book, which means that the
+    ///   corresponding user successfully placed it to begin with.
+    public fun cancel_order_internal<B, Q, E>(
+        user: address,
+        custodian_id: u64,
+        side: bool,
+        order_id: u128,
+        _econia_capability: &EconiaCapability
+    ) acquires MarketAccounts {
+        let market_account_info = MarketAccountInfo{
+            market_info: registry::market_info<B, Q, E>(),
+            custodian_id
+        }; // Declare market account info
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        let price = 1; // TODO update with price calculation by order ID
+        // Get mutable reference to corresponding tree, mutable
+        // reference to corresponding coins available field, and
+        // base parcel multiplier based on given side
+        let (tree_ref_mut, coins_available_ref_mut, base_parcel_multiplier) =
+            order_change_field_prep(market_account, side, price);
+        // Pop order from corresponding tree, storing number of base
+        // parcels it specified
+        let base_parcels = critbit::pop(tree_ref_mut, order_id);
+        // Calculate number of coins unlocked by order cancellation
+        let coins_unlocked = base_parcels * base_parcel_multiplier;
+        // Increment available coin amount
+        *coins_available_ref_mut = *coins_available_ref_mut + coins_unlocked;
+    }
 
     /// Deposit `coins` to `user`'s `Collateral` for given
     /// `market_account_info`.
@@ -264,6 +376,46 @@ module econia::user {
         let market_accounts_map = &borrow_global<MarketAccounts>(user).map;
         // Return if market account is registered in table
         open_table::contains(market_accounts_map, market_account_info)
+    }
+
+    /// Determine order tree, coins available field, and base parcel
+    /// multiplier for order on `side` of `market_account`, at given
+    /// `price`
+    ///
+    /// # Returns
+    /// * `&mut CritBitTree<u64>`: Mutable reference to
+    ///   `market_account` asks tree if `side` is `ASK`, else bids tree
+    /// * `&mut u64`: Mutable reference to `market_account` base coins
+    ///   available counter if `side` is `ASK`, else quote coins
+    /// * `u64`: Scale factor for market account if the order `side` is
+    ///   `ASK`, else the order `price`. When this value is multiplied
+    ///   by the number of base parcels in an order, the resulting value
+    ///   is the amount of coins locked when placing an order, and the
+    ///   amount unlockd when cancelling an order.
+    fun order_change_field_prep(
+        market_account: &mut MarketAccount,
+        side: bool,
+        price: u64
+    ): (
+        &mut CritBitTree<u64>,
+        &mut u64,
+        u64
+    ) {
+        if (side == ASK) ( // If order is an ask, return
+            // Mutable reference to asks tree
+            &mut market_account.asks,
+            // Mutable reference to base coins available field
+            &mut market_account.base_coins_available,
+            // Scale factor for given market
+            market_account.scale_factor
+        ) else ( // If order is a bid, return
+            // Mutable reference to bids tree
+            &mut market_account.bids,
+            // Mutable reference to quote coins available field
+            &mut market_account.quote_coins_available,
+            // Price for given order
+            price
+        )
     }
 
     /// Register user with a `Collateral` map entry for given `CoinType`

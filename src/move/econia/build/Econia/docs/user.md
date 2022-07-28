@@ -18,24 +18,33 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
     -  [Abort conditions](#@Abort_conditions_1)
 -  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
+-  [Function `add_order_internal`](#0xc0deb00c_user_add_order_internal)
+    -  [Parameters](#@Parameters_2)
+    -  [Abort conditions](#@Abort_conditions_3)
+-  [Function `cancel_order_internal`](#0xc0deb00c_user_cancel_order_internal)
+    -  [Parameters](#@Parameters_4)
+    -  [Assumes](#@Assumes_5)
 -  [Function `deposit_collateral`](#0xc0deb00c_user_deposit_collateral)
-    -  [Abort conditions](#@Abort_conditions_2)
+    -  [Abort conditions](#@Abort_conditions_6)
 -  [Function `market_account_info`](#0xc0deb00c_user_market_account_info)
 -  [Function `withdraw_collateral_custodian`](#0xc0deb00c_user_withdraw_collateral_custodian)
 -  [Function `borrow_coins_available_mut`](#0xc0deb00c_user_borrow_coins_available_mut)
-    -  [Abort conditions](#@Abort_conditions_3)
-    -  [Assumes](#@Assumes_4)
--  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_5)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
-    -  [Abort conditions](#@Abort_conditions_6)
--  [Function `withdraw_collateral_internal`](#0xc0deb00c_user_withdraw_collateral_internal)
     -  [Abort conditions](#@Abort_conditions_7)
+    -  [Assumes](#@Assumes_8)
+-  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
+-  [Function `order_change_field_prep`](#0xc0deb00c_user_order_change_field_prep)
+    -  [Returns](#@Returns_9)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
+    -  [Abort conditions](#@Abort_conditions_10)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+    -  [Abort conditions](#@Abort_conditions_11)
+-  [Function `withdraw_collateral_internal`](#0xc0deb00c_user_withdraw_collateral_internal)
+    -  [Abort conditions](#@Abort_conditions_12)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
 <b>use</b> <a href="">0x1::signer</a>;
+<b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
 <b>use</b> <a href="registry.md#0xc0deb00c_registry">0xc0deb00c::registry</a>;
@@ -197,6 +206,26 @@ Market account map for all of a user's <code><a href="user.md#0xc0deb00c_user_Ma
 ## Constants
 
 
+<a name="0xc0deb00c_user_ASK"></a>
+
+Flag for asks side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_BID"></a>
+
+Flag for asks side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_CUSTODIAN_OVERRIDE"></a>
 
 When user attempts invalid custodian override
@@ -253,6 +282,16 @@ When a market account is not registered
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNTS"></a>
+
+When a user does not a market accounts map
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 8;
 </code></pre>
 
 
@@ -378,6 +417,167 @@ Aborts if custodian serial ID for given market account is not 0.
 
 </details>
 
+<a name="0xc0deb00c_user_add_order_internal"></a>
+
+## Function `add_order_internal`
+
+Add an order to a user's market account, provided an immutable
+reference to an <code>EconiaCapability</code>.
+
+
+<a name="@Parameters_2"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>custodian_id</code>: Serial ID of delegated custodian for given
+market account
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code>order_id</code>: Order ID for given order
+* <code>base_parcels</code>: Number of base parcels the order is for
+* <code>price</code>: Order price
+
+
+<a name="@Abort_conditions_3"></a>
+
+### Abort conditions
+
+* If user does not have a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code>
+* If user does not have a corresponding <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> for
+given type arguments and <code>custodian_id</code>
+* If user does not have sufficient collateral to cover the order
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_add_order_internal">add_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, custodian_id: u64, side: bool, order_id: u128, base_parcels: u64, price: u64, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_add_order_internal">add_order_internal</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    custodian_id: u64,
+    side: bool,
+    order_id: u128,
+    base_parcels: u64,
+    price: u64,
+    _econia_capability: &EconiaCapability
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> a <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
+    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{
+        market_info: <a href="registry.md#0xc0deb00c_registry_market_info">registry::market_info</a>&lt;B, Q, E&gt;(),
+        custodian_id
+    }; // Declare <a href="market.md#0xc0deb00c_market">market</a> account info
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> account for given <a href="market.md#0xc0deb00c_market">market</a> info
+    <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(market_accounts_map, market_account_info),
+        <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    // Borrow mutable reference <b>to</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> account
+    <b>let</b> market_account =
+        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts_map, market_account_info);
+    // Get mutable reference <b>to</b> corresponding tree, mutable
+    // reference <b>to</b> corresponding <a href="coins.md#0xc0deb00c_coins">coins</a> available field, and
+    // base parcel multiplier based on given side
+    <b>let</b> (tree_ref_mut, coins_available_ref_mut, base_parcel_multiplier) =
+        <a href="user.md#0xc0deb00c_user_order_change_field_prep">order_change_field_prep</a>(market_account, side, price);
+    // Determine number of <a href="coins.md#0xc0deb00c_coins">coins</a> required <b>as</b> order collateral
+    <b>let</b> coins_required = base_parcels * base_parcel_multiplier;
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> enough collateral <b>to</b> place the order
+    <b>assert</b>!(coins_required &lt;= *coins_available_ref_mut,
+        <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>);
+    // Decrement available <a href="">coin</a> amount
+    *coins_available_ref_mut = *coins_available_ref_mut - coins_required;
+    // Add order <b>to</b> corresponding tree
+    <a href="critbit.md#0xc0deb00c_critbit_insert">critbit::insert</a>(tree_ref_mut, order_id, base_parcels);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_cancel_order_internal"></a>
+
+## Function `cancel_order_internal`
+
+Cancel an order from a user's market account, provided an
+immutable reference to an <code>EconiaCapability</code>.
+
+
+<a name="@Parameters_4"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>custodian_id</code>: Serial ID of delegated custodian for given
+market account
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code>order_id</code>: Order ID for given order
+
+
+<a name="@Assumes_5"></a>
+
+### Assumes
+
+* That order has already been cancelled from the order book, and
+as such that user necessarily has an open order as specified:
+if an order has been cancelled from the book, then it had to
+have been placed on the book, which means that the
+corresponding user successfully placed it to begin with.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, custodian_id: u64, side: bool, order_id: u128, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    custodian_id: u64,
+    side: bool,
+    order_id: u128,
+    _econia_capability: &EconiaCapability
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{
+        market_info: <a href="registry.md#0xc0deb00c_registry_market_info">registry::market_info</a>&lt;B, Q, E&gt;(),
+        custodian_id
+    }; // Declare <a href="market.md#0xc0deb00c_market">market</a> account info
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> account
+    <b>let</b> market_account =
+        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts_map, market_account_info);
+    <b>let</b> price = 1; // TODO <b>update</b> <b>with</b> price calculation by order ID
+    // Get mutable reference <b>to</b> corresponding tree, mutable
+    // reference <b>to</b> corresponding <a href="coins.md#0xc0deb00c_coins">coins</a> available field, and
+    // base parcel multiplier based on given side
+    <b>let</b> (tree_ref_mut, coins_available_ref_mut, base_parcel_multiplier) =
+        <a href="user.md#0xc0deb00c_user_order_change_field_prep">order_change_field_prep</a>(market_account, side, price);
+    // Pop order from corresponding tree, storing number of base
+    // parcels it specified
+    <b>let</b> base_parcels = <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, order_id);
+    // Calculate number of <a href="coins.md#0xc0deb00c_coins">coins</a> unlocked by order cancellation
+    <b>let</b> coins_unlocked = base_parcels * base_parcel_multiplier;
+    // Increment available <a href="">coin</a> amount
+    *coins_available_ref_mut = *coins_available_ref_mut + coins_unlocked;
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_deposit_collateral"></a>
 
 ## Function `deposit_collateral`
@@ -386,7 +586,7 @@ Deposit <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> to <code><a h
 <code>market_account_info</code>.
 
 
-<a name="@Abort_conditions_2"></a>
+<a name="@Abort_conditions_6"></a>
 
 ### Abort conditions
 
@@ -520,7 +720,7 @@ Look up the <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount<
 number of available coins of <code>CoinType</code>.
 
 
-<a name="@Abort_conditions_3"></a>
+<a name="@Abort_conditions_7"></a>
 
 ### Abort conditions
 
@@ -528,7 +728,7 @@ number of available coins of <code>CoinType</code>.
 <code>market_account_info</code>.
 
 
-<a name="@Assumes_4"></a>
+<a name="@Assumes_8"></a>
 
 ### Assumes
 
@@ -601,6 +801,70 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 
 </details>
 
+<a name="0xc0deb00c_user_order_change_field_prep"></a>
+
+## Function `order_change_field_prep`
+
+Determine order tree, coins available field, and base parcel
+multiplier for order on <code>side</code> of <code>market_account</code>, at given
+<code>price</code>
+
+
+<a name="@Returns_9"></a>
+
+### Returns
+
+* <code>&<b>mut</b> CritBitTree&lt;u64&gt;</code>: Mutable reference to
+<code>market_account</code> asks tree if <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, else bids tree
+* <code>&<b>mut</b> u64</code>: Mutable reference to <code>market_account</code> base coins
+available counter if <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, else quote coins
+* <code>u64</code>: Scale factor for market account if the order <code>side</code> is
+<code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, else the order <code>price</code>. When this value is multiplied
+by the number of base parcels in an order, the resulting value
+is the amount of coins locked when placing an order, and the
+amount unlockd when cancelling an order.
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_order_change_field_prep">order_change_field_prep</a>(market_account: &<b>mut</b> <a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>, side: bool, price: u64): (&<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;u64&gt;, &<b>mut</b> u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_order_change_field_prep">order_change_field_prep</a>(
+    market_account: &<b>mut</b> <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>,
+    side: bool,
+    price: u64
+): (
+    &<b>mut</b> CritBitTree&lt;u64&gt;,
+    &<b>mut</b> u64,
+    u64
+) {
+    <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) ( // If order is an ask, <b>return</b>
+        // Mutable reference <b>to</b> asks tree
+        &<b>mut</b> market_account.asks,
+        // Mutable reference <b>to</b> base <a href="coins.md#0xc0deb00c_coins">coins</a> available field
+        &<b>mut</b> market_account.base_coins_available,
+        // Scale factor for given <a href="market.md#0xc0deb00c_market">market</a>
+        market_account.scale_factor
+    ) <b>else</b> ( // If order is a bid, <b>return</b>
+        // Mutable reference <b>to</b> bids tree
+        &<b>mut</b> market_account.bids,
+        // Mutable reference <b>to</b> quote <a href="coins.md#0xc0deb00c_coins">coins</a> available field
+        &<b>mut</b> market_account.quote_coins_available,
+        // Price for given order
+        price
+    )
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_collateral_entry"></a>
 
 ## Function `register_collateral_entry`
@@ -610,7 +874,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_5"></a>
+<a name="@Abort_conditions_10"></a>
 
 ### Abort conditions
 
@@ -661,7 +925,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 not already exist
 
 
-<a name="@Abort_conditions_6"></a>
+<a name="@Abort_conditions_11"></a>
 
 ### Abort conditions
 
@@ -720,7 +984,7 @@ Withdraw <code>amount</code> of <code>Coin</code> having <code>CoinType</code> f
 entry corresponding to <code>market_account_info</code>, then return it.
 
 
-<a name="@Abort_conditions_7"></a>
+<a name="@Abort_conditions_12"></a>
 
 ### Abort conditions
 

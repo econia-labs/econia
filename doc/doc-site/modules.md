@@ -15,6 +15,9 @@
 ## Use dependencies
 
 ```mermaid
+
+%%{init: {'theme':'dark'}}%%
+
 flowchart TD
 
     market --> critbit

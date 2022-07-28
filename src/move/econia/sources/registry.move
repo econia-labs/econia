@@ -107,17 +107,17 @@ module econia::registry {
     /// When looking up a type that is not a valid scale exponent
     const E_NOT_EXPONENT_TYPE: u64 = 3;
     /// When base type is not a valid coin
-    const E_NOT_COIN_BASE: u64 = 5;
+    const E_NOT_COIN_BASE: u64 = 4;
     /// When quote type is not a valid coin
-    const E_NOT_COIN_QUOTE: u64 = 6;
+    const E_NOT_COIN_QUOTE: u64 = 5;
     /// When base and quote type are same
-    const E_SAME_COIN_TYPE: u64 = 7;
+    const E_SAME_COIN_TYPE: u64 = 6;
     /// When a given market is already registered
-    const E_MARKET_EXISTS: u64 = 8;
+    const E_MARKET_EXISTS: u64 = 7;
     /// When no such market exists
-    const E_MARKET_NOT_REGISTERED: u64 = 9;
+    const E_MARKET_NOT_REGISTERED: u64 = 8;
     /// When a coin is neither base nor quote on given market
-    const E_NOT_IN_MARKET_PAIR: u64 = 10;
+    const E_NOT_IN_MARKET_PAIR: u64 = 9;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -461,7 +461,7 @@ module econia::registry {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = 9)]
     /// Verify failure for neither base nor quote coin match
     fun test_coin_is_base_coin_neither() {
         // Define mock market info
@@ -555,7 +555,7 @@ module econia::registry {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = 4)]
     /// Verify failure for base type not a valid coin type
     fun test_register_market_internal_base_not_coin(
         econia: &signer
@@ -567,7 +567,7 @@ module econia::registry {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = 7)]
     /// Verify failure for market already exists
     fun test_register_market_internal_duplicate(
         econia: &signer
@@ -602,7 +602,7 @@ module econia::registry {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = 5)]
     /// Verify failure for quote type not a valid coin type
     fun test_register_market_internal_quote_not_coin(
         econia: &signer
@@ -614,7 +614,7 @@ module econia::registry {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = 6)]
     /// Verify failure for base and quote are same type
     fun test_register_market_internal_same_coin(
         econia: &signer

@@ -747,7 +747,7 @@ When caller is not Econia
 When a given market is already registered
 
 
-<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>: u64 = 8;
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>: u64 = 7;
 </code></pre>
 
 
@@ -757,7 +757,7 @@ When a given market is already registered
 When no such market exists
 
 
-<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_MARKET_NOT_REGISTERED">E_MARKET_NOT_REGISTERED</a>: u64 = 9;
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_MARKET_NOT_REGISTERED">E_MARKET_NOT_REGISTERED</a>: u64 = 8;
 </code></pre>
 
 
@@ -767,7 +767,7 @@ When no such market exists
 When base type is not a valid coin
 
 
-<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_BASE">E_NOT_COIN_BASE</a>: u64 = 5;
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_BASE">E_NOT_COIN_BASE</a>: u64 = 4;
 </code></pre>
 
 
@@ -777,7 +777,7 @@ When base type is not a valid coin
 When quote type is not a valid coin
 
 
-<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_QUOTE">E_NOT_COIN_QUOTE</a>: u64 = 6;
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_COIN_QUOTE">E_NOT_COIN_QUOTE</a>: u64 = 5;
 </code></pre>
 
 
@@ -797,7 +797,7 @@ When looking up a type that is not a valid scale exponent
 When a coin is neither base nor quote on given market
 
 
-<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>: u64 = 10;
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>: u64 = 9;
 </code></pre>
 
 
@@ -827,7 +827,7 @@ When registry already initialized
 When base and quote type are same
 
 
-<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN_TYPE">E_SAME_COIN_TYPE</a>: u64 = 7;
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN_TYPE">E_SAME_COIN_TYPE</a>: u64 = 6;
 </code></pre>
 
 

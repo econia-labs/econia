@@ -10,7 +10,6 @@
 | `open_table` | [open_table.move](../../src/move/econia/sources/open_table.move) | [open_table.md](../../src/move/econia/build/Econia/docs/open_table.md) |
 | `registry`   | [registry.move](../../src/move/econia/sources/registry.move)     | [registry.md](../../src/move/econia/build/Econia/docs/registry.md)     |
 | `user`       | [user.move](../../src/move/econia/sources/user.move)             | [user.md](../../src/move/econia/build/Econia/docs/user.md)             |
-| `util`       | [util.move](../../src/move/econia/sources/util.move)             | [util.md](../../src/move/econia/build/Econia/docs/util.md)             |
 
 ## Use dependencies
 
@@ -35,6 +34,5 @@ flowchart TD
     registry --> capability
     registry --> |test-only| coins
     registry --> open_table
-    registry --> util
 
 ```

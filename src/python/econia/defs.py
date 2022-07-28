@@ -71,16 +71,10 @@ econia_modules = SimpleNamespace(
     user = SimpleNamespace(
         name = 'user'
     ),
-    util = SimpleNamespace(
-        name = 'util'
-    )
 )
 """Econia Move modules with nested member specifiers"""
 
 econia_module_publish_order = [
-    [
-        econia_modules.util.name
-    ],
     [
         econia_modules.capability.name
     ],

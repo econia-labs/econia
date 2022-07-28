@@ -6,7 +6,6 @@ module econia::registry {
     use aptos_framework::type_info;
     use econia::capability::EconiaCapability;
     use econia::open_table;
-    use econia::util::are_same_type_info;
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -177,8 +176,8 @@ module econia::registry {
         // Get coin type info
         let coin_type_info = type_info::type_of<CoinType>();
         // Return if coin is either base or quote
-        are_same_type_info(&coin_type_info, &market_info.base_coin_type) ||
-        are_same_type_info(&coin_type_info, &market_info.quote_coin_type)
+        coin_type_info == market_info.base_coin_type ||
+        coin_type_info == market_info.quote_coin_type
     }
 
     /// Return `true` if `CoinType` is base coin in `market_info`,
@@ -188,10 +187,10 @@ module econia::registry {
     ): bool {
         // Get coin type info
         let coin_type_info = type_info::type_of<CoinType>();
-        if (are_same_type_info(&coin_type_info, &market_info.base_coin_type))
-            return true; // Return true if base coin match
-        if (are_same_type_info(&coin_type_info, &market_info.quote_coin_type))
-            return false; // Return false if quote coin match
+        // Return true if base coin match
+        if (coin_type_info ==  market_info.base_coin_type) return true;
+        // Return false if quote coin match
+        if (coin_type_info ==  market_info.quote_coin_type) return false;
         abort E_NOT_IN_MARKET_PAIR // Else abort
     }
 
@@ -286,8 +285,8 @@ module econia::registry {
         let base_coin_type = type_info::type_of<B>();
         // Get quote type type info
         let quote_coin_type = type_info::type_of<Q>();
-        assert!(!are_same_type_info(&base_coin_type, &quote_coin_type),
-            E_SAME_COIN_TYPE); // Assert base and quote not same type
+        // Assert base and quote not same type
+        assert!(base_coin_type != quote_coin_type, E_SAME_COIN_TYPE);
         // Get scale exponent type type info
         let scale_exponent_type = type_info::type_of<E>();
         // Borrow mutable reference to registry

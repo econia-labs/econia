@@ -51,7 +51,6 @@
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
-<b>use</b> <a href="util.md#0xc0deb00c_util">0xc0deb00c::util</a>;
 </code></pre>
 
 
@@ -1055,8 +1054,8 @@ Return <code><b>true</b></code> if <code>CoinType</code> is either base or quote
     // Get <a href="">coin</a> type info
     <b>let</b> coin_type_info = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;();
     // Return <b>if</b> <a href="">coin</a> is either base or quote
-    are_same_type_info(&coin_type_info, &market_info.base_coin_type) ||
-    are_same_type_info(&coin_type_info, &market_info.quote_coin_type)
+    coin_type_info == market_info.base_coin_type ||
+    coin_type_info == market_info.quote_coin_type
 }
 </code></pre>
 
@@ -1086,10 +1085,10 @@ Return <code><b>true</b></code> if <code>CoinType</code> is base coin in <code>m
 ): bool {
     // Get <a href="">coin</a> type info
     <b>let</b> coin_type_info = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;();
-    <b>if</b> (are_same_type_info(&coin_type_info, &market_info.base_coin_type))
-        <b>return</b> <b>true</b>; // Return <b>true</b> <b>if</b> base <a href="">coin</a> match
-    <b>if</b> (are_same_type_info(&coin_type_info, &market_info.quote_coin_type))
-        <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> quote <a href="">coin</a> match
+    // Return <b>true</b> <b>if</b> base <a href="">coin</a> match
+    <b>if</b> (coin_type_info ==  market_info.base_coin_type) <b>return</b> <b>true</b>;
+    // Return <b>false</b> <b>if</b> quote <a href="">coin</a> match
+    <b>if</b> (coin_type_info ==  market_info.quote_coin_type) <b>return</b> <b>false</b>;
     <b>abort</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a> // Else <b>abort</b>
 }
 </code></pre>
@@ -1288,8 +1287,8 @@ to an <code>EconiaCapability</code>.
     <b>let</b> base_coin_type = <a href="_type_of">type_info::type_of</a>&lt;B&gt;();
     // Get quote type type info
     <b>let</b> quote_coin_type = <a href="_type_of">type_info::type_of</a>&lt;Q&gt;();
-    <b>assert</b>!(!are_same_type_info(&base_coin_type, &quote_coin_type),
-        <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN_TYPE">E_SAME_COIN_TYPE</a>); // Assert base and quote not same type
+    // Assert base and quote not same type
+    <b>assert</b>!(base_coin_type != quote_coin_type, <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN_TYPE">E_SAME_COIN_TYPE</a>);
     // Get scale exponent type type info
     <b>let</b> scale_exponent_type = <a href="_type_of">type_info::type_of</a>&lt;E&gt;();
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>

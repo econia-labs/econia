@@ -316,16 +316,16 @@ for given market and <code>custodian_id</code>.
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     custodian_id: u64
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Get market info
+    // Get <a href="market.md#0xc0deb00c_market">market</a> info
     <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_market_info">registry::market_info</a>&lt;B, Q, E&gt;();
-    // Assert market <b>has</b> already been registered
+    // Assert <a href="market.md#0xc0deb00c_market">market</a> <b>has</b> already been registered
     <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_is_registered">registry::is_registered</a>(market_info), <a href="user.md#0xc0deb00c_user_E_NO_MARKET">E_NO_MARKET</a>);
     // Assert given custodian ID is in bounds
     <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_is_valid_custodian_id">registry::is_valid_custodian_id</a>(custodian_id),
         <a href="user.md#0xc0deb00c_user_E_INVALID_CUSTODIAN_ID">E_INVALID_CUSTODIAN_ID</a>);
-    <b>let</b> market_account_info = // Pack market account info
+    <b>let</b> market_account_info = // Pack <a href="market.md#0xc0deb00c_market">market</a> account info
         <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_info, custodian_id};
-    // Register entry in market accounts map (aborts <b>if</b> already
+    // Register entry in <a href="market.md#0xc0deb00c_market">market</a> accounts map (aborts <b>if</b> already
     // registered)
     <a href="user.md#0xc0deb00c_user_register_market_accounts_entry">register_market_accounts_entry</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
     // Registry collateral entry for base <a href="">coin</a> (aborts <b>if</b> already
@@ -368,7 +368,7 @@ Aborts if custodian serial ID for given market account is not 0.
     // Assert <a href="user.md#0xc0deb00c_user">user</a> is not trying <b>to</b> override delegated custody
     <b>assert</b>!(market_account_info.custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
-    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s market account
+    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
     <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)
 }
@@ -412,14 +412,14 @@ registered
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Assert attempting <b>to</b> actually deposit <a href="coins.md#0xc0deb00c_coins">coins</a>
     <b>assert</b>!(<a href="_value">coin::value</a>(&<a href="coins.md#0xc0deb00c_coins">coins</a>) != 0, <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>);
-    // Assert market account registered for market account info
+    // Assert <a href="market.md#0xc0deb00c_market">market</a> account registered for <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>assert</b>!(<a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info, <a href="user.md#0xc0deb00c_user">user</a>),
         <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    // Borrow mutable reference <b>to</b> market accounts map
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
     // Borrow mutable reference <b>to</b> available <a href="">coin</a> count (aborts <b>if</b>
-    // <a href="">coin</a> type is neither base nor quote for given market account)
+    // <a href="">coin</a> type is neither base nor quote for given <a href="market.md#0xc0deb00c_market">market</a> account)
     <b>let</b> coins_available_ref_mut = <a href="user.md#0xc0deb00c_user_borrow_coins_available_mut">borrow_coins_available_mut</a>&lt;CoinType&gt;(
         market_accounts_map, market_account_info);
     *coins_available_ref_mut = // Increment available <a href="">coin</a> count
@@ -427,10 +427,10 @@ registered
     // Borrow mutable reference <b>to</b> collateral map
     <b>let</b> collateral_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> collateral for market account
+    // Borrow mutable reference <b>to</b> collateral for <a href="market.md#0xc0deb00c_market">market</a> account
     <b>let</b> collateral =
         <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(collateral_map, market_account_info);
-    // Merge <a href="coins.md#0xc0deb00c_coins">coins</a> into market account collateral
+    // Merge <a href="coins.md#0xc0deb00c_coins">coins</a> into <a href="market.md#0xc0deb00c_market">market</a> account collateral
     <a href="_merge">coin::merge</a>(collateral, <a href="coins.md#0xc0deb00c_coins">coins</a>);
 }
 </code></pre>
@@ -498,10 +498,10 @@ correspond to that specified in <code>market_account_info</code>.
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Assert serial custodian ID from <a href="capability.md#0xc0deb00c_capability">capability</a> matches ID from
-    // market account info
+    // <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability) ==
         market_account_info.custodian_id, <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
-    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s market account
+    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
     <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_account_info, amount)
 }
@@ -549,11 +549,11 @@ number of available coins of <code>CoinType</code>.
         &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>&gt;,
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>
 ): &<b>mut</b> u64 {
-    // Determine <b>if</b> <a href="">coin</a> is base <a href="">coin</a> for market (aborts <b>if</b> is
+    // Determine <b>if</b> <a href="">coin</a> is base <a href="">coin</a> for <a href="market.md#0xc0deb00c_market">market</a> (aborts <b>if</b> is
     // neither base nor quote
     <b>let</b> is_base_coin = <a href="registry.md#0xc0deb00c_registry_coin_is_base_coin">registry::coin_is_base_coin</a>&lt;CoinType&gt;(
         &market_account_info.market_info);
-    // Borrow mutable reference <b>to</b> market account
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> account
     <b>let</b> market_account =
         <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts_map, market_account_info);
     // If is base <a href="">coin</a>, <b>return</b> mutable ref <b>to</b> base <a href="coins.md#0xc0deb00c_coins">coins</a> available
@@ -588,11 +588,11 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>
 ): bool
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Return <b>false</b> <b>if</b> no market accounts map <b>exists</b>
+    // Return <b>false</b> <b>if</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts map <b>exists</b>
     <b>if</b>(!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
-    // Borrow immutable ref <b>to</b> market accounts map
+    // Borrow immutable ref <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map = &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Return <b>if</b> market account is registered in <a href="">table</a>
+    // Return <b>if</b> <a href="market.md#0xc0deb00c_market">market</a> account is registered in <a href="">table</a>
     <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(market_accounts_map, market_account_info)
 }
 </code></pre>
@@ -640,10 +640,10 @@ not already exist.
     };
     <b>let</b> map = // Borrow mutable reference <b>to</b> collateral map
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(user_address).map;
-    // Assert no entry <b>exists</b> for given market account info
+    // Assert no entry <b>exists</b> for given <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(map,
         market_account_info), <a href="user.md#0xc0deb00c_user_E_MARKET_ACCOUNT_REGISTERED">E_MARKET_ACCOUNT_REGISTERED</a>);
-    // Add an empty entry for given market account info
+    // Add an empty entry for given <a href="market.md#0xc0deb00c_market">market</a> account info
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(map, market_account_info, <a href="_zero">coin::zero</a>&lt;CoinType&gt;());
 }
 </code></pre>
@@ -683,21 +683,21 @@ not already exist
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a>'s <b>address</b>
-    // If <a href="user.md#0xc0deb00c_user">user</a> does not have a market accounts map initialized
+    // If <a href="user.md#0xc0deb00c_user">user</a> does not have a <a href="market.md#0xc0deb00c_market">market</a> accounts map initialized
     <b>if</b>(!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address)) {
         // Pack an empty one and <b>move</b> it <b>to</b> their account
         <b>move_to</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
             <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>{map: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()})
     };
-    // Borrow mutable reference <b>to</b> market accounts map
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> map = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    // Assert no entry <b>exists</b> for given market account info
+    // Assert no entry <b>exists</b> for given <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(map, market_account_info),
         <a href="user.md#0xc0deb00c_user_E_MARKET_ACCOUNT_REGISTERED">E_MARKET_ACCOUNT_REGISTERED</a>);
-    // Get scale factor for corresponding market
+    // Get scale factor for corresponding <a href="market.md#0xc0deb00c_market">market</a>
     <b>let</b> scale_factor = <a href="registry.md#0xc0deb00c_registry_scale_factor_from_market_info">registry::scale_factor_from_market_info</a>(
         &market_account_info.market_info);
-    // Add an empty entry for given market account info
+    // Add an empty entry for given <a href="market.md#0xc0deb00c_market">market</a> account info
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(map, market_account_info, <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>{
         scale_factor,
         asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
@@ -748,14 +748,14 @@ registered
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Assert attempting <b>to</b> actually withdraw <a href="coins.md#0xc0deb00c_coins">coins</a>
     <b>assert</b>!(amount != 0, <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>);
-    // Assert market account registered for market account info
+    // Assert <a href="market.md#0xc0deb00c_market">market</a> account registered for <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>assert</b>!(<a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info, <a href="user.md#0xc0deb00c_user">user</a>),
         <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    // Borrow mutable reference <b>to</b> market accounts map
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
     // Borrow mutable reference <b>to</b> available <a href="">coin</a> count (aborts <b>if</b>
-    // <a href="">coin</a> type is neither base nor quote for given market account)
+    // <a href="">coin</a> type is neither base nor quote for given <a href="market.md#0xc0deb00c_market">market</a> account)
     <b>let</b> coins_available_ref_mut = <a href="user.md#0xc0deb00c_user_borrow_coins_available_mut">borrow_coins_available_mut</a>&lt;CoinType&gt;(
         market_accounts_map, market_account_info);
     // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> enough available collateral <b>to</b> withdraw
@@ -765,10 +765,10 @@ registered
     // Borrow mutable reference <b>to</b> collateral map
     <b>let</b> collateral_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> collateral for market account
+    // Borrow mutable reference <b>to</b> collateral for <a href="market.md#0xc0deb00c_market">market</a> account
     <b>let</b> collateral =
         <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(collateral_map, market_account_info);
-    // Extract collateral from market account and <b>return</b>
+    // Extract collateral from <a href="market.md#0xc0deb00c_market">market</a> account and <b>return</b>
     <a href="_extract">coin::extract</a>(collateral, amount)
 }
 </code></pre>

@@ -5,6 +5,7 @@ module econia::init {
 
     use std::signer::address_of;
     use econia::registry;
+    use econia::market;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -21,7 +22,9 @@ module econia::init {
     ) {
         // Assert caller is Econia account
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        registry::init_module(account); // Init registry module
+        registry::init_registry(account); // Init registry
+        // Administer Econia capability to market
+        market::init_econia_capability_store(account);
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

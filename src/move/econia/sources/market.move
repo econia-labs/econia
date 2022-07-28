@@ -1,9 +1,9 @@
-/// Order book functionality
-module econia::book {
+/// Market-side functionality
+module econia::market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use econia::capability::{EconiaCapability};
+    use econia::capability::{Self, EconiaCapability};
     use econia::critbit::{Self, CritBitTree};
     use std::signer::address_of;
 
@@ -12,11 +12,19 @@ module econia::book {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::capability::get_econia_capability_test;
+    use econia::coins::{BC, QC};
+
+    #[test_only]
+    use econia::registry::E1;
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Stores an `EconiaCapability` for cross-module authorization
+    struct EconiaCapabilityStore has key {
+        econia_capability: EconiaCapability
+    }
 
     /// An order on the order book
     struct Order has store {
@@ -50,6 +58,10 @@ module econia::book {
 
     /// When an order book already exists at given address
     const E_BOOK_EXISTS: u64 = 0;
+    /// When caller is not Econia
+    const E_NOT_ECONIA: u64 = 1;
+    /// When `EconiaCapabilityStore` already exists under Econia account
+    const E_CAPABILITY_STORE_EXISTS: u64 = 2;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -72,12 +84,46 @@ module econia::book {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Initializes an `EconiaCapabilityStore`, aborting if one already
+    /// exists under the Econia account or if caller is not Econia
+    public fun init_econia_capability_store(
+        account: &signer
+    ) {
+        // Assert caller is Econia account
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Assert capability store not already registered
+        assert!(!exists<EconiaCapabilityStore>(@econia),
+            E_CAPABILITY_STORE_EXISTS);
+        // Get new capability instance (aborts if caller is not Econia)
+        let econia_capability = capability::get_econia_capability(account);
+        move_to<EconiaCapabilityStore>(account, EconiaCapabilityStore{
+            econia_capability}); // Move to account capability store
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return an `EconiaCapability`
+    ///
+    /// # Assumes
+    /// * `EconiaCapabilityStore` has already been successfully
+    ///   initialized, and thus skips existence checks
+    fun get_econia_capability():
+    EconiaCapability
+    acquires EconiaCapabilityStore {
+        borrow_global<EconiaCapabilityStore>(@econia).econia_capability
+    }
+
     /// Initialize `OrderBook` with given `scale_factor` under `host`
     /// account, aborting if one already exists
-    public fun init_book<B, Q, E>(
+    fun init_book<B, Q, E>(
         host: &signer,
         scale_factor: u64,
-        _: &EconiaCapability
     ) {
         // Assert book does not already exist under host account
         assert!(!exists<OrderBook<B, Q, E>>(address_of(host)), E_BOOK_EXISTS);
@@ -92,35 +138,7 @@ module econia::book {
         });
     }
 
-    /// Return scale factor for extant order book at `host` address
-    ///
-    /// # Assumes
-    /// * `OrderBook` exists at `host` address
-    public fun scale_factor<B, Q, E>(
-        host: address,
-        _: &EconiaCapability
-    ): u64
-    acquires OrderBook {
-        borrow_global<OrderBook<B, Q, E>>(host).scale_factor
-    }
-
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Test-only structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test_only]
-    /// Test base coin type
-    struct BT{}
-
-    #[test_only]
-    /// Test quote coin type
-    struct QT{}
-
-    #[test_only]
-    /// Test scale exponent type
-    struct ET{}
-
-    // Test-only structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -131,9 +149,9 @@ module econia::book {
         host: &signer,
     ) {
         // Initialize a book
-        init_book<BT, QT, ET>(host, 10, &get_econia_capability_test());
+        init_book<BC, QC, E1>(host, 10);
         // Attemp invalid re-initialization
-        init_book<BT, QT, ET>(host, 10, &get_econia_capability_test());
+        init_book<BC, QC, E1>(host, 10);
     }
 
     #[test(host = @user)]
@@ -142,9 +160,9 @@ module econia::book {
         host: &signer,
     ) acquires OrderBook {
         // Initialize a book
-        init_book<BT, QT, ET>(host, 10, &get_econia_capability_test());
+        init_book<BC, QC, E1>(host, 10);
         // Borrow immutable reference to new book
-        let book = borrow_global<OrderBook<BT, QT, ET>>(@user);
+        let book = borrow_global<OrderBook<BC, QC, E1>>(@user);
         // Assert fields initialized correctly
         assert!(book.scale_factor == 10, 0);
         assert!(critbit::is_empty(&book.asks), 0);
@@ -152,6 +170,25 @@ module econia::book {
         assert!(book.min_ask == MIN_ASK_DEFAULT, 0);
         assert!(book.max_bid == MAX_BID_DEFAULT, 0);
         assert!(book.counter == 0, 0);
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for attempting to init under non-Econia account
+    fun test_init_econia_capability_store_not_econia(
+        account: &signer
+    ) {
+        init_econia_capability_store(account); // Attempt invalid init
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for attempting to re-init under Econia account
+    fun test_init_econia_capability_store_exists(
+        econia: &signer
+    ) {
+        init_econia_capability_store(econia); // Initialize store
+        init_econia_capability_store(econia); // Attempt invalid re-init
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

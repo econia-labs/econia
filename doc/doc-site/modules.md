@@ -9,21 +9,21 @@
 ```mermaid
 flowchart TD
 
-    init --> order
+    market --> critbit
+    market --> registry
+    market --> capability
+    market --> |test-only| coins
+    market --> user
+    init --> registry
+    init --> market
+    user --> capability
     user --> critbit
-    user --> registry
-    book --> critbit
     user --> open_table
+    user --> registry
     user --> |test-only| coins
-    book --> capability
     registry --> capability
     registry --> |test-only| coins
     registry --> open_table
-    init --> registry
     registry --> util
-    registry --> book
-    order --> user
-    order --> book
-    order --> capability
 
 ```

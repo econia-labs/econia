@@ -1,7 +1,6 @@
 /// Low-level utility functions
 module econia::util {
 
-
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::type_info::{

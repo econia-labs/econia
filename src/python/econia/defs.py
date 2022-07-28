@@ -65,6 +65,9 @@ econia_modules = SimpleNamespace(
     open_table = SimpleNamespace(
         name = 'open_table'
     ),
+    order_id = SimpleNamespace(
+        name = 'order_id'
+    ),
     registry = SimpleNamespace(
         name = 'registry'
     ),
@@ -80,6 +83,9 @@ econia_module_publish_order = [
     ],
     [
         econia_modules.critbit.name
+    ],
+    [
+        econia_modules.order_id.name
     ],
     [
         econia_modules.coins.name,

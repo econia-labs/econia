@@ -107,7 +107,7 @@ module econia::market {
 
     /// Register a market for the given base type, quote type,
     /// scale exponent type, and move an `OrderBook` to `host`.
-    public fun register_market<B, Q, E>(
+    public entry fun register_market<B, Q, E>(
         host: &signer,
     ) acquires EconiaCapabilityStore {
         // Add an entry to the market registry table

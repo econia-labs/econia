@@ -381,7 +381,7 @@ module econia::registry {
         let custodian_id = registry.n_custodians + 1;
         // Update the registry for the new count
         registry.n_custodians = custodian_id;
-        // Pack a return corresponding capability
+        // Pack and return corresponding capability
         CustodianCapability{custodian_id}
     }
 

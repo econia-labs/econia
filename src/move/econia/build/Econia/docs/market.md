@@ -299,7 +299,7 @@ scale exponent type, and move an <code><a href="market.md#0xc0deb00c_market_Orde
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;B, Q, E&gt;(
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;B, Q, E&gt;(
     host: &<a href="">signer</a>,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a> {
     // Add an entry <b>to</b> the <a href="market.md#0xc0deb00c_market">market</a> <a href="registry.md#0xc0deb00c_registry">registry</a> <a href="">table</a>

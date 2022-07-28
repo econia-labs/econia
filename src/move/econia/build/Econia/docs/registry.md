@@ -1523,7 +1523,7 @@ registry is not initialized
     <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry">registry</a>.n_custodians + 1;
     // Update the <a href="registry.md#0xc0deb00c_registry">registry</a> for the new count
     <a href="registry.md#0xc0deb00c_registry">registry</a>.n_custodians = custodian_id;
-    // Pack a <b>return</b> corresponding <a href="capability.md#0xc0deb00c_capability">capability</a>
+    // Pack and <b>return</b> corresponding <a href="capability.md#0xc0deb00c_capability">capability</a>
     <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>{custodian_id}
 }
 </code></pre>

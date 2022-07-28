@@ -13,10 +13,10 @@ module econia::market {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::coins::{BC, QC};
+    use econia::coins::{Self, BC, QC};
 
     #[test_only]
-    use econia::registry::{E1, F1};
+    use econia::registry::{E1};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -208,7 +208,8 @@ module econia::market {
     /// Verify successful registration
     fun test_register_market(
         econia: &signer
-    ) acquires EconiaCapabilityStore, OrderBook {
+    ) acquires EconiaCapabilityStore {
+        init_econia_capability_store(econia);
         coins::init_coin_types(econia); // Init coin types
         registry::init_registry(econia); // Initialize registry
         register_market<BC, QC, E1>(econia); // Register market

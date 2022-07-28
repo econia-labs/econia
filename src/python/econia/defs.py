@@ -47,9 +47,6 @@ econia_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 econia_modules = SimpleNamespace(
-    book = SimpleNamespace(
-        name = 'book',
-    ),
     capability = SimpleNamespace(
         name = 'capability',
     ),
@@ -62,24 +59,33 @@ econia_modules = SimpleNamespace(
     init = SimpleNamespace(
         name = 'init'
     ),
+    market = SimpleNamespace(
+        name = 'market',
+    ),
     open_table = SimpleNamespace(
         name = 'open_table'
     ),
     registry = SimpleNamespace(
         name = 'registry'
+    ),
+    user = SimpleNamespace(
+        name = 'user'
+    ),
+    util = SimpleNamespace(
+        name = 'util'
     )
 )
 """Econia Move modules with nested member specifiers"""
 
 econia_module_publish_order = [
     [
+        econia_modules.util.name
+    ],
+    [
         econia_modules.capability.name
     ],
     [
         econia_modules.critbit.name
-    ],
-    [
-        econia_modules.book.name
     ],
     [
         econia_modules.coins.name,
@@ -89,6 +95,12 @@ econia_module_publish_order = [
     ],
     [
         econia_modules.registry.name
+    ],
+    [
+        econia_modules.user.name
+    ],
+    [
+        econia_modules.market.name
     ],
     [
         econia_modules.init.name

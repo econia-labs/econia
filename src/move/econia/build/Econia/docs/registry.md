@@ -1290,15 +1290,16 @@ to an <code>EconiaCapability</code>.
     <b>let</b> quote_coin_type = <a href="_type_of">type_info::type_of</a>&lt;Q&gt;();
     <b>assert</b>!(!are_same_type_info(&base_coin_type, &quote_coin_type),
         <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN_TYPE">E_SAME_COIN_TYPE</a>); // Assert base and quote not same type
-    // Check scale factor (aborts <b>if</b> not valid scale exponent type)
-    <b>let</b> _scale_factor = <a href="registry.md#0xc0deb00c_registry_scale_factor">scale_factor</a>&lt;E&gt;();
-    // Pack new <a href="market.md#0xc0deb00c_market">market</a> info for given types
-    <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{base_coin_type, quote_coin_type,
-        scale_exponent_type: <a href="_type_of">type_info::type_of</a>&lt;E&gt;()};
-    // Assert the <a href="market.md#0xc0deb00c_market">market</a> is not already registered
-    <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(market_info), <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
+    // Get scale exponent type type info
+    <b>let</b> scale_exponent_type = <a href="_type_of">type_info::type_of</a>&lt;E&gt;();
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
+    <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.scales, scale_exponent_type),
+        <a href="registry.md#0xc0deb00c_registry_E_NOT_EXPONENT_TYPE">E_NOT_EXPONENT_TYPE</a>); // Verify valid exponent type
+    <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{base_coin_type, quote_coin_type,
+        scale_exponent_type}; // Pack new <a href="market.md#0xc0deb00c_market">market</a> info for types
+    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info),
+        <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>); // Assert <a href="market.md#0xc0deb00c_market">market</a> is not already registered
     // Register host-<a href="market.md#0xc0deb00c_market">market</a> relationship
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info, host);
 }

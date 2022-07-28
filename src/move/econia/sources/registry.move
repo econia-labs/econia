@@ -288,15 +288,16 @@ module econia::registry {
         let quote_coin_type = type_info::type_of<Q>();
         assert!(!are_same_type_info(&base_coin_type, &quote_coin_type),
             E_SAME_COIN_TYPE); // Assert base and quote not same type
-        // Check scale factor (aborts if not valid scale exponent type)
-        let _scale_factor = scale_factor<E>();
-        // Pack new market info for given types
-        let market_info = MarketInfo{base_coin_type, quote_coin_type,
-            scale_exponent_type: type_info::type_of<E>()};
-        // Assert the market is not already registered
-        assert!(!is_registered(market_info), E_MARKET_EXISTS);
+        // Get scale exponent type type info
+        let scale_exponent_type = type_info::type_of<E>();
         // Borrow mutable reference to registry
         let registry = borrow_global_mut<Registry>(@econia);
+        assert!(open_table::contains(&registry.scales, scale_exponent_type),
+            E_NOT_EXPONENT_TYPE); // Verify valid exponent type
+        let market_info = MarketInfo{base_coin_type, quote_coin_type,
+            scale_exponent_type}; // Pack new market info for types
+        assert!(!open_table::contains(&registry.markets, market_info),
+            E_MARKET_EXISTS); // Assert market is not already registered
         // Register host-market relationship
         open_table::add(&mut registry.markets, market_info, host);
     }
@@ -556,7 +557,7 @@ module econia::registry {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for base type not a valid coin type
-    fun test_register_market_base_not_coin(
+    fun test_register_market_internal_base_not_coin(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize registry
@@ -568,7 +569,7 @@ module econia::registry {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 8)]
     /// Verify failure for market already exists
-    fun test_register_market_duplicate(
+    fun test_register_market_internal_duplicate(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize module
@@ -582,16 +583,28 @@ module econia::registry {
     #[test]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for registry not yet initialized
-    fun test_register_market_no_registry()
+    fun test_register_market_internal_no_registry()
     acquires Registry {
         register_market_internal<BC, QC, E0>( // Attempt invalid init
             @user, &get_econia_capability_test());
     }
 
     #[test(econia = @econia)]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for invalid exponent type
+    fun test_register_market_internal_not_exponent_type(
+        econia: &signer
+    ) acquires Registry {
+        init_registry(econia); // Initialize module
+        init_coin_types(econia); // Initialize coin types
+        register_market_internal<BC, QC, QC>( // Attempt invalid init
+            @econia, &get_econia_capability_test());
+    }
+
+    #[test(econia = @econia)]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for quote type not a valid coin type
-    fun test_register_market_quote_not_coin(
+    fun test_register_market_internal_quote_not_coin(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize registry
@@ -603,7 +616,7 @@ module econia::registry {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for base and quote are same type
-    fun test_register_market_same_coin(
+    fun test_register_market_internal_same_coin(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize registry
@@ -614,7 +627,7 @@ module econia::registry {
 
     #[test(econia = @econia)]
     /// Verify successful market registration
-    fun test_register_market_success(
+    fun test_register_market_internal_success(
         econia: &signer,
     ) acquires Registry {
         init_registry(econia); // Init registry

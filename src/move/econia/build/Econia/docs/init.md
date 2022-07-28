@@ -54,7 +54,7 @@ Initialize Econia with core resources needed for trading
     // Assert caller is Econia account
     <b>assert</b>!(address_of(account) == @econia, <a href="init.md#0xc0deb00c_init_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <a href="registry.md#0xc0deb00c_registry_init_registry">registry::init_registry</a>(account); // Init <a href="registry.md#0xc0deb00c_registry">registry</a>
-    // Administer Econia <a href="capability.md#0xc0deb00c_capability">capability</a> for <a href="market.md#0xc0deb00c_market">market</a>
+    // Administer Econia <a href="capability.md#0xc0deb00c_capability">capability</a> <b>to</b> <a href="market.md#0xc0deb00c_market">market</a>
     <a href="market.md#0xc0deb00c_market_init_econia_capability_store">market::init_econia_capability_store</a>(account);
 }
 </code></pre>

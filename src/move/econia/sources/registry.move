@@ -272,7 +272,7 @@ module econia::registry {
     /// * If `B` and `Q` are the same type
     /// * If market is already registered
     /// * If `E` is not a valid scale exponent type
-    public fun register_market<B, Q, E>(
+    public fun register_market_internal<B, Q, E>(
         host: address,
         _econia_capability: &EconiaCapability
     ) acquires Registry {
@@ -402,10 +402,10 @@ module econia::registry {
     public fun register_test_market(
         econia: &signer
     ) acquires Registry {
-       init_registry(econia); // Initialize module's core resources
-       init_coin_types(econia); // Initialize test coins
-       // Register test market
-       register_market<BC, QC, E1>(@econia, &get_econia_capability_test());
+        init_registry(econia); // Initialize module's core resources
+        init_coin_types(econia); // Initialize test coins
+        register_market_internal<BC, QC, E1>( // Register test market
+            @econia, &get_econia_capability_test());
     }
 
     #[test_only]
@@ -561,8 +561,8 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize registry
         init_coin_types(econia); // Initialize coin types
-        // Attempt invalid init
-        register_market<E0, QC, E0>(@econia, &get_econia_capability_test());
+        register_market_internal<E0, QC, E0>( // Attempt invalid init
+            @econia, &get_econia_capability_test());
     }
 
     #[test(econia = @econia)]
@@ -573,10 +573,10 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize module
         init_coin_types(econia); // Initialize coin types
-        // Run valid initialization
-        register_market<BC, QC, E0>(@econia, &get_econia_capability_test());
-        // Attempt invalid init
-        register_market<BC, QC, E0>(@econia, &get_econia_capability_test());
+        register_market_internal<BC, QC, E0>( // Run valid initialization
+            @econia, &get_econia_capability_test());
+        register_market_internal<BC, QC, E0>( // Attempt invalid init
+            @econia, &get_econia_capability_test());
     }
 
     #[test]
@@ -584,8 +584,8 @@ module econia::registry {
     /// Verify failure for registry not yet initialized
     fun test_register_market_no_registry()
     acquires Registry {
-        // Attempt invalid init
-        register_market<BC, QC, E0>(@user, &get_econia_capability_test());
+        register_market_internal<BC, QC, E0>( // Attempt invalid init
+            @user, &get_econia_capability_test());
     }
 
     #[test(econia = @econia)]
@@ -596,8 +596,8 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize registry
         init_coin_types(econia); // Initialize coin types
-        // Attempt invalid init
-        register_market<BC, E0, E0>(@econia, &get_econia_capability_test());
+        register_market_internal<BC, E0, E0>( // Attempt invalid init
+            @econia, &get_econia_capability_test());
     }
 
     #[test(econia = @econia)]
@@ -608,8 +608,8 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize registry
         init_coin_types(econia); // Initialize coin types
-        // Attempt invalid init
-        register_market<BC, BC, E0>(@econia, &get_econia_capability_test());
+        register_market_internal<BC, BC, E0>( // Attempt invalid init
+            @econia, &get_econia_capability_test());
     }
 
     #[test(econia = @econia)]
@@ -619,8 +619,9 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Init registry
         init_coin_types(econia); // Initialize coin types
+        register_market_internal<BC, QC, E2>(
         // Run valid initialization
-        register_market<BC, QC, E2>(@user, &get_econia_capability_test());
+            @user, &get_econia_capability_test());
         // Borrow immutable reference to registry
         let registry = borrow_global<Registry>(@econia);
         // Get market info for given market

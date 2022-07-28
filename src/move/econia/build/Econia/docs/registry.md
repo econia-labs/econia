@@ -35,7 +35,7 @@
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
 -  [Function `market_info`](#0xc0deb00c_registry_market_info)
 -  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
--  [Function `register_market`](#0xc0deb00c_registry_register_market)
+-  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
     -  [Abort conditions](#@Abort_conditions_1)
 -  [Function `scale_factor`](#0xc0deb00c_registry_scale_factor)
 -  [Function `scale_factor_from_type_info`](#0xc0deb00c_registry_scale_factor_from_type_info)
@@ -1245,9 +1245,9 @@ u64
 
 </details>
 
-<a name="0xc0deb00c_registry_register_market"></a>
+<a name="0xc0deb00c_registry_register_market_internal"></a>
 
-## Function `register_market`
+## Function `register_market_internal`
 
 Register a market for the given base type, quote type,
 scale exponent type, and <code>host</code>, provided an immutable reference
@@ -1265,7 +1265,7 @@ to an <code>EconiaCapability</code>.
 * If <code>E</code> is not a valid scale exponent type
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market">register_market</a>&lt;B, Q, E&gt;(host: <b>address</b>, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;B, Q, E&gt;(host: <b>address</b>, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>)
 </code></pre>
 
 
@@ -1274,7 +1274,7 @@ to an <code>EconiaCapability</code>.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market">register_market</a>&lt;B, Q, E&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;B, Q, E&gt;(
     host: <b>address</b>,
     _econia_capability: &EconiaCapability
 ) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {

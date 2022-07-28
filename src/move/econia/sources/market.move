@@ -5,6 +5,7 @@ module econia::market {
 
     use econia::capability::{Self, EconiaCapability};
     use econia::critbit::{Self, CritBitTree};
+    use econia::registry;
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -15,7 +16,7 @@ module econia::market {
     use econia::coins::{BC, QC};
 
     #[test_only]
-    use econia::registry::E1;
+    use econia::registry::{E1, F1};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -104,6 +105,18 @@ module econia::market {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Register a market for the given base type, quote type,
+    /// scale exponent type, and move an `OrderBook` to `host`.
+    public fun register_market<B, Q, E>(
+        host: &signer,
+    ) acquires EconiaCapabilityStore {
+        // Add an entry to the market registry table
+        registry::register_market_internal<B, Q, E>(address_of(host),
+            &get_econia_capability());
+        // Initialize an order book under host account
+        init_book<B, Q, E>(host, registry::scale_factor<E>());
+    }
+
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -189,6 +202,20 @@ module econia::market {
     ) {
         init_econia_capability_store(econia); // Initialize store
         init_econia_capability_store(econia); // Attempt invalid re-init
+    }
+
+    #[test(econia = @econia)]
+    /// Verify successful registration
+    fun test_register_market(
+        econia: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        coins::init_coin_types(econia); // Init coin types
+        registry::init_registry(econia); // Initialize registry
+        register_market<BC, QC, E1>(econia); // Register market
+        // Assert entry added to registry
+        assert!(registry::is_registered_types<BC, QC, E1>(), 0);
+        // Assert corresponding order book initialized under host
+        assert!(exists<OrderBook<BC, QC, E1>>(@econia), 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

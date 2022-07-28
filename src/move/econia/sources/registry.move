@@ -400,7 +400,7 @@ module econia::registry {
 
     #[test_only]
     /// Initialize registry, register test coin markets
-    public fun register_test_market(
+    public fun register_test_market_internal(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize module's core resources

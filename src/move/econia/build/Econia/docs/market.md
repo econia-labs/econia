@@ -11,6 +11,7 @@ Market-side functionality
 -  [Resource `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Constants](#@Constants_0)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
+-  [Function `register_market`](#0xc0deb00c_market_register_market)
 -  [Function `get_econia_capability`](#0xc0deb00c_market_get_econia_capability)
     -  [Assumes](#@Assumes_1)
 -  [Function `init_book`](#0xc0deb00c_market_init_book)
@@ -19,6 +20,7 @@ Market-side functionality
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
+<b>use</b> <a href="registry.md#0xc0deb00c_registry">0xc0deb00c::registry</a>;
 </code></pre>
 
 
@@ -273,6 +275,38 @@ exists under the Econia account or if caller is not Econia
     <b>let</b> econia_capability = <a href="capability.md#0xc0deb00c_capability_get_econia_capability">capability::get_econia_capability</a>(account);
     <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(account, <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>{
         econia_capability}); // Move <b>to</b> account <a href="capability.md#0xc0deb00c_capability">capability</a> store
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_register_market"></a>
+
+## Function `register_market`
+
+Register a market for the given base type, quote type,
+scale exponent type, and move an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> to <code>host</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;B, Q, E&gt;(host: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;B, Q, E&gt;(
+    host: &<a href="">signer</a>,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a> {
+    // Add an entry <b>to</b> the <a href="market.md#0xc0deb00c_market">market</a> <a href="registry.md#0xc0deb00c_registry">registry</a> <a href="">table</a>
+    <a href="registry.md#0xc0deb00c_registry_register_market_internal">registry::register_market_internal</a>&lt;B, Q, E&gt;(address_of(host),
+        &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
+    // Initialize an order book under host account
+    <a href="market.md#0xc0deb00c_market_init_book">init_book</a>&lt;B, Q, E&gt;(host, <a href="registry.md#0xc0deb00c_registry_scale_factor">registry::scale_factor</a>&lt;E&gt;());
 }
 </code></pre>
 

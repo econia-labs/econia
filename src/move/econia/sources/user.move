@@ -412,7 +412,7 @@ module econia::user {
     ) acquires Collateral, MarketAccounts {
         let deposit_amount = 25; // Declare deposit amount
         // Register a test market for trading
-        registry::register_test_market(econia);
+        registry::register_test_market_internal(econia);
         let market_account_info = MarketAccountInfo{
             market_info: registry::market_info<BC, QC, E1>(),
             custodian_id: 0}; // Declare market account info
@@ -491,7 +491,7 @@ module econia::user {
         econia: &signer,
         user: &signer
     ) acquires Collateral, MarketAccounts {
-       registry::register_test_market(econia); // Init test market
+       registry::register_test_market_internal(econia); // Init test market
        // Attempt invalid registration
        register_market_account<BC, QC, E1>(user, 1);
     }
@@ -516,7 +516,7 @@ module econia::user {
         user: &signer
     ): registry::CustodianCapability
     acquires Collateral, MarketAccounts {
-        registry::register_test_market(econia); // Init test market
+        registry::register_test_market_internal(econia); // Init test market
         // Register a custodian
         let custodian_capability = registry::register_custodian_capability();
         // Register uncustodied and custodied test market accounts
@@ -627,7 +627,7 @@ module econia::user {
         let withdraw_amount_1 = 15; // Declare first withdraw amount
         let withdraw_amount_2 = 5; // Declare second withdraw amount
         // Register test market
-        registry::register_test_market(econia);
+        registry::register_test_market_internal(econia);
         // Register market account for user without custodian
         register_market_account<BC, QC, E1>(user, NO_CUSTODIAN);
         let market_account_info = MarketAccountInfo{
@@ -745,7 +745,7 @@ module econia::user {
     ): Coin<BC>
     acquires Collateral, MarketAccounts {
         // Register test market
-        registry::register_test_market(econia);
+        registry::register_test_market_internal(econia);
         // Register custodian, store capability
         let custodian_capability = registry::register_custodian_capability();
         // Register market account for user w/ custodian ID 1

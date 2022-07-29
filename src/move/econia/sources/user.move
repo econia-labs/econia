@@ -583,10 +583,10 @@ module econia::user {
     acquires Collateral {
         // Get market account info for given custodian ID
         let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        // Borrow mutable reference to collateral map
-        let collateral_map = borrow_global<collateral<BaseOrQuote>>(user).map;
+        // Borrow immutable reference to collateral map
+        let collateral_map = &borrow_global<Collateral<BaseOrQuote>>(user).map;
         let collateral_ref = // Get immutable ref to collateral coins
-            open_table::open_table(collateral_map, market_account_info);
+            open_table::borrow(collateral_map, market_account_info);
         coin::value(collateral_ref) // Return amount of coins held
     }
 
@@ -640,15 +640,14 @@ module econia::user {
     ) acquires MarketAccounts {
         // Declare market account info
         let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to corresponding market account
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map = &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to corresponding market account
         let market_account =
-            open_table::borrow_mut(market_accounts_map, market_account_info);
+            open_table::borrow(market_accounts_map, market_account_info);
         // If base collateral counts requested, return them
         if (registry::coin_is_base_coin<BaseOrQuote>(
-            market_account_info.market_info)) (
+            &market_account_info.market_info)) (
                 market_account.base_coins_total,
                 market_account.base_coins_available,
             ) else ( // Else return quote collateral counts
@@ -672,20 +671,20 @@ module econia::user {
         custodian_id: u64,
         side: bool,
         order_id: u128
-    ): bool {
+    ): bool
+    acquires MarketAccounts {
         // Declare market account info
         let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to corresponding market account
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map = &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to corresponding market account
         let market_account =
-            open_table::borrow_mut(market_accounts_map, market_account_info);
+            open_table::borrow(market_accounts_map, market_account_info);
         // Get immutable reference to orders tree for given side
         let tree_ref = if (side == ASK) &market_account.asks else
             &market_account.bids;
         // Return if orders tree contains given order ID
-        critbit::contains(tree_ref_mut, order_id)
+        critbit::has_key(tree_ref, order_id)
     }
 
     #[test_only]
@@ -704,19 +703,20 @@ module econia::user {
         custodian_id: u64,
         side: bool,
         order_id: u128
-    ): u64 {
+    ): u64
+    acquires MarketAccounts {
         // Declare market account info
         let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to corresponding market account
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map = &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to corresponding market account
         let market_account =
-            open_table::borrow_mut(market_accounts_map, market_account_info);
+            open_table::borrow(market_accounts_map, market_account_info);
         // Get immutable reference to orders tree for given side
         let tree_ref = if (side == ASK) &market_account.asks else
             &market_account.bids;
-        critbit::borrow(tree_ref, order_id); // Return order size
+        // Return order base parcels
+        *critbit::borrow(tree_ref, order_id)
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

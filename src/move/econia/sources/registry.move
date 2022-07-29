@@ -364,7 +364,7 @@ module econia::registry {
     acquires Registry {
         // Return false if registry hasn't been initialized
         if (!exists<Registry>(@econia)) return false;
-        custodian_id <= n_custodians()
+        custodian_id <= n_custodians() // Return if custodian ID valid
     }
 
     /// Update the number of registered custodians and issue a
@@ -423,6 +423,16 @@ module econia::registry {
         custodian_id: u64
     ): CustodianCapability {
         CustodianCapability{custodian_id} // Pack and return capability
+    }
+
+    #[test_only]
+    /// Update registry to indicate `custodian_id` as valid. Assumes
+    /// registry already initialized under Econia account.
+    public fun set_registered_custodian(
+        custodian_id: u64
+    ) acquires Registry {
+        // Set registered custodian count to include given ID
+        borrow_global_mut<Registry>(@econia).n_custodians = custodian_id;
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

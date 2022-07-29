@@ -10,9 +10,9 @@ Market-side functionality
 -  [Struct `Order`](#0xc0deb00c_market_Order)
 -  [Resource `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Constants](#@Constants_0)
+-  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
--  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
@@ -321,6 +321,43 @@ Default value for minimum ask order ID
 
 
 
+<a name="0xc0deb00c_market_cancel_limit_order_custodian"></a>
+
+## Function `cancel_limit_order_custodian`
+
+Cancel a limit order on the book and in a user's market account.
+Invoked by a custodian, who passes an immutable reference to
+their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
+<code>cancel_limit_order</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+    custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Get custodian ID encoded in <a href="capability.md#0xc0deb00c_capability">capability</a>
+    <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability_ref);
+    // Cancel limit order <b>with</b> corresponding custodian id
+    <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, host, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_init_econia_capability_store"></a>
 
 ## Function `init_econia_capability_store`
@@ -389,43 +426,6 @@ their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">regist
     // Place limit order <b>with</b> corresponding custodian id
     <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, host, custodian_id, side, base_parcels, price);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_market_cancel_limit_order_custodian"></a>
-
-## Function `cancel_limit_order_custodian`
-
-Cancel a limit order on the book and in a user's market account.
-Invoked by a custodian, who passes an immutable reference to
-their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
-<code>cancel_limit_order</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>&lt;B, Q, E&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
-    host: <b>address</b>,
-    side: bool,
-    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
-    custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
-    // Get custodian ID encoded in <a href="capability.md#0xc0deb00c_capability">capability</a>
-    <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability_ref);
-    // Cancel limit order <b>with</b> corresponding custodian id
-    <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, host, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
 }
 </code></pre>
 

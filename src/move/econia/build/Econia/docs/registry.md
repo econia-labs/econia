@@ -1486,7 +1486,7 @@ Return <code><b>true</b></code> if <code>custodian_id</code> has already been re
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Return <b>false</b> <b>if</b> <a href="registry.md#0xc0deb00c_registry">registry</a> hasn't been initialized
     <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
-    <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a> &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>()
+    <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a> &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>() // Return <b>if</b> custodian ID valid
 }
 </code></pre>
 

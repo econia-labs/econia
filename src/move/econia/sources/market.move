@@ -101,6 +101,23 @@ module econia::market {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Cancel a limit order on the book and in a user's market account.
+    /// Invoked by a custodian, who passes an immutable reference to
+    /// their `registry::CustodianCapability`. See wrapped call
+    /// `cancel_limit_order`.
+    public fun cancel_limit_order_custodian<B, Q, E>(
+        user: address,
+        host: address,
+        side: bool,
+        order_id: u128,
+        custodian_capability_ref: &registry::CustodianCapability
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Get custodian ID encoded in capability
+        let custodian_id = registry::custodian_id(custodian_capability_ref);
+        // Cancel limit order with corresponding custodian id
+        cancel_limit_order<B, Q, E>(user, host, custodian_id, side, order_id);
+    }
+
     /// Initializes an `EconiaCapabilityStore`, aborting if one already
     /// exists under the Econia account or if caller is not Econia
     public fun init_econia_capability_store(
@@ -134,23 +151,6 @@ module econia::market {
         // Place limit order with corresponding custodian id
         place_limit_order<B, Q, E>(
             user, host, custodian_id, side, base_parcels, price);
-    }
-
-    /// Cancel a limit order on the book and in a user's market account.
-    /// Invoked by a custodian, who passes an immutable reference to
-    /// their `registry::CustodianCapability`. See wrapped call
-    /// `cancel_limit_order`.
-    public fun cancel_limit_order_custodian<B, Q, E>(
-        user: address,
-        host: address,
-        side: bool,
-        order_id: u128,
-        custodian_capability_ref: &registry::CustodianCapability
-    ) acquires EconiaCapabilityStore, OrderBook {
-        // Get custodian ID encoded in capability
-        let custodian_id = registry::custodian_id(custodian_capability_ref);
-        // Cancel limit order with corresponding custodian id
-        cancel_limit_order<B, Q, E>(user, host, custodian_id, side, order_id);
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -454,6 +454,8 @@ module econia::market {
         init_econia_capability_store(econia);
         // Register test market with Econia as host
         register_market<BC, QC, E1>(econia);
+        // Set custodian ID as in bounds
+        registry::set_registered_custodian(custodian_id);
         // Register user to trade on the account
         user::register_market_account<BC, QC, E1>(user, custodian_id);
         // Get market account info
@@ -825,6 +827,88 @@ module econia::market {
         econia = @econia,
         user = @user
     )]
+    /// Verify limit order placement and cancellation by custodian
+    fun test_place_cancel_limit_order_custodian(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Define parameters for upcoming order
+        let (side, base_parcels, price, custodian_id, serial_id) =
+            (ASK, 10, 12, 25, 0);
+        // Get order ID
+        let order_id = order_id::order_id(price, serial_id, side);
+        // Register user with market account for given custodian ID
+        register_market_with_user_test(econia, user, custodian_id);
+        // Get custodian capability w/ corresponding ID
+        let custodian_capability =
+            registry::get_custodian_capability(custodian_id);
+        // Have custodian place limit order
+        place_limit_order_custodian<BC, QC, E1>(@user, @econia, side,
+            base_parcels, price, &custodian_capability);
+        // Assert base parcels for order in user's market account
+        assert!(user::order_base_parcels_test<BC, QC, E1>(
+            @user, custodian_id, side, order_id) == base_parcels, 0);
+        // Get fields for order on book having given order ID
+        let (order_base_parcels, order_user, order_custodian_id) =
+            order_fields_test<BC, QC, E1>(@econia, order_id, side);
+        // Assert order fields
+        assert!(order_base_parcels == base_parcels, 0);
+        assert!(order_user == @user, 0);
+        assert!(order_custodian_id == custodian_id, 0);
+        // Have custodian cancel limit order
+        cancel_limit_order_custodian<BC, QC, E1>(@user, @econia, side,
+            order_id, &custodian_capability);
+        // Assert user no longer has order
+        assert!(!user::has_order_test<BC, QC, E1>(
+            @user, custodian_id, side, order_id), 0);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id), 0);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability(custodian_capability);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify limit order placement and cancellation by signing user
+    fun test_place_cancel_limit_order_user(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Define parameters for upcoming order
+        let (side, base_parcels, price, custodian_id, serial_id) =
+            ( ASK,           10,    12, NO_CUSTODIAN,         0);
+        // Get order ID
+        let order_id = order_id::order_id(price, serial_id, side);
+        // Register user with market account for given custodian ID
+        register_market_with_user_test(econia, user, custodian_id);
+        // Have user place limit order
+        place_limit_order_user<BC, QC, E1>(user, @econia, side,
+            base_parcels, price);
+        // Assert base parcels for order in user's market account
+        assert!(user::order_base_parcels_test<BC, QC, E1>(
+            @user, custodian_id, side, order_id) == base_parcels, 0);
+        // Get fields for order on book having given order ID
+        let (order_base_parcels, order_user, order_custodian_id) =
+            order_fields_test<BC, QC, E1>(@econia, order_id, side);
+        // Assert order fields
+        assert!(order_base_parcels == base_parcels, 0);
+        assert!(order_user == @user, 0);
+        assert!(order_custodian_id == custodian_id, 0);
+        // Have user cancel limit order
+        cancel_limit_order_user<BC, QC, E1>(user, @econia, side, order_id);
+        // Assert user no longer has order
+        assert!(!user::has_order_test<BC, QC, E1>(
+            @user, custodian_id, side, order_id), 0);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id), 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
     /// Verify successful order placement
     fun test_place_limit_order_ask(
         econia: &signer,
@@ -944,4 +1028,5 @@ module econia::market {
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 }

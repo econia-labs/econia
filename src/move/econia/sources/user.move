@@ -59,10 +59,14 @@ module econia::user {
         asks: CritBitTree<u64>,
         /// Map from order ID to size of order, in base parcels
         bids: CritBitTree<u64>,
+        /// Total base coins held as collateral
+        base_coins_total: u64,
         /// Base coins available for withdraw
         base_coins_available: u64,
+        /// Total quote coins held as collateral
+        quote_coins_total: u64,
         /// Quote coins available for withdraw
-        quote_coins_available: u64,
+        quote_coins_available: u64
     }
 
     /// Market account map for all of a user's `MarketAccount`s
@@ -261,10 +265,15 @@ module econia::user {
         // Borrow mutable reference to market accounts map
         let market_accounts_map =
             &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to available coin count (aborts if
-        // coin type is neither base nor quote for given market account)
-        let coins_available_ref_mut = borrow_coins_available_mut<CoinType>(
-            market_accounts_map, market_account_info);
+        // Borrow mutable reference to total coins held as collateral,
+        // and mutable reference to amount of coins available for
+        // withdraw (aborts if coin type is neither base nor quote for
+        // given market account)
+        let (coins_total_ref_mut, coins_available_ref_mut) =
+            borrow_coin_counts_mut<CoinType>(market_accounts_map,
+                market_account_info);
+        *coins_total_ref_mut = // Increment total coin count
+            *coins_total_ref_mut + coin::value(&coins);
         *coins_available_ref_mut = // Increment available coin count
             *coins_available_ref_mut + coin::value(&coins);
         // Borrow mutable reference to collateral map
@@ -370,7 +379,8 @@ module econia::user {
 
     /// Look up the `MarketAccount` in `market_accounts_map` having
     /// `market_account_info`, then return a mutable reference to the
-    /// number of available coins of `CoinType`.
+    /// number of coins of `CoinType` held as collateral, and a mutable
+    /// reference to the number of coins available for withdraw.
     ///
     /// # Abort conditions
     /// * If `CoinType` is neither base nor quote coin in
@@ -378,11 +388,15 @@ module econia::user {
     ///
     /// # Assumes
     /// * `market_accounts_map` has an entry with `market_account_info`
-    fun borrow_coins_available_mut<CoinType>(
+    fun borrow_coin_counts_mut<CoinType>(
         market_accounts_map:
             &mut open_table::OpenTable<MarketAccountInfo, MarketAccount>,
         market_account_info: MarketAccountInfo
-    ): &mut u64 {
+    ): (
+        &mut u64,
+        &mut u64
+    )
+    {
         // Determine if coin is base coin for market (aborts if is
         // neither base nor quote
         let is_base_coin = registry::coin_is_base_coin<CoinType>(
@@ -390,9 +404,13 @@ module econia::user {
         // Borrow mutable reference to market account
         let market_account =
             open_table::borrow_mut(market_accounts_map, market_account_info);
-        // If is base coin, return mutable ref to base coins available
-        (if (is_base_coin) &mut market_account.base_coins_available else
-            &mut market_account.quote_coins_available) // Else quote
+        if (is_base_coin) ( // If is base coin, return base coin refs
+            &mut market_account.base_coins_total,
+            &mut market_account.base_coins_available
+        ) else ( // Else quote coin refs
+            &mut market_account.quote_coins_total,
+            &mut market_account.quote_coins_available
+        )
     }
 
     /// Return `true` if `user` has an `MarketAccounts` entry for
@@ -495,7 +513,9 @@ module econia::user {
             scale_factor,
             asks: critbit::empty(),
             bids: critbit::empty(),
+            base_coins_total: 0,
             base_coins_available: 0,
+            quote_coins_total: 0,
             quote_coins_available: 0
         });
     }
@@ -523,12 +543,17 @@ module econia::user {
         // Borrow mutable reference to market accounts map
         let market_accounts_map =
             &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to available coin count (aborts if
-        // coin type is neither base nor quote for given market account)
-        let coins_available_ref_mut = borrow_coins_available_mut<CoinType>(
-            market_accounts_map, market_account_info);
+        // Borrow mutable reference to total coins held as collateral,
+        // and mutable reference to amount of coins available for
+        // withdraw (aborts if coin type is neither base nor quote for
+        // given market account)
+        let (coins_total_ref_mut, coins_available_ref_mut) =
+            borrow_coin_counts_mut<CoinType>(market_accounts_map,
+                market_account_info);
         // Assert user has enough available collateral to withdraw
         assert!(amount <= *coins_available_ref_mut, E_NOT_ENOUGH_COLLATERAL);
+        // Decrement withdrawn amount from total coin count
+        *coins_total_ref_mut = *coins_total_ref_mut - amount;
         // Decrement withdrawn amount from available coin count
         *coins_available_ref_mut = *coins_available_ref_mut - amount;
         // Borrow mutable reference to collateral map
@@ -651,6 +676,9 @@ module econia::user {
         // Borrow mutable reference to market account
         let market_account =
             open_table::borrow(market_accounts_map, market_account_info);
+        // Assert total base coin count
+        assert!(market_account.base_coins_total == deposit_amount, 0);
+        // Assert available base coin count
         assert!(market_account.base_coins_available == deposit_amount, 0);
     }
 
@@ -734,7 +762,8 @@ module econia::user {
         user: &signer
     ): registry::CustodianCapability
     acquires Collateral, MarketAccounts {
-        registry::register_test_market_internal(econia); // Init test market
+        // Init test market
+        registry::register_test_market_internal(econia);
         // Register a custodian
         let custodian_capability = registry::register_custodian_capability();
         // Register uncustodied and custodied test market accounts
@@ -799,7 +828,9 @@ module econia::user {
         assert!(market_account_1.scale_factor == 10, 0);
         assert!(critbit::is_empty(&market_account_1.asks), 0);
         assert!(critbit::is_empty(&market_account_1.bids), 0);
+        assert!(market_account_1.base_coins_total == 0, 0);
         assert!(market_account_1.base_coins_available == 0, 0);
+        assert!(market_account_1.quote_coins_total == 0, 0);
         assert!(market_account_1.quote_coins_available == 0, 0);
         // Borrow immutable ref to second market account
         let market_account_2 = open_table::borrow(
@@ -808,7 +839,9 @@ module econia::user {
         assert!(market_account_2.scale_factor == 100, 0);
         assert!(critbit::is_empty(&market_account_2.asks), 0);
         assert!(critbit::is_empty(&market_account_2.bids), 0);
+        assert!(market_account_2.base_coins_total == 0, 0);
         assert!(market_account_2.base_coins_available == 0, 0);
+        assert!(market_account_2.quote_coins_total == 0, 0);
         assert!(market_account_2.quote_coins_available == 0, 0);
     }
 
@@ -867,8 +900,11 @@ module econia::user {
         // Borrow mutable reference to market account
         let market_account =
             open_table::borrow_mut(market_accounts_map, market_account_info);
-        // Assert available coin amounts
+        // Assert coin counts
+        assert!(market_account.base_coins_total == 0, 0);
         assert!(market_account.base_coins_available == 0, 0);
+        assert!(market_account.quote_coins_total ==
+            deposit_amount - withdraw_amount_1, 0);
         assert!(market_account.quote_coins_available ==
             deposit_amount - withdraw_amount_1, 0);
         // Borrow mutable reference to collateral map
@@ -891,8 +927,10 @@ module econia::user {
         // Borrow mutable reference to market account
         let market_account =
             open_table::borrow_mut(market_accounts_map, market_account_info);
-        // Assert available coin amounts
+        // Assert coin counts
+        assert!(market_account.base_coins_total == 0, 0);
         assert!(market_account.base_coins_available == 0, 0);
+        assert!(market_account.quote_coins_total == 0, 0);
         assert!(market_account.quote_coins_available == 0, 0);
         // Borrow mutable reference to collateral map
         let collateral_map =

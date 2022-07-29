@@ -169,7 +169,7 @@ module econia::user {
         assert!(market_account_info.custodian_id == NO_CUSTODIAN,
             E_CUSTODIAN_OVERRIDE);
         // Withdraw collateral from user's market account
-        withdraw_collateral_internal<CoinType>(
+        withdraw_collateral<CoinType>(
             address_of(user), market_account_info, amount)
     }
 
@@ -365,8 +365,22 @@ module econia::user {
         assert!(registry::custodian_id(custodian_capability_ref) ==
             market_account_info.custodian_id, E_UNAUTHORIZED_CUSTODIAN);
         // Withdraw collateral from user's market account
-        withdraw_collateral_internal<CoinType>(
-            user, market_account_info, amount)
+        withdraw_collateral<CoinType>(user, market_account_info, amount)
+    }
+
+    /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
+    /// entry corresponding to `market_account_info`, then return it.
+    /// Reserved for internal cross-module clls, and requires a
+    /// reference to an `EconiaCapability`.
+    public fun withdraw_collateral_internal<CoinType>(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        amount: u64,
+        _econia_capability: &EconiaCapability
+    ): coin::Coin<CoinType>
+    acquires Collateral, MarketAccounts {
+        // Withdraw collateral from user's market account
+        withdraw_collateral<CoinType>(user, market_account_info, amount)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -525,7 +539,7 @@ module econia::user {
     /// * If `user` does not have corresponding market account
     ///   registered
     /// * If `user` has insufficient collateral to withdraw
-    fun withdraw_collateral_internal<CoinType>(
+    fun withdraw_collateral<CoinType>(
         user: address,
         market_account_info: MarketAccountInfo,
         amount: u64

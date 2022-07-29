@@ -28,6 +28,7 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
     -  [Parameters](#@Parameters_5)
     -  [Assumes](#@Assumes_6)
 -  [Function `withdraw_collateral_custodian`](#0xc0deb00c_user_withdraw_collateral_custodian)
+-  [Function `withdraw_collateral_internal`](#0xc0deb00c_user_withdraw_collateral_internal)
 -  [Function `borrow_coin_counts_mut`](#0xc0deb00c_user_borrow_coin_counts_mut)
     -  [Abort conditions](#@Abort_conditions_7)
     -  [Assumes](#@Assumes_8)
@@ -37,7 +38,7 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
     -  [Abort conditions](#@Abort_conditions_9)
 -  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
     -  [Abort conditions](#@Abort_conditions_10)
--  [Function `withdraw_collateral_internal`](#0xc0deb00c_user_withdraw_collateral_internal)
+-  [Function `withdraw_collateral`](#0xc0deb00c_user_withdraw_collateral)
     -  [Abort conditions](#@Abort_conditions_11)
 
 
@@ -470,7 +471,7 @@ Aborts if custodian serial ID for given market account is not 0.
     <b>assert</b>!(market_account_info.custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
     // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
-    <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)
 }
 </code></pre>
@@ -782,8 +783,42 @@ correspond to that specified in <code>market_account_info</code>.
     <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability_ref) ==
         market_account_info.custodian_id, <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
     // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
-    <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_account_info, amount)
+    <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, amount)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_withdraw_collateral_internal"></a>
+
+## Function `withdraw_collateral_internal`
+
+Withdraw <code>amount</code> of <code>Coin</code> having <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>
+entry corresponding to <code>market_account_info</code>, then return it.
+Reserved for internal cross-module clls, and requires a
+reference to an <code>EconiaCapability</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64,
+    _econia_capability: &EconiaCapability
+): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
+    <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, amount)
 }
 </code></pre>
 
@@ -1050,9 +1085,9 @@ not already exist
 
 </details>
 
-<a name="0xc0deb00c_user_withdraw_collateral_internal"></a>
+<a name="0xc0deb00c_user_withdraw_collateral"></a>
 
-## Function `withdraw_collateral_internal`
+## Function `withdraw_collateral`
 
 Withdraw <code>amount</code> of <code>Coin</code> having <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>
 entry corresponding to <code>market_account_info</code>, then return it.
@@ -1069,7 +1104,7 @@ registered
 * If <code><a href="user.md#0xc0deb00c_user">user</a></code> has insufficient collateral to withdraw
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 </code></pre>
 
 
@@ -1078,7 +1113,7 @@ registered
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">withdraw_collateral_internal</a>&lt;CoinType&gt;(
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
     amount: u64

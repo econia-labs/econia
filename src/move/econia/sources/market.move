@@ -5,7 +5,9 @@ module econia::market {
 
     use econia::capability::{Self, EconiaCapability};
     use econia::critbit::{Self, CritBitTree};
+    use econia::order_id;
     use econia::registry;
+    use econia::user;
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -62,7 +64,11 @@ module econia::market {
     /// When caller is not Econia
     const E_NOT_ECONIA: u64 = 1;
     /// When `EconiaCapabilityStore` already exists under Econia account
-    const E_CAPABILITY_STORE_EXISTS: u64 = 2;
+    const E_ECONIA_CAPABILITY_STORE_EXISTS: u64 = 2;
+    /// When no `EconiaCapabilityStore` exists under Econia account
+    const E_NO_ECONIA_CAPABILITY_STORE: u64 = 3;
+    /// When no `OrderBook` exists under given address
+    const E_NO_ORDER_BOOK: u64 = 4;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -94,7 +100,7 @@ module econia::market {
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
         // Assert capability store not already registered
         assert!(!exists<EconiaCapabilityStore>(@econia),
-            E_CAPABILITY_STORE_EXISTS);
+            E_ECONIA_CAPABILITY_STORE_EXISTS);
         // Get new capability instance (aborts if caller is not Econia)
         let econia_capability = capability::get_econia_capability(account);
         move_to<EconiaCapabilityStore>(account, EconiaCapabilityStore{
@@ -121,14 +127,27 @@ module econia::market {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return an `EconiaCapability`
-    ///
-    /// # Assumes
-    /// * `EconiaCapabilityStore` has already been successfully
-    ///   initialized, and thus skips existence checks
+    /// Increment counter for number of orders placed on an `OrderBook`,
+    /// returning the original value.
+    fun get_serial_id<B, Q, E>(
+        order_book_ref_mut: &mut OrderBook<B, Q, E>
+    ): u64 {
+        // Borrow mutable reference to order book serial counter
+        let counter_ref_mut = &mut order_book_ref_mut.counter;
+        let count = *counter_ref_mut; // Get count
+        *counter_ref_mut = count + 1; // Set new count
+        count // Return original count
+    }
+
+    /// Return an `EconiaCapability`, aborting if Econia account has no
+    /// `EconiaCapabilityStore`
     fun get_econia_capability():
     EconiaCapability
     acquires EconiaCapabilityStore {
+        // Assert capability store has been intialized
+        assert!(exists<EconiaCapabilityStore>(@econia),
+            E_NO_ECONIA_CAPABILITY_STORE);
+        // Return a copy of an Econia capability
         borrow_global<EconiaCapabilityStore>(@econia).econia_capability
     }
 
@@ -151,6 +170,27 @@ module econia::market {
         });
     }
 
+    fun place_limit_order<B, Q, E>(
+        user: address,
+        host: address,
+        custodian_id: u64,
+        side: bool,
+        base_parcels: u64,
+        price: u64
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Assert host has an order book
+        assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
+        // Borrow mutable reference to order book
+        let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
+        let order_id = // Get order ID based on book serial ID and side
+            order_id::order_id(price, get_serial_id(order_book_ref_mut), side);
+        // Add order to user's market account
+        user::add_order_internal<B, Q, E>(user, custodian_id, side, order_id,
+            base_parcels, price, &get_econia_capability());
+        // Insert to corresponding tree
+        // Check min/max
+    }
+
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -165,6 +205,29 @@ module econia::market {
         init_book<BC, QC, E1>(host, 10);
         // Attemp invalid re-initialization
         init_book<BC, QC, E1>(host, 10);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for uninitialized capability store
+    fun test_get_econia_capability_not_exists()
+    acquires EconiaCapabilityStore{
+        get_econia_capability(); // Attempt invalid invocation
+    }
+
+    #[test(econia = @econia)]
+    /// Verify successful serial ID generation
+    fun test_get_order_serial_id(
+        econia: &signer
+    ) acquires OrderBook {
+        init_book<BC, QC, E1>(econia, 10); // Initalize order book
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            borrow_global_mut<OrderBook<BC, QC, E1>>(@econia);
+        // Assert serial ID returns
+        assert!(get_serial_id(order_book_ref_mut) == 0, 0);
+        assert!(get_serial_id(order_book_ref_mut) == 1, 0);
+        assert!(get_serial_id(order_book_ref_mut) == 2, 0);
     }
 
     #[test(host = @user)]

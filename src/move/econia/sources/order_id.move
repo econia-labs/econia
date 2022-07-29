@@ -93,10 +93,25 @@ module econia::order_id {
     const HI_64: u64 = 0xffffffffffffffff;
     /// Positions to bitshift for operating on first 64 bits
     const FIRST_64: u8 = 64;
+    /// Ask flag
+    const ASK: bool = true;
+    /// Bid flag
+    const BID: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return order ID for `price` and `serial_id` on given `side`
+    public fun order_id(
+        price: u64,
+        serial_id: u64,
+        side: bool
+    ): u128 {
+        // Return corresponding order ID type based on side
+        if (side == ASK) order_id_ask(price, serial_id) else
+            order_id_bid(price, serial_id)
+    }
 
     /// Return order ID for ask with `price` and `serial_id`
     public fun order_id_ask(
@@ -134,6 +149,13 @@ module econia::order_id {
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Assert wrapped returns same as unwrapped returns
+    fun test_order_id() {
+        assert!(order_id(123, 456, ASK) == order_id_ask(123, 456), 0);
+        assert!(order_id(234, 567, BID) == order_id_bid(234, 567), 0);
+    }
 
     #[test]
     /// Verify expected return

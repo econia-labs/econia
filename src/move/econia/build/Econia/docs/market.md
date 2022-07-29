@@ -12,15 +12,18 @@ Market-side functionality
 -  [Constants](#@Constants_0)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
+-  [Function `get_serial_id`](#0xc0deb00c_market_get_serial_id)
 -  [Function `get_econia_capability`](#0xc0deb00c_market_get_econia_capability)
-    -  [Assumes](#@Assumes_1)
 -  [Function `init_book`](#0xc0deb00c_market_init_book)
+-  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
+<b>use</b> <a href="order_id.md#0xc0deb00c_order_id">0xc0deb00c::order_id</a>;
 <b>use</b> <a href="registry.md#0xc0deb00c_registry">0xc0deb00c::registry</a>;
+<b>use</b> <a href="user.md#0xc0deb00c_user">0xc0deb00c::user</a>;
 </code></pre>
 
 
@@ -216,12 +219,32 @@ When an order book already exists at given address
 
 
 
-<a name="0xc0deb00c_market_E_CAPABILITY_STORE_EXISTS"></a>
+<a name="0xc0deb00c_market_E_ECONIA_CAPABILITY_STORE_EXISTS"></a>
 
 When <code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a></code> already exists under Econia account
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_CAPABILITY_STORE_EXISTS">E_CAPABILITY_STORE_EXISTS</a>: u64 = 2;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_ECONIA_CAPABILITY_STORE_EXISTS">E_ECONIA_CAPABILITY_STORE_EXISTS</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_NO_ECONIA_CAPABILITY_STORE"></a>
+
+When no <code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a></code> exists under Econia account
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NO_ECONIA_CAPABILITY_STORE">E_NO_ECONIA_CAPABILITY_STORE</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_NO_ORDER_BOOK"></a>
+
+When no <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> exists under given address
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>: u64 = 4;
 </code></pre>
 
 
@@ -270,7 +293,7 @@ exists under the Econia account or if caller is not Econia
     <b>assert</b>!(address_of(account) == @econia, <a href="market.md#0xc0deb00c_market_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     // Assert <a href="capability.md#0xc0deb00c_capability">capability</a> store not already registered
     <b>assert</b>!(!<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia),
-        <a href="market.md#0xc0deb00c_market_E_CAPABILITY_STORE_EXISTS">E_CAPABILITY_STORE_EXISTS</a>);
+        <a href="market.md#0xc0deb00c_market_E_ECONIA_CAPABILITY_STORE_EXISTS">E_ECONIA_CAPABILITY_STORE_EXISTS</a>);
     // Get new <a href="capability.md#0xc0deb00c_capability">capability</a> instance (aborts <b>if</b> caller is not Econia)
     <b>let</b> econia_capability = <a href="capability.md#0xc0deb00c_capability_get_econia_capability">capability::get_econia_capability</a>(account);
     <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(account, <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>{
@@ -314,19 +337,44 @@ scale exponent type, and move an <code><a href="market.md#0xc0deb00c_market_Orde
 
 </details>
 
+<a name="0xc0deb00c_market_get_serial_id"></a>
+
+## Function `get_serial_id`
+
+Increment counter for number of orders placed on an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>,
+returning the original value.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_serial_id">get_serial_id</a>&lt;B, Q, E&gt;(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&lt;B, Q, E&gt;): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_serial_id">get_serial_id</a>&lt;B, Q, E&gt;(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;
+): u64 {
+    // Borrow mutable reference <b>to</b> order book serial counter
+    <b>let</b> counter_ref_mut = &<b>mut</b> order_book_ref_mut.counter;
+    <b>let</b> count = *counter_ref_mut; // Get count
+    *counter_ref_mut = count + 1; // Set new count
+    count // Return original count
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_get_econia_capability"></a>
 
 ## Function `get_econia_capability`
 
-Return an <code>EconiaCapability</code>
-
-
-<a name="@Assumes_1"></a>
-
-### Assumes
-
-* <code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a></code> has already been successfully
-initialized, and thus skips existence checks
+Return an <code>EconiaCapability</code>, aborting if Econia account has no
+<code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a></code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>(): <a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>
@@ -341,6 +389,10 @@ initialized, and thus skips existence checks
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>():
 EconiaCapability
 <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a> {
+    // Assert <a href="capability.md#0xc0deb00c_capability">capability</a> store <b>has</b> been intialized
+    <b>assert</b>!(<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia),
+        <a href="market.md#0xc0deb00c_market_E_NO_ECONIA_CAPABILITY_STORE">E_NO_ECONIA_CAPABILITY_STORE</a>);
+    // Return a <b>copy</b> of an Econia <a href="capability.md#0xc0deb00c_capability">capability</a>
     <b>borrow_global</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia).econia_capability
 }
 </code></pre>
@@ -381,6 +433,47 @@ account, aborting if one already exists
         max_bid: <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>,
         counter: 0
     });
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order"></a>
+
+## Function `place_limit_order`
+
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, custodian_id: u64, side: bool, base_parcels: u64, price: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    custodian_id: u64,
+    side: bool,
+    base_parcels: u64,
+    price: u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Assert host <b>has</b> an order book
+    <b>assert</b>!(<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host), <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>);
+    // Borrow mutable reference <b>to</b> order book
+    <b>let</b> order_book_ref_mut = <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host);
+    <b>let</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a> = // Get order ID based on book serial ID and side
+        <a href="order_id.md#0xc0deb00c_order_id_order_id">order_id::order_id</a>(price, <a href="market.md#0xc0deb00c_market_get_serial_id">get_serial_id</a>(order_book_ref_mut), side);
+    // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
+    <a href="user.md#0xc0deb00c_user_add_order_internal">user::add_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
+        base_parcels, price, &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
+    // Insert <b>to</b> corresponding tree
+    // Check <b>min</b>/max
 }
 </code></pre>
 

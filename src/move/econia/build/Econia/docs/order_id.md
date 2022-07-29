@@ -116,6 +116,7 @@ order with serial ID <code>63</code> will be filled second.
     -  [Market buy example](#@Market_buy_example_4)
     -  [Market sell example](#@Market_sell_example_5)
 -  [Constants](#@Constants_6)
+-  [Function `order_id`](#0xc0deb00c_order_id_order_id)
 -  [Function `order_id_ask`](#0xc0deb00c_order_id_order_id_ask)
 -  [Function `order_id_bid`](#0xc0deb00c_order_id_order_id_bid)
 -  [Function `price`](#0xc0deb00c_order_id_price)
@@ -142,6 +143,26 @@ order with serial ID <code>63</code> will be filled second.
 
 
 
+<a name="0xc0deb00c_order_id_ASK"></a>
+
+Ask flag
+
+
+<pre><code><b>const</b> <a href="order_id.md#0xc0deb00c_order_id_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_order_id_BID"></a>
+
+Bid flag
+
+
+<pre><code><b>const</b> <a href="order_id.md#0xc0deb00c_order_id_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_order_id_FIRST_64"></a>
 
 Positions to bitshift for operating on first 64 bits
@@ -151,6 +172,37 @@ Positions to bitshift for operating on first 64 bits
 </code></pre>
 
 
+
+<a name="0xc0deb00c_order_id_order_id"></a>
+
+## Function `order_id`
+
+Return order ID for <code>price</code> and <code>serial_id</code> on given <code>side</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a>(price: u64, serial_id: u64, side: bool): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a>(
+    price: u64,
+    serial_id: u64,
+    side: bool
+): u128 {
+    // Return corresponding order ID type based on side
+    <b>if</b> (side == <a href="order_id.md#0xc0deb00c_order_id_ASK">ASK</a>) <a href="order_id.md#0xc0deb00c_order_id_order_id_ask">order_id_ask</a>(price, serial_id) <b>else</b>
+        <a href="order_id.md#0xc0deb00c_order_id_order_id_bid">order_id_bid</a>(price, serial_id)
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_order_id_order_id_ask"></a>
 

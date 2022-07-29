@@ -363,6 +363,133 @@ module econia::market {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Scale factor for test market (`registry::F1`)
+    const SCALE_FACTOR: u64 = 10;
+    #[test_only]
+    /// Number of base coins `@user` starts with as collateral
+    const USER_BASE_COINS_START: u64 = 1000000;
+    #[test_only]
+    /// Number of quote coins `@user` starts with as collateral
+    const USER_QUOTE_COINS_START: u64 = 2000000;
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return `true` if `OrderBook` at `host` has `Order` with given
+    /// `order_id` on given `side`.
+    ///
+    /// # Assumes
+    /// * `host` has `OrderBook` as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to private and test-only to prevent excessive
+    ///   public queries and thus transaction collisions
+    fun has_order_test<B, Q, E>(
+        host: address,
+        side: bool,
+        order_id: u128,
+    ): bool
+    acquires OrderBook {
+        // Borrow immutable reference to order book
+        let order_book_ref = borrow_global<OrderBook<B, Q, E>>(host);
+        // Borrow immutable reference to orders tree for given side
+        let tree_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Return if orders tree has given order ID
+        critbit::has_key(tree_ref, order_id)
+    }
+
+    #[test_only]
+    /// Return fields of `Order` having `order_id` on `side` of
+    /// `OrderBook` at `host`.
+    ///
+    /// # Assumes
+    /// * `OrderBook` for given market exists at `host` with `Order`
+    ///   having `order_id` on given `side`
+    ///
+    /// # Returns
+    /// * `u64`: `Order.base_parcels`
+    /// * `address`: `Order.user`
+    /// * `u64`: `Order.custodian_id`
+    ///
+    /// # Restrictions
+    /// * Restricted to private and test-only to prevent excessive
+    ///   public queries and thus transaction collisions
+    fun order_fields_test<B, Q, E>(
+        host: address,
+        order_id: u128,
+        side: bool
+    ): (
+        u64,
+        address,
+        u64
+    ) acquires OrderBook {
+        // Borrow immutable reference to order book
+        let order_book_ref = borrow_global<OrderBook<B, Q, E>>(host);
+        // Borrow immutable reference to orders tree for given side
+        let tree_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Get immutable reference to order with given ID
+        let order_ref = critbit::borrow(tree_ref, order_id);
+        // Return order fields
+        (order_ref.base_parcels, order_ref.user, order_ref.custodian_id)
+    }
+
+    #[test_only]
+    /// Initialize a test market hosted by Econia, then register `user`
+    /// with corresponding market account having `custodian_id`.
+    fun register_market_with_user_test(
+        econia: &signer,
+        user: &signer,
+        custodian_id: u64
+    ) acquires EconiaCapabilityStore {
+        coins::init_coin_types(econia); // Initialize coin types
+        registry::init_registry(econia); // Initialize registry
+        // Initialize Econia capability store
+        init_econia_capability_store(econia);
+        // Register test market with Econia as host
+        register_market<BC, QC, E1>(econia);
+        // Register user to trade on the account
+        user::register_market_account<BC, QC, E1>(user, custodian_id);
+        // Get market account info
+        let market_account_info =
+            user::market_account_info<BC, QC, E1>(custodian_id);
+        // Deposit base coin collateral
+        user::deposit_collateral<BC>(address_of(user), market_account_info,
+            coins::mint<BC>(econia, USER_BASE_COINS_START));
+        // Deposit quote coin collateral
+        user::deposit_collateral<QC>(address_of(user), market_account_info,
+            coins::mint<QC>(econia, USER_QUOTE_COINS_START));
+    }
+
+    #[test_only]
+    /// If `side` is `ASK`, return minimum ask order ID field for
+    /// `OrderBook` at `host`, else the maximum bid order ID field.
+    ///
+    /// # Assumes
+    /// * `OrderBook` for given market exists at `host`
+    ///
+    /// # Restrictions
+    /// * Restricted to private and test-only to prevent excessive
+    ///   public queries and thus transaction collisions
+    fun spread_maker_test<B, Q, E>(
+        host: address,
+        side: bool
+    ): u128
+    acquires OrderBook {
+        // Borrow immutable reference to order book
+        let order_book_ref = borrow_global<OrderBook<B, Q, E>>(host);
+        // Return spread maker
+        if (side == ASK) order_book_ref.min_ask else order_book_ref.max_bid
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test(host = @user)]
@@ -375,6 +502,263 @@ module econia::market {
         init_book<BC, QC, E1>(host, 10);
         // Attemp invalid re-initialization
         init_book<BC, QC, E1>(host, 10);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful cancellation for asks
+    fun test_cancel_limit_order_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = ASK; // Declare side
+        // Register market with test user
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare upcoming order parameters
+        let (base_parcels_0, price_0, serial_id_0) = (10, 23, 0);
+        let (base_parcels_1, price_1, serial_id_1) = (11, 22, 1);
+        let (base_parcels_2, price_2, serial_id_2) = (12, 21, 2);
+        // Get order IDs
+        let order_id_0 = order_id::order_id(price_0, serial_id_0, side);
+        let order_id_1 = order_id::order_id(price_1, serial_id_1, side);
+        let order_id_2 = order_id::order_id(price_2, serial_id_2, side);
+        // Place orders on book
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_0, price_0);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_1, price_1);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_2, price_2);
+        // Assert all orders on book
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_0), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        // Cancel order that is not spread maker
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_0);
+        // Assert user-side state updates
+        let (base_coins_total, base_coins_available) = user::
+            get_collateral_counts_test<BC, QC, E1, BC>(@user, NO_CUSTODIAN);
+        assert!(base_coins_total == USER_BASE_COINS_START, 0);
+        assert!(base_coins_available == USER_BASE_COINS_START -
+            SCALE_FACTOR * (base_parcels_1 + base_parcels_2), 0);
+        assert!(!user::has_order_test<BC, QC, E1>(@user, NO_CUSTODIAN,
+            side, order_id_0), 0);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_0), 0);
+        // Assert spread maker field unmodified
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_2, 0);
+        // Cancel spread maker
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_2);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        // Assert spread maker field updates
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_1, 0);
+        // Cancel spread maker
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_1);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        // Assert spread maker field updates
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) ==
+            MIN_ASK_DEFAULT, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful cancellation for bids
+    fun test_cancel_limit_order_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = BID; // Declare side
+        // Register market with test user
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare upcoming order parameters
+        let (base_parcels_0, price_0, serial_id_0) = (10, 21, 0);
+        let (base_parcels_1, price_1, serial_id_1) = (11, 22, 1);
+        let (base_parcels_2, price_2, serial_id_2) = (12, 23, 2);
+        // Get order IDs
+        let order_id_0 = order_id::order_id(price_0, serial_id_0, side);
+        let order_id_1 = order_id::order_id(price_1, serial_id_1, side);
+        let order_id_2 = order_id::order_id(price_2, serial_id_2, side);
+        // Place orders on book
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_0, price_0);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_1, price_1);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_2, price_2);
+        // Assert all orders on book
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_0), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        // Cancel order that is not spread maker
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_0);
+        // Assert user-side state updates
+        let (quote_coins_total, quote_coins_available) = user::
+            get_collateral_counts_test<BC, QC, E1, QC>(@user, NO_CUSTODIAN);
+        assert!(quote_coins_total == USER_QUOTE_COINS_START, 0);
+        assert!(quote_coins_available == USER_QUOTE_COINS_START -
+            (base_parcels_1 * price_1 + base_parcels_2 * price_2), 0);
+        assert!(!user::has_order_test<BC, QC, E1>(@user, NO_CUSTODIAN,
+            side, order_id_0), 0);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_0), 0);
+        // Assert spread maker field unmodified
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_2, 0);
+        // Cancel spread maker
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_2);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        // Assert spread maker field updates
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_1, 0);
+        // Cancel spread maker
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_1);
+        // Assert order no longer on book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        // Assert spread maker field updates
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) ==
+            MAX_BID_DEFAULT, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful spread maker updates when multiple candidates
+    /// for next spread maker
+    fun test_cancel_limit_order_spread_maker(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = ASK; // Declare side
+        // Register market with test user
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare upcoming order parameters
+        let (base_parcels_0, price_0, serial_id_0) = (10, 21, 0);
+        let (base_parcels_1, price_1, serial_id_1) = (11, 22, 1);
+        let (base_parcels_2, price_2) = (12, 23);
+        let (base_parcels_3, price_3) = (13, 24);
+        // Get order IDs
+        let order_id_0 = order_id::order_id(price_0, serial_id_0, side);
+        let order_id_1 = order_id::order_id(price_1, serial_id_1, side);
+        // Place orders on book
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_0, price_0);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_1, price_1);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_2, price_2);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_3, price_3);
+        // Cancel spread maker when multiple candidtates for max/min
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_0);
+        // Assert spread maker updates correctly
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_1, 0);
+        let side = BID; // Declare new side
+        // Declare upcoming order parameters
+        let (base_parcels_4, price_4) = (10, 21);
+        let (base_parcels_5, price_5) = (11, 22);
+        let (base_parcels_6, price_6, serial_id_6) = (12, 23, 6);
+        let (base_parcels_7, price_7, serial_id_7) = (13, 24, 7);
+        // Get order IDs
+        let order_id_6 = order_id::order_id(price_6, serial_id_6, side);
+        let order_id_7 = order_id::order_id(price_7, serial_id_7, side);
+        // Place orders on book
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_4, price_4);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_5, price_5);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_6, price_6);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_7, price_7);
+        // Cancel spread maker when multiple candidtates for max/min
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_7);
+        // Assert spread maker updates correctly
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_6, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for invalid custodian
+    fun test_cancel_limit_order_invalid_custodian(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = ASK; // Declare side
+        // Register market with test user
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare upcoming order parameters
+        let (base_parcels, price, serial_id) = (11, 12, 0);
+        // Get order id
+        let order_id = order_id::order_id(price, serial_id, side);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels, price); // Place order on book
+        cancel_limit_order<BC, QC, E1>( // Attempt invalid cancel
+            @user, @econia, 1, side, order_id);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid user
+    fun test_cancel_limit_order_invalid_user(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = ASK; // declare side
+        // Register market with test user
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare upcoming order parameters
+        let (base_parcels, price, serial_id) = (11, 12, 0);
+        // Get order ID
+        let order_id = order_id::order_id(price, serial_id, side);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels, price); // Place order on book
+        cancel_limit_order<BC, QC, E1>( // Attempt invalid cancel
+            @econia, @econia, NO_CUSTODIAN, side, order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for no registered order book at host
+    fun test_cancel_limit_order_no_book()
+    acquires EconiaCapabilityStore, OrderBook {
+        // Attempt invalid invocation
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, ASK, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for no such order on book
+    fun test_cancel_limit_order_no_order(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Register market with test user
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Attempt invalid invocation of order cancellation
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, ASK, 0);
     }
 
     #[test]
@@ -435,6 +819,113 @@ module econia::market {
     ) {
         init_econia_capability_store(econia); // Initialize store
         init_econia_capability_store(econia); // Attempt invalid re-init
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful order placement
+    fun test_place_limit_order_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = ASK; // Declare side
+        // Register market and user with a market account on it
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare order parameters
+        let (base_parcels, price, serial_id) = (15, 25, 0);
+        // Get order id
+        let order_id = order_id::order_id(price, serial_id, side);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels, price); // Place limit order
+        // Assert user-side state updates
+        let (base_coins_total, base_coins_available) = user::
+            get_collateral_counts_test<BC, QC, E1, BC>(@user, NO_CUSTODIAN);
+        assert!(base_coins_total == USER_BASE_COINS_START, 0);
+        assert!(base_coins_available ==
+            USER_BASE_COINS_START - SCALE_FACTOR * base_parcels, 0);
+        assert!(user::order_base_parcels_test<BC, QC, E1>(@user, NO_CUSTODIAN,
+            side, order_id) == base_parcels, 0);
+        // Get fields for order on book having given order ID
+        let (order_base_parcels, order_user, order_custodian_id) =
+            order_fields_test<BC, QC, E1>(@econia, order_id, side);
+        assert!(order_base_parcels == base_parcels, 0);
+        assert!(order_user == @user, 0);
+        assert!(order_custodian_id == NO_CUSTODIAN, 0);
+        // Assert spread maker update
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id, 0);
+        // Update order parameters for new spread maker
+        (base_parcels, price, serial_id) = (10, 24, 1);
+        // Get new order id
+        order_id = order_id::order_id(price, serial_id, side);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels, price); // Place limit order
+        // Assert spread maker update
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id, 0);
+        // Place limit order that does not cause new spread maker
+        place_limit_order<BC, QC, E1>(
+            @user, @econia, NO_CUSTODIAN, side, 1, 26);
+        // Assert no spread maker update
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful order placement
+    fun test_place_limit_order_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = BID; // Declare side
+        // Register market and user with a market account on it
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare order parameters
+        let (base_parcels, price, serial_id) = (15, 25, 0);
+        // Get order id
+        let order_id = order_id::order_id(price, serial_id, side);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels, price); // Place limit order
+        // Assert user-side state updates
+        let (quote_coins_total, quote_coins_available) = user::
+            get_collateral_counts_test<BC, QC, E1, QC>(@user, NO_CUSTODIAN);
+        assert!(quote_coins_total == USER_QUOTE_COINS_START, 0);
+        assert!(quote_coins_available ==
+            USER_QUOTE_COINS_START - price * base_parcels, 0);
+        assert!(user::order_base_parcels_test<BC, QC, E1>(@user, NO_CUSTODIAN,
+            side, order_id) == base_parcels, 0);
+        // Get fields for order on book having given order ID
+        let (order_base_parcels, order_user, order_custodian_id) =
+            order_fields_test<BC, QC, E1>(@econia, order_id, side);
+        assert!(order_base_parcels == base_parcels, 0);
+        assert!(order_user == @user, 0);
+        assert!(order_custodian_id == NO_CUSTODIAN, 0);
+        // Assert spread maker update
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id, 0);
+        // Update order parameters for new spread maker
+        (base_parcels, price, serial_id) = (10, 26, 1);
+        // Get new order id
+        order_id = order_id::order_id(price, serial_id, side);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels, price); // Place limit order
+        // Assert spread maker update
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id, 0);
+        // Place limit order that does not cause new spread maker
+        place_limit_order<BC, QC, E1>(
+            @user, @econia, NO_CUSTODIAN, side, 1, 24);
+        // Assert no spread maker update
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for no initialized order book
+    fun test_place_limit_order_no_order_book()
+    acquires EconiaCapabilityStore, OrderBook {
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, ASK,
+            10, 10); // Attempt invalid invocation
     }
 
     #[test(econia = @econia)]

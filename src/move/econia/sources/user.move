@@ -564,6 +564,163 @@ module econia::user {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return number of coins `user` holds as collateral for given
+    /// market, `custodian_id`, and `BaseOrQuote` type specifier.
+    ///
+    /// # Assumes
+    /// * `user` has `Collateral` for given market account
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun get_collateral_amount_test<B, Q, E, BaseOrQuote>(
+        user: address,
+        custodian_id: u64
+    ): u64
+    acquires Collateral {
+        // Get market account info for given custodian ID
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
+        // Borrow mutable reference to collateral map
+        let collateral_map = borrow_global<collateral<BaseOrQuote>>(user).map;
+        let collateral_ref = // Get immutable ref to collateral coins
+            open_table::open_table(collateral_map, market_account_info);
+        coin::value(collateral_ref) // Return amount of coins held
+    }
+
+    #[test_only]
+    /// Return amount of collateral a `user` has under market account
+    /// with corresonding `custodian_id`.
+    ///
+    /// # Returns
+    /// * `u64`: Base coins held as collateral
+    /// * `u64`: Quote coins held as collateral
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun get_collateral_amounts_test<B, Q, E>(
+        user: address,
+        custodian_id: u64
+    ): (
+        u64,
+        u64
+    ) acquires Collateral {
+       (
+        get_collateral_amount_test<B, Q, E, B>(user, custodian_id),
+        get_collateral_amount_test<B, Q, E, Q>(user, custodian_id)
+       )
+    }
+
+    #[test_only]
+    /// Return market account counter for coins available and total
+    /// coins, for given `user`, `custodian`, and `BaseOrQuote` coin
+    /// type.
+    ///
+    /// # Returns
+    /// * `u64`: `base_coins_total` if `BaseOrQuote` is `B`, and
+    ///   `quote_coins_total` if `BaseOrQuote` is `Q`
+    /// * `u64`: `base_coins_available` if `BaseOrQuote` is `B`, and
+    ///   `quote_coins_available` if `BaseOrQuote` is `Q`
+    ///
+    /// # Assumes
+    /// * `user` market account as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun get_collateral_counts_test<B, Q, E, BaseOrQuote>(
+        user: address,
+        custodian_id: u64
+    ): (
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        // Declare market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // If base collateral counts requested, return them
+        if (registry::coin_is_base_coin<BaseOrQuote>(
+            market_account_info.market_info)) (
+                market_account.base_coins_total,
+                market_account.base_coins_available,
+            ) else ( // Else return quote collateral counts
+                market_account.quote_coins_total,
+                market_account.quote_coins_available,
+            )
+    }
+
+    #[test_only]
+    /// Return `true` if `user` has order with given `order_id` on given
+    /// `side` for market account with given `custodian_id`.
+    ///
+    /// # Assumes
+    /// * `user` market account as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun has_order_test<B, Q, E>(
+        user: address,
+        custodian_id: u64,
+        side: bool,
+        order_id: u128
+    ): bool {
+        // Declare market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Get immutable reference to orders tree for given side
+        let tree_ref = if (side == ASK) &market_account.asks else
+            &market_account.bids;
+        // Return if orders tree contains given order ID
+        critbit::contains(tree_ref_mut, order_id)
+    }
+
+    #[test_only]
+    /// Return number of base parcels indicated for order having
+    /// `order_id` on given `side` of `user`'s market account having
+    /// `custodian_id`.
+    ///
+    /// # Assumes
+    /// * `user` has an open order as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun order_base_parcels_test<B, Q, E>(
+        user: address,
+        custodian_id: u64,
+        side: bool,
+        order_id: u128
+    ): u64 {
+        // Declare market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Get immutable reference to orders tree for given side
+        let tree_ref = if (side == ASK) &market_account.asks else
+            &market_account.bids;
+        critbit::borrow(tree_ref, order_id); // Return order size
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test(

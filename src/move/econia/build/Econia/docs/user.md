@@ -248,16 +248,6 @@ Flag for asks side
 
 
 
-<a name="0xc0deb00c_user_E_BASE_OVERFLOW"></a>
-
-When a base fill amount would not fit into a <code>u64</code>
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_BASE_OVERFLOW">E_BASE_OVERFLOW</a>: u64 = 11;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_E_BASE_PARCELS_0"></a>
 
 When an order has no base parcel count listed
@@ -348,22 +338,32 @@ When a collateral transfer does not have specified amount
 
 
 
+<a name="0xc0deb00c_user_E_OVERFLOW_BASE"></a>
+
+When a base fill amount would not fit into a <code>u64</code>
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>: u64 = 11;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_OVERFLOW_QUOTE"></a>
+
+When a quote fill amount would not fit into a <code>u64</code>
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>: u64 = 12;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_PRICE_0"></a>
 
 When an order has no price listed
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>: u64 = 9;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_E_QUOTE_OVERFLOW"></a>
-
-When a quote fill amount would not fit into a <code>u64</code>
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_QUOTE_OVERFLOW">E_QUOTE_OVERFLOW</a>: u64 = 12;
 </code></pre>
 
 
@@ -531,10 +531,8 @@ given type arguments and <code>custodian_id</code>
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> a <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
-    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{
-        market_info: <a href="registry.md#0xc0deb00c_registry_market_info">registry::market_info</a>&lt;B, Q, E&gt;(),
-        custodian_id
-    }; // Declare <a href="market.md#0xc0deb00c_market">market</a> account info
+    // Declare <a href="market.md#0xc0deb00c_market">market</a> account info
+    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
@@ -717,10 +715,8 @@ corresponding user successfully placed it to begin with.
     <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
     _econia_capability: &EconiaCapability
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{
-        market_info: <a href="registry.md#0xc0deb00c_registry_market_info">registry::market_info</a>&lt;B, Q, E&gt;(),
-        custodian_id
-    }; // Declare <a href="market.md#0xc0deb00c_market">market</a> account info
+    // Declare <a href="market.md#0xc0deb00c_market">market</a> account info
+    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
@@ -927,11 +923,11 @@ and quote coins required to fill the order.
     // Calculate base <a href="coins.md#0xc0deb00c_coins">coins</a> required <b>to</b> fill the order
     <b>let</b> base_to_fill = (scale_factor <b>as</b> u128) * (base_parcels <b>as</b> u128);
     // Assert that amount can fit in a u64
-    <b>assert</b>!(!(base_to_fill &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_BASE_OVERFLOW">E_BASE_OVERFLOW</a>);
+    <b>assert</b>!(!(base_to_fill &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>);
     // Determine amount of quote <a href="coins.md#0xc0deb00c_coins">coins</a> needed <b>to</b> fill order
     <b>let</b> quote_to_fill = (price <b>as</b> u128) * (base_parcels <b>as</b> u128);
     // Assert that amount can fit in a u64
-    <b>assert</b>!(!(quote_to_fill &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_QUOTE_OVERFLOW">E_QUOTE_OVERFLOW</a>);
+    <b>assert</b>!(!(quote_to_fill &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>);
     // Return casted, range-checked amounts
     ((base_to_fill <b>as</b> u64), (quote_to_fill <b>as</b> u64))
 }

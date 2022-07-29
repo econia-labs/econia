@@ -104,9 +104,9 @@ module econia::user {
     /// When an order has no base parcel count listed
     const E_BASE_PARCELS_0: u64 = 10;
     /// When a base fill amount would not fit into a `u64`
-    const E_BASE_OVERFLOW: u64 = 11;
+    const E_OVERFLOW_BASE: u64 = 11;
     /// When a quote fill amount would not fit into a `u64`
-    const E_QUOTE_OVERFLOW: u64 = 12;
+    const E_OVERFLOW_QUOTE: u64 = 12;
 
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -206,10 +206,8 @@ module econia::user {
     ) acquires MarketAccounts {
         // Assert user has a market accounts map
         assert!(exists<MarketAccounts>(user), E_NO_MARKET_ACCOUNTS);
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<B, Q, E>(),
-            custodian_id
-        }; // Declare market account info
+        // Declare market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
         // Borrow mutable reference to market accounts map
         let market_accounts_map =
             &mut borrow_global_mut<MarketAccounts>(user).map;
@@ -320,10 +318,8 @@ module econia::user {
         order_id: u128,
         _econia_capability: &EconiaCapability
     ) acquires MarketAccounts {
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<B, Q, E>(),
-            custodian_id
-        }; // Declare market account info
+        // Declare market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
         // Borrow mutable reference to market accounts map
         let market_accounts_map =
             &mut borrow_global_mut<MarketAccounts>(user).map;
@@ -446,11 +442,11 @@ module econia::user {
         // Calculate base coins required to fill the order
         let base_to_fill = (scale_factor as u128) * (base_parcels as u128);
         // Assert that amount can fit in a u64
-        assert!(!(base_to_fill > (HI_64 as u128)), E_BASE_OVERFLOW);
+        assert!(!(base_to_fill > (HI_64 as u128)), E_OVERFLOW_BASE);
         // Determine amount of quote coins needed to fill order
         let quote_to_fill = (price as u128) * (base_parcels as u128);
         // Assert that amount can fit in a u64
-        assert!(!(quote_to_fill > (HI_64 as u128)), E_QUOTE_OVERFLOW);
+        assert!(!(quote_to_fill > (HI_64 as u128)), E_OVERFLOW_QUOTE);
         // Return casted, range-checked amounts
         ((base_to_fill as u64), (quote_to_fill as u64))
     }
@@ -617,6 +613,156 @@ module econia::user {
             &get_econia_capability_test()); // Attemp invalid call
     }
 
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for not enough collateral
+    fun test_add_order_internal_not_enough_collateral(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Register test market
+        registry::register_test_market_internal(econia);
+        // Register market account for user with no custodian ID
+        register_market_account<BC, QC, E1>(user, NO_CUSTODIAN);
+        // Declare function arguments
+        let custodian_id = NO_CUSTODIAN; let side = ASK; let order_id = 123;
+        let base_parcels = 456; let price = 789;
+        // Attempt invalid order add
+        add_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
+            base_parcels, price, &get_econia_capability_test());
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify end-to-end internal adding and removing of ask
+    fun test_add_remove_order_internal_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Register test market
+        registry::register_test_market_internal(econia);
+        // Declare ask parameters
+        let custodian_id = NO_CUSTODIAN;
+        let side = ASK;
+        let order_id = 123;
+        let base_parcels = 456;
+        let price = 789;
+        // Declare base coins at start
+        let base_coins_start = 12345678;
+        // Declare scale factor
+        let scale_factor = registry::scale_factor<E1>();
+        // Declare base coins available after ask added
+        let base_coins_available = base_coins_start -
+            base_parcels * scale_factor;
+        let market_account_info = // Get market account info
+            market_account_info<BC, QC, E1>(custodian_id);
+        // Register market account for user with no custodian ID
+        register_market_account<BC, QC, E1>(user, custodian_id);
+        // Deposit base coins
+        deposit_collateral<BC>(@user, market_account_info,
+            coins::mint<BC>(econia, base_coins_start));
+        // Add ask
+        add_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
+            base_parcels, price, &get_econia_capability_test());
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(@user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        assert!(*critbit::borrow(&market_account.asks, order_id) ==
+            base_parcels, 0); // Assert order added to correct tree
+        // Assert coin counts
+        assert!(market_account.base_coins_total == base_coins_start, 0);
+        assert!(market_account.base_coins_available ==
+            base_coins_available, 0);
+        assert!(market_account.quote_coins_total == 0, 0);
+        assert!(market_account.quote_coins_available == 0, 0);
+        remove_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
+            &get_econia_capability_test()); // Remove order
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(@user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Assert order removed from asks tree
+        assert!(!critbit::has_key(&market_account.asks, order_id), 0);
+        // Assert coin counts
+        assert!(market_account.base_coins_total == base_coins_start, 0);
+        assert!(market_account.base_coins_available == base_coins_start, 0);
+        assert!(market_account.quote_coins_total == 0, 0);
+        assert!(market_account.quote_coins_available == 0, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify end-to-end internal adding and removing of bid
+    fun test_add_remove_order_internal_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Register test market
+        registry::register_test_market_internal(econia);
+        // Declare bid parameters
+        let custodian_id = NO_CUSTODIAN;
+        let side = BID;
+        let price = 123;
+        let serial_id = 45;
+        let order_id = order_id::order_id_bid(price, serial_id);
+        let base_parcels = 456;
+        // Declare quote coins at start
+        let quote_coins_start = 12345678;
+        // Declare quote coins available after bid added
+        let quote_coins_available = quote_coins_start - base_parcels * price;
+        let market_account_info = // Get market account info
+            market_account_info<BC, QC, E1>(custodian_id);
+        // Register market account for user with no custodian ID
+        register_market_account<BC, QC, E1>(user, custodian_id);
+        // Deposit base coins
+        deposit_collateral<QC>(@user, market_account_info,
+            coins::mint<QC>(econia, quote_coins_start));
+        // Add bid
+        add_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
+            base_parcels, price, &get_econia_capability_test());
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(@user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        assert!(*critbit::borrow(&market_account.bids, order_id) ==
+            base_parcels, 0); // Assert order added to correct tree
+        // Assert coin counts
+        assert!(market_account.base_coins_total == 0, 0);
+        assert!(market_account.base_coins_available == 0, 0);
+        assert!(market_account.quote_coins_total == quote_coins_start, 0);
+        assert!(market_account.quote_coins_available ==
+            quote_coins_available, 0);
+        remove_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
+            &get_econia_capability_test()); // Remove order
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map =
+            &mut borrow_global_mut<MarketAccounts>(@user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Assert order removed from bids tree
+        assert!(!critbit::has_key(&market_account.bids, order_id), 0);
+        // Assert coin counts
+        assert!(market_account.base_coins_total == 0, 0);
+        assert!(market_account.base_coins_available == 0, 0);
+        assert!(market_account.quote_coins_total == quote_coins_start, 0);
+        assert!(market_account.quote_coins_available == quote_coins_start, 0);
+    }
+
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for attempting to deposit zero amount
@@ -680,6 +826,49 @@ module econia::user {
         assert!(market_account.base_coins_total == deposit_amount, 0);
         // Assert available base coin count
         assert!(market_account.base_coins_available == deposit_amount, 0);
+    }
+
+    #[test]
+    /// Verify successful returns
+    fun test_range_check_order_fills() {
+        // Define function parameters
+        let (scale_factor, base_parcels, price) = (10, 11, 12);
+        // Run calculations
+        let (base_to_fill, quote_to_fill) = range_check_order_fills(
+            scale_factor, base_parcels, price);
+        // Assert returns
+        assert!(base_to_fill == scale_factor * base_parcels, 0);
+        assert!(quote_to_fill == price * base_parcels, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for base parcels set to 0
+    fun test_range_check_order_fills_base_parcels_0() {
+        range_check_order_fills(123, 0, 456); // Attempt invalid call
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for base fill overflow
+    fun test_range_check_order_fills_overflow_base() {
+        // Attempt invalid call
+        range_check_order_fills(10, HI_64 / 9, 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for quote fill overflow
+    fun test_range_check_order_fills_overflow_quote() {
+        // Attempt invalid call
+        range_check_order_fills(1, HI_64, 2);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for price set to 0
+    fun test_range_check_order_fills_price_0() {
+        range_check_order_fills(123, 456, 0); // Attempt invalid call
     }
 
     #[test(user = @user)]

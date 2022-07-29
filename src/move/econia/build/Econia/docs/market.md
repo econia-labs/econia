@@ -241,6 +241,16 @@ When an order book already exists at given address
 
 
 
+<a name="0xc0deb00c_market_E_CROSSED_SPREAD"></a>
+
+When a limit order crosses the spread
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_CROSSED_SPREAD">E_CROSSED_SPREAD</a>: u64 = 8;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_ECONIA_CAPABILITY_STORE_EXISTS"></a>
 
 When <code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a></code> already exists under Econia account
@@ -750,6 +760,7 @@ market account
 
 * If <code>host</code> does not have corresponding <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
 * If order does not pass <code><a href="user.md#0xc0deb00c_user_add_order_internal">user::add_order_internal</a></code> error checks
+* If new order crosses the spread (temporary)
 
 
 <a name="@Assumes_5"></a>
@@ -789,18 +800,23 @@ counter that increases when queried (via <code>get_serial_id</code>)
     <a href="user.md#0xc0deb00c_user_add_order_internal">user::add_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
         base_parcels, price, &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
     // Get mutable reference <b>to</b> orders tree for corresponding side,
-    // determine <b>if</b> new order ID is new spread maker, and get
-    // mutable reference <b>to</b> spread maker for given side
-    <b>let</b> (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) = <b>if</b>
-        (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) (
+    // determine <b>if</b> new order ID is new spread maker, determine <b>if</b>
+    // new order crosses the spread, and get mutable reference <b>to</b>
+    // spread maker for given side
+    <b>let</b> (tree_ref_mut, new_spread_maker, crossed_spread,
+        spread_maker_ref_mut) = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) (
             &<b>mut</b> order_book_ref_mut.asks,
             (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> &lt; order_book_ref_mut.min_ask),
+            (price &lt;= <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(order_book_ref_mut.max_bid)),
             &<b>mut</b> order_book_ref_mut.min_ask
-        ) <b>else</b> (
+        ) <b>else</b> ( // If order is a bid
             &<b>mut</b> order_book_ref_mut.bids,
             (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> &gt; order_book_ref_mut.max_bid),
+            (price &gt;= <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(order_book_ref_mut.min_ask)),
             &<b>mut</b> order_book_ref_mut.max_bid
         );
+    // Assert spread uncrossed
+    <b>assert</b>!(!crossed_spread, <a href="market.md#0xc0deb00c_market_E_CROSSED_SPREAD">E_CROSSED_SPREAD</a>);
     // If a new spread maker, mark <b>as</b> such on book
     <b>if</b> (new_spread_maker) *spread_maker_ref_mut = <a href="order_id.md#0xc0deb00c_order_id">order_id</a>;
     // Insert order <b>to</b> corresponding tree

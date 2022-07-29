@@ -77,6 +77,8 @@ module econia::market {
     const E_INVALID_USER: u64 = 6;
     /// When invalid custodian attempts to manage an order
     const E_INVALID_CUSTODIAN: u64 = 7;
+    /// When a limit order crosses the spread
+    const E_CROSSED_SPREAD: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -318,6 +320,7 @@ module econia::market {
     /// # Abort conditions
     /// * If `host` does not have corresponding `OrderBook`
     /// * If order does not pass `user::add_order_internal` error checks
+    /// * If new order crosses the spread (temporary)
     ///
     /// # Assumes
     /// * Orders tree will not alread have an order with the same ID as
@@ -342,18 +345,23 @@ module econia::market {
         user::add_order_internal<B, Q, E>(user, custodian_id, side, order_id,
             base_parcels, price, &get_econia_capability());
         // Get mutable reference to orders tree for corresponding side,
-        // determine if new order ID is new spread maker, and get
-        // mutable reference to spread maker for given side
-        let (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) = if
-            (side == ASK) (
+        // determine if new order ID is new spread maker, determine if
+        // new order crosses the spread, and get mutable reference to
+        // spread maker for given side
+        let (tree_ref_mut, new_spread_maker, crossed_spread,
+            spread_maker_ref_mut) = if (side == ASK) (
                 &mut order_book_ref_mut.asks,
                 (order_id < order_book_ref_mut.min_ask),
+                (price <= order_id::price(order_book_ref_mut.max_bid)),
                 &mut order_book_ref_mut.min_ask
-            ) else (
+            ) else ( // If order is a bid
                 &mut order_book_ref_mut.bids,
                 (order_id > order_book_ref_mut.max_bid),
+                (price >= order_id::price(order_book_ref_mut.min_ask)),
                 &mut order_book_ref_mut.max_bid
             );
+        // Assert spread uncrossed
+        assert!(!crossed_spread, E_CROSSED_SPREAD);
         // If a new spread maker, mark as such on book
         if (new_spread_maker) *spread_maker_ref_mut = order_id;
         // Insert order to corresponding tree
@@ -646,10 +654,10 @@ module econia::market {
         // Register market with test user
         register_market_with_user_test(econia, user, NO_CUSTODIAN);
         // Declare upcoming order parameters
-        let (base_parcels_0, price_0, serial_id_0) = (10, 21, 0);
-        let (base_parcels_1, price_1, serial_id_1) = (11, 22, 1);
-        let (base_parcels_2, price_2) = (12, 23);
-        let (base_parcels_3, price_3) = (13, 24);
+        let (base_parcels_0, price_0, serial_id_0) = (10, 71, 0);
+        let (base_parcels_1, price_1, serial_id_1) = (11, 72, 1);
+        let (base_parcels_2, price_2) = (12, 73);
+        let (base_parcels_3, price_3) = (13, 74);
         // Get order IDs
         let order_id_0 = order_id::order_id(price_0, serial_id_0, side);
         let order_id_1 = order_id::order_id(price_1, serial_id_1, side);
@@ -1001,6 +1009,58 @@ module econia::market {
             @user, @econia, NO_CUSTODIAN, side, 1, 24);
         // Assert no spread maker update
         assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for placing limit order that crosses spread
+    fun test_place_limit_order_crossed_spread_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Define parameters for upcoming order
+        let (side, base_parcels, price, custodian_id) =
+            ( BID,           10,    12, NO_CUSTODIAN);
+        // Register user with market account
+        register_market_with_user_test(econia, user, custodian_id);
+        // Place limit order
+        place_limit_order<BC, QC, E1>(@user, @econia, custodian_id, side,
+            base_parcels, price);
+        // Define parameters for upcoming order
+        let (side, base_parcels, price, custodian_id) =
+            ( ASK,           10,    12, NO_CUSTODIAN);
+        // Attempt placing limit order
+        place_limit_order<BC, QC, E1>(@user, @econia, custodian_id, side,
+            base_parcels, price);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for placing limit order that crosses spread
+    fun test_place_limit_order_crossed_spread_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Define parameters for upcoming order
+        let (side, base_parcels, price, custodian_id) =
+            ( ASK,           10,    12, NO_CUSTODIAN);
+        // Register user with market account
+        register_market_with_user_test(econia, user, custodian_id);
+        // Place limit order
+        place_limit_order<BC, QC, E1>(@user, @econia, custodian_id, side,
+            base_parcels, price);
+        // Define parameters for upcoming order
+        let (side, base_parcels, price, custodian_id) =
+            ( BID,           10,    12, NO_CUSTODIAN);
+        // Attempt placing limit order
+        place_limit_order<BC, QC, E1>(@user, @econia, custodian_id, side,
+            base_parcels, price);
     }
 
     #[test]

@@ -357,12 +357,12 @@ module econia::user {
         user: address,
         market_account_info: MarketAccountInfo,
         amount: u64,
-        custodian_capability: &registry::CustodianCapability,
+        custodian_capability_ref: &registry::CustodianCapability,
     ): coin::Coin<CoinType>
     acquires Collateral, MarketAccounts {
         // Assert serial custodian ID from capability matches ID from
         // market account info
-        assert!(registry::custodian_id(custodian_capability) ==
+        assert!(registry::custodian_id(custodian_capability_ref) ==
             market_account_info.custodian_id, E_UNAUTHORIZED_CUSTODIAN);
         // Withdraw collateral from user's market account
         withdraw_collateral_internal<CoinType>(

@@ -11,11 +11,21 @@ Market-side functionality
 -  [Resource `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Constants](#@Constants_0)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
+-  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
+-  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
+-  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
+-  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
+-  [Function `cancel_limit_order`](#0xc0deb00c_market_cancel_limit_order)
+    -  [Parameters](#@Parameters_1)
+    -  [Abort conditions](#@Abort_conditions_2)
 -  [Function `get_serial_id`](#0xc0deb00c_market_get_serial_id)
 -  [Function `get_econia_capability`](#0xc0deb00c_market_get_econia_capability)
 -  [Function `init_book`](#0xc0deb00c_market_init_book)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+    -  [Parameters](#@Parameters_3)
+    -  [Abort conditions](#@Abort_conditions_4)
+    -  [Assumes](#@Assumes_5)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
@@ -86,7 +96,7 @@ An order on the order book
  Address of corresponding user
 </dd>
 <dt>
-<code>custodian_id: u8</code>
+<code>custodian_id: u64</code>
 </dt>
 <dd>
  For given user, custodian ID of corresponding market account
@@ -135,13 +145,15 @@ An order book for the given market
 <code>min_ask: u128</code>
 </dt>
 <dd>
- Order ID of minimum ask, per price-time priority
+ Order ID of minimum ask, per price-time priority. The ask
+ side "spread maker".
 </dd>
 <dt>
 <code>max_bid: u128</code>
 </dt>
 <dd>
- Order ID of maximum bid, per price-time priority
+ Order ID of maximum bid, per price-time priority. The bid
+ side "spread maker".
 </dd>
 <dt>
 <code>counter: u64</code>
@@ -209,6 +221,16 @@ Bid flag
 
 
 
+<a name="0xc0deb00c_market_NO_CUSTODIAN"></a>
+
+Custodian ID flag for no delegated custodian
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_BOOK_EXISTS"></a>
 
 When an order book already exists at given address
@@ -229,6 +251,26 @@ When <code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCap
 
 
 
+<a name="0xc0deb00c_market_E_INVALID_CUSTODIAN"></a>
+
+When invalid custodian attempts to manage an order
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>: u64 = 7;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_INVALID_USER"></a>
+
+When invalid user attempts to manage an order
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>: u64 = 6;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_NO_ECONIA_CAPABILITY_STORE"></a>
 
 When no <code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a></code> exists under Econia account
@@ -245,6 +287,16 @@ When no <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></cod
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_NO_SUCH_ORDER"></a>
+
+When corresponding order not found on book for given side
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NO_SUCH_ORDER">E_NO_SUCH_ORDER</a>: u64 = 5;
 </code></pre>
 
 
@@ -305,6 +357,115 @@ exists under the Econia account or if caller is not Econia
 
 </details>
 
+<a name="0xc0deb00c_market_place_limit_order_custodian"></a>
+
+## Function `place_limit_order_custodian`
+
+Place a limit order on the book and in a user's market account.
+Invoked by a custodian, who passes an immutable reference to
+their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
+<code>place_limit_order</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, side: bool, base_parcels: u64, price: u64, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    side: bool,
+    base_parcels: u64,
+    price: u64,
+    custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Get custodian ID encoded in <a href="capability.md#0xc0deb00c_capability">capability</a>
+    <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability_ref);
+    // Place limit order <b>with</b> corresponding custodian id
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, host, custodian_id, side, base_parcels, price);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_limit_order_custodian"></a>
+
+## Function `cancel_limit_order_custodian`
+
+Cancel a limit order on the book and in a user's market account.
+Invoked by a custodian, who passes an immutable reference to
+their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
+<code>cancel_limit_order</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+    custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Get custodian ID encoded in <a href="capability.md#0xc0deb00c_capability">capability</a>
+    <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability_ref);
+    // Cancel limit order <b>with</b> corresponding custodian id
+    <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, host, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_limit_order_user"></a>
+
+## Function `cancel_limit_order_user`
+
+Cancel a limit order on the book and in a user's market account.
+Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_user">cancel_limit_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_user">cancel_limit_order_user</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Cancel limit order <b>with</b> corresponding no custodian flag
+    <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>&lt;B, Q, E&gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>), host, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_register_market"></a>
 
 ## Function `register_market`
@@ -330,6 +491,129 @@ scale exponent type, and move an <code><a href="market.md#0xc0deb00c_market_Orde
         &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
     // Initialize an order book under host account
     <a href="market.md#0xc0deb00c_market_init_book">init_book</a>&lt;B, Q, E&gt;(host, <a href="registry.md#0xc0deb00c_registry_scale_factor">registry::scale_factor</a>&lt;E&gt;());
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order_user"></a>
+
+## Function `place_limit_order_user`
+
+Place a limit order on the book and in a user's market account.
+Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, side: bool, base_parcels: u64, price: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    side: bool,
+    base_parcels: u64,
+    price: u64,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Place limit order <b>with</b> no custodian flag
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>), host, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, side, base_parcels, price);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_limit_order"></a>
+
+## Function `cancel_limit_order`
+
+Cancel limit order on book and unmark in user's market account.
+
+
+<a name="@Parameters_1"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>host</code>: Where corresponding <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> is hosted
+* <code>custodian_id</code>: Serial ID of delegated custodian for given
+market account
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+* <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
+
+
+<a name="@Abort_conditions_2"></a>
+
+### Abort conditions
+
+* If no such <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> under <code>host</code> account
+* If the specified <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code> is not on given <code>side</code> for
+corresponding <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
+* If <code><a href="user.md#0xc0deb00c_user">user</a></code> is not the user who placed the order with the
+corresponding <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
+* If <code>custodian_id</code> is not the same as that indicated on order
+with the corresponding <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, custodian_id: u64, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    custodian_id: u64,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Assert host <b>has</b> an order book
+    <b>assert</b>!(<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host), <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>);
+    // Borrow mutable reference <b>to</b> order book
+    <b>let</b> order_book_ref_mut = <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host);
+    // Get mutable reference <b>to</b> orders tree for corresponding side
+    <b>let</b> tree_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks <b>else</b>
+        &<b>mut</b> order_book_ref_mut.bids;
+    // Assert order is on book
+    <b>assert</b>!(<a href="critbit.md#0xc0deb00c_critbit_has_key">critbit::has_key</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>), <a href="market.md#0xc0deb00c_market_E_NO_SUCH_ORDER">E_NO_SUCH_ORDER</a>);
+    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{ // Pop and unpack order from book,
+        base_parcels: _, // Drop base parcel count
+        <a href="user.md#0xc0deb00c_user">user</a>: order_user, // Save indicated <a href="user.md#0xc0deb00c_user">user</a> for checking later
+        custodian_id: order_custodian_id // Save indicated custodian
+    } = <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> attempting <b>to</b> cancel is <a href="user.md#0xc0deb00c_user">user</a> on order
+    <b>assert</b>!(<a href="user.md#0xc0deb00c_user">user</a> == order_user, <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>);
+    // Assert custodian attempting <b>to</b> cancel is custodian on order
+    <b>assert</b>!(custodian_id == order_custodian_id, <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
+    // If cancelling an ask that was previously the spread maker
+    <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a> && <a href="order_id.md#0xc0deb00c_order_id">order_id</a> == order_book_ref_mut.min_ask) {
+        // Update minimum ask <b>to</b> default value <b>if</b> tree is empty
+        order_book_ref_mut.min_ask = <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_empty">critbit::is_empty</a>(tree_ref_mut))
+            // Else <b>to</b> the minimum ask on the book
+            <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a> <b>else</b> <a href="critbit.md#0xc0deb00c_critbit_min_key">critbit::min_key</a>(tree_ref_mut);
+    // Else <b>if</b> cancelling a bid that was previously the spread maker
+    } <b>else</b> <b>if</b> (side == <a href="market.md#0xc0deb00c_market_BID">BID</a> && <a href="order_id.md#0xc0deb00c_order_id">order_id</a> == order_book_ref_mut.max_bid) {
+        // Update maximum bid <b>to</b> default value <b>if</b> tree is empty
+        order_book_ref_mut.max_bid = <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_empty">critbit::is_empty</a>(tree_ref_mut))
+            // Else <b>to</b> the maximum bid on the book
+            <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a> <b>else</b> <a href="critbit.md#0xc0deb00c_critbit_max_key">critbit::max_key</a>(tree_ref_mut);
+    };
+    // Remove order from corresponding <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
+    <a href="user.md#0xc0deb00c_user_remove_order_internal">user::remove_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, side,
+        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
 }
 </code></pre>
 
@@ -444,6 +728,37 @@ account, aborting if one already exists
 
 ## Function `place_limit_order`
 
+Place limit order on the book and in user's market account.
+
+
+<a name="@Parameters_3"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user submitting order
+* <code>host</code>: Where corresponding <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> is hosted
+* <code>custodian_id</code>: Serial ID of delegated custodian for <code><a href="user.md#0xc0deb00c_user">user</a></code>'s
+market account
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+* <code>base_parcels</code>: Number of base parcels the order is for
+* <code>price</code>: Order price
+
+
+<a name="@Abort_conditions_4"></a>
+
+### Abort conditions
+
+* If <code>host</code> does not have corresponding <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
+* If order does not pass <code><a href="user.md#0xc0deb00c_user_add_order_internal">user::add_order_internal</a></code> error checks
+
+
+<a name="@Assumes_5"></a>
+
+### Assumes
+
+* Orders tree will not alread have an order with the same ID as
+the new order because order IDs are generated from a
+counter that increases when queried (via <code>get_serial_id</code>)
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, custodian_id: u64, side: bool, base_parcels: u64, price: u64)
@@ -467,13 +782,30 @@ account, aborting if one already exists
     <b>assert</b>!(<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host), <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>);
     // Borrow mutable reference <b>to</b> order book
     <b>let</b> order_book_ref_mut = <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host);
-    <b>let</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a> = // Get order ID based on book serial ID and side
+    <b>let</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a> = // Get order ID based on new book serial ID/side
         <a href="order_id.md#0xc0deb00c_order_id_order_id">order_id::order_id</a>(price, <a href="market.md#0xc0deb00c_market_get_serial_id">get_serial_id</a>(order_book_ref_mut), side);
-    // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
+    // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account (performs extensive error
+    // checking)
     <a href="user.md#0xc0deb00c_user_add_order_internal">user::add_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
         base_parcels, price, &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
-    // Insert <b>to</b> corresponding tree
-    // Check <b>min</b>/max
+    // Get mutable reference <b>to</b> orders tree for corresponding side,
+    // determine <b>if</b> new order ID is new spread maker, and get
+    // mutable reference <b>to</b> spread maker for given side
+    <b>let</b> (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) = <b>if</b>
+        (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) (
+            &<b>mut</b> order_book_ref_mut.asks,
+            (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> &lt; order_book_ref_mut.min_ask),
+            &<b>mut</b> order_book_ref_mut.min_ask
+        ) <b>else</b> (
+            &<b>mut</b> order_book_ref_mut.bids,
+            (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> &gt; order_book_ref_mut.max_bid),
+            &<b>mut</b> order_book_ref_mut.max_bid
+        );
+    // If a new spread maker, mark <b>as</b> such on book
+    <b>if</b> (new_spread_maker) *spread_maker_ref_mut = <a href="order_id.md#0xc0deb00c_order_id">order_id</a>;
+    // Insert order <b>to</b> corresponding tree
+    <a href="critbit.md#0xc0deb00c_critbit_insert">critbit::insert</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
+        <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id});
 }
 </code></pre>
 

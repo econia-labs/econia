@@ -36,7 +36,7 @@ module econia::market {
         /// Address of corresponding user
         user: address,
         /// For given user, custodian ID of corresponding market account
-        custodian_id: u8
+        custodian_id: u64
     }
 
     /// An order book for the given market
@@ -47,9 +47,11 @@ module econia::market {
         asks: CritBitTree<Order>,
         /// Bids tree
         bids: CritBitTree<Order>,
-        /// Order ID of minimum ask, per price-time priority
+        /// Order ID of minimum ask, per price-time priority. The ask
+        /// side "spread maker".
         min_ask: u128,
-        /// Order ID of maximum bid, per price-time priority
+        /// Order ID of maximum bid, per price-time priority. The bid
+        /// side "spread maker".
         max_bid: u128,
         /// Serial counter for number of orders placed on book
         counter: u64
@@ -69,6 +71,12 @@ module econia::market {
     const E_NO_ECONIA_CAPABILITY_STORE: u64 = 3;
     /// When no `OrderBook` exists under given address
     const E_NO_ORDER_BOOK: u64 = 4;
+    /// When corresponding order not found on book for given side
+    const E_NO_SUCH_ORDER: u64 = 5;
+    /// When invalid user attempts to manage an order
+    const E_INVALID_USER: u64 = 6;
+    /// When invalid custodian attempts to manage an order
+    const E_INVALID_CUSTODIAN: u64 = 7;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -84,6 +92,8 @@ module econia::market {
     const MAX_BID_DEFAULT: u128 = 0;
     /// Default value for minimum ask order ID
     const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// Custodian ID flag for no delegated custodian
+    const NO_CUSTODIAN: u64 = 0;
     /// Right direction, denoting successor traversal
     const RIGHT: bool = false;
 
@@ -107,9 +117,58 @@ module econia::market {
             econia_capability}); // Move to account capability store
     }
 
+    /// Place a limit order on the book and in a user's market account.
+    /// Invoked by a custodian, who passes an immutable reference to
+    /// their `registry::CustodianCapability`. See wrapped call
+    /// `place_limit_order`.
+    public fun place_limit_order_custodian<B, Q, E>(
+        user: address,
+        host: address,
+        side: bool,
+        base_parcels: u64,
+        price: u64,
+        custodian_capability_ref: &registry::CustodianCapability
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Get custodian ID encoded in capability
+        let custodian_id = registry::custodian_id(custodian_capability_ref);
+        // Place limit order with corresponding custodian id
+        place_limit_order<B, Q, E>(
+            user, host, custodian_id, side, base_parcels, price);
+    }
+
+    /// Cancel a limit order on the book and in a user's market account.
+    /// Invoked by a custodian, who passes an immutable reference to
+    /// their `registry::CustodianCapability`. See wrapped call
+    /// `cancel_limit_order`.
+    public fun cancel_limit_order_custodian<B, Q, E>(
+        user: address,
+        host: address,
+        side: bool,
+        order_id: u128,
+        custodian_capability_ref: &registry::CustodianCapability
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Get custodian ID encoded in capability
+        let custodian_id = registry::custodian_id(custodian_capability_ref);
+        // Cancel limit order with corresponding custodian id
+        cancel_limit_order<B, Q, E>(user, host, custodian_id, side, order_id);
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Cancel a limit order on the book and in a user's market account.
+    /// Invoked by a signing user. See wrapped call `place_limit_order`.
+    public entry fun cancel_limit_order_user<B, Q, E>(
+        user: &signer,
+        host: address,
+        side: bool,
+        order_id: u128,
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Cancel limit order with corresponding no custodian flag
+        cancel_limit_order<B, Q, E>(
+            address_of(user), host, NO_CUSTODIAN, side, order_id);
+    }
 
     /// Register a market for the given base type, quote type,
     /// scale exponent type, and move an `OrderBook` to `host`.
@@ -123,9 +182,84 @@ module econia::market {
         init_book<B, Q, E>(host, registry::scale_factor<E>());
     }
 
+    /// Place a limit order on the book and in a user's market account.
+    /// Invoked by a signing user. See wrapped call `place_limit_order`.
+    public entry fun place_limit_order_user<B, Q, E>(
+        user: &signer,
+        host: address,
+        side: bool,
+        base_parcels: u64,
+        price: u64,
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Place limit order with no custodian flag
+        place_limit_order<B, Q, E>(
+            address_of(user), host, NO_CUSTODIAN, side, base_parcels, price);
+    }
+
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Cancel limit order on book and unmark in user's market account.
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `host`: Where corresponding `OrderBook` is hosted
+    /// * `custodian_id`: Serial ID of delegated custodian for given
+    ///   market account
+    /// * `side`: `ASK` or `BID`
+    /// * `order_id`: Order ID for given order
+    ///
+    /// # Abort conditions
+    /// * If no such `OrderBook` under `host` account
+    /// * If the specified `order_id` is not on given `side` for
+    ///   corresponding `OrderBook`
+    /// * If `user` is not the user who placed the order with the
+    ///   corresponding `order_id`
+    /// * If `custodian_id` is not the same as that indicated on order
+    ///   with the corresponding `order_id`
+    fun cancel_limit_order<B, Q, E>(
+        user: address,
+        host: address,
+        custodian_id: u64,
+        side: bool,
+        order_id: u128
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Assert host has an order book
+        assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
+        // Borrow mutable reference to order book
+        let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
+        // Get mutable reference to orders tree for corresponding side
+        let tree_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
+            &mut order_book_ref_mut.bids;
+        // Assert order is on book
+        assert!(critbit::has_key(tree_ref_mut, order_id), E_NO_SUCH_ORDER);
+        let Order{ // Pop and unpack order from book,
+            base_parcels: _, // Drop base parcel count
+            user: order_user, // Save indicated user for checking later
+            custodian_id: order_custodian_id // Save indicated custodian
+        } = critbit::pop(tree_ref_mut, order_id);
+        // Assert user attempting to cancel is user on order
+        assert!(user == order_user, E_INVALID_USER);
+        // Assert custodian attempting to cancel is custodian on order
+        assert!(custodian_id == order_custodian_id, E_INVALID_CUSTODIAN);
+        // If cancelling an ask that was previously the spread maker
+        if (side == ASK && order_id == order_book_ref_mut.min_ask) {
+            // Update minimum ask to default value if tree is empty
+            order_book_ref_mut.min_ask = if (critbit::is_empty(tree_ref_mut))
+                // Else to the minimum ask on the book
+                MIN_ASK_DEFAULT else critbit::min_key(tree_ref_mut);
+        // Else if cancelling a bid that was previously the spread maker
+        } else if (side == BID && order_id == order_book_ref_mut.max_bid) {
+            // Update maximum bid to default value if tree is empty
+            order_book_ref_mut.max_bid = if (critbit::is_empty(tree_ref_mut))
+                // Else to the maximum bid on the book
+                MAX_BID_DEFAULT else critbit::max_key(tree_ref_mut);
+        };
+        // Remove order from corresponding user's market account
+        user::remove_order_internal<B, Q, E>(user, custodian_id, side,
+            order_id, &get_econia_capability());
+    }
 
     /// Increment counter for number of orders placed on an `OrderBook`,
     /// returning the original value.
@@ -170,6 +304,25 @@ module econia::market {
         });
     }
 
+    /// Place limit order on the book and in user's market account.
+    ///
+    /// # Parameters
+    /// * `user`: Address of user submitting order
+    /// * `host`: Where corresponding `OrderBook` is hosted
+    /// * `custodian_id`: Serial ID of delegated custodian for `user`'s
+    ///   market account
+    /// * `side`: `ASK` or `BID`
+    /// * `base_parcels`: Number of base parcels the order is for
+    /// * `price`: Order price
+    ///
+    /// # Abort conditions
+    /// * If `host` does not have corresponding `OrderBook`
+    /// * If order does not pass `user::add_order_internal` error checks
+    ///
+    /// # Assumes
+    /// * Orders tree will not alread have an order with the same ID as
+    ///   the new order because order IDs are generated from a
+    ///   counter that increases when queried (via `get_serial_id`)
     fun place_limit_order<B, Q, E>(
         user: address,
         host: address,
@@ -182,13 +335,30 @@ module econia::market {
         assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
         // Borrow mutable reference to order book
         let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
-        let order_id = // Get order ID based on book serial ID and side
+        let order_id = // Get order ID based on new book serial ID/side
             order_id::order_id(price, get_serial_id(order_book_ref_mut), side);
-        // Add order to user's market account
+        // Add order to user's market account (performs extensive error
+        // checking)
         user::add_order_internal<B, Q, E>(user, custodian_id, side, order_id,
             base_parcels, price, &get_econia_capability());
-        // Insert to corresponding tree
-        // Check min/max
+        // Get mutable reference to orders tree for corresponding side,
+        // determine if new order ID is new spread maker, and get
+        // mutable reference to spread maker for given side
+        let (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) = if
+            (side == ASK) (
+                &mut order_book_ref_mut.asks,
+                (order_id < order_book_ref_mut.min_ask),
+                &mut order_book_ref_mut.min_ask
+            ) else (
+                &mut order_book_ref_mut.bids,
+                (order_id > order_book_ref_mut.max_bid),
+                &mut order_book_ref_mut.max_bid
+            );
+        // If a new spread maker, mark as such on book
+        if (new_spread_maker) *spread_maker_ref_mut = order_id;
+        // Insert order to corresponding tree
+        critbit::insert(tree_ref_mut, order_id,
+            Order{base_parcels, user, custodian_id});
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

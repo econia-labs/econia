@@ -254,7 +254,7 @@ Flag for asks side
 When an order has no base parcel count listed
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_BASE_PARCELS_0">E_BASE_PARCELS_0</a>: u64 = 10;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_BASE_PARCELS_0">E_BASE_PARCELS_0</a>: u64 = 9;
 </code></pre>
 
 
@@ -264,7 +264,7 @@ When an order has no base parcel count listed
 When user attempts invalid custodian override
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>: u64 = 7;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>: u64 = 6;
 </code></pre>
 
 
@@ -294,7 +294,7 @@ When a market account registered for given market account info
 When not enough collateral
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>: u64 = 5;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_COLLATERAL">E_NOT_ENOUGH_COLLATERAL</a>: u64 = 4;
 </code></pre>
 
 
@@ -311,10 +311,10 @@ When no such market has been registered
 
 <a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
 
-When a market account is not registered
+When a collateral transfer does not have specified amount
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>: u64 = 4;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>: u64 = 3;
 </code></pre>
 
 
@@ -324,17 +324,7 @@ When a market account is not registered
 When a user does not a market accounts map
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 8;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_E_NO_TRANSFER_AMOUNT"></a>
-
-When a collateral transfer does not have specified amount
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>: u64 = 3;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 7;
 </code></pre>
 
 
@@ -344,7 +334,7 @@ When a collateral transfer does not have specified amount
 When a base fill amount would not fit into a <code>u64</code>
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>: u64 = 11;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>: u64 = 10;
 </code></pre>
 
 
@@ -354,7 +344,7 @@ When a base fill amount would not fit into a <code>u64</code>
 When a quote fill amount would not fit into a <code>u64</code>
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>: u64 = 12;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>: u64 = 11;
 </code></pre>
 
 
@@ -364,7 +354,7 @@ When a quote fill amount would not fit into a <code>u64</code>
 When an order has no price listed
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>: u64 = 9;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>: u64 = 8;
 </code></pre>
 
 
@@ -374,7 +364,7 @@ When an order has no price listed
 When unauthorized custodian ID
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>: u64 = 6;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>: u64 = 5;
 </code></pre>
 
 
@@ -586,7 +576,6 @@ Deposit <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> to <code><a h
 ### Abort conditions
 
 * If <code>CoinType</code> is neither base nor quote for market account
-* If <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> has a value of 0
 * If <code><a href="user.md#0xc0deb00c_user">user</a></code> does not have corresponding market account
 registered
 
@@ -605,8 +594,6 @@ registered
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
     <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Assert attempting <b>to</b> actually deposit <a href="coins.md#0xc0deb00c_coins">coins</a>
-    <b>assert</b>!(<a href="_value">coin::value</a>(&<a href="coins.md#0xc0deb00c_coins">coins</a>) != 0, <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>);
     // Assert <a href="market.md#0xc0deb00c_market">market</a> account registered for <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>assert</b>!(<a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info, <a href="user.md#0xc0deb00c_user">user</a>),
         <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
@@ -1098,7 +1085,6 @@ entry corresponding to <code>market_account_info</code>, then return it.
 ### Abort conditions
 
 * If <code>CoinType</code> is neither base nor quote for market account
-* If <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> has a value of 0
 * If <code><a href="user.md#0xc0deb00c_user">user</a></code> does not have corresponding market account
 registered
 * If <code><a href="user.md#0xc0deb00c_user">user</a></code> has insufficient collateral to withdraw
@@ -1119,8 +1105,6 @@ registered
     amount: u64
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Assert attempting <b>to</b> actually withdraw <a href="coins.md#0xc0deb00c_coins">coins</a>
-    <b>assert</b>!(amount != 0, <a href="user.md#0xc0deb00c_user_E_NO_TRANSFER_AMOUNT">E_NO_TRANSFER_AMOUNT</a>);
     // Assert <a href="market.md#0xc0deb00c_market">market</a> account registered for <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>assert</b>!(<a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info, <a href="user.md#0xc0deb00c_user">user</a>),
         <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);

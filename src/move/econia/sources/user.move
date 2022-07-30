@@ -88,25 +88,23 @@ module econia::user {
     /// When a market account registered for given market account info
     const E_MARKET_ACCOUNT_REGISTERED: u64 = 2;
     /// When a collateral transfer does not have specified amount
-    const E_NO_TRANSFER_AMOUNT: u64 = 3;
-    /// When a market account is not registered
-    const E_NO_MARKET_ACCOUNT: u64 = 4;
+    const E_NO_MARKET_ACCOUNT: u64 = 3;
     /// When not enough collateral
-    const E_NOT_ENOUGH_COLLATERAL: u64 = 5;
+    const E_NOT_ENOUGH_COLLATERAL: u64 = 4;
     /// When unauthorized custodian ID
-    const E_UNAUTHORIZED_CUSTODIAN: u64 = 6;
+    const E_UNAUTHORIZED_CUSTODIAN: u64 = 5;
     /// When user attempts invalid custodian override
-    const E_CUSTODIAN_OVERRIDE: u64 = 7;
+    const E_CUSTODIAN_OVERRIDE: u64 = 6;
     /// When a user does not a market accounts map
-    const E_NO_MARKET_ACCOUNTS: u64 = 8;
+    const E_NO_MARKET_ACCOUNTS: u64 = 7;
     /// When an order has no price listed
-    const E_PRICE_0: u64 = 9;
+    const E_PRICE_0: u64 = 8;
     /// When an order has no base parcel count listed
-    const E_BASE_PARCELS_0: u64 = 10;
+    const E_BASE_PARCELS_0: u64 = 9;
     /// When a base fill amount would not fit into a `u64`
-    const E_OVERFLOW_BASE: u64 = 11;
+    const E_OVERFLOW_BASE: u64 = 10;
     /// When a quote fill amount would not fit into a `u64`
-    const E_OVERFLOW_QUOTE: u64 = 12;
+    const E_OVERFLOW_QUOTE: u64 = 11;
 
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -247,7 +245,6 @@ module econia::user {
     ///
     /// # Abort conditions
     /// * If `CoinType` is neither base nor quote for market account
-    /// * If `coins` has a value of 0
     /// * If `user` does not have corresponding market account
     ///   registered
     public fun deposit_collateral<CoinType>(
@@ -255,8 +252,6 @@ module econia::user {
         market_account_info: MarketAccountInfo,
         coins: coin::Coin<CoinType>
     ) acquires Collateral, MarketAccounts {
-        // Assert attempting to actually deposit coins
-        assert!(coin::value(&coins) != 0, E_NO_TRANSFER_AMOUNT);
         // Assert market account registered for market account info
         assert!(exists_market_account(market_account_info, user),
             E_NO_MARKET_ACCOUNT);
@@ -535,7 +530,6 @@ module econia::user {
     ///
     /// # Abort conditions
     /// * If `CoinType` is neither base nor quote for market account
-    /// * If `coins` has a value of 0
     /// * If `user` does not have corresponding market account
     ///   registered
     /// * If `user` has insufficient collateral to withdraw
@@ -545,8 +539,6 @@ module econia::user {
         amount: u64
     ): coin::Coin<CoinType>
     acquires Collateral, MarketAccounts {
-        // Assert attempting to actually withdraw coins
-        assert!(amount != 0, E_NO_TRANSFER_AMOUNT);
         // Assert market account registered for market account info
         assert!(exists_market_account(market_account_info, user),
             E_NO_MARKET_ACCOUNT);
@@ -741,7 +733,7 @@ module econia::user {
         econia = @econia,
         user = @user
     )]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = 4)]
     /// Verify failure for insufficient collateral
     fun test_add_order_internal_no_collateral(
         econia: &signer,
@@ -760,7 +752,7 @@ module econia::user {
         econia = @econia,
         user = @user
     )]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = 3)]
     /// Verify failure for no market account
     fun test_add_order_internal_no_market_account(
         econia: &signer,
@@ -776,7 +768,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 8)]
+    #[expected_failure(abort_code = 7)]
     /// Verify failure for no market accounts map
     fun test_add_order_internal_no_market_accounts()
     acquires MarketAccounts {
@@ -788,7 +780,7 @@ module econia::user {
         econia = @econia,
         user = @user
     )]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = 4)]
     /// Verify failure for not enough collateral
     fun test_add_order_internal_not_enough_collateral(
         econia: &signer,
@@ -934,20 +926,8 @@ module econia::user {
         assert!(market_account.quote_coins_available == quote_coins_start, 0);
     }
 
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for attempting to deposit zero amount
-    fun test_deposit_collateral_no_amount()
-    acquires Collateral, MarketAccounts {
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E1>(),
-            custodian_id: 123 }; // Declare market account info
-        // Attempt invalid deposit
-        deposit_collateral<BC>(@user, market_account_info, coin::zero<BC>());
-    }
-
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = 3)]
     /// Verify failure for attempting to deposit when no market account
     fun test_deposit_collateral_no_market_account(
         econia: &signer
@@ -1013,14 +993,14 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
+    #[expected_failure(abort_code = 9)]
     /// Verify failure for base parcels set to 0
     fun test_range_check_order_fills_base_parcels_0() {
         range_check_order_fills(123, 0, 456); // Attempt invalid call
     }
 
     #[test]
-    #[expected_failure(abort_code = 11)]
+    #[expected_failure(abort_code = 10)]
     /// Verify failure for base fill overflow
     fun test_range_check_order_fills_overflow_base() {
         // Attempt invalid call
@@ -1028,7 +1008,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 12)]
+    #[expected_failure(abort_code = 11)]
     /// Verify failure for quote fill overflow
     fun test_range_check_order_fills_overflow_quote() {
         // Attempt invalid call
@@ -1036,7 +1016,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 9)]
+    #[expected_failure(abort_code = 8)]
     /// Verify failure for price set to 0
     fun test_range_check_order_fills_price_0() {
         range_check_order_fills(123, 456, 0); // Attempt invalid call
@@ -1304,7 +1284,7 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)]
+    #[expected_failure(abort_code = 5)]
     /// Verify failure for unauthorized custodian withdraw
     fun test_withdraw_collateral_custodian_unauthorized():
     Coin<BC>
@@ -1323,20 +1303,7 @@ module econia::user {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for no withdraw amount
-    fun test_withdraw_collateral_no_amount(
-        user: &signer
-    ): Coin<BC>
-    acquires Collateral, MarketAccounts {
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, registry::E1>(),
-            custodian_id: 0 }; // Declare market account info
-        withdraw_collateral_user<BC>(user, market_account_info, 0)
-    }
-
-    #[test(user = @user)]
-    #[expected_failure(abort_code = 4)]
+    #[expected_failure(abort_code = 5)]
     /// Verify failure for no registered market account
     fun test_withdraw_collateral_no_market_account(
         user: &signer
@@ -1353,7 +1320,7 @@ module econia::user {
         econia = @econia,
         user = @user
     )]
-    #[expected_failure(abort_code = 5)]
+    #[expected_failure(abort_code = 4)]
     /// Verify failure for not enough collateral
     fun test_withdraw_collateral_not_enough_collateral(
         econia: &signer,
@@ -1379,7 +1346,7 @@ module econia::user {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 7)]
+    #[expected_failure(abort_code = 6)]
     /// Verify failure for attempting to override custodian
     fun test_withdraw_collateral_user_override(
         user: &signer

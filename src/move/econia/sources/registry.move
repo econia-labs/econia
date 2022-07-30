@@ -3,7 +3,7 @@ module econia::registry {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::coin;
-    use aptos_framework::type_info;
+    use aptos_std::type_info;
     use econia::capability::EconiaCapability;
     use econia::open_table;
     use std::signer::address_of;

@@ -952,7 +952,7 @@ counter that increases when queried (via <code>get_serial_id</code>)
     <b>let</b> order_book_ref_mut = <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host);
     <b>let</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a> = // Get order ID based on new book serial ID/side
         <a href="order_id.md#0xc0deb00c_order_id_order_id">order_id::order_id</a>(price, <a href="market.md#0xc0deb00c_market_get_serial_id">get_serial_id</a>(order_book_ref_mut), side);
-    // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account (performs extensive error
+    // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account (performs extensive <a href="">error</a>
     // checking)
     <a href="user.md#0xc0deb00c_user_add_order_internal">user::add_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
         base_parcels, price, &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());

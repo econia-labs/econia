@@ -80,8 +80,6 @@ module econia::market {
     const E_INVALID_CUSTODIAN: u64 = 7;
     /// When a limit order crosses the spread
     const E_CROSSED_SPREAD: u64 = 8;
-    /// When placing a market order against an empty book
-    const E_NO_DEPTH: u64 = 9;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -270,6 +268,43 @@ module econia::market {
             order_id, &get_econia_capability());
     }
 
+    /// If `style` is `BUY`, check indicated amount of base parcels
+    /// to buy, updating as needed
+    ///
+    /// Inner function for `fill_market_order`.
+    ///
+    /// # Parameters
+    /// * `style`: `BUY` or `SELL`
+    /// * `target_price`: Target order price
+    /// * `quote_coins_ref`: Immutable reference to quote coins on hand
+    /// * `target_order_ref_mut`: Mutable reference to target order
+    ///   for
+    /// * `base_parcels_to_fill_ref_mut`: Mutable reference to counter
+    ///   for number of base parcels still left to fill
+    fun check_base_parcels_to_fill<Q>(
+        style: bool,
+        target_price: u64,
+        quote_coins_ref: &coin::Coin<Q>,
+        target_order_ref_mut: &mut Order,
+        base_parcels_to_fill_ref_mut: &mut u64
+    ) {
+        if (style == SELL) return; // No need to check when market sell
+        // Calculate max base parcels that incoming user could buy at
+        // target order price
+        let base_parcels_can_afford = coin::value(quote_coins_ref) /
+            target_price;
+        // If user cannot afford to buy all base parcels in target order
+        if (base_parcels_can_afford < target_order_ref_mut.base_parcels) {
+            // If number of base parcels that user can afford is less
+            // than the number they would otherwise buy
+            if (base_parcels_can_afford < *base_parcels_to_fill_ref_mut) {
+                // Set the remaining number of base parcels to fill as
+                // the number they can actually afford
+                *base_parcels_to_fill_ref_mut = base_parcels_can_afford;
+            };
+        };
+    }
+
     fun fill_market_order<B, Q, E>(
         user: address,
         host: address,
@@ -291,7 +326,7 @@ module econia::market {
         // Get side that order fills against, base coins and quote coins
         // required for the fill, mutable reference to orders tree
         // to fill against, and traversal direction
-        let (_side, base_coins, quote_coins, tree_ref_mut, traversal_direction)
+        let (side, base_coins, quote_coins, tree_ref_mut, traversal_direction)
             = if (style == BUY) (
             ASK, // If a market buy, fills against asks
             coin::zero<B>(), // Does not require base, but needs quote
@@ -309,7 +344,13 @@ module econia::market {
         );
         // Get number of orders on book for given side
         let n_orders = critbit::length(tree_ref_mut);
-        assert!(n_orders != 0, E_NO_DEPTH); // Assert depth on book
+        if (n_orders == 0) { // If no orders on book
+            // Give user back their collateral and return
+            user::deposit_collateral<B>(user, market_account_info, base_coins);
+            user::deposit_collateral<Q>(user, market_account_info,
+                quote_coins);
+            return
+        };
         // Initialize iterated traversal, storing order ID of target
         // order, mutable reference to target order, the parent field
         // of the target node, and child field index of target node
@@ -319,57 +360,69 @@ module econia::market {
         // Declare counter for number of base parcels left to fill
         let base_parcels_to_fill = max_base_parcels;
         loop { // Begin traversal loop
-            // Get price of target order
+            // Calculate price of target order
             let target_price = order_id::price(target_order_id);
-            // Get base parcels to fill target order
-            let target_base_parcels = target_order_ref_mut.base_parcels;
-            let done_matching = true; // Assume will pop traverse
-            // Assume target order not completely exhausted
-            let target_order_exhausted = true;
-            if (style == BUY) { // If a market buy
-                // Calculate max base parcels that incoming user could
-                // afford at the target price
-                let base_parcels_can_afford =
-                    coin::value(&quote_coins) / target_price;
-                // If user cannot afford to buy all target base parcels
-                if (base_parcels_can_afford < target_base_parcels) {
-                    // If number of base parcels that user can afford is
-                    // less than the number of base parcels they would
-                    // otherwise buy
-                    if (base_parcels_can_afford < base_parcels_to_fill) {
-                        // Set the remaining number of base parcels to
-                        // fill as the number they can afford
-                        base_parcels_to_fill = base_parcels_can_afford;
-                    };
+            // Check counter for base parcels to fill
+            check_base_parcels_to_fill(style, target_price, &quote_coins,
+                target_order_ref_mut, &mut base_parcels_to_fill);
+            // Break out of loop if not enough quote coins in the case
+            // of a buy
+            if (base_parcels_to_fill == 0) break;
+            // Check if target order will be completely filled
+            let complete_fill =
+                (base_parcels_to_fill >= target_order_ref_mut.base_parcels);
+            // Calculate number of base parcels filled
+            let base_parcels_filled = if (complete_fill)
+                target_order_ref_mut.base_parcels else base_parcels_to_fill;
+            // Calculate coins in and out (relative to target user)
+            let (coins_in_target, coins_out_target) = if (side == ASK) (
+                base_parcels_filled * target_price, // Quote coins
+                base_parcels_filled * scale_factor // Base coins
+            ) else ( // If filling against a bid
+                base_parcels_filled * scale_factor, // Base coins
+                base_parcels_filled * target_price, // Quote coins
+            );
+            // Fill the target user's order
+            user::fill_order_internal<B, Q, E>(target_order_ref_mut.user,
+                target_order_ref_mut.custodian_id, side, target_order_id,
+                complete_fill, base_parcels_filled, &mut base_coins,
+                &mut quote_coins, coins_in_target, coins_out_target,
+                &get_econia_capability());
+            // If did not completely fill target order, decrement the
+            // number of base parcels it is for by the fill amount
+            if (!complete_fill) target_order_ref_mut.base_parcels =
+                target_order_ref_mut.base_parcels - base_parcels_filled;
+            // Decrement counter for number of base parcels to fill
+            base_parcels_to_fill = base_parcels_to_fill - base_parcels_filled;
+            if (n_orders == 1) { // If no orders left on book
+                if (complete_fill) { // If had a complete fill
+                    // Pop final order
+                    // Set spread maker to default value for side
+                } else { // If only partial fill against target order
+                    // Set its order ID to be new spread maker
                 };
-            };
-            // If a partial target fill
-            if (base_parcels_to_fill < target_base_parcels) {
-                // Mark target order as not fully exhausted
-                target_order_exhausted = false;
-            // If a complete target fill
-            } else if (base_parcels_to_fill > target_base_parcels) {
-                // If can traverse, keep doing it
-                if (n_orders > 1) done_matching = false;
-            // If an exact target fill
-            } else {
-            };
-            if (!done_matching) { // If can still traverse
-                // Traverse pop fill to next order in book
-                (target_order_id, target_order_ref_mut, target_parent_index,
-                 target_child_index,
-                 Order{base_parcels: _, user: _, custodian_id: _}) =
+                break // Break out of loop
+            } else { // If orders still left on book
+                // If no more matching left to do
+                if (base_parcels_to_fill == 0) {
+                    if (!complete_fill) { // If incomplete fill
+                        // Set spread maker to order's order ID
+                    } else { // If complete fill
+                        // Traverse pop to next position and set as
+                        // spread maker
+                    };
+                    break // Break out of loop
+                } else { // If matching still left to do
+                    // Traverse pop to next order on book
+                    (target_order_id, target_order_ref_mut,
+                        target_parent_index, target_child_index, Order{
+                            base_parcels: _, user: _, custodian_id: _}) =
                     critbit::traverse_pop_mut(tree_ref_mut, target_order_id,
                         target_parent_index, target_child_index, n_orders,
                         traversal_direction);
-                n_orders = n_orders - 1; // Decrement order count
-            } else { // If done matching
-                // If target order exhausted
-                if (target_order_exhausted) {
-                    // Refresh spread maker
+                    n_orders = n_orders - 1; // Decrement order count
                 };
-                break // Break out of iterated traversal loop
-            }
+            };
         };
         user::deposit_collateral<B>(user, market_account_info, base_coins);
         user::deposit_collateral<Q>(user, market_account_info, quote_coins);

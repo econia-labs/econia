@@ -22,6 +22,7 @@ Market-side functionality
 -  [Function `check_base_parcels_to_fill`](#0xc0deb00c_market_check_base_parcels_to_fill)
     -  [Parameters](#@Parameters_3)
 -  [Function `fill_market_order`](#0xc0deb00c_market_fill_market_order)
+-  [Function `fill_market_order_process_loop_order`](#0xc0deb00c_market_fill_market_order_process_loop_order)
 -  [Function `get_serial_id`](#0xc0deb00c_market_get_serial_id)
 -  [Function `get_econia_capability`](#0xc0deb00c_market_get_econia_capability)
 -  [Function `init_book`](#0xc0deb00c_market_init_book)
@@ -660,9 +661,9 @@ with the corresponding <code><a href="order_id.md#0xc0deb00c_order_id">order_id<
 ## Function `check_base_parcels_to_fill`
 
 If <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, check indicated amount of base parcels
-to buy, updating as needed
+to buy, updating as needed.
 
-Inner function for <code>fill_market_order</code>.
+Inner function for <code>fill_market_order_process_loop_order</code>.
 
 
 <a name="@Parameters_3"></a>
@@ -673,7 +674,6 @@ Inner function for <code>fill_market_order</code>.
 * <code>target_price</code>: Target order price
 * <code>quote_coins_ref</code>: Immutable reference to quote coins on hand
 * <code>target_order_ref_mut</code>: Mutable reference to target order
-for
 * <code>base_parcels_to_fill_ref_mut</code>: Mutable reference to counter
 for number of base parcels still left to fill
 
@@ -751,14 +751,16 @@ for number of base parcels still left to fill
         <a href="user.md#0xc0deb00c_user_market_account_info">user::market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
     // Get side that order fills against, base <a href="coins.md#0xc0deb00c_coins">coins</a> and quote <a href="coins.md#0xc0deb00c_coins">coins</a>
     // required for the fill, mutable reference <b>to</b> orders tree
-    // <b>to</b> fill against, and traversal direction
-    <b>let</b> (side, base_coins, quote_coins, tree_ref_mut, traversal_direction)
-        = <b>if</b> (style == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) (
+    // <b>to</b> fill against, mutable reference <b>to</b> the spread maker for
+    // given side, and traversal direction
+    <b>let</b> (side, base_coins, quote_coins, tree_ref_mut, spread_maker_ref_mut,
+        traversal_direction) = <b>if</b> (style == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) (
         <a href="market.md#0xc0deb00c_market_ASK">ASK</a>, // If a <a href="market.md#0xc0deb00c_market">market</a> buy, fills against asks
         <a href="_zero">coin::zero</a>&lt;B&gt;(), // Does not require base, but needs quote
         <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">user::withdraw_collateral_internal</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info,
             max_quote_units, &econia_capability),
         &<b>mut</b> order_book_ref_mut.asks, // Fill against asks tree
+        &<b>mut</b> order_book_ref_mut.min_ask, // Asks spread maker
         <a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a> // Successor iteration
     ) <b>else</b> ( // If a <a href="market.md#0xc0deb00c_market">market</a> sell
         <a href="market.md#0xc0deb00c_market_BID">BID</a>, // Fills against bids, <b>requires</b> base <a href="coins.md#0xc0deb00c_coins">coins</a>
@@ -766,6 +768,7 @@ for number of base parcels still left to fill
             max_base_parcels * scale_factor, &econia_capability),
         <a href="_zero">coin::zero</a>&lt;Q&gt;(), // Does not require quote <a href="coins.md#0xc0deb00c_coins">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>
         &<b>mut</b> order_book_ref_mut.bids, // Fill against bids tree
+        &<b>mut</b> order_book_ref_mut.max_bid, // Bids spread maker
         <a href="market.md#0xc0deb00c_market_LEFT">LEFT</a> // Predecessor iteration
     );
     // Get number of orders on book for given side
@@ -786,54 +789,26 @@ for number of base parcels still left to fill
     // Declare counter for number of base parcels left <b>to</b> fill
     <b>let</b> base_parcels_to_fill = max_base_parcels;
     <b>loop</b> { // Begin traversal <b>loop</b>
-        // Calculate price of target order
-        <b>let</b> target_price = <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(target_order_id);
-        // Check counter for base parcels <b>to</b> fill
-        <a href="market.md#0xc0deb00c_market_check_base_parcels_to_fill">check_base_parcels_to_fill</a>(style, target_price, &quote_coins,
-            target_order_ref_mut, &<b>mut</b> base_parcels_to_fill);
-        // Target price may be too high for <a href="user.md#0xc0deb00c_user">user</a> <b>to</b> afford even one
-        // base parcel in the case of a buy, and <b>break</b> <b>if</b> so
-        <b>if</b> (base_parcels_to_fill == 0) <b>break</b>;
-        // Check <b>if</b> target order will be completely filled
-        <b>let</b> complete_fill =
-            (base_parcels_to_fill &gt;= target_order_ref_mut.base_parcels);
-        // Calculate number of base parcels filled
-        <b>let</b> base_parcels_filled = <b>if</b> (complete_fill)
-            target_order_ref_mut.base_parcels <b>else</b> base_parcels_to_fill;
-        // Calculate base and quote <a href="coins.md#0xc0deb00c_coins">coins</a> routed for the fill
-        <b>let</b> base_to_route = base_parcels_filled * target_price;
-        <b>let</b> quote_to_route = base_parcels_filled * scale_factor;
-        // Fill the target <a href="user.md#0xc0deb00c_user">user</a>'s order
-        <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;B, Q, E&gt;(target_order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>,
-            target_order_ref_mut.custodian_id, side, target_order_id,
-            complete_fill, base_parcels_filled, &<b>mut</b> base_coins,
-            &<b>mut</b> quote_coins, base_to_route, quote_to_route,
-            &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
-        // If did not completely fill target order, decrement the
-        // number of base parcels it is for by the fill amount
-        <b>if</b> (!complete_fill) target_order_ref_mut.base_parcels =
-            target_order_ref_mut.base_parcels - base_parcels_filled;
-        // Decrement counter for number of base parcels <b>to</b> fill
-        base_parcels_to_fill = base_parcels_to_fill - base_parcels_filled;
+        // Process the order for current iteration, storing flag for
+        // <b>if</b> the target order was completely filled
+        <b>let</b> complete_fill = <a href="market.md#0xc0deb00c_market_fill_market_order_process_loop_order">fill_market_order_process_loop_order</a>&lt;B, Q, E&gt;(
+            style, side, scale_factor, &<b>mut</b> base_parcels_to_fill,
+            target_order_id, target_order_ref_mut, &<b>mut</b> base_coins,
+            &<b>mut</b> quote_coins, &econia_capability);
+        // Assume should set new spread maker <b>to</b> target order ID,
+        // that should <b>break</b> out of <b>loop</b> after <b>post</b>-processing, and
+        // that should not pop final order in tree
+        <b>let</b> (new_spread_maker, should_break, should_pop_final) =
+            ( target_order_id,         <b>true</b>,            <b>false</b>);
         <b>if</b> (n_orders == 1) { // If no orders left on book
             <b>if</b> (complete_fill) { // If had a complete fill
-                // Pop final order
-                // Set spread maker <b>to</b> default value for side
-            } <b>else</b> { // If only partial fill against target order
-                // Set its order ID <b>to</b> be new spread maker
-            };
-            <b>break</b> // Break out of <b>loop</b>
+                should_pop_final = <b>true</b>; // Market order for popping
+                // Mark new spread maker <b>to</b> default value for side
+                new_spread_maker = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a> <b>else</b>
+                    <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>
+            }; // If incomplete fill, <b>use</b> default flags
         } <b>else</b> { // If orders still left on book
-            // If no more matching left <b>to</b> do
-            <b>if</b> (base_parcels_to_fill == 0) {
-                <b>if</b> (!complete_fill) { // If incomplete fill
-                    // Set spread maker <b>to</b> order's order ID
-                } <b>else</b> { // If complete fill
-                    // Traverse pop <b>to</b> next position and set <b>as</b>
-                    // spread maker
-                };
-                <b>break</b> // Break out of <b>loop</b>
-            } <b>else</b> { // If matching still left <b>to</b> do
+            <b>if</b> (complete_fill) { // If target order fully filled
                 // Traverse pop <b>to</b> next order on book
                 (target_order_id, target_order_ref_mut,
                     target_parent_index, target_child_index, <a href="market.md#0xc0deb00c_market_Order">Order</a>{
@@ -841,12 +816,101 @@ for number of base parcels still left to fill
                 <a href="critbit.md#0xc0deb00c_critbit_traverse_pop_mut">critbit::traverse_pop_mut</a>(tree_ref_mut, target_order_id,
                     target_parent_index, target_child_index, n_orders,
                     traversal_direction);
-                n_orders = n_orders - 1; // Decrement order count
+                // If no base parcels left <b>to</b> fill
+                <b>if</b> (base_parcels_to_fill == 0) {
+                    // The order ID of the order that was just
+                    // traversed <b>to</b> becomes the new spread maker
+                    new_spread_maker = target_order_id;
+                } <b>else</b> { // If still base parcels left <b>to</b> fill
+                    should_break = <b>false</b>; // Should <b>continue</b> looping
+                    n_orders = n_orders - 1; // Update order count
+                }
+            }; // If incomplete fill, <b>use</b> default flags
+        };
+        <b>if</b> (should_break) { // If should <b>break</b> out of <b>loop</b>
+            // Update new spread maker
+            *spread_maker_ref_mut = new_spread_maker;
+            // Pop and unpack final order <b>if</b> <a href="">option</a> is flagged
+            <b>if</b> (should_pop_final) {
+                <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _} =
+                    <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, target_order_id);
             };
+            <b>break</b> // Break out of <b>loop</b>
         };
     };
     <a href="user.md#0xc0deb00c_user_deposit_collateral">user::deposit_collateral</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, base_coins);
     <a href="user.md#0xc0deb00c_user_deposit_collateral">user::deposit_collateral</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, quote_coins);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_fill_market_order_process_loop_order"></a>
+
+## Function `fill_market_order_process_loop_order`
+
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_process_loop_order">fill_market_order_process_loop_order</a>&lt;B, Q, E&gt;(style: bool, side: bool, scale_factor: u64, base_parcels_to_fill_ref_mut: &<b>mut</b> u64, target_order_id: u128, target_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">market::Order</a>, base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;, quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;, econia_capability_ref: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_process_loop_order">fill_market_order_process_loop_order</a>&lt;B, Q, E&gt;(
+    style: bool,
+    side: bool,
+    scale_factor: u64,
+    base_parcels_to_fill_ref_mut: &<b>mut</b> u64,
+    target_order_id: u128,
+    target_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;,
+    quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;,
+    econia_capability_ref: &EconiaCapability,
+): (
+    bool // Complete fill
+) {
+    // Calculate price of target order
+    <b>let</b> target_price = <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(target_order_id);
+    // Check, and maybe <b>update</b>, tracker for base parcels <b>to</b> fill
+    <a href="market.md#0xc0deb00c_market_check_base_parcels_to_fill">check_base_parcels_to_fill</a>(style, target_price, quote_coins_ref_mut,
+        target_order_ref_mut, base_parcels_to_fill_ref_mut);
+    // Target price may be too high for <a href="user.md#0xc0deb00c_user">user</a> <b>to</b> afford even one
+    // base parcel in the case of a buy, and <b>return</b> incomplete fill
+    // <b>if</b> so
+    <b>if</b> (*base_parcels_to_fill_ref_mut == 0) <b>return</b> <b>false</b>;
+    // Otherwise check <b>if</b> target order will be completely filled
+    <b>let</b> complete_fill = (*base_parcels_to_fill_ref_mut &gt;=
+        target_order_ref_mut.base_parcels);
+    // Calculate number of base parcels filled
+    <b>let</b> base_parcels_filled = <b>if</b> (complete_fill)
+        // If complete fill, number of base parcels order was for
+        target_order_ref_mut.base_parcels <b>else</b>
+        // Else, remaining base parcels left <b>to</b> fill
+        *base_parcels_to_fill_ref_mut;
+    // Decrement counter for number of base parcels <b>to</b> fill
+    *base_parcels_to_fill_ref_mut = *base_parcels_to_fill_ref_mut -
+        base_parcels_filled;
+    // Calculate base and quote <a href="coins.md#0xc0deb00c_coins">coins</a> routed for the fill
+    <b>let</b> base_to_route = base_parcels_filled * target_price;
+    <b>let</b> quote_to_route = base_parcels_filled * scale_factor;
+    // Fill the target <a href="user.md#0xc0deb00c_user">user</a>'s order
+    <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;B, Q, E&gt;(target_order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>,
+        target_order_ref_mut.custodian_id, side, target_order_id,
+        complete_fill, base_parcels_filled, base_coins_ref_mut,
+        quote_coins_ref_mut, base_to_route, quote_to_route,
+        econia_capability_ref);
+    // If did not completely fill target order, decrement the number
+    // of base parcels it is for by the fill amount (<b>if</b> it was
+    // completely filled, it should be popped later)
+    <b>if</b> (!complete_fill) target_order_ref_mut.base_parcels =
+        target_order_ref_mut.base_parcels - base_parcels_filled;
+    complete_fill // Return <b>if</b> target order was completely filled
 }
 </code></pre>
 

@@ -35,11 +35,11 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
     -  [Abort conditions](#@Abort_conditions_8)
     -  [Assumes](#@Assumes_9)
 -  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
--  [Function `fill_order_update_market_account`](#0xc0deb00c_user_fill_order_update_market_account)
-    -  [Parameters](#@Parameters_10)
 -  [Function `fill_order_route_collateral`](#0xc0deb00c_user_fill_order_route_collateral)
-    -  [Parameters](#@Parameters_11)
+    -  [Parameters](#@Parameters_10)
 -  [Function `fill_order_route_collateral_single`](#0xc0deb00c_user_fill_order_route_collateral_single)
+    -  [Parameters](#@Parameters_11)
+-  [Function `fill_order_update_market_account`](#0xc0deb00c_user_fill_order_update_market_account)
     -  [Parameters](#@Parameters_12)
 -  [Function `range_check_order_fills`](#0xc0deb00c_user_range_check_order_fills)
 -  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
@@ -682,15 +682,15 @@ market account
 through the matching engine
 * <code>quote_coins_ref_mut</code>: Mutable reference to quote coins
 passing through the matching engine
-* <code>coins_in</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote coins to route
-from <code>quote_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else number of base
-coins to route from <code>base_coins_ref_mut</code> to user
-* <code>coins_out</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base coins to route
-from user to <code>base_coins_ref_mut</code>, else number of quote coins
-to route from user to <code>quote_coins_ref_mut</code>
+* <code>base_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base coins to
+route from <code><a href="user.md#0xc0deb00c_user">user</a></code> to <code>base_coins_ref_mut</code>, else from
+<code>base_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>quote_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote coins to
+route from <code>quote_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
+to <code>quote_coins_ref_mut</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, custodian_id: u64, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, base_parcels_filled: u64, base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;, quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;, coins_in: u64, coins_out: u64, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, custodian_id: u64, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, base_parcels_filled: u64, base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;, quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;, base_to_route: u64, quote_to_route: u64, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>)
 </code></pre>
 
 
@@ -708,18 +708,20 @@ to route from user to <code>quote_coins_ref_mut</code>
     base_parcels_filled: u64,
     base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;,
     quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;,
-    coins_in: u64,
-    coins_out: u64,
+    base_to_route: u64,
+    quote_to_route: u64,
     _econia_capability: &EconiaCapability
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Get <a href="market.md#0xc0deb00c_market">market</a> account info
     <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
     // Update <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
     <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, side,
-        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, complete_fill, base_parcels_filled, coins_in, coins_out);
+        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, complete_fill, base_parcels_filled, base_to_route,
+        quote_to_route);
     // Route collateral accordingly
     <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;B, Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, side,
-        base_coins_ref_mut, quote_coins_ref_mut, coins_in, coins_out);
+        base_coins_ref_mut, quote_coins_ref_mut, base_to_route,
+        quote_to_route);
 }
 </code></pre>
 
@@ -1013,11 +1015,11 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 
 </details>
 
-<a name="0xc0deb00c_user_fill_order_update_market_account"></a>
+<a name="0xc0deb00c_user_fill_order_route_collateral"></a>
 
-## Function `fill_order_update_market_account`
+## Function `fill_order_route_collateral`
 
-Update a user's market account when filling an order.
+Route collateral when filling an order.
 
 Inner function for <code>fill_order_internal</code>.
 
@@ -1029,111 +1031,19 @@ Inner function for <code>fill_order_internal</code>.
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
 * <code>market_account_info</code>: Corresponding <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code>
 * <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
-* <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
-* <code>complete_fill</code>: If <code><b>true</b></code>, the order is completely filled
-* <code>base_parcels_filled</code>: Number of base parcels filled
-* <code>coins_in</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote coins to route
-from <code>quote_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else number of base
-coins to route from <code>base_coins_ref_mut</code> to user
-* <code>coins_out</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base coins to route
-from user to <code>base_coins_ref_mut</code>, else number of quote coins
-to route from user to <code>quote_coins_ref_mut</code>
-
-
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, base_parcels_filled: u64, coins_in: u64, coins_out: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(
-    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
-    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
-    side: bool,
-    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
-    complete_fill: bool,
-    base_parcels_filled: u64,
-    coins_in: u64,
-    coins_out: u64,
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
-    <b>let</b> market_accounts_map_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> account
-    <b>let</b> market_account_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
-        market_accounts_map_ref_mut, market_account_info);
-    // Get mutable reference <b>to</b> corresponding orders tree and
-    // relevant <a href="">coin</a> count fields for incoming and outgoing <a href="coins.md#0xc0deb00c_coins">coins</a>
-    <b>let</b> (
-        order_tree_ref_mut,
-        coins_in_total_ref_mut,
-        coins_in_available_ref_mut,
-        coins_out_total_ref_mut,
-    ) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) ( // If an ask is matched
-        &<b>mut</b> market_account_ref_mut.asks,
-        &<b>mut</b> market_account_ref_mut.quote_coins_total,
-        &<b>mut</b> market_account_ref_mut.quote_coins_available,
-        &<b>mut</b> market_account_ref_mut.base_coins_total,
-    ) <b>else</b> ( // If a bid is matched
-        &<b>mut</b> market_account_ref_mut.bids,
-        &<b>mut</b> market_account_ref_mut.base_coins_total,
-        &<b>mut</b> market_account_ref_mut.base_coins_available,
-        &<b>mut</b> market_account_ref_mut.quote_coins_total,
-    );
-    <b>if</b> (complete_fill) { // If completely filling the order
-        <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(order_tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>); // Pop order
-    } <b>else</b> { // If only partially filling the order
-        // Get mutable reference <b>to</b> base parcels left <b>to</b> be filled
-        // on the order
-        <b>let</b> order_base_parcels_ref_mut =
-            <a href="critbit.md#0xc0deb00c_critbit_borrow_mut">critbit::borrow_mut</a>(order_tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
-        // Decrement amount still unfilled
-        *order_base_parcels_ref_mut = *order_base_parcels_ref_mut -
-            base_parcels_filled;
-    };
-    // Update <a href="">coin</a> counts for incoming and outgoing <a href="coins.md#0xc0deb00c_coins">coins</a>
-    *coins_in_total_ref_mut = *coins_in_total_ref_mut + coins_in;
-    *coins_in_available_ref_mut = *coins_in_available_ref_mut + coins_in;
-    *coins_out_total_ref_mut = *coins_out_total_ref_mut - coins_out;
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_user_fill_order_route_collateral"></a>
-
-## Function `fill_order_route_collateral`
-
-Route collateral when filling an order.
-
-Inner function for <code>fill_order_internal</code>.
-
-
-<a name="@Parameters_11"></a>
-
-### Parameters
-
-* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
-* <code>market_account_info</code>: Corresponding <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code>
-* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
 * <code>base_coins_ref_mut</code>: Mutable reference to base coins passing
 through the matching engine
 * <code>quote_coins_ref_mut</code>: Mutable reference to quote coins
 passing through the matching engine
-* <code>coins_in</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote coins to route
-from <code>quote_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else number of base
-coins to route from <code>base_coins_ref_mut</code> to user
-* <code>coins_out</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base coins to route
-from user to <code>base_coins_ref_mut</code>, else number of quote coins
-to route from user to <code>quote_coins_ref_mut</code>
+* <code>base_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base coins to
+route from <code><a href="user.md#0xc0deb00c_user">user</a></code> to <code>base_coins_ref_mut</code>, else from
+<code>base_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>quote_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote coins to
+route from <code>quote_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
+to <code>quote_coins_ref_mut</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;B, Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, side: bool, base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;, quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;, coins_in: u64, coins_out: u64)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;B, Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, side: bool, base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;, quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;, base_to_route: u64, quote_to_route: u64)
 </code></pre>
 
 
@@ -1148,22 +1058,18 @@ to route from user to <code>quote_coins_ref_mut</code>
     side: bool,
     base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;,
     quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;,
-    coins_in: u64,
-    coins_out: u64,
+    base_to_route: u64,
+    quote_to_route: u64,
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a> {
-    // Determine routing direction and amount <b>to</b> route for both base
-    // and quote <a href="coins.md#0xc0deb00c_coins">coins</a> based on side
-    <b>let</b> (base_direction, quote_direction, base_to_route, quote_to_route) =
-        // If filling an ask, base <a href="coins.md#0xc0deb00c_coins">coins</a> out, quote <a href="coins.md#0xc0deb00c_coins">coins</a> in
-        <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (<a href="user.md#0xc0deb00c_user_OUT">OUT</a>, <a href="user.md#0xc0deb00c_user_IN">IN</a>, coins_out, coins_in) <b>else</b>
-        // If filling a bid, base in, quote out
-        (<a href="user.md#0xc0deb00c_user_IN">IN</a>, <a href="user.md#0xc0deb00c_user_OUT">OUT</a>, coins_in, coins_out);
+    // Determine route direction for base and quote relative <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>
+    <b>let</b> (base_direction, quote_direction) =
+        <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (<a href="user.md#0xc0deb00c_user_OUT">OUT</a>, <a href="user.md#0xc0deb00c_user_IN">IN</a>) <b>else</b> (<a href="user.md#0xc0deb00c_user_IN">IN</a>, <a href="user.md#0xc0deb00c_user_OUT">OUT</a>);
     // Route base <a href="coins.md#0xc0deb00c_coins">coins</a>
     <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info,
-        base_direction, base_to_route, base_coins_ref_mut);
+        base_coins_ref_mut, base_to_route, base_direction);
     // Route quote <a href="coins.md#0xc0deb00c_coins">coins</a>
     <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info,
-        quote_direction, quote_to_route, quote_coins_ref_mut);
+        quote_coins_ref_mut, quote_to_route, quote_direction);
 }
 </code></pre>
 
@@ -1182,18 +1088,18 @@ from or to, respectively, coins at <code>external_coins_ref_mut</code>.
 Inner function for <code>fill_order_route_collateral</code>
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_11"></a>
 
 ### Parameters
 
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
 * <code>market_account_info</code>: Corresponding <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code>
-* <code>direction</code>: <code><a href="user.md#0xc0deb00c_user_IN">IN</a></code> or <code><a href="user.md#0xc0deb00c_user_OUT">OUT</a></code>
-* <code>amount</code>: Amount of coins to route
 * <code>external_coins_ref_mut</code>: Effectively a counterparty to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>amount</code>: Amount of coins to route
+* <code>direction</code>: <code><a href="user.md#0xc0deb00c_user_IN">IN</a></code> or <code><a href="user.md#0xc0deb00c_user_OUT">OUT</a></code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, direction: bool, amount: u64, external_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, external_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;, amount: u64, direction: bool)
 </code></pre>
 
 
@@ -1205,9 +1111,9 @@ Inner function for <code>fill_order_route_collateral</code>
 <pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;CoinType&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
-    direction: bool,
+    external_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;,
     amount: u64,
-    external_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+    direction: bool
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a> {
     // Borrow mutable reference <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s collateral map
     <b>let</b> collateral_map_ref_mut =
@@ -1224,6 +1130,100 @@ Inner function for <code>fill_order_route_collateral</code>
         // those extracted from <a href="user.md#0xc0deb00c_user">user</a>'s collateral
         <a href="_merge">coin::merge</a>(external_coins_ref_mut,
             <a href="_extract">coin::extract</a>(collateral_ref_mut, amount));
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_fill_order_update_market_account"></a>
+
+## Function `fill_order_update_market_account`
+
+Update a user's market account when filling an order.
+
+Inner function for <code>fill_order_internal</code>.
+
+
+<a name="@Parameters_12"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>market_account_info</code>: Corresponding <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code>
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
+* <code>complete_fill</code>: If <code><b>true</b></code>, the order is completely filled
+* <code>base_parcels_filled</code>: Number of base parcels filled
+* <code>base_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base coins
+routed from <code><a href="user.md#0xc0deb00c_user">user</a></code>, else to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>quote_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote coins
+routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, base_parcels_filled: u64, base_to_route: u64, quote_to_route: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+    complete_fill: bool,
+    base_parcels_filled: u64,
+    base_to_route: u64,
+    quote_to_route: u64,
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> account
+    <b>let</b> market_account_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
+        market_accounts_map_ref_mut, market_account_info);
+    <b>let</b> ( // Get mutable reference <b>to</b> corresponding orders tree,
+        order_tree_ref_mut,
+        coins_in, // Amount of inbound <a href="coins.md#0xc0deb00c_coins">coins</a>
+        coins_in_total_ref_mut, // Totals field for inbound <a href="coins.md#0xc0deb00c_coins">coins</a>
+        coins_in_available_ref_mut, // Available field
+        coins_out, // Amount of outbound <a href="coins.md#0xc0deb00c_coins">coins</a>
+        coins_out_total_ref_mut, // Totals field for outbound <a href="coins.md#0xc0deb00c_coins">coins</a>
+    ) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) ( // If an ask is matched
+        &<b>mut</b> market_account_ref_mut.asks,
+        quote_to_route,
+        &<b>mut</b> market_account_ref_mut.quote_coins_total,
+        &<b>mut</b> market_account_ref_mut.quote_coins_available,
+        base_to_route,
+        &<b>mut</b> market_account_ref_mut.base_coins_total,
+    ) <b>else</b> ( // If a bid is matched
+        &<b>mut</b> market_account_ref_mut.bids,
+        base_to_route,
+        &<b>mut</b> market_account_ref_mut.base_coins_total,
+        &<b>mut</b> market_account_ref_mut.base_coins_available,
+        quote_to_route,
+        &<b>mut</b> market_account_ref_mut.quote_coins_total,
+    );
+    <b>if</b> (complete_fill) { // If completely filling the order
+        <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(order_tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>); // Pop order
+    } <b>else</b> { // If only partially filling the order
+        // Get mutable reference <b>to</b> base parcels left <b>to</b> be filled
+        // on the order
+        <b>let</b> order_base_parcels_ref_mut =
+            <a href="critbit.md#0xc0deb00c_critbit_borrow_mut">critbit::borrow_mut</a>(order_tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+        // Decrement amount still unfilled
+        *order_base_parcels_ref_mut = *order_base_parcels_ref_mut -
+            base_parcels_filled;
+    };
+    // Update <a href="">coin</a> counts for incoming and outgoing <a href="coins.md#0xc0deb00c_coins">coins</a>
+    *coins_in_total_ref_mut = *coins_in_total_ref_mut + coins_in;
+    *coins_in_available_ref_mut = *coins_in_available_ref_mut + coins_in;
+    *coins_out_total_ref_mut = *coins_out_total_ref_mut - coins_out;
 }
 </code></pre>
 

@@ -791,8 +791,8 @@ for number of base parcels still left to fill
         // Check counter for base parcels <b>to</b> fill
         <a href="market.md#0xc0deb00c_market_check_base_parcels_to_fill">check_base_parcels_to_fill</a>(style, target_price, &quote_coins,
             target_order_ref_mut, &<b>mut</b> base_parcels_to_fill);
-        // Break out of <b>loop</b> <b>if</b> not enough quote <a href="coins.md#0xc0deb00c_coins">coins</a> in the case
-        // of a buy
+        // Target price may be too high for <a href="user.md#0xc0deb00c_user">user</a> <b>to</b> afford even one
+        // base parcel in the case of a buy, and <b>break</b> <b>if</b> so
         <b>if</b> (base_parcels_to_fill == 0) <b>break</b>;
         // Check <b>if</b> target order will be completely filled
         <b>let</b> complete_fill =
@@ -800,19 +800,14 @@ for number of base parcels still left to fill
         // Calculate number of base parcels filled
         <b>let</b> base_parcels_filled = <b>if</b> (complete_fill)
             target_order_ref_mut.base_parcels <b>else</b> base_parcels_to_fill;
-        // Calculate <a href="coins.md#0xc0deb00c_coins">coins</a> in and out (relative <b>to</b> target <a href="user.md#0xc0deb00c_user">user</a>)
-        <b>let</b> (coins_in_target, coins_out_target) = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) (
-            base_parcels_filled * target_price, // Quote <a href="coins.md#0xc0deb00c_coins">coins</a>
-            base_parcels_filled * scale_factor // Base <a href="coins.md#0xc0deb00c_coins">coins</a>
-        ) <b>else</b> ( // If filling against a bid
-            base_parcels_filled * scale_factor, // Base <a href="coins.md#0xc0deb00c_coins">coins</a>
-            base_parcels_filled * target_price, // Quote <a href="coins.md#0xc0deb00c_coins">coins</a>
-        );
+        // Calculate base and quote <a href="coins.md#0xc0deb00c_coins">coins</a> routed for the fill
+        <b>let</b> base_to_route = base_parcels_filled * target_price;
+        <b>let</b> quote_to_route = base_parcels_filled * scale_factor;
         // Fill the target <a href="user.md#0xc0deb00c_user">user</a>'s order
         <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;B, Q, E&gt;(target_order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>,
             target_order_ref_mut.custodian_id, side, target_order_id,
             complete_fill, base_parcels_filled, &<b>mut</b> base_coins,
-            &<b>mut</b> quote_coins, coins_in_target, coins_out_target,
+            &<b>mut</b> quote_coins, base_to_route, quote_to_route,
             &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
         // If did not completely fill target order, decrement the
         // number of base parcels it is for by the fill amount

@@ -302,12 +302,12 @@ module econia::user {
     ///   through the matching engine
     /// * `quote_coins_ref_mut`: Mutable reference to quote coins
     ///   passing through the matching engine
-    /// * `coins_in`: If `side` is `ASK`, number of quote coins to route
-    ///   from `quote_coins_ref_mut` to `user`, else number of base
-    ///   coins to route from `base_coins_ref_mut` to user
-    /// * `coins_out`: If `side` is `ASK`, number of base coins to route
-    ///   from user to `base_coins_ref_mut`, else number of quote coins
-    ///   to route from user to `quote_coins_ref_mut`
+    /// * `base_to_route`: If `side` is `ASK`, number of base coins to
+    ///   route from `user` to `base_coins_ref_mut`, else from
+    ///   `base_coins_ref_mut` to `user`
+    /// * `quote_to_route`: If `side` is `ASK`, number of quote coins to
+    ///   route from `quote_coins_ref_mut` to `user`, else from `user`
+    ///   to `quote_coins_ref_mut`
     public fun fill_order_internal<B, Q, E>(
         user: address,
         custodian_id: u64,
@@ -317,18 +317,20 @@ module econia::user {
         base_parcels_filled: u64,
         base_coins_ref_mut: &mut coin::Coin<B>,
         quote_coins_ref_mut: &mut coin::Coin<Q>,
-        coins_in: u64,
-        coins_out: u64,
+        base_to_route: u64,
+        quote_to_route: u64,
         _econia_capability: &EconiaCapability
     ) acquires Collateral, MarketAccounts {
         // Get market account info
         let market_account_info = market_account_info<B, Q, E>(custodian_id);
         // Update user's market account
         fill_order_update_market_account(user, market_account_info, side,
-            order_id, complete_fill, base_parcels_filled, coins_in, coins_out);
+            order_id, complete_fill, base_parcels_filled, base_to_route,
+            quote_to_route);
         // Route collateral accordingly
         fill_order_route_collateral<B, Q>(user, market_account_info, side,
-            base_coins_ref_mut, quote_coins_ref_mut, coins_in, coins_out);
+            base_coins_ref_mut, quote_coins_ref_mut, base_to_route,
+            quote_to_route);
     }
 
     /// Get a `MarketInfo` for type arguments, pack with `custodian_id`
@@ -485,6 +487,80 @@ module econia::user {
         open_table::contains(market_accounts_map, market_account_info)
     }
 
+    /// Route collateral when filling an order.
+    ///
+    /// Inner function for `fill_order_internal`.
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `market_account_info`: Corresponding `MarketAccountInfo`
+    /// * `side`: `ASK` or `BID`
+    /// * `base_coins_ref_mut`: Mutable reference to base coins passing
+    ///   through the matching engine
+    /// * `quote_coins_ref_mut`: Mutable reference to quote coins
+    ///   passing through the matching engine
+    /// * `base_to_route`: If `side` is `ASK`, number of base coins to
+    ///   route from `user` to `base_coins_ref_mut`, else from
+    ///   `base_coins_ref_mut` to `user`
+    /// * `quote_to_route`: If `side` is `ASK`, number of quote coins to
+    ///   route from `quote_coins_ref_mut` to `user`, else from `user`
+    ///   to `quote_coins_ref_mut`
+    fun fill_order_route_collateral<B, Q>(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        side: bool,
+        base_coins_ref_mut: &mut coin::Coin<B>,
+        quote_coins_ref_mut: &mut coin::Coin<Q>,
+        base_to_route: u64,
+        quote_to_route: u64,
+    ) acquires Collateral {
+        // Determine route direction for base and quote relative to user
+        let (base_direction, quote_direction) =
+            if (side == ASK) (OUT, IN) else (IN, OUT);
+        // Route base coins
+        fill_order_route_collateral_single<B>(user, market_account_info,
+            base_coins_ref_mut, base_to_route, base_direction);
+        // Route quote coins
+        fill_order_route_collateral_single<Q>(user, market_account_info,
+            quote_coins_ref_mut, quote_to_route, quote_direction);
+    }
+
+    /// Route `amount` of `Collateral` in `direction` either `IN` or
+    /// `OUT`, relative to `user` with `market_account_info`, either
+    /// from or to, respectively, coins at `external_coins_ref_mut`.
+    ///
+    /// Inner function for `fill_order_route_collateral`
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `market_account_info`: Corresponding `MarketAccountInfo`
+    /// * `external_coins_ref_mut`: Effectively a counterparty to `user`
+    /// * `amount`: Amount of coins to route
+    /// * `direction`: `IN` or `OUT`
+    fun fill_order_route_collateral_single<CoinType>(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        external_coins_ref_mut: &mut coin::Coin<CoinType>,
+        amount: u64,
+        direction: bool
+    ) acquires Collateral {
+        // Borrow mutable reference to user's collateral map
+        let collateral_map_ref_mut =
+            &mut borrow_global_mut<Collateral<CoinType>>(user).map;
+        // Borrow mutable reference to user's collateral
+        let collateral_ref_mut = open_table::borrow_mut(collateral_map_ref_mut,
+            market_account_info);
+        // If inbound collateral to user
+        if (direction == IN)
+            // Merge to their collateral store extracted external coins
+            coin::merge(collateral_ref_mut,
+                coin::extract(external_coins_ref_mut, amount)) else
+            // If outbound collateral from user, merge to external coins
+            // those extracted from user's collateral
+            coin::merge(external_coins_ref_mut,
+                coin::extract(collateral_ref_mut, amount));
+    }
+
     /// Update a user's market account when filling an order.
     ///
     /// Inner function for `fill_order_internal`.
@@ -496,12 +572,10 @@ module econia::user {
     /// * `order_id`: Order ID for given order
     /// * `complete_fill`: If `true`, the order is completely filled
     /// * `base_parcels_filled`: Number of base parcels filled
-    /// * `coins_in`: If `side` is `ASK`, number of quote coins to route
-    ///   from `quote_coins_ref_mut` to `user`, else number of base
-    ///   coins to route from `base_coins_ref_mut` to user
-    /// * `coins_out`: If `side` is `ASK`, number of base coins to route
-    ///   from user to `base_coins_ref_mut`, else number of quote coins
-    ///   to route from user to `quote_coins_ref_mut`
+    /// * `base_to_route`: If `side` is `ASK`, number of base coins
+    ///   routed from `user`, else to `user`
+    /// * `quote_to_route`: If `side` is `ASK`, number of quote coins
+    ///   routed to `user`, else from `user`
     fun fill_order_update_market_account(
         user: address,
         market_account_info: MarketAccountInfo,
@@ -509,8 +583,8 @@ module econia::user {
         order_id: u128,
         complete_fill: bool,
         base_parcels_filled: u64,
-        coins_in: u64,
-        coins_out: u64,
+        base_to_route: u64,
+        quote_to_route: u64,
     ) acquires MarketAccounts {
         // Borrow mutable reference to market accounts map
         let market_accounts_map_ref_mut =
@@ -518,22 +592,26 @@ module econia::user {
         // Borrow mutable reference to market account
         let market_account_ref_mut = open_table::borrow_mut(
             market_accounts_map_ref_mut, market_account_info);
-        // Get mutable reference to corresponding orders tree and
-        // relevant coin count fields for incoming and outgoing coins
-        let (
+        let ( // Get mutable reference to corresponding orders tree,
             order_tree_ref_mut,
-            coins_in_total_ref_mut,
-            coins_in_available_ref_mut,
-            coins_out_total_ref_mut,
+            coins_in, // Amount of inbound coins
+            coins_in_total_ref_mut, // Totals field for inbound coins
+            coins_in_available_ref_mut, // Available field
+            coins_out, // Amount of outbound coins
+            coins_out_total_ref_mut, // Totals field for outbound coins
         ) = if (side == ASK) ( // If an ask is matched
             &mut market_account_ref_mut.asks,
+            quote_to_route,
             &mut market_account_ref_mut.quote_coins_total,
             &mut market_account_ref_mut.quote_coins_available,
+            base_to_route,
             &mut market_account_ref_mut.base_coins_total,
         ) else ( // If a bid is matched
             &mut market_account_ref_mut.bids,
+            base_to_route,
             &mut market_account_ref_mut.base_coins_total,
             &mut market_account_ref_mut.base_coins_available,
+            quote_to_route,
             &mut market_account_ref_mut.quote_coins_total,
         );
         if (complete_fill) { // If completely filling the order
@@ -551,84 +629,6 @@ module econia::user {
         *coins_in_total_ref_mut = *coins_in_total_ref_mut + coins_in;
         *coins_in_available_ref_mut = *coins_in_available_ref_mut + coins_in;
         *coins_out_total_ref_mut = *coins_out_total_ref_mut - coins_out;
-    }
-
-    /// Route collateral when filling an order.
-    ///
-    /// Inner function for `fill_order_internal`.
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_info`: Corresponding `MarketAccountInfo`
-    /// * `side`: `ASK` or `BID`
-    /// * `base_coins_ref_mut`: Mutable reference to base coins passing
-    ///   through the matching engine
-    /// * `quote_coins_ref_mut`: Mutable reference to quote coins
-    ///   passing through the matching engine
-    /// * `coins_in`: If `side` is `ASK`, number of quote coins to route
-    ///   from `quote_coins_ref_mut` to `user`, else number of base
-    ///   coins to route from `base_coins_ref_mut` to user
-    /// * `coins_out`: If `side` is `ASK`, number of base coins to route
-    ///   from user to `base_coins_ref_mut`, else number of quote coins
-    ///   to route from user to `quote_coins_ref_mut`
-    fun fill_order_route_collateral<B, Q>(
-        user: address,
-        market_account_info: MarketAccountInfo,
-        side: bool,
-        base_coins_ref_mut: &mut coin::Coin<B>,
-        quote_coins_ref_mut: &mut coin::Coin<Q>,
-        coins_in: u64,
-        coins_out: u64,
-    ) acquires Collateral {
-        // Determine routing direction and amount to route for both base
-        // and quote coins based on side
-        let (base_direction, quote_direction, base_to_route, quote_to_route) =
-            // If filling an ask, base coins out, quote coins in
-            if (side == ASK) (OUT, IN, coins_out, coins_in) else
-            // If filling a bid, base in, quote out
-            (IN, OUT, coins_in, coins_out);
-        // Route base coins
-        fill_order_route_collateral_single<B>(user, market_account_info,
-            base_direction, base_to_route, base_coins_ref_mut);
-        // Route quote coins
-        fill_order_route_collateral_single<Q>(user, market_account_info,
-            quote_direction, quote_to_route, quote_coins_ref_mut);
-    }
-
-    /// Route `amount` of `Collateral` in `direction` either `IN` or
-    /// `OUT`, relative to `user` with `market_account_info`, either
-    /// from or to, respectively, coins at `external_coins_ref_mut`.
-    ///
-    /// Inner function for `fill_order_route_collateral`
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `market_account_info`: Corresponding `MarketAccountInfo`
-    /// * `direction`: `IN` or `OUT`
-    /// * `amount`: Amount of coins to route
-    /// * `external_coins_ref_mut`: Effectively a counterparty to `user`
-    fun fill_order_route_collateral_single<CoinType>(
-        user: address,
-        market_account_info: MarketAccountInfo,
-        direction: bool,
-        amount: u64,
-        external_coins_ref_mut: &mut coin::Coin<CoinType>
-    ) acquires Collateral {
-        // Borrow mutable reference to user's collateral map
-        let collateral_map_ref_mut =
-            &mut borrow_global_mut<Collateral<CoinType>>(user).map;
-        // Borrow mutable reference to user's collateral
-        let collateral_ref_mut = open_table::borrow_mut(collateral_map_ref_mut,
-            market_account_info);
-        // If inbound collateral to user
-        if (direction == IN)
-            // Merge to their collateral store extracted external coins
-            coin::merge(collateral_ref_mut,
-                coin::extract(external_coins_ref_mut, amount)) else
-            // If outbound collateral from user, merge to external coins
-            // those extracted from user's collateral
-            coin::merge(external_coins_ref_mut,
-                coin::extract(collateral_ref_mut, amount));
     }
 
     /// For order with given `scale_factor`, `base_parcels`, and
@@ -1213,24 +1213,24 @@ module econia::user {
         ); // Initialize matching engine side of route with coins
         // Declare partial fill parameters relative to user
         let base_parcels_filled_1 = 100;
-        let coins_in_1 = base_parcels_filled_1 * price;
-        let coins_out_1 = base_parcels_filled_1 * scale_factor;
+        let base_to_route_1 = base_parcels_filled_1 * scale_factor;
+        let quote_to_route_1 = base_parcels_filled_1 * price;
         // Process a partial fill
         fill_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
             false, base_parcels_filled_1, &mut engine_base_coins,
-            &mut engine_quote_coins, coins_in_1, coins_out_1,
+            &mut engine_quote_coins, base_to_route_1, quote_to_route_1,
             &get_econia_capability_test());
         // Assert base coin counts
         let (base_coins_total, base_coins_available) =
             get_collateral_counts_test<BC, QC, E1, BC>(@user, custodian_id);
-        assert!(base_coins_total == base_coins_start - coins_out_1, 0);
+        assert!(base_coins_total == base_coins_start - base_to_route_1, 0);
         assert!(base_coins_available == base_coins_start -
             order_base_parcels * scale_factor, 0);
         // Assert quote coin counts
         let (quote_coins_total, quote_coins_available) =
             get_collateral_counts_test<BC, QC, E1, QC>(@user, custodian_id);
-        assert!(quote_coins_total == coins_in_1, 0);
-        assert!(quote_coins_available == coins_in_1, 0);
+        assert!(quote_coins_total == quote_to_route_1, 0);
+        assert!(quote_coins_available == quote_to_route_1, 0);
         // Assert order base parcel size updates
         assert!(order_base_parcels_test<BC, QC, E1>(@user, custodian_id, side,
             order_id) == order_base_parcels - base_parcels_filled_1, 0);
@@ -1238,20 +1238,20 @@ module econia::user {
         let (base_collateral, quote_collateral) =
             get_collateral_amounts_test<BC, QC, E1>(@user, custodian_id);
         // Assert collateral amounts
-        assert!(base_collateral == base_coins_start - coins_out_1, 0);
-        assert!(quote_collateral == coins_in_1, 0);
+        assert!(base_collateral == base_coins_start - base_to_route_1, 0);
+        assert!(quote_collateral == quote_to_route_1, 0);
         // Assert matching engine coin coints
-        assert!(coin::value(&engine_base_coins) == coins_out_1, 0);
+        assert!(coin::value(&engine_base_coins) == base_to_route_1, 0);
         assert!(coin::value(&engine_quote_coins) == engine_quote_coins_start -
-            coins_in_1, 0);
+            quote_to_route_1, 0);
         // Declare complete fill parameters relative to user
         let base_parcels_filled_2 = order_base_parcels - base_parcels_filled_1;
-        let coins_in_2 = base_parcels_filled_2 * price;
-        let coins_out_2 = base_parcels_filled_2 * scale_factor;
+        let base_to_route_2 = base_parcels_filled_2 * scale_factor;
+        let quote_to_route_2 = base_parcels_filled_2 * price;
         // Process a complete fill
         fill_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
             true, base_parcels_filled_2, &mut engine_base_coins,
-            &mut engine_quote_coins, coins_in_2, coins_out_2,
+            &mut engine_quote_coins, base_to_route_2, quote_to_route_2,
             &get_econia_capability_test());
         // Assert base coin counts
         (base_coins_total, base_coins_available) =
@@ -1273,13 +1273,13 @@ module econia::user {
             get_collateral_amounts_test<BC, QC, E1>(@user, custodian_id);
         // Assert collateral amounts
         assert!(base_collateral == base_coins_start -
-            coins_out_1 - coins_out_2, 0);
-        assert!(quote_collateral == coins_in_1 + coins_in_2, 0);
+            base_to_route_1 - base_to_route_2, 0);
+        assert!(quote_collateral == quote_to_route_1 + quote_to_route_2, 0);
         // Assert matching engine coin coints
         assert!(coin::value(&engine_base_coins) ==
-            coins_out_1 + coins_out_2, 0);
+            base_to_route_1 + base_to_route_2, 0);
         assert!(coin::value(&engine_quote_coins) ==
-            engine_quote_coins_start - coins_in_1 - coins_in_2, 0);
+            engine_quote_coins_start - quote_to_route_1 - quote_to_route_2, 0);
         // Burn matching engine's coins
         coins::burn(engine_base_coins); coins::burn(engine_quote_coins);
     }
@@ -1320,22 +1320,22 @@ module econia::user {
         ); // Initialize matching engine side of route with coins
         // Declare partial fill parameters relative to user
         let base_parcels_filled_1 = 100;
-        let coins_in_1 = base_parcels_filled_1 * scale_factor;
-        let coins_out_1 = base_parcels_filled_1 * price;
+        let base_to_route_1 = base_parcels_filled_1 * scale_factor;
+        let quote_to_route_1 = base_parcels_filled_1 * price;
         // Process a partial fill
         fill_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
             false, base_parcels_filled_1, &mut engine_base_coins,
-            &mut engine_quote_coins, coins_in_1, coins_out_1,
+            &mut engine_quote_coins, base_to_route_1, quote_to_route_1,
             &get_econia_capability_test());
         // Assert base coin counts
         let (base_coins_total, base_coins_available) =
             get_collateral_counts_test<BC, QC, E1, BC>(@user, custodian_id);
-        assert!(base_coins_total == coins_in_1, 0);
-        assert!(base_coins_available == coins_in_1, 0);
+        assert!(base_coins_total == base_to_route_1, 0);
+        assert!(base_coins_available == base_to_route_1, 0);
         // Assert quote coin counts
         let (quote_coins_total, quote_coins_available) =
             get_collateral_counts_test<BC, QC, E1, QC>(@user, custodian_id);
-        assert!(quote_coins_total == quote_coins_start - coins_out_1, 0);
+        assert!(quote_coins_total == quote_coins_start - quote_to_route_1, 0);
         assert!(quote_coins_available == quote_coins_start -
             order_base_parcels * price, 0);
         // Assert order base parcel size updates
@@ -1345,20 +1345,20 @@ module econia::user {
         let (base_collateral, quote_collateral) =
             get_collateral_amounts_test<BC, QC, E1>(@user, custodian_id);
         // Assert collateral amounts
-        assert!(base_collateral == coins_in_1, 0);
-        assert!(quote_collateral == quote_coins_start - coins_out_1, 0);
+        assert!(base_collateral == base_to_route_1, 0);
+        assert!(quote_collateral == quote_coins_start - quote_to_route_1, 0);
         // Assert matching engine coin coints
         assert!(coin::value(&engine_base_coins) == engine_base_coins_start -
-            coins_in_1, 0);
-        assert!(coin::value(&engine_quote_coins) == coins_out_1, 0);
+            base_to_route_1, 0);
+        assert!(coin::value(&engine_quote_coins) == quote_to_route_1, 0);
         // Declare complete fill parameters relative to user
         let base_parcels_filled_2 = order_base_parcels - base_parcels_filled_1;
-        let coins_in_2 = base_parcels_filled_2 * scale_factor;
-        let coins_out_2 = base_parcels_filled_2 * price;
+        let base_to_route_2 = base_parcels_filled_2 * scale_factor;
+        let quote_to_route_2 = base_parcels_filled_2 * price;
         // Process a complete fill
         fill_order_internal<BC, QC, E1>(@user, custodian_id, side, order_id,
             true, base_parcels_filled_2, &mut engine_base_coins,
-            &mut engine_quote_coins, coins_in_2, coins_out_2,
+            &mut engine_quote_coins, base_to_route_2, quote_to_route_2,
             &get_econia_capability_test());
         // Assert base coin counts
         (base_coins_total, base_coins_available) =
@@ -1379,14 +1379,14 @@ module econia::user {
         (base_collateral, quote_collateral) =
             get_collateral_amounts_test<BC, QC, E1>(@user, custodian_id);
         // Assert collateral amounts
-        assert!(base_collateral == coins_in_1 + coins_in_2, 0);
+        assert!(base_collateral == base_to_route_1 + base_to_route_2, 0);
         assert!(quote_collateral ==
-            quote_coins_start - coins_out_1 - coins_out_2, 0);
+            quote_coins_start - quote_to_route_1 - quote_to_route_2, 0);
         // Assert matching engine coin coints
         assert!(coin::value(&engine_base_coins) ==
-            engine_base_coins_start - coins_in_1 - coins_in_2, 0);
+            engine_base_coins_start - base_to_route_1 - base_to_route_2, 0);
         assert!(coin::value(&engine_quote_coins) ==
-            coins_out_1 + coins_out_2, 0);
+            quote_to_route_1 + quote_to_route_2, 0);
         // Burn matching engine's coins
         coins::burn(engine_base_coins); coins::burn(engine_quote_coins);
     }

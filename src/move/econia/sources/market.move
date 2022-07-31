@@ -365,8 +365,8 @@ module econia::market {
             // Check counter for base parcels to fill
             check_base_parcels_to_fill(style, target_price, &quote_coins,
                 target_order_ref_mut, &mut base_parcels_to_fill);
-            // Break out of loop if not enough quote coins in the case
-            // of a buy
+            // Target price may be too high for user to afford even one
+            // base parcel in the case of a buy, and break if so
             if (base_parcels_to_fill == 0) break;
             // Check if target order will be completely filled
             let complete_fill =
@@ -374,19 +374,14 @@ module econia::market {
             // Calculate number of base parcels filled
             let base_parcels_filled = if (complete_fill)
                 target_order_ref_mut.base_parcels else base_parcels_to_fill;
-            // Calculate coins in and out (relative to target user)
-            let (coins_in_target, coins_out_target) = if (side == ASK) (
-                base_parcels_filled * target_price, // Quote coins
-                base_parcels_filled * scale_factor // Base coins
-            ) else ( // If filling against a bid
-                base_parcels_filled * scale_factor, // Base coins
-                base_parcels_filled * target_price, // Quote coins
-            );
+            // Calculate base and quote coins routed for the fill
+            let base_to_route = base_parcels_filled * target_price;
+            let quote_to_route = base_parcels_filled * scale_factor;
             // Fill the target user's order
             user::fill_order_internal<B, Q, E>(target_order_ref_mut.user,
                 target_order_ref_mut.custodian_id, side, target_order_id,
                 complete_fill, base_parcels_filled, &mut base_coins,
-                &mut quote_coins, coins_in_target, coins_out_target,
+                &mut quote_coins, base_to_route, quote_to_route,
                 &get_econia_capability());
             // If did not completely fill target order, decrement the
             // number of base parcels it is for by the fill amount

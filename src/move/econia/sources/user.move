@@ -491,7 +491,7 @@ module econia::user {
 
     /// Route collateral when filling an order.
     ///
-    /// Inner function for `fill_order_internal`.
+    /// Inner function for `fill_order_internal()`.
     ///
     /// # Parameters
     /// * `user`: Address of corresponding user
@@ -531,7 +531,7 @@ module econia::user {
     /// `OUT`, relative to `user` with `market_account_info`, either
     /// from or to, respectively, coins at `external_coins_ref_mut`.
     ///
-    /// Inner function for `fill_order_route_collateral`
+    /// Inner function for `fill_order_route_collateral()`
     ///
     /// # Parameters
     /// * `user`: Address of corresponding user
@@ -565,7 +565,7 @@ module econia::user {
 
     /// Update a user's market account when filling an order.
     ///
-    /// Inner function for `fill_order_internal`.
+    /// Inner function for `fill_order_internal()`.
     ///
     /// # Parameters
     /// * `user`: Address of corresponding user

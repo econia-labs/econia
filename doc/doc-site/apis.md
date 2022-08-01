@@ -79,11 +79,11 @@ Don't forget to first read the [design overview](https://econia.dev/design-overv
 
 ##### As a signing user
 
-[`econia::market::cancel_limit_order_user`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_place_limit_order_user) cancels an ask or a bid on the order book for a given market, and requires a user's signature
+[`econia::market::cancel_limit_order_user`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_cancel_limit_order_user) cancels an ask or a bid on the order book for a given market, and requires a user's signature
 
 ##### As a custodian
 
-[`econia::market::place_limit_order_custodian`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_place_limit_order_custodian) cancels an ask or a bid on the order book for a given market, and requires the capability of a corresponding custodian
+[`econia::market::cancel_limit_order_custodian`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_cancel_limit_order_custodian) cancels an ask or a bid on the order book for a given market, and requires the capability of a corresponding custodian
 
 ### Placing a market order
 

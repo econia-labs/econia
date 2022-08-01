@@ -115,7 +115,7 @@ module econia::market {
     /// Cancel a limit order on the book and in a user's market account.
     /// Invoked by a custodian, who passes an immutable reference to
     /// their `registry::CustodianCapability`. See wrapped call
-    /// `cancel_limit_order`.
+    /// `cancel_limit_order()`.
     public fun cancel_limit_order_custodian<B, Q, E>(
         user: address,
         host: address,
@@ -132,7 +132,7 @@ module econia::market {
     /// Fill a market order on behalf of a user. Invoked by a custodian,
     /// who passes an immutable reference to their
     /// `registry::CustodianCapability`. See wrapped call
-    /// `fill_market_order`.
+    /// `fill_market_order()`.
     public fun fill_market_order_custodian<B, Q, E>(
         user: address,
         host: address,
@@ -167,7 +167,7 @@ module econia::market {
     /// Place a limit order on the book and in a user's market account.
     /// Invoked by a custodian, who passes an immutable reference to
     /// their `registry::CustodianCapability`. See wrapped call
-    /// `place_limit_order`.
+    /// `place_limit_order()`.
     public fun place_limit_order_custodian<B, Q, E>(
         user: address,
         host: address,
@@ -188,7 +188,8 @@ module econia::market {
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Cancel a limit order on the book and in a user's market account.
-    /// Invoked by a signing user. See wrapped call `cancel_limit_order`.
+    /// Invoked by a signing user. See wrapped call
+    /// `cancel_limit_order()`.
     public entry fun cancel_limit_order_user<B, Q, E>(
         user: &signer,
         host: address,
@@ -201,7 +202,7 @@ module econia::market {
     }
 
     /// Fill a market order. Invoked by a signing user. See wrapped
-    /// call `fill_market_order`.
+    /// call `fill_market_order()`.
     public entry fun fill_market_order_user<B, Q, E>(
         user: &signer,
         host: address,
@@ -227,7 +228,8 @@ module econia::market {
     }
 
     /// Place a limit order on the book and in a user's market account.
-    /// Invoked by a signing user. See wrapped call `place_limit_order`.
+    /// Invoked by a signing user. See wrapped call
+    /// `place_limit_order()`.
     public entry fun place_limit_order_user<B, Q, E>(
         user: &signer,
         host: address,
@@ -366,7 +368,7 @@ module econia::market {
 
     /// Clean up before breaking during iterated market order filling.
     ///
-    /// Inner function for `fill_market_order_traverse_loop`.
+    /// Inner function for `fill_market_order_traverse_loop()`.
     ///
     /// # Parameters
     /// * `null_order`: A null order used for mutable reference passing
@@ -399,7 +401,7 @@ module econia::market {
     /// If `style` is `BUY`, check indicated amount of base parcels
     /// to buy, updating as needed.
     ///
-    /// Inner function for `fill_market_order_process_loop_order`. In
+    /// Inner function for `fill_market_order_process_loop_order()`. In
     /// the case of a `BUY`, if the "target order" on the book (against
     /// which the "incoming user's" order fills against) has a high
     /// enough price, then the incoming user may not be able to afford
@@ -441,7 +443,7 @@ module econia::market {
 
     /// Initialize local variables required for filling market orders.
     ///
-    /// Inner function for `fill_market_order`.
+    /// Inner function for `fill_market_order()`.
     ///
     /// # Parameters
     /// * `user`: Address of corresponding user
@@ -531,7 +533,7 @@ module econia::market {
 
     /// Follow up after processing a fill against an order on the book.
     ///
-    /// Inner function for `fill_market_order_traverse_loop`. Checks
+    /// Inner function for `fill_market_order_traverse_loop()`. Checks
     /// if traversal is still possible, computes new spread maker values
     /// as needed, and determines if loop has hit break condition.
     ///
@@ -633,9 +635,9 @@ module econia::market {
 
     /// Fill a target order on the book during iterated traversal.
     ///
-    /// Inner function for `fill_market_order_traverse_loop`, where the
-    /// "incoming user" (who the market order is for) fills against a
-    /// "target order" on the order book.
+    /// Inner function for `fill_market_order_traverse_loop()`, where
+    /// the "incoming user" (who the market order is for) fills against
+    /// a "target order" on the order book.
     ///
     /// # Parameters
     /// * `style`: `BUY` or `SELL`
@@ -710,7 +712,7 @@ module econia::market {
 
     /// Fill a market order by traversing along the orders tree.
     ///
-    /// Inner function for `fill_market_order`. During iterated
+    /// Inner function for `fill_market_order()`. During iterated
     /// traversal, the "incoming user" (who places the market order or
     /// who has the order placed on their behalf by a custodian) has
     /// their order filled against the "target user" who has a "target

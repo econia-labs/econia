@@ -21,23 +21,28 @@ Market-side functionality
     -  [Abort conditions](#@Abort_conditions_2)
 -  [Function `fill_market_order`](#0xc0deb00c_market_fill_market_order)
     -  [Parameters](#@Parameters_3)
--  [Function `fill_market_order_check_base_parcels_to_fill`](#0xc0deb00c_market_fill_market_order_check_base_parcels_to_fill)
+-  [Function `fill_market_order_break_cleanup`](#0xc0deb00c_market_fill_market_order_break_cleanup)
     -  [Parameters](#@Parameters_4)
--  [Function `fill_market_order_init`](#0xc0deb00c_market_fill_market_order_init)
+-  [Function `fill_market_order_check_base_parcels_to_fill`](#0xc0deb00c_market_fill_market_order_check_base_parcels_to_fill)
     -  [Parameters](#@Parameters_5)
-    -  [Returns](#@Returns_6)
+-  [Function `fill_market_order_init`](#0xc0deb00c_market_fill_market_order_init)
+    -  [Parameters](#@Parameters_6)
+    -  [Returns](#@Returns_7)
+-  [Function `fill_market_order_loop_order_follow_up`](#0xc0deb00c_market_fill_market_order_loop_order_follow_up)
+    -  [Parameters](#@Parameters_8)
+    -  [Returns](#@Returns_9)
 -  [Function `fill_market_order_process_loop_order`](#0xc0deb00c_market_fill_market_order_process_loop_order)
-    -  [Parameters](#@Parameters_7)
-    -  [Returns](#@Returns_8)
+    -  [Parameters](#@Parameters_10)
+    -  [Returns](#@Returns_11)
 -  [Function `fill_market_order_traverse_loop`](#0xc0deb00c_market_fill_market_order_traverse_loop)
-    -  [Parameters](#@Parameters_9)
+    -  [Parameters](#@Parameters_12)
 -  [Function `get_serial_id`](#0xc0deb00c_market_get_serial_id)
 -  [Function `get_econia_capability`](#0xc0deb00c_market_get_econia_capability)
 -  [Function `init_book`](#0xc0deb00c_market_init_book)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Parameters](#@Parameters_10)
-    -  [Abort conditions](#@Abort_conditions_11)
-    -  [Assumes](#@Assumes_12)
+    -  [Parameters](#@Parameters_13)
+    -  [Abort conditions](#@Abort_conditions_14)
+    -  [Assumes](#@Assumes_15)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -680,7 +685,7 @@ a custodain) has their order filled against the "target user"
 who has a "target position" on the order book.
 
 During initialization, withdraws collateral from the incoming
-user, routes assets accordingly, then deposits collateral back
+user. Then routes assets accordingly, then deposits assets back
 to the incoming user.
 
 
@@ -736,10 +741,66 @@ at market prices.
             spread_maker_ref_mut, base_parcels_to_fill, &<b>mut</b> base_coins,
             &<b>mut</b> quote_coins, &econia_capability);
     };
-    // Deposit base <a href="coins.md#0xc0deb00c_coins">coins</a> on hand in incoming <a href="user.md#0xc0deb00c_user">user</a>'s collateral
+    // Deposit base <a href="coins.md#0xc0deb00c_coins">coins</a> <b>to</b> incoming <a href="user.md#0xc0deb00c_user">user</a>'s collateral
     <a href="user.md#0xc0deb00c_user_deposit_collateral">user::deposit_collateral</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, base_coins);
-    // Deposit quote <a href="coins.md#0xc0deb00c_coins">coins</a> on hand in incoming <a href="user.md#0xc0deb00c_user">user</a>'s collateral
+    // Deposit quote <a href="coins.md#0xc0deb00c_coins">coins</a> <b>to</b> incoming <a href="user.md#0xc0deb00c_user">user</a>'s collateral
     <a href="user.md#0xc0deb00c_user_deposit_collateral">user::deposit_collateral</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, quote_coins);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_fill_market_order_break_cleanup"></a>
+
+## Function `fill_market_order_break_cleanup`
+
+Clean up before breaking during iterated market order filling.
+
+Inner function for <code>fill_market_order_traverse_loop</code>.
+
+
+<a name="@Parameters_4"></a>
+
+### Parameters
+
+* <code>null_order</code>: A null order used for mutable reference passing
+* <code>spread_maker_ref_mut</code>: Mutable reference to the spread maker
+for order tree just filled against
+* <code>new_spread_maker</code>: New spread maker value to assign
+* <code>should_pop</code>: If ended traversal by completely filling against
+the last order on the book
+* <code>tree_ref_mut</code>: Mutable reference to orders tree filled
+against
+* <code>target_order_id</code>: If <code>should_pop</code> is <code><b>true</b></code>, the order ID of
+the final order in the book that should be popped
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_break_cleanup">fill_market_order_break_cleanup</a>(null_order: <a href="market.md#0xc0deb00c_market_Order">market::Order</a>, spread_maker_ref_mut: &<b>mut</b> u128, new_spread_maker: u128, should_pop: bool, tree_ref_mut: &<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;, target_order_id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_break_cleanup">fill_market_order_break_cleanup</a>(
+    null_order: <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    spread_maker_ref_mut: &<b>mut</b> u128,
+    new_spread_maker: u128,
+    should_pop: bool,
+    tree_ref_mut: &<b>mut</b> CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;,
+    target_order_id: u128
+) {
+    // Unpack null order
+    <a href="market.md#0xc0deb00c_market_Order">Order</a>{custodian_id: _, <a href="user.md#0xc0deb00c_user">user</a>: _, base_parcels: _} = null_order;
+    // Update spread maker field
+    *spread_maker_ref_mut = new_spread_maker;
+    // If pop flagged, pop and unpack final order on tree
+    <b>if</b> (should_pop) <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _} =
+        <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, target_order_id);
 }
 </code></pre>
 
@@ -763,7 +824,7 @@ as many base parcels as otherwise indicated by
 is updated with the amount the incoming can afford.
 
 
-<a name="@Parameters_4"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -823,7 +884,7 @@ Initialize local variables required for filling market orders.
 Inner function for <code>fill_market_order</code>.
 
 
-<a name="@Parameters_5"></a>
+<a name="@Parameters_6"></a>
 
 ### Parameters
 
@@ -840,7 +901,7 @@ at market prices.
 <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
 
 
-<a name="@Returns_6"></a>
+<a name="@Returns_7"></a>
 
 ### Returns
 
@@ -932,6 +993,136 @@ against
 
 </details>
 
+<a name="0xc0deb00c_market_fill_market_order_loop_order_follow_up"></a>
+
+## Function `fill_market_order_loop_order_follow_up`
+
+Follow up after processing a fill against an order on the book.
+
+Inner function for <code>fill_market_order_traverse_loop</code>. Checks
+if traversal is still possible, computes new spread maker values
+as needed, and determines if loop has hit break condition.
+
+
+<a name="@Parameters_8"></a>
+
+### Parameters
+
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, side of order on book just processed
+* <code>base_parcels_to_fill</code>: Counter for base parcels left to fill
+* <code>complete_fill</code>: <code><b>true</b></code> if the processeed order was completely
+filled
+* <code>traversal_direction</code>: <code><a href="market.md#0xc0deb00c_market_LEFT">LEFT</a></code> or <code><a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a></code>
+* <code>tree_ref_mut</code>: Mutable reference to orders tree
+* <code>n_orders</code>: Counter for number of orders in tree, including
+the order that was just processed
+* <code>target_order_id</code>: The order ID of the target order just
+processed
+* <code>target_order_ref_mut</code>: Mutable reference to an <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>.
+Reassigned only when traversal should proceed to the next
+order on the book, otherwise left unmodified. Intended to
+accept as an input a mutable reference to a bogus <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>.
+* <code>target_parent_index</code>: Loop variable for iterated traversal
+along outer nodes of a <code>CritBitTree</code>
+* <code>target_child_index</code>: Loop variable for iterated traversal
+along outer nodes of a <code>CritBitTree</code>
+
+
+<a name="@Returns_9"></a>
+
+### Returns
+
+* <code>bool</code>: <code><b>true</b></code> if should break out of loop after follow up
+* <code>bool</code>: <code><b>true</b></code> if just processed a complete fill against
+the last order on the book and it should be popped without
+attempting to traverse
+* <code>u128</code>: The order ID of the new spread maker for the given
+<code>side</code>, if one should be set
+* <code>u64</code>: Updated count for <code>n_orders</code>
+* <code>u128</code>: Target order ID, updated if traversal proceeds to the
+next order on the book
+* <code>&<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a></code>: Mutable reference to next order on the book to
+process, only reassigned when iterated traversal proceeds
+* <code>u64</code>: Loop variable for iterated traversal along outer nodes
+of a <code>CritBitTree</code>, only updated when iterated traversal
+proceeds
+* <code>u64</code>: Loop variable for iterated traversal along outer nodes
+of a <code>CritBitTree</code>, only updated when iterated traversal
+proceeds
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_loop_order_follow_up">fill_market_order_loop_order_follow_up</a>(side: bool, base_parcels_to_fill: u64, complete_fill: bool, traversal_direction: bool, tree_ref_mut: &<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;, n_orders: u64, target_order_id: u128, target_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">market::Order</a>, target_parent_index: u64, target_child_index: u64): (bool, bool, u128, u64, u128, &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">market::Order</a>, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_loop_order_follow_up">fill_market_order_loop_order_follow_up</a>(
+    side: bool,
+    base_parcels_to_fill: u64,
+    complete_fill: bool,
+    traversal_direction: bool,
+    tree_ref_mut: &<b>mut</b> CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;,
+    n_orders: u64,
+    target_order_id: u128,
+    target_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    target_parent_index: u64,
+    target_child_index: u64,
+): (
+    bool,
+    bool,
+    u128,
+    u64,
+    u128,
+    &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    u64,
+    u64
+) {
+    // Assume should set new spread maker field <b>to</b> target order ID,
+    // that should <b>break</b> out of <b>loop</b> after follow up, and that
+    // should not pop an order off the book after followup
+    <b>let</b> (new_spread_maker, should_break, should_pop) =
+        ( target_order_id,         <b>true</b>,      <b>false</b>);
+    <b>if</b> (n_orders == 1) { // If no orders left on book
+        <b>if</b> (complete_fill) { // If had a complete fill
+            should_pop = <b>true</b>; // Mark that should pop final order
+            // Set new spread maker value <b>to</b> default value for side
+            new_spread_maker = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a> <b>else</b>
+                <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>
+        }; // If incomplete fill, <b>use</b> default flags
+    } <b>else</b> { // If orders still left on book
+        <b>if</b> (complete_fill) { // If target order completely filled
+            // Traverse pop <b>to</b> next order on book
+            (target_order_id, target_order_ref_mut, target_parent_index,
+             target_child_index,
+             <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _}) =
+                <a href="critbit.md#0xc0deb00c_critbit_traverse_pop_mut">critbit::traverse_pop_mut</a>(tree_ref_mut, target_order_id,
+                    target_parent_index, target_child_index, n_orders,
+                    traversal_direction);
+            <b>if</b> (base_parcels_to_fill == 0) {
+                // The order ID of the order that was just traversed
+                // <b>to</b> becomes the new spread maker
+                new_spread_maker = target_order_id;
+            } <b>else</b> { // If still base parcels left <b>to</b> fill
+                should_break = <b>false</b>; // Should <b>continue</b> looping
+                // Decrement count of orders on book for given side
+                n_orders = n_orders - 1;
+            };
+        }; // If incomplete fill, <b>use</b> default flags
+    };
+    // Return updated variables
+    (should_break, should_pop, new_spread_maker, n_orders, target_order_id,
+     target_order_ref_mut, target_parent_index, target_child_index)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_fill_market_order_process_loop_order"></a>
 
 ## Function `fill_market_order_process_loop_order`
@@ -943,7 +1134,7 @@ Inner function for <code>fill_market_order_traverse_loop</code>, where the
 "target order" on the order book.
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -963,7 +1154,7 @@ quote coins
 <code>EconiaCapability</code> required for internal cross-module calls
 
 
-<a name="@Returns_8"></a>
+<a name="@Returns_11"></a>
 
 ### Returns
 
@@ -1050,7 +1241,7 @@ their order filled against the "target user" who has a "target
 position" on the order book.
 
 
-<a name="@Parameters_9"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -1102,6 +1293,8 @@ quote coins
     <b>let</b> (target_order_id, target_order_ref_mut, target_parent_index,
          target_child_index) = <a href="critbit.md#0xc0deb00c_critbit_traverse_init_mut">critbit::traverse_init_mut</a>(
             tree_ref_mut, traversal_direction);
+    // Declare a null order for generating default mutable reference
+    <b>let</b> null_order = <a href="market.md#0xc0deb00c_market_Order">Order</a>{<a href="user.md#0xc0deb00c_user">user</a>: @0x0, custodian_id: 0, base_parcels: 0};
     <b>loop</b> { // Begin traversal <b>loop</b>
         // Process the order for current iteration, storing flag for
         // <b>if</b> the target order was completely filled
@@ -1109,74 +1302,23 @@ quote coins
             style, side, scale_factor, &<b>mut</b> base_parcels_to_fill,
             target_order_id, target_order_ref_mut, base_coins_ref_mut,
             quote_coins_ref_mut, econia_capability_ref);
-        /*
-        // Declare null order
-        <b>let</b> null_order = <a href="market.md#0xc0deb00c_market_Order">Order</a>{<a href="user.md#0xc0deb00c_user">user</a>: @<a href="user.md#0xc0deb00c_user">user</a>, custodian_id: 0, base_parcels: 3};
+        // Declare variables for <b>if</b> should <b>break</b> out of <b>loop</b>, <b>if</b>
+        // should pop the last order in the tree, and the value for
+        // a new spread maker <b>if</b> one is generated
         <b>let</b> (should_break, should_pop, new_spread_maker);
-        // Follow up on the processed order, storing flag for <b>if</b>
-        // should <b>break</b> out of the iterated traversal
-        (should_break, should_pop, new_spread_maker, target_order_id,
-             target_parent_index, target_child_index) =
-            fill_market_order_loop_order_follow_up(
-                side,
-                base_parcels_to_fill,
-                complete_fill,
-                tree_ref_mut,
-                traversal_direction,
-                &<b>mut</b> n_orders,
-                target_order_id,
-                &<b>mut</b> null_order,
-                target_parent_index,
-                target_child_index,
-        );
-
-        // If pop flagged, pop and unpack final order on tree
-        <b>if</b> (should_pop) <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _} =
-                <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, target_order_id);
-        // If should <b>break</b> out of <b>loop</b>, then <b>update</b> spread maker too
-        <b>if</b> (should_break) {
-            *spread_maker_ref_mut = new_spread_maker;
-            <b>break</b> // Done looping over orders
-        };
-        */
-        <b>let</b> (new_spread_maker, should_break, should_pop) =
-            ( target_order_id,         <b>true</b>,      <b>false</b>);
-        <b>if</b> (n_orders == 1) { // If no orders left on book
-            <b>if</b> (complete_fill) { // If had a complete fill
-                should_pop = <b>true</b>; // Mark that should pop final order
-                // Set new spread maker value <b>to</b> default value for side
-                new_spread_maker = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a> <b>else</b>
-                    <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>;
-            }; // If incomplete fill, <b>use</b> default flags
-        } <b>else</b> { // If orders still left on book
-            <b>if</b> (complete_fill) { // If target order completely filled
-                // Traverse pop <b>to</b> next order on book
-                (target_order_id, target_order_ref_mut,
-                target_parent_index, target_child_index,
-                <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _}) =
-                    <a href="critbit.md#0xc0deb00c_critbit_traverse_pop_mut">critbit::traverse_pop_mut</a>(tree_ref_mut, target_order_id,
-                        target_parent_index, target_child_index,
-                        n_orders, traversal_direction);
-                // If no base parcels left <b>to</b> fill
-                <b>if</b> (base_parcels_to_fill == 0) {
-                    // The order ID of the order that was just traversed
-                    // <b>to</b> becomes the new spread maker
-                    new_spread_maker = target_order_id;
-                } <b>else</b> { // If still base parcels left <b>to</b> fill
-                    should_break = <b>false</b>; // Should <b>continue</b> looping
-                    // Decrement count of orders on book for given side
-                    n_orders = n_orders - 1;
-                };
-            }; // If incomplete fill, <b>use</b> default flags
-        };
+        // Follow up on order processing
+        (should_break, should_pop, new_spread_maker, n_orders,
+         target_order_id, target_order_ref_mut, target_parent_index,
+         target_child_index) = <a href="market.md#0xc0deb00c_market_fill_market_order_loop_order_follow_up">fill_market_order_loop_order_follow_up</a>(
+            side, base_parcels_to_fill, complete_fill, traversal_direction,
+            tree_ref_mut, n_orders, target_order_id, &<b>mut</b> null_order,
+            target_parent_index, target_child_index);
         <b>if</b> (should_break) { // If should <b>break</b> out of <b>loop</b>
-            // Then <b>update</b> spread maker <b>with</b> new value
-            *spread_maker_ref_mut = new_spread_maker;
-            // If marked that should pop final order from tree
-            <b>if</b> (should_pop) // Pop and unpack it
-                <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels: _, <a href="user.md#0xc0deb00c_user">user</a>: _, custodian_id: _} =
-                <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, target_order_id);
-            <b>break</b> // Done looping over orders
+            // Clean up <b>as</b> needed before breaking out of <b>loop</b>
+            <a href="market.md#0xc0deb00c_market_fill_market_order_break_cleanup">fill_market_order_break_cleanup</a>(null_order,
+                spread_maker_ref_mut, new_spread_maker, should_pop,
+                tree_ref_mut, target_order_id);
+            <b>break</b> // Break out of <b>loop</b>
         };
     };
 }
@@ -1296,7 +1438,7 @@ account, aborting if one already exists
 Place limit order on the book and in user's market account.
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1309,7 +1451,7 @@ market account
 * <code>price</code>: Order price
 
 
-<a name="@Abort_conditions_11"></a>
+<a name="@Abort_conditions_14"></a>
 
 ### Abort conditions
 
@@ -1318,7 +1460,7 @@ market account
 * If new order crosses the spread (temporary)
 
 
-<a name="@Assumes_12"></a>
+<a name="@Assumes_15"></a>
 
 ### Assumes
 

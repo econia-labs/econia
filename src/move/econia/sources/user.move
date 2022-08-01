@@ -128,7 +128,9 @@ module econia::user {
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Register `user` with a `MarketAccount` and `Collateral` entries
-    /// for given market and `custodian_id`.
+    /// for given market and `custodian_id`. If `custodian_id` is 0,
+    /// register user with an account that only they can manage via a
+    /// signature.
     ///
     /// # Abort conditions
     /// * If market is not already registered

@@ -2,34 +2,35 @@
 
 - [Using Econia](#using-econia)
   - [Core initialization](#core-initialization)
-  - [Public entry functions](#public-entry-functions)
+  - [Move interfaces](#move-interfaces)
     - [Setup](#setup)
       - [Market registration](#market-registration)
+      - [Custodian registration](#custodian-registration)
       - [User initialization](#user-initialization)
-      - [Container registration](#container-registration)
     - [Collateral management](#collateral-management)
       - [Depositing coins](#depositing-coins)
       - [Withdrawing coins](#withdrawing-coins)
+        - [As a signing user](#as-a-signing-user)
+        - [As a custodian](#as-a-custodian)
     - [Limit orders](#limit-orders)
-      - [Ask submission](#ask-submission)
-      - [Bid submission](#bid-submission)
-      - [Ask cancellation](#ask-cancellation)
-      - [Bid cancellation](#bid-cancellation)
-    - [Market orders](#market-orders)
-      - [Market buy](#market-buy)
-      - [Market sell](#market-sell)
-    - [Swap wrappers](#swap-wrappers)
-      - [Swap buy](#swap-buy)
-      - [Swap sell](#swap-sell)
+      - [Placing a limit order](#placing-a-limit-order)
+        - [As a signing user](#as-a-signing-user-1)
+        - [As a custodian](#as-a-custodian-1)
+      - [Cancelling a limit order](#cancelling-a-limit-order)
+        - [As a signing user](#as-a-signing-user-2)
+        - [As a custodian](#as-a-custodian-2)
+    - [Placing a market order](#placing-a-market-order)
+        - [As a signing user](#as-a-signing-user-3)
+        - [As a custodian](#as-a-custodian-3)
   - [TypeScript SDK](#typescript-sdk)
 
 ## Core initialization
 
-Before anyone can trade on Econia, it must first be initialized ([`Econia::Init::init_econia()`](../../src/move/econia/build/Econia/docs/Init.md#0xc0deb00c_Init_init_econia)) by the account that published its bytecode to the Aptos blockchain.
+Before anyone can trade on Econia, it must first be initialized ([`econia::init::init_econia`](../../src/move/econia/build/Econia/docs/init.md#0xc0deb00c_init_init_econia)) by the account that published its bytecode to the Aptos blockchain.
 For now this will be taking place on the Aptos devnet (which is reset about once weekly), so monitor the [welcome page listing](welcome.md#devnet-account) for the most up-to-date Econia devnet account.
-After Econia has been initialized, users may interact with it through the following `public entry` functions:
+After Econia has been initialized, users may interact with it through the following:
 
-## Public entry functions
+## Move interfaces
 
 Don't forget to first read the [design overview](https://econia.dev/design-overview) for a quick explanation of how Econia works!
 
@@ -37,64 +38,62 @@ Don't forget to first read the [design overview](https://econia.dev/design-overv
 
 #### Market registration
 
-[`Econia::Registry::register_market()`](../../src/move/econia/build/Econia/docs/Registry.md#0xc0deb00c_Registry_register_market) registers a market in the Econia registry, if it has not already been registered, and moves an order book to the account of the host who registered it
+[`econia::market::register_market`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market) registers a market in the Econia registry, if it has not already been registered, and moves an order book to the account of the host who registered it
+
+#### Custodian registration
+[`econia::registry::register_custodian_capability`](../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_register_custodian_capability) administers to the caller a custodian capability with a unique ID, and updates the registry accordingly.
 
 #### User initialization
 
-[`Econia::User::init_user()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_init_user) sets up a user for trading on Econia
-
-#### Container registration
-
-[`Econia::User::init_containers()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_init_containers) initializes a user with the resources required to trade on a given market.
-Must be executed for each market a user wishes to trade on.
+[`econia::user::register_market_account`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_register_market_account) sets up a user for trading on Econia, for a given `<B, Q, E>`-style market and custodian.
 
 ### Collateral management
 
 #### Depositing coins
 
-[`Econia::User::deposit()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_deposit) deposits coins into a user's order collateral
+[`econia::user::deposit_collateral`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_deposit_collateral) deposits coins into a user's collateral
 
 #### Withdrawing coins
 
-[`Econia::User::withdraw()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_withdraw) withdraws coins from a user's order collateral
+##### As a signing user
+
+[`econia::user::withdraw_collateral_user`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_user) withdraws coins from a user's order collateral, and requires the user's signature
+
+##### As a custodian
+
+[`econia::user::withdraw_collateral_custodian`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_custodian) withdraws coins from a user's order collateral, and requires the capability of a corresponding custodian
 
 ### Limit orders
 
-#### Ask submission
+#### Placing a limit order
 
-[`Econia::User::submit_ask()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_submit_ask) submits an ask to the order book for a given market
+##### As a signing user
 
-#### Bid submission
+[`econia::market::place_limit_order_user`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_place_limit_order_user) submits an ask or a bid to the order book for a given market, and requires a user's signature
 
-[`Econia::User::submit_bid()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_submit_bid) submits a bid to the order book for a given market
+##### As a custodian
 
-#### Ask cancellation
+[`econia::market::place_limit_order_custodian`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_place_limit_order_custodian) submits an ask or a bid to the order book for a given market, and requires the capability of a corresponding custodian
 
-[`Econia::User::cancel_ask()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_cancel_ask) cancels an ask on the order book for a given market
+#### Cancelling a limit order
 
-#### Bid cancellation
+##### As a signing user
 
-[`Econia::User::cancel_bid()`](../../src/move/econia/build/Econia/docs/User.md#0xc0deb00c_User_cancel_bid) cancels a bid on the order book for a given market
+[`econia::market::cancel_limit_order_user`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_place_limit_order_user) cancels an ask or a bid on the order book for a given market, and requires a user's signature
 
-### Market orders
+##### As a custodian
 
-#### Market buy
+[`econia::market::place_limit_order_custodian`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_place_limit_order_custodian) cancels an ask or a bid on the order book for a given market, and requires the capability of a corresponding custodian
 
-[`Econia::Match::submit_market_buy()`](../../src/move/econia/build/Econia/docs/Match.md#0xc0deb00c_Match_submit_market_buy) submits a market buy
+### Placing a market order
 
-#### Market sell
+##### As a signing user
 
-[`Econia::Match::submit_market_sell()`](../../src/move/econia/build/Econia/docs/Match.md#0xc0deb00c_Match_submit_market_sell) submits a market sell
+[`econia::market::fill_market_order_user`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_fill_market_order_user) fills a market order against the order book for a given market, and requires a user's signature
 
-### Swap wrappers
+##### As a custodian
 
-#### Swap buy
-
-[`Econia::Match::swap_buy()`](../../src/move/econia/build/Econia/docs/Match.md#0xc0deb00c_Match_swap_buy) initializes relevant containers, executes a swap, and withdraws collateral
-
-#### Swap sell
-
-[`Econia::Match::swap_sell()`](../../src/move/econia/build/Econia/docs/Match.md#0xc0deb00c_Match_swap_sell) initializes relevant containers, executes a swap, and withdraws collateral
+[`econia::market::fill_market_order_custodian`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_fill_market_order_custodian) fills a market order against the order book for a given market, and requires the capability of a corresponding custodian
 
 ## TypeScript SDK
 

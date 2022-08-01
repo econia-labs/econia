@@ -188,7 +188,7 @@ module econia::market {
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Cancel a limit order on the book and in a user's market account.
-    /// Invoked by a signing user. See wrapped call `place_limit_order`.
+    /// Invoked by a signing user. See wrapped call `cancel_limit_order`.
     public entry fun cancel_limit_order_user<B, Q, E>(
         user: &signer,
         host: address,

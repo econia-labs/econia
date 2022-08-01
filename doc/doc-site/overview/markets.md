@@ -6,7 +6,6 @@
   - [Markets](#markets)
   - [Dynamic scaling](#dynamic-scaling)
   - [Social effects](#social-effects)
-  - [Registry lookup](#registry-lookup)
 
 ## Trading pairs
 
@@ -16,14 +15,14 @@ A `FOO/BAR` "price" of `12.34` means that one `FOO` costs 12.34 `BAR`.
 
 ## Scaling
 
-Notably, in the above example values are listed as decimal amounts, which is what a user would probably see on a front-end web interface, but in Move, `Coin` types are ultimately represented as integers.
+Notably, in the above example values are listed as decimal amounts, which is what a user would probably see on a front-end web interface.
+In Move, however, `Coin` types are ultimately represented as integers.
 More specifically, if a front-end user were to trade 1 `FOO` for 12.34 `BAR`, they would actually be trading a `Coin<FOO>` of `value` 1000 for a `Coin<BAR>` of `value` 1234000000, or perhaps a `Coin<FOO>` of `value` 1000000000 for a `Coin<BAR>` of `value` 123400, depending on the actual `decimals` field defined in each `Coin`'s respective `CoinInfo`.
 
 Since Econia's matching engine operates on the underlying integer values, not decimals, granularity problems can arise when a trading pair involves two assets with disparate valuations relative to one another, because the matching engine similarly denotes price as an integer.
-[`Econia::Registry` module documentation](../../../src/move/econia/build/Econia/docs/Registry.md) contains a more detailed explanation of the problem, omitted here in the interest of brevity.
 
 Econia thus implements a "scaled price", formally defined as the number of indivisible quote coin subunits (`Coin<BAR>.value`) per `SF` base coin indivisible subunits (`Coin<FOO>.value`), with `SF` denoting scale factor.
-Again, the above reference contains a more detailed description of scaled price with corresponding mathematical equations, but the following practical examples are provided here instead:
+For example:
 
 * Scale factor of 100
     * A user submits a bid to buy a `Coin<FOO>` of `value` 1200 at a scaled price of 34.
@@ -40,6 +39,9 @@ At a scale factor of 100, a user can only transact in parcels of 100 base coin (
     * A user submits a bid to buy a `Coin<FOO>` of `value` 120 at a price of 3.
     * The "scaled size" of the order (number of parcels) is 12 (`120 / 10 = 12`), and it takes a `Coin<BAR>` of `value` 36 (`12 * 3 = 36`) to fill the order
     * The order is stored in memory with a scaled price of 3 and a scaled size 12
+
+In terms of conventional trading semantics, "scale factor" is analogous to lot size, with Econia implementing a fixed tick size of 1 for every trading pair.
+In future releases, Econia will likely switch to using these terms exclusively, with configurable lot and tick size scheduled for a [future release](https://github.com/econia-labs/econia/issues/10#issuecomment-1201406918).
 
 ## Markets
 
@@ -58,15 +60,15 @@ In Econia, a "market" is uniquely specified by 3 type arguments, having the cano
     | 4 | 10000 |
     | ... | ... |
 
-In [`Econia::Registry`](../../../src/move/econia/sources/Registry.move), scale exponents are defined as the types `E0`, `E1`, `E2`, ..., while scale factors are defined as the `u64` values `F0 = 0`, `F1 = 10`, `F2 = 100`, ..., with scale exponent type arguments used to identify markets, and scale factor `u64` values used to perform arithmetic operations pertaining to a given market.
+In [`econia::registry`](../../../src/move/econia/sources/registry.move), scale exponents are defined as the types `E0`, `E1`, `E2`, ..., while scale factors are defined as the `u64` values `F0 = 0`, `F1 = 10`, `F2 = 100`, ..., with scale exponent type arguments used to identify markets, and scale factor `u64` values used to perform arithmetic operations pertaining to a given market.
 
 For a user to trade on a market, the market must first be "registered" by a "host", meaning that:
 
 1. An empty order book of type `<B, Q, E>` is initialized under the host's account
 2. A registry is updated with an entry mapping from `<B, Q, E>` to the address of the corresponding host
 
-The registry is an `aptos_framework::IterableTable::IterableTable` that can only be initialized under the Econia account, and the registry must be initialized before hosts can register markets.
-A market can only be registered once, meaning that `<FOOAccount::FOOModule::FOO, BARAccount::BARModuleBAR, E0>`, for instance, can only ever be registered to one host, and markets can only be registered using scale exponents defined in [`Econia::Registry`](../../../src/move/econia/sources/Registry.move) (e.g. `E0` actually denotes `Econia::Registry::E0`)
+The registry can only be initialized by the Econia account, and the registry must be initialized before hosts can register markets.
+A market can only be registered once, meaning that `<FOOAccount::FOOModule::FOO, BARAccount::BARModuleBAR, E0>`, for instance, can only ever be registered to one host, and markets can only be registered using scale exponents defined in [`econia::registry`](../../../src/move/econia/sources/registry.move) (e.g. `E0` actually denotes `econia::registry::E0`)
 Notably, this does not prevent multiple markets from being initialized using the same trading symbol, because the Aptos VM treats `FOOAccount::FOOModule::FOO` and `ImposterAccount::ImposterModule::FOO` as different types, hence front-end applications are advised to exercise caution accordingly.
 
 ## Dynamic scaling
@@ -77,7 +79,7 @@ Essentially this functionality is implemented because:
 1. Market registration is permissionless, and
 1. Trading granularity varies as asset prices change relative to one another
 
-The [`Econia::Registry` module documentation](../../../src/move/econia/build/Econia/docs/Registry.md) contains an in-depth explanation of these two concepts, condensed here to the following practical examples:
+For example:
 
 Recently-issued protocol token `PRO` has 3 decimal places, a circulating supply of 1 billion (`10 ^ 9`), and a market capitalization denominated in `USDC` (6 decimal places) of $100,000.
 Hence the user-facing decimal representation `1.000 PRO` corresponds to `Coin<PRO>.value = 1000`, an amount that trades for `100,000 / 10 ^ 9 = 0.0001 USDC`.
@@ -97,9 +99,3 @@ Here, the expectation is that as asset prices drastically change relative to one
 Not that users are necessarily forced to migrate their orders over:
 in the above example, if a user wanted to continue placing orders on `<PRO, USDC, E3>` even when 99% of liquidity had fled to `<PRO, USDC, E0>`, there would ultimately be nothing stopping them from placing orders on the outdated venue, in parcels of `1.000 PRO` at a time.
 The uninformed (or perhaps stubborn? idealistic?) user would almost certainly receive a worse price than if they had simply followed the pack and migrated to the new marketplace, but in one sense, it is a form of economic freedom that they are not strictly forced to.
-
-## Registry lookup
-
-The Econia registry, implemented as an `aptos_framework::IterableTable::IterableTable`, provides public functions for market registration but does not provide public lookup functions, so as to avoid resource contention that would otherwise likely result from concurrent reads and writes on-chain.
-Instead, registry data consumers are advised to inspect the Econia registry via the Aptos REST API or from a local node's state, then use the results to construct transactions accordingly.
-See [Wayne Culbreth's Table tutorial](https://medium.com/code-community-command/aptos-tutorial-episode-4-lets-table-this-for-now-part-1-2e465707f83d) for more information on API-based table lookups, noting that following his pull request of a `MapTable` module to the `aptos_framework`, Econia will likely switch to using that data structure.

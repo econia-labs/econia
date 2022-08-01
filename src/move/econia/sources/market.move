@@ -1,4 +1,8 @@
-/// Market-side functionality
+/// Market-side functionality. See test-only constants for end-to-end
+/// market order fill testing mock order sizes/prices: in the case of
+/// both bids and asks, `USER_1` has the order closest to the spread,
+/// while `USER_3` has the order furthest from the spread. `USER_0` then
+/// places a market order against the book.
 module econia::market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -688,8 +692,8 @@ module econia::market {
         *base_parcels_to_fill_ref_mut = *base_parcels_to_fill_ref_mut -
             base_parcels_filled;
         // Calculate base and quote coins routed for the fill
-        let base_to_route = base_parcels_filled * target_price;
-        let quote_to_route = base_parcels_filled * scale_factor;
+        let base_to_route = base_parcels_filled * scale_factor;
+        let quote_to_route = base_parcels_filled * target_price;
         // Fill the target user's order
         user::fill_order_internal<B, Q, E>(target_order_ref_mut.user,
             target_order_ref_mut.custodian_id, side, target_order_id,
@@ -1316,66 +1320,6 @@ module econia::market {
         econia = @econia,
         user = @user
     )]
-    /// Verify successful spread maker updates when multiple candidates
-    /// for next spread maker
-    fun test_cancel_limit_order_spread_maker(
-        econia: &signer,
-        user: &signer
-    ) acquires EconiaCapabilityStore, OrderBook {
-        let side = ASK; // Declare side
-        // Register market with test user
-        register_market_with_user_test(econia, user, NO_CUSTODIAN);
-        // Declare upcoming order parameters
-        let (base_parcels_0, price_0, serial_id_0) = (10, 71, 0);
-        let (base_parcels_1, price_1, serial_id_1) = (11, 72, 1);
-        let (base_parcels_2, price_2) = (12, 73);
-        let (base_parcels_3, price_3) = (13, 74);
-        // Get order IDs
-        let order_id_0 = order_id::order_id(price_0, serial_id_0, side);
-        let order_id_1 = order_id::order_id(price_1, serial_id_1, side);
-        // Place orders on book
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_0, price_0);
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_1, price_1);
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_2, price_2);
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_3, price_3);
-        // Cancel spread maker when multiple candidtates for max/min
-        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            order_id_0);
-        // Assert spread maker updates correctly
-        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_1, 0);
-        let side = BID; // Declare new side
-        // Declare upcoming order parameters
-        let (base_parcels_4, price_4) = (10, 21);
-        let (base_parcels_5, price_5) = (11, 22);
-        let (base_parcels_6, price_6, serial_id_6) = (12, 23, 6);
-        let (base_parcels_7, price_7, serial_id_7) = (13, 24, 7);
-        // Get order IDs
-        let order_id_6 = order_id::order_id(price_6, serial_id_6, side);
-        let order_id_7 = order_id::order_id(price_7, serial_id_7, side);
-        // Place orders on book
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_4, price_4);
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_5, price_5);
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_6, price_6);
-        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            base_parcels_7, price_7);
-        // Cancel spread maker when multiple candidtates for max/min
-        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
-            order_id_7);
-        // Assert spread maker updates correctly
-        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_6, 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for invalid custodian
     fun test_cancel_limit_order_invalid_custodian(
@@ -1441,6 +1385,66 @@ module econia::market {
         register_market_with_user_test(econia, user, NO_CUSTODIAN);
         // Attempt invalid invocation of order cancellation
         cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, ASK, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful spread maker updates when multiple candidates
+    /// for next spread maker
+    fun test_cancel_limit_order_spread_maker(
+        econia: &signer,
+        user: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let side = ASK; // Declare side
+        // Register market with test user
+        register_market_with_user_test(econia, user, NO_CUSTODIAN);
+        // Declare upcoming order parameters
+        let (base_parcels_0, price_0, serial_id_0) = (10, 71, 0);
+        let (base_parcels_1, price_1, serial_id_1) = (11, 72, 1);
+        let (base_parcels_2, price_2) = (12, 73);
+        let (base_parcels_3, price_3) = (13, 74);
+        // Get order IDs
+        let order_id_0 = order_id::order_id(price_0, serial_id_0, side);
+        let order_id_1 = order_id::order_id(price_1, serial_id_1, side);
+        // Place orders on book
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_0, price_0);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_1, price_1);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_2, price_2);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_3, price_3);
+        // Cancel spread maker when multiple candidtates for max/min
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_0);
+        // Assert spread maker updates correctly
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_1, 0);
+        let side = BID; // Declare new side
+        // Declare upcoming order parameters
+        let (base_parcels_4, price_4) = (10, 21);
+        let (base_parcels_5, price_5) = (11, 22);
+        let (base_parcels_6, price_6, serial_id_6) = (12, 23, 6);
+        let (base_parcels_7, price_7, serial_id_7) = (13, 24, 7);
+        // Get order IDs
+        let order_id_6 = order_id::order_id(price_6, serial_id_6, side);
+        let order_id_7 = order_id::order_id(price_7, serial_id_7, side);
+        // Place orders on book
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_4, price_4);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_5, price_5);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_6, price_6);
+        place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            base_parcels_7, price_7);
+        // Cancel spread maker when multiple candidtates for max/min
+        cancel_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, side,
+            order_id_7);
+        // Assert spread maker updates correctly
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_6, 0);
     }
 
     #[test(
@@ -1562,110 +1566,6 @@ module econia::market {
     ) acquires EconiaCapabilityStore, OrderBook {
         // Attempt invalid market order fill
         fill_market_order_user<QC, BC, E1>(user, @econia, BUY, 100, 200);
-    }
-
-    #[test(
-        econia = @econia,
-        user_0 = @user_0,
-        user_1 = @user_1,
-        user_2 = @user_2,
-        user_3 = @user_3
-    )]
-    /// Verify unmodified user state for nothing to fill (trying to
-    /// fill side without orders)
-    fun test_fill_market_order_no_fill_empty_tree(
-        econia: &signer,
-        user_0: &signer,
-        user_1: &signer,
-        user_2: &signer,
-        user_3: &signer
-    ) acquires EconiaCapabilityStore, OrderBook {
-        let style = SELL; // Define market order style
-        let side =  BID; // Define side of book orders fill against
-        let max_base_parcels = 50; // Define max base parcels to fill
-        let max_quote_units = 100; // Define max quote units if buy
-        assert!( // Assert style and side match
-            style == SELL && side == BID || style == BUY && side == ASK, 0);
-        // Initialize test market, storing order ID of limit orders
-        let (order_id_1, order_id_2, order_id_3) = init_market_test(side,
-            econia, user_0, user_1, user_2, user_3);
-        // Attempt market order fill on opposite side of book (empty)
-        fill_market_order_user<BC, QC, E1>(user_0, @econia, !style,
-            max_base_parcels, max_quote_units);
-        // Assert order book state
-        let (order_base_parcels_1, order_user_1, order_custodian_id_1) =
-            order_fields_test<BC, QC, E1>(@econia, order_id_1, side);
-        let (order_base_parcels_2, order_user_2, order_custodian_id_2) =
-            order_fields_test<BC, QC, E1>(@econia, order_id_2, side);
-        let (order_base_parcels_3, order_user_3, order_custodian_id_3) =
-            order_fields_test<BC, QC, E1>(@econia, order_id_3, side);
-        assert!(order_base_parcels_1 ==  USER_1_BID_SIZE, 0);
-        assert!(order_base_parcels_2 ==  USER_2_BID_SIZE, 0);
-        assert!(order_base_parcels_3 ==  USER_3_BID_SIZE, 0);
-        assert!(        order_user_1 == @user_1, 0);
-        assert!(        order_user_2 == @user_2, 0);
-        assert!(        order_user_3 == @user_3, 0);
-        assert!(order_custodian_id_1 ==  USER_1_CUSTODIAN_ID, 0);
-        assert!(order_custodian_id_2 ==  USER_2_CUSTODIAN_ID, 0);
-        assert!(order_custodian_id_3 ==  USER_3_CUSTODIAN_ID, 0);
-        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_1, 0);
-        // Assert user collateral amounts
-        let ( base_collateral_0,  base_total_0,  base_available_0,
-             quote_collateral_0, quote_total_0, quote_available_0) =
-            user::get_collateral_state_test<BC, QC, E1>(
-                @user_0, USER_0_CUSTODIAN_ID);
-        let ( base_collateral_1,  base_total_1,  base_available_1,
-             quote_collateral_1, quote_total_1, quote_available_1) =
-            user::get_collateral_state_test<BC, QC, E1>(
-                @user_1, USER_1_CUSTODIAN_ID);
-        let ( base_collateral_2,  base_total_2,  base_available_2,
-             quote_collateral_2, quote_total_2, quote_available_2) =
-            user::get_collateral_state_test<BC, QC, E1>(
-                @user_2, USER_2_CUSTODIAN_ID);
-        let ( base_collateral_3,  base_total_3,  base_available_3,
-             quote_collateral_3, quote_total_3, quote_available_3) =
-            user::get_collateral_state_test<BC, QC, E1>(
-                @user_3, USER_3_CUSTODIAN_ID);
-        assert!( base_collateral_0 == USER_0_START_BASE, 0);
-        assert!(      base_total_0 == USER_0_START_BASE, 0);
-        assert!(  base_available_0 == USER_0_START_BASE, 0);
-        assert!(quote_collateral_0 == USER_0_START_QUOTE, 0);
-        assert!(     quote_total_0 == USER_0_START_QUOTE, 0);
-        assert!( quote_available_0 == USER_0_START_QUOTE, 0);
-        assert!( base_collateral_1 == USER_1_START_BASE, 0);
-        assert!(      base_total_1 == USER_1_START_BASE, 0);
-        assert!(  base_available_1 == USER_1_START_BASE, 0);
-        assert!(quote_collateral_1 == USER_1_START_QUOTE, 0);
-        assert!(     quote_total_1 == USER_1_START_QUOTE, 0);
-        assert!( quote_available_1 == USER_1_START_QUOTE
-            - USER_1_BID_SIZE * USER_1_BID_PRICE, 0);
-        assert!( base_collateral_2 == USER_2_START_BASE, 0);
-        assert!(      base_total_2 == USER_2_START_BASE, 0);
-        assert!(  base_available_2 == USER_2_START_BASE, 0);
-        assert!(quote_collateral_2 == USER_2_START_QUOTE, 0);
-        assert!(     quote_total_2 == USER_2_START_QUOTE, 0);
-        assert!( quote_available_2 == USER_2_START_QUOTE
-            - USER_2_BID_SIZE * USER_2_BID_PRICE, 0);
-        assert!( base_collateral_3 == USER_3_START_BASE, 0);
-        assert!(      base_total_3 == USER_3_START_BASE, 0);
-        assert!(  base_available_3 == USER_3_START_BASE, 0);
-        assert!(quote_collateral_3 == USER_3_START_QUOTE, 0);
-        assert!(     quote_total_3 == USER_3_START_QUOTE, 0);
-        assert!( quote_available_3 == USER_3_START_QUOTE
-            - USER_3_BID_SIZE * USER_3_BID_PRICE, 0);
-        // Assert user order sizes
-        let user_1_order_base_parcels =
-            user::order_base_parcels_test<BC, QC, E1>(@user_1,
-                USER_1_CUSTODIAN_ID, side, order_id_1);
-        let user_2_order_base_parcels =
-            user::order_base_parcels_test<BC, QC, E1>(@user_2,
-                USER_2_CUSTODIAN_ID, side, order_id_2);
-        let user_3_order_base_parcels =
-            user::order_base_parcels_test<BC, QC, E1>(@user_3,
-                USER_3_CUSTODIAN_ID, side, order_id_3);
-        assert!(user_1_order_base_parcels == USER_1_BID_SIZE, 0);
-        assert!(user_2_order_base_parcels == USER_2_BID_SIZE, 0);
-        assert!(user_3_order_base_parcels == USER_3_BID_SIZE, 0);
     }
 
     #[test(
@@ -1882,6 +1782,110 @@ module econia::market {
         user_2 = @user_2,
         user_3 = @user_3
     )]
+    /// Verify unmodified user state for nothing to fill (trying to
+    /// fill side without orders)
+    fun test_fill_market_order_no_fill_empty_tree(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let style = SELL; // Define market order style
+        let side =  BID; // Define side of book orders fill against
+        let max_base_parcels = 50; // Define max base parcels to fill
+        let max_quote_units = 100; // Define max quote units if buy
+        assert!( // Assert style and side match
+            style == SELL && side == BID || style == BUY && side == ASK, 0);
+        // Initialize test market, storing order ID of limit orders
+        let (order_id_1, order_id_2, order_id_3) = init_market_test(side,
+            econia, user_0, user_1, user_2, user_3);
+        // Attempt market order fill on opposite side of book (empty)
+        fill_market_order_user<BC, QC, E1>(user_0, @econia, !style,
+            max_base_parcels, max_quote_units);
+        // Assert order book state
+        let (order_base_parcels_1, order_user_1, order_custodian_id_1) =
+            order_fields_test<BC, QC, E1>(@econia, order_id_1, side);
+        let (order_base_parcels_2, order_user_2, order_custodian_id_2) =
+            order_fields_test<BC, QC, E1>(@econia, order_id_2, side);
+        let (order_base_parcels_3, order_user_3, order_custodian_id_3) =
+            order_fields_test<BC, QC, E1>(@econia, order_id_3, side);
+        assert!(order_base_parcels_1 ==  USER_1_BID_SIZE, 0);
+        assert!(order_base_parcels_2 ==  USER_2_BID_SIZE, 0);
+        assert!(order_base_parcels_3 ==  USER_3_BID_SIZE, 0);
+        assert!(        order_user_1 == @user_1, 0);
+        assert!(        order_user_2 == @user_2, 0);
+        assert!(        order_user_3 == @user_3, 0);
+        assert!(order_custodian_id_1 ==  USER_1_CUSTODIAN_ID, 0);
+        assert!(order_custodian_id_2 ==  USER_2_CUSTODIAN_ID, 0);
+        assert!(order_custodian_id_3 ==  USER_3_CUSTODIAN_ID, 0);
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) == order_id_1, 0);
+        // Assert user collateral amounts
+        let ( base_collateral_0,  base_total_0,  base_available_0,
+             quote_collateral_0, quote_total_0, quote_available_0) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_0, USER_0_CUSTODIAN_ID);
+        let ( base_collateral_1,  base_total_1,  base_available_1,
+             quote_collateral_1, quote_total_1, quote_available_1) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID);
+        let ( base_collateral_2,  base_total_2,  base_available_2,
+             quote_collateral_2, quote_total_2, quote_available_2) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID);
+        let ( base_collateral_3,  base_total_3,  base_available_3,
+             quote_collateral_3, quote_total_3, quote_available_3) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID);
+        assert!( base_collateral_0 == USER_0_START_BASE, 0);
+        assert!(      base_total_0 == USER_0_START_BASE, 0);
+        assert!(  base_available_0 == USER_0_START_BASE, 0);
+        assert!(quote_collateral_0 == USER_0_START_QUOTE, 0);
+        assert!(     quote_total_0 == USER_0_START_QUOTE, 0);
+        assert!( quote_available_0 == USER_0_START_QUOTE, 0);
+        assert!( base_collateral_1 == USER_1_START_BASE, 0);
+        assert!(      base_total_1 == USER_1_START_BASE, 0);
+        assert!(  base_available_1 == USER_1_START_BASE, 0);
+        assert!(quote_collateral_1 == USER_1_START_QUOTE, 0);
+        assert!(     quote_total_1 == USER_1_START_QUOTE, 0);
+        assert!( quote_available_1 == USER_1_START_QUOTE
+            - USER_1_BID_SIZE * USER_1_BID_PRICE, 0);
+        assert!( base_collateral_2 == USER_2_START_BASE, 0);
+        assert!(      base_total_2 == USER_2_START_BASE, 0);
+        assert!(  base_available_2 == USER_2_START_BASE, 0);
+        assert!(quote_collateral_2 == USER_2_START_QUOTE, 0);
+        assert!(     quote_total_2 == USER_2_START_QUOTE, 0);
+        assert!( quote_available_2 == USER_2_START_QUOTE
+            - USER_2_BID_SIZE * USER_2_BID_PRICE, 0);
+        assert!( base_collateral_3 == USER_3_START_BASE, 0);
+        assert!(      base_total_3 == USER_3_START_BASE, 0);
+        assert!(  base_available_3 == USER_3_START_BASE, 0);
+        assert!(quote_collateral_3 == USER_3_START_QUOTE, 0);
+        assert!(     quote_total_3 == USER_3_START_QUOTE, 0);
+        assert!( quote_available_3 == USER_3_START_QUOTE
+            - USER_3_BID_SIZE * USER_3_BID_PRICE, 0);
+        // Assert user order sizes
+        let user_1_order_base_parcels =
+            user::order_base_parcels_test<BC, QC, E1>(@user_1,
+                USER_1_CUSTODIAN_ID, side, order_id_1);
+        let user_2_order_base_parcels =
+            user::order_base_parcels_test<BC, QC, E1>(@user_2,
+                USER_2_CUSTODIAN_ID, side, order_id_2);
+        let user_3_order_base_parcels =
+            user::order_base_parcels_test<BC, QC, E1>(@user_3,
+                USER_3_CUSTODIAN_ID, side, order_id_3);
+        assert!(user_1_order_base_parcels == USER_1_BID_SIZE, 0);
+        assert!(user_2_order_base_parcels == USER_2_BID_SIZE, 0);
+        assert!(user_3_order_base_parcels == USER_3_BID_SIZE, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
     /// Verify unmodified user state for nothing to fill
     fun test_fill_market_order_no_fill_quote_units(
         econia: &signer,
@@ -1976,6 +1980,132 @@ module econia::market {
         assert!(user_1_order_base_parcels == USER_1_ASK_SIZE, 0);
         assert!(user_2_order_base_parcels == USER_2_ASK_SIZE, 0);
         assert!(user_3_order_base_parcels == USER_3_ASK_SIZE, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
+    /// Verify post-trade state for filling through all price levels
+    /// except the final order, for filling against bids
+    fun test_fill_market_order_partial_fill_final_bid(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let style = SELL; // Define market order style
+        let side =  BID; // Define side of book orders fill against
+        // Define partial fill against user 3
+        let user_3_fill_size = USER_3_BID_SIZE - 1;
+        let max_base_parcels = USER_1_BID_SIZE + USER_2_BID_SIZE +
+            (user_3_fill_size); // Define max base parcels to fill
+        let max_quote_units = 0; // Define max quote units if buy
+        // Define base/quoute coins routed for each order on book
+        let user_1_base_routed  = USER_1_BID_SIZE * SCALE_FACTOR;
+        let user_1_quote_routed = USER_1_BID_SIZE * USER_1_BID_PRICE;
+        let user_2_base_routed  = USER_2_BID_SIZE * SCALE_FACTOR;
+        let user_2_quote_routed = USER_2_BID_SIZE * USER_2_BID_PRICE;
+        let user_3_base_routed  = user_3_fill_size * SCALE_FACTOR;
+        let user_3_quote_routed = user_3_fill_size * USER_3_BID_PRICE;
+        // Calculate end coin amounts for each user
+        let user_0_end_base = USER_0_START_BASE - (user_1_base_routed +
+            user_2_base_routed + user_3_base_routed);
+        let user_0_end_quote = USER_0_START_QUOTE + (user_1_quote_routed +
+            user_2_quote_routed + user_3_quote_routed);
+        let user_1_end_base  = USER_1_START_BASE  + user_1_base_routed;
+        let user_1_end_quote = USER_1_START_QUOTE - user_1_quote_routed;
+        let user_2_end_base  = USER_2_START_BASE  + user_2_base_routed;
+        let user_2_end_quote = USER_2_START_QUOTE - user_2_quote_routed;
+        let user_3_end_base  = USER_3_START_BASE  + user_3_base_routed;
+        let user_3_end_quote = USER_3_START_QUOTE - user_3_quote_routed;
+        assert!( // Assert style and side match
+            style == SELL && side == BID || style == BUY && side == ASK, 0);
+        // Initialize test market, storing order ID of limit orders
+        let (order_id_1, order_id_2, order_id_3) = init_market_test(side,
+            econia, user_0, user_1, user_2, user_3);
+        // Assert all orders on book
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_3), 0);
+        // Assert users have orders registered
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID, side, order_id_1), 0);
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID, side, order_id_2), 0);
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID, side, order_id_3), 0);
+        // Attempt market order fill
+        fill_market_order_user<BC, QC, E1>(user_0, @econia, style,
+            max_base_parcels, max_quote_units);
+        // Assert all orders taken off book except final one
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        let (order_base_parcels_3, order_user_3, order_custodian_id_3) =
+            order_fields_test<BC, QC, E1>(@econia, order_id_3, side);
+        assert!(order_base_parcels_3 ==
+            USER_3_BID_SIZE - user_3_fill_size, 0);
+        assert!(        order_user_3 == @user_3, 0);
+        assert!(order_custodian_id_3 ==  USER_3_CUSTODIAN_ID, 0);
+        // Assert spread maker updated
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) ==
+            order_id_3, 0);
+        // Assert user collateral amounts
+        let ( base_collateral_0,  base_total_0,  base_available_0,
+             quote_collateral_0, quote_total_0, quote_available_0) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_0, USER_0_CUSTODIAN_ID);
+        let ( base_collateral_1,  base_total_1,  base_available_1,
+             quote_collateral_1, quote_total_1, quote_available_1) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID);
+        let ( base_collateral_2,  base_total_2,  base_available_2,
+             quote_collateral_2, quote_total_2, quote_available_2) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID);
+        let ( base_collateral_3,  base_total_3,  base_available_3,
+             quote_collateral_3, quote_total_3, quote_available_3) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID);
+        assert!( base_collateral_0 == user_0_end_base, 0);
+        assert!(      base_total_0 == user_0_end_base, 0);
+        assert!(  base_available_0 == user_0_end_base, 0);
+        assert!(quote_collateral_0 == user_0_end_quote, 0);
+        assert!(     quote_total_0 == user_0_end_quote, 0);
+        assert!( quote_available_0 == user_0_end_quote, 0);
+        assert!( base_collateral_1 == user_1_end_base, 0);
+        assert!(      base_total_1 == user_1_end_base, 0);
+        assert!(  base_available_1 == user_1_end_base, 0);
+        assert!(quote_collateral_1 == user_1_end_quote, 0);
+        assert!(     quote_total_1 == user_1_end_quote, 0);
+        assert!( quote_available_1 == user_1_end_quote, 0);
+        assert!( base_collateral_2 == user_2_end_base, 0);
+        assert!(      base_total_2 == user_2_end_base, 0);
+        assert!(  base_available_2 == user_2_end_base, 0);
+        assert!(quote_collateral_2 == user_2_end_quote, 0);
+        assert!(     quote_total_2 == user_2_end_quote, 0);
+        assert!( quote_available_2 == user_2_end_quote, 0);
+        assert!( base_collateral_3 == user_3_end_base, 0);
+        assert!(      base_total_3 == user_3_end_base, 0);
+        assert!(  base_available_3 == user_3_end_base, 0);
+        assert!(quote_collateral_3 == user_3_end_quote, 0);
+        assert!(     quote_total_3 == user_3_end_quote, 0);
+        assert!( quote_available_3 == USER_3_START_QUOTE -
+            USER_3_BID_SIZE * USER_3_BID_PRICE, 0);
+        // Assert user orders popped except for final user
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID, side, order_id_1), 0);
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID, side, order_id_2), 0);
+        let user_3_order_base_parcels =
+            user::order_base_parcels_test<BC, QC, E1>(@user_3,
+                USER_3_CUSTODIAN_ID, side, order_id_3);
+        assert!(user_3_order_base_parcels == USER_3_BID_SIZE -
+            user_3_fill_size, 0);
     }
 
     #[test(
@@ -2090,6 +2220,238 @@ module econia::market {
         assert!(user_3_order_base_parcels == USER_3_ASK_SIZE, 0);
     }
 
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
+    /// Verify post-trade state for filling through all price levels and
+    /// popping the final trade on the book, for filling against asks
+    fun test_fill_market_order_pop_final_ask(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let style = BUY; // Define market order style
+        let side =  ASK; // Define side of book orders fill against
+        let max_base_parcels = (USER_1_ASK_SIZE + USER_2_ASK_SIZE +
+            USER_3_ASK_SIZE) + 1; // Calculate max base parcels
+        // Define max quote units if buy (limiting factor here)
+        let max_quote_units =
+            (USER_1_ASK_SIZE * USER_1_ASK_PRICE) +
+            (USER_2_ASK_SIZE * USER_2_ASK_PRICE) +
+            (USER_3_ASK_SIZE * USER_3_ASK_PRICE);
+        // Define base/quoute coins routed for each order on book
+        let user_1_base_routed  = USER_1_ASK_SIZE * SCALE_FACTOR;
+        let user_1_quote_routed = USER_1_ASK_SIZE * USER_1_ASK_PRICE;
+        let user_2_base_routed  = USER_2_ASK_SIZE * SCALE_FACTOR;
+        let user_2_quote_routed = USER_2_ASK_SIZE * USER_2_ASK_PRICE;
+        let user_3_base_routed  = USER_3_ASK_SIZE * SCALE_FACTOR;
+        let user_3_quote_routed = USER_3_ASK_SIZE * USER_3_ASK_PRICE;
+        // Calculate end coin amounts for each user
+        let user_0_end_base = USER_0_START_BASE + (user_1_base_routed +
+            user_2_base_routed + user_3_base_routed);
+        let user_0_end_quote = USER_0_START_QUOTE - (user_1_quote_routed +
+            user_2_quote_routed + user_3_quote_routed);
+        let user_1_end_base  = USER_1_START_BASE  - user_1_base_routed;
+        let user_1_end_quote = USER_1_START_QUOTE + user_1_quote_routed;
+        let user_2_end_base  = USER_2_START_BASE  - user_2_base_routed;
+        let user_2_end_quote = USER_2_START_QUOTE + user_2_quote_routed;
+        let user_3_end_base  = USER_3_START_BASE  - user_3_base_routed;
+        let user_3_end_quote = USER_3_START_QUOTE + user_3_quote_routed;
+        assert!( // Assert style and side match
+            style == SELL && side == BID || style == BUY && side == ASK, 0);
+        // Initialize test market, storing order ID of limit orders
+        let (order_id_1, order_id_2, order_id_3) = init_market_test(side,
+            econia, user_0, user_1, user_2, user_3);
+        // Assert all orders on book
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_3), 0);
+        // Assert users have orders registered
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID, side, order_id_1), 0);
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID, side, order_id_2), 0);
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID, side, order_id_3), 0);
+        // Attempt market order fill
+        fill_market_order_user<BC, QC, E1>(user_0, @econia, style,
+            max_base_parcels, max_quote_units);
+        // Assert all orders taken off book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_3), 0);
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) ==
+            MIN_ASK_DEFAULT, 0);
+        // Assert user collateral amounts
+        let ( base_collateral_0,  base_total_0,  base_available_0,
+             quote_collateral_0, quote_total_0, quote_available_0) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_0, USER_0_CUSTODIAN_ID);
+        let ( base_collateral_1,  base_total_1,  base_available_1,
+             quote_collateral_1, quote_total_1, quote_available_1) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID);
+        let ( base_collateral_2,  base_total_2,  base_available_2,
+             quote_collateral_2, quote_total_2, quote_available_2) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID);
+        let ( base_collateral_3,  base_total_3,  base_available_3,
+             quote_collateral_3, quote_total_3, quote_available_3) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID);
+        assert!( base_collateral_0 == user_0_end_base, 0);
+        assert!(      base_total_0 == user_0_end_base, 0);
+        assert!(  base_available_0 == user_0_end_base, 0);
+        assert!(quote_collateral_0 == user_0_end_quote, 0);
+        assert!(     quote_total_0 == user_0_end_quote, 0);
+        assert!( quote_available_0 == user_0_end_quote, 0);
+        assert!( base_collateral_1 == user_1_end_base, 0);
+        assert!(      base_total_1 == user_1_end_base, 0);
+        assert!(  base_available_1 == user_1_end_base, 0);
+        assert!(quote_collateral_1 == user_1_end_quote, 0);
+        assert!(     quote_total_1 == user_1_end_quote, 0);
+        assert!( quote_available_1 == user_1_end_quote, 0);
+        assert!( base_collateral_2 == user_2_end_base, 0);
+        assert!(      base_total_2 == user_2_end_base, 0);
+        assert!(  base_available_2 == user_2_end_base, 0);
+        assert!(quote_collateral_2 == user_2_end_quote, 0);
+        assert!(     quote_total_2 == user_2_end_quote, 0);
+        assert!( quote_available_2 == user_2_end_quote, 0);
+        assert!( base_collateral_3 == user_3_end_base, 0);
+        assert!(      base_total_3 == user_3_end_base, 0);
+        assert!(  base_available_3 == user_3_end_base, 0);
+        assert!(quote_collateral_3 == user_3_end_quote, 0);
+        assert!(     quote_total_3 == user_3_end_quote, 0);
+        assert!( quote_available_3 == user_3_end_quote, 0);
+        // Assert user orders popped
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID, side, order_id_1), 0);
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID, side, order_id_2), 0);
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID, side, order_id_3), 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
+    /// Verify post-trade state for filling through all price levels and
+    /// popping the final trade on the book, for filling against bids
+    fun test_fill_market_order_pop_final_bid(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let style = SELL; // Define market order style
+        let side =  BID; // Define side of book orders fill against
+        let max_base_parcels = USER_1_BID_SIZE + USER_2_BID_SIZE +
+            USER_3_BID_SIZE + 1; // Define max base parcels to fill
+        let max_quote_units = 0; // Define max quote units if buy
+        // Define base/quoute coins routed for each order on book
+        let user_1_base_routed  = USER_1_BID_SIZE * SCALE_FACTOR;
+        let user_1_quote_routed = USER_1_BID_SIZE * USER_1_BID_PRICE;
+        let user_2_base_routed  = USER_2_BID_SIZE * SCALE_FACTOR;
+        let user_2_quote_routed = USER_2_BID_SIZE * USER_2_BID_PRICE;
+        let user_3_base_routed  = USER_3_BID_SIZE * SCALE_FACTOR;
+        let user_3_quote_routed = USER_3_BID_SIZE * USER_3_BID_PRICE;
+        // Calculate end coin amounts for each user
+        let user_0_end_base = USER_0_START_BASE - (user_1_base_routed +
+            user_2_base_routed + user_3_base_routed);
+        let user_0_end_quote = USER_0_START_QUOTE + (user_1_quote_routed +
+            user_2_quote_routed + user_3_quote_routed);
+        let user_1_end_base  = USER_1_START_BASE  + user_1_base_routed;
+        let user_1_end_quote = USER_1_START_QUOTE - user_1_quote_routed;
+        let user_2_end_base  = USER_2_START_BASE  + user_2_base_routed;
+        let user_2_end_quote = USER_2_START_QUOTE - user_2_quote_routed;
+        let user_3_end_base  = USER_3_START_BASE  + user_3_base_routed;
+        let user_3_end_quote = USER_3_START_QUOTE - user_3_quote_routed;
+        assert!( // Assert style and side match
+            style == SELL && side == BID || style == BUY && side == ASK, 0);
+        // Initialize test market, storing order ID of limit orders
+        let (order_id_1, order_id_2, order_id_3) = init_market_test(side,
+            econia, user_0, user_1, user_2, user_3);
+        // Assert all orders on book
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        assert!(has_order_test<BC, QC, E1>(@econia, side, order_id_3), 0);
+        // Assert users have orders registered
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID, side, order_id_1), 0);
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID, side, order_id_2), 0);
+        assert!(user::has_order_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID, side, order_id_3), 0);
+        // Attempt market order fill
+        fill_market_order_user<BC, QC, E1>(user_0, @econia, style,
+            max_base_parcels, max_quote_units);
+        // Assert all orders taken off book
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_2), 0);
+        assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_3), 0);
+        assert!(spread_maker_test<BC, QC, E1>(@econia, side) ==
+            MAX_BID_DEFAULT, 0);
+        // Assert user collateral amounts
+        let ( base_collateral_0,  base_total_0,  base_available_0,
+             quote_collateral_0, quote_total_0, quote_available_0) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_0, USER_0_CUSTODIAN_ID);
+        let ( base_collateral_1,  base_total_1,  base_available_1,
+             quote_collateral_1, quote_total_1, quote_available_1) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID);
+        let ( base_collateral_2,  base_total_2,  base_available_2,
+             quote_collateral_2, quote_total_2, quote_available_2) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID);
+        let ( base_collateral_3,  base_total_3,  base_available_3,
+             quote_collateral_3, quote_total_3, quote_available_3) =
+            user::get_collateral_state_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID);
+        assert!( base_collateral_0 == user_0_end_base, 0);
+        assert!(      base_total_0 == user_0_end_base, 0);
+        assert!(  base_available_0 == user_0_end_base, 0);
+        assert!(quote_collateral_0 == user_0_end_quote, 0);
+        assert!(     quote_total_0 == user_0_end_quote, 0);
+        assert!( quote_available_0 == user_0_end_quote, 0);
+        assert!( base_collateral_1 == user_1_end_base, 0);
+        assert!(      base_total_1 == user_1_end_base, 0);
+        assert!(  base_available_1 == user_1_end_base, 0);
+        assert!(quote_collateral_1 == user_1_end_quote, 0);
+        assert!(     quote_total_1 == user_1_end_quote, 0);
+        assert!( quote_available_1 == user_1_end_quote, 0);
+        assert!( base_collateral_2 == user_2_end_base, 0);
+        assert!(      base_total_2 == user_2_end_base, 0);
+        assert!(  base_available_2 == user_2_end_base, 0);
+        assert!(quote_collateral_2 == user_2_end_quote, 0);
+        assert!(     quote_total_2 == user_2_end_quote, 0);
+        assert!( quote_available_2 == user_2_end_quote, 0);
+        assert!( base_collateral_3 == user_3_end_base, 0);
+        assert!(      base_total_3 == user_3_end_base, 0);
+        assert!(  base_available_3 == user_3_end_base, 0);
+        assert!(quote_collateral_3 == user_3_end_quote, 0);
+        assert!(     quote_total_3 == user_3_end_quote, 0);
+        assert!( quote_available_3 == user_3_end_quote, 0);
+        // Assert user orders popped
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_1, USER_1_CUSTODIAN_ID, side, order_id_1), 0);
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_2, USER_2_CUSTODIAN_ID, side, order_id_2), 0);
+        assert!(!user::has_order_test<BC, QC, E1>(
+                @user_3, USER_3_CUSTODIAN_ID, side, order_id_3), 0);
+    }
+
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for uninitialized capability store
@@ -2131,15 +2493,6 @@ module econia::market {
         assert!(book.counter == 0, 0);
     }
 
-    #[test(account = @user)]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for attempting to init under non-Econia account
-    fun test_init_econia_capability_store_not_econia(
-        account: &signer
-    ) {
-        init_econia_capability_store(account); // Attempt invalid init
-    }
-
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for attempting to re-init under Econia account
@@ -2148,6 +2501,15 @@ module econia::market {
     ) {
         init_econia_capability_store(econia); // Initialize store
         init_econia_capability_store(econia); // Attempt invalid re-init
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for attempting to init under non-Econia account
+    fun test_init_econia_capability_store_not_econia(
+        account: &signer
+    ) {
+        init_econia_capability_store(account); // Attempt invalid init
     }
 
     #[test(

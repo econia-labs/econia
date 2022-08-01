@@ -3,7 +3,11 @@
 
 # Module `0xc0deb00c::market`
 
-Market-side functionality
+Market-side functionality. See test-only constants for end-to-end
+market order fill testing mock order sizes/prices: in the case of
+both bids and asks, <code>USER_1</code> has the order closest to the spread,
+while <code>USER_3</code> has the order furthest from the spread. <code>USER_0</code> then
+places a market order against the book.
 
 
 -  [Resource `EconiaCapabilityStore`](#0xc0deb00c_market_EconiaCapabilityStore)
@@ -1282,8 +1286,8 @@ quote coins
     *base_parcels_to_fill_ref_mut = *base_parcels_to_fill_ref_mut -
         base_parcels_filled;
     // Calculate base and quote <a href="coins.md#0xc0deb00c_coins">coins</a> routed for the fill
-    <b>let</b> base_to_route = base_parcels_filled * target_price;
-    <b>let</b> quote_to_route = base_parcels_filled * scale_factor;
+    <b>let</b> base_to_route = base_parcels_filled * scale_factor;
+    <b>let</b> quote_to_route = base_parcels_filled * target_price;
     // Fill the target <a href="user.md#0xc0deb00c_user">user</a>'s order
     <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;B, Q, E&gt;(target_order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>,
         target_order_ref_mut.custodian_id, side, target_order_id,

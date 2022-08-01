@@ -125,6 +125,25 @@ module econia::market {
         cancel_limit_order<B, Q, E>(user, host, custodian_id, side, order_id);
     }
 
+    /// Fill a market order on behalf of a user. Invoked by a custodian,
+    /// who passes an immutable reference to their
+    /// `registry::CustodianCapability`. See wrapped call
+    /// `fill_market_order`.
+    public fun fill_market_order_custodian<B, Q, E>(
+        user: address,
+        host: address,
+        style: bool,
+        max_base_parcels: u64,
+        max_quote_units: u64,
+        custodian_capability_ref: &registry::CustodianCapability
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Get custodian ID encoded in capability
+        let custodian_id = registry::custodian_id(custodian_capability_ref);
+        // Fill the market order, using custodian ID
+        fill_market_order<B, Q, E>(user, host, custodian_id, style,
+            max_base_parcels, max_quote_units);
+    }
+
     /// Initializes an `EconiaCapabilityStore`, aborting if one already
     /// exists under the Econia account or if caller is not Econia
     public fun init_econia_capability_store(
@@ -172,9 +191,23 @@ module econia::market {
         side: bool,
         order_id: u128,
     ) acquires EconiaCapabilityStore, OrderBook {
-        // Cancel limit order with corresponding no custodian flag
+        // Cancel limit order, with no custodian flag
         cancel_limit_order<B, Q, E>(
             address_of(user), host, NO_CUSTODIAN, side, order_id);
+    }
+
+    /// Fill a market order. Invoked by a signing user. See wrapped
+    /// call `fill_market_order`.
+    public entry fun fill_market_order_user<B, Q, E>(
+        user: address,
+        host: address,
+        style: bool,
+        max_base_parcels: u64,
+        max_quote_units: u64,
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Fill the market order, with no custodian flag
+        fill_market_order<B, Q, E>(user, host, NO_CUSTODIAN, style,
+            max_base_parcels, max_quote_units);
     }
 
     /// Register a market for the given base type, quote type,
@@ -198,7 +231,7 @@ module econia::market {
         base_parcels: u64,
         price: u64,
     ) acquires EconiaCapabilityStore, OrderBook {
-        // Place limit order with no custodian flag
+        // Place limit order, with no custodian flag
         place_limit_order<B, Q, E>(
             address_of(user), host, NO_CUSTODIAN, side, base_parcels, price);
     }

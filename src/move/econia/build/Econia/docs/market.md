@@ -11,9 +11,11 @@ Market-side functionality
 -  [Resource `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Constants](#@Constants_0)
 -  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
+-  [Function `fill_market_order_custodian`](#0xc0deb00c_market_fill_market_order_custodian)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
+-  [Function `fill_market_order_user`](#0xc0deb00c_market_fill_market_order_user)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
 -  [Function `cancel_limit_order`](#0xc0deb00c_market_cancel_limit_order)
@@ -406,6 +408,45 @@ their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">regist
 
 </details>
 
+<a name="0xc0deb00c_market_fill_market_order_custodian"></a>
+
+## Function `fill_market_order_custodian`
+
+Fill a market order on behalf of a user. Invoked by a custodian,
+who passes an immutable reference to their
+<code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
+<code>fill_market_order</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_custodian">fill_market_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, style: bool, max_base_parcels: u64, max_quote_units: u64, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_custodian">fill_market_order_custodian</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    style: bool,
+    max_base_parcels: u64,
+    max_quote_units: u64,
+    custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Get custodian ID encoded in <a href="capability.md#0xc0deb00c_capability">capability</a>
+    <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(custodian_capability_ref);
+    // Fill the <a href="market.md#0xc0deb00c_market">market</a> order, using custodian ID
+    <a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, host, custodian_id, style,
+        max_base_parcels, max_quote_units);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_init_econia_capability_store"></a>
 
 ## Function `init_econia_capability_store`
@@ -504,9 +545,43 @@ Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
     side: bool,
     <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
-    // Cancel limit order <b>with</b> corresponding no custodian flag
+    // Cancel limit order, <b>with</b> no custodian flag
     <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>&lt;B, Q, E&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>), host, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_fill_market_order_user"></a>
+
+## Function `fill_market_order_user`
+
+Fill a market order. Invoked by a signing user. See wrapped
+call <code>fill_market_order</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_user">fill_market_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, style: bool, max_base_parcels: u64, max_quote_units: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_user">fill_market_order_user</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    style: bool,
+    max_base_parcels: u64,
+    max_quote_units: u64,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Fill the <a href="market.md#0xc0deb00c_market">market</a> order, <b>with</b> no custodian flag
+    <a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, host, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, style,
+        max_base_parcels, max_quote_units);
 }
 </code></pre>
 
@@ -570,7 +645,7 @@ Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
     base_parcels: u64,
     price: u64,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
-    // Place limit order <b>with</b> no custodian flag
+    // Place limit order, <b>with</b> no custodian flag
     <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>), host, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, side, base_parcels, price);
 }

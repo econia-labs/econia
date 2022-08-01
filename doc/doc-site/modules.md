@@ -2,13 +2,40 @@
 
 | Module | Source code | Documentation |
 | ------ | ----------- | ------------- |
-| `Book` | [Book.move](../../src/move/econia/sources/Book.move) | [Book.md](../../src/move/econia/build/Econia/docs/Book.md) |
-| `Caps` | [Caps.move](../../src/move/econia/sources/Caps.move) | [Caps.md](../../src/move/econia/build/Econia/docs/Caps.md) |
-| `CritBit` | [CritBit.move](../../src/move/econia/sources/CritBit.move) | [CritBit.md](../../src/move/econia/build/Econia/docs/CritBit.md) |
-| `ID` | [ID.move](../../src/move/econia/sources/ID.move) | [ID.md](../../src/move/econia/build/Econia/docs/ID.md) |
-| `Init` | [Init.move](../../src/move/econia/sources/Init.move) | [Init.md](../../src/move/econia/build/Econia/docs/Init.md) |
-| `Match` | [Match.move](../../src/move/econia/sources/Match.move) | [Match.md](../../src/move/econia/build/Econia/docs/Match.md) |
-| `Orders` | [Orders.move](../../src/move/econia/sources/Orders.move) | [Orders.md](../../src/move/econia/build/Econia/docs/Orders.md) |
-| `Registry` | [Registry.move](../../src/move/econia/sources/Registry.move) | [Registry.md](../../src/move/econia/build/Econia/docs/Registry.md) |
-| `User` | [User.move](../../src/move/econia/sources/User.move) | [User.md](../../src/move/econia/build/Econia/docs/User.md) |
-| `Version` | [Version.move](../../src/move/econia/sources/Version.move) | [Version.md](../../src/move/econia/build/Econia/docs/Version.md) |
+| `capability` | [capability.move](../../src/move/econia/sources/capability.move) | [capability.md](../../src/move/econia/build/Econia/docs/capability.md) |
+| `coins`      | [coins.move](../../src/move/econia/sources/coins.move)           | [coins.md](../../src/move/econia/build/Econia/docs/coins.md)           |
+| `critbit`    | [critbit.move](../../src/move/econia/sources/critbit.move)       | [critbit.md](../../src/move/econia/build/Econia/docs/critbit.md)       |
+| `init`       | [init.move](../../src/move/econia/sources/init.move)             | [init.md](../../src/move/econia/build/Econia/docs/init.md)             |
+| `market`     | [market.move](../../src/move/econia/sources/market.move)         | [market.md](../../src/move/econia/build/Econia/docs/market.md)         |
+| `open_table` | [open_table.move](../../src/move/econia/sources/open_table.move) | [open_table.md](../../src/move/econia/build/Econia/docs/open_table.md) |
+| `registry`   | [registry.move](../../src/move/econia/sources/registry.move)     | [registry.md](../../src/move/econia/build/Econia/docs/registry.md)     |
+| `user`       | [user.move](../../src/move/econia/sources/user.move)             | [user.md](../../src/move/econia/build/Econia/docs/user.md)             |
+
+## Use dependencies
+
+```mermaid
+
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
+
+flowchart TD
+
+    market --> critbit
+    market --> registry
+    market --> capability
+    market --> |test-only| coins
+    market --> user
+    market --> order_id
+    init --> registry
+    init --> market
+    user --> capability
+    user --> critbit
+    user --> open_table
+    user --> order_id
+    user --> registry
+    user --> |test-only| coins
+    registry --> capability
+    registry --> |test-only| coins
+    registry --> open_table
+    order_id --> |test-only| critbit
+
+```

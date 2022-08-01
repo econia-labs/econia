@@ -11,7 +11,7 @@ elif test $1 = ac; then
     cd src/move/econia
 
 # Build package via Move command line
-elif test $1 = b; then move package build
+elif test $1 = b; then move build
 
 # Clear the terminal
 elif test $1 = c; then clear
@@ -46,12 +46,12 @@ elif test $1 = p; then
     addr=$(python ../../python/econia/build.py gen ../../.. \
         | grep -E -o "(\w+)$")
     # Compile package using new named address
-    aptos move compile --named-addresses "Econia=0x$addr" > /dev/null
+    aptos move compile --named-addresses "econia=0x$addr" > /dev/null
     # Publish under corresponding account (restores named address)
     python ../../python/econia/build.py publish \
         ../../../.secrets/"$addr".key ../../../ $2
     # Rebuild docs with named address to avoid git diffs
-    move build --doc > /dev/null
+    move build --doc &> /dev/null
 
 # Run tests in standard form , passing optional argument
 # For example `s ts -f coin`
@@ -70,6 +70,11 @@ elif test $1 = tf; then aptos move test --filter $2
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand
 elif test $1 = wd; then
-    ls sources/*.move | entr move package build --doc
+    ls sources/*.move | entr move build --doc
+
+# Watch source code and run all tests if it changes
+# May require `brew install entr` beforehand
+elif test $1 = wt; then
+    ls sources/*.move | entr aptos move test
 
 else echo Invalid option; fi

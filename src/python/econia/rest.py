@@ -1297,11 +1297,16 @@ class EconiaClient(Client):
         ----------
         econia: econia.account.Account
             Signing account of Econia
+
+        Returns
+        -------
+        str
+            Transaction hash
         """
-        init_func = ems.Init.script_functions.init_econia
+        init_func = ems.init.entry_functions.init_econia
         return self.run_script(
             econia,
-            [econia.address(), ems.Init.name, init_func]
+            [econia.address(), ems.init.name, init_func]
         )
 
     def core_structs(

@@ -47,99 +47,66 @@ econia_bool_maps = SimpleNamespace(
 """Mapping from boolean values onto corresponding string"""
 
 econia_modules = SimpleNamespace(
-    Book = SimpleNamespace(
-        name = 'Book'
+    capability = SimpleNamespace(
+        name = 'capability',
     ),
-    Caps = SimpleNamespace(
-        name = 'Caps',
-        structs = SimpleNamespace(
-            FC = 'FC'
-        ),
+    coins = SimpleNamespace(
+        name = 'coins',
     ),
-    Coins = SimpleNamespace(
-        name = 'Coins',
-        script_functions = SimpleNamespace(
-            init_coin_types = 'init_coin_types',
-            mint_to = 'mint_to'
-        ),
-        structs = SimpleNamespace(
-            BCT = 'BCT',
-            QCT = 'QCT',
-        )
+    critbit = SimpleNamespace(
+        name = 'critbit'
     ),
-    CritBit = SimpleNamespace(
-        name = 'CritBit'
-    ),
-    ID = SimpleNamespace(
-        name = 'ID'
-    ),
-    Init = SimpleNamespace(
-        name = 'Init',
-        script_functions = SimpleNamespace(
+    init = SimpleNamespace(
+        name = 'init',
+        entry_functions = SimpleNamespace(
             init_econia = 'init_econia'
-        )
-    ),
-    Match = SimpleNamespace(
-        name = 'Match',
-        script_functions = SimpleNamespace(
-            submit_market_buy = 'submit_market_buy'
-        )
-    ),
-    Orders = SimpleNamespace(
-        name = 'Orders'
-    ),
-    Registry = SimpleNamespace(
-        name = 'Registry',
-        script_functions = SimpleNamespace(
-            register_market = 'register_market'
-        ),
-        structs = SimpleNamespace(
-            E1 = 'E1',
-            MR = 'MR'
-        )
-
-    ),
-    User = SimpleNamespace(
-        name = 'User',
-        script_functions = SimpleNamespace(
-            deposit = 'deposit',
-            init_containers = 'init_containers',
-            init_user = 'init_user',
-            submit_ask = 'submit_ask'
         ),
     ),
-    Version = SimpleNamespace(
-        name = 'Version',
-        structs = SimpleNamespace(
-            MC = 'MC'
-        )
-    )
+    market = SimpleNamespace(
+        name = 'market',
+    ),
+    open_table = SimpleNamespace(
+        name = 'open_table'
+    ),
+    order_id = SimpleNamespace(
+        name = 'order_id'
+    ),
+    registry = SimpleNamespace(
+        name = 'registry'
+    ),
+    user = SimpleNamespace(
+        name = 'user'
+    ),
 )
 """Econia Move modules with nested member specifiers"""
 
 econia_module_publish_order = [
     [
-        econia_modules.CritBit.name,
+        econia_modules.capability.name
     ],
     [
-        econia_modules.ID.name,
+        econia_modules.critbit.name
     ],
     [
-        econia_modules.Book.name,
+        econia_modules.order_id.name
     ],
     [
-        econia_modules.Orders.name,
+        econia_modules.coins.name,
     ],
     [
-        econia_modules.Caps.name,
-        econia_modules.Version.name,
-        econia_modules.Registry.name,
-        econia_modules.Init.name,
-        econia_modules.User.name,
-        econia_modules.Match.name,
+        econia_modules.open_table.name
     ],
     [
-        econia_modules.Coins.name
+        econia_modules.registry.name
+    ],
+    [
+        econia_modules.user.name
+    ],
+    [
+        econia_modules.market.name
+    ],
+    [
+        econia_modules.init.name
     ],
 ]
 """
@@ -148,7 +115,8 @@ batched modules that should be loaded together. Individual modules
 should be defined as the sole element in a list if they are to be loaded
 alone. If order within sub-batches is changed loading may break, for
 instance among friends, where the module declaring a friend should be
-listed before the declared friend.
+listed before the declared friend. Additionally, modules that are "used"
+by other modules should be loaded before the modules that use them
 """
 
 econia_paths = SimpleNamespace(
@@ -208,8 +176,10 @@ data should be signed. Per official Aptos transaction tutorial
 """
 
 named_addrs = SimpleNamespace(
-    Std = '1',
-    Econia = 'c0deb00c' # For command-line testing
+    econia = SimpleNamespace(
+        address = 'c0deb00c',
+        address_name = 'econia',
+    )
 )
 """Named addresses (without leading hex specifier)"""
 

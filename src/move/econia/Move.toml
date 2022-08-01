@@ -1,16 +1,17 @@
 [package]
 name = 'Econia'
-version = '1.1.0' # Per SemVer
+version = '2.0.0' # Per SemVer
 
 [addresses]
-Econia = '0x389397a906ddab111bc8f8bfece404424d9da38f64e45f262e444281a2d71618'
-TestUser = '0x1234'
-TestUser1 = '0x2345'
-TestUser2 = '0x3456'
-TestUser3 = '0x4567'
-TestUser4 = '0x5678'
+econia = '0xc0deb00c'
+# Mock users for unit tests
+user = '0x1234'
+user_0 = '0x2345'
+user_1 = '0x3456'
+user_2 = '0x4567'
+user_3 = '0x5678'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = 'a3143756d498821f4f51a5970c7ea35d483938b3'
+rev = '7296f138e11113fab6a1e193fc3f18fa7d08bd3e'

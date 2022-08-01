@@ -412,7 +412,9 @@ Flag for outbound coins
 ## Function `register_market_account`
 
 Register <code><a href="user.md#0xc0deb00c_user">user</a></code> with a <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> and <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> entries
-for given market and <code>custodian_id</code>.
+for given market and <code>custodian_id</code>. If <code>custodian_id</code> is 0,
+register user with an account that only they can manage via a
+signature.
 
 
 <a name="@Abort_conditions_1"></a>
@@ -1021,7 +1023,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 
 Route collateral when filling an order.
 
-Inner function for <code>fill_order_internal</code>.
+Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
 <a name="@Parameters_10"></a>
@@ -1085,7 +1087,7 @@ Route <code>amount</code> of <code><a href="user.md#0xc0deb00c_user_Collateral">
 <code><a href="user.md#0xc0deb00c_user_OUT">OUT</a></code>, relative to <code><a href="user.md#0xc0deb00c_user">user</a></code> with <code>market_account_info</code>, either
 from or to, respectively, coins at <code>external_coins_ref_mut</code>.
 
-Inner function for <code>fill_order_route_collateral</code>
+Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>()</code>
 
 
 <a name="@Parameters_11"></a>
@@ -1143,7 +1145,7 @@ Inner function for <code>fill_order_route_collateral</code>
 
 Update a user's market account when filling an order.
 
-Inner function for <code>fill_order_internal</code>.
+Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
 <a name="@Parameters_12"></a>

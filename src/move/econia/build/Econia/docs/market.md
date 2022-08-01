@@ -382,7 +382,7 @@ Market sell flag
 Cancel a limit order on the book and in a user's market account.
 Invoked by a custodian, who passes an immutable reference to
 their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
-<code>cancel_limit_order</code>.
+<code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
@@ -419,7 +419,7 @@ their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">regist
 Fill a market order on behalf of a user. Invoked by a custodian,
 who passes an immutable reference to their
 <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
-<code>fill_market_order</code>.
+<code><a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_custodian">fill_market_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, style: bool, max_base_parcels: u64, max_quote_units: u64, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
@@ -494,7 +494,7 @@ exists under the Econia account or if caller is not Econia
 Place a limit order on the book and in a user's market account.
 Invoked by a custodian, who passes an immutable reference to
 their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a></code>. See wrapped call
-<code>place_limit_order</code>.
+<code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, side: bool, base_parcels: u64, price: u64, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
@@ -531,7 +531,8 @@ their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">regist
 ## Function `cancel_limit_order_user`
 
 Cancel a limit order on the book and in a user's market account.
-Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
+Invoked by a signing user. See wrapped call
+<code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_user">cancel_limit_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128)
@@ -564,7 +565,7 @@ Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
 ## Function `fill_market_order_user`
 
 Fill a market order. Invoked by a signing user. See wrapped
-call <code>fill_market_order</code>.
+call <code><a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_user">fill_market_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, style: bool, max_base_parcels: u64, max_quote_units: u64)
@@ -630,7 +631,8 @@ scale exponent type, and move an <code><a href="market.md#0xc0deb00c_market_Orde
 ## Function `place_limit_order_user`
 
 Place a limit order on the book and in a user's market account.
-Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
+Invoked by a signing user. See wrapped call
+<code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, side: bool, base_parcels: u64, price: u64)
@@ -837,7 +839,7 @@ at market prices.
 
 Clean up before breaking during iterated market order filling.
 
-Inner function for <code>fill_market_order_traverse_loop</code>.
+Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order_traverse_loop">fill_market_order_traverse_loop</a>()</code>.
 
 
 <a name="@Parameters_4"></a>
@@ -894,7 +896,7 @@ the final order in the book that should be popped
 If <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, check indicated amount of base parcels
 to buy, updating as needed.
 
-Inner function for <code>fill_market_order_process_loop_order</code>. In
+Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order_process_loop_order">fill_market_order_process_loop_order</a>()</code>. In
 the case of a <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, if the "target order" on the book (against
 which the "incoming user's" order fills against) has a high
 enough price, then the incoming user may not be able to afford
@@ -960,7 +962,7 @@ for number of base parcels still left to fill
 
 Initialize local variables required for filling market orders.
 
-Inner function for <code>fill_market_order</code>.
+Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>()</code>.
 
 
 <a name="@Parameters_6"></a>
@@ -1078,7 +1080,7 @@ against
 
 Follow up after processing a fill against an order on the book.
 
-Inner function for <code>fill_market_order_traverse_loop</code>. Checks
+Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order_traverse_loop">fill_market_order_traverse_loop</a>()</code>. Checks
 if traversal is still possible, computes new spread maker values
 as needed, and determines if loop has hit break condition.
 
@@ -1208,9 +1210,9 @@ proceeds
 
 Fill a target order on the book during iterated traversal.
 
-Inner function for <code>fill_market_order_traverse_loop</code>, where the
-"incoming user" (who the market order is for) fills against a
-"target order" on the order book.
+Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order_traverse_loop">fill_market_order_traverse_loop</a>()</code>, where
+the "incoming user" (who the market order is for) fills against
+a "target order" on the order book.
 
 
 <a name="@Parameters_10"></a>
@@ -1313,7 +1315,7 @@ quote coins
 
 Fill a market order by traversing along the orders tree.
 
-Inner function for <code>fill_market_order</code>. During iterated
+Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>()</code>. During iterated
 traversal, the "incoming user" (who places the market order or
 who has the order placed on their behalf by a custodian) has
 their order filled against the "target user" who has a "target

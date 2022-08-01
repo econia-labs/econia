@@ -73,7 +73,7 @@ Notably, this does not prevent multiple markets from being initialized using the
 
 ## Dynamic scaling
 
-Multiple markets be additionally registered for a given base coin/quote coin trading pair by simply varying the scale exponent, which means that `<A1::M1::FOO, A2::M2::BAR, E0>` and `<A1::M1::FOO, A2::M2::BAR, E3>` can co-exist in the registry, along with any other such market containing a variation on the scale exponent type.
+Multiple markets may be registered for a given base coin/quote coin trading pair by simply varying the scale exponent, which means that `<A1::M1::FOO, A2::M2::BAR, E0>` and `<A1::M1::FOO, A2::M2::BAR, E3>` can co-exist in the registry, along with any other such market containing a variation on the scale exponent type.
 Essentially this functionality is implemented because:
 
 1. Market registration is permissionless, and
@@ -85,7 +85,7 @@ Recently-issued protocol token `PRO` has 3 decimal places, a circulating supply 
 Hence the user-facing decimal representation `1.000 PRO` corresponds to `Coin<PRO>.value = 1000`, an amount that trades for `100,000 / 10 ^ 9 = 0.0001 USDC`.
 This means that a single indivisible subunit of `PRO` (`0.001 PRO`, `Coin<PRO>.value = 1`) should trade for only `0.0000001 USDC`, an amount that is actually impossible to represent, since `USDC` only has 6 decimal places.
 Thus a host registers the market `<PRO, USDC, E3>`, corresponding to a scale factor of `1000`, such that `PRO` can only be transacted in parcels of 1000 indivisible subunits, or `1.000 PRO` at a time.
-A user submits a bid to buy `5.000 PRO` (5 parcels) at a scaled price of `99`, for instance, and in return receives `0.000495 USDC` (`Coin<USDC>.value = 495`, `5 * 99 = 495`)
+A user submits a bid to buy `5.000 PRO` (5 parcels) at a scaled price of `99`, for instance, and in return receives `0.000495 USDC` (`Coin<USDC>.value = 495`, `5 * 99 = 495`).
 
 Later, the `USDC`-denominated market capitalization of `PRO` increases to $100B, such that each `1.000 PRO` nominally trades for $100.
 Here, a scale factor of `1000` is no longer appropriate, because users are still limited to transacting in parcels of `Coin<PRO>.value = 1000` (`1.000 PRO`), each having a nominal price of $100, such that it is impossible to place a bid to buy `.5 PRO` ($50 nominal).

@@ -7,7 +7,7 @@
     * [Orders](overview/orders.md)
     * [System integration](overview/integration.md)
 
-* [Using Econia](using.md)
+* [APIs](apis.md)
 
 * [Move modules](modules.md)
 

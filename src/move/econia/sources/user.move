@@ -861,6 +861,48 @@ module econia::user {
     }
 
     #[test_only]
+    /// Inspect all collateral state for given `user` and `custodian_id`
+    /// on given market account.
+    ///
+    /// # Assumes
+    /// * `user` market account as specified
+    ///
+    /// # Returns
+    /// * `u64`: `Collateral<B>` value for given market account
+    /// * `u64`: `MarketAccount.base_coins_total`
+    /// * `u64`: `MarketAccount.base_coins_available`
+    /// * `u64`: `Collateral<Q>` value for given market account
+    /// * `u64`: `MarketAccount.quote_coins_total`
+    /// * `u64`: `MarketAccount.quote_coins_available`
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun get_collateral_state_test<B, Q, E>(
+        user: address,
+        custodian_id: u64,
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires Collateral, MarketAccounts {
+        // Get value of actual coins held as collateral
+        let (base_collateral, quote_collateral) =
+            get_collateral_amounts_test<B, Q, E>(user, custodian_id);
+        // Get base total and available fields from market account
+        let (base_total_field, base_available_field) =
+            get_collateral_counts_test<B, Q, E, B>(user, custodian_id);
+        // Get quote total and available fields from market account
+        let (quote_total_field, quote_available_field) =
+            get_collateral_counts_test<B, Q, E, Q>(user, custodian_id);
+        (base_collateral, base_total_field, base_available_field,
+         quote_collateral, quote_total_field, quote_available_field)
+    }
+
+    #[test_only]
     /// Return `true` if `user` has order with given `order_id` on given
     /// `side` for market account with given `custodian_id`.
     ///

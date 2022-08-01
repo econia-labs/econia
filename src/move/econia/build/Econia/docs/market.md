@@ -563,7 +563,7 @@ Fill a market order. Invoked by a signing user. See wrapped
 call <code>fill_market_order</code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_user">fill_market_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, style: bool, max_base_parcels: u64, max_quote_units: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_user">fill_market_order_user</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, style: bool, max_base_parcels: u64, max_quote_units: u64)
 </code></pre>
 
 
@@ -573,14 +573,14 @@ call <code>fill_market_order</code>.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_fill_market_order_user">fill_market_order_user</a>&lt;B, Q, E&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     host: <b>address</b>,
     style: bool,
     max_base_parcels: u64,
     max_quote_units: u64,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
     // Fill the <a href="market.md#0xc0deb00c_market">market</a> order, <b>with</b> no custodian flag
-    <a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, host, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, style,
+    <a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), host, <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>, style,
         max_base_parcels, max_quote_units);
 }
 </code></pre>

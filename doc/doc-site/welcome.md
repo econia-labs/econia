@@ -4,18 +4,16 @@
 
 **e·co·ni·a** | /ə'känēə/
 
-Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain CLOB for the Aptos blockchain
+Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the Aptos blockchain
 
 ## What is Econia?
 
 Econia is a protocol that lets anyone in the world trade a digital asset with anyone else in the world, at whatever price they want.
-More specifically, Econia is a central limit order book (CLOB), a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is open-source and decentralized.
+More specifically, Econia is an order book, a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is open-source and decentralized.
 
 ## Econia is in development
 
-Econia is currently under development, and this is the first iteration that has shipped to the [Aptos](https://aptos.dev) blockchain.
-This version 1 minimum viable prototype (v1 MVP) introduces a key innovation for on-chain trading, Econia's atomic matching engine, which settles market orders with finality during the transaction in which they were placed.
-That's right, Econia's v1 MVP implements the world's first on-chain atomic matching engine, and all builders are welcome to try it out for themselves!
+Econia is currently under development, and this is the second major iteration that has shipped to the [Aptos](https://aptos.dev) blockchain.
 
 If you are a builder and you are interested in working with Econia, first take a look at the [design overview](https://econia.dev/design-overview), as this provides a technical breakdown that will provide some context for the system design.
 Then try [using Econia](using.md), and let's see what we can build together!

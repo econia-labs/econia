@@ -22,8 +22,6 @@
       - [Swap buy](#swap-buy)
       - [Swap sell](#swap-sell)
   - [TypeScript SDK](#typescript-sdk)
-    - [Orders](#orders)
-    - [Price levels](#price-levels)
 
 ## Core initialization
 
@@ -100,20 +98,5 @@ Must be executed for each market a user wishes to trade on.
 
 ## TypeScript SDK
 
-Econia contains an auto-generated TypeScript SDK contributed and maintained by [Manahip](http:github.com/manahip).
-See [the README](../../src/move/econia/build/typescript/README.md) for a walkthrough.
-Econia Move code includes several private Move functions useful for transpiler-based SDK generation, including:
-
-### Orders
-
-* [`Econia::Book::get_orders()`](../../src/move/econia/build/Econia/docs/Book.md#0xc0deb00c_Book_get_orders)
-
-* [`Econia::Book::get_orders_inner()`](../../src/move/econia/build/Econia/docs/Book.md#0xc0deb00c_Book_get_orders_inner)
-
-* [`Econia::Book::show_book_as_orders()`](../../src/move/econia/build/Econia/docs/Book.md#0xc0deb00c_Book_show_book_as_orders)
-
-### Price levels
-
-* [`Econia::Book::get_price_levels()`](../../src/move/econia/build/Econia/docs/Book.md#0xc0deb00c_Book_get_price_levels)
-
-* [`Econia::Book::show_book_as_price_levels()`](../../src/move/econia/build/Econia/docs/Book.md#0xc0deb00c_Book_show_book_as_price_levels)
+Econia previously contained an auto-generated TypeScript SDK contributed and maintained by [Manahip](http:github.com/manahip).
+With Econia's most recent breaking changes, this SDK no longer works, but a new one is on the way.

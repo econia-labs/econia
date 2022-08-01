@@ -1476,12 +1476,15 @@ module econia::market {
         // Initialize test market, storing order id of limit orders
         let (order_id_1, order_id_2, order_id_3) = init_market_test(side,
             econia, user_0, user_1, user_2, user_3);
+        let custodian_capability = // Get mock custodian capability
+            registry::get_custodian_capability(USER_0_CUSTODIAN_ID);
         // Attempt market order fill, generating mock custodian
         // capability that cannot make in practice but which can use to
         // check invocation of custodian placement function
-        fill_market_order_custodian<BC, QC, E1>(user_0, @econia, style,
-            max_base_parcels, max_quote_units, &
-            registry::get_custodian_capability(USER_0_CUSTODIAN_ID));
+        fill_market_order_custodian<BC, QC, E1>(@user_0, @econia, style,
+            max_base_parcels, max_quote_units, &custodian_capability);
+        // Destroy capability
+        registry::destroy_custodian_capability(custodian_capability);
         // Assert order book state
         assert!(!has_order_test<BC, QC, E1>(@econia, side, order_id_1), 0);
         let (order_base_parcels_2, order_user_2, order_custodian_id_2) =

@@ -46,6 +46,7 @@ from econia.defs import (
     build_print_outputs,
     e_msgs,
     econia_module_publish_order as e_m_p_o,
+    econia_modules,
     econia_paths as ps,
     Econia,
     file_extensions,
@@ -59,7 +60,7 @@ from econia.defs import (
     tx_fields,
     util_paths
 )
-from econia.rest import Client
+from econia.rest import EconiaClient, Client, move_trio
 
 def get_move_util_path(
     filename: str,
@@ -657,6 +658,32 @@ def gen_new_econia_dev_account(
     account.save_seed_to_disk(get_key_path(address, econia_root))
     sub_named_toml_address(econia_root)
 
+def init_econia(
+    account: Account,
+):
+    """Send the initialize Econia transaction via `account`
+
+    Parameters
+    ----------
+    econia: econia.account.Account
+        Signing account of Econia
+    """
+    client = EconiaClient(networks.devnet) # Initialize client
+    tx_hash = client.init_econia(account) # Send init trigger
+    # Get init script module name
+    module = econia_modules.init.name
+    # Get init function name
+    function = econia_modules.init.entry_functions.init_econia
+    status = e_msgs.failed # Assume tx failed
+    if client.tx_successful(tx_hash): # If successful init trigger
+        status = tx_fields.success # Set status to success
+    # Print diagnostic information on transaction
+    print(
+        move_trio(Econia, module, function) + seps.cln,
+        status,
+        seps.lp + client.tx_vn_url(tx_hash) + seps.rp
+    )
+
 if __name__ == '__main__':
     """See module docstring for examples"""
 
@@ -674,6 +701,7 @@ if __name__ == '__main__':
             serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
         account = Account(path=keyfile)
         publish_bytecode(account, econia_root, serialized)
+        init_econia(account)
         sub_named_toml_address(econia_root, generic=False)
     elif action == build_command_fields.gen: # Generate new dev account
         econia_root = seps.dot

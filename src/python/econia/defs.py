@@ -57,7 +57,10 @@ econia_modules = SimpleNamespace(
         name = 'critbit'
     ),
     init = SimpleNamespace(
-        name = 'init'
+        name = 'init',
+        entry_functions = SimpleNamespace(
+            init_econia = 'init_econia'
+        ),
     ),
     market = SimpleNamespace(
         name = 'market',

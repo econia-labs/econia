@@ -1,4 +1,4 @@
-/// Mock coin types for on- and off-chain testing
+/// Mock coin types for on- and off-chain testing.
 module econia::coins {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

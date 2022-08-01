@@ -3,7 +3,7 @@
 
 # Module `0xc0deb00c::init`
 
-Initializers for core Econia resources
+Initializers for core Econia resources.
 
 
 -  [Constants](#@Constants_0)

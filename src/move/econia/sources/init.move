@@ -1,4 +1,4 @@
-/// Initializers for core Econia resources
+/// Initializers for core Econia resources.
 module econia::init {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

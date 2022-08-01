@@ -3,6 +3,8 @@
 
 # Module `0xc0deb00c::registry`
 
+Econia-wide registry functionality. Provides permissionless market
+registration and tracking, delegated custodian registration.
 
 
 -  [Struct `E0`](#0xc0deb00c_registry_E0)

@@ -1,3 +1,5 @@
+/// Econia-wide registry functionality. Provides permissionless market
+/// registration and tracking, delegated custodian registration.
 module econia::registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

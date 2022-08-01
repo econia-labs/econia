@@ -244,7 +244,7 @@ module econia::market {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Cancel limit order on book and unmark in user's market account.
+    /// Cancel limit order on book, remove from user's market account.
     ///
     /// # Parameters
     /// * `user`: Address of corresponding user
@@ -313,7 +313,7 @@ module econia::market {
     /// nodes until the order is filled or another break condition is
     /// met. During iterated traversal, the "incoming user" (who places
     /// the market order or who has the order placed on their behalf by
-    /// a custodain) has their order filled against the "target user"
+    /// a custodian) has their order filled against the "target user"
     /// who has a "target position" on the order book.
     ///
     /// During initialization, withdraws collateral from the incoming
@@ -352,7 +352,7 @@ module econia::market {
                 fill_market_order_init<B, Q, E>(user, custodian_id, style,
                     max_base_parcels, max_quote_units, order_book_ref_mut);
         if (n_orders != 0) { // If orders tree has orders to fill
-            // Fill them in an interated loop traversal
+            // Fill them in an iterated loop traversal
             fill_market_order_traverse_loop<B, Q, E>(style, side, scale_factor,
                 tree_ref_mut, traversal_direction, n_orders,
                 spread_maker_ref_mut, base_parcels_to_fill, &mut base_coins,
@@ -538,7 +538,7 @@ module econia::market {
     /// # Parameters
     /// * `side`: `ASK` or `BID`, side of order on book just processed
     /// * `base_parcels_to_fill`: Counter for base parcels left to fill
-    /// * `complete_fill`: `true` if the processeed order was completely
+    /// * `complete_fill`: `true` if the processed order was completely
     ///   filled
     /// * `traversal_direction`: `LEFT` or `RIGHT`
     /// * `tree_ref_mut`: Mutable reference to orders tree
@@ -712,7 +712,7 @@ module econia::market {
     ///
     /// Inner function for `fill_market_order`. During iterated
     /// traversal, the "incoming user" (who places the market order or
-    /// who has the order placed on their behalf by a custodain) has
+    /// who has the order placed on their behalf by a custodian) has
     /// their order filled against the "target user" who has a "target
     /// position" on the order book.
     ///
@@ -801,7 +801,7 @@ module econia::market {
     fun get_econia_capability():
     EconiaCapability
     acquires EconiaCapabilityStore {
-        // Assert capability store has been intialized
+        // Assert capability store has been initialized
         assert!(exists<EconiaCapabilityStore>(@econia),
             E_NO_ECONIA_CAPABILITY_STORE);
         // Return a copy of an Econia capability
@@ -844,7 +844,7 @@ module econia::market {
     /// * If new order crosses the spread (temporary)
     ///
     /// # Assumes
-    /// * Orders tree will not alread have an order with the same ID as
+    /// * Orders tree will not already have an order with the same ID as
     ///   the new order because order IDs are generated from a
     ///   counter that increases when queried (via `get_serial_id`)
     fun place_limit_order<B, Q, E>(

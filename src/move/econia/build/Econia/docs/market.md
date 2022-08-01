@@ -663,7 +663,7 @@ Invoked by a signing user. See wrapped call <code>place_limit_order</code>.
 
 ## Function `cancel_limit_order`
 
-Cancel limit order on book and unmark in user's market account.
+Cancel limit order on book, remove from user's market account.
 
 
 <a name="@Parameters_1"></a>
@@ -760,7 +760,7 @@ Prepares a crit-bit tree for iterated traversal, then loops over
 nodes until the order is filled or another break condition is
 met. During iterated traversal, the "incoming user" (who places
 the market order or who has the order placed on their behalf by
-a custodain) has their order filled against the "target user"
+a custodian) has their order filled against the "target user"
 who has a "target position" on the order book.
 
 During initialization, withdraws collateral from the incoming
@@ -814,7 +814,7 @@ at market prices.
             <a href="market.md#0xc0deb00c_market_fill_market_order_init">fill_market_order_init</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, style,
                 max_base_parcels, max_quote_units, order_book_ref_mut);
     <b>if</b> (n_orders != 0) { // If orders tree <b>has</b> orders <b>to</b> fill
-        // Fill them in an interated <b>loop</b> traversal
+        // Fill them in an iterated <b>loop</b> traversal
         <a href="market.md#0xc0deb00c_market_fill_market_order_traverse_loop">fill_market_order_traverse_loop</a>&lt;B, Q, E&gt;(style, side, scale_factor,
             tree_ref_mut, traversal_direction, n_orders,
             spread_maker_ref_mut, base_parcels_to_fill, &<b>mut</b> base_coins,
@@ -1089,7 +1089,7 @@ as needed, and determines if loop has hit break condition.
 
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, side of order on book just processed
 * <code>base_parcels_to_fill</code>: Counter for base parcels left to fill
-* <code>complete_fill</code>: <code><b>true</b></code> if the processeed order was completely
+* <code>complete_fill</code>: <code><b>true</b></code> if the processed order was completely
 filled
 * <code>traversal_direction</code>: <code><a href="market.md#0xc0deb00c_market_LEFT">LEFT</a></code> or <code><a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a></code>
 * <code>tree_ref_mut</code>: Mutable reference to orders tree
@@ -1315,7 +1315,7 @@ Fill a market order by traversing along the orders tree.
 
 Inner function for <code>fill_market_order</code>. During iterated
 traversal, the "incoming user" (who places the market order or
-who has the order placed on their behalf by a custodain) has
+who has the order placed on their behalf by a custodian) has
 their order filled against the "target user" who has a "target
 position" on the order book.
 
@@ -1459,7 +1459,7 @@ Return an <code>EconiaCapability</code>, aborting if Econia account has no
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>():
 EconiaCapability
 <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a> {
-    // Assert <a href="capability.md#0xc0deb00c_capability">capability</a> store <b>has</b> been intialized
+    // Assert <a href="capability.md#0xc0deb00c_capability">capability</a> store <b>has</b> been initialized
     <b>assert</b>!(<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia),
         <a href="market.md#0xc0deb00c_market_E_NO_ECONIA_CAPABILITY_STORE">E_NO_ECONIA_CAPABILITY_STORE</a>);
     // Return a <b>copy</b> of an Econia <a href="capability.md#0xc0deb00c_capability">capability</a>
@@ -1543,7 +1543,7 @@ market account
 
 ### Assumes
 
-* Orders tree will not alread have an order with the same ID as
+* Orders tree will not already have an order with the same ID as
 the new order because order IDs are generated from a
 counter that increases when queried (via <code>get_serial_id</code>)
 

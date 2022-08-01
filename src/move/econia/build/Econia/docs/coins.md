@@ -3,7 +3,7 @@
 
 # Module `0xc0deb00c::coins`
 
-Mock coin types for on- and off-chain testing
+Mock coin types for on- and off-chain testing.
 
 
 -  [Resource `CoinCapabilities`](#0xc0deb00c_coins_CoinCapabilities)

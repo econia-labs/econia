@@ -41,11 +41,11 @@ Don't forget to first read the [design overview](https://econia.dev/design-overv
 [`econia::market::register_market`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market) registers a market in the Econia registry, if it has not already been registered, and moves an order book to the account of the host who registered it
 
 #### Custodian registration
-[`econia::registry::register_custodian_capability`](../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_register_custodian_capability) administers to the caller a custodian capability with a unique ID, and updates the registry accordingly.
+[`econia::registry::register_custodian_capability`](../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_register_custodian_capability) administers to the caller a custodian capability with a unique ID, and updates the registry accordingly
 
 #### User initialization
 
-[`econia::user::register_market_account`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_register_market_account) sets up a user for trading on Econia, for a given `<B, Q, E>`-style market and custodian.
+[`econia::user::register_market_account`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_register_market_account) sets up a user for trading on Econia, for a given `<B, Q, E>`-style market and custodian
 
 ### Collateral management
 

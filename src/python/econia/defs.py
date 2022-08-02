@@ -27,8 +27,11 @@ build_command_fields = SimpleNamespace(
     gen = 'gen',
     long = 'long',
     prep = 'prep',
+    print_keyfile_address = 'print-keyfile-address',
     publish = 'publish',
-    serial = 'serial'
+    publish_keyfile = 'publish-keyfile',
+    serial = 'serial',
+    substitute = 'substitute'
 )
 """Command line fields for automated building process"""
 
@@ -177,11 +180,14 @@ data should be signed. Per official Aptos transaction tutorial
 
 named_addrs = SimpleNamespace(
     econia = SimpleNamespace(
-        address = 'c0deb00c',
+        docgen = 'c0deb00c',
         address_name = 'econia',
     )
 )
-"""Named addresses (without leading hex specifier)"""
+"""
+Named addresses (without leading hex specifier). Docgen address used as
+substitute in auto-generated documentation files to prevent excessively
+long address names in markdown file headers."""
 
 networks = SimpleNamespace(
     devnet = 'devnet'

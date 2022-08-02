@@ -132,6 +132,10 @@ To install the `econia` Python package:
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
     ```
 
+    ```zsh
+    if ! test -d .secrets/vanity; then mkdir .secrets/devnet; fi
+    ```
+
 Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
 If using VS Code, select `econia` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
 

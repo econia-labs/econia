@@ -4,9 +4,12 @@ Econia
 *Hyper-parallelized on-chain order book for the Aptos blockchain*
 
 .. toctree::
-   :caption: Python
+   :caption: Python modules
 
-   python/index
+   python/account
+   python/build
+   python/defs
+   python/rest
 
 Indices and tables
 ******************

@@ -5,4 +5,4 @@ If you would like to incorporate the Econia logo in your project, don't forget t
 
 <br>
 
-<img src="../../.assets/powered-by-Econia.png" width="237" height="234" />
+<img src="../../.assets/powered-by-guidelines.png" width="237" height="234" />

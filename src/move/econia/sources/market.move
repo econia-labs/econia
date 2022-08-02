@@ -14,6 +14,7 @@ module econia::market {
     use econia::registry;
     use econia::user;
     use std::signer::address_of;
+    use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -893,6 +894,147 @@ module econia::market {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Simple representation of an order, for SDK generation
+    struct SimpleOrder has copy, drop {
+        /// Price encoded in corresponding `Order`'s order ID
+        price: u64,
+        /// Number of base parcels the order is for
+        base_parcels: u64
+    }
+
+    /// Represents a price level formed by one or more `OrderSimple`s
+    struct PriceLevel has copy, drop {
+        /// Price of all orders in the price level
+        price: u64,
+        /// Net base parcels across all `OrderSimple`s in the level
+        base_parcels: u64
+    }
+
+    /// Index `Order`s from `order_book_ref_mut` into vector of
+    /// `SimpleOrder`s, sorted by price-time priority per
+    /// `get_orders_sdk`, for each side.
+    ///
+    /// # Returns
+    /// * `vector<SimpleOrder>`: Price-time sorted asks
+    /// * `vector<SimpleOrder>`: Price-time sorted bids
+    fun book_orders_sdk<B, Q, E>(
+        order_book_ref_mut: &mut OrderBook<B, Q, E>
+    ): (
+        vector<SimpleOrder>,
+        vector<SimpleOrder>
+    ) {
+        (get_orders_sdk<B, Q, E>(order_book_ref_mut, ASK),
+         get_orders_sdk<B, Q, E>(order_book_ref_mut, BID))
+    }
+
+    /// Index `OrderBook` from `order_book_ref_mut` into vector of
+    /// `PriceLevels` for each side.
+    ///
+    /// # Returns
+    /// * `vector<PriceLevel>`: Ask price levels
+    /// * `vector<PriceLevel>`: Bid price levels
+    fun book_price_levels_sdk<B, Q, E>(
+        order_book_ref_mut: &mut OrderBook<B, Q, E>
+    ): (
+        vector<PriceLevel>,
+        vector<PriceLevel>
+    ) {
+        (get_price_levels_sdk(get_orders_sdk(order_book_ref_mut, ASK)),
+         get_price_levels_sdk(get_orders_sdk(order_book_ref_mut, BID)))
+    }
+
+    /// Index `Order`s in `order_book_ref_mut` into a `vector` of
+    /// `OrderSimple`s sorted by price-time priority, beginning with the
+    /// spread maker: if `side` is `ASK`, first element in vector is the
+    /// oldest ask at the minimum ask price, and if `side` is `BID`,
+    /// first element in vector is the oldest bid at the maximum bid
+    /// price. Requires mutable reference to `OrderBook` because
+    /// `CritBitTree` traversal is not implemented immutably (at least
+    /// as of the time of this writing). Only for SDK generation.
+    fun get_orders_sdk<B, Q, E>(
+        order_book_ref_mut: &mut OrderBook<B, Q, E>,
+        side: bool
+    ): vector<SimpleOrder> {
+        // Initialize empty vector
+        let simple_orders = vector::empty<SimpleOrder>();
+        // Define orders tree and traversal direction base on side
+        let (tree_ref_mut, traversal_direction) = if (side == ASK)
+            // If asks, use asks tree with successor iteration
+            (&mut order_book_ref_mut.asks, RIGHT) else
+            // If bids, use bids tree with predecessor iteration
+            (&mut order_book_ref_mut.bids, LEFT);
+        // If no positions in tree, return empty vector
+        if (critbit::is_empty(tree_ref_mut)) return simple_orders;
+        // Calculate number of traversals possible
+        let remaining_traversals = critbit::length(tree_ref_mut) - 1;
+        // Initialize traversal: get target order ID, mutable reference
+        // to target order, and the index of the target node's parent
+        let (target_id, target_order_ref_mut, target_parent_index, _) =
+            critbit::traverse_init_mut(tree_ref_mut, traversal_direction);
+        loop { // Loop over all orders in tree
+            vector::push_back(&mut simple_orders, SimpleOrder{
+                price: order_id::price(target_id),
+                base_parcels: target_order_ref_mut.base_parcels
+            }); // Push back corresponding simple order onto vector
+            // Return simple orders vector if unable to traverse
+            if (remaining_traversals == 0) return simple_orders;
+            // Otherwise traverse to next order in the tree
+            (target_id, target_order_ref_mut, target_parent_index, _) =
+                critbit::traverse_mut(tree_ref_mut, target_id,
+                    target_parent_index, traversal_direction);
+            // Decrement number of remaining traversals
+            remaining_traversals = remaining_traversals - 1;
+        }
+    }
+
+    /// Index output of `get_orders_sdk()` into a vector of `PriceLevel`
+    fun get_price_levels_sdk(
+        simple_orders: vector<SimpleOrder>
+    ): vector<PriceLevel> {
+        // Initialize empty vector of price levels
+        let price_levels = vector::empty<PriceLevel>();
+        // Return empty vector if no simple orders to index
+        if (vector::is_empty(&simple_orders)) return price_levels;
+        // Get immutable reference to first simple order in vector
+        let simple_order_ref = vector::borrow(&simple_orders, 0);
+        // Set level price to that from first simple order
+        let level_price = simple_order_ref.price;
+        // Set level base parcels counter to that of first simple order
+        let level_base_parcels = simple_order_ref.base_parcels;
+        // Get number of simple orders to index
+        let n_simple_orders = vector::length(&simple_orders);
+        let simple_order_index = 1; // Start loop at the next order
+        // While there are simple orders left to index
+        while (simple_order_index < n_simple_orders) {
+            // Borrow immutable reference to order for current iteration
+            simple_order_ref =
+                vector::borrow(&simple_orders, simple_order_index);
+            // If on new level
+            if (simple_order_ref.price != level_price) {
+                // Store last price level in vector
+                vector::push_back(&mut price_levels, PriceLevel{
+                    price: level_price, base_parcels: level_base_parcels});
+                // Start tracking new price level with given order
+                (level_price, level_base_parcels) = (
+                    simple_order_ref.price, simple_order_ref.base_parcels)
+            } else { // If same price as last checked
+                // Increment count of base parcels for current level
+                level_base_parcels =
+                    level_base_parcels + simple_order_ref.base_parcels;
+            };
+            // Iterate again, on next simple order in vector
+            simple_order_index = simple_order_index + 1;
+        }; // No more simple orders left to index
+        // Store final price level in vector
+        vector::push_back(&mut price_levels, PriceLevel{
+            price: level_price, base_parcels: level_base_parcels});
+        price_levels // Return sorted vector of price levels
+    }
+
+    // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -2768,6 +2910,100 @@ module econia::market {
         assert!(registry::is_registered_types<BC, QC, E1>(), 0);
         // Assert corresponding order book initialized under host
         assert!(exists<OrderBook<BC, QC, E1>>(@econia), 0);
+    }
+
+    #[test]
+    fun test_sdk_hooks(): OrderBook<BC, QC, E1> {
+        let order_book = OrderBook<BC, QC, E1>{
+            scale_factor: 123,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: 234,
+            max_bid: 345,
+            counter: 0,
+        }; // Define mock order book
+        // Get orders vectors from empty book
+        let (asks, bids) = book_orders_sdk<BC, QC, E1>(&mut order_book);
+        // Assert both vectors empty
+        assert!(vector::is_empty(&asks) && vector::is_empty(&bids), 0);
+        // Get price level vectors from empty book
+        let (ask_levels, bid_levels) =
+            book_price_levels_sdk<BC, QC, E1>(&mut order_book);
+        assert!( // Assert both vectors empty
+            vector::is_empty(&ask_levels) && vector::is_empty(&bid_levels), 0);
+        // Define default order struct field values
+        let (user, custodian_id) = (@user, NO_CUSTODIAN);
+        // Define mock order parameters for a single ask, and two bids,
+        // where second bid is different price level from first
+        let ask_0_price = 12;
+        let ask_0_base_parcels = 123;
+        let ask_0_order_id = order_id::order_id(
+            ask_0_price, get_serial_id<BC, QC, E1>(&mut order_book), ASK);
+        let bid_0_price = 8;
+        let bid_0_base_parcels = 234;
+        let bid_0_order_id = order_id::order_id(
+            bid_0_price, get_serial_id<BC, QC, E1>(&mut order_book), BID);
+        let bid_1_price = 7;
+        let bid_1_base_parcels = 345;
+        let bid_1_order_id = order_id::order_id(
+            bid_1_price, get_serial_id<BC, QC, E1>(&mut order_book), BID);
+        // Insert all orders to tree
+        critbit::insert(&mut order_book.asks, ask_0_order_id, Order{
+            base_parcels: ask_0_base_parcels, user, custodian_id});
+        critbit::insert(&mut order_book.bids, bid_0_order_id, Order{
+            base_parcels: bid_0_base_parcels, user, custodian_id});
+        critbit::insert(&mut order_book.bids, bid_1_order_id, Order{
+            base_parcels: bid_1_base_parcels, user, custodian_id});
+        // Get orders
+        (asks, bids) = book_orders_sdk<BC, QC, E1>(&mut order_book);
+        // Assert all state
+        let     ask_0_ref = vector::borrow(&asks, 0);
+        assert!(ask_0_ref.price        ==     ask_0_price       , 0);
+        assert!(ask_0_ref.base_parcels ==     ask_0_base_parcels, 0);
+        let     bid_0_ref = vector::borrow(&bids, 0);
+        assert!(bid_0_ref.price        ==     bid_0_price       , 0);
+        assert!(bid_0_ref.base_parcels ==     bid_0_base_parcels, 0);
+        let     bid_1_ref = vector::borrow(&bids, 1);
+        assert!(bid_1_ref.price        ==     bid_1_price       , 0);
+        assert!(bid_1_ref.base_parcels ==     bid_1_base_parcels, 0);
+        // Get price levels
+        (ask_levels, bid_levels) =
+            book_price_levels_sdk<BC, QC, E1>(&mut order_book);
+        // Assert all state
+        let ask_level_0_ref = vector::borrow(&ask_levels, 0);
+        assert!(ask_level_0_ref.price        == ask_0_price,       0);
+        assert!(ask_level_0_ref.base_parcels == ask_0_base_parcels, 0);
+        let bid_level_0_ref = vector::borrow(&bid_levels, 0);
+        assert!(bid_level_0_ref.price        == bid_0_price,       0);
+        assert!(bid_level_0_ref.base_parcels == bid_0_base_parcels, 0);
+        let bid_level_1_ref = vector::borrow(&bid_levels, 1);
+        assert!(bid_level_1_ref.price        == bid_1_price,       0);
+        assert!(bid_level_1_ref.base_parcels == bid_1_base_parcels, 0);
+        // Insert to tree another ask in same price level as first
+        let ask_1_price = ask_0_price;
+        let ask_1_base_parcels = 789;
+        let ask_1_order_id = order_id::order_id(
+            ask_1_price, get_serial_id<BC, QC, E1>(&mut order_book), ASK);
+        critbit::insert(&mut order_book.asks, ask_1_order_id, Order{
+            base_parcels: ask_1_base_parcels, user, custodian_id});
+        // Get asks
+        let (asks, _bids) = book_orders_sdk<BC, QC, E1>(&mut order_book);
+        // Assert all state
+        let     ask_0_ref = vector::borrow(&asks, 0);
+        assert!(ask_0_ref.price        ==     ask_0_price       , 0);
+        assert!(ask_0_ref.base_parcels ==     ask_0_base_parcels, 0);
+        let     ask_1_ref = vector::borrow(&asks, 1);
+        assert!(ask_1_ref.price        ==     ask_1_price       , 0);
+        assert!(ask_1_ref.base_parcels ==     ask_1_base_parcels, 0);
+        // Get ask price levels
+        let (ask_levels, _bid_levels) =
+            book_price_levels_sdk<BC, QC, E1>(&mut order_book);
+        // Assert all state
+        let ask_level_0_ref = vector::borrow(&ask_levels, 0);
+        assert!(ask_level_0_ref.price == ask_0_price, 0);
+        assert!(ask_level_0_ref.base_parcels == ask_0_base_parcels +
+            ask_1_base_parcels, 0);
+        order_book // Return rather than unpack
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

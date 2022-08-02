@@ -13,6 +13,8 @@ places a market order against the book.
 -  [Resource `EconiaCapabilityStore`](#0xc0deb00c_market_EconiaCapabilityStore)
 -  [Struct `Order`](#0xc0deb00c_market_Order)
 -  [Resource `OrderBook`](#0xc0deb00c_market_OrderBook)
+-  [Struct `SimpleOrder`](#0xc0deb00c_market_SimpleOrder)
+-  [Struct `PriceLevel`](#0xc0deb00c_market_PriceLevel)
 -  [Constants](#@Constants_0)
 -  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
 -  [Function `fill_market_order_custodian`](#0xc0deb00c_market_fill_market_order_custodian)
@@ -49,10 +51,17 @@ places a market order against the book.
     -  [Parameters](#@Parameters_13)
     -  [Abort conditions](#@Abort_conditions_14)
     -  [Assumes](#@Assumes_15)
+-  [Function `book_orders_sdk`](#0xc0deb00c_market_book_orders_sdk)
+    -  [Returns](#@Returns_16)
+-  [Function `book_price_levels_sdk`](#0xc0deb00c_market_book_price_levels_sdk)
+    -  [Returns](#@Returns_17)
+-  [Function `get_orders_sdk`](#0xc0deb00c_market_get_orders_sdk)
+-  [Function `get_price_levels_sdk`](#0xc0deb00c_market_get_price_levels_sdk)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
 <b>use</b> <a href="">0x1::signer</a>;
+<b>use</b> <a href="">0x1::vector</a>;
 <b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="order_id.md#0xc0deb00c_order_id">0xc0deb00c::order_id</a>;
@@ -184,6 +193,74 @@ An order book for the given market
 </dt>
 <dd>
  Serial counter for number of limit orders placed on book
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_market_SimpleOrder"></a>
+
+## Struct `SimpleOrder`
+
+Simple representation of an order, for SDK generation
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Price encoded in corresponding <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>'s order ID
+</dd>
+<dt>
+<code>base_parcels: u64</code>
+</dt>
+<dd>
+ Number of base parcels the order is for
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_market_PriceLevel"></a>
+
+## Struct `PriceLevel`
+
+Represents a price level formed by one or more <code>OrderSimple</code>s
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Price of all orders in the price level
+</dd>
+<dt>
+<code>base_parcels: u64</code>
+</dt>
+<dd>
+ Net base parcels across all <code>OrderSimple</code>s in the level
 </dd>
 </dl>
 
@@ -1600,6 +1677,215 @@ counter that increases when queried (via <code>get_serial_id</code>)
     // Insert order <b>to</b> corresponding tree
     <a href="critbit.md#0xc0deb00c_critbit_insert">critbit::insert</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
         <a href="market.md#0xc0deb00c_market_Order">Order</a>{base_parcels, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_book_orders_sdk"></a>
+
+## Function `book_orders_sdk`
+
+Index <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>s from <code>order_book_ref_mut</code> into vector of
+<code><a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a></code>s, sorted by price-time priority per
+<code>get_orders_sdk</code>, for each side.
+
+
+<a name="@Returns_16"></a>
+
+### Returns
+
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;</code>: Price-time sorted asks
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;</code>: Price-time sorted bids
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_book_orders_sdk">book_orders_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&lt;B, Q, E&gt;): (<a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;, <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_book_orders_sdk">book_orders_sdk</a>&lt;B, Q, E&gt;(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;
+): (
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;,
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;
+) {
+    (<a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_ASK">ASK</a>),
+     <a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_BID">BID</a>))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_book_price_levels_sdk"></a>
+
+## Function `book_price_levels_sdk`
+
+Index <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> from <code>order_book_ref_mut</code> into vector of
+<code>PriceLevels</code> for each side.
+
+
+<a name="@Returns_17"></a>
+
+### Returns
+
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;</code>: Ask price levels
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;</code>: Bid price levels
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_book_price_levels_sdk">book_price_levels_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&lt;B, Q, E&gt;): (<a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;, <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_book_price_levels_sdk">book_price_levels_sdk</a>&lt;B, Q, E&gt;(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;
+): (
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;,
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;
+) {
+    (<a href="market.md#0xc0deb00c_market_get_price_levels_sdk">get_price_levels_sdk</a>(<a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)),
+     <a href="market.md#0xc0deb00c_market_get_price_levels_sdk">get_price_levels_sdk</a>(<a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_BID">BID</a>)))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_get_orders_sdk"></a>
+
+## Function `get_orders_sdk`
+
+Index <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>s in <code>order_book_ref_mut</code> into a <code><a href="">vector</a></code> of
+<code>OrderSimple</code>s sorted by price-time priority, beginning with the
+spread maker: if <code>side</code> is <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>, first element in vector is the
+oldest ask at the minimum ask price, and if <code>side</code> is <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>,
+first element in vector is the oldest bid at the maximum bid
+price. Requires mutable reference to <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> because
+<code>CritBitTree</code> traversal is not implemented immutably (at least
+as of the time of this writing). Only for SDK generation.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&lt;B, Q, E&gt;, side: bool): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>&lt;B, Q, E&gt;(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;,
+    side: bool
+): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt; {
+    // Initialize empty <a href="">vector</a>
+    <b>let</b> simple_orders = <a href="_empty">vector::empty</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;();
+    // Define orders tree and traversal direction base on side
+    <b>let</b> (tree_ref_mut, traversal_direction) = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+        // If asks, <b>use</b> asks tree <b>with</b> successor iteration
+        (&<b>mut</b> order_book_ref_mut.asks, <a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a>) <b>else</b>
+        // If bids, <b>use</b> bids tree <b>with</b> predecessor iteration
+        (&<b>mut</b> order_book_ref_mut.bids, <a href="market.md#0xc0deb00c_market_LEFT">LEFT</a>);
+    // If no positions in tree, <b>return</b> empty <a href="">vector</a>
+    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_empty">critbit::is_empty</a>(tree_ref_mut)) <b>return</b> simple_orders;
+    // Calculate number of traversals possible
+    <b>let</b> remaining_traversals = <a href="critbit.md#0xc0deb00c_critbit_length">critbit::length</a>(tree_ref_mut) - 1;
+    // Initialize traversal: get target order ID, mutable reference
+    // <b>to</b> target order, and the index of the target node's parent
+    <b>let</b> (target_id, target_order_ref_mut, target_parent_index, _) =
+        <a href="critbit.md#0xc0deb00c_critbit_traverse_init_mut">critbit::traverse_init_mut</a>(tree_ref_mut, traversal_direction);
+    <b>loop</b> { // Loop over all orders in tree
+        <a href="_push_back">vector::push_back</a>(&<b>mut</b> simple_orders, <a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>{
+            price: <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(target_id),
+            base_parcels: target_order_ref_mut.base_parcels
+        }); // Push back corresponding simple order onto <a href="">vector</a>
+        // Return simple orders <a href="">vector</a> <b>if</b> unable <b>to</b> traverse
+        <b>if</b> (remaining_traversals == 0) <b>return</b> simple_orders;
+        // Otherwise traverse <b>to</b> next order in the tree
+        (target_id, target_order_ref_mut, target_parent_index, _) =
+            <a href="critbit.md#0xc0deb00c_critbit_traverse_mut">critbit::traverse_mut</a>(tree_ref_mut, target_id,
+                target_parent_index, traversal_direction);
+        // Decrement number of remaining traversals
+        remaining_traversals = remaining_traversals - 1;
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_get_price_levels_sdk"></a>
+
+## Function `get_price_levels_sdk`
+
+Index output of <code><a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>()</code> into a vector of <code><a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a></code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_sdk">get_price_levels_sdk</a>(simple_orders: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_price_levels_sdk">get_price_levels_sdk</a>(
+    simple_orders: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;
+): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt; {
+    // Initialize empty <a href="">vector</a> of price levels
+    <b>let</b> price_levels = <a href="_empty">vector::empty</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;();
+    // Return empty <a href="">vector</a> <b>if</b> no simple orders <b>to</b> index
+    <b>if</b> (<a href="_is_empty">vector::is_empty</a>(&simple_orders)) <b>return</b> price_levels;
+    // Get immutable reference <b>to</b> first simple order in <a href="">vector</a>
+    <b>let</b> simple_order_ref = <a href="_borrow">vector::borrow</a>(&simple_orders, 0);
+    // Set level price <b>to</b> that from first simple order
+    <b>let</b> level_price = simple_order_ref.price;
+    // Set level base parcels counter <b>to</b> that of first simple order
+    <b>let</b> level_base_parcels = simple_order_ref.base_parcels;
+    // Get number of simple orders <b>to</b> index
+    <b>let</b> n_simple_orders = <a href="_length">vector::length</a>(&simple_orders);
+    <b>let</b> simple_order_index = 1; // Start <b>loop</b> at the next order
+    // While there are simple orders left <b>to</b> index
+    <b>while</b> (simple_order_index &lt; n_simple_orders) {
+        // Borrow immutable reference <b>to</b> order for current iteration
+        simple_order_ref =
+            <a href="_borrow">vector::borrow</a>(&simple_orders, simple_order_index);
+        // If on new level
+        <b>if</b> (simple_order_ref.price != level_price) {
+            // Store last price level in <a href="">vector</a>
+            <a href="_push_back">vector::push_back</a>(&<b>mut</b> price_levels, <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>{
+                price: level_price, base_parcels: level_base_parcels});
+            // Start tracking new price level <b>with</b> given order
+            (level_price, level_base_parcels) = (
+                simple_order_ref.price, simple_order_ref.base_parcels)
+        } <b>else</b> { // If same price <b>as</b> last checked
+            // Increment count of base parcels for current level
+            level_base_parcels =
+                level_base_parcels + simple_order_ref.base_parcels;
+        };
+        // Iterate again, on next simple order in <a href="">vector</a>
+        simple_order_index = simple_order_index + 1;
+    }; // No more simple orders left <b>to</b> index
+    // Store final price level in <a href="">vector</a>
+    <a href="_push_back">vector::push_back</a>(&<b>mut</b> price_levels, <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>{
+        price: level_price, base_parcels: level_base_parcels});
+    price_levels // Return sorted <a href="">vector</a> of price levels
 }
 </code></pre>
 

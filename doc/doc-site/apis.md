@@ -1,6 +1,6 @@
-# Using Econia
+# APIs
 
-- [Using Econia](#using-econia)
+- [APIs](#apis)
   - [Core initialization](#core-initialization)
   - [Move interfaces](#move-interfaces)
     - [Setup](#setup)

@@ -21,8 +21,8 @@ places a market order against the book.
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>](#@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_BUY">BUY</a></code>_1)
-    -  [When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>](#@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_SELL">SELL</a></code>_2)
+    -  [If a swap buy:](#@If_a_swap_buy:_1)
+    -  [If a swap sell:](#@If_a_swap_sell:_2)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `fill_market_order_user`](#0xc0deb00c_market_fill_market_order_user)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
@@ -628,9 +628,9 @@ For given market and <code>host</code>, execute specified <code>style</code> of 
 either <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_BUY">BUY</a></code>_1"></a>
+<a name="@If_a_swap_buy:_1"></a>
 
-### When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>
+### If a swap buy:
 
 * Quote coins at <code>quote_coins_ref_mut</code> are traded against the
 order book until either there are no more trades on the book
@@ -641,9 +641,9 @@ but <code>quote_coins_ref_mut</code> does (amount of quote coins to
 spend)
 
 
-<a name="@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_SELL">SELL</a></code>_2"></a>
+<a name="@If_a_swap_sell:_2"></a>
 
-### When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
+### If a swap sell:
 
 * Base coins at <code>base_coins_ref_mut</code> are traded against the
 order book until either there are no more trades on the book

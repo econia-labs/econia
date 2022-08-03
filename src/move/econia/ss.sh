@@ -1,28 +1,59 @@
 # Shell scripts for common developer workflows
 
-# Substitute named `@econia`` address in Move.toml, passing optional
-# argument specifying the address to substitute.
+# Load into global memory a relative path (relative to Move package
+# directory) to flagged keyfile, and the address derived from the hex
+# seed within the keyfile. Stores in variables `keyfile` and `addr`.
+#
+# If called with argument `temp`, operates on temporary keyfile in
+# secrets directory
+#
+# If called with argument `official`, operates on official devnet file
+#
+# Should be run from inside Move package directory.
+get_keyfile_info() {
+    if test $1 = temp; then # If using a temporary keyfile
+        # Keyfile is first regular file in secrets directory
+        # (https://unix.stackexchange.com/a/617582)
+        keyfile=(../../../.secrets/*(N.[1]))
+    elif test $1 = official; then # If using official devnet keyfile
+        # Look inside secrets devnet directory
+        keyfile=(../../../.secrets/devnet/*(N.[1]))
+    fi
+    # Get address from keyfile hex seed
+    addr=$(python ../../../src/python/econia/build.py print-keyfile-address \
+        "$keyfile")
+}
+
+
+# Use passed argument flag to substitute `@econia` address in Move.toml.
 #
 # Should be run from inside Move package directory.
 substitute_econia_address() {
-    cd ../../../ # Navigate to Econia repository root
-    # Substitute docgen address, passing optional argument
-    python src/python/econia/build.py substitute $1
-    cd src/move/econia # Navigate back to move package
+    # If flag is for docgen or for generic address
+    if [[ $1 = docgen || $1 = _ ]]; then
+        addr=$1 # Set address argument to the argument
+    # If flag is for temporary keyfile or for official devnet keyfile
+    elif [[ $1 = temp || $1 = official ]]; then
+        get_keyfile_info $1 # Get keyfile info for given flag
+    fi
+    # Substitute address in memory in Move.toml
+    python ../../../src/python/econia/build.py substitute $addr ../../../
 }
 
-# Get relative (to Econia project root) path to devnet keyfile, and
-# account address derived from the hex seed within.
+# Publish bytecode to blockchain, via keyfile flag
 #
 # Should be run from inside Move package directory.
-get_devnet_keyfile_info () {
-    cd ../../../.secrets/devnet/ # Navigate to devnet secrets folder
-    keyfile=(*(N[1])) # Get first file name in directory (zsh)
-    cd ../.. # Navigate to Econia root directory
-    keyfile=".secrets/devnet/$keyfile" # Get relative path to keyfile
-    # Get address from keyfile hex seed
-    addr=$(python src/python/econia/build.py print-keyfile-address "$keyfile")
-    cd src/move/econia # Navigate back to move package
+publish_from_keyfile () {
+    # Substitute generic named address in Move.toml
+    substitute_econia_address _
+    # Get keyfile for given flag argument
+    get_keyfile_info $1
+    # Compile package using new named address
+    aptos move compile --named-addresses "econia=0x$addr" > /dev/null
+    # Publish under corresponding account
+    python ../../python/econia/build.py publish "$keyfile" ../../../
+    # Substitute back docgen address
+    substitute_econia_address docgen
 }
 
 # Return if no arguments passed
@@ -30,13 +61,10 @@ if test "$#" = 0; then return
 
 # Git add all and commit from project root, then come back
 elif test $1 = ac; then
-    cd ../../../
-    git add .
-    git commit
-    cd src/move/econia
-
-# Build package via Move command line
-elif test $1 = b; then move build
+    cd ../../../ # Navigate to Econia project root directory
+    git add . # Add all files
+    git commit # Commit
+    cd src/move/econia # Navigate back to Move package
 
 # Clear the terminal
 elif test $1 = c; then clear
@@ -49,67 +77,43 @@ elif test $1 = cl; then
     move sandbox clean
     clear
 
-# Run test coverage summary against a module
-# For instance, `s cm Coin`
-elif test $1 = cm; then move package coverage source --module $2
-
-# Output test coverage summary
-elif test $1 = cs; then move package coverage summary
-
 # Build documentation
 elif test $1 = d; then
-    substitute_econia_address # Substitute address with default option
+    substitute_econia_address docgen # Substitute docgen address
     move build --doc # Build docs
-
-# Substitute devnet address into Move.toml
-elif test $1 = da; then
-    get_devnet_keyfile_info
-    substitute_econia_address $keyfile
 
 # Go back to Econia project repository root
 elif test $1 = er; then cd ../../../
 
+# Generate a temporary keyfile account in secrets directory
+elif test $1 = gt; then python ../../python/econia/build.py generate ../../../
+
 # Verify that this script can be invoked
 elif test $1 = hello; then echo Hello, Econia developer
 
-# Publish bytecode using a newly-generated address
-elif test $1 = p; then
-    # Capture RegEx search on printed output of address generator
-    addr=$(python ../../python/econia/build.py gen ../../.. \
-        | grep -E -o "(\w+)$")
-    # Compile package using new named address
-    aptos move compile --named-addresses "econia=0x$addr" > /dev/null
-    # Publish under corresponding account (restores docgen address)
-    python ../../python/econia/build.py publish \
-        ../../../.secrets/"$addr".key ../../../ $2
-    # Rebuild docs with docgen address for readability
-    move build --doc &> /dev/null
+# Run pre-commit checks
+elif test $1 = pc; then
+    substitute_econia_address docgen # Substitute docgen address
+    aptos move test # Run all tests
+    move build --doc # Build docs
+    substitute_econia_address official # Substitute official address
 
-# Publish using a keyfile in ../../.secrets/devnet
-elif test $1 = pd; then
-    get_devnet_keyfile_info
-    # Substitute generic named address in Move.toml
-    substitute_econia_address _
-    # Compile package using devnet named address
-    aptos move compile --named-addresses "econia=0x$addr" > /dev/null
-    cd ../../.. # Navigate to Econia root folder
-    # Publish using devnet account keyfile
-    python src/python/econia/build.py publish-keyfile $keyfile
-    # Update Move.toml with devnet named address
-    python src/python/econia/build.py substitute $keyfile
-    # Navigate back to Move package
-    cd src/move/econia
+# Publish bytecode using official devnet address
+elif test $1 = po; then
+    publish_from_keyfile official
 
-# Run tests in standard form , passing optional argument
-# For example `s ts -f coin`
-elif test $1 = t; then move package test $2 $3
+# Publish bytecode using a temporary devnet address
+elif test $1 = pt; then
+    # Generate temporary address
+    python ../../python/econia/build.py generate ../../../
+    # Publish from temporary keyfile
+    publish_from_keyfile temp
+
+# Substitute official devnet address into Move.toml
+elif test $1 = so; then substitute_econia_address official
 
 # Run aptos CLI test on all modules, rebuild documentation
 elif test $1 = ta; then aptos move test; move build --doc
-
-# Run tests with coverage, for given filter argument
-# For example `s tc critbit`
-elif test $1 = tc; then move package test --coverage -f $2
 
 # Run aptos CLI test with filter and passed argument
 elif test $1 = tf; then aptos move test --filter $2
@@ -117,15 +121,8 @@ elif test $1 = tf; then aptos move test --filter $2
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand
 elif test $1 = wd; then
-    # Substitute address with default option (subs docgen address)
-    substitute_econia_address
+    # Substitute docgen address into Move.toml
+    substitute_econia_address docgen
     ls sources/*.move | entr move build --doc
-
-# Watch source code and run all tests if it changes
-# May require `brew install entr` beforehand
-elif test $1 = wt; then
-    # Substitute address with default option (subs docgen address)
-    substitute_econia_address
-    ls sources/*.move | entr aptos move test
 
 else echo Invalid option; fi

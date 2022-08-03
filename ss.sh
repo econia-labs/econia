@@ -58,9 +58,6 @@ elif test $1 = setup; then
     # Similarly create a directory for old secrets, used by build utils
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
 
-    # Generate a random keyfile for publishing bytecode
-    python src/python/econia/build.py gen
-
     echo Setup complete
 
 # If no corresponding option

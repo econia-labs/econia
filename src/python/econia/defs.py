@@ -19,17 +19,13 @@ api_url_types = SimpleNamespace(
 )
 """Types of REST API base urls"""
 
-build_print_outputs = SimpleNamespace(
-    account_msg = 'New account:',
-)
-
 build_command_fields = SimpleNamespace(
-    gen = 'gen',
+    docgen = 'docgen',
+    generate = 'generate',
     long = 'long',
     prep = 'prep',
     print_keyfile_address = 'print-keyfile-address',
     publish = 'publish',
-    publish_keyfile = 'publish-keyfile',
     serial = 'serial',
     substitute = 'substitute'
 )
@@ -85,41 +81,26 @@ econia_modules = SimpleNamespace(
 
 econia_module_publish_order = [
     [
-        econia_modules.capability.name
-    ],
-    [
-        econia_modules.critbit.name
-    ],
-    [
-        econia_modules.order_id.name
-    ],
-    [
+        econia_modules.capability.name,
+        econia_modules.critbit.name,
+        econia_modules.order_id.name,
         econia_modules.coins.name,
-    ],
-    [
-        econia_modules.open_table.name
-    ],
-    [
-        econia_modules.registry.name
-    ],
-    [
-        econia_modules.user.name
-    ],
-    [
-        econia_modules.market.name
-    ],
-    [
-        econia_modules.init.name
+        econia_modules.open_table.name,
+        econia_modules.registry.name,
+        econia_modules.user.name,
+        econia_modules.market.name,
+        econia_modules.init.name,
     ],
 ]
 """
 Order to publish Move modules bytecode in, with sublists indicating
-batched modules that should be loaded together. Individual modules
-should be defined as the sole element in a list if they are to be loaded
-alone. If order within sub-batches is changed loading may break, for
-instance among friends, where the module declaring a friend should be
-listed before the declared friend. Additionally, modules that are "used"
-by other modules should be loaded before the modules that use them
+batched modules to load together. Individual modules should be defined
+as the sole element in a list if they are to be loaded alone. If order
+within sub-batches is changed loading may break, for instance among
+friends, where the module declaring a friend should be listed before the
+declared friend. Additionally, modules that are "used" by other modules
+should be loaded before the modules that use them, and may be loaded in
+a single batch, but can also be split up into separate batches.
 """
 
 econia_paths = SimpleNamespace(

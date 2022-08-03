@@ -1,53 +1,79 @@
 """Move package building functionality
 
 Relies on a ``.secrets`` folder inside Econia project root directory,
-which contains a directory ``old``, hence ``econia/.secrets/old``
+where temporary keyfiles are stored. Old temporary keyfiles are moved to
+``econia/.secrets/old``. The "official" devnet keyfile is the one stored
+in ``econia/.secrets/devnet``
 
 Some functionality abstracted to be run from the command line:
 
 .. code-block:: zsh
-    :caption: Generate new account, set ``econia = '_'`` in ``Move.toml``
-    :emphasize-lines: 8
+    :caption: Mark ``Move.toml`` to have generic Econia address
+    :emphasize-lines: 5, 13
 
-    # From Econia repository root directory
-    % python src/python/econia/build.py gen
-    New account: c238d4245cda39670045efb6cd2baabe9094b75bbe3f1cd814459985b1aa05e2
-    % < src/move/econia/Move.toml
+    # From inside Econia repository root directory
+    # Navigate to Move package
+    % cd src/move/econia
+    # Run substitute command for generic address marker
+    % python ../../../src/python/econia/build.py substitute _ ../../../
+    # Output Move.toml contents
+    % < Move.toml
     [package]
     name = 'Econia'
     ...
+
+    [addresses]
     econia = '_'
-    # Corresponding keyfile now in secrets directory
-    % < .secrets/c238d4245cda39670045efb6cd2baabe9094b75bbe3f1cd814459985b1aa05e2.key
+    ...
+
+.. code-block:: zsh
+    :caption: Generate temporary new account, printing address
+    :emphasize-lines: 3
+
+    # Still inside Move package directory
+    # Run generate command, printing new address
+    % python ../../python/econia/build.py generate ../../../
+    db5d4dfd8d4f0f801697f5124ab61ad486d13fc140778117d76641904d728ba6
+    # Output corresponding keyfile contents
+    % < ../../../.secrets/db5d4dfd8d4f0f801697f5124ab61ad486d13fc140778117d76641904d728ba6.key
     (hex seed)
     ...
 
 .. code-block:: zsh
     :caption: Compile package using new named address
 
-    # Move to Econia Move package
-    % cd src/move/econia
-    % aptos move compile --named-addresses "econia=0xc238d4245cda39670045efb6cd2baabe9094b75bbe3f1cd814459985b1aa05e2"
+    # Still inside Move package directory
+    # Compile address with temporary address
+    % aptos move compile --named-addresses "econia=0xdb5d4dfd8d4f0f801697f5124ab61ad486d13fc140778117d76641904d728ba6"
     {
-    "Result": [
-        "C238D4245CDA39670045EFB6CD2BAABE9094B75BBE3F1CD814459985B1AA05E2::capability",
+      "Result": [
+        "DB5D4DFD8D4F0F801697F5124AB61AD486D13FC140778117D76641904D728BA6::capability",
         ...
-        "C238D4245CDA39670045EFB6CD2BAABE9094B75BBE3F1CD814459985B1AA05E2::user"
-        ]
+        "DB5D4DFD8D4F0F801697F5124AB61AD486D13FC140778117D76641904D728BA6::user"
+      ]
     }
 
 .. code-block:: zsh
-    :caption: Publish bytecode, initialize, then replace docgen address
-    :emphasize-lines: 13
+    :caption: Publish bytecode using temporary address, with optional serial flag
+    :emphasize-lines: 3
 
-    # Go back to Econia repository root directory
-    % cd ../../..
-    % python src/python/econia/build.py publish .secrets/c238d4245cda39670045efb6cd2baabe9094b75bbe3f1cd814459985b1aa05e2.key
-    capability: success (https://aptos-explorer.netlify.app/txn/4961764)
+    # Still inside Move package directory
+    # Publish using the temporary keyfile
+    % python ../../python/econia/build.py publish ../../../.secrets/db5d4dfd8d4f0f801697f5124ab61ad486d13fc140778117d76641904d728ba6.key ../../../ serial
+    capability: success (https://aptos-explorer.netlify.app/txn/6788537)
     ...
-    init: success (https://aptos-explorer.netlify.app/txn/4962044)
-    0xEconia::init::init_econia: success (https://aptos-explorer.netlify.app/txn/4962079)
-    % <  src/move/econia/Move.toml
+    init: success (https://aptos-explorer.netlify.app/txn/6788747)
+    0xEconia::init::init_econia: success (https://aptos-explorer.netlify.app/txn/6788771)
+
+.. code-block:: zsh
+    :caption: Substitute docgen address into ``Move.toml``
+    :emphasize-lines: 3, 10
+
+    # Still inside Move package directory
+    # Substitute docgen address into Move.toml
+    % python ../../../src/python/econia/build.py substitute docgen ../../../
+    # Output Move.toml contents
+    % < Move.toml
     [package]
     name = 'Econia'
     ...
@@ -56,54 +82,29 @@ Some functionality abstracted to be run from the command line:
     ...
 
 .. code-block:: zsh
-    :caption: Substitute different address from keyfile into `Move.toml`
-    :emphasize-lines: 2, 8
+    :caption: Print full address generated from official devnet keyfile
+    :emphasize-lines: 2
 
-    # From Econia repository root directory
-    % python src/python/econia/build.py substitute .secrets/devnet/b148a37d1cf8fe4b5c6d8011630d836680c9c921fb12721e8ae37a4d85e9cbc7.key
-    % <  src/move/econia/Move.toml
-    [package]
-    name = 'Econia'
-    ...
-    [addresses]
-    econia = '0xb148a37d1cf8fe4b5c6d8011630d836680c9c921fb12721e8ae37a4d85e9cbc7'
-    ...
-
-.. code-block:: zsh
-    :caption: Substitute back docgen address
-    :emphasize-lines: 2, 8
-
-    # From Econia repository root directory
-    % python src/python/econia/build.py substitute
-    % <  src/move/econia/Move.toml
-    [package]
-    name = 'Econia'
-    ...
-    [addresses]
-    econia = '0xc0deb00c'
-    ...
-
-.. code-block:: zsh
-    :caption: Substitute generic address
-    :emphasize-lines: 2, 8
-
-    # From Econia repository root directory
-    % python src/python/econia/build.py substitute _
-    % <  src/move/econia/Move.toml
-    [package]
-    name = 'Econia'
-    ...
-    [addresses]
-    econia = '_'
-    ...
-
-.. code-block:: zsh
-    :caption: Print full address generated from keyfile hex seed
-
-    # From Econia repository root directory
-    % python src/python/econia/build.py print-keyfile-address .secrets/devnet/c0deb00c.key
+    # Still inside Move package directory
+    # Print keyfile address from relative file path
+    % python ../../../src/python/econia/build.py print-keyfile-address ../../../.secrets/devnet/c0deb00c.key
     c0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd
 
+.. code-block:: zsh
+    :caption: Substitute the address into ``Move.toml``
+    :emphasize-lines: 3, 10
+
+    # Still inside Move package directory
+    # Substitute the official devnet address into Move.toml
+    % python ../../../src/python/econia/build.py substitute c0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd ../../../
+    # Output Move.toml contents
+    % < Move.toml
+    [package]
+    name = 'Econia'
+    ...
+    [addresses]
+    econia = '0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd'
+    ...
 """
 
 import os
@@ -116,7 +117,6 @@ from typing import Union
 from econia.account import Account, hex_leader
 from econia.defs import (
     build_command_fields,
-    build_print_outputs,
     e_msgs,
     econia_module_publish_order as e_m_p_o,
     econia_modules,
@@ -709,32 +709,26 @@ def sub_named_toml_address(
 def gen_new_econia_dev_account(
     econia_root: str = seps.dot
 ) -> None:
-    """Generate new Econia account, fund from faucet, update build files
+    """Generate new Econia account, save keyfile to secrets directory
 
     Parameters
     ----------
     econia_root : str, optional
         Relative path to econia repository root directory
     """
-    account = Account()
-    address = account.address()
-    mint_val = tx_defaults.faucet_mint_val
-    try:
-        Client(networks.devnet).mint_testcoin(address, mint_val)
-    except Exception:
-        print(e_msgs.faucet)
-        return
-    # Strip off potential leading 0 for recording on disk
-    address = normalized_hex(get_addr_bytes(account.address()))
-    print(build_print_outputs.account_msg, address)
+    account = Account() # Generate new account
+    # Archive old temp keyfiles in secrets directory
     archive_keyfiles(get_secrets_dir(econia_root))
+    # Strip off potential leading 0 from filename for keyfile
+    address = normalized_hex(get_addr_bytes(account.address()))
+    print(address) # Print address
+    # Save keyfile to disk
     account.save_seed_to_disk(get_key_path(address, econia_root))
-    sub_named_toml_address(econia_root)
 
 def init_econia(
     account: Account,
 ):
-    """Send the initialize Econia transaction via `account`
+    """Send the initialize Econia transaction via ``econia`` account
 
     Parameters
     ----------
@@ -761,49 +755,35 @@ if __name__ == '__main__':
     """See module docstring for examples"""
 
     # Aliases
-    generate = build_command_fields.gen
+    docgen = build_command_fields.docgen
+    generate = build_command_fields.generate
     print_keyfile_address = build_command_fields.print_keyfile_address
     publish = build_command_fields.publish
-    publish_keyfile = build_command_fields.publish_keyfile
     serial = build_command_fields.serial
     substitute = build_command_fields.substitute
     action = sys.argv[1]
 
-    if action == publish: # Publish compiled bytecode, init on-chain
-        keyfile = sys.argv[2]
-        econia_root = seps.dot
-        serialized = False
-        if len(sys.argv) >= 4:
-            econia_root = sys.argv[3]
-            serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
-        account = Account(path=keyfile)
-        publish_bytecode(account, econia_root, serialized)
-        init_econia(account)
-        # Sub docgen address
-        sub_named_toml_address(econia_root, generic=False)
-    elif action == generate: # Generate new dev account
-        econia_root = seps.dot
-        if len (sys.argv) == 3:
+    if action == generate: # Generate new dev account
+        econia_root = seps.dot # Assume in Econia root
+        if len (sys.argv) == 3: # If argument passed after action
+            # Save it as relative path to Econia project root directory
             econia_root = sys.argv[2]
         gen_new_econia_dev_account(econia_root)
-    elif action == substitute: # Substitute Move.toml named address
-        econia_root = seps.dot # Assume in Econia repo root
-        if len (sys.argv) == 3: # If given optional argument
-            keyfile = sys.argv[2] # Get keyfile path
-            if keyfile == seps.us: # If flagged for generic address
-                sub_named_toml_address(econia_root) # Substitute it
-            else: # If actually given a keyfile path
-                account = Account(path=keyfile) # Get signing account
-                # Substitute address from keyfile
-                sub_named_toml_address(econia_root, generic=False,
-                    named=hex_leader(account.address()))
-        else: # If no optional argument
-            # Sub docgen address
-            sub_named_toml_address(econia_root, generic=False)
-    elif action == publish_keyfile: # Publish on-chain for given keyfile
-        econia_root = seps.dot # Assume in Econia repo root
-        keyfile = sys.argv[2] # Get keyfile path
-        account = Account(path=keyfile) # Get account from keyfile
+    elif action == publish: # Publish compiled bytecode, init on-chain
+        # Relative keyfile path (to current directory) is first argument
+        # after action
+        keyfile = sys.argv[2]
+        econia_root = seps.dot # Assume in Econia project root
+        serialized = False # Assume not running with serial override
+        # If passed 2 or more arguments after action
+        if len(sys.argv) >= 4:
+            # 2nd argument after action is relative path to Econia
+            # project root directory
+            econia_root = sys.argv[3]
+            # Mark for serialized publication if 3 arguments after
+            # action and the 3rd one is serial flag
+            serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
+        account = Account(path=keyfile)
         mint_val = tx_defaults.faucet_mint_val # Get mint value
         try: # Try minting from faucet to account
             Client(networks.devnet).mint_testcoin(account.address(), mint_val)
@@ -813,7 +793,25 @@ if __name__ == '__main__':
             publish_bytecode(account, econia_root) # Publish bytecode
             init_econia(account) # Initialize Econia
     elif action == print_keyfile_address: # If want keyfile address
+        # Print address derived from hex seed in keyfile at relative
+        # path
         print(Account(path=sys.argv[2]).address())
+    elif action == substitute: # Substitute Move.toml named address
+        econia_root = seps.dot # Assume in Econia repo root
+        if len(sys.argv) >= 3: # If given one optional argument
+            address = sys.argv[2] # It is the address to substitute
+            if len(sys.argv) == 4: # If given second optional argument
+                # It is relative path to Econia project root directory
+                econia_root = sys.argv[3]
+            if address == seps.us: # If flagged for generic address
+                sub_named_toml_address(econia_root) # Substitute it
+            elif address == docgen: # If flagged for docgen address
+                # Sub docgen address
+                sub_named_toml_address(econia_root, generic=False)
+            else: # If actually given an address
+                # Substitute it into Move.toml
+                sub_named_toml_address(econia_root, generic=False,
+                    named=hex_leader(normalized_hex(get_addr_bytes(address))))
 
     # (Deprecated)  Prepare Move.Toml file
     elif action == build_command_fields.prep:

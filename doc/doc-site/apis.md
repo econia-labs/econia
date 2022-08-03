@@ -22,6 +22,7 @@
     - [Placing a market order](#placing-a-market-order)
         - [As a signing user](#as-a-signing-user-3)
         - [As a custodian](#as-a-custodian-3)
+    - [Swaps](#swaps)
   - [SDK hooks](#sdk-hooks)
       - [Book orders](#book-orders)
       - [Book price levels](#book-price-levels)
@@ -97,6 +98,10 @@ Don't forget to first read the [design overview](https://econia.dev/design-overv
 ##### As a custodian
 
 [`econia::market::fill_market_order_custodian`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_fill_market_order_custodian) fills a market order against the order book for a given market, and requires the capability of a corresponding custodian
+
+### Swaps
+
+[`econia::market::swap`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_swap) buys or sells against the book without the need for a signature, a custodian capability, a market account, or even a user address (`public fun`)
 
 ## SDK hooks
 

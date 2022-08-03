@@ -20,6 +20,7 @@ places a market order against the book.
 -  [Function `fill_market_order_custodian`](#0xc0deb00c_market_fill_market_order_custodian)
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
+-  [Function `swap`](#0xc0deb00c_market_swap)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `fill_market_order_user`](#0xc0deb00c_market_fill_market_order_user)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
@@ -281,6 +282,16 @@ When caller is not Econia
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>: u64 = 18446744073709551615;
 </code></pre>
 
 
@@ -600,6 +611,77 @@ their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">regist
     // Place limit order <b>with</b> corresponding custodian id
     <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;B, Q, E&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, host, custodian_id, side, base_parcels, price);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_swap"></a>
+
+## Function `swap`
+
+For given market and <code>host</code>, execute specified <code>style</code> of swap,
+either <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
+
+When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>
+* Quote coins at <code>quote_coins_ref_mut</code> are traded against the
+order book until either there are no more trades on the book
+or max possible quote coins have been spent on base coins.
+* Purchased base coins are deposited to <code>base_coin_ref_mut</code>
+* <code>base_coins_ref_mut</code> does not need to have coins before swap,
+but <code>quote_coins_ref_mut</code> does (amount of quote coins to
+spend)
+
+When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
+* Base coins at <code>base_coins_ref_mut</code> are traded against the
+order book until either there are no more trades on the book
+or max possible base coins have been sold in exchange for
+quote coins
+* Received quote coins are deposited to <code>quote_coins_ref_mut</code>
+* <code>quote_coins_ref_mut</code> does not need to have coins before swap,
+but <code>base_coins_ref_mut</code> does (amount of base coins to sell)
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;B, Q, E&gt;(style: bool, host: <b>address</b>, base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;, quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;B, Q, E&gt;(
+    style: bool,
+    host: <b>address</b>,
+    base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;B&gt;,
+    quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;Q&gt;
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> {
+    // Assert host <b>has</b> an order book
+    <b>assert</b>!(<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host), <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>);
+    // Borrow mutable reference <b>to</b> order book
+    <b>let</b> order_book_ref_mut = <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host);
+    // Get scale factor for book
+    <b>let</b> scale_factor = order_book_ref_mut.scale_factor;
+    // Get an Econia <a href="capability.md#0xc0deb00c_capability">capability</a>
+    <b>let</b> econia_capability = <a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>();
+    // Compute max number of base <a href="">coin</a> parcels/quote <a href="">coin</a> units <b>to</b>
+    // fill, based on side
+    <b>let</b> (max_base_parcels, max_quote_units) = <b>if</b> (style == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+        // If <a href="market.md#0xc0deb00c_market">market</a> buy, limiting factor is quote <a href="coins.md#0xc0deb00c_coins">coins</a>, so set
+        // max base parcels <b>to</b> biggest value that can fit in u64
+        (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>, <a href="_value">coin::value</a>(quote_coins_ref_mut)) <b>else</b>
+        // If a <a href="market.md#0xc0deb00c_market">market</a> sell, max base parcels that can be filled is
+        // number of base <a href="coins.md#0xc0deb00c_coins">coins</a> divided by scale factor (truncating
+        // division) and quote <a href="">coin</a> argument <b>has</b> no impact on
+        // matching engine
+        (<a href="_value">coin::value</a>(base_coins_ref_mut) / scale_factor, 0);
+    // Fill <a href="market.md#0xc0deb00c_market">market</a> order against the book
+    <a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(order_book_ref_mut, scale_factor, style,
+        max_base_parcels, max_quote_units, base_coins_ref_mut,
+        quote_coins_ref_mut, &econia_capability);
 }
 </code></pre>
 

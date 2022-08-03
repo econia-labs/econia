@@ -96,6 +96,8 @@ module econia::market {
     const BID: bool = false;
     /// Market buy flag
     const BUY: bool = true;
+    /// `u64` bitmask with all bits set
+    const HI_64: u64 = 0xffffffffffffffff;
     /// Left direction, denoting predecessor traversal
     const LEFT: bool = true;
     /// Default value for maximum bid order ID
@@ -183,6 +185,57 @@ module econia::market {
         // Place limit order with corresponding custodian id
         place_limit_order<B, Q, E>(
             user, host, custodian_id, side, base_parcels, price);
+    }
+
+    /// For given market and `host`, execute specified `style` of swap,
+    /// either `BUY` or `SELL`.
+    ///
+    /// When `style` is `BUY`
+    /// * Quote coins at `quote_coins_ref_mut` are traded against the
+    ///   order book until either there are no more trades on the book
+    ///   or max possible quote coins have been spent on base coins.
+    /// * Purchased base coins are deposited to `base_coin_ref_mut`
+    /// * `base_coins_ref_mut` does not need to have coins before swap,
+    ///   but `quote_coins_ref_mut` does (amount of quote coins to
+    ///   spend)
+    ///
+    /// When `style` is `SELL`
+    /// * Base coins at `base_coins_ref_mut` are traded against the
+    ///   order book until either there are no more trades on the book
+    ///   or max possible base coins have been sold in exchange for
+    ///   quote coins
+    /// * Received quote coins are deposited to `quote_coins_ref_mut`
+    /// * `quote_coins_ref_mut` does not need to have coins before swap,
+    ///   but `base_coins_ref_mut` does (amount of base coins to sell)
+    public fun swap<B, Q, E>(
+        style: bool,
+        host: address,
+        base_coins_ref_mut: &mut coin::Coin<B>,
+        quote_coins_ref_mut: &mut coin::Coin<Q>
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Assert host has an order book
+        assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
+        // Borrow mutable reference to order book
+        let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
+        // Get scale factor for book
+        let scale_factor = order_book_ref_mut.scale_factor;
+        // Get an Econia capability
+        let econia_capability = get_econia_capability();
+        // Compute max number of base coin parcels/quote coin units to
+        // fill, based on side
+        let (max_base_parcels, max_quote_units) = if (style == BUY)
+            // If market buy, limiting factor is quote coins, so set
+            // max base parcels to biggest value that can fit in u64
+            (HI_64, coin::value(quote_coins_ref_mut)) else
+            // If a market sell, max base parcels that can be filled is
+            // number of base coins divided by scale factor (truncating
+            // division) and quote coin argument has no impact on
+            // matching engine
+            (coin::value(base_coins_ref_mut) / scale_factor, 0);
+        // Fill market order against the book
+        fill_market_order<B, Q, E>(order_book_ref_mut, scale_factor, style,
+            max_base_parcels, max_quote_units, base_coins_ref_mut,
+            quote_coins_ref_mut, &econia_capability);
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3026,6 +3079,100 @@ module econia::market {
         assert!(ask_level_0_ref.base_parcels == ask_0_base_parcels +
             ask_1_base_parcels, 0);
         order_book // Return rather than unpack
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for no such order book
+    fun test_swap_no_book(
+        econia: &signer,
+    ) acquires EconiaCapabilityStore, OrderBook {
+        coins::init_coin_types(econia); // Init coin types
+        // Initialize trading coins
+        let (base_coins, quote_coins) = (coin::zero<BC>(), coin::zero<QC>());
+        // Attempt invalid swap
+        swap<BC, QC, E1>(BUY, @econia, &mut base_coins, &mut quote_coins);
+        // Burn base and quote coins
+        coins::burn(base_coins); coins::burn(quote_coins);
+    }
+
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
+    /// Verify correct post-swap coin values for a buy. Modeled off of
+    /// comprehensive `test_fill_market_order...()` test series, with
+    /// a partial fill against the third order.
+    fun test_swap_success_buy(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Initialize test market
+        init_market_test(ASK, econia, user_0, user_1, user_2, user_3);
+        let base_coins = coin::zero<BC>(); // Do not need base coins
+        // Calculate base parcels filled against user 3
+        let user_3_fill_size = USER_3_ASK_SIZE - 2;
+        // Calculate base coins bought
+        let base_coins_bought = SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE + user_3_fill_size);
+        let quote_coins_spent = // Calculate quote coins spent
+            (USER_1_ASK_SIZE * USER_1_ASK_PRICE) +
+            (USER_2_ASK_SIZE * USER_2_ASK_PRICE) +
+            (user_3_fill_size * USER_3_ASK_PRICE);
+        // Mint necessary quote coins
+        let quote_coins = coins::mint<QC>(econia, quote_coins_spent);
+        // Place a swap
+        swap<BC, QC, E1>(BUY, @econia, &mut base_coins, &mut quote_coins);
+        // Assert coin values
+        assert!(coin::value(&quote_coins) == 0, 0);
+        assert!(coin::value(&base_coins) == base_coins_bought, 0);
+        // Burn base and quote coins
+        coins::burn(base_coins); coin::destroy_zero(quote_coins);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
+    /// Verify correct post-swap coin values for a sell. Modeled off of
+    /// comprehensive `test_fill_market_order...()` test series, with
+    /// a complete fill against the second order.
+    fun test_swap_success_sell(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Initialize test market
+        init_market_test(BID, econia, user_0, user_1, user_2, user_3);
+        // Calculate base coins bought
+        let base_coins_sold = SCALE_FACTOR *
+            (USER_1_BID_SIZE + USER_2_BID_SIZE);
+        let quote_coins_received = // Calculate quote coins received
+            (USER_1_BID_SIZE * USER_1_BID_PRICE) +
+            (USER_2_BID_SIZE * USER_2_BID_PRICE);
+        // Mint necessary base coins
+        let base_coins = coins::mint<BC>(econia, base_coins_sold);
+        // Do not need quote coins
+        let quote_coins = coin::zero<QC>();
+        // Place a swap
+        swap<BC, QC, E1>(SELL, @econia, &mut base_coins, &mut quote_coins);
+        // Assert coin values
+        assert!(coin::value(&quote_coins) == quote_coins_received, 0);
+        assert!(coin::value(&base_coins) == 0, 0);
+        // Burn base and quote coins
+        coin::destroy_zero(base_coins); coins::burn(quote_coins);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

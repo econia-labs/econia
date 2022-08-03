@@ -127,6 +127,7 @@ module econia::user {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd]
     /// Register `user` with a `MarketAccount` and `Collateral` entries
     /// for given market and `custodian_id`. If `custodian_id` is 0,
     /// register user with an account that only they can manage via a
@@ -159,6 +160,7 @@ module econia::user {
         register_collateral_entry<Q>(user, market_account_info);
     }
 
+    #[cmd]
     /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
     /// entry corresponding to `market_account_info`, then return it.
     /// Aborts if custodian serial ID for given market account is not 0.

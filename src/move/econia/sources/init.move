@@ -16,6 +16,7 @@ module econia::init {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd]
     /// Initialize Econia with core resources needed for trading
     public entry fun init_econia(
         account: &signer

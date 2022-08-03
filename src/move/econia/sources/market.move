@@ -45,6 +45,7 @@ module econia::market {
         custodian_id: u64
     }
 
+    #[show(book_orders_sdk, book_price_levels_sdk)]
     /// An order book for the given market
     struct OrderBook<phantom B, phantom Q, phantom E> has key {
         /// Number of base units in a base parcel
@@ -242,6 +243,7 @@ module econia::market {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd]
     /// Cancel a limit order on the book and in a user's market account.
     /// Invoked by a signing user. See wrapped call
     /// `cancel_limit_order()`.
@@ -256,6 +258,7 @@ module econia::market {
             address_of(user), host, NO_CUSTODIAN, side, order_id);
     }
 
+    #[cmd]
     /// Fill a market order. Invoked by a signing user. See wrapped
     /// call `fill_market_order_from_market_account()`.
     public entry fun fill_market_order_user<B, Q, E>(
@@ -271,6 +274,7 @@ module econia::market {
             max_quote_units);
     }
 
+    #[cmd]
     /// Register a market for the given base type, quote type,
     /// scale exponent type, and move an `OrderBook` to `host`.
     public entry fun register_market<B, Q, E>(
@@ -283,6 +287,7 @@ module econia::market {
         init_book<B, Q, E>(host, registry::scale_factor<E>());
     }
 
+    #[cmd]
     /// Place a limit order on the book and in a user's market account.
     /// Invoked by a signing user. See wrapped call
     /// `place_limit_order()`.

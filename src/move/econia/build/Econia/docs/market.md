@@ -21,44 +21,46 @@ places a market order against the book.
 -  [Function `init_econia_capability_store`](#0xc0deb00c_market_init_econia_capability_store)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
 -  [Function `swap`](#0xc0deb00c_market_swap)
+    -  [When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>](#@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_BUY">BUY</a></code>_1)
+    -  [When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>](#@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_SELL">SELL</a></code>_2)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `fill_market_order_user`](#0xc0deb00c_market_fill_market_order_user)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
 -  [Function `cancel_limit_order`](#0xc0deb00c_market_cancel_limit_order)
-    -  [Parameters](#@Parameters_1)
-    -  [Abort conditions](#@Abort_conditions_2)
--  [Function `fill_market_order`](#0xc0deb00c_market_fill_market_order)
     -  [Parameters](#@Parameters_3)
-    -  [Assumes](#@Assumes_4)
--  [Function `fill_market_order_break_cleanup`](#0xc0deb00c_market_fill_market_order_break_cleanup)
+    -  [Abort conditions](#@Abort_conditions_4)
+-  [Function `fill_market_order`](#0xc0deb00c_market_fill_market_order)
     -  [Parameters](#@Parameters_5)
--  [Function `fill_market_order_check_base_parcels_to_fill`](#0xc0deb00c_market_fill_market_order_check_base_parcels_to_fill)
-    -  [Parameters](#@Parameters_6)
--  [Function `fill_market_order_from_market_account`](#0xc0deb00c_market_fill_market_order_from_market_account)
+    -  [Assumes](#@Assumes_6)
+-  [Function `fill_market_order_break_cleanup`](#0xc0deb00c_market_fill_market_order_break_cleanup)
     -  [Parameters](#@Parameters_7)
--  [Function `fill_market_order_init`](#0xc0deb00c_market_fill_market_order_init)
+-  [Function `fill_market_order_check_base_parcels_to_fill`](#0xc0deb00c_market_fill_market_order_check_base_parcels_to_fill)
     -  [Parameters](#@Parameters_8)
-    -  [Returns](#@Returns_9)
--  [Function `fill_market_order_loop_order_follow_up`](#0xc0deb00c_market_fill_market_order_loop_order_follow_up)
+-  [Function `fill_market_order_from_market_account`](#0xc0deb00c_market_fill_market_order_from_market_account)
+    -  [Parameters](#@Parameters_9)
+-  [Function `fill_market_order_init`](#0xc0deb00c_market_fill_market_order_init)
     -  [Parameters](#@Parameters_10)
     -  [Returns](#@Returns_11)
--  [Function `fill_market_order_process_loop_order`](#0xc0deb00c_market_fill_market_order_process_loop_order)
+-  [Function `fill_market_order_loop_order_follow_up`](#0xc0deb00c_market_fill_market_order_loop_order_follow_up)
     -  [Parameters](#@Parameters_12)
     -  [Returns](#@Returns_13)
--  [Function `fill_market_order_traverse_loop`](#0xc0deb00c_market_fill_market_order_traverse_loop)
+-  [Function `fill_market_order_process_loop_order`](#0xc0deb00c_market_fill_market_order_process_loop_order)
     -  [Parameters](#@Parameters_14)
+    -  [Returns](#@Returns_15)
+-  [Function `fill_market_order_traverse_loop`](#0xc0deb00c_market_fill_market_order_traverse_loop)
+    -  [Parameters](#@Parameters_16)
 -  [Function `get_serial_id`](#0xc0deb00c_market_get_serial_id)
 -  [Function `get_econia_capability`](#0xc0deb00c_market_get_econia_capability)
 -  [Function `init_book`](#0xc0deb00c_market_init_book)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Parameters](#@Parameters_15)
-    -  [Abort conditions](#@Abort_conditions_16)
-    -  [Assumes](#@Assumes_17)
+    -  [Parameters](#@Parameters_17)
+    -  [Abort conditions](#@Abort_conditions_18)
+    -  [Assumes](#@Assumes_19)
 -  [Function `book_orders_sdk`](#0xc0deb00c_market_book_orders_sdk)
-    -  [Returns](#@Returns_18)
+    -  [Returns](#@Returns_20)
 -  [Function `book_price_levels_sdk`](#0xc0deb00c_market_book_price_levels_sdk)
-    -  [Returns](#@Returns_19)
+    -  [Returns](#@Returns_21)
 -  [Function `get_orders_sdk`](#0xc0deb00c_market_get_orders_sdk)
 -  [Function `get_price_levels_sdk`](#0xc0deb00c_market_get_price_levels_sdk)
 
@@ -625,16 +627,24 @@ their <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">regist
 For given market and <code>host</code>, execute specified <code>style</code> of swap,
 either <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
-When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>
+
+<a name="@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_BUY">BUY</a></code>_1"></a>
+
+### When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>
+
 * Quote coins at <code>quote_coins_ref_mut</code> are traded against the
 order book until either there are no more trades on the book
-or max possible quote coins have been spent on base coins.
+or max possible quote coins have been spent on base coins
 * Purchased base coins are deposited to <code>base_coin_ref_mut</code>
 * <code>base_coins_ref_mut</code> does not need to have coins before swap,
 but <code>quote_coins_ref_mut</code> does (amount of quote coins to
 spend)
 
-When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
+
+<a name="@When_<code>style</code>_is_<code><a_href="market.md#0xc0deb00c_market_SELL">SELL</a></code>_2"></a>
+
+### When <code>style</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
+
 * Base coins at <code>base_coins_ref_mut</code> are traded against the
 order book until either there are no more trades on the book
 or max possible base coins have been sold in exchange for
@@ -832,7 +842,7 @@ Invoked by a signing user. See wrapped call
 Cancel limit order on book, remove from user's market account.
 
 
-<a name="@Parameters_1"></a>
+<a name="@Parameters_3"></a>
 
 ### Parameters
 
@@ -844,7 +854,7 @@ market account
 * <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
 
 
-<a name="@Abort_conditions_2"></a>
+<a name="@Abort_conditions_4"></a>
 
 ### Abort conditions
 
@@ -930,7 +940,7 @@ a custodian) has their order filled against the "target user"
 who has a "target position" on the order book.
 
 
-<a name="@Parameters_3"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -951,7 +961,7 @@ quote coins, essentially a container to route to/from
 <code>EconiaCapability</code>
 
 
-<a name="@Assumes_4"></a>
+<a name="@Assumes_6"></a>
 
 ### Assumes
 
@@ -1010,7 +1020,7 @@ Clean up before breaking during iterated market order filling.
 Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order_traverse_loop">fill_market_order_traverse_loop</a>()</code>.
 
 
-<a name="@Parameters_5"></a>
+<a name="@Parameters_7"></a>
 
 ### Parameters
 
@@ -1073,7 +1083,7 @@ as many base parcels as otherwise indicated by
 is updated with the amount the incoming can afford.
 
 
-<a name="@Parameters_6"></a>
+<a name="@Parameters_8"></a>
 
 ### Parameters
 
@@ -1134,7 +1144,7 @@ to cover a market order. Deposits assets back to <code><a href="user.md#0xc0deb0
 See wrapped function <code><a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>()</code>.
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_9"></a>
 
 ### Parameters
 
@@ -1212,7 +1222,7 @@ Initialize local variables required for filling market orders.
 Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>()</code>.
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -1222,7 +1232,7 @@ Inner function for <code><a href="market.md#0xc0deb00c_market_fill_market_order"
 * <code>max_base_parcels</code>: The maximum number of base parcels to fill
 
 
-<a name="@Returns_9"></a>
+<a name="@Returns_11"></a>
 
 ### Returns
 
@@ -1297,7 +1307,7 @@ if traversal is still possible, computes new spread maker values
 as needed, and determines if loop has hit break condition.
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -1321,7 +1331,7 @@ along outer nodes of a <code>CritBitTree</code>
 along outer nodes of a <code>CritBitTree</code>
 
 
-<a name="@Returns_11"></a>
+<a name="@Returns_13"></a>
 
 ### Returns
 
@@ -1427,7 +1437,7 @@ the "incoming user" (who the market order is for) fills against
 a "target order" on the order book.
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_14"></a>
 
 ### Parameters
 
@@ -1447,7 +1457,7 @@ quote coins
 <code>EconiaCapability</code> required for internal cross-module calls
 
 
-<a name="@Returns_13"></a>
+<a name="@Returns_15"></a>
 
 ### Returns
 
@@ -1534,7 +1544,7 @@ their order filled against the "target user" who has a "target
 position" on the order book.
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_16"></a>
 
 ### Parameters
 
@@ -1731,7 +1741,7 @@ account, aborting if one already exists
 Place limit order on the book and in user's market account.
 
 
-<a name="@Parameters_15"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1744,7 +1754,7 @@ market account
 * <code>price</code>: Order price
 
 
-<a name="@Abort_conditions_16"></a>
+<a name="@Abort_conditions_18"></a>
 
 ### Abort conditions
 
@@ -1753,7 +1763,7 @@ market account
 * If new order crosses the spread (temporary)
 
 
-<a name="@Assumes_17"></a>
+<a name="@Assumes_19"></a>
 
 ### Assumes
 
@@ -1828,7 +1838,7 @@ Index <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>s from <
 <code>get_orders_sdk</code>, for each side.
 
 
-<a name="@Returns_18"></a>
+<a name="@Returns_20"></a>
 
 ### Returns
 
@@ -1868,7 +1878,7 @@ Index <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
 <code>PriceLevels</code> for each side.
 
 
-<a name="@Returns_19"></a>
+<a name="@Returns_21"></a>
 
 ### Returns
 

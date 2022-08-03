@@ -190,16 +190,16 @@ module econia::market {
     /// For given market and `host`, execute specified `style` of swap,
     /// either `BUY` or `SELL`.
     ///
-    /// When `style` is `BUY`
+    /// # When `style` is `BUY`
     /// * Quote coins at `quote_coins_ref_mut` are traded against the
     ///   order book until either there are no more trades on the book
-    ///   or max possible quote coins have been spent on base coins.
+    ///   or max possible quote coins have been spent on base coins
     /// * Purchased base coins are deposited to `base_coin_ref_mut`
     /// * `base_coins_ref_mut` does not need to have coins before swap,
     ///   but `quote_coins_ref_mut` does (amount of quote coins to
     ///   spend)
     ///
-    /// When `style` is `SELL`
+    /// # When `style` is `SELL`
     /// * Base coins at `base_coins_ref_mut` are traded against the
     ///   order book until either there are no more trades on the book
     ///   or max possible base coins have been sold in exchange for

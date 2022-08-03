@@ -1,5 +1,30 @@
 # Shell scripts for common developer workflows
 
+# Substitute named `@econia`` address in Move.toml, passing optional
+# argument specifying the address to substitute.
+#
+# Should be run from inside Move package directory.
+substitute_econia_address() {
+    cd ../../../ # Navigate to Econia repository root
+    # Substitute docgen address, passing optional argument
+    python src/python/econia/build.py substitute $1
+    cd src/move/econia # Navigate back to move package
+}
+
+# Get relative (to Econia project root) path to devnet keyfile, and
+# account address derived from the hex seed within.
+#
+# Should be run from inside Move package directory.
+get_devnet_keyfile_info () {
+    cd ../../../.secrets/devnet/ # Navigate to devnet secrets folder
+    keyfile=(*(N[1])) # Get first file name in directory (zsh)
+    cd ../.. # Navigate to Econia root directory
+    keyfile=".secrets/devnet/$keyfile" # Get relative path to keyfile
+    # Get address from keyfile hex seed
+    addr=$(python src/python/econia/build.py print-keyfile-address "$keyfile")
+    cd src/move/econia # Navigate back to move package
+}
+
 # Return if no arguments passed
 if test "$#" = 0; then return
 
@@ -32,24 +57,14 @@ elif test $1 = cm; then move package coverage source --module $2
 elif test $1 = cs; then move package coverage summary
 
 # Build documentation
-elif test $1 = d; then move build --doc
+elif test $1 = d; then
+    substitute_econia_address # Substitute address with default option
+    move build --doc # Build docs
 
 # Substitute devnet address into Move.toml
 elif test $1 = da; then
-    cd ../../../.secrets/devnet/ # Navigate to devnet secrets folder
-    keyfile=(*(N[1])) # Get first file name in directory (zsh)
-    cd ../.. # Navigate to Econia root directory
-    keyfile=".secrets/devnet/$keyfile" # Get relative path to keyfile
-    # Update Move.toml with devnet named address
-    python src/python/econia/build.py substitute $keyfile
-    cd src/move/econia # Navigate back to move package
-
-# Substitute docgen address into Move.toml
-elif test $1 = dg; then
-    cd ../../../ # Navigate to Econia repository root
-    # Substitute docgen address
-    python src/python/econia/build.py substitute
-    cd src/move/econia # Navigate back to move package
+    get_devnet_keyfile_info
+    substitute_econia_address $keyfile
 
 # Go back to Econia project repository root
 elif test $1 = er; then cd ../../../
@@ -72,15 +87,9 @@ elif test $1 = p; then
 
 # Publish using a keyfile in ../../.secrets/devnet
 elif test $1 = pd; then
-    cd ../../../.secrets/devnet/ # Navigate to devnet secrets folder
-    keyfile=(*(N[1])) # Get first file name in directory (zsh)
-    cd ../.. # Navigate to Econia root directory
-    keyfile=".secrets/devnet/$keyfile" # Get relative path to keyfile
-    # Get address from keyfile hex seed
-    addr=$(python src/python/econia/build.py print-keyfile-address "$keyfile")
+    get_devnet_keyfile_info
     # Substitute generic named address in Move.toml
-    python src/python/econia/build.py substitute _
-    cd src/move/econia # Navigate back to Move package folder
+    substitute_econia_address _
     # Compile package using devnet named address
     aptos move compile --named-addresses "econia=0x$addr" > /dev/null
     cd ../../.. # Navigate to Econia root folder
@@ -108,11 +117,15 @@ elif test $1 = tf; then aptos move test --filter $2
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand
 elif test $1 = wd; then
+    # Substitute address with default option (subs docgen address)
+    substitute_econia_address
     ls sources/*.move | entr move build --doc
 
 # Watch source code and run all tests if it changes
 # May require `brew install entr` beforehand
 elif test $1 = wt; then
+    # Substitute address with default option (subs docgen address)
+    substitute_econia_address
     ls sources/*.move | entr aptos move test
 
 else echo Invalid option; fi

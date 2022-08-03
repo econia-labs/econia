@@ -31,7 +31,7 @@
 The easiest way to develop Econia is with the provided shell scripts, and the fastest way to run these scripts is by adding the following function to your runtime configuration file (`~/.zshrc`, `~/.bash_profile`, etc):
 
 ```zsh
-# Shell script wrapper: pass all commands to ./ss.sh
+# Shell script wrapper: pass all arguments to ./ss.sh
 s() {source ss.sh "$@"}
 ```
 

@@ -73,6 +73,7 @@ module econia::coins {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd]
     /// Initialize mock base and quote coin types under Econia account
     public entry fun init_coin_types(
         account: &signer
@@ -83,6 +84,7 @@ module econia::coins {
             QUOTE_COIN_DECIMALS); // Initialize mock quote coin
     }
 
+    #[cmd]
     /// Mint new `amount` of `CoinType`, aborting if not called by
     /// Econia account or if `CoinCapabilities` uninitialized
     public entry fun mint<CoinType>(

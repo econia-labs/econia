@@ -109,6 +109,9 @@ elif test $1 = pt; then
     # Publish from temporary keyfile
     publish_from_keyfile temp
 
+# Substitute docgen address into Move.toml
+elif test $1 = sd; then substitute_econia_address docgen
+
 # Substitute official devnet address into Move.toml
 elif test $1 = so; then substitute_econia_address official
 

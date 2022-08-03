@@ -133,7 +133,7 @@ module econia::market {
     /// Fill a market order on behalf of a user. Invoked by a custodian,
     /// who passes an immutable reference to their
     /// `registry::CustodianCapability`. See wrapped call
-    /// `fill_market_order()`.
+    /// `fill_market_order_from_market_account()`.
     public fun fill_market_order_custodian<B, Q, E>(
         user: address,
         host: address,
@@ -145,8 +145,9 @@ module econia::market {
         // Get custodian ID encoded in capability
         let custodian_id = registry::custodian_id(custodian_capability_ref);
         // Fill the market order, using custodian ID
-        fill_market_order<B, Q, E>(user, host, custodian_id, style,
-            max_base_parcels, max_quote_units);
+        fill_market_order_from_market_account<B, Q, E>(
+            user, host, custodian_id, style, max_base_parcels,
+            max_quote_units);
     }
 
     /// Initializes an `EconiaCapabilityStore`, aborting if one already
@@ -203,7 +204,7 @@ module econia::market {
     }
 
     /// Fill a market order. Invoked by a signing user. See wrapped
-    /// call `fill_market_order()`.
+    /// call `fill_market_order_from_market_account()`.
     public entry fun fill_market_order_user<B, Q, E>(
         user: &signer,
         host: address,
@@ -212,8 +213,9 @@ module econia::market {
         max_quote_units: u64,
     ) acquires EconiaCapabilityStore, OrderBook {
         // Fill the market order, with no custodian flag
-        fill_market_order<B, Q, E>(address_of(user), host, NO_CUSTODIAN, style,
-            max_base_parcels, max_quote_units);
+        fill_market_order_from_market_account<B, Q, E>(
+            address_of(user), host, NO_CUSTODIAN, style, max_base_parcels,
+            max_quote_units);
     }
 
     /// Register a market for the given base type, quote type,
@@ -308,8 +310,8 @@ module econia::market {
             order_id, &get_econia_capability());
     }
 
-    /// For an `OrderBook` at `host`, fill a market order for given
-    /// `user`, `custodian_id`, `style`, and `max_base_parcels`,
+    /// For an `OrderBook` accessed by `order_book_ref_mut`, fill a
+    /// market order for given `style` and `max_base_parcels`,
     /// optionally accounting for `max_quote_units` if `style` is `BUY`.
     ///
     /// Prepares a crit-bit tree for iterated traversal, then loops over
@@ -319,52 +321,52 @@ module econia::market {
     /// a custodian) has their order filled against the "target user"
     /// who has a "target position" on the order book.
     ///
-    /// During initialization, withdraws collateral from the incoming
-    /// user. Then routes assets accordingly, then deposits assets back
-    /// to the incoming user.
-    ///
     /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `host`: Where corresponding `OrderBook` is hosted
-    /// * `custodian_id`: Serial ID of delegated custodian for given
-    ///   market account
+    /// * `order_book_ref_mut`: Mutable reference to order book to fill
+    ///   against
+    /// * `scale_factor`: Scale factor for corresponding `OrderBook`
     /// * `style`: `BUY` or `SELL`
     /// * `max_base_parcels`: The maximum number of base parcels to fill
     /// * `max_quote_units`: The maximum number of quote units to
     ///   exchange during a `BUY`, which may become a limiting factor
     ///   if the incoming user cannot afford to buy `max_base_parcels`
     ///   at market prices.
+    /// * `base_coins_ref_mut`: Mutable reference to incoming user's
+    ///   base coins, essentially a container to route to/from
+    /// * `quote_coins_ref_mut`: Mutable reference to incoming user's
+    ///   quote coins, essentially a container to route to/from
+    /// * `econia_capability_ref`: Immutable reference to an
+    ///   `EconiaCapability`
+    ///
+    /// # Assumes
+    /// * Caller has provided sufficient collateral in `Coin` at
+    ///   `quote_coins_ref_mut` if `style` is `BUY`, or to
+    ///   `base_coins_ref_mut` if `style` is `SELL`
+    /// * Caller has derived `scale_factor` from `OrderBook` accessed by
+    ///   `order_book_ref_mut`
     fun fill_market_order<B, Q, E>(
-        user: address,
-        host: address,
-        custodian_id: u64,
+        order_book_ref_mut: &mut OrderBook<B, Q, E>,
+        scale_factor: u64,
         style: bool,
         max_base_parcels: u64,
         max_quote_units: u64,
-    ) acquires EconiaCapabilityStore, OrderBook {
+        base_coins_ref_mut: &mut coin::Coin<B>,
+        quote_coins_ref_mut: &mut coin::Coin<Q>,
+        econia_capability_ref: &EconiaCapability
+    ) {
         if (max_base_parcels == 0 || style == BUY && max_quote_units == 0)
             return; // Return if nothing to fill
-        // Assert host has an order book
-        assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
-        // Borrow mutable reference to order book
-        let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
         // Initialize local variables, get user's base/quote collateral
-        let (econia_capability, scale_factor, market_account_info,
-             base_parcels_to_fill, side, base_coins, quote_coins, tree_ref_mut,
-             spread_maker_ref_mut, n_orders, traversal_direction) =
-                fill_market_order_init<B, Q, E>(user, custodian_id, style,
-                    max_base_parcels, max_quote_units, order_book_ref_mut);
+        let (base_parcels_to_fill, side, tree_ref_mut, spread_maker_ref_mut,
+             n_orders, traversal_direction) = fill_market_order_init<B, Q, E>(
+                order_book_ref_mut, style, max_base_parcels);
         if (n_orders != 0) { // If orders tree has orders to fill
             // Fill them in an iterated loop traversal
             fill_market_order_traverse_loop<B, Q, E>(style, side, scale_factor,
                 tree_ref_mut, traversal_direction, n_orders,
-                spread_maker_ref_mut, base_parcels_to_fill, &mut base_coins,
-                &mut quote_coins, &econia_capability);
+                spread_maker_ref_mut, base_parcels_to_fill, base_coins_ref_mut,
+                quote_coins_ref_mut, econia_capability_ref);
         };
-        // Deposit base coins to incoming user's collateral
-        user::deposit_collateral<B>(user, market_account_info, base_coins);
-        // Deposit quote coins to incoming user's collateral
-        user::deposit_collateral<Q>(user, market_account_info, quote_coins);
     }
 
     /// Clean up before breaking during iterated market order filling.
@@ -442,12 +444,14 @@ module econia::market {
         };
     }
 
-    /// Initialize local variables required for filling market orders.
-    ///
-    /// Inner function for `fill_market_order()`.
+    /// Verifies that `OrderBook` exists at `host` for given market,
+    /// then withdraws collateral from `user`'s market account as needed
+    /// to cover a market order. Deposits assets back to `user` after.
+    /// See wrapped function `fill_market_order()`.
     ///
     /// # Parameters
     /// * `user`: Address of corresponding user
+    /// * `host`: Where corresponding `OrderBook` is hosted
     /// * `custodian_id`: Serial ID of delegated custodian for given
     ///   market account
     /// * `style`: `BUY` or `SELL`
@@ -456,18 +460,58 @@ module econia::market {
     ///   exchange during a `BUY`, which may become a limiting factor
     ///   if the incoming user cannot afford to buy `max_base_parcels`
     ///   at market prices.
+    fun fill_market_order_from_market_account<B, Q, E>(
+        user: address,
+        host: address,
+        custodian_id: u64,
+        style: bool,
+        max_base_parcels: u64,
+        max_quote_units: u64,
+    ) acquires EconiaCapabilityStore, OrderBook {
+        // Assert host has an order book
+        assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
+        // Borrow mutable reference to order book
+        let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
+        // Get scale factor for book
+        let scale_factor = order_book_ref_mut.scale_factor;
+        let market_account_info = // Get market account info for order
+            user::market_account_info<B, Q, E>(custodian_id);
+        // Get an Econia capability
+        let econia_capability = get_econia_capability();
+        // Get base and quote coin instances for collateral routing
+        let (base_coins, quote_coins) = if (style == BUY) ( // If a buy
+            coin::zero<B>(), // Does not require base, but needs quote
+            user::withdraw_collateral_internal<Q>(user, market_account_info,
+                max_quote_units, &econia_capability),
+        ) else ( // If a market sell
+            // Requires base coins from user
+            user::withdraw_collateral_internal<B>(user, market_account_info,
+                max_base_parcels * scale_factor, &econia_capability),
+            coin::zero<Q>(), // Does not require quote coins from user
+        );
+        // Fill market order against the book
+        fill_market_order<B, Q, E>(order_book_ref_mut, scale_factor, style,
+            max_base_parcels, max_quote_units, &mut base_coins,
+            &mut quote_coins, &econia_capability);
+        // Deposit base coins to user's collateral
+        user::deposit_collateral<B>(user, market_account_info, base_coins);
+        // Deposit quote coins to user's collateral
+        user::deposit_collateral<Q>(user, market_account_info, quote_coins);
+    }
+
+    /// Initialize local variables required for filling market orders.
+    ///
+    /// Inner function for `fill_market_order()`.
+    ///
+    /// # Parameters
     /// * `order_book_ref_mut`: Mutable reference to corresponding
     ///   `OrderBook`
+    /// * `style`: `BUY` or `SELL`
+    /// * `max_base_parcels`: The maximum number of base parcels to fill
     ///
     /// # Returns
-    /// * `EconiaCapability`: An `EconiaCapability` needed for internal
-    ///   cross-module calls
-    /// * `u64`: The scale factor for the given market
-    /// * `user::MarketAccountInfo`: Info on `user`'s market account
     /// * `u64`: A counter for the number of base parcels left to fill
     /// * `bool`: Either `ASK` or `BID`
-    /// * `coin::Coin<B>`: Base coins to route
-    /// * `coin::Coin<Q>`: Quote coins to route
     /// * `&mut CritBitTree`: Mutable reference to orders tree to fill
     ///   against
     /// * `&mut u128`: Mutable reference to spread maker field for given
@@ -475,51 +519,30 @@ module econia::market {
     /// * `u64`: Number of orders in corresponding tree
     /// * `bool`: `LEFT` or `RIGHT` (traversal direction)
     fun fill_market_order_init<B, Q, E>(
-        user: address,
-        custodian_id: u64,
+        order_book_ref_mut: &mut OrderBook<B, Q, E>,
         style: bool,
         max_base_parcels: u64,
-        max_quote_units: u64,
-        order_book_ref_mut: &mut OrderBook<B, Q, E>,
     ): (
-        EconiaCapability,
-        u64,
-        user::MarketAccountInfo,
         u64,
         bool,
-        coin::Coin<B>,
-        coin::Coin<Q>,
         &mut CritBitTree<Order>,
         &mut u128,
         u64,
         bool
-    ) acquires EconiaCapabilityStore {
-        // Get an Econia capability
-        let econia_capability = get_econia_capability();
-        // Get scale factor for market
-        let scale_factor = order_book_ref_mut.scale_factor;
-        let market_account_info = // Get market account info for order
-            user::market_account_info<B, Q, E>(custodian_id);
+    ) {
         // Declare counter for number of base parcels left to fill
         let base_parcels_to_fill = max_base_parcels;
-        // Get side that order fills against, base coins and quote coins
-        // required for the fill, mutable reference to orders tree
-        // to fill against, mutable reference to the spread maker for
-        // given side, and traversal direction
-        let (side, base_coins, quote_coins, tree_ref_mut, spread_maker_ref_mut,
-            traversal_direction) = if (style == BUY) (
+        // Get side that order fills against, mutable reference to
+        // orders tree to fill against, mutable reference to the spread
+        // maker for given side, and traversal direction
+        let (side, tree_ref_mut, spread_maker_ref_mut, traversal_direction) =
+            if (style == BUY) (
             ASK, // If a market buy, fills against asks
-            coin::zero<B>(), // Does not require base, but needs quote
-            user::withdraw_collateral_internal<Q>(user, market_account_info,
-                max_quote_units, &econia_capability),
             &mut order_book_ref_mut.asks, // Fill against asks tree
             &mut order_book_ref_mut.min_ask, // Asks spread maker
             RIGHT // Successor iteration
         ) else ( // If a market sell
             BID, // Fills against bids, requires base coins
-            user::withdraw_collateral_internal<B>(user, market_account_info,
-                max_base_parcels * scale_factor, &econia_capability),
-            coin::zero<Q>(), // Does not require quote coins from user
             &mut order_book_ref_mut.bids, // Fill against bids tree
             &mut order_book_ref_mut.max_bid, // Bids spread maker
             LEFT // Predecessor iteration
@@ -527,9 +550,8 @@ module econia::market {
         // Get number of orders on book for given side
         let n_orders = critbit::length(tree_ref_mut);
         // Return initialized variables
-        (econia_capability, scale_factor, market_account_info,
-         base_parcels_to_fill, side, base_coins, quote_coins, tree_ref_mut,
-         spread_maker_ref_mut, n_orders, traversal_direction)
+        (base_parcels_to_fill, side, tree_ref_mut, spread_maker_ref_mut,
+         n_orders, traversal_direction)
     }
 
     /// Follow up after processing a fill against an order on the book.

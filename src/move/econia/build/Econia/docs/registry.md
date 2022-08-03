@@ -31,10 +31,13 @@ registration and tracking, delegated custodian registration.
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Constants](#@Constants_0)
--  [Function `coin_is_in_market_pair`](#0xc0deb00c_registry_coin_is_in_market_pair)
 -  [Function `coin_is_base_coin`](#0xc0deb00c_registry_coin_is_base_coin)
+-  [Function `coin_is_in_market_pair`](#0xc0deb00c_registry_coin_is_in_market_pair)
 -  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
+-  [Function `is_registered`](#0xc0deb00c_registry_is_registered)
+-  [Function `is_registered_types`](#0xc0deb00c_registry_is_registered_types)
+-  [Function `is_valid_custodian_id`](#0xc0deb00c_registry_is_valid_custodian_id)
 -  [Function `market_info`](#0xc0deb00c_registry_market_info)
 -  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
@@ -42,9 +45,6 @@ registration and tracking, delegated custodian registration.
 -  [Function `scale_factor`](#0xc0deb00c_registry_scale_factor)
 -  [Function `scale_factor_from_type_info`](#0xc0deb00c_registry_scale_factor_from_type_info)
 -  [Function `scale_factor_from_market_info`](#0xc0deb00c_registry_scale_factor_from_market_info)
--  [Function `is_registered`](#0xc0deb00c_registry_is_registered)
--  [Function `is_registered_types`](#0xc0deb00c_registry_is_registered_types)
--  [Function `is_valid_custodian_id`](#0xc0deb00c_registry_is_valid_custodian_id)
 -  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
 
 
@@ -1033,38 +1033,6 @@ Corresponds to <code><a href="registry.md#0xc0deb00c_registry_E9">E9</a></code>
 
 
 
-<a name="0xc0deb00c_registry_coin_is_in_market_pair"></a>
-
-## Function `coin_is_in_market_pair`
-
-Return <code><b>true</b></code> if <code>CoinType</code> is either base or quote coin in
-<code>market_info</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">coin_is_in_market_pair</a>&lt;CoinType&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">coin_is_in_market_pair</a>&lt;CoinType&gt;(
-    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
-): bool {
-    // Get <a href="">coin</a> type info
-    <b>let</b> coin_type_info = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;();
-    // Return <b>if</b> <a href="">coin</a> is either base or quote
-    coin_type_info == market_info.base_coin_type ||
-    coin_type_info == market_info.quote_coin_type
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_registry_coin_is_base_coin"></a>
 
 ## Function `coin_is_base_coin`
@@ -1092,6 +1060,38 @@ Return <code><b>true</b></code> if <code>CoinType</code> is base coin in <code>m
     // Return <b>false</b> <b>if</b> quote <a href="">coin</a> match
     <b>if</b> (coin_type_info ==  market_info.quote_coin_type) <b>return</b> <b>false</b>;
     <b>abort</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a> // Else <b>abort</b>
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_coin_is_in_market_pair"></a>
+
+## Function `coin_is_in_market_pair`
+
+Return <code><b>true</b></code> if <code>CoinType</code> is either base or quote coin in
+<code>market_info</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">coin_is_in_market_pair</a>&lt;CoinType&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_coin_is_in_market_pair">coin_is_in_market_pair</a>&lt;CoinType&gt;(
+    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): bool {
+    // Get <a href="">coin</a> type info
+    <b>let</b> coin_type_info = <a href="_type_of">type_info::type_of</a>&lt;CoinType&gt;();
+    // Return <b>if</b> <a href="">coin</a> is either base or quote
+    coin_type_info == market_info.base_coin_type ||
+    coin_type_info == market_info.quote_coin_type
 }
 </code></pre>
 
@@ -1178,6 +1178,97 @@ Move empty registry to the Econia account, then add scale map
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(scales, <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_E17">E17</a>&gt;(), <a href="registry.md#0xc0deb00c_registry_F17">F17</a>);
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(scales, <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_E18">E18</a>&gt;(), <a href="registry.md#0xc0deb00c_registry_F18">F18</a>);
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(scales, <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_E19">E19</a>&gt;(), <a href="registry.md#0xc0deb00c_registry_F19">F19</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_registered"></a>
+
+## Function `is_registered`
+
+Return <code><b>true</b></code> if <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code> is registered, else <code><b>false</b></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(
+    market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Return <b>false</b> <b>if</b> no <a href="registry.md#0xc0deb00c_registry">registry</a> initialized
+    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
+    // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
+    <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
+    // Return <b>if</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="registry.md#0xc0deb00c_registry">registry</a> cointains given <a href="market.md#0xc0deb00c_market">market</a> info
+    <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_registered_types"></a>
+
+## Function `is_registered_types`
+
+Wrapper for <code><a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>()</code>, accepting type arguments
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_types">is_registered_types</a>&lt;B, Q, E&gt;(): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_types">is_registered_types</a>&lt;B, Q, E&gt;():
+bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Pass type argument <a href="market.md#0xc0deb00c_market">market</a> info info
+    <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(<a href="registry.md#0xc0deb00c_registry_market_info">market_info</a>&lt;B, Q, E&gt;())
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_valid_custodian_id"></a>
+
+## Function `is_valid_custodian_id`
+
+Return <code><b>true</b></code> if <code>custodian_id</code> has already been registered
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_valid_custodian_id">is_valid_custodian_id</a>(custodian_id: u64): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_valid_custodian_id">is_valid_custodian_id</a>(
+    custodian_id: u64
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Return <b>false</b> <b>if</b> <a href="registry.md#0xc0deb00c_registry">registry</a> hasn't been initialized
+    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
+    <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a> &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>() // Return <b>if</b> custodian ID valid
 }
 </code></pre>
 
@@ -1398,97 +1489,6 @@ reference
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Return query on accessed field
     <a href="registry.md#0xc0deb00c_registry_scale_factor_from_type_info">scale_factor_from_type_info</a>(market_info.scale_exponent_type)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_registered"></a>
-
-## Function `is_registered`
-
-Return <code><b>true</b></code> if <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a></code> is registered, else <code><b>false</b></code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(
-    market_info: <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
-): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Return <b>false</b> <b>if</b> no <a href="registry.md#0xc0deb00c_registry">registry</a> initialized
-    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
-    // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
-    <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
-    // Return <b>if</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="registry.md#0xc0deb00c_registry">registry</a> cointains given <a href="market.md#0xc0deb00c_market">market</a> info
-    <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_registered_types"></a>
-
-## Function `is_registered_types`
-
-Wrapper for <code><a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>()</code>, accepting type arguments
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_types">is_registered_types</a>&lt;B, Q, E&gt;(): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_types">is_registered_types</a>&lt;B, Q, E&gt;():
-bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Pass type argument <a href="market.md#0xc0deb00c_market">market</a> info info
-    <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(<a href="registry.md#0xc0deb00c_registry_market_info">market_info</a>&lt;B, Q, E&gt;())
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_valid_custodian_id"></a>
-
-## Function `is_valid_custodian_id`
-
-Return <code><b>true</b></code> if <code>custodian_id</code> has already been registered
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_valid_custodian_id">is_valid_custodian_id</a>(custodian_id: u64): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_valid_custodian_id">is_valid_custodian_id</a>(
-    custodian_id: u64
-): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Return <b>false</b> <b>if</b> <a href="registry.md#0xc0deb00c_registry">registry</a> hasn't been initialized
-    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
-    <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a> &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>() // Return <b>if</b> custodian ID valid
 }
 </code></pre>
 

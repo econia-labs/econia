@@ -170,18 +170,6 @@ module econia::registry {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return `true` if `CoinType` is either base or quote coin in
-    /// `market_info`
-    public fun coin_is_in_market_pair<CoinType>(
-        market_info: &MarketInfo
-    ): bool {
-        // Get coin type info
-        let coin_type_info = type_info::type_of<CoinType>();
-        // Return if coin is either base or quote
-        coin_type_info == market_info.base_coin_type ||
-        coin_type_info == market_info.quote_coin_type
-    }
-
     /// Return `true` if `CoinType` is base coin in `market_info`,
     /// `false` if is quote coin, and abort otherwise
     public fun coin_is_base_coin<CoinType>(
@@ -194,6 +182,18 @@ module econia::registry {
         // Return false if quote coin match
         if (coin_type_info ==  market_info.quote_coin_type) return false;
         abort E_NOT_IN_MARKET_PAIR // Else abort
+    }
+
+    /// Return `true` if `CoinType` is either base or quote coin in
+    /// `market_info`
+    public fun coin_is_in_market_pair<CoinType>(
+        market_info: &MarketInfo
+    ): bool {
+        // Get coin type info
+        let coin_type_info = type_info::type_of<CoinType>();
+        // Return if coin is either base or quote
+        coin_type_info == market_info.base_coin_type ||
+        coin_type_info == market_info.quote_coin_type
     }
 
     /// Return serial ID of `CustodianCapability`
@@ -240,6 +240,37 @@ module econia::registry {
         open_table::add(scales, type_info::type_of<E17>(), F17);
         open_table::add(scales, type_info::type_of<E18>(), F18);
         open_table::add(scales, type_info::type_of<E19>(), F19);
+    }
+
+    /// Return `true` if `MarketInfo` is registered, else `false`
+    public fun is_registered(
+        market_info: MarketInfo
+    ): bool
+    acquires Registry {
+        // Return false if no registry initialized
+        if (!exists<Registry>(@econia)) return false;
+        // Borrow mutable reference to registry
+        let registry = borrow_global_mut<Registry>(@econia);
+        // Return if market registry cointains given market info
+        open_table::contains(&registry.markets, market_info)
+    }
+
+    /// Wrapper for `is_registered()`, accepting type arguments
+    public fun is_registered_types<B, Q, E>():
+    bool
+    acquires Registry {
+        // Pass type argument market info info
+        is_registered(market_info<B, Q, E>())
+    }
+
+    /// Return `true` if `custodian_id` has already been registered
+    public fun is_valid_custodian_id(
+        custodian_id: u64
+    ): bool
+    acquires Registry {
+        // Return false if registry hasn't been initialized
+        if (!exists<Registry>(@econia)) return false;
+        custodian_id <= n_custodians() // Return if custodian ID valid
     }
 
     /// Pack provided type arguments into a `MarketInfo` and return
@@ -336,37 +367,6 @@ module econia::registry {
     acquires Registry {
         // Return query on accessed field
         scale_factor_from_type_info(market_info.scale_exponent_type)
-    }
-
-    /// Return `true` if `MarketInfo` is registered, else `false`
-    public fun is_registered(
-        market_info: MarketInfo
-    ): bool
-    acquires Registry {
-        // Return false if no registry initialized
-        if (!exists<Registry>(@econia)) return false;
-        // Borrow mutable reference to registry
-        let registry = borrow_global_mut<Registry>(@econia);
-        // Return if market registry cointains given market info
-        open_table::contains(&registry.markets, market_info)
-    }
-
-    /// Wrapper for `is_registered()`, accepting type arguments
-    public fun is_registered_types<B, Q, E>():
-    bool
-    acquires Registry {
-        // Pass type argument market info info
-        is_registered(market_info<B, Q, E>())
-    }
-
-    /// Return `true` if `custodian_id` has already been registered
-    public fun is_valid_custodian_id(
-        custodian_id: u64
-    ): bool
-    acquires Registry {
-        // Return false if registry hasn't been initialized
-        if (!exists<Registry>(@econia)) return false;
-        custodian_id <= n_custodians() // Return if custodian ID valid
     }
 
     /// Update the number of registered custodians and issue a

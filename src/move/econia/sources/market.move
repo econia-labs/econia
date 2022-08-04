@@ -1127,7 +1127,8 @@ module econia::market {
     ///   quote coins if `style` is `BUY`, else max quote coins that can
     ///   be received in exchange for selling `coins_in` base coins.
     /// * `u64`: Leftover `coins_in`, if not enough depth on book for a
-    ///   complete fill
+    ///   complete fill, or if integer truncation results in being
+    ///   unable to fill an entire base parcel.
     fun simulate_swap_sdk<B, Q, E>(
         order_book_ref_mut: &mut OrderBook<B, Q, E>,
         style: bool,

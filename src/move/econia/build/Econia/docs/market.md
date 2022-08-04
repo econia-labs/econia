@@ -2066,7 +2066,8 @@ coins to sell if style is <code><a href="market.md#0xc0deb00c_market_SELL">SELL<
 quote coins if <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, else max quote coins that can
 be received in exchange for selling <code>coins_in</code> base coins.
 * <code>u64</code>: Leftover <code>coins_in</code>, if not enough depth on book for a
-complete fill
+complete fill, or if integer truncation results in being
+unable to fill an entire base parcel.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_simulate_swap_sdk">simulate_swap_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&lt;B, Q, E&gt;, style: bool, coins_in: u64): (u64, u64)

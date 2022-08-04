@@ -1114,6 +1114,94 @@ module econia::market {
         price_levels // Return sorted vector of price levels
     }
 
+    /// Calculate expected result of swap against an `OrderBook`.
+    ///
+    /// # Parameters
+    /// * `order_book_ref_mut`: Mutable reference to an `OrderBook`
+    /// * `style`: `BUY` or `SELL`
+    /// * `coins_in`: Quote coins to spend if style is `BUY`, and base
+    ///   coins to sell if style is `SELL`
+    ///
+    /// # Returns
+    /// * `u64`: Max base coins that can be purchased with `coins_in`
+    ///   quote coins if `style` is `BUY`, else max quote coins that can
+    ///   be received in exchange for selling `coins_in` base coins.
+    /// * `u64`: Leftover `coins_in`, if not enough depth on book for a
+    ///   complete fill
+    fun simulate_swap_sdk<B, Q, E>(
+        order_book_ref_mut: &mut OrderBook<B, Q, E>,
+        style: bool,
+        coins_in: u64
+    ): (
+        u64,
+        u64
+    ) {
+        // If a swap buy, fills against asks, else bids
+        let (side) = if (style == BUY) ASK else BID;
+        // Get orders sorted by price-time priority
+        let simple_orders = get_orders_sdk<B, Q, E>(order_book_ref_mut, side);
+        // If no orders on book, return that 0 swaps made
+        if (vector::is_empty(&simple_orders)) return (0, coins_in);
+        // Get order book scale factor
+        let scale_factor = order_book_ref_mut.scale_factor;
+        // Initialize counter for in coins left, out coins received,
+        // counter for vector loop index, and number of orders
+        let (coins_in_left, coins_out, simple_order_index, n_orders) =
+            (coins_in, 0, 0, vector::length(&simple_orders));
+        loop { // Loop over all orders
+            // Borrow immutable reference to order for current iteration
+            let simple_order =
+                vector::borrow(&simple_orders, simple_order_index);
+            // Declare variables for base parcels filled, and if should
+            // return after current iteration
+            let (base_parcels_filled, should_return);
+            // Set base parcels filled multipliers based on style
+            let (coins_in_multiplier, coins_out_multiplier) =
+                // If sell, get base coins and expend quote coins
+                if (style == SELL) (scale_factor, simple_order.price) else
+                    // If buy, get quote coins and expend base coins
+                    (simple_order.price, scale_factor);
+            if (style == SELL) { // If selling base coins
+                // Calculate base parcels swap seller has
+                let base_parcels_on_hand = coins_in_left / scale_factor;
+                // Caculate base parcels filled against order and if
+                // should return after current loop iteration
+                (base_parcels_filled, should_return) =
+                    // If more than enough base parcels on hand for a
+                    // complete fill against the target bid
+                    if (base_parcels_on_hand > simple_order.base_parcels)
+                    // Complete fill, so continue
+                    (simple_order.base_parcels, false) else
+                    // Fills all parcels on hand, so return
+                    (base_parcels_on_hand, true);
+            } else { // If buying base coins
+                // Calculate number of base parcels user can afford at
+                // order price
+                let base_parcels_can_afford =
+                    coins_in_left / simple_order.price;
+                // Caculate base parcels filled against order and if
+                // should return after current loop iteration
+                (base_parcels_filled, should_return) =
+                    // If cannot afford to buy all base parcels in order
+                    if (simple_order.base_parcels > base_parcels_can_afford)
+                    // Only fills base parcels can afford, so return
+                    (base_parcels_can_afford, true) else
+                    // Fills all base parcels in order, so continue
+                    (simple_order.base_parcels, false);
+            };
+            // Decrement coins in by base parcels times multiplier
+            coins_in_left = coins_in_left -
+                base_parcels_filled * coins_in_multiplier;
+            // Increment coins out by base parcels times multiplier
+            coins_out = coins_out + base_parcels_filled * coins_out_multiplier;
+            // Increment loop counter
+            simple_order_index = simple_order_index + 1;
+            // If done looping, return coins out and coins in left
+            if (should_return || simple_order_index == n_orders)
+                return (coins_out, coins_in_left)
+        }
+    }
+
     // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -3101,6 +3189,125 @@ module econia::market {
         coins::burn(base_coins); coins::burn(quote_coins);
     }
 
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
+    /// Verify expected returns for simulated swap buys
+    fun test_simulate_swap_sdk_buy(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let (style, side) = (BUY, ASK); // Define buying against asks
+        // Initialize test market
+        init_market_test(side, econia, user_0, user_1, user_2, user_3);
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            borrow_global_mut<OrderBook<BC, QC, E1>>(@econia);
+        let quote_coin_surplus = 1; // Declare surplus quote coins
+        // Calculate quote coins required to fill book
+        let quote_coins_required =
+            (USER_1_ASK_SIZE * USER_1_ASK_PRICE) +
+            (USER_2_ASK_SIZE * USER_2_ASK_PRICE) +
+            (USER_3_ASK_SIZE * USER_3_ASK_PRICE);
+        // Calculate base coins received
+        let base_coins_received = SCALE_FACTOR *
+            (USER_1_ASK_SIZE + USER_2_ASK_SIZE + USER_3_ASK_SIZE);
+        // Calculate coins in for filling all orders
+        let coins_in = quote_coins_required + quote_coin_surplus;
+        // Simulate a swap
+        let (coins_out, coins_in_left) =
+            simulate_swap_sdk<BC, QC, E1>(order_book_ref_mut, style, coins_in);
+        // Assert expected returns
+        assert!(coins_out == base_coins_received, 0);
+        assert!(coins_in_left == quote_coin_surplus, 0);
+        // Set coins in to not enough quote coins for buying even one
+        // base parcel off of the first order
+        coins_in = USER_1_ASK_PRICE - 1;
+        // Simulate a swap
+        (coins_out, coins_in_left) =
+            simulate_swap_sdk<BC, QC, E1>(order_book_ref_mut, style, coins_in);
+        // Assert expected returns
+        assert!(coins_out == 0, 0);
+        assert!(coins_in_left == coins_in, 0);
+        // Simulate a swap for no coins in
+        (coins_out, coins_in_left) =
+            simulate_swap_sdk<BC, QC, E1>(order_book_ref_mut, style, 0);
+        // Assert expected returns
+        assert!(coins_out == 0, 0);
+        assert!(coins_in_left == 0, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3
+    )]
+    /// Verify expected returns for simulated swap sells
+    fun test_simulate_swap_sdk_sell(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires EconiaCapabilityStore, OrderBook {
+        let (style, side) = (SELL, BID); // Define selling against bids
+        // Initialize test market
+        init_market_test(side, econia, user_0, user_1, user_2, user_3);
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            borrow_global_mut<OrderBook<BC, QC, E1>>(@econia);
+        // Calculate base coins required to exactly fill book
+        let coins_in = SCALE_FACTOR *
+            (USER_1_BID_SIZE + USER_2_BID_SIZE + USER_3_BID_SIZE);
+        // Calculate quote coins received
+        let coins_out_expected =
+            (USER_1_BID_SIZE * USER_1_BID_PRICE) +
+            (USER_2_BID_SIZE * USER_2_BID_PRICE) +
+            (USER_3_BID_SIZE * USER_3_BID_PRICE);
+        // Simulate a swap
+        let (coins_out, coins_in_left) =
+            simulate_swap_sdk<BC, QC, E1>(order_book_ref_mut, style, coins_in);
+        // Assert expected returns
+        assert!(coins_out == coins_out_expected, 0);
+        assert!(coins_in_left == 0, 0);
+        // Calculate new coins in as just 1 less than old coins in
+        coins_in = coins_in - 1;
+        // Calculate base parcels filled against user 3
+        let base_parcels_filled_against_3 = (coins_in -
+            SCALE_FACTOR * (USER_1_BID_SIZE + USER_2_BID_SIZE)) /
+                SCALE_FACTOR;
+        // Calculate number of base parcels filled
+        let base_parcels_filled = (USER_1_BID_SIZE + USER_2_BID_SIZE +
+            base_parcels_filled_against_3);
+        // Calculate surplus base coins
+        let surplus_base_coins = coins_in - base_parcels_filled * SCALE_FACTOR;
+        // Simulate a swap
+        // Calculate quote coins recieved
+        coins_out_expected =
+            (USER_1_BID_SIZE * USER_1_BID_PRICE) +
+            (USER_2_BID_SIZE * USER_2_BID_PRICE) +
+            (base_parcels_filled_against_3 * USER_3_BID_PRICE);
+        (coins_out, coins_in_left) =
+            simulate_swap_sdk<BC, QC, E1>(order_book_ref_mut, style, coins_in);
+        // Assert expected returns
+        assert!(coins_out == coins_out_expected, 0);
+        assert!(coins_in_left == surplus_base_coins, 0);
+        // Simulate a swap for no coins in
+        (coins_out, coins_in_left) =
+            simulate_swap_sdk<BC, QC, E1>(order_book_ref_mut, style, 0);
+        // Assert expected returns
+        assert!(coins_out == 0, 0);
+        assert!(coins_in_left == 0, 0);
+    }
 
     #[test(
         econia = @econia,

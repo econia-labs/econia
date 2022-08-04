@@ -63,6 +63,9 @@ places a market order against the book.
     -  [Returns](#@Returns_21)
 -  [Function `get_orders_sdk`](#0xc0deb00c_market_get_orders_sdk)
 -  [Function `get_price_levels_sdk`](#0xc0deb00c_market_get_price_levels_sdk)
+-  [Function `simulate_swap_sdk`](#0xc0deb00c_market_simulate_swap_sdk)
+    -  [Parameters](#@Parameters_22)
+    -  [Returns](#@Returns_23)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -2031,6 +2034,122 @@ Index output of <code><a href="market.md#0xc0deb00c_market_get_orders_sdk">get_o
     <a href="_push_back">vector::push_back</a>(&<b>mut</b> price_levels, <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>{
         price: level_price, base_parcels: level_base_parcels});
     price_levels // Return sorted <a href="">vector</a> of price levels
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_simulate_swap_sdk"></a>
+
+## Function `simulate_swap_sdk`
+
+Calculate expected result of swap against an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>.
+
+
+<a name="@Parameters_22"></a>
+
+### Parameters
+
+* <code>order_book_ref_mut</code>: Mutable reference to an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
+* <code>style</code>: <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
+* <code>coins_in</code>: Quote coins to spend if style is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, and base
+coins to sell if style is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
+
+
+<a name="@Returns_23"></a>
+
+### Returns
+
+* <code>u64</code>: Max base coins that can be purchased with <code>coins_in</code>
+quote coins if <code>style</code> is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, else max quote coins that can
+be received in exchange for selling <code>coins_in</code> base coins.
+* <code>u64</code>: Leftover <code>coins_in</code>, if not enough depth on book for a
+complete fill
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_simulate_swap_sdk">simulate_swap_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&lt;B, Q, E&gt;, style: bool, coins_in: u64): (u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_simulate_swap_sdk">simulate_swap_sdk</a>&lt;B, Q, E&gt;(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;,
+    style: bool,
+    coins_in: u64
+): (
+    u64,
+    u64
+) {
+    // If a swap buy, fills against asks, <b>else</b> bids
+    <b>let</b> (side) = <b>if</b> (style == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) <a href="market.md#0xc0deb00c_market_ASK">ASK</a> <b>else</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>;
+    // Get orders sorted by price-time priority
+    <b>let</b> simple_orders = <a href="market.md#0xc0deb00c_market_get_orders_sdk">get_orders_sdk</a>&lt;B, Q, E&gt;(order_book_ref_mut, side);
+    // If no orders on book, <b>return</b> that 0 swaps made
+    <b>if</b> (<a href="_is_empty">vector::is_empty</a>(&simple_orders)) <b>return</b> (0, coins_in);
+    // Get order book scale factor
+    <b>let</b> scale_factor = order_book_ref_mut.scale_factor;
+    // Initialize counter for in <a href="coins.md#0xc0deb00c_coins">coins</a> left, out <a href="coins.md#0xc0deb00c_coins">coins</a> received,
+    // counter for <a href="">vector</a> <b>loop</b> index, and number of orders
+    <b>let</b> (coins_in_left, coins_out, simple_order_index, n_orders) =
+        (coins_in, 0, 0, <a href="_length">vector::length</a>(&simple_orders));
+    <b>loop</b> { // Loop over all orders
+        // Borrow immutable reference <b>to</b> order for current iteration
+        <b>let</b> simple_order =
+            <a href="_borrow">vector::borrow</a>(&simple_orders, simple_order_index);
+        // Declare variables for base parcels filled, and <b>if</b> should
+        // <b>return</b> after current iteration
+        <b>let</b> (base_parcels_filled, should_return);
+        // Set base parcels filled multipliers based on style
+        <b>let</b> (coins_in_multiplier, coins_out_multiplier) =
+            // If sell, get base <a href="coins.md#0xc0deb00c_coins">coins</a> and expend quote <a href="coins.md#0xc0deb00c_coins">coins</a>
+            <b>if</b> (style == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) (scale_factor, simple_order.price) <b>else</b>
+                // If buy, get quote <a href="coins.md#0xc0deb00c_coins">coins</a> and expend base <a href="coins.md#0xc0deb00c_coins">coins</a>
+                (simple_order.price, scale_factor);
+        <b>if</b> (style == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) { // If selling base <a href="coins.md#0xc0deb00c_coins">coins</a>
+            // Calculate base parcels swap seller <b>has</b>
+            <b>let</b> base_parcels_on_hand = coins_in_left / scale_factor;
+            // Caculate base parcels filled against order and <b>if</b>
+            // should <b>return</b> after current <b>loop</b> iteration
+            (base_parcels_filled, should_return) =
+                // If more than enough base parcels on hand for a
+                // complete fill against the target bid
+                <b>if</b> (base_parcels_on_hand &gt; simple_order.base_parcels)
+                // Complete fill, so <b>continue</b>
+                (simple_order.base_parcels, <b>false</b>) <b>else</b>
+                // Fills all parcels on hand, so <b>return</b>
+                (base_parcels_on_hand, <b>true</b>);
+        } <b>else</b> { // If buying base <a href="coins.md#0xc0deb00c_coins">coins</a>
+            // Calculate number of base parcels <a href="user.md#0xc0deb00c_user">user</a> can afford at
+            // order price
+            <b>let</b> base_parcels_can_afford =
+                coins_in_left / simple_order.price;
+            // Caculate base parcels filled against order and <b>if</b>
+            // should <b>return</b> after current <b>loop</b> iteration
+            (base_parcels_filled, should_return) =
+                // If cannot afford <b>to</b> buy all base parcels in order
+                <b>if</b> (simple_order.base_parcels &gt; base_parcels_can_afford)
+                // Only fills base parcels can afford, so <b>return</b>
+                (base_parcels_can_afford, <b>true</b>) <b>else</b>
+                // Fills all base parcels in order, so <b>continue</b>
+                (simple_order.base_parcels, <b>false</b>);
+        };
+        // Decrement <a href="coins.md#0xc0deb00c_coins">coins</a> in by base parcels times multiplier
+        coins_in_left = coins_in_left -
+            base_parcels_filled * coins_in_multiplier;
+        // Increment <a href="coins.md#0xc0deb00c_coins">coins</a> out by base parcels times multiplier
+        coins_out = coins_out + base_parcels_filled * coins_out_multiplier;
+        // Increment <b>loop</b> counter
+        simple_order_index = simple_order_index + 1;
+        // If done looping, <b>return</b> <a href="coins.md#0xc0deb00c_coins">coins</a> out and <a href="coins.md#0xc0deb00c_coins">coins</a> in left
+        <b>if</b> (should_return || simple_order_index == n_orders)
+            <b>return</b> (coins_out, coins_in_left)
+    }
 }
 </code></pre>
 

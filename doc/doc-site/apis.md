@@ -26,6 +26,7 @@
   - [SDK hooks](#sdk-hooks)
       - [Book orders](#book-orders)
       - [Book price levels](#book-price-levels)
+    - [Swap simulator](#swap-simulator)
   - [TypeScript SDK](#typescript-sdk)
 
 ## Core initialization
@@ -114,6 +115,10 @@ The following private functions provide transpilation hooks for SDK generation:
 #### Book price levels
 
 [`econia::market::book_price_levels_sdk`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_price_levels_sdk) indexes an order book into a vector price levels
+
+### Swap simulator
+
+[`econia::market::simulate_swap_sdk`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_simulate_swap_sdk) simulates a swap, calculating the number of coins received after the trade, as well as any leftovers if applicable.
 
 ## TypeScript SDK
 

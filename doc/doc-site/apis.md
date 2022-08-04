@@ -24,8 +24,8 @@
         - [As a custodian](#as-a-custodian-3)
     - [Swaps](#swaps)
   - [SDK hooks](#sdk-hooks)
-      - [Book orders](#book-orders)
-      - [Book price levels](#book-price-levels)
+    - [Book orders](#book-orders)
+    - [Book price levels](#book-price-levels)
     - [Swap simulator](#swap-simulator)
   - [TypeScript SDK](#typescript-sdk)
 
@@ -108,11 +108,11 @@ Don't forget to first read the [design overview](https://econia.dev/design-overv
 
 The following private functions provide transpilation hooks for SDK generation:
 
-#### Book orders
+### Book orders
 
 [`econia::market::book_orders_sdk`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_book_orders_sdk) indexes an order book into a vector of orders
 
-#### Book price levels
+### Book price levels
 
 [`econia::market::book_price_levels_sdk`](../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_price_levels_sdk) indexes an order book into a vector price levels
 

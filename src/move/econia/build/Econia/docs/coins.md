@@ -213,18 +213,18 @@ Quote coin symbol
 
 ## Function `burn`
 
-Burn <code><a href="coins.md#0xc0deb00c_coins">coins</a></code>
+Burn <code><a href="">coins</a></code>
 
 
 <a name="@Assumes_1"></a>
 
 ### Assumes
 
-* That since <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> exist in the first place, that
+* That since <code><a href="">coins</a></code> exist in the first place, that
 <code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a></code> must exist in the Econia account
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(<a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(<a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
 </code></pre>
 
 
@@ -234,12 +234,12 @@ Burn <code><a href="coins.md#0xc0deb00c_coins">coins</a></code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(
-    <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+    <a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 ) <b>acquires</b> <a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a> {
     // Borrow immutable reference <b>to</b> burn <a href="capability.md#0xc0deb00c_capability">capability</a>
     <b>let</b> burn_capability = &<b>borrow_global</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
             @econia).burn_capability;
-    <a href="_burn">coin::burn</a>&lt;CoinType&gt;(<a href="coins.md#0xc0deb00c_coins">coins</a>, burn_capability); // Burn <a href="coins.md#0xc0deb00c_coins">coins</a>
+    <a href="_burn">coin::burn</a>&lt;CoinType&gt;(<a href="">coins</a>, burn_capability); // Burn <a href="">coins</a>
 }
 </code></pre>
 
@@ -254,7 +254,7 @@ Burn <code><a href="coins.md#0xc0deb00c_coins">coins</a></code>
 Initialize mock base and quote coin types under Econia account
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_types">init_coin_types</a>(account: &<a href="">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_types">init_coin_types</a>(<a href="">account</a>: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -264,11 +264,11 @@ Initialize mock base and quote coin types under Econia account
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_types">init_coin_types</a>(
-    account: &<a href="">signer</a>
+    <a href="">account</a>: &<a href="">signer</a>
 ) {
-    <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;<a href="coins.md#0xc0deb00c_coins_BC">BC</a>&gt;(account, <a href="coins.md#0xc0deb00c_coins_BASE_COIN_NAME">BASE_COIN_NAME</a>, <a href="coins.md#0xc0deb00c_coins_BASE_COIN_SYMBOL">BASE_COIN_SYMBOL</a>,
+    <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;<a href="coins.md#0xc0deb00c_coins_BC">BC</a>&gt;(<a href="">account</a>, <a href="coins.md#0xc0deb00c_coins_BASE_COIN_NAME">BASE_COIN_NAME</a>, <a href="coins.md#0xc0deb00c_coins_BASE_COIN_SYMBOL">BASE_COIN_SYMBOL</a>,
         <a href="coins.md#0xc0deb00c_coins_BASE_COIN_DECIMALS">BASE_COIN_DECIMALS</a>); // Initialize mock base <a href="">coin</a>
-    <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;<a href="coins.md#0xc0deb00c_coins_QC">QC</a>&gt;(account, <a href="coins.md#0xc0deb00c_coins_QUOTE_COIN_NAME">QUOTE_COIN_NAME</a>, <a href="coins.md#0xc0deb00c_coins_QUOTE_COIN_SYMBOL">QUOTE_COIN_SYMBOL</a>,
+    <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;<a href="coins.md#0xc0deb00c_coins_QC">QC</a>&gt;(<a href="">account</a>, <a href="coins.md#0xc0deb00c_coins_QUOTE_COIN_NAME">QUOTE_COIN_NAME</a>, <a href="coins.md#0xc0deb00c_coins_QUOTE_COIN_SYMBOL">QUOTE_COIN_SYMBOL</a>,
         <a href="coins.md#0xc0deb00c_coins_QUOTE_COIN_DECIMALS">QUOTE_COIN_DECIMALS</a>); // Initialize mock quote <a href="">coin</a>
 }
 </code></pre>
@@ -285,7 +285,7 @@ Mint new <code>amount</code> of <code>CoinType</code>, aborting if not called by
 Econia account or if <code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a></code> uninitialized
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_mint">mint</a>&lt;CoinType&gt;(account: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_mint">mint</a>&lt;CoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 </code></pre>
 
 
@@ -295,12 +295,12 @@ Econia account or if <code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="coins.md#0xc0deb00c_coins_mint">mint</a>&lt;CoinType&gt;(
-    account: &<a href="">signer</a>,
+    <a href="">account</a>: &<a href="">signer</a>,
     amount: u64
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 <b>acquires</b> <a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a> {
-    // Get account <b>address</b>
-    <b>let</b> account_address = address_of(account);
+    // Get <a href="">account</a> <b>address</b>
+    <b>let</b> account_address = address_of(<a href="">account</a>);
     // Assert caller is Econia
     <b>assert</b>!(account_address == @econia, <a href="coins.md#0xc0deb00c_coins_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <b>assert</b>!(<b>exists</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(account_address),
@@ -324,7 +324,7 @@ Econia account or if <code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">
 Initialize given coin type under Econia account
 
 
-<pre><code><b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;CoinType&gt;(account: &<a href="">signer</a>, coin_name: <a href="">vector</a>&lt;u8&gt;, coin_symbol: <a href="">vector</a>&lt;u8&gt;, decimals: u64)
+<pre><code><b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;CoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, coin_name: <a href="">vector</a>&lt;u8&gt;, coin_symbol: <a href="">vector</a>&lt;u8&gt;, decimals: u64)
 </code></pre>
 
 
@@ -334,21 +334,21 @@ Initialize given coin type under Econia account
 
 
 <pre><code><b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;CoinType&gt;(
-    account: &<a href="">signer</a>,
+    <a href="">account</a>: &<a href="">signer</a>,
     coin_name: <a href="">vector</a>&lt;u8&gt;,
     coin_symbol: <a href="">vector</a>&lt;u8&gt;,
     decimals: u64,
 ) {
     // Assert caller is Econia
-    <b>assert</b>!(address_of(account) == @econia, <a href="coins.md#0xc0deb00c_coins_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="coins.md#0xc0deb00c_coins_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     // Assert Econia does not already have <a href="">coin</a> capabilities stored
     <b>assert</b>!(!<b>exists</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(@econia),
         <a href="coins.md#0xc0deb00c_coins_E_HAS_CAPABILITIES">E_HAS_CAPABILITIES</a>);
     // Initialize <a href="">coin</a>, storing capabilities
     <b>let</b> (mint_capability, burn_capability) = <a href="_initialize">coin::initialize</a>&lt;CoinType&gt;(
-        account, utf8(coin_name), utf8(coin_symbol), decimals, <b>false</b>);
-    // Store capabilities under Econia account
-    <b>move_to</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(account,
+        <a href="">account</a>, utf8(coin_name), utf8(coin_symbol), decimals, <b>false</b>);
+    // Store capabilities under Econia <a href="">account</a>
+    <b>move_to</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(<a href="">account</a>,
         <a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;{mint_capability, burn_capability});
 }
 </code></pre>

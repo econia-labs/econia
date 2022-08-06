@@ -82,8 +82,6 @@ module econia::open_table {
     fun test_basic():
     OpenTable<u8, u8> {
         let open_table = empty();
-        // Assert base table is empty
-        assert!(table::empty(&open_table.base_table), 0);
         // Assert keys list is empty
         assert!(vector::is_empty(&open_table.keys), 0);
         // Assert membership check returns

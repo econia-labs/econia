@@ -53,7 +53,7 @@ See `ss.sh` within a given directory for its available options
 1. Then install the `aptos` CLI:
 
     ```zsh
-    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
+    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos --branch devnet
     ```
 
 1. Now you should be able to run all Move tests:

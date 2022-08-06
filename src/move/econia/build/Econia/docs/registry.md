@@ -1133,7 +1133,7 @@ Return serial ID of <code><a href="registry.md#0xc0deb00c_registry_CustodianCapa
 Move empty registry to the Econia account, then add scale map
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(account: &<a href="">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(<a href="">account</a>: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -1143,14 +1143,14 @@ Move empty registry to the Econia account, then add scale map
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(
-    account: &<a href="">signer</a>,
+    <a href="">account</a>: &<a href="">signer</a>,
 ) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Assert caller is Econia account
-    <b>assert</b>!(address_of(account) == @econia, <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> does not already exist at Econia account
+    // Assert caller is Econia <a href="">account</a>
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> does not already exist at Econia <a href="">account</a>
     <b>assert</b>!(!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
     // Move an empty <a href="registry.md#0xc0deb00c_registry">registry</a> <b>to</b> the Econia Account
-    <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(account, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
+    <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(<a href="">account</a>, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
         scales: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>(),
         markets: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>(),
         n_custodians: 0
@@ -1450,7 +1450,7 @@ aborting if registry not initialized or if an invalid type
     scale_exponent_type_info: <a href="_TypeInfo">type_info::TypeInfo</a>
 ): u64
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> initialized under Econia account
+    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> initialized under Econia <a href="">account</a>
     <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
     // Borrow immutable reference <b>to</b> scales <a href="">table</a>
     <b>let</b> scales = &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).scales;

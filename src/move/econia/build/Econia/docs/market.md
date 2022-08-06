@@ -556,7 +556,7 @@ Initializes an <code><a href="market.md#0xc0deb00c_market_EconiaCapabilityStore"
 exists under the Econia account or if caller is not Econia
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_init_econia_capability_store">init_econia_capability_store</a>(account: &<a href="">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_init_econia_capability_store">init_econia_capability_store</a>(<a href="">account</a>: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -566,17 +566,17 @@ exists under the Econia account or if caller is not Econia
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_init_econia_capability_store">init_econia_capability_store</a>(
-    account: &<a href="">signer</a>
+    <a href="">account</a>: &<a href="">signer</a>
 ) {
-    // Assert caller is Econia account
-    <b>assert</b>!(address_of(account) == @econia, <a href="market.md#0xc0deb00c_market_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Assert caller is Econia <a href="">account</a>
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="market.md#0xc0deb00c_market_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     // Assert <a href="capability.md#0xc0deb00c_capability">capability</a> store not already registered
     <b>assert</b>!(!<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(@econia),
         <a href="market.md#0xc0deb00c_market_E_ECONIA_CAPABILITY_STORE_EXISTS">E_ECONIA_CAPABILITY_STORE_EXISTS</a>);
     // Get new <a href="capability.md#0xc0deb00c_capability">capability</a> instance (aborts <b>if</b> caller is not Econia)
-    <b>let</b> econia_capability = <a href="capability.md#0xc0deb00c_capability_get_econia_capability">capability::get_econia_capability</a>(account);
-    <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(account, <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>{
-        econia_capability}); // Move <b>to</b> account <a href="capability.md#0xc0deb00c_capability">capability</a> store
+    <b>let</b> econia_capability = <a href="capability.md#0xc0deb00c_capability_get_econia_capability">capability::get_econia_capability</a>(<a href="">account</a>);
+    <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>&gt;(<a href="">account</a>, <a href="market.md#0xc0deb00c_market_EconiaCapabilityStore">EconiaCapabilityStore</a>{
+        econia_capability}); // Move <b>to</b> <a href="">account</a> <a href="capability.md#0xc0deb00c_capability">capability</a> store
 }
 </code></pre>
 
@@ -683,11 +683,11 @@ but <code>base_coins_ref_mut</code> does (amount of base coins to sell)
     // Compute max number of base <a href="">coin</a> parcels/quote <a href="">coin</a> units <b>to</b>
     // fill, based on side
     <b>let</b> (max_base_parcels, max_quote_units) = <b>if</b> (style == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
-        // If <a href="market.md#0xc0deb00c_market">market</a> buy, limiting factor is quote <a href="coins.md#0xc0deb00c_coins">coins</a>, so set
+        // If <a href="market.md#0xc0deb00c_market">market</a> buy, limiting factor is quote <a href="">coins</a>, so set
         // max base parcels <b>to</b> biggest value that can fit in u64
         (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>, <a href="_value">coin::value</a>(quote_coins_ref_mut)) <b>else</b>
         // If a <a href="market.md#0xc0deb00c_market">market</a> sell, max base parcels that can be filled is
-        // number of base <a href="coins.md#0xc0deb00c_coins">coins</a> divided by scale factor (truncating
+        // number of base <a href="">coins</a> divided by scale factor (truncating
         // division) and quote <a href="">coin</a> argument <b>has</b> no impact on
         // matching engine
         (<a href="_value">coin::value</a>(base_coins_ref_mut) / scale_factor, 0);
@@ -794,7 +794,7 @@ scale exponent type, and move an <code><a href="market.md#0xc0deb00c_market_Orde
     // Add an entry <b>to</b> the <a href="market.md#0xc0deb00c_market">market</a> <a href="registry.md#0xc0deb00c_registry">registry</a> <a href="">table</a>
     <a href="registry.md#0xc0deb00c_registry_register_market_internal">registry::register_market_internal</a>&lt;B, Q, E&gt;(address_of(host),
         &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
-    // Initialize an order book under host account
+    // Initialize an order book under host <a href="">account</a>
     <a href="market.md#0xc0deb00c_market_init_book">init_book</a>&lt;B, Q, E&gt;(host, <a href="registry.md#0xc0deb00c_registry_scale_factor">registry::scale_factor</a>&lt;E&gt;());
 }
 </code></pre>
@@ -917,7 +917,7 @@ with the corresponding <code><a href="order_id.md#0xc0deb00c_order_id">order_id<
             // Else <b>to</b> the maximum bid on the book
             <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a> <b>else</b> <a href="critbit.md#0xc0deb00c_critbit_max_key">critbit::max_key</a>(tree_ref_mut);
     };
-    // Remove order from corresponding <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account
+    // Remove order from corresponding <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <a href="user.md#0xc0deb00c_user_remove_order_internal">user::remove_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, side,
         <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
 }
@@ -1186,7 +1186,7 @@ at market prices.
     <b>let</b> order_book_ref_mut = <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host);
     // Get scale factor for book
     <b>let</b> scale_factor = order_book_ref_mut.scale_factor;
-    <b>let</b> market_account_info = // Get <a href="market.md#0xc0deb00c_market">market</a> account info for order
+    <b>let</b> market_account_info = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info for order
         <a href="user.md#0xc0deb00c_user_market_account_info">user::market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
     // Get an Econia <a href="capability.md#0xc0deb00c_capability">capability</a>
     <b>let</b> econia_capability = <a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>();
@@ -1196,18 +1196,18 @@ at market prices.
         <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">user::withdraw_collateral_internal</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info,
             max_quote_units, &econia_capability),
     ) <b>else</b> ( // If a <a href="market.md#0xc0deb00c_market">market</a> sell
-        // Requires base <a href="coins.md#0xc0deb00c_coins">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>
+        // Requires base <a href="">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>
         <a href="user.md#0xc0deb00c_user_withdraw_collateral_internal">user::withdraw_collateral_internal</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info,
             max_base_parcels * scale_factor, &econia_capability),
-        <a href="_zero">coin::zero</a>&lt;Q&gt;(), // Does not require quote <a href="coins.md#0xc0deb00c_coins">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>
+        <a href="_zero">coin::zero</a>&lt;Q&gt;(), // Does not require quote <a href="">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>
     );
     // Fill <a href="market.md#0xc0deb00c_market">market</a> order against the book
     <a href="market.md#0xc0deb00c_market_fill_market_order">fill_market_order</a>&lt;B, Q, E&gt;(order_book_ref_mut, scale_factor, style,
         max_base_parcels, max_quote_units, &<b>mut</b> base_coins,
         &<b>mut</b> quote_coins, &econia_capability);
-    // Deposit base <a href="coins.md#0xc0deb00c_coins">coins</a> <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s collateral
+    // Deposit base <a href="">coins</a> <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s collateral
     <a href="user.md#0xc0deb00c_user_deposit_collateral">user::deposit_collateral</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, base_coins);
-    // Deposit quote <a href="coins.md#0xc0deb00c_coins">coins</a> <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s collateral
+    // Deposit quote <a href="">coins</a> <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s collateral
     <a href="user.md#0xc0deb00c_user_deposit_collateral">user::deposit_collateral</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, quote_coins);
 }
 </code></pre>
@@ -1282,7 +1282,7 @@ against
         &<b>mut</b> order_book_ref_mut.min_ask, // Asks spread maker
         <a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a> // Successor iteration
     ) <b>else</b> ( // If a <a href="market.md#0xc0deb00c_market">market</a> sell
-        <a href="market.md#0xc0deb00c_market_BID">BID</a>, // Fills against bids, <b>requires</b> base <a href="coins.md#0xc0deb00c_coins">coins</a>
+        <a href="market.md#0xc0deb00c_market_BID">BID</a>, // Fills against bids, <b>requires</b> base <a href="">coins</a>
         &<b>mut</b> order_book_ref_mut.bids, // Fill against bids tree
         &<b>mut</b> order_book_ref_mut.max_bid, // Bids spread maker
         <a href="market.md#0xc0deb00c_market_LEFT">LEFT</a> // Predecessor iteration
@@ -1512,7 +1512,7 @@ quote coins
     // Decrement counter for number of base parcels <b>to</b> fill
     *base_parcels_to_fill_ref_mut = *base_parcels_to_fill_ref_mut -
         base_parcels_filled;
-    // Calculate base and quote <a href="coins.md#0xc0deb00c_coins">coins</a> routed for the fill
+    // Calculate base and quote <a href="">coins</a> routed for the fill
     <b>let</b> base_to_route = base_parcels_filled * scale_factor;
     <b>let</b> quote_to_route = base_parcels_filled * target_price;
     // Fill the target <a href="user.md#0xc0deb00c_user">user</a>'s order
@@ -1719,7 +1719,7 @@ account, aborting if one already exists
     host: &<a href="">signer</a>,
     scale_factor: u64,
 ) {
-    // Assert book does not already exist under host account
+    // Assert book does not already exist under host <a href="">account</a>
     <b>assert</b>!(!<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(address_of(host)), <a href="market.md#0xc0deb00c_market_E_BOOK_EXISTS">E_BOOK_EXISTS</a>);
     // Move <b>to</b> host a newly-packed order book
     <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>{
@@ -1798,7 +1798,7 @@ counter that increases when queried (via <code>get_serial_id</code>)
     <b>let</b> order_book_ref_mut = <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>&lt;B, Q, E&gt;&gt;(host);
     <b>let</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a> = // Get order ID based on new book serial ID/side
         <a href="order_id.md#0xc0deb00c_order_id_order_id">order_id::order_id</a>(price, <a href="market.md#0xc0deb00c_market_get_serial_id">get_serial_id</a>(order_book_ref_mut), side);
-    // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> account (performs extensive <a href="">error</a>
+    // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> (performs extensive <a href="">error</a>
     // checking)
     <a href="user.md#0xc0deb00c_user_add_order_internal">user::add_order_internal</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>, custodian_id, side, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
         base_parcels, price, &<a href="market.md#0xc0deb00c_market_get_econia_capability">get_econia_capability</a>());
@@ -2095,7 +2095,7 @@ unable to fill an entire base parcel.
     <b>if</b> (<a href="_is_empty">vector::is_empty</a>(&simple_orders)) <b>return</b> (0, coins_in);
     // Get order book scale factor
     <b>let</b> scale_factor = order_book_ref_mut.scale_factor;
-    // Initialize counter for in <a href="coins.md#0xc0deb00c_coins">coins</a> left, out <a href="coins.md#0xc0deb00c_coins">coins</a> received,
+    // Initialize counter for in <a href="">coins</a> left, out <a href="">coins</a> received,
     // counter for <a href="">vector</a> <b>loop</b> index, and number of orders
     <b>let</b> (coins_in_left, coins_out, simple_order_index, n_orders) =
         (coins_in, 0, 0, <a href="_length">vector::length</a>(&simple_orders));
@@ -2108,11 +2108,11 @@ unable to fill an entire base parcel.
         <b>let</b> (base_parcels_filled, should_return);
         // Set base parcels filled multipliers based on style
         <b>let</b> (coins_in_multiplier, coins_out_multiplier) =
-            // If sell, get base <a href="coins.md#0xc0deb00c_coins">coins</a> and expend quote <a href="coins.md#0xc0deb00c_coins">coins</a>
+            // If sell, get base <a href="">coins</a> and expend quote <a href="">coins</a>
             <b>if</b> (style == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) (scale_factor, simple_order.price) <b>else</b>
-                // If buy, get quote <a href="coins.md#0xc0deb00c_coins">coins</a> and expend base <a href="coins.md#0xc0deb00c_coins">coins</a>
+                // If buy, get quote <a href="">coins</a> and expend base <a href="">coins</a>
                 (simple_order.price, scale_factor);
-        <b>if</b> (style == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) { // If selling base <a href="coins.md#0xc0deb00c_coins">coins</a>
+        <b>if</b> (style == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>) { // If selling base <a href="">coins</a>
             // Calculate base parcels swap seller <b>has</b>
             <b>let</b> base_parcels_on_hand = coins_in_left / scale_factor;
             // Caculate base parcels filled against order and <b>if</b>
@@ -2125,7 +2125,7 @@ unable to fill an entire base parcel.
                 (simple_order.base_parcels, <b>false</b>) <b>else</b>
                 // Fills all parcels on hand, so <b>return</b>
                 (base_parcels_on_hand, <b>true</b>);
-        } <b>else</b> { // If buying base <a href="coins.md#0xc0deb00c_coins">coins</a>
+        } <b>else</b> { // If buying base <a href="">coins</a>
             // Calculate number of base parcels <a href="user.md#0xc0deb00c_user">user</a> can afford at
             // order price
             <b>let</b> base_parcels_can_afford =
@@ -2140,14 +2140,14 @@ unable to fill an entire base parcel.
                 // Fills all base parcels in order, so <b>continue</b>
                 (simple_order.base_parcels, <b>false</b>);
         };
-        // Decrement <a href="coins.md#0xc0deb00c_coins">coins</a> in by base parcels times multiplier
+        // Decrement <a href="">coins</a> in by base parcels times multiplier
         coins_in_left = coins_in_left -
             base_parcels_filled * coins_in_multiplier;
-        // Increment <a href="coins.md#0xc0deb00c_coins">coins</a> out by base parcels times multiplier
+        // Increment <a href="">coins</a> out by base parcels times multiplier
         coins_out = coins_out + base_parcels_filled * coins_out_multiplier;
         // Increment <b>loop</b> counter
         simple_order_index = simple_order_index + 1;
-        // If done looping, <b>return</b> <a href="coins.md#0xc0deb00c_coins">coins</a> out and <a href="coins.md#0xc0deb00c_coins">coins</a> in left
+        // If done looping, <b>return</b> <a href="">coins</a> out and <a href="">coins</a> in left
         <b>if</b> (should_return || simple_order_index == n_orders)
             <b>return</b> (coins_out, coins_in_left)
     }

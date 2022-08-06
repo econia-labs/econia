@@ -67,7 +67,7 @@ When not called by Econia account
 Return an <code><a href="capability.md#0xc0deb00c_capability_EconiaCapability">EconiaCapability</a></code> when called by Econia account
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="capability.md#0xc0deb00c_capability_get_econia_capability">get_econia_capability</a>(account: &<a href="">signer</a>): <a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>
+<pre><code><b>public</b> <b>fun</b> <a href="capability.md#0xc0deb00c_capability_get_econia_capability">get_econia_capability</a>(<a href="">account</a>: &<a href="">signer</a>): <a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>
 </code></pre>
 
 
@@ -77,10 +77,10 @@ Return an <code><a href="capability.md#0xc0deb00c_capability_EconiaCapability">E
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="capability.md#0xc0deb00c_capability_get_econia_capability">get_econia_capability</a>(
-    account: &<a href="">signer</a>
+    <a href="">account</a>: &<a href="">signer</a>
 ): <a href="capability.md#0xc0deb00c_capability_EconiaCapability">EconiaCapability</a> {
-    // Assert called by Econia account
-    <b>assert</b>!(address_of(account) == @econia, <a href="capability.md#0xc0deb00c_capability_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Assert called by Econia <a href="">account</a>
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="capability.md#0xc0deb00c_capability_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     // Return an Econia <a href="capability.md#0xc0deb00c_capability">capability</a>
     <a href="capability.md#0xc0deb00c_capability_EconiaCapability">EconiaCapability</a>{}
 }

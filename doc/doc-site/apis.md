@@ -82,7 +82,7 @@ Don't forget to first read the [design overview](https://econia.dev/design-overv
 
 ##### To a coin store
 
-[`econia::user::deposit_collateral_coinstore`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_coinstore) withdraws coins from a user's collateral, depositing them to their `aptos_framework::coin::CoinStore`
+[`econia::user::withdraw_collateral_coinstore`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_coinstore) withdraws coins from a user's collateral, depositing them to their `aptos_framework::coin::CoinStore`
 
 ### Limit orders
 

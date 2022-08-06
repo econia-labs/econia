@@ -161,7 +161,7 @@ module econia::user {
     }
 
     /// For given market and `custodian_id`, withdraw `amount` of
-    /// `user`s coins from their `Collateral`, depositing them to their
+    /// `user`'s coins from their `Collateral`, depositing them to their
     /// `aptos_framework::coin::CoinStore`. See wrapped function
     /// `withdraw_collateral()`.
     ///
@@ -309,9 +309,9 @@ module econia::user {
         coin::merge(collateral, coins);
     }
 
-    /// For given market and `custodian_id`, deposit `amount` of `user`s
-    /// coins to their `Collateral`, after withdrawing from their
-    /// `aptos_framework::coin::CoinStore`. See wrapped function
+    /// For given market and `custodian_id`, deposit `amount` of
+    /// `user`'s coins to their `Collateral`, after withdrawing from
+    /// their `aptos_framework::coin::CoinStore`. See wrapped function
     /// `deposit_collateral()`.
     ///
     /// # Parameters

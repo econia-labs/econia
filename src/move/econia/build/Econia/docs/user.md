@@ -472,7 +472,7 @@ signature.
 ## Function `withdraw_collateral_coinstore`
 
 For given market and <code>custodian_id</code>, withdraw <code>amount</code> of
-<code><a href="user.md#0xc0deb00c_user">user</a></code>s coins from their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, depositing them to their
+<code><a href="user.md#0xc0deb00c_user">user</a></code>'s coins from their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, depositing them to their
 <code>aptos_framework::coin::CoinStore</code>. See wrapped function
 <code><a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>()</code>.
 
@@ -711,9 +711,9 @@ registered
 
 ## Function `deposit_collateral_coinstore`
 
-For given market and <code>custodian_id</code>, deposit <code>amount</code> of <code><a href="user.md#0xc0deb00c_user">user</a></code>s
-coins to their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, after withdrawing from their
-<code>aptos_framework::coin::CoinStore</code>. See wrapped function
+For given market and <code>custodian_id</code>, deposit <code>amount</code> of
+<code><a href="user.md#0xc0deb00c_user">user</a></code>'s coins to their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, after withdrawing from
+their <code>aptos_framework::coin::CoinStore</code>. See wrapped function
 <code><a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>()</code>.
 
 

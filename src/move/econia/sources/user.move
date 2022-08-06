@@ -160,6 +160,29 @@ module econia::user {
         register_collateral_entry<Q>(user, market_account_info);
     }
 
+    /// For given market and `custodian_id`, withdraw `amount` of
+    /// `user`s coins from their `Collateral`, depositing them to their
+    /// `aptos_framework::coin::CoinStore`. See wrapped function
+    /// `withdraw_collateral()`.
+    ///
+    /// # Parameters
+    /// * `base`: If `true`, withdraw base coins, else quote coins
+    public entry fun withdraw_collateral_coinstore<B, Q, E>(
+        user: &signer,
+        custodian_id: u64,
+        base: bool,
+        amount: u64
+    ) acquires Collateral, MarketAccounts {
+        // Get corresponding market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
+        if (base) // If marked for withdrawing base coins, use base type
+            coin::deposit<B>(address_of(user), withdraw_collateral<B>(
+                address_of(user), market_account_info, amount)) else
+            // Else withdraw quote coins from collateral to coinstore
+            coin::deposit<Q>(address_of(user), withdraw_collateral<Q>(
+                address_of(user), market_account_info, amount));
+    }
+
     #[cmd]
     /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
     /// entry corresponding to `market_account_info`, then return it.
@@ -284,6 +307,28 @@ module econia::user {
             open_table::borrow_mut(collateral_map, market_account_info);
         // Merge coins into market account collateral
         coin::merge(collateral, coins);
+    }
+
+    /// For given market and `custodian_id`, deposit `amount` of `user`s
+    /// coins to their `Collateral`, after withdrawing from their
+    /// `aptos_framework::coin::CoinStore`. See wrapped function
+    /// `deposit_collateral()`.
+    ///
+    /// # Parameters
+    /// * `base`: If `true`, deposit base coins, else quote coins
+    public entry fun deposit_collateral_coinstore<B, Q, E>(
+        user: &signer,
+        custodian_id: u64,
+        base: bool,
+        amount: u64
+    ) acquires Collateral, MarketAccounts {
+        // Get corresponding market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
+        if (base) // If marked for depositing base coins, use base type
+            deposit_collateral<B>(address_of(user), market_account_info,
+                coin::withdraw<B>(user, amount)) else // Else quote
+            deposit_collateral<Q>(address_of(user), market_account_info,
+                coin::withdraw<Q>(user, amount));
     }
 
     /// Fill a user's order, routing collateral accordingly.
@@ -1202,7 +1247,7 @@ module econia::user {
             custodian_id: 0}; // Declare market account info
         // Register user with market account
         register_market_account<BC, QC, E1>(user, 0);
-        // Attempt make valid deposit
+        // Attempt valid deposit
         deposit_collateral<BC>(@user, market_account_info,
             coins::mint<BC>(econia, deposit_amount));
         // Borrow immutable ref to collateral map
@@ -1221,6 +1266,19 @@ module econia::user {
         assert!(market_account.base_coins_total == deposit_amount, 0);
         // Assert available base coin count
         assert!(market_account.base_coins_available == deposit_amount, 0);
+        deposit_amount = 30; // Declare new deposit amount
+        // Register user with quote coin store
+        coin::register_for_test<QC>(user);
+        coin::deposit<QC>(@user, coins::mint<QC>(econia, deposit_amount));
+        // Attempt valid deposit from coin store
+        deposit_collateral_coinstore<BC, QC, E1>(
+            user, NO_CUSTODIAN, false, deposit_amount);
+        // Get total and available quote amounts
+        let (quote_total, quote_available) =
+            get_collateral_counts_test<BC, QC, E1, QC>(@user, NO_CUSTODIAN);
+        // Assert correct values
+        assert!(quote_total == deposit_amount, 0);
+        assert!(quote_available == deposit_amount, 0);
     }
 
     #[test(
@@ -1714,11 +1772,13 @@ module econia::user {
         assert!( // Assert correct value
             coin::value(collateral) == deposit_amount - withdraw_amount_1, 0);
         coins::burn(coins); // Burn withdrawn coins
+        // Register user with quote coin store
+        coin::register_for_test<QC>(user);
         // Withdraw second withdraw amount
-        let coins = withdraw_collateral_user<QC>(
-            user, market_account_info, withdraw_amount_2);
+        withdraw_collateral_coinstore<BC, QC, E1>(
+            user, NO_CUSTODIAN, false, withdraw_amount_2);
         // Assert correct amount withdrawn
-        assert!(coin::value(&coins) == withdraw_amount_2, 0);
+        assert!(coin::balance<QC>(@user) == withdraw_amount_2, 0);
         // Borrow mutable reference to market accounts map
         let market_accounts_map =
             &mut borrow_global_mut<MarketAccounts>(@user).map;
@@ -1738,7 +1798,6 @@ module econia::user {
             open_table::borrow(collateral_map, market_account_info);
         // Assert correct value
         assert!(coin::value(collateral) == 0, 0);
-        coins::burn(coins); // Burn withdrawn coins
     }
 
     #[test]

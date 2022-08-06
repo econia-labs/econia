@@ -9,9 +9,13 @@
       - [User initialization](#user-initialization)
     - [Collateral management](#collateral-management)
       - [Depositing coins](#depositing-coins)
+        - [Standalone coins](#standalone-coins)
+        - [From a coin store](#from-a-coin-store)
       - [Withdrawing coins](#withdrawing-coins)
-        - [As a signing user](#as-a-signing-user)
-        - [As a custodian](#as-a-custodian)
+        - [Standalone coins](#standalone-coins-1)
+          - [As a signing user](#as-a-signing-user)
+          - [As a custodian](#as-a-custodian)
+        - [To a coin store](#to-a-coin-store)
     - [Limit orders](#limit-orders)
       - [Placing a limit order](#placing-a-limit-order)
         - [As a signing user](#as-a-signing-user-1)
@@ -56,17 +60,29 @@ Don't forget to first read the [design overview](https://econia.dev/design-overv
 
 #### Depositing coins
 
-[`econia::user::deposit_collateral`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_deposit_collateral) deposits coins into a user's collateral
+##### Standalone coins
+
+[`econia::user::deposit_collateral`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_deposit_collateral) deposits standalone coins into a user's collateral
+
+##### From a coin store
+
+[`econia::user::deposit_collateral_coinstore`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_deposit_collateral_coinstore) deposits coins into a user's collateral, from their `aptos_framework::coin::CoinStore`
 
 #### Withdrawing coins
 
-##### As a signing user
+##### Standalone coins
 
-[`econia::user::withdraw_collateral_user`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_user) withdraws coins from a user's order collateral, and requires the user's signature
+###### As a signing user
 
-##### As a custodian
+[`econia::user::withdraw_collateral_user`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_user) withdraws coins from a user's collateral, requires the user's signature, and returns standalone coins
 
-[`econia::user::withdraw_collateral_custodian`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_custodian) withdraws coins from a user's order collateral, and requires the capability of a corresponding custodian
+###### As a custodian
+
+[`econia::user::withdraw_collateral_custodian`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_custodian) withdraws coins from a user's collateral, requires the capability of a corresponding custodian, and returns standalone coins
+
+##### To a coin store
+
+[`econia::user::deposit_collateral_coinstore`](../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_collateral_coinstore) withdraws coins from a user's collateral, depositing them to their `aptos_framework::coin::CoinStore`
 
 ### Limit orders
 

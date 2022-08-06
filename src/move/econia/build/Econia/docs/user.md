@@ -17,37 +17,41 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
 -  [Constants](#@Constants_0)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
     -  [Abort conditions](#@Abort_conditions_1)
+-  [Function `withdraw_collateral_coinstore`](#0xc0deb00c_user_withdraw_collateral_coinstore)
+    -  [Parameters](#@Parameters_2)
 -  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
 -  [Function `add_order_internal`](#0xc0deb00c_user_add_order_internal)
-    -  [Parameters](#@Parameters_2)
-    -  [Abort conditions](#@Abort_conditions_3)
--  [Function `deposit_collateral`](#0xc0deb00c_user_deposit_collateral)
+    -  [Parameters](#@Parameters_3)
     -  [Abort conditions](#@Abort_conditions_4)
+-  [Function `deposit_collateral`](#0xc0deb00c_user_deposit_collateral)
+    -  [Abort conditions](#@Abort_conditions_5)
+-  [Function `deposit_collateral_coinstore`](#0xc0deb00c_user_deposit_collateral_coinstore)
+    -  [Parameters](#@Parameters_6)
 -  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
-    -  [Parameters](#@Parameters_5)
+    -  [Parameters](#@Parameters_7)
 -  [Function `market_account_info`](#0xc0deb00c_user_market_account_info)
 -  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
-    -  [Parameters](#@Parameters_6)
-    -  [Assumes](#@Assumes_7)
+    -  [Parameters](#@Parameters_8)
+    -  [Assumes](#@Assumes_9)
 -  [Function `withdraw_collateral_custodian`](#0xc0deb00c_user_withdraw_collateral_custodian)
 -  [Function `withdraw_collateral_internal`](#0xc0deb00c_user_withdraw_collateral_internal)
 -  [Function `borrow_coin_counts_mut`](#0xc0deb00c_user_borrow_coin_counts_mut)
-    -  [Abort conditions](#@Abort_conditions_8)
-    -  [Assumes](#@Assumes_9)
+    -  [Abort conditions](#@Abort_conditions_10)
+    -  [Assumes](#@Assumes_11)
 -  [Function `exists_market_account`](#0xc0deb00c_user_exists_market_account)
 -  [Function `fill_order_route_collateral`](#0xc0deb00c_user_fill_order_route_collateral)
-    -  [Parameters](#@Parameters_10)
--  [Function `fill_order_route_collateral_single`](#0xc0deb00c_user_fill_order_route_collateral_single)
-    -  [Parameters](#@Parameters_11)
--  [Function `fill_order_update_market_account`](#0xc0deb00c_user_fill_order_update_market_account)
     -  [Parameters](#@Parameters_12)
+-  [Function `fill_order_route_collateral_single`](#0xc0deb00c_user_fill_order_route_collateral_single)
+    -  [Parameters](#@Parameters_13)
+-  [Function `fill_order_update_market_account`](#0xc0deb00c_user_fill_order_update_market_account)
+    -  [Parameters](#@Parameters_14)
 -  [Function `range_check_order_fills`](#0xc0deb00c_user_range_check_order_fills)
 -  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_13)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
-    -  [Abort conditions](#@Abort_conditions_14)
--  [Function `withdraw_collateral`](#0xc0deb00c_user_withdraw_collateral)
     -  [Abort conditions](#@Abort_conditions_15)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+    -  [Abort conditions](#@Abort_conditions_16)
+-  [Function `withdraw_collateral`](#0xc0deb00c_user_withdraw_collateral)
+    -  [Abort conditions](#@Abort_conditions_17)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -463,6 +467,53 @@ signature.
 
 </details>
 
+<a name="0xc0deb00c_user_withdraw_collateral_coinstore"></a>
+
+## Function `withdraw_collateral_coinstore`
+
+For given market and <code>custodian_id</code>, withdraw <code>amount</code> of
+<code><a href="user.md#0xc0deb00c_user">user</a></code>s coins from their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, depositing them to their
+<code>aptos_framework::coin::CoinStore</code>. See wrapped function
+<code><a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>()</code>.
+
+
+<a name="@Parameters_2"></a>
+
+### Parameters
+
+* <code>base</code>: If <code><b>true</b></code>, withdraw base coins, else quote coins
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_coinstore">withdraw_collateral_coinstore</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, custodian_id: u64, base: bool, amount: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_coinstore">withdraw_collateral_coinstore</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    custodian_id: u64,
+    base: bool,
+    amount: u64
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Get corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
+    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
+    <b>if</b> (base) // If marked for withdrawing base <a href="">coins</a>, <b>use</b> base type
+        <a href="_deposit">coin::deposit</a>&lt;B&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;B&gt;(
+            address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)) <b>else</b>
+        // Else withdraw quote <a href="">coins</a> from collateral <b>to</b> coinstore
+        <a href="_deposit">coin::deposit</a>&lt;Q&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;Q&gt;(
+            address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount));
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_withdraw_collateral_user"></a>
 
 ## Function `withdraw_collateral_user`
@@ -508,7 +559,7 @@ Add an order to a user's market account, provided an immutable
 reference to an <code>EconiaCapability</code>.
 
 
-<a name="@Parameters_2"></a>
+<a name="@Parameters_3"></a>
 
 ### Parameters
 
@@ -521,7 +572,7 @@ market account
 * <code>price</code>: Order price
 
 
-<a name="@Abort_conditions_3"></a>
+<a name="@Abort_conditions_4"></a>
 
 ### Abort conditions
 
@@ -601,7 +652,7 @@ Deposit <code><a href="">coins</a></code> to <code><a href="user.md#0xc0deb00c_u
 <code>market_account_info</code>.
 
 
-<a name="@Abort_conditions_4"></a>
+<a name="@Abort_conditions_5"></a>
 
 ### Abort conditions
 
@@ -656,6 +707,52 @@ registered
 
 </details>
 
+<a name="0xc0deb00c_user_deposit_collateral_coinstore"></a>
+
+## Function `deposit_collateral_coinstore`
+
+For given market and <code>custodian_id</code>, deposit <code>amount</code> of <code><a href="user.md#0xc0deb00c_user">user</a></code>s
+coins to their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, after withdrawing from their
+<code>aptos_framework::coin::CoinStore</code>. See wrapped function
+<code><a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>()</code>.
+
+
+<a name="@Parameters_6"></a>
+
+### Parameters
+
+* <code>base</code>: If <code><b>true</b></code>, deposit base coins, else quote coins
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_collateral_coinstore">deposit_collateral_coinstore</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, custodian_id: u64, base: bool, amount: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_collateral_coinstore">deposit_collateral_coinstore</a>&lt;B, Q, E&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    custodian_id: u64,
+    base: bool,
+    amount: u64
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Get corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
+    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
+    <b>if</b> (base) // If marked for depositing base <a href="">coins</a>, <b>use</b> base type
+        <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;B&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info,
+            <a href="_withdraw">coin::withdraw</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, amount)) <b>else</b> // Else quote
+        <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;Q&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info,
+            <a href="_withdraw">coin::withdraw</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, amount));
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_fill_order_internal"></a>
 
 ## Function `fill_order_internal`
@@ -669,7 +766,7 @@ given user has the indicated open order and appropriate
 collateral to fill it. Hence no error checking.
 
 
-<a name="@Parameters_5"></a>
+<a name="@Parameters_7"></a>
 
 ### Parameters
 
@@ -770,7 +867,7 @@ Remove an order from a user's market account, provided an
 immutable reference to an <code>EconiaCapability</code>.
 
 
-<a name="@Parameters_6"></a>
+<a name="@Parameters_8"></a>
 
 ### Parameters
 
@@ -781,7 +878,7 @@ market account
 * <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
 
 
-<a name="@Assumes_7"></a>
+<a name="@Assumes_9"></a>
 
 ### Assumes
 
@@ -928,7 +1025,7 @@ number of coins of <code>CoinType</code> held as collateral, and a mutable
 reference to the number of coins available for withdraw.
 
 
-<a name="@Abort_conditions_8"></a>
+<a name="@Abort_conditions_10"></a>
 
 ### Abort conditions
 
@@ -936,7 +1033,7 @@ reference to the number of coins available for withdraw.
 <code>market_account_info</code>.
 
 
-<a name="@Assumes_9"></a>
+<a name="@Assumes_11"></a>
 
 ### Assumes
 
@@ -1026,7 +1123,7 @@ Route collateral when filling an order.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -1090,7 +1187,7 @@ from or to, respectively, coins at <code>external_coins_ref_mut</code>.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>()</code>
 
 
-<a name="@Parameters_11"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1148,7 +1245,7 @@ Update a user's market account when filling an order.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_14"></a>
 
 ### Parameters
 
@@ -1289,7 +1386,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_13"></a>
+<a name="@Abort_conditions_15"></a>
 
 ### Abort conditions
 
@@ -1340,7 +1437,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 not already exist
 
 
-<a name="@Abort_conditions_14"></a>
+<a name="@Abort_conditions_16"></a>
 
 ### Abort conditions
 
@@ -1401,7 +1498,7 @@ Withdraw <code>amount</code> of <code>Coin</code> having <code>CoinType</code> f
 entry corresponding to <code>market_account_info</code>, then return it.
 
 
-<a name="@Abort_conditions_15"></a>
+<a name="@Abort_conditions_17"></a>
 
 ### Abort conditions
 

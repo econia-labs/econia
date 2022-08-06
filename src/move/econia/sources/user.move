@@ -127,6 +127,28 @@ module econia::user {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// For given market and `custodian_id`, deposit `amount` of
+    /// `user`'s coins to their `Collateral`, after withdrawing from
+    /// their `aptos_framework::coin::CoinStore`. See wrapped function
+    /// `deposit_collateral()`.
+    ///
+    /// # Parameters
+    /// * `base`: If `true`, deposit base coins, else quote coins
+    public entry fun deposit_collateral_coinstore<B, Q, E>(
+        user: &signer,
+        custodian_id: u64,
+        base: bool,
+        amount: u64
+    ) acquires Collateral, MarketAccounts {
+        // Get corresponding market account info
+        let market_account_info = market_account_info<B, Q, E>(custodian_id);
+        if (base) // If marked for depositing base coins, use base type
+            deposit_collateral<B>(address_of(user), market_account_info,
+                coin::withdraw<B>(user, amount)) else // Else quote
+            deposit_collateral<Q>(address_of(user), market_account_info,
+                coin::withdraw<Q>(user, amount));
+    }
+
     #[cmd]
     /// Register `user` with a `MarketAccount` and `Collateral` entries
     /// for given market and `custodian_id`. If `custodian_id` is 0,
@@ -307,28 +329,6 @@ module econia::user {
             open_table::borrow_mut(collateral_map, market_account_info);
         // Merge coins into market account collateral
         coin::merge(collateral, coins);
-    }
-
-    /// For given market and `custodian_id`, deposit `amount` of
-    /// `user`'s coins to their `Collateral`, after withdrawing from
-    /// their `aptos_framework::coin::CoinStore`. See wrapped function
-    /// `deposit_collateral()`.
-    ///
-    /// # Parameters
-    /// * `base`: If `true`, deposit base coins, else quote coins
-    public entry fun deposit_collateral_coinstore<B, Q, E>(
-        user: &signer,
-        custodian_id: u64,
-        base: bool,
-        amount: u64
-    ) acquires Collateral, MarketAccounts {
-        // Get corresponding market account info
-        let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        if (base) // If marked for depositing base coins, use base type
-            deposit_collateral<B>(address_of(user), market_account_info,
-                coin::withdraw<B>(user, amount)) else // Else quote
-            deposit_collateral<Q>(address_of(user), market_account_info,
-                coin::withdraw<Q>(user, amount));
     }
 
     /// Fill a user's order, routing collateral accordingly.

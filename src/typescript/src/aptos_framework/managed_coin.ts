@@ -7,6 +7,7 @@ import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from "@manahippo/move-to-t
 import {HexString, AptosClient} from "aptos";
 import * as Std from "../std";
 import * as Coin from "./coin";
+import * as Coins from "./coins";
 export const packageName = "AptosFramework";
 export const moduleAddress = new HexString("0x1");
 export const moduleName = "managed_coin";
@@ -152,7 +153,7 @@ export function register_ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <CoinType>*/
 ): void {
-  Coin.register_(account, $c, [$p[0]]);
+  Coins.register_(account, $c, [$p[0]]);
   return;
 }
 

@@ -5,40 +5,45 @@ import {u8, u64, u128} from "@manahippo/move-to-ts";
 import {TypeParamDeclType, FieldDeclType} from "@manahippo/move-to-ts";
 import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from "@manahippo/move-to-ts";
 import {HexString, AptosClient} from "aptos";
+import * as Std from "../std";
 import * as Account from "./account";
 import * as Coin from "./coin";
 export const packageName = "AptosFramework";
 export const moduleAddress = new HexString("0x1");
-export const moduleName = "account_utils";
+export const moduleName = "coins";
 
 
-export function create_and_fund_account_ (
-  funder: HexString,
+export function register_ (
   account: HexString,
-  amount: U64,
   $c: AptosDataCache,
+  $p: TypeTag[], /* <CoinType>*/
 ): void {
-  Account.create_account_($.copy(account), $c);
-  Coin.transfer_(funder, $.copy(account), $.copy(amount), $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
+  register_internal_(account, $c, [$p[0]]);
   return;
 }
 
 
-export function buildPayload_create_and_fund_account (
-  account: HexString,
-  amount: U64,
+export function buildPayload_register (
+  $p: TypeTag[], /* <CoinType>*/
 ) {
-  const typeParamStrings = [] as string[];
+  const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
   return $.buildPayload(
-    "0x1::account_utils::create_and_fund_account",
+    "0x1::coins::register",
     typeParamStrings,
-    [
-      $.payloadArg(account),
-      $.payloadArg(amount),
-    ]
+    []
   );
 
 }
+export function register_internal_ (
+  account: HexString,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <CoinType>*/
+): void {
+  Coin.register_(account, $c, [$p[0]]);
+  Account.register_coin_(Std.Signer.address_of_(account, $c), $c, [$p[0]]);
+  return;
+}
+
 export function loadParsers(repo: AptosParserRepo) {
 }
 

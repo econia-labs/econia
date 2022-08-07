@@ -73,34 +73,6 @@ export class Coin
 
 }
 
-export class CoinEvents 
-{
-  static moduleAddress = moduleAddress;
-  static moduleName = moduleName;
-  static structName: string = "CoinEvents";
-  static typeParameters: TypeParamDeclType[] = [
-
-  ];
-  static fields: FieldDeclType[] = [
-  { name: "register_events", typeTag: new StructTag(new HexString("0x1"), "event", "EventHandle", [new StructTag(new HexString("0x1"), "coin", "RegisterEvent", [])]) }];
-
-  register_events: Aptos_std.Event.EventHandle;
-
-  constructor(proto: any, public typeTag: TypeTag) {
-    this.register_events = proto['register_events'] as Aptos_std.Event.EventHandle;
-  }
-
-  static CoinEventsParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : CoinEvents {
-    const proto = $.parseStructProto(data, typeTag, repo, CoinEvents);
-    return new CoinEvents(proto, typeTag);
-  }
-
-  static async load(repo: AptosParserRepo, client: AptosClient, address: HexString, typeParams: TypeTag[]) {
-    const result = await repo.loadResource(client, address, CoinEvents, typeParams);
-    return result as unknown as CoinEvents;
-  }
-}
-
 export class CoinInfo 
 {
   static moduleAddress = moduleAddress;
@@ -220,30 +192,6 @@ export class MintCapability
     const result = await repo.loadResource(client, address, MintCapability, typeParams);
     return result as unknown as MintCapability;
   }
-}
-
-export class RegisterEvent 
-{
-  static moduleAddress = moduleAddress;
-  static moduleName = moduleName;
-  static structName: string = "RegisterEvent";
-  static typeParameters: TypeParamDeclType[] = [
-
-  ];
-  static fields: FieldDeclType[] = [
-  { name: "type_info", typeTag: new StructTag(new HexString("0x1"), "type_info", "TypeInfo", []) }];
-
-  type_info: Aptos_std.Type_info.TypeInfo;
-
-  constructor(proto: any, public typeTag: TypeTag) {
-    this.type_info = proto['type_info'] as Aptos_std.Type_info.TypeInfo;
-  }
-
-  static RegisterEventParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : RegisterEvent {
-    const proto = $.parseStructProto(data, typeTag, repo, RegisterEvent);
-    return new RegisterEvent(proto, typeTag);
-  }
-
 }
 
 export class WithdrawEvent 
@@ -488,39 +436,11 @@ export function register_ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <CoinType>*/
 ): void {
-  register_internal_(account, $c, [$p[0]]);
-  return;
-}
-
-
-export function buildPayload_register (
-  $p: TypeTag[], /* <CoinType>*/
-) {
-  const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
-  return $.buildPayload(
-    "0x1::coin::register",
-    typeParamStrings,
-    []
-  );
-
-}
-export function register_internal_ (
-  account: HexString,
-  $c: AptosDataCache,
-  $p: TypeTag[], /* <CoinType>*/
-): void {
-  let account_addr, coin_events, coin_store;
+  let account_addr, coin_store;
   account_addr = Std.Signer.address_of_(account, $c);
   if (!!is_account_registered_($.copy(account_addr), $c, [$p[0]])) {
     throw $.abortCode(Std.Error.already_exists_(ECOIN_STORE_ALREADY_PUBLISHED, $c));
   }
-  if (!$c.exists(new StructTag(new HexString("0x1"), "coin", "CoinEvents", []), $.copy(account_addr))) {
-    $c.move_to(new StructTag(new HexString("0x1"), "coin", "CoinEvents", []), account, new CoinEvents({ register_events: Aptos_std.Event.new_event_handle_(account, $c, [new StructTag(new HexString("0x1"), "coin", "RegisterEvent", [])]) }, new StructTag(new HexString("0x1"), "coin", "CoinEvents", [])));
-  }
-  else{
-  }
-  coin_events = $c.borrow_global_mut<CoinEvents>(new StructTag(new HexString("0x1"), "coin", "CoinEvents", []), $.copy(account_addr));
-  Aptos_std.Event.emit_event_(coin_events.register_events, new RegisterEvent({ type_info: Aptos_std.Type_info.type_of_($c, [$p[0]]) }, new StructTag(new HexString("0x1"), "coin", "RegisterEvent", [])), $c, [new StructTag(new HexString("0x1"), "coin", "RegisterEvent", [])]);
   coin_store = new CoinStore({ coin: new Coin({ value: u64("0") }, new StructTag(new HexString("0x1"), "coin", "Coin", [$p[0]])), deposit_events: Aptos_std.Event.new_event_handle_(account, $c, [new StructTag(new HexString("0x1"), "coin", "DepositEvent", [])]), withdraw_events: Aptos_std.Event.new_event_handle_(account, $c, [new StructTag(new HexString("0x1"), "coin", "WithdrawEvent", [])]) }, new StructTag(new HexString("0x1"), "coin", "CoinStore", [$p[0]]));
   $c.move_to(new StructTag(new HexString("0x1"), "coin", "CoinStore", [$p[0]]), account, coin_store);
   return;
@@ -610,12 +530,10 @@ export function zero_ (
 export function loadParsers(repo: AptosParserRepo) {
   repo.addParser("0x1::coin::BurnCapability", BurnCapability.BurnCapabilityParser);
   repo.addParser("0x1::coin::Coin", Coin.CoinParser);
-  repo.addParser("0x1::coin::CoinEvents", CoinEvents.CoinEventsParser);
   repo.addParser("0x1::coin::CoinInfo", CoinInfo.CoinInfoParser);
   repo.addParser("0x1::coin::CoinStore", CoinStore.CoinStoreParser);
   repo.addParser("0x1::coin::DepositEvent", DepositEvent.DepositEventParser);
   repo.addParser("0x1::coin::MintCapability", MintCapability.MintCapabilityParser);
-  repo.addParser("0x1::coin::RegisterEvent", RegisterEvent.RegisterEventParser);
   repo.addParser("0x1::coin::WithdrawEvent", WithdrawEvent.WithdrawEventParser);
 }
 

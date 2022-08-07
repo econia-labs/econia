@@ -43,7 +43,7 @@ export async function sendPayloadTx(
   const signedTxn = await client.signTransaction(account, txnRequest);
   const txnResult = await client.submitTransaction(signedTxn);
   await client.waitForTransaction(txnResult.hash);
-  const txDetails = (await client.getTransaction(txnResult.hash)) as Types.UserTransaction;
+  const txDetails = (await client.getTransactionByHash(txnResult.hash)) as Types.UserTransaction;
   console.log(txDetails);
 }
 
@@ -194,6 +194,30 @@ program
   .action(market_register_market);
 
 
+const user_deposit_collateral_coinstore = async (B: string, Q: string, E: string, custodian_id: string, base: string, amount: string) => {
+  const {client, account} = readConfig(program);
+  const B_ = parseTypeTagOrThrow(B);
+  const Q_ = parseTypeTagOrThrow(Q);
+  const E_ = parseTypeTagOrThrow(E);
+  const custodian_id_ = u64(custodian_id);
+  const base_ = base=='true';
+  const amount_ = u64(amount);
+  const payload = Econia.User.buildPayload_deposit_collateral_coinstore(custodian_id_, base_, amount_, [B_, Q_, E_]);
+  await sendPayloadTx(client, account, payload);
+}
+
+program
+  .command("user:deposit-collateral-coinstore")
+  .description("")
+  .argument('<TYPE_B>')
+  .argument('<TYPE_Q>')
+  .argument('<TYPE_E>')
+  .argument('<custodian_id>')
+  .argument('<base>')
+  .argument('<amount>')
+  .action(user_deposit_collateral_coinstore);
+
+
 const user_register_market_account = async (B: string, Q: string, E: string, custodian_id: string) => {
   const {client, account} = readConfig(program);
   const B_ = parseTypeTagOrThrow(B);
@@ -214,8 +238,32 @@ program
   .action(user_register_market_account);
 
 
+const user_withdraw_collateral_coinstore = async (B: string, Q: string, E: string, custodian_id: string, base: string, amount: string) => {
+  const {client, account} = readConfig(program);
+  const B_ = parseTypeTagOrThrow(B);
+  const Q_ = parseTypeTagOrThrow(Q);
+  const E_ = parseTypeTagOrThrow(E);
+  const custodian_id_ = u64(custodian_id);
+  const base_ = base=='true';
+  const amount_ = u64(amount);
+  const payload = Econia.User.buildPayload_withdraw_collateral_coinstore(custodian_id_, base_, amount_, [B_, Q_, E_]);
+  await sendPayloadTx(client, account, payload);
+}
 
-const book_orders_sdk = async (owner: string, B: string, Q: string, E: string) => {
+program
+  .command("user:withdraw-collateral-coinstore")
+  .description("")
+  .argument('<TYPE_B>')
+  .argument('<TYPE_Q>')
+  .argument('<TYPE_E>')
+  .argument('<custodian_id>')
+  .argument('<base>')
+  .argument('<amount>')
+  .action(user_withdraw_collateral_coinstore);
+
+
+
+const OrderBook_book_orders_sdk = async (owner: string, B: string, Q: string, E: string) => {
   const {client} = readConfig(program);
   const repo = getProjectRepo();
   const owner_ = new HexString(owner);
@@ -224,15 +272,15 @@ const book_orders_sdk = async (owner: string, B: string, Q: string, E: string) =
 }
 
 program
-  .command("book-orders-sdk")
+  .command("OrderBook:book-orders-sdk")
   .argument("<ADDRESS:owner>")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
-  .action(book_orders_sdk)
+  .action(OrderBook_book_orders_sdk)
 
 
-const book_price_levels_sdk = async (owner: string, B: string, Q: string, E: string) => {
+const OrderBook_book_price_levels_sdk = async (owner: string, B: string, Q: string, E: string) => {
   const {client} = readConfig(program);
   const repo = getProjectRepo();
   const owner_ = new HexString(owner);
@@ -241,12 +289,49 @@ const book_price_levels_sdk = async (owner: string, B: string, Q: string, E: str
 }
 
 program
-  .command("book-price-levels-sdk")
+  .command("OrderBook:book-price-levels-sdk")
   .argument("<ADDRESS:owner>")
   .argument('<TYPE_B>')
   .argument('<TYPE_Q>')
   .argument('<TYPE_E>')
-  .action(book_price_levels_sdk)
+  .action(OrderBook_book_price_levels_sdk)
+
+
+const OrderBook_get_orders_sdk = async (owner: string, B: string, Q: string, E: string, side: string) => {
+  const {client} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await Econia.Market.OrderBook.load(repo, client, owner_, [parseTypeTagOrThrow(B), parseTypeTagOrThrow(Q), parseTypeTagOrThrow(E)])
+  print(value.get_orders_sdk(side=='true'));
+}
+
+program
+  .command("OrderBook:get-orders-sdk")
+  .argument("<ADDRESS:owner>")
+  .argument('<TYPE_B>')
+  .argument('<TYPE_Q>')
+  .argument('<TYPE_E>')
+  .argument('<side>')
+  .action(OrderBook_get_orders_sdk)
+
+
+const OrderBook_simulate_swap_sdk = async (owner: string, B: string, Q: string, E: string, style: string, coins_in: string) => {
+  const {client} = readConfig(program);
+  const repo = getProjectRepo();
+  const owner_ = new HexString(owner);
+  const value = await Econia.Market.OrderBook.load(repo, client, owner_, [parseTypeTagOrThrow(B), parseTypeTagOrThrow(Q), parseTypeTagOrThrow(E)])
+  print(value.simulate_swap_sdk(style=='true', u64(coins_in)));
+}
+
+program
+  .command("OrderBook:simulate-swap-sdk")
+  .argument("<ADDRESS:owner>")
+  .argument('<TYPE_B>')
+  .argument('<TYPE_Q>')
+  .argument('<TYPE_E>')
+  .argument('<style>')
+  .argument('<coins_in>')
+  .action(OrderBook_simulate_swap_sdk)
 
 
 program.parse();

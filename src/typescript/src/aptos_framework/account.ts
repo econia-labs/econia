@@ -5,13 +5,13 @@ import {u8, u64, u128} from "@manahippo/move-to-ts";
 import {TypeParamDeclType, FieldDeclType} from "@manahippo/move-to-ts";
 import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from "@manahippo/move-to-ts";
 import {HexString, AptosClient} from "aptos";
+import * as Aptos_std from "../aptos_std";
 import * as Std from "../std";
 import * as Chain_id from "./chain_id";
 import * as Coin from "./coin";
 import * as System_addresses from "./system_addresses";
 import * as Timestamp from "./timestamp";
 import * as Transaction_fee from "./transaction_fee";
-import * as Transaction_publishing_option from "./transaction_publishing_option";
 export const packageName = "AptosFramework";
 export const moduleAddress = new HexString("0x1");
 export const moduleName = "account";
@@ -54,16 +54,19 @@ export class Account
   static fields: FieldDeclType[] = [
   { name: "authentication_key", typeTag: new VectorTag(AtomicTypeTag.U8) },
   { name: "sequence_number", typeTag: AtomicTypeTag.U64 },
-  { name: "self_address", typeTag: AtomicTypeTag.Address }];
+  { name: "self_address", typeTag: AtomicTypeTag.Address },
+  { name: "coin_register_events", typeTag: new StructTag(new HexString("0x1"), "event", "EventHandle", [new StructTag(new HexString("0x1"), "account", "CoinRegisterEvent", [])]) }];
 
   authentication_key: U8[];
   sequence_number: U64;
   self_address: HexString;
+  coin_register_events: Aptos_std.Event.EventHandle;
 
   constructor(proto: any, public typeTag: TypeTag) {
     this.authentication_key = proto['authentication_key'] as U8[];
     this.sequence_number = proto['sequence_number'] as U64;
     this.self_address = proto['self_address'] as HexString;
+    this.coin_register_events = proto['coin_register_events'] as Aptos_std.Event.EventHandle;
   }
 
   static AccountParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : Account {
@@ -93,8 +96,7 @@ export class ChainSpecificAccountInfo
   { name: "writeset_prologue_name", typeTag: new VectorTag(AtomicTypeTag.U8) },
   { name: "multi_agent_prologue_name", typeTag: new VectorTag(AtomicTypeTag.U8) },
   { name: "user_epilogue_name", typeTag: new VectorTag(AtomicTypeTag.U8) },
-  { name: "writeset_epilogue_name", typeTag: new VectorTag(AtomicTypeTag.U8) },
-  { name: "currency_code_required", typeTag: AtomicTypeTag.Bool }];
+  { name: "writeset_epilogue_name", typeTag: new VectorTag(AtomicTypeTag.U8) }];
 
   module_addr: HexString;
   module_name: U8[];
@@ -104,7 +106,6 @@ export class ChainSpecificAccountInfo
   multi_agent_prologue_name: U8[];
   user_epilogue_name: U8[];
   writeset_epilogue_name: U8[];
-  currency_code_required: boolean;
 
   constructor(proto: any, public typeTag: TypeTag) {
     this.module_addr = proto['module_addr'] as HexString;
@@ -115,7 +116,6 @@ export class ChainSpecificAccountInfo
     this.multi_agent_prologue_name = proto['multi_agent_prologue_name'] as U8[];
     this.user_epilogue_name = proto['user_epilogue_name'] as U8[];
     this.writeset_epilogue_name = proto['writeset_epilogue_name'] as U8[];
-    this.currency_code_required = proto['currency_code_required'] as boolean;
   }
 
   static ChainSpecificAccountInfoParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ChainSpecificAccountInfo {
@@ -127,6 +127,30 @@ export class ChainSpecificAccountInfo
     const result = await repo.loadResource(client, address, ChainSpecificAccountInfo, typeParams);
     return result as unknown as ChainSpecificAccountInfo;
   }
+}
+
+export class CoinRegisterEvent 
+{
+  static moduleAddress = moduleAddress;
+  static moduleName = moduleName;
+  static structName: string = "CoinRegisterEvent";
+  static typeParameters: TypeParamDeclType[] = [
+
+  ];
+  static fields: FieldDeclType[] = [
+  { name: "type_info", typeTag: new StructTag(new HexString("0x1"), "type_info", "TypeInfo", []) }];
+
+  type_info: Aptos_std.Type_info.TypeInfo;
+
+  constructor(proto: any, public typeTag: TypeTag) {
+    this.type_info = proto['type_info'] as Aptos_std.Type_info.TypeInfo;
+  }
+
+  static CoinRegisterEventParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : CoinRegisterEvent {
+    const proto = $.parseStructProto(data, typeTag, repo, CoinRegisterEvent);
+    return new CoinRegisterEvent(proto, typeTag);
+  }
+
 }
 
 export class SignerCapability 
@@ -159,6 +183,7 @@ export function create_account_ (
   let signer;
   signer = create_account_internal_($.copy(auth_key), $c);
   Coin.register_(signer, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
+  register_coin_($.copy(auth_key), $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
   return;
 }
 
@@ -202,7 +227,7 @@ export function create_account_unchecked_ (
   if (!(Std.Vector.length_(authentication_key, $c, [AtomicTypeTag.U8])).eq((u64("32")))) {
     throw $.abortCode(Std.Error.invalid_argument_(EMALFORMED_AUTHENTICATION_KEY, $c));
   }
-  $c.move_to(new StructTag(new HexString("0x1"), "account", "Account", []), new_account, new Account({ authentication_key: $.copy(authentication_key), sequence_number: u64("0"), self_address: $.copy(new_address) }, new StructTag(new HexString("0x1"), "account", "Account", [])));
+  $c.move_to(new StructTag(new HexString("0x1"), "account", "Account", []), new_account, new Account({ authentication_key: $.copy(authentication_key), sequence_number: u64("0"), self_address: $.copy(new_address), coin_register_events: Aptos_std.Event.new_event_handle_(new_account, $c, [new StructTag(new HexString("0x1"), "account", "CoinRegisterEvent", [])]) }, new StructTag(new HexString("0x1"), "account", "Account", [])));
   return new_account;
 }
 
@@ -330,11 +355,10 @@ export function initialize_ (
   multi_agent_prologue_name: U8[],
   user_epilogue_name: U8[],
   writeset_epilogue_name: U8[],
-  currency_code_required: boolean,
   $c: AptosDataCache,
 ): void {
   System_addresses.assert_aptos_framework_(account, $c);
-  $c.move_to(new StructTag(new HexString("0x1"), "account", "ChainSpecificAccountInfo", []), account, new ChainSpecificAccountInfo({ module_addr: $.copy(module_addr), module_name: $.copy(module_name), script_prologue_name: $.copy(script_prologue_name), module_prologue_name: $.copy(module_prologue_name), writeset_prologue_name: $.copy(writeset_prologue_name), multi_agent_prologue_name: $.copy(multi_agent_prologue_name), user_epilogue_name: $.copy(user_epilogue_name), writeset_epilogue_name: $.copy(writeset_epilogue_name), currency_code_required: currency_code_required }, new StructTag(new HexString("0x1"), "account", "ChainSpecificAccountInfo", [])));
+  $c.move_to(new StructTag(new HexString("0x1"), "account", "ChainSpecificAccountInfo", []), account, new ChainSpecificAccountInfo({ module_addr: $.copy(module_addr), module_name: $.copy(module_name), script_prologue_name: $.copy(script_prologue_name), module_prologue_name: $.copy(module_prologue_name), writeset_prologue_name: $.copy(writeset_prologue_name), multi_agent_prologue_name: $.copy(multi_agent_prologue_name), user_epilogue_name: $.copy(user_epilogue_name), writeset_epilogue_name: $.copy(writeset_epilogue_name) }, new StructTag(new HexString("0x1"), "account", "ChainSpecificAccountInfo", [])));
   return;
 }
 
@@ -348,9 +372,6 @@ export function module_prologue_ (
   chain_id: U8,
   $c: AptosDataCache,
 ): void {
-  if (!Transaction_publishing_option.is_module_allowed_($c)) {
-    throw $.abortCode(Std.Error.invalid_state_(PROLOGUE_EMODULE_NOT_ALLOWED, $c));
-  }
   return prologue_common_(sender, $.copy(txn_sequence_number), $.copy(txn_public_key), $.copy(txn_gas_price), $.copy(txn_max_gas_units), $.copy(txn_expiration_time), $.copy(chain_id), $c);
 }
 
@@ -435,6 +456,17 @@ export function prologue_common_ (
   return;
 }
 
+export function register_coin_ (
+  account_addr: HexString,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <CoinType>*/
+): void {
+  let account;
+  account = $c.borrow_global_mut<Account>(new StructTag(new HexString("0x1"), "account", "Account", []), $.copy(account_addr));
+  Aptos_std.Event.emit_event_(account.coin_register_events, new CoinRegisterEvent({ type_info: Aptos_std.Type_info.type_of_($c, [$p[0]]) }, new StructTag(new HexString("0x1"), "account", "CoinRegisterEvent", [])), $c, [new StructTag(new HexString("0x1"), "account", "CoinRegisterEvent", [])]);
+  return;
+}
+
 export function rotate_authentication_key_ (
   account: HexString,
   new_auth_key: U8[],
@@ -484,12 +516,9 @@ export function script_prologue_ (
   txn_max_gas_units: U64,
   txn_expiration_time: U64,
   chain_id: U8,
-  script_hash: U8[],
+  _script_hash: U8[],
   $c: AptosDataCache,
 ): void {
-  if (!Transaction_publishing_option.is_script_allowed_(script_hash, $c)) {
-    throw $.abortCode(Std.Error.invalid_state_(PROLOGUE_ESCRIPT_NOT_ALLOWED, $c));
-  }
   return prologue_common_(sender, $.copy(txn_sequence_number), $.copy(txn_public_key), $.copy(txn_gas_price), $.copy(txn_max_gas_units), $.copy(txn_expiration_time), $.copy(chain_id), $c);
 }
 
@@ -552,6 +581,7 @@ export function writeset_prologue_ (
 export function loadParsers(repo: AptosParserRepo) {
   repo.addParser("0x1::account::Account", Account.AccountParser);
   repo.addParser("0x1::account::ChainSpecificAccountInfo", ChainSpecificAccountInfo.ChainSpecificAccountInfoParser);
+  repo.addParser("0x1::account::CoinRegisterEvent", CoinRegisterEvent.CoinRegisterEventParser);
   repo.addParser("0x1::account::SignerCapability", SignerCapability.SignerCapabilityParser);
 }
 

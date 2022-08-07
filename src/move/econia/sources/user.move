@@ -127,6 +127,7 @@ module econia::user {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd]
     /// For given market and `custodian_id`, deposit `amount` of
     /// `user`'s coins to their `Collateral`, after withdrawing from
     /// their `aptos_framework::coin::CoinStore`. See wrapped function
@@ -182,6 +183,7 @@ module econia::user {
         register_collateral_entry<Q>(user, market_account_info);
     }
 
+    #[cmd]
     /// For given market and `custodian_id`, withdraw `amount` of
     /// `user`'s coins from their `Collateral`, depositing them to their
     /// `aptos_framework::coin::CoinStore`. See wrapped function
@@ -205,7 +207,6 @@ module econia::user {
                 address_of(user), market_account_info, amount));
     }
 
-    #[cmd]
     /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
     /// entry corresponding to `market_account_info`, then return it.
     /// Aborts if custodian serial ID for given market account is not 0.

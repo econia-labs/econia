@@ -29,18 +29,18 @@ export class BucketTable
     { name: "V", isPhantom: false }
   ];
   static fields: FieldDeclType[] = [
-  { name: "buckets", typeTag: new StructTag(new HexString("0x1"), "table", "Table", [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [new $.TypeParamIdx(0), new $.TypeParamIdx(1)]))]) },
+  { name: "buckets", typeTag: new StructTag(new HexString("0x1"), "table_with_length", "TableWithLength", [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [new $.TypeParamIdx(0), new $.TypeParamIdx(1)]))]) },
   { name: "num_buckets", typeTag: AtomicTypeTag.U64 },
   { name: "level", typeTag: AtomicTypeTag.U8 },
   { name: "len", typeTag: AtomicTypeTag.U64 }];
 
-  buckets: Aptos_std.Table.Table;
+  buckets: Aptos_std.Table_with_length.TableWithLength;
   num_buckets: U64;
   level: U8;
   len: U64;
 
   constructor(proto: any, public typeTag: TypeTag) {
-    this.buckets = proto['buckets'] as Aptos_std.Table.Table;
+    this.buckets = proto['buckets'] as Aptos_std.Table_with_length.TableWithLength;
     this.num_buckets = proto['num_buckets'] as U64;
     this.level = proto['level'] as U8;
     this.len = proto['len'] as U64;
@@ -93,7 +93,7 @@ export function add_ (
   let temp$1, temp$2, bucket, entry, hash, i, index, len;
   hash = Std.Hash.sip_hash_(key, $c, [$p[0]]);
   index = bucket_index_($.copy(map.level), $.copy(map.num_buckets), $.copy(hash), $c);
-  bucket = Aptos_std.Table.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  bucket = Aptos_std.Table_with_length.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   i = u64("0");
   len = Std.Vector.length_(bucket, $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
   while (($.copy(i)).lt($.copy(len))) {
@@ -124,7 +124,7 @@ export function borrow_ (
 ): any {
   let temp$1, temp$2, bucket, entry, i, index, len;
   index = bucket_index_($.copy(map.level), $.copy(map.num_buckets), Std.Hash.sip_hash_(key, $c, [$p[0]]), $c);
-  bucket = Aptos_std.Table.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  bucket = Aptos_std.Table_with_length.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   i = u64("0");
   len = Std.Vector.length_(bucket, $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
   while (($.copy(i)).lt($.copy(len))) {
@@ -150,7 +150,7 @@ export function borrow_mut_ (
 ): any {
   let bucket, entry, i, index, len;
   index = bucket_index_($.copy(map.level), $.copy(map.num_buckets), Std.Hash.sip_hash_(key, $c, [$p[0]]), $c);
-  bucket = Aptos_std.Table.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  bucket = Aptos_std.Table_with_length.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   i = u64("0");
   len = Std.Vector.length_(bucket, $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
   while (($.copy(i)).lt($.copy(len))) {
@@ -192,7 +192,7 @@ export function contains_ (
 ): boolean {
   let bucket, entry, i, index, len;
   index = bucket_index_($.copy(map.level), $.copy(map.num_buckets), Std.Hash.sip_hash_(key, $c, [$p[0]]), $c);
-  bucket = Aptos_std.Table.borrow_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  bucket = Aptos_std.Table_with_length.borrow_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   i = u64("0");
   len = Std.Vector.length_(bucket, $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
   while (($.copy(i)).lt($.copy(len))) {
@@ -221,12 +221,12 @@ export function destroy_empty_ (
   i = u64("0");
   while (($.copy(i)).lt($.copy(map.num_buckets))) {
     {
-      Std.Vector.destroy_empty_(Aptos_std.Table.remove_(map.buckets, $.copy(i), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]), $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
+      Std.Vector.destroy_empty_(Aptos_std.Table_with_length.remove_(map.buckets, $.copy(i), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]), $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
       i = ($.copy(i)).add(u64("1"));
     }
 
   }let { buckets: buckets } = map;
-  Aptos_std.Table.destroy_empty_(buckets, $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  Aptos_std.Table_with_length.destroy_empty_(buckets, $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   return;
 }
 
@@ -255,8 +255,8 @@ export function new___ (
   if (!($.copy(initial_buckets)).gt(u64("0"))) {
     throw $.abortCode(Std.Error.invalid_argument_(EZERO_CAPACITY, $c));
   }
-  buckets = Aptos_std.Table.new___($c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
-  Aptos_std.Table.add_(buckets, u64("0"), Std.Vector.empty_($c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  buckets = Aptos_std.Table_with_length.new___($c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  Aptos_std.Table_with_length.add_(buckets, u64("0"), Std.Vector.empty_($c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   map = new BucketTable({ buckets: buckets, num_buckets: u64("1"), level: u8("0"), len: u64("0") }, new StructTag(new HexString("0x1"), "bucket_table", "BucketTable", [$p[0], $p[1]]));
   split_(map, ($.copy(initial_buckets)).sub(u64("1")), $c, [$p[0], $p[1]]);
   return map;
@@ -270,7 +270,7 @@ export function remove_ (
 ): any {
   let temp$1, temp$2, bucket, entry, i, index, len;
   index = bucket_index_($.copy(map.level), $.copy(map.num_buckets), Std.Hash.sip_hash_(key, $c, [$p[0]]), $c);
-  bucket = Aptos_std.Table.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  bucket = Aptos_std.Table_with_length.borrow_mut_(map.buckets, $.copy(index), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   i = u64("0");
   len = Std.Vector.length_(bucket, $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
   while (($.copy(i)).lt($.copy(len))) {
@@ -320,7 +320,7 @@ export function split_one_bucket_ (
   }
   else{
   }
-  old_bucket = Aptos_std.Table.borrow_mut_(map.buckets, $.copy(to_split), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  old_bucket = Aptos_std.Table_with_length.borrow_mut_(map.buckets, $.copy(to_split), $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   i = u64("0");
   j = Std.Vector.length_(old_bucket, $c, [new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]])]);
   len = $.copy(j);
@@ -345,7 +345,7 @@ export function split_one_bucket_ (
       len = ($.copy(len)).sub(u64("1"));
     }
 
-  }Aptos_std.Table.add_(map.buckets, $.copy(new_bucket_index), new_bucket, $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
+  }Aptos_std.Table_with_length.add_(map.buckets, $.copy(new_bucket_index), new_bucket, $c, [AtomicTypeTag.U64, new VectorTag(new StructTag(new HexString("0x1"), "bucket_table", "Entry", [$p[0], $p[1]]))]);
   return;
 }
 

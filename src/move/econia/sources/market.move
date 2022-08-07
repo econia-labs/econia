@@ -45,7 +45,12 @@ module econia::market {
         custodian_id: u64
     }
 
-    #[method(book_orders_sdk, book_price_levels_sdk, get_orders_sdk, simulate_swap_sdk)]
+    #[method(
+        book_orders_sdk,
+        book_price_levels_sdk,
+        get_orders_sdk,
+        simulate_swap_sdk
+    )]
     /// An order book for the given market
     struct OrderBook<phantom B, phantom Q, phantom E> has key {
         /// Number of base units in a base parcel

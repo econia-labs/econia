@@ -15,33 +15,6 @@ export const EUPGRADE_IMMUTABLE : U64 = u64("2");
 export const EUPGRADE_WEAKER_POLICY : U64 = u64("3");
 
 
-export class AddressAlias 
-{
-  static moduleAddress = moduleAddress;
-  static moduleName = moduleName;
-  static structName: string = "AddressAlias";
-  static typeParameters: TypeParamDeclType[] = [
-
-  ];
-  static fields: FieldDeclType[] = [
-  { name: "alias", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
-  { name: "addr", typeTag: AtomicTypeTag.Address }];
-
-  alias: Std.String.String;
-  addr: HexString;
-
-  constructor(proto: any, public typeTag: TypeTag) {
-    this.alias = proto['alias'] as Std.String.String;
-    this.addr = proto['addr'] as HexString;
-  }
-
-  static AddressAliasParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : AddressAlias {
-    const proto = $.parseStructProto(data, typeTag, repo, AddressAlias);
-    return new AddressAlias(proto, typeTag);
-  }
-
-}
-
 export class ModuleMetadata 
 {
   static moduleAddress = moduleAddress;
@@ -52,49 +25,25 @@ export class ModuleMetadata
   ];
   static fields: FieldDeclType[] = [
   { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
+  { name: "source", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
   { name: "source_map", typeTag: new VectorTag(AtomicTypeTag.U8) },
-  { name: "source", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) }];
+  { name: "abi", typeTag: new VectorTag(AtomicTypeTag.U8) }];
 
   name: Std.String.String;
-  source_map: U8[];
   source: Std.String.String;
+  source_map: U8[];
+  abi: U8[];
 
   constructor(proto: any, public typeTag: TypeTag) {
     this.name = proto['name'] as Std.String.String;
-    this.source_map = proto['source_map'] as U8[];
     this.source = proto['source'] as Std.String.String;
+    this.source_map = proto['source_map'] as U8[];
+    this.abi = proto['abi'] as U8[];
   }
 
   static ModuleMetadataParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : ModuleMetadata {
     const proto = $.parseStructProto(data, typeTag, repo, ModuleMetadata);
     return new ModuleMetadata(proto, typeTag);
-  }
-
-}
-
-export class PackageDep 
-{
-  static moduleAddress = moduleAddress;
-  static moduleName = moduleName;
-  static structName: string = "PackageDep";
-  static typeParameters: TypeParamDeclType[] = [
-
-  ];
-  static fields: FieldDeclType[] = [
-  { name: "addr", typeTag: AtomicTypeTag.Address },
-  { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) }];
-
-  addr: HexString;
-  name: Std.String.String;
-
-  constructor(proto: any, public typeTag: TypeTag) {
-    this.addr = proto['addr'] as HexString;
-    this.name = proto['name'] as Std.String.String;
-  }
-
-  static PackageDepParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : PackageDep {
-    const proto = $.parseStructProto(data, typeTag, repo, PackageDep);
-    return new PackageDep(proto, typeTag);
   }
 
 }
@@ -110,22 +59,19 @@ export class PackageMetadata
   static fields: FieldDeclType[] = [
   { name: "name", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
   { name: "upgrade_policy", typeTag: new StructTag(new HexString("0x1"), "code", "UpgradePolicy", []) },
-  { name: "modules", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "ModuleMetadata", [])) },
-  { name: "address_aliases", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "AddressAlias", [])) },
-  { name: "deps", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "PackageDep", [])) }];
+  { name: "manifest", typeTag: new StructTag(new HexString("0x1"), "string", "String", []) },
+  { name: "modules", typeTag: new VectorTag(new StructTag(new HexString("0x1"), "code", "ModuleMetadata", [])) }];
 
   name: Std.String.String;
   upgrade_policy: UpgradePolicy;
+  manifest: Std.String.String;
   modules: ModuleMetadata[];
-  address_aliases: AddressAlias[];
-  deps: PackageDep[];
 
   constructor(proto: any, public typeTag: TypeTag) {
     this.name = proto['name'] as Std.String.String;
     this.upgrade_policy = proto['upgrade_policy'] as UpgradePolicy;
+    this.manifest = proto['manifest'] as Std.String.String;
     this.modules = proto['modules'] as ModuleMetadata[];
-    this.address_aliases = proto['address_aliases'] as AddressAlias[];
-    this.deps = proto['deps'] as PackageDep[];
   }
 
   static PackageMetadataParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : PackageMetadata {
@@ -353,9 +299,7 @@ export function upgrade_policy_no_compat_ (
 }
 
 export function loadParsers(repo: AptosParserRepo) {
-  repo.addParser("0x1::code::AddressAlias", AddressAlias.AddressAliasParser);
   repo.addParser("0x1::code::ModuleMetadata", ModuleMetadata.ModuleMetadataParser);
-  repo.addParser("0x1::code::PackageDep", PackageDep.PackageDepParser);
   repo.addParser("0x1::code::PackageMetadata", PackageMetadata.PackageMetadataParser);
   repo.addParser("0x1::code::PackageRegistry", PackageRegistry.PackageRegistryParser);
   repo.addParser("0x1::code::UpgradePolicy", UpgradePolicy.UpgradePolicyParser);

@@ -220,7 +220,7 @@ export function initialize_ (
   System_addresses.assert_aptos_framework_(aptos_framework, $c);
   [mint_cap, burn_cap] = Coin.initialize_(aptos_framework, Std.String.utf8_([u8("65"), u8("112"), u8("116"), u8("111"), u8("115"), u8("32"), u8("67"), u8("111"), u8("105"), u8("110")], $c), Std.String.utf8_([u8("65"), u8("80"), u8("84"), u8("79"), u8("83")], $c), u64("8"), false, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
   $c.move_to(new StructTag(new HexString("0x1"), "aptos_coin", "Capabilities", []), aptos_framework, new Capabilities({ mint_cap: $.copy(mint_cap) }, new StructTag(new HexString("0x1"), "aptos_coin", "Capabilities", [])));
-  Coin.register_internal_(core_resource, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
+  Coin.register_(core_resource, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
   coins = Coin.mint_(u64("18446744073709551615"), mint_cap, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
   Coin.deposit_(Std.Signer.address_of_(core_resource, $c), coins, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
   $c.move_to(new StructTag(new HexString("0x1"), "aptos_coin", "Capabilities", []), core_resource, new Capabilities({ mint_cap: $.copy(mint_cap) }, new StructTag(new HexString("0x1"), "aptos_coin", "Capabilities", [])));

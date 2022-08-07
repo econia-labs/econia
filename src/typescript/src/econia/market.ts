@@ -139,16 +139,35 @@ export class OrderBook
     return result as unknown as OrderBook;
   }
 
-  book_orders_sdk() {
+  book_orders_sdk(
+  ) {
     const cache = new DummyCache();
     const tags = (this.typeTag as StructTag).typeParams;
     return book_orders_sdk_(this, cache, tags);
   }
 
-  book_price_levels_sdk() {
+  book_price_levels_sdk(
+  ) {
     const cache = new DummyCache();
     const tags = (this.typeTag as StructTag).typeParams;
     return book_price_levels_sdk_(this, cache, tags);
+  }
+
+  get_orders_sdk(
+    side: boolean,
+  ) {
+    const cache = new DummyCache();
+    const tags = (this.typeTag as StructTag).typeParams;
+    return get_orders_sdk_(this, side, cache, tags);
+  }
+
+  simulate_swap_sdk(
+    style: boolean,
+    coins_in: U64,
+  ) {
+    const cache = new DummyCache();
+    const tags = (this.typeTag as StructTag).typeParams;
+    return simulate_swap_sdk_(this, style, coins_in, cache, tags);
   }
 
 }
@@ -889,6 +908,75 @@ export function buildPayload_register_market (
     []
   );
 
+}
+
+export function simulate_swap_sdk_ (
+  order_book_ref_mut: OrderBook,
+  style: boolean,
+  coins_in: U64,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <B, Q, E>*/
+): [U64, U64] {
+  let temp$1, temp$2, temp$3, temp$4, temp$5, temp$6, temp$7, temp$8, base_parcels_can_afford, base_parcels_filled, base_parcels_on_hand, coins_in_left, coins_in_multiplier, coins_out, coins_out_multiplier, n_orders, scale_factor, should_return, side, simple_order, simple_order_index, simple_orders;
+  if ((style == BUY)) {
+    temp$1 = ASK;
+  }
+  else{
+    temp$1 = BID;
+  }
+  side = temp$1;
+  simple_orders = get_orders_sdk_(order_book_ref_mut, side, $c, [$p[0], $p[1], $p[2]]);
+  if (Std.Vector.is_empty_(simple_orders, $c, [new StructTag(new HexString("0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7"), "market", "SimpleOrder", [])])) {
+    return [u64("0"), $.copy(coins_in)];
+  }
+  else{
+  }
+  scale_factor = $.copy(order_book_ref_mut.scale_factor);
+  [coins_in_left, coins_out, simple_order_index, n_orders] = [$.copy(coins_in), u64("0"), u64("0"), Std.Vector.length_(simple_orders, $c, [new StructTag(new HexString("0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7"), "market", "SimpleOrder", [])])];
+  while (true) {
+    simple_order = Std.Vector.borrow_(simple_orders, $.copy(simple_order_index), $c, [new StructTag(new HexString("0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7"), "market", "SimpleOrder", [])]);
+    if ((style == SELL)) {
+      [temp$2, temp$3] = [$.copy(scale_factor), $.copy(simple_order.price)];
+    }
+    else{
+      [temp$2, temp$3] = [$.copy(simple_order.price), $.copy(scale_factor)];
+    }
+    [coins_in_multiplier, coins_out_multiplier] = [temp$2, temp$3];
+    if ((style == SELL)) {
+      base_parcels_on_hand = ($.copy(coins_in_left)).div($.copy(scale_factor));
+      if (($.copy(base_parcels_on_hand)).gt($.copy(simple_order.base_parcels))) {
+        [temp$4, temp$5] = [$.copy(simple_order.base_parcels), false];
+      }
+      else{
+        [temp$4, temp$5] = [$.copy(base_parcels_on_hand), true];
+      }
+      [base_parcels_filled, should_return] = [temp$4, temp$5];
+    }
+    else{
+      base_parcels_can_afford = ($.copy(coins_in_left)).div($.copy(simple_order.price));
+      if (($.copy(simple_order.base_parcels)).gt($.copy(base_parcels_can_afford))) {
+        [temp$6, temp$7] = [$.copy(base_parcels_can_afford), true];
+      }
+      else{
+        [temp$6, temp$7] = [$.copy(simple_order.base_parcels), false];
+      }
+      [base_parcels_filled, should_return] = [temp$6, temp$7];
+    }
+    coins_in_left = ($.copy(coins_in_left)).sub(($.copy(base_parcels_filled)).mul($.copy(coins_in_multiplier)));
+    coins_out = ($.copy(coins_out)).add(($.copy(base_parcels_filled)).mul($.copy(coins_out_multiplier)));
+    simple_order_index = ($.copy(simple_order_index)).add(u64("1"));
+    if (should_return) {
+      temp$8 = true;
+    }
+    else{
+      temp$8 = ($.copy(simple_order_index)).eq(($.copy(n_orders)));
+    }
+    if (temp$8) {
+      return [$.copy(coins_out), $.copy(coins_in_left)];
+    }
+    else{
+    }
+  }
 }
 
 export function swap_ (

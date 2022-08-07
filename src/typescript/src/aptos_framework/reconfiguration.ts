@@ -179,7 +179,7 @@ export function initialize_ (
   if (!!$c.exists(new StructTag(new HexString("0x1"), "reconfiguration", "Configuration", []), new HexString("0x1"))) {
     throw $.abortCode(Std.Error.already_exists_(ECONFIGURATION, $c));
   }
-  if (!(Std.Guid.get_next_creation_num_(Std.Signer.address_of_(account, $c), $c)).eq((u64("0")))) {
+  if (!(Std.Guid.get_next_creation_num_(Std.Signer.address_of_(account, $c), $c)).eq((u64("1")))) {
     throw $.abortCode(Std.Error.invalid_state_(EINVALID_GUID_FOR_EVENT, $c));
   }
   $c.move_to(new StructTag(new HexString("0x1"), "reconfiguration", "Configuration", []), account, new Configuration({ epoch: u64("0"), last_reconfiguration_time: u64("0"), events: Aptos_std.Event.new_event_handle_(account, $c, [new StructTag(new HexString("0x1"), "reconfiguration", "NewEpochEvent", [])]) }, new StructTag(new HexString("0x1"), "reconfiguration", "Configuration", [])));

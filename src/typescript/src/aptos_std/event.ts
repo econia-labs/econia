@@ -69,6 +69,14 @@ export class EventHandleGenerator
     return result as unknown as EventHandleGenerator;
   }
 }
+export function counter_ (
+  handle_ref: EventHandle,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <T>*/
+): U64 {
+  return $.copy(handle_ref.counter);
+}
+
 export function destroy_handle_ (
   handle: EventHandle,
   $c: AptosDataCache,

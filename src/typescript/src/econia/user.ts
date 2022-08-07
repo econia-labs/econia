@@ -237,6 +237,45 @@ export function deposit_collateral_ (
   return;
 }
 
+export function deposit_collateral_coinstore_ (
+  user: HexString,
+  custodian_id: U64,
+  base: boolean,
+  amount: U64,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <B, Q, E>*/
+): void {
+  let market_account_info;
+  market_account_info = market_account_info_($.copy(custodian_id), $c, [$p[0], $p[1], $p[2]]);
+  if (base) {
+    deposit_collateral_(Std.Signer.address_of_(user, $c), $.copy(market_account_info), Aptos_framework.Coin.withdraw_(user, $.copy(amount), $c, [$p[0]]), $c, [$p[0]]);
+  }
+  else{
+    deposit_collateral_(Std.Signer.address_of_(user, $c), $.copy(market_account_info), Aptos_framework.Coin.withdraw_(user, $.copy(amount), $c, [$p[1]]), $c, [$p[1]]);
+  }
+  return;
+}
+
+
+export function buildPayload_deposit_collateral_coinstore (
+  custodian_id: U64,
+  base: boolean,
+  amount: U64,
+  $p: TypeTag[], /* <B, Q, E>*/
+) {
+  const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
+  return $.buildPayload(
+    "0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7::user::deposit_collateral_coinstore",
+    typeParamStrings,
+    [
+      $.payloadArg(custodian_id),
+      $.payloadArg(base),
+      $.payloadArg(amount),
+    ]
+  );
+
+}
+
 export function exists_market_account_ (
   market_account_info: MarketAccountInfo,
   user: HexString,
@@ -513,6 +552,45 @@ export function withdraw_collateral_ (
   collateral_map = $c.borrow_global_mut<Collateral>(new StructTag(new HexString("0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7"), "user", "Collateral", [$p[0]]), $.copy(user)).map;
   collateral = Open_table.borrow_mut_(collateral_map, $.copy(market_account_info), $c, [new StructTag(new HexString("0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7"), "user", "MarketAccountInfo", []), new StructTag(new HexString("0x1"), "coin", "Coin", [$p[0]])]);
   return Aptos_framework.Coin.extract_(collateral, $.copy(amount), $c, [$p[0]]);
+}
+
+export function withdraw_collateral_coinstore_ (
+  user: HexString,
+  custodian_id: U64,
+  base: boolean,
+  amount: U64,
+  $c: AptosDataCache,
+  $p: TypeTag[], /* <B, Q, E>*/
+): void {
+  let market_account_info;
+  market_account_info = market_account_info_($.copy(custodian_id), $c, [$p[0], $p[1], $p[2]]);
+  if (base) {
+    Aptos_framework.Coin.deposit_(Std.Signer.address_of_(user, $c), withdraw_collateral_(Std.Signer.address_of_(user, $c), $.copy(market_account_info), $.copy(amount), $c, [$p[0]]), $c, [$p[0]]);
+  }
+  else{
+    Aptos_framework.Coin.deposit_(Std.Signer.address_of_(user, $c), withdraw_collateral_(Std.Signer.address_of_(user, $c), $.copy(market_account_info), $.copy(amount), $c, [$p[1]]), $c, [$p[1]]);
+  }
+  return;
+}
+
+
+export function buildPayload_withdraw_collateral_coinstore (
+  custodian_id: U64,
+  base: boolean,
+  amount: U64,
+  $p: TypeTag[], /* <B, Q, E>*/
+) {
+  const typeParamStrings = $p.map(t=>$.getTypeTagFullname(t));
+  return $.buildPayload(
+    "0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7::user::withdraw_collateral_coinstore",
+    typeParamStrings,
+    [
+      $.payloadArg(custodian_id),
+      $.payloadArg(base),
+      $.payloadArg(amount),
+    ]
+  );
+
 }
 
 export function withdraw_collateral_custodian_ (

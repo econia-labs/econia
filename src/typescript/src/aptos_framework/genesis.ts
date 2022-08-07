@@ -11,13 +11,12 @@ import * as Aptos_coin from "./aptos_coin";
 import * as Aptos_governance from "./aptos_governance";
 import * as Block from "./block";
 import * as Chain_id from "./chain_id";
-import * as Coin from "./coin";
+import * as Coins from "./coins";
 import * as Consensus_config from "./consensus_config";
 import * as Reconfiguration from "./reconfiguration";
 import * as Stake from "./stake";
 import * as Timestamp from "./timestamp";
 import * as Transaction_fee from "./transaction_fee";
-import * as Transaction_publishing_option from "./transaction_publishing_option";
 import * as Version from "./version";
 import * as Vm_config from "./vm_config";
 export const packageName = "AptosFramework";
@@ -34,7 +33,6 @@ export function create_initialize_validators_ (
   validator_network_addresses: U8[][],
   full_node_network_addresses: U8[][],
   staking_distribution: U64[],
-  initial_lockup_timestamp: U64,
   $c: AptosDataCache,
 ): void {
   let amount, consensus_pubkey, cur_full_node_network_addresses, cur_validator_network_addresses, i, num_full_node_network_addresses, num_owners, num_staking, num_validator_network_addresses, owner, owner_account, pop;
@@ -58,9 +56,9 @@ export function create_initialize_validators_ (
       consensus_pubkey = $.copy(Std.Vector.borrow_(consensus_pubkeys, $.copy(i), $c, [new VectorTag(AtomicTypeTag.U8)]));
       pop = $.copy(Std.Vector.borrow_(proof_of_possession, $.copy(i), $c, [new VectorTag(AtomicTypeTag.U8)]));
       Stake.register_validator_candidate_(owner_account, $.copy(consensus_pubkey), $.copy(pop), $.copy(cur_validator_network_addresses), $.copy(cur_full_node_network_addresses), $c);
-      Stake.increase_lockup_(owner_account, $.copy(initial_lockup_timestamp), $c);
+      Stake.increase_lockup_(owner_account, $c);
       amount = $.copy(Std.Vector.borrow_(staking_distribution, $.copy(i), $c, [AtomicTypeTag.U64]));
-      Coin.register_(owner_account, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
+      Coins.register_(owner_account, $c, [new StructTag(new HexString("0x1"), "aptos_coin", "AptosCoin", [])]);
       Aptos_coin.mint_(aptos_framework_account, $.copy(owner), $.copy(amount), $c);
       Stake.add_stake_(owner_account, $.copy(amount), $c);
       Stake.join_validator_set_internal_(owner_account, $.copy(owner), $c);
@@ -71,37 +69,9 @@ export function create_initialize_validators_ (
   return;
 }
 
-
-export function buildPayload_create_initialize_validators (
-  owners: HexString[],
-  consensus_pubkeys: U8[][],
-  proof_of_possession: U8[][],
-  validator_network_addresses: U8[][],
-  full_node_network_addresses: U8[][],
-  staking_distribution: U64[],
-  initial_lockup_timestamp: U64,
-) {
-  const typeParamStrings = [] as string[];
-  return $.buildPayload(
-    "0x1::genesis::create_initialize_validators",
-    typeParamStrings,
-    [
-      owners.map(element => $.payloadArg(element)),
-      consensus_pubkeys.map(array => $.u8ArrayArg(array)),
-      proof_of_possession.map(array => $.u8ArrayArg(array)),
-      validator_network_addresses.map(array => $.u8ArrayArg(array)),
-      full_node_network_addresses.map(array => $.u8ArrayArg(array)),
-      staking_distribution.map(element => $.payloadArg(element)),
-      $.payloadArg(initial_lockup_timestamp),
-    ]
-  );
-
-}
 export function initialize_ (
   core_resource_account: HexString,
   core_resource_account_auth_key: U8[],
-  initial_script_allow_list: U8[][],
-  is_open_module: boolean,
   instruction_schedule: U8[],
   native_schedule: U8[],
   chain_id: U8,
@@ -111,52 +81,26 @@ export function initialize_ (
   epoch_interval: U64,
   minimum_stake: U64,
   maximum_stake: U64,
-  min_lockup_duration_secs: U64,
-  max_lockup_duration_secs: U64,
-  allow_validator_set_change: boolean,
-  rewards_rate: U64,
-  rewards_rate_denominator: U64,
-  $c: AptosDataCache,
-): void {
-  if (!($.copy(epoch_interval)).gt(u64("0"))) {
-    throw $.abortCode(Std.Error.invalid_argument_(EINVALID_EPOCH_DURATION, $c));
-  }
-  return initialize_internal_(core_resource_account, $.copy(core_resource_account_auth_key), $.copy(initial_script_allow_list), is_open_module, $.copy(instruction_schedule), $.copy(native_schedule), $.copy(chain_id), $.copy(initial_version), $.copy(consensus_config), $.copy(min_price_per_gas_unit), $.copy(epoch_interval), $.copy(minimum_stake), $.copy(maximum_stake), $.copy(min_lockup_duration_secs), $.copy(max_lockup_duration_secs), allow_validator_set_change, $.copy(rewards_rate), $.copy(rewards_rate_denominator), $c);
-}
-
-export function initialize_internal_ (
-  core_resource_account: HexString,
-  core_resource_account_auth_key: U8[],
-  initial_script_allow_list: U8[][],
-  is_open_module: boolean,
-  instruction_schedule: U8[],
-  native_schedule: U8[],
-  chain_id: U8,
-  initial_version: U64,
-  consensus_config: U8[],
-  min_price_per_gas_unit: U64,
-  epoch_interval: U64,
-  minimum_stake: U64,
-  maximum_stake: U64,
-  min_lockup_duration_secs: U64,
-  max_lockup_duration_secs: U64,
+  recurring_lockup_duration_secs: U64,
   allow_validator_set_change: boolean,
   rewards_rate: U64,
   rewards_rate_denominator: U64,
   $c: AptosDataCache,
 ): void {
   let aptos_framework_account, burn_cap, framework_signer_cap, mint_cap;
+  if (!($.copy(epoch_interval)).gt(u64("0"))) {
+    throw $.abortCode(Std.Error.invalid_argument_(EINVALID_EPOCH_DURATION, $c));
+  }
   Account.create_account_internal_(Std.Signer.address_of_(core_resource_account, $c), $c);
   Account.rotate_authentication_key_internal_(core_resource_account, $.copy(core_resource_account_auth_key), $c);
   [aptos_framework_account, framework_signer_cap] = Account.create_core_framework_account_($c);
-  Account.initialize_(aptos_framework_account, new HexString("0x1"), [u8("97"), u8("99"), u8("99"), u8("111"), u8("117"), u8("110"), u8("116")], [u8("115"), u8("99"), u8("114"), u8("105"), u8("112"), u8("116"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("109"), u8("111"), u8("100"), u8("117"), u8("108"), u8("101"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("119"), u8("114"), u8("105"), u8("116"), u8("101"), u8("115"), u8("101"), u8("116"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("109"), u8("117"), u8("108"), u8("116"), u8("105"), u8("95"), u8("97"), u8("103"), u8("101"), u8("110"), u8("116"), u8("95"), u8("115"), u8("99"), u8("114"), u8("105"), u8("112"), u8("116"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("101"), u8("112"), u8("105"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("119"), u8("114"), u8("105"), u8("116"), u8("101"), u8("115"), u8("101"), u8("116"), u8("95"), u8("101"), u8("112"), u8("105"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], false, $c);
+  Account.initialize_(aptos_framework_account, new HexString("0x1"), [u8("97"), u8("99"), u8("99"), u8("111"), u8("117"), u8("110"), u8("116")], [u8("115"), u8("99"), u8("114"), u8("105"), u8("112"), u8("116"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("109"), u8("111"), u8("100"), u8("117"), u8("108"), u8("101"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("119"), u8("114"), u8("105"), u8("116"), u8("101"), u8("115"), u8("101"), u8("116"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("109"), u8("117"), u8("108"), u8("116"), u8("105"), u8("95"), u8("97"), u8("103"), u8("101"), u8("110"), u8("116"), u8("95"), u8("115"), u8("99"), u8("114"), u8("105"), u8("112"), u8("116"), u8("95"), u8("112"), u8("114"), u8("111"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("101"), u8("112"), u8("105"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], [u8("119"), u8("114"), u8("105"), u8("116"), u8("101"), u8("115"), u8("101"), u8("116"), u8("95"), u8("101"), u8("112"), u8("105"), u8("108"), u8("111"), u8("103"), u8("117"), u8("101")], $c);
   Aptos_governance.store_signer_cap_(aptos_framework_account, framework_signer_cap, $c);
   Consensus_config.initialize_(aptos_framework_account, $c);
   Version.initialize_(aptos_framework_account, $.copy(initial_version), $c);
-  Stake.initialize_validator_set_(aptos_framework_account, $.copy(minimum_stake), $.copy(maximum_stake), $.copy(min_lockup_duration_secs), $.copy(max_lockup_duration_secs), allow_validator_set_change, $.copy(rewards_rate), $.copy(rewards_rate_denominator), $c);
+  Stake.initialize_validator_set_(aptos_framework_account, $.copy(minimum_stake), $.copy(maximum_stake), $.copy(recurring_lockup_duration_secs), allow_validator_set_change, $.copy(rewards_rate), $.copy(rewards_rate_denominator), $c);
   Vm_config.initialize_(aptos_framework_account, $.copy(instruction_schedule), $.copy(native_schedule), $.copy(min_price_per_gas_unit), $c);
   Consensus_config.set_(aptos_framework_account, $.copy(consensus_config), $c);
-  Transaction_publishing_option.initialize_(aptos_framework_account, $.copy(initial_script_allow_list), is_open_module, $c);
   [mint_cap, burn_cap] = Aptos_coin.initialize_(aptos_framework_account, core_resource_account, $c);
   Stake.store_aptos_coin_mint_cap_(aptos_framework_account, $.copy(mint_cap), $c);
   Transaction_fee.store_aptos_coin_burn_cap_(aptos_framework_account, $.copy(burn_cap), $c);

@@ -5,13 +5,11 @@ import {u8, u64, u128} from "@manahippo/move-to-ts";
 import {TypeParamDeclType, FieldDeclType} from "@manahippo/move-to-ts";
 import {AtomicTypeTag, StructTag, TypeTag, VectorTag} from "@manahippo/move-to-ts";
 import {HexString, AptosClient} from "aptos";
-import * as Std from "../std";
 export const packageName = "AptosStdlib";
 export const moduleAddress = new HexString("0x1");
 export const moduleName = "table";
 
 export const EALREADY_EXISTS : U64 = u64("100");
-export const ENOT_EMPTY : U64 = u64("102");
 export const ENOT_FOUND : U64 = u64("101");
 
 
@@ -53,15 +51,12 @@ export class Table
     { name: "V", isPhantom: true }
   ];
   static fields: FieldDeclType[] = [
-  { name: "handle", typeTag: AtomicTypeTag.U128 },
-  { name: "length", typeTag: AtomicTypeTag.U64 }];
+  { name: "handle", typeTag: AtomicTypeTag.U128 }];
 
   handle: U128;
-  length: U64;
 
   constructor(proto: any, public typeTag: TypeTag) {
     this.handle = proto['handle'] as U128;
-    this.length = proto['length'] as U64;
   }
 
   static TableParser(data:any, typeTag: TypeTag, repo: AptosParserRepo) : Table {
@@ -77,9 +72,7 @@ export function add_ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <K, V>*/
 ): void {
-  add_box_(table, $.copy(key), new Box({ val: val }, new StructTag(new HexString("0x1"), "table", "Box", [$p[1]])), $c, [$p[0], $p[1], new StructTag(new HexString("0x1"), "table", "Box", [$p[1]])]);
-  table.length = ($.copy(table.length)).add(u64("1"));
-  return;
+  return add_box_(table, $.copy(key), new Box({ val: val }, new StructTag(new HexString("0x1"), "table", "Box", [$p[1]])), $c, [$p[0], $p[1], new StructTag(new HexString("0x1"), "table", "Box", [$p[1]])]);
 }
 
 export function add_box_ (
@@ -163,14 +156,11 @@ export function contains_box_ (
   return $.aptos_std_table_contains_box(table, key, $c, [$p[0], $p[1], $p[2]]);
 
 }
-export function destroy_empty_ (
+export function destroy_ (
   table: Table,
   $c: AptosDataCache,
   $p: TypeTag[], /* <K, V>*/
 ): void {
-  if (!($.copy(table.length)).eq((u64("0")))) {
-    throw $.abortCode(Std.Error.invalid_state_(ENOT_EMPTY, $c));
-  }
   destroy_empty_box_(table, $c, [$p[0], $p[1], new StructTag(new HexString("0x1"), "table", "Box", [$p[1]])]);
   return drop_unchecked_box_(table, $c, [$p[0], $p[1], new StructTag(new HexString("0x1"), "table", "Box", [$p[1]])]);
 }
@@ -191,27 +181,11 @@ export function drop_unchecked_box_ (
   return $.aptos_std_table_drop_unchecked_box(table, $c, [$p[0], $p[1], $p[2]]);
 
 }
-export function empty_ (
-  table: Table,
-  $c: AptosDataCache,
-  $p: TypeTag[], /* <K, V>*/
-): boolean {
-  return ($.copy(table.length)).eq((u64("0")));
-}
-
-export function length_ (
-  table: Table,
-  $c: AptosDataCache,
-  $p: TypeTag[], /* <K, V>*/
-): U64 {
-  return $.copy(table.length);
-}
-
 export function new___ (
   $c: AptosDataCache,
   $p: TypeTag[], /* <K, V>*/
 ): Table {
-  return new Table({ handle: new_table_handle_($c, [$p[0], $p[1]]), length: u64("0") }, new StructTag(new HexString("0x1"), "table", "Table", [$p[0], $p[1]]));
+  return new Table({ handle: new_table_handle_($c, [$p[0], $p[1]]) }, new StructTag(new HexString("0x1"), "table", "Table", [$p[0], $p[1]]));
 }
 
 export function new_table_handle_ (
@@ -228,7 +202,6 @@ export function remove_ (
   $p: TypeTag[], /* <K, V>*/
 ): any {
   let { val: val } = remove_box_(table, $.copy(key), $c, [$p[0], $p[1], new StructTag(new HexString("0x1"), "table", "Box", [$p[1]])]);
-  table.length = ($.copy(table.length)).sub(u64("1"));
   return val;
 }
 

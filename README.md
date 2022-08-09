@@ -18,6 +18,7 @@
     - [Command line setup](#command-line-setup)
     - [Using the Python package](#using-the-python-package)
     - [Using the TypeScript SDK](#using-the-typescript-sdk)
+    - [Freeing up disk space](#freeing-up-disk-space)
   - [Major filetypes](#major-filetypes)
     - [Jupyter](#jupyter)
     - [Markdown](#markdown)
@@ -169,6 +170,15 @@ With the `econia` conda environment active, you can then build the Python packag
 
 Econia v1.1.0 contained an auto-generated TypeScript SDK, contributed and maintained by [Manahip](http://github.com/manahip).
 Econia's current branch does not yet have one, but it is on the way.
+
+### Freeing up disk space
+
+Installing all of the dependencies necessary to develop Econia can quickly take up disk space.
+To clean up cache files and intermediate artifacts, consider the following tools:
+
+* [`kondo`](https://github.com/tbillington/kondo)
+* [`cargo cache`](https://github.com/matthiaskrgr/cargo-cache)
+* [`detox`](https://github.com/whitfin/detox)
 
 ## Major filetypes
 

@@ -1,6 +1,6 @@
 [package]
 name = 'Econia'
-version = '2.0.1' # Per SemVer
+version = '3.0.0' # Per SemVer
 
 [addresses]
 econia = '0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7'

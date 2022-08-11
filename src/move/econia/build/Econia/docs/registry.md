@@ -1209,7 +1209,7 @@ Return <code><b>true</b></code> if <code><a href="registry.md#0xc0deb00c_registr
     <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
-    // Return <b>if</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="registry.md#0xc0deb00c_registry">registry</a> cointains given <a href="market.md#0xc0deb00c_market">market</a> info
+    // Return <b>if</b> market <a href="registry.md#0xc0deb00c_registry">registry</a> cointains given market info
     <a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info)
 }
 </code></pre>
@@ -1237,7 +1237,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_is_registered">is_reg
 <pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_types">is_registered_types</a>&lt;B, Q, E&gt;():
 bool
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Pass type argument <a href="market.md#0xc0deb00c_market">market</a> info info
+    // Pass type argument market info info
     <a href="registry.md#0xc0deb00c_registry_is_registered">is_registered</a>(<a href="registry.md#0xc0deb00c_registry_market_info">market_info</a>&lt;B, Q, E&gt;())
 }
 </code></pre>
@@ -1389,10 +1389,10 @@ to an <code>EconiaCapability</code>.
     <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.scales, scale_exponent_type),
         <a href="registry.md#0xc0deb00c_registry_E_NOT_EXPONENT_TYPE">E_NOT_EXPONENT_TYPE</a>); // Verify valid exponent type
     <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{base_coin_type, quote_coin_type,
-        scale_exponent_type}; // Pack new <a href="market.md#0xc0deb00c_market">market</a> info for types
+        scale_exponent_type}; // Pack new market info for types
     <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info),
-        <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>); // Assert <a href="market.md#0xc0deb00c_market">market</a> is not already registered
-    // Register host-<a href="market.md#0xc0deb00c_market">market</a> relationship
+        <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>); // Assert market is not already registered
+    // Register host-market relationship
     <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.markets, market_info, host);
 }
 </code></pre>

@@ -2,8 +2,8 @@
 
 | Module | Source code | Documentation |
 | ------ | ----------- | ------------- |
+| `assets`     | [assets.move](../../src/move/econia/sources/assets.move)         | [assets.md](../../src/move/econia/build/Econia/docs/assets.md)         |
 | `capability` | [capability.move](../../src/move/econia/sources/capability.move) | [capability.md](../../src/move/econia/build/Econia/docs/capability.md) |
-| `coins`      | [coins.move](../../src/move/econia/sources/coins.move)           | [coins.md](../../src/move/econia/build/Econia/docs/coins.md)           |
 | `critbit`    | [critbit.move](../../src/move/econia/sources/critbit.move)       | [critbit.md](../../src/move/econia/build/Econia/docs/critbit.md)       |
 | `init`       | [init.move](../../src/move/econia/sources/init.move)             | [init.md](../../src/move/econia/build/Econia/docs/init.md)             |
 | `market`     | [market.move](../../src/move/econia/sources/market.move)         | [market.md](../../src/move/econia/build/Econia/docs/market.md)         |

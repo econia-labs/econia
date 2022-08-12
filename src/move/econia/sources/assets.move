@@ -1,5 +1,5 @@
-/// Mock coin types for on- and off-chain testing.
-module econia::coins {
+/// Mock asset types for on- and off-chain testing.
+module econia::assets {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -130,6 +130,26 @@ module econia::coins {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Base agnostic asset type
+    struct BA{}
+
+    #[test_only]
+    /// Mock agnostic asset type
+    struct MA{}
+
+    #[test_only]
+    /// Mock coin type
+    struct MC{}
+
+    #[test_only]
+    /// Quote agnostic asset type
+    struct QA{}
+
+    // Test-only structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

@@ -11,7 +11,7 @@ flowchart TD
     market --> critbit
     market --> registry
     market --> capability
-    market --> |test-only| coins
+    market --> |test-only| assets
     market --> user
     market --> order_id
     init --> registry
@@ -21,10 +21,9 @@ flowchart TD
     user --> open_table
     user --> order_id
     user --> registry
-    user --> |test-only| coins
+    user --> |test-only| assets
     registry --> capability
-    registry --> |test-only| coins
-    registry --> open_table
+    registry --> |test-only| assets
     order_id --> |test-only| critbit
 
 ```

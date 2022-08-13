@@ -1594,7 +1594,8 @@ module econia::user {
         econia: &signer,
         user: &signer
     ) acquires Collateral, MarketAccounts {
-       registry::register_test_market_internal(econia); // Init test market
+       // Init test market
+       registry::register_test_market_internal(econia);
        // Attempt invalid registration
        register_market_account<BC, QC, E1>(user, 1);
     }

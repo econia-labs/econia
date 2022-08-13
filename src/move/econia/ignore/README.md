@@ -4,6 +4,8 @@ This is a temporary directory for storing modules that have unresolved dependenc
 
 ```mermaid
 
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
+
 flowchart LR
 
     deposit_collateral_coinstore --> deposit_collateral

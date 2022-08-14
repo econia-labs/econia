@@ -186,8 +186,8 @@ module econia::user {
     #[cmd]
     /// For given market, withdraw `amount` of `user`'s coins from their
     /// `Collateral`, depositing them to their
-    /// `aptos_framework::coin::CoinStore`. See wrapped function
-    /// `withdraw_collateral()`.
+    /// `aptos_framework::coin::CoinStore`: base coins if `base` is true
+    /// else quote coins. See wrapped function `withdraw_collateral()`.
     ///
     /// # Patch notes
     /// * Previously allowed for any `custodian_id`, which would

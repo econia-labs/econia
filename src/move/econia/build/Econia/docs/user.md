@@ -519,8 +519,8 @@ signature.
 
 For given market, withdraw <code>amount</code> of <code><a href="user.md#0xc0deb00c_user">user</a></code>'s coins from their
 <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, depositing them to their
-<code>aptos_framework::coin::CoinStore</code>. See wrapped function
-<code><a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>()</code>.
+<code>aptos_framework::coin::CoinStore</code>: base coins if <code>base</code> is true
+else quote coins. See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>()</code>.
 
 
 <a name="@Patch_notes_3"></a>

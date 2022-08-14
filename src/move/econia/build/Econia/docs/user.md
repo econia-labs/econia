@@ -20,7 +20,7 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
     -  [Abort conditions](#@Abort_conditions_2)
 -  [Function `withdraw_collateral_coinstore`](#0xc0deb00c_user_withdraw_collateral_coinstore)
-    -  [Parameters](#@Parameters_3)
+    -  [Patch notes](#@Patch_notes_3)
 -  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
 -  [Function `add_order_internal`](#0xc0deb00c_user_add_order_internal)
     -  [Parameters](#@Parameters_4)
@@ -517,17 +517,21 @@ signature.
 
 ## Function `withdraw_collateral_coinstore`
 
-For given market and <code>custodian_id</code>, withdraw <code>amount</code> of
-<code><a href="user.md#0xc0deb00c_user">user</a></code>'s coins from their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, depositing them to their
+For given market, withdraw <code>amount</code> of <code><a href="user.md#0xc0deb00c_user">user</a></code>'s coins from their
+<code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>, depositing them to their
 <code>aptos_framework::coin::CoinStore</code>. See wrapped function
 <code><a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>()</code>.
 
 
-<a name="@Parameters_3"></a>
+<a name="@Patch_notes_3"></a>
 
-### Parameters
+### Patch notes
 
-* <code>base</code>: If <code><b>true</b></code>, withdraw base coins, else quote coins
+* Previously allowed for any <code>custodian_id</code>, which would
+inappropriately allow for user to override a custodian. Rather
+than removing the <code>custodian_id</code> parameter, however, the
+assert statement was instead added so as not to introduce
+breaking API changes.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_coinstore">withdraw_collateral_coinstore</a>&lt;B, Q, E&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, custodian_id: u64, base: bool, amount: u64)
@@ -545,6 +549,8 @@ For given market and <code>custodian_id</code>, withdraw <code>amount</code> of
     base: bool,
     amount: u64
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert custodian ID indicates no custodian
+    <b>assert</b>!(custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>, <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
     // Get corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
     <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
     <b>if</b> (base) // If marked for withdrawing base <a href="">coins</a>, <b>use</b> base type

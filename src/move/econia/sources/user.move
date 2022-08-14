@@ -184,19 +184,25 @@ module econia::user {
     }
 
     #[cmd]
-    /// For given market and `custodian_id`, withdraw `amount` of
-    /// `user`'s coins from their `Collateral`, depositing them to their
+    /// For given market, withdraw `amount` of `user`'s coins from their
+    /// `Collateral`, depositing them to their
     /// `aptos_framework::coin::CoinStore`. See wrapped function
     /// `withdraw_collateral()`.
     ///
-    /// # Parameters
-    /// * `base`: If `true`, withdraw base coins, else quote coins
+    /// # Patch notes
+    /// * Previously allowed for any `custodian_id`, which would
+    ///   inappropriately allow for user to override a custodian. Rather
+    ///   than removing the `custodian_id` parameter, however, the
+    ///   assert statement was instead added so as not to introduce
+    ///   breaking API changes.
     public entry fun withdraw_collateral_coinstore<B, Q, E>(
         user: &signer,
         custodian_id: u64,
         base: bool,
         amount: u64
     ) acquires Collateral, MarketAccounts {
+        // Assert custodian ID indicates no custodian
+        assert!(custodian_id == NO_CUSTODIAN, E_CUSTODIAN_OVERRIDE);
         // Get corresponding market account info
         let market_account_info = market_account_info<B, Q, E>(custodian_id);
         if (base) // If marked for withdrawing base coins, use base type
@@ -1720,6 +1726,15 @@ module econia::user {
         register_market_accounts_entry(user, market_account_info);
         // Attempt invalid re-registration
         register_market_accounts_entry(user, market_account_info);
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for custodian ID not flagged as no custodian
+    fun test_withdraw_collateral_coinstore_override(
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        withdraw_collateral_coinstore<BC, QC, E1>(user, 1, true, 1);
     }
 
     #[test(

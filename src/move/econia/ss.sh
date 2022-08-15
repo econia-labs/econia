@@ -43,7 +43,7 @@ substitute_econia_address() {
 # Publish bytecode to blockchain, via keyfile flag
 #
 # Should be run from inside Move package directory.
-publish_from_keyfile () {
+publish_from_keyfile() {
     # Substitute generic named address in Move.toml
     substitute_econia_address _
     # Get keyfile for given flag argument
@@ -54,6 +54,17 @@ publish_from_keyfile () {
     python ../../python/econia/build.py publish "$keyfile" ../../../
     # Substitute back docgen address
     substitute_econia_address docgen
+}
+
+# Update Git revision hash for dependency in Move.toml
+#
+# Should be run from inside Move package directory
+update_rev_hash() {
+    # Get hash of latest commit to aptos-core devnet branch
+    hash=$(git ls-remote https://github.com/aptos-labs/aptos-core \
+        refs/heads/devnet | grep -o '^\w\+')
+    # Update Move.toml to indicate new hash dependency
+    python ../../../src/python/econia/build.py rev $hash ../../../
 }
 
 # Return if no arguments passed
@@ -93,6 +104,7 @@ elif test $1 = hello; then echo Hello, Econia developer
 
 # Run pre-commit checks
 elif test $1 = pc; then
+    update_rev_hash # Update revision hash for devnet dependency
     substitute_econia_address docgen # Substitute docgen address
     aptos move test # Run all tests
     move build --doc # Build docs
@@ -108,6 +120,10 @@ elif test $1 = pt; then
     python ../../python/econia/build.py generate ../../../
     # Publish from temporary keyfile
     publish_from_keyfile temp
+
+# Update devnet revision hash in Move.toml
+elif test $1 = r; then
+    update_rev_hash
 
 # Substitute docgen address into Move.toml
 elif test $1 = sd; then substitute_econia_address docgen

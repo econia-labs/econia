@@ -105,6 +105,32 @@ Some functionality abstracted to be run from the command line:
     [addresses]
     econia = '0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd'
     ...
+
+.. code-block:: zsh
+    :caption: Substitute new ``rev`` hash in ``Move.toml``
+    :emphasize-lines: 3, 11, 13, 21
+
+    # Still inside Move package directory
+    # Substitute a new revision hash into Move.toml
+    % python ../../../src/python/econia/build.py rev abcdef ../../../
+    # Output Move.toml contents
+    % < Move.toml
+    [package]
+    name = 'Econia'
+    ...
+    [dependencies.AptosFramework]
+    ...
+    rev = 'abcdef'
+    # Switch to a different mock hash
+    % python ../../../src/python/econia/build.py rev 123456 ../../../
+    # Output Move.toml contents
+    % < Move.toml
+    [package]
+    name = 'Econia'
+    ...
+    [dependencies.AptosFramework]
+    ...
+    rev = '123456'
 """
 
 import os
@@ -751,6 +777,25 @@ def init_econia(
         seps.lp + client.tx_vn_url(tx_hash) + seps.rp
     )
 
+def sub_rev_hash(
+    new_hash = str,
+    econia_root: str = seps.dot
+):
+    """Substitute new hash into sole dependency rev field for Move.toml
+
+    Parameters
+    ----------
+    new_hash : str
+        New commit hash to use
+    econia_root : str, optional
+        Relative path to econia repository root directory
+    """
+    # Define RegEx pattern for substituting new hash to middle group
+    pattern = r'(' + build_command_fields.rev + r'.+' + seps.sq + \
+        r')(\w+)(' + seps.sq + r')' # (rev.+')(\w+)(')
+    # Substitute new hash into middle group from RegEx search match
+    sub_middle_group_file(get_toml_path(econia_root), pattern, new_hash)
+
 if __name__ == '__main__':
     """See module docstring for examples"""
 
@@ -759,6 +804,7 @@ if __name__ == '__main__':
     generate = build_command_fields.generate
     print_keyfile_address = build_command_fields.print_keyfile_address
     publish = build_command_fields.publish
+    rev = build_command_fields.rev
     serial = build_command_fields.serial
     substitute = build_command_fields.substitute
     action = sys.argv[1]
@@ -796,6 +842,15 @@ if __name__ == '__main__':
         # Print address derived from hex seed in keyfile at relative
         # path
         print(Account(path=sys.argv[2]).address())
+    elif action == rev: # Substitute given hash into Move.toml rev
+        econia_root = seps.dot # Assume in Econia repo root
+        # First argument after build command is new hash
+        new_hash = sys.argv[2]
+        if len(sys.argv) == 4: # If given one optional argument
+            # It is relative path to Econia project root directory
+            econia_root = sys.argv[3]
+        # Substitute the given hash into Move.toml
+        sub_rev_hash(new_hash, econia_root)
     elif action == substitute: # Substitute Move.toml named address
         econia_root = seps.dot # Assume in Econia repo root
         if len(sys.argv) >= 3: # If given one optional argument

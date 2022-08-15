@@ -26,6 +26,7 @@ build_command_fields = SimpleNamespace(
     prep = 'prep',
     print_keyfile_address = 'print-keyfile-address',
     publish = 'publish',
+    rev = 'rev',
     serial = 'serial',
     substitute = 'substitute'
 )

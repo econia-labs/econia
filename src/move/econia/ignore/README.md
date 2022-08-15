@@ -1,4 +1,21 @@
-This is a temporary directory for storing modules that have unresolved dependencies, during revisions to lower-level dependencies
+# Structure
+
+This is a temporary directory for storing modules that have unresolved dependencies, during revisions to lower-level dependencies.
+
+## Color codes
+
+```mermaid
+
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
+
+flowchart LR
+
+    id0[Before revisions]
+
+    id1[Modified but not renamed]
+    style id1 fill:#ff00ff
+```
+
 
 # `user.move` dependencies
 
@@ -8,6 +25,23 @@ This is a temporary directory for storing modules that have unresolved dependenc
 
 flowchart LR
 
+%% Class definitions
+
+    classDef modified_but_not_renamed fill:#ff00ff
+
+%% Node definitions
+    Collateral[Collateral]
+    MarketAccount[MarketAccount]
+    MarketAccountInfo[MarketAccountInfo]
+    MarketAccounts[MarketAccounts]
+
+%% Class definitions
+    class Collateral modified_but_not_renamed;
+    class MarketAccount modified_but_not_renamed;
+    class MarketAccountInfo modified_but_not_renamed;
+    class MarketAccounts modified_but_not_renamed;
+
+%% Relationships
     deposit_collateral_coinstore --> deposit_collateral
     deposit_collateral_coinstore --> Collateral
     deposit_collateral_coinstore --> MarketAccounts

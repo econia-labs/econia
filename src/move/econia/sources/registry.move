@@ -67,9 +67,11 @@ module econia::registry {
         lot_size: u64,
         /// Number of quote units exchanged per lot
         tick_size: u64,
-        /// `true` if base asset is an `aptos_framework::coin::Coin`
+        /// `true` if base asset is an `aptos_framework::coin::Coin`,
+        /// stored as a field for lookup optimization
         base_is_coin: bool,
-        /// `true` if quote asset is an `aptos_framework::coin::Coin`
+        /// `true` if quote asset is an `aptos_framework::coin::Coin`,
+        /// stored as a field for lookup optimization
         quote_is_coin: bool,
         /// ID of custodian capability required to withdraw/deposit
         /// collateral for an asset that is not a coin. A "market-wide"

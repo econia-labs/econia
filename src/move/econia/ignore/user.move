@@ -1,18 +1,9 @@
-/// User-side collateral and book keeping management. For a given
-/// market, a user can register multiple `MarketAccount`s, with each
-/// such market account having a different delegated custodian and a
-/// unique `MarketAccountInfo`. For a given `MarketAccount`, a user has
-/// entries in a `Collateral` map for both base and quote coins.
 module econia::user {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use aptos_framework::coin::{Self, Coin};
     use econia::capability::EconiaCapability;
-    use econia::critbit::{Self, CritBitTree};
-    use econia::open_table;
     use econia::order_id;
-    use econia::registry;
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -29,55 +20,6 @@ module econia::user {
     use econia::registry::{E1, E2};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Collateral map for given coin type, across all `MarketAccount`s
-    struct Collateral<phantom CoinType> has key {
-        /// Map from `MarketAccountInfo` to coins held as collateral for
-        /// given `MarketAccount`. Separated into different table
-        /// entries to reduce transaction collisions across markets
-        map: open_table::OpenTable<MarketAccountInfo, Coin<CoinType>>
-    }
-
-    /// Unique ID describing a market and a delegated custodian
-    struct MarketAccountInfo has copy, drop, store {
-        /// The market that a user is trading on
-        market_info: registry::MarketInfo,
-        /// Serial ID of registered account custodian, set to 0 when
-        /// given account does not have an authorized custodian
-        custodian_id: u64
-    }
-
-    /// Represents a user's open orders and collateral status for a
-    /// given `MarketAccountInfo`
-    struct MarketAccount has store {
-        /// Scale factor for given market, included as a lookup
-        /// optimization for integer-based arithmetic
-        scale_factor: u64,
-        /// Map from order ID to size of order, in base parcels
-        asks: CritBitTree<u64>,
-        /// Map from order ID to size of order, in base parcels
-        bids: CritBitTree<u64>,
-        /// Total base coins held as collateral
-        base_coins_total: u64,
-        /// Base coins available for withdraw
-        base_coins_available: u64,
-        /// Total quote coins held as collateral
-        quote_coins_total: u64,
-        /// Quote coins available for withdraw
-        quote_coins_available: u64
-    }
-
-    /// Market account map for all of a user's `MarketAccount`s
-    struct MarketAccounts has key {
-        /// Map from `MarketAccountInfo` to `MarketAccount`. Separated
-        /// into different table entries to reduce transaction
-        /// collisions across markets
-        map: open_table::OpenTable<MarketAccountInfo, MarketAccount>
-    }
-
-    // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

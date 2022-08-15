@@ -191,13 +191,15 @@ Information about a trading pair
 <code>base_is_coin: bool</code>
 </dt>
 <dd>
- <code><b>true</b></code> if base asset is an <code>aptos_framework::coin::Coin</code>
+ <code><b>true</b></code> if base asset is an <code>aptos_framework::coin::Coin</code>,
+ stored as a field for lookup optimization
 </dd>
 <dt>
 <code>quote_is_coin: bool</code>
 </dt>
 <dd>
- <code><b>true</b></code> if quote asset is an <code>aptos_framework::coin::Coin</code>
+ <code><b>true</b></code> if quote asset is an <code>aptos_framework::coin::Coin</code>,
+ stored as a field for lookup optimization
 </dd>
 <dt>
 <code>custodian_id: u64</code>

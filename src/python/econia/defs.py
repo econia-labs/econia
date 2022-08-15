@@ -22,8 +22,6 @@ api_url_types = SimpleNamespace(
 build_command_fields = SimpleNamespace(
     docgen = 'docgen',
     generate = 'generate',
-    long = 'long',
-    prep = 'prep',
     print_keyfile_address = 'print-keyfile-address',
     publish = 'publish',
     rev = 'rev',
@@ -32,19 +30,8 @@ build_command_fields = SimpleNamespace(
 )
 """Command line fields for automated building process"""
 
-coin_scales = SimpleNamespace(
-    APT = 6,
-    USD = 12,
-)
-"""Decimal scalars for each coin"""
-
 Econia = 'Econia'
 """Project name"""
-
-econia_bool_maps = SimpleNamespace(
-    side  = {True: 'Buy', False: 'Sell'},
-)
-"""Mapping from boolean values onto corresponding string"""
 
 econia_modules = SimpleNamespace(
     capability = SimpleNamespace(
@@ -117,7 +104,6 @@ econia_paths = SimpleNamespace(
 """Econia Move code paths"""
 
 e_msgs = SimpleNamespace(
-    decimal = "Decimal values must be reported as str ('123.45') or int (123)",
     failed = 'failed',
     faucet = 'Faucet funding failed',
     path_val_collision = 'Different value already exists at provided path',
@@ -133,26 +119,6 @@ file_extensions = SimpleNamespace(
     toml = 'toml'
 )
 """Extensions for common filetypes"""
-
-max_address_length = SimpleNamespace(
-    aptos = 32,
-    move_cli = 16,
-)
-"""Max address length in bytes"""
-
-member_names = SimpleNamespace(
-    Balance = 'Balance',
-    transfer = 'transfer',
-    register = 'register',
-    CoinStore = 'CoinStore'
-)
-"""Move module member names"""
-
-module_names = SimpleNamespace(
-    TestCoin = 'TestCoin',
-    Coin = 'coin'
-)
-"""Move module names, non-Econia"""
 
 msg_sig_start_byte = 2
 """
@@ -275,16 +241,6 @@ seps = SimpleNamespace(
 
 single_sig_id = b'\x00'
 """1-byte signature scheme identifier, indicating single signature"""
-
-test_coins = SimpleNamespace(
-    APT = SimpleNamespace(
-        name = 'APT'
-    ),
-    USD = SimpleNamespace(
-        name = 'USD'
-    ),
-)
-"""Test coins"""
 
 toml_section_names = SimpleNamespace(
     addresses = 'addresses'

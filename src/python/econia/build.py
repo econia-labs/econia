@@ -149,7 +149,6 @@ from econia.defs import (
     econia_paths as ps,
     Econia,
     file_extensions,
-    max_address_length,
     named_addrs,
     networks,
     regex_trio_group_ids as r_i,
@@ -241,60 +240,6 @@ def get_toml_lines(
     """
     return Path(abs_path).read_text().splitlines()
 
-def is_address_line(
-    line: str
-) -> bool:
-    """Return True if line has [addresses] section flag
-
-    Parameters
-    ----------
-    line : str
-        A line from a .toml file
-
-    Returns
-    -------
-    bool
-        True if is [addresses]
-    """
-    return line == seps.lsb + toml_section_names.addresses + seps.rsb
-
-def get_addr_elems(
-    line: str
-) -> list[str]:
-    """Split address line into name, address, comment tokens
-
-    Parameters
-    ----------
-    line : str
-        Address line
-
-    Returns
-    -------
-    str
-        The name of the address
-    str
-        The address, without a leading '0x'
-    str or None
-        The comment
-
-    Example
-    -------
-    >>> from econia.build import get_addr_elems
-    >>> get_addr_elems("Foo = '0x123abc' # 123abc")
-    ('Foo', '123abc', '123abc')
-    >>> get_addr_elems("Bar = '0x987cbd'")
-    ('Bar', '987cbd', None)
-    """
-    comment = None
-    match = re.search(r'(?<=' + seps.pnd + r'\s)\w+' , line)
-    if match:
-        comment = match.group(0)
-    return (
-        re.search(r'^\w+', line).group(0),
-        re.search(r'(?<=' + seps.hex + r')\w+', line).group(0),
-        comment
-    )
-
 def get_addr_bytes(
     hex: str
 ) -> bytes:
@@ -344,109 +289,6 @@ def normalized_hex(
     '1'
     """
     return addr_bytes.hex().lstrip('0')
-
-def format_addr(
-    name: str,
-    addr: str,
-    comment: object,
-    long: bool
-) -> str:
-    """Format address in long or short form, returning full line
-
-    Parameters
-    ----------
-    name : str
-        The name of the address
-    addr : str
-        Hexstring address without leading hex identifier
-    comment : str or None
-        Optional comment field specifying address ending
-    long: bool
-        If True, format as Aptos address, otherwise Move CLI address
-
-    Returns
-    -------
-    str
-        A new address line with a full Aptos-compatible address
-
-    Example
-    -------
-    >>> from econia.build import format_addr
-    >>> format_addr('A', '1234567890abcdef' * 3, None, True)
-    "A = '0x1234567890abcdef1234567890abcdef1234567890abcdef'"
-    >>> format_addr('B', '4321abcd' * 4, '7890' , True)
-    "B = '0x4321abcd4321abcd4321abcd4321abcd7890'"
-    >>> format_addr('C', '1234abcd' * 5, None, False)
-    "C = '0x1234abcd1234abcd1234abcd1234abcd' # 1234abcd"
-    >>> format_addr('D', '87654321' * 4, 'abcd' , False)
-    "D = '0x87654321876543218765432187654321' # abcd"
-    >>> # Preserves leading zeroes in comment but not at start
-    >>> format_addr('E', '00123456' * 4, '00123456' , True)
-    "E = '0x12345600123456001234560012345600123456'"
-    """
-    addr = get_addr_bytes(addr)
-    if comment is not None:
-        comment = get_addr_bytes(comment)
-    if long:
-        if comment is not None: # Merge comment into address
-            addr = addr + comment
-            comment = None
-        assert len(addr) <= max_address_length.aptos
-    else:
-        if comment is None: # Split up
-            if len(addr) > max_address_length.move_cli:
-                comment = addr[max_address_length.move_cli:]
-                addr = addr[0:max_address_length.move_cli]
-        assert len(addr) <= max_address_length.move_cli
-    line = f'{name}' +  seps.sp + seps.eq + seps.sp + seps.sq + \
-        hex_leader(normalized_hex(addr)) + seps.sq
-    if comment is not None:
-        line = line + seps.sp + seps.pnd + seps.sp + comment.hex()
-    return line
-
-def format_addrs(
-    lines: list[str],
-    long: bool
-) -> None:
-    """Format addresses in the lines of a Toml file
-
-    Parameters
-    ----------
-    lines : list of str
-        Per :func:`~build.get_toml_lines`
-    long : bool
-        True if addresses should be formatted in long version
-    """
-    in_addrs = False
-    for i, line in enumerate(lines):
-        if in_addrs:
-            if not line: # Blank line
-                break
-            lines[i] = format_addr(*get_addr_elems(line), long)
-        if is_address_line(line):
-            in_addrs = True
-
-def prep_toml(
-    econia_root: str = seps.dot,
-    long: bool = True,
-) -> None:
-    """Prepare Move.toml file with either long/short address variants
-
-    The Move CLI only accepts shorter addresses, while Aptos addresses
-    are longer. Hence, when building, it may be necessary to transition
-    between both forms for local testing and blockchain deployment
-
-    Parameters
-    ----------
-    econia_root : str, optional
-        Relative path to Econia repository root directory
-    long: bool, optional
-        If True, format as Aptos addresses, otherwise Move CLI addresses
-    """
-    toml_path = get_toml_path(econia_root)
-    lines = get_toml_lines(toml_path)
-    format_addrs(lines, long)
-    Path(toml_path).write_text(seps.nl.join(lines))
 
 def get_bytecode_files(
     econia_root: str = seps.dot
@@ -867,9 +709,3 @@ if __name__ == '__main__':
                 # Substitute it into Move.toml
                 sub_named_toml_address(econia_root, generic=False,
                     named=hex_leader(normalized_hex(get_addr_bytes(address))))
-
-    # (Deprecated)  Prepare Move.Toml file
-    elif action == build_command_fields.prep:
-        long = sys.argv[2] == build_command_fields.long
-        econia_root = sys.argv[3]
-        prep_toml(econia_root, long)

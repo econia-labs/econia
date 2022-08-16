@@ -14,6 +14,9 @@ flowchart LR
 
     id1[Modified but not renamed]
     style id1 fill:#ff00ff
+
+    id2[Modified and renamed <br/> old function name]
+    style id2 fill:#a020f0
 ```
 
 
@@ -28,18 +31,21 @@ flowchart LR
 %% Class definitions
 
     classDef modified_but_not_renamed fill:#ff00ff
+    classDef modified_and_renamed fill:#a020f0
 
 %% Node definitions
     Collateral[Collateral]
     MarketAccount[MarketAccount]
     MarketAccountInfo[MarketAccountInfo]
     MarketAccounts[MarketAccounts]
+    register_market_accounts_entry[add_market_account <br/> register_market_accounts_entry]
 
 %% Class definitions
     class Collateral modified_but_not_renamed;
     class MarketAccount modified_but_not_renamed;
     class MarketAccountInfo modified_but_not_renamed;
     class MarketAccounts modified_but_not_renamed;
+    class register_market_accounts_entry modified_and_renamed;
 
 %% Relationships
     deposit_collateral_coinstore --> deposit_collateral

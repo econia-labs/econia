@@ -26,7 +26,7 @@ depositing or withdrawing a non-coin asset.
 -  [Struct `MarketAccountInfo`](#0xc0deb00c_user_MarketAccountInfo)
 -  [Resource `MarketAccounts`](#0xc0deb00c_user_MarketAccounts)
 -  [Constants](#@Constants_0)
--  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
+-  [Function `add_market_account`](#0xc0deb00c_user_add_market_account)
     -  [Abort conditions](#@Abort_conditions_1)
 
 
@@ -210,9 +210,9 @@ When market account already exists for given market account info
 
 
 
-<a name="0xc0deb00c_user_register_market_account"></a>
+<a name="0xc0deb00c_user_add_market_account"></a>
 
-## Function `register_market_account`
+## Function `add_market_account`
 
 Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> map entry corresponding to
 <code>market_account_info</code>, initializing <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does
@@ -227,7 +227,7 @@ not already exist
 <code>market_account_info</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_add_market_account">add_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>)
 </code></pre>
 
 
@@ -236,7 +236,7 @@ not already exist
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>(
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_add_market_account">add_market_account</a>(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {

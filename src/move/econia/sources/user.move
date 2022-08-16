@@ -90,7 +90,7 @@ module econia::user {
     /// # Abort conditions
     /// * If user already has a `MarketAccounts` entry for given
     ///   `market_account_info`
-    fun register_market_account(
+    fun add_market_account(
         user: &signer,
         market_account_info: MarketAccountInfo,
     ) acquires MarketAccounts {

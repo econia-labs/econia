@@ -8,22 +8,18 @@ Econia modules `use` each other as follows:
 
 flowchart TD
 
-    market --> critbit
-    market --> registry
-    market --> capability
-    market --> |test-only| assets
-    market --> user
-    market --> order_id
-    init --> registry
-    init --> market
-    user --> capability
-    user --> critbit
     user --> open_table
+    user --> critbit
     user --> order_id
-    user --> registry
+    user --> |friend| registry
     user --> |test-only| assets
-    registry --> capability
     registry --> |test-only| assets
     order_id --> |test-only| critbit
+    market --> critbit
+    market --> open_table
+    market --> |friend| registry
+    market --> |test-only| assets
+    market --> |friend| user
+    market --> order_id
 
 ```

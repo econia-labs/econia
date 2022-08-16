@@ -16,12 +16,18 @@
 /// depositing or withdrawing a non-coin asset.
 module econia::user {
 
+    // Dependency planning stubs
+    use econia::registry;
+    fun invoke_registry() {registry::return_0();}
+    public(friend) fun return_0(): u8 {0}
+    friend econia::market;
+
+/*
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use aptos_framework::coin::{/*Self,*/ Coin};
+    use aptos_framework::coin::{Coin};
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
-    use econia::registry;
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -118,5 +124,7 @@ module econia::user {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+*/
 
 }

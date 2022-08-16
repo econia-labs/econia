@@ -12,6 +12,7 @@ registration and tracking, delegated custodian registration.
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Struct `TradingPairInfo`](#0xc0deb00c_registry_TradingPairInfo)
 -  [Constants](#@Constants_0)
+-  [Function `return_0`](#0xc0deb00c_registry_return_0)
 -  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
 -  [Function `is_in_market_pair`](#0xc0deb00c_registry_is_in_market_pair)
@@ -31,7 +32,6 @@ registration and tracking, delegated custodian registration.
 <b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::table</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
-<b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
 </code></pre>
 
 
@@ -320,6 +320,28 @@ Custodian ID flag for no delegated custodian
 
 
 
+<a name="0xc0deb00c_registry_return_0"></a>
+
+## Function `return_0`
+
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_return_0">return_0</a>(): u8
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_return_0">return_0</a>(): u8 {0}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_custodian_id"></a>
 
 ## Function `custodian_id`
@@ -570,7 +592,7 @@ registry is not initialized
     <b>let</b> custodian_id = <a href="registry.md#0xc0deb00c_registry">registry</a>.n_custodians + 1;
     // Update the <a href="registry.md#0xc0deb00c_registry">registry</a> for the new count
     <a href="registry.md#0xc0deb00c_registry">registry</a>.n_custodians = custodian_id;
-    // Pack and <b>return</b> corresponding <a href="capability.md#0xc0deb00c_capability">capability</a>
+    // Pack and <b>return</b> corresponding capability
     <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>{custodian_id}
 }
 </code></pre>
@@ -583,8 +605,7 @@ registry is not initialized
 
 ## Function `register_market_internal`
 
-Register a market, provided an immutable reference to an
-<code>EconiaCapability</code>.
+Register a market
 
 
 <a name="@Type_parameters_1"></a>
@@ -629,7 +650,7 @@ When registering a market with an asset corresponding to an
 than <code>Coin&lt;MyCoin&gt;</code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, lot_size: u64, tick_size: u64, custodian_id: u64, _econia_capability: &<a href="capability.md#0xc0deb00c_capability_EconiaCapability">capability::EconiaCapability</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, lot_size: u64, tick_size: u64, custodian_id: u64)
 </code></pre>
 
 
@@ -638,7 +659,7 @@ than <code>Coin&lt;MyCoin&gt;</code>.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;
     BaseType,
     QuoteType
 &gt;(
@@ -646,7 +667,6 @@ than <code>Coin&lt;MyCoin&gt;</code>.
     lot_size: u64,
     tick_size: u64,
     custodian_id: u64,
-    _econia_capability: &EconiaCapability
 ) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Assert the <a href="registry.md#0xc0deb00c_registry">registry</a> is already initialized
     <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
@@ -669,20 +689,20 @@ than <code>Coin&lt;MyCoin&gt;</code>.
         base_type_info, quote_type_info, lot_size, tick_size,
         base_is_coin, quote_is_coin, custodian_id};
     <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(trading_pair_info),
-        <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>); // Assert market is not already registered
+        <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>); // Assert <a href="market.md#0xc0deb00c_market">market</a> is not already registered
     <b>if</b> (!base_is_coin || !quote_is_coin) { // If asset-agnostic
         // Assert custodian ID <b>has</b> been registered
         <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">is_registered_custodian_id</a>(custodian_id),
             <a href="registry.md#0xc0deb00c_registry_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
     } <b>else</b> { // If both base and quote are <a href="">coins</a>
-        // Assert no market-level custodian for withdraw/deposits
+        // Assert no <a href="market.md#0xc0deb00c_market">market</a>-level custodian for withdraw/deposits
         <b>assert</b>!(custodian_id == <a href="registry.md#0xc0deb00c_registry_NO_CUSTODIAN">NO_CUSTODIAN</a>, <a href="registry.md#0xc0deb00c_registry_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
     };
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
     // Register host for given trading pair
     <a href="_add">table::add</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.hosts, trading_pair_info, host);
-    // Push back onto markets list a packed market info
+    // Push back onto markets list a packed <a href="market.md#0xc0deb00c_market">market</a> info
     <a href="_push_back">vector::push_back</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.markets,
         <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{host, trading_pair_info});
 }

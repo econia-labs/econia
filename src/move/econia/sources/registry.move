@@ -7,19 +7,23 @@ module econia::registry {
     use aptos_framework::coin;
     use aptos_std::type_info;
     use aptos_std::table;
-    use econia::capability::EconiaCapability;
     use std::signer::address_of;
     use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    friend econia::user;
+    friend econia::market;
+    public(friend) fun return_0(): u8 {0}
+
+    // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
     use econia::assets::{Self, BA, BC, MA, QA, QC};
-
-    #[test_only]
-    use econia::capability::{get_econia_capability_test};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -213,8 +217,11 @@ module econia::registry {
         CustodianCapability{custodian_id}
     }
 
-    /// Register a market, provided an immutable reference to an
-    /// `EconiaCapability`.
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Register a market
     ///
     /// # Type parameters
     /// * `BaseType`: Base type for market
@@ -241,7 +248,7 @@ module econia::registry {
     /// `aptos_framework::coin::Coin`, use only the phantom
     /// `CoinType` as a type parameter. For example pass `MyCoin` rather
     /// than `Coin<MyCoin>`.
-    public fun register_market_internal<
+    public(friend) fun register_market_internal<
         BaseType,
         QuoteType
     >(
@@ -249,7 +256,6 @@ module econia::registry {
         lot_size: u64,
         tick_size: u64,
         custodian_id: u64,
-        _econia_capability: &EconiaCapability
     ) acquires Registry {
         // Assert the registry is already initialized
         assert!(exists<Registry>(@econia), E_NO_REGISTRY);
@@ -290,7 +296,7 @@ module econia::registry {
             MarketInfo{host, trading_pair_info});
     }
 
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -467,10 +473,10 @@ module econia::registry {
         let custodian_id = 3; // Declare custodian ID
         // Set custodian as registered
         set_registered_custodian_test(custodian_id);
-        register_market_internal<BA, QA>( // Run valid init
-            @econia, 1, 2, custodian_id, &get_econia_capability_test());
-        register_market_internal<BA, QA>( // Attempt invalid re-init
-            @econia, 1, 2, custodian_id, &get_econia_capability_test());
+        // Run valid init
+        register_market_internal<BA, QA>(@econia, 1, 2, custodian_id);
+        // Attempt invalid re-init
+        register_market_internal<BA, QA>(@econia, 1, 2, custodian_id);
     }
 
     #[test(econia = @econia)]
@@ -480,8 +486,8 @@ module econia::registry {
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize module
-        register_market_internal<BA, QA>( // Attempt invalid init
-            @econia, 1, 2, NO_CUSTODIAN, &get_econia_capability_test());
+        // Attempt invalid init
+        register_market_internal<BA, QA>(@econia, 1, 2, NO_CUSTODIAN);
     }
 
     #[test(econia = @econia)]
@@ -492,8 +498,8 @@ module econia::registry {
     ) acquires Registry {
         assets::init_coin_types(econia); // Initalize coin types
         init_registry(econia); // Initialize module
-        register_market_internal<BC, QC>( // Attempt invalid init
-            @econia, 1, 2, 1, &get_econia_capability_test());
+        // Attempt invalid init
+        register_market_internal<BC, QC>(@econia, 1, 2, 1);
     }
 
     #[test(econia = @econia)]
@@ -503,8 +509,8 @@ module econia::registry {
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize registry
-        register_market_internal<BA, QA>( // Attempt invalid init
-            @econia, 0, 2, 3, &get_econia_capability_test());
+        // Attempt invalid init
+        register_market_internal<BA, QA>(@econia, 0, 2, 3);
     }
 
     #[test]
@@ -513,8 +519,7 @@ module econia::registry {
     fun test_register_market_internal_no_registry()
     acquires Registry {
         // Attempt invalid init
-        register_market_internal<BA, QA>(
-            @econia, 1, 2, 3, &get_econia_capability_test());
+        register_market_internal<BA, QA>(@econia, 1, 2, 3);
     }
 
     #[test(econia = @econia)]
@@ -524,8 +529,8 @@ module econia::registry {
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize registry
-        register_market_internal<BA, QA>( // Attempt invalid init
-            @econia, 1, 0, 3, &get_econia_capability_test());
+        // Attempt invalid init
+        register_market_internal<BA, QA>(@econia, 1, 0, 3);
     }
 
     #[test(econia = @econia)]
@@ -535,8 +540,8 @@ module econia::registry {
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize registry
-        register_market_internal<MA, MA>( // Attempt invalid init
-            @econia, 1, 2, 3, &get_econia_capability_test());
+        // Attempt invalid init
+        register_market_internal<MA, MA>(@econia, 1, 2, 3);
     }
 
     #[test(econia = @econia)]
@@ -559,9 +564,8 @@ module econia::registry {
             quote_type_info, lot_size, tick_size, base_is_coin, quote_is_coin,
             custodian_id};
         let market_info = MarketInfo{trading_pair_info, host};
-        // Run valid initialization
-        register_market_internal<BC, QC>(@user, lot_size, tick_size,
-            custodian_id, &get_econia_capability_test());
+        register_market_internal<BC, QC>( // Run valid initialization
+            @user, lot_size, tick_size, custodian_id);
         // Borrow immutable reference to registry
         let registry = borrow_global<Registry>(@econia);
         // Assert correct host registration
@@ -577,9 +581,8 @@ module econia::registry {
         market_info = MarketInfo{trading_pair_info, host};
         // Set custodian ID to be registered
         set_registered_custodian_test(custodian_id);
-        // Run valid initialization
-        register_market_internal<BA, QC>(@user, lot_size, tick_size,
-            custodian_id, &get_econia_capability_test());
+        register_market_internal<BA, QC>( // Run valid initialization
+            @user, lot_size, tick_size, custodian_id);
         // Borrow immutable reference to registry
         registry = borrow_global<Registry>(@econia);
         // Assert correct host registration

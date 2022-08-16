@@ -236,7 +236,7 @@ Burn <code><a href="">coins</a></code>
 <pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_burn">burn</a>&lt;CoinType&gt;(
     <a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 ) <b>acquires</b> <a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a> {
-    // Borrow immutable reference <b>to</b> burn <a href="capability.md#0xc0deb00c_capability">capability</a>
+    // Borrow immutable reference <b>to</b> burn capability
     <b>let</b> burn_capability = &<b>borrow_global</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
             @econia).burn_capability;
     <a href="_burn">coin::burn</a>&lt;CoinType&gt;(<a href="">coins</a>, burn_capability); // Burn <a href="">coins</a>
@@ -305,7 +305,7 @@ Econia account or if <code><a href="assets.md#0xc0deb00c_assets_CoinCapabilities
     <b>assert</b>!(account_address == @econia, <a href="assets.md#0xc0deb00c_assets_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <b>assert</b>!(<b>exists</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(account_address),
         <a href="assets.md#0xc0deb00c_assets_E_NO_CAPABILITIES">E_NO_CAPABILITIES</a>); // Assert <a href="">coin</a> capabilities initialized
-    // Borrow immutable reference <b>to</b> mint <a href="capability.md#0xc0deb00c_capability">capability</a>
+    // Borrow immutable reference <b>to</b> mint capability
     <b>let</b> mint_capability = &<b>borrow_global</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
             account_address).mint_capability;
     // Mint specified amount

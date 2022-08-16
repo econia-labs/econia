@@ -213,23 +213,6 @@ module econia::user {
                 address_of(user), market_account_info, amount));
     }
 
-    /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
-    /// entry corresponding to `market_account_info`, then return it.
-    /// Aborts if custodian serial ID for given market account is not 0.
-    public entry fun withdraw_collateral_user<CoinType>(
-        user: &signer,
-        market_account_info: MarketAccountInfo,
-        amount: u64,
-    ): coin::Coin<CoinType>
-    acquires Collateral, MarketAccounts {
-        // Assert user is not trying to override delegated custody
-        assert!(market_account_info.custodian_id == NO_CUSTODIAN,
-            E_CUSTODIAN_OVERRIDE);
-        // Withdraw collateral from user's market account
-        withdraw_collateral<CoinType>(
-            address_of(user), market_account_info, amount)
-    }
-
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -486,6 +469,23 @@ module econia::user {
     acquires Collateral, MarketAccounts {
         // Withdraw collateral from user's market account
         withdraw_collateral<CoinType>(user, market_account_info, amount)
+    }
+
+    /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
+    /// entry corresponding to `market_account_info`, then return it.
+    /// Aborts if custodian serial ID for given market account is not 0.
+    public fun withdraw_collateral_user<CoinType>(
+        user: &signer,
+        market_account_info: MarketAccountInfo,
+        amount: u64,
+    ): coin::Coin<CoinType>
+    acquires Collateral, MarketAccounts {
+        // Assert user is not trying to override delegated custody
+        assert!(market_account_info.custodian_id == NO_CUSTODIAN,
+            E_CUSTODIAN_OVERRIDE);
+        // Withdraw collateral from user's market account
+        withdraw_collateral<CoinType>(
+            address_of(user), market_account_info, amount)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

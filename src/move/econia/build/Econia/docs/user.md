@@ -21,7 +21,6 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
     -  [Abort conditions](#@Abort_conditions_2)
 -  [Function `withdraw_collateral_coinstore`](#0xc0deb00c_user_withdraw_collateral_coinstore)
     -  [Patch notes](#@Patch_notes_3)
--  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
 -  [Function `add_order_internal`](#0xc0deb00c_user_add_order_internal)
     -  [Parameters](#@Parameters_4)
     -  [Abort conditions](#@Abort_conditions_5)
@@ -35,6 +34,7 @@ entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></
     -  [Assumes](#@Assumes_9)
 -  [Function `withdraw_collateral_custodian`](#0xc0deb00c_user_withdraw_collateral_custodian)
 -  [Function `withdraw_collateral_internal`](#0xc0deb00c_user_withdraw_collateral_internal)
+-  [Function `withdraw_collateral_user`](#0xc0deb00c_user_withdraw_collateral_user)
 -  [Function `borrow_coin_counts_mut`](#0xc0deb00c_user_borrow_coin_counts_mut)
     -  [Abort conditions](#@Abort_conditions_10)
     -  [Assumes](#@Assumes_11)
@@ -566,43 +566,6 @@ breaking API changes.
 
 </details>
 
-<a name="0xc0deb00c_user_withdraw_collateral_user"></a>
-
-## Function `withdraw_collateral_user`
-
-Withdraw <code>amount</code> of <code>Coin</code> having <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>
-entry corresponding to <code>market_account_info</code>, then return it.
-Aborts if custodian serial ID for given market account is not 0.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
-    amount: u64,
-): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> is not trying <b>to</b> override delegated custody
-    <b>assert</b>!(market_account_info.custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>,
-        <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
-    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
-    <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(
-        address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_user_add_order_internal"></a>
 
 ## Function `add_order_internal`
@@ -1014,6 +977,43 @@ reference to an <code>EconiaCapability</code>.
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, amount)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_withdraw_collateral_user"></a>
+
+## Function `withdraw_collateral_user`
+
+Withdraw <code>amount</code> of <code>Coin</code> having <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code>
+entry corresponding to <code>market_account_info</code>, then return it.
+Aborts if custodian serial ID for given market account is not 0.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_collateral_user">withdraw_collateral_user</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64,
+): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> is not trying <b>to</b> override delegated custody
+    <b>assert</b>!(market_account_info.custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
+    // Withdraw collateral from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;CoinType&gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)
 }
 </code></pre>
 

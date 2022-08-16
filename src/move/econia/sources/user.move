@@ -19,9 +19,10 @@ module econia::user {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::coin::{/*Self,*/ Coin};
-    use econia::critbit::{/*Self,*/ CritBitTree};
+    use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
     use econia::registry;
+    use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -72,5 +73,50 @@ module econia::user {
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// When market account already exists for given market account info
+    const E_EXISTS_MARKET_ACCOUNT: u64 = 2;
+
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Register user with a `MarketAccounts` map entry corresponding to
+    /// `market_account_info`, initializing `MarketAccounts` if it does
+    /// not already exist
+    ///
+    /// # Abort conditions
+    /// * If user already has a `MarketAccounts` entry for given
+    ///   `market_account_info`
+    fun register_market_account(
+        user: &signer,
+        market_account_info: MarketAccountInfo,
+    ) acquires MarketAccounts {
+        let user_address = address_of(user); // Get user's address
+        // If user does not have a market accounts map initialized
+        if(!exists<MarketAccounts>(user_address)) {
+            // Pack an empty one and move it to their account
+            move_to<MarketAccounts>(user,
+                MarketAccounts{map: open_table::empty()})
+        };
+        // Borrow mutable reference to market accounts map
+        let map = &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        // Assert no entry exists for given market account info
+        assert!(!open_table::contains(map, market_account_info),
+            E_EXISTS_MARKET_ACCOUNT);
+        // Add an empty entry for given market account info
+        open_table::add(map, market_account_info, MarketAccount{
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            base_total: 0,
+            base_available: 0,
+            quote_total: 0,
+            quote_available: 0
+        });
+    }
+
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

@@ -4,7 +4,6 @@ module econia::user {
 
     use econia::capability::EconiaCapability;
     use econia::order_id;
-    use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -27,8 +26,6 @@ module econia::user {
     const E_NO_MARKET: u64 = 0;
     /// When the passed custodian ID is invalid
     const E_INVALID_CUSTODIAN_ID: u64 = 1;
-    /// When a market account registered for given market account info
-    const E_MARKET_ACCOUNT_REGISTERED: u64 = 2;
     /// When a collateral transfer does not have specified amount
     const E_NO_MARKET_ACCOUNT: u64 = 3;
     /// When not enough collateral
@@ -681,44 +678,6 @@ module econia::user {
             market_account_info), E_MARKET_ACCOUNT_REGISTERED);
         // Add an empty entry for given market account info
         open_table::add(map, market_account_info, coin::zero<CoinType>());
-    }
-
-    /// Register user with a `MarketAccounts` map entry corresponding to
-    /// `market_account_info`, initializing `MarketAccounts` if it does
-    /// not already exist
-    ///
-    /// # Abort conditions
-    /// * If user already has a `MarketAccounts` entry for given
-    ///   `market_account_info`
-    fun register_market_accounts_entry(
-        user: &signer,
-        market_account_info: MarketAccountInfo,
-    ) acquires MarketAccounts {
-        let user_address = address_of(user); // Get user's address
-        // If user does not have a market accounts map initialized
-        if(!exists<MarketAccounts>(user_address)) {
-            // Pack an empty one and move it to their account
-            move_to<MarketAccounts>(user,
-                MarketAccounts{map: open_table::empty()})
-        };
-        // Borrow mutable reference to market accounts map
-        let map = &mut borrow_global_mut<MarketAccounts>(user_address).map;
-        // Assert no entry exists for given market account info
-        assert!(!open_table::contains(map, market_account_info),
-            E_MARKET_ACCOUNT_REGISTERED);
-        // Get scale factor for corresponding market
-        let scale_factor = registry::scale_factor_from_market_info(
-            &market_account_info.market_info);
-        // Add an empty entry for given market account info
-        open_table::add(map, market_account_info, MarketAccount{
-            scale_factor,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            base_coins_total: 0,
-            base_coins_available: 0,
-            quote_coins_total: 0,
-            quote_coins_available: 0
-        });
     }
 
     /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`

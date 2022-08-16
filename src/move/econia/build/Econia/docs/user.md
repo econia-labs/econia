@@ -25,9 +25,13 @@ depositing or withdrawing a non-coin asset.
 -  [Struct `MarketAccount`](#0xc0deb00c_user_MarketAccount)
 -  [Struct `MarketAccountInfo`](#0xc0deb00c_user_MarketAccountInfo)
 -  [Resource `MarketAccounts`](#0xc0deb00c_user_MarketAccounts)
+-  [Constants](#@Constants_0)
+-  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
+    -  [Abort conditions](#@Abort_conditions_1)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
 <b>use</b> <a href="registry.md#0xc0deb00c_registry">0xc0deb00c::registry</a>;
@@ -187,6 +191,79 @@ Market account map for all of a user's <code><a href="user.md#0xc0deb00c_user_Ma
  collisions across markets
 </dd>
 </dl>
+
+
+</details>
+
+<a name="@Constants_0"></a>
+
+## Constants
+
+
+<a name="0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT"></a>
+
+When market account already exists for given market account info
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_register_market_account"></a>
+
+## Function `register_market_account`
+
+Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> map entry corresponding to
+<code>market_account_info</code>, initializing <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does
+not already exist
+
+
+<a name="@Abort_conditions_1"></a>
+
+### Abort conditions
+
+* If user already has a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> entry for given
+<code>market_account_info</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a>'s <b>address</b>
+    // If <a href="user.md#0xc0deb00c_user">user</a> does not have a market accounts map initialized
+    <b>if</b>(!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address)) {
+        // Pack an empty one and <b>move</b> it <b>to</b> their <a href="">account</a>
+        <b>move_to</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
+            <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>{map: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()})
+    };
+    // Borrow mutable reference <b>to</b> market accounts map
+    <b>let</b> map = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
+    // Assert no entry <b>exists</b> for given market <a href="">account</a> info
+    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(map, market_account_info),
+        <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>);
+    // Add an empty entry for given market <a href="">account</a> info
+    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(map, market_account_info, <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>{
+        asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
+        bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
+        base_total: 0,
+        base_available: 0,
+        quote_total: 0,
+        quote_available: 0
+    });
+}
+</code></pre>
+
 
 
 </details>

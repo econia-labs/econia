@@ -16,14 +16,14 @@ module econia::registry {
 
     friend econia::user;
     friend econia::market;
-    public(friend) fun return_0(): u8 {0}
+    public(friend) fun return_0(): u8 {0} // Dependency solver stub
 
     // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::assets::{Self, BA, BC, MA, QA, QC};
+    use econia::assets::{Self, BC, BG, QC, QG};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -37,6 +37,9 @@ module econia::registry {
         custodian_id: u64
     }
 
+    /// Type flag for generic asset
+    struct GenericAsset{}
+
     /// Unique identifier for a market
     struct MarketInfo has copy, drop, store {
         /// Account hosting corresponding `OrderBook`
@@ -49,10 +52,11 @@ module econia::registry {
     struct Registry has key {
         /// Map from trading pair to order book host address
         hosts: table::Table<TradingPairInfo, address>,
-        /// List of all available markets
+        /// List of all available markets, with each market's serial ID
+        /// defined as its vector index
         markets: vector<MarketInfo>,
         /// Number of registered custodians
-        n_custodians: u64,
+        n_custodians: u64
     }
 
     /// Information about a trading pair
@@ -60,28 +64,36 @@ module econia::registry {
         /// Base asset type info. When trading an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`.
+        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
+        /// a non-coin asset indicated by the market host.
         base_type_info: type_info::TypeInfo,
         /// Quote asset type info. When trading an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`.
+        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
+        /// a non-coin asset indicated by the market host.
         quote_type_info: type_info::TypeInfo,
         /// Number of base units exchanged per lot
         lot_size: u64,
         /// Number of quote units exchanged per lot
         tick_size: u64,
-        /// `true` if base asset is an `aptos_framework::coin::Coin`,
-        /// stored as a field for lookup optimization
-        base_is_coin: bool,
-        /// `true` if quote asset is an `aptos_framework::coin::Coin`,
-        /// stored as a field for lookup optimization
-        quote_is_coin: bool,
         /// ID of custodian capability required to withdraw/deposit
         /// collateral for an asset that is not a coin. A "market-wide"
         /// collateral transfer custodian ID, required to verify deposit
-        /// and withdraw amounts for asset-agnostic markets.
+        /// and withdraw amounts for asset-agnostic markets. Marked as
+        /// `PURE_COIN_PAIR` when base and quote types are both coins.
         custodian_id: u64,
+        /// Additional optional ID for a trading pair in the case of
+        /// a generic asset on either side. Allows third parties to
+        /// register multiple unique asset-agnostic order books all
+        /// having identical values for the above fields: when
+        /// multiple asset-agnostic trading pairs have the same
+        /// `base_type_info`, `quote_type_info`, `lot_size`,
+        /// `tick_size`, and `custodian_id`, the `agnostic_id` helps
+        /// disambiguate them. Marked `PURE_COIN_PAIR` when base
+        /// and quote are both coins. Otherwise set to the serial ID for
+        /// given market (its vector index in `Registry.markets`).
+        agnostic_id: u64
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -100,8 +112,8 @@ module econia::registry {
     const E_TICK_SIZE_0: u64 = 4;
     /// When invalid custodian ID
     const E_INVALID_CUSTODIAN: u64 = 5;
-    /// When base and quote type are same
-    const E_SAME_TYPE: u64 = 6;
+    /// When base and quote types are the same for a pure-coin market
+    const E_SAME_COIN: u64 = 6;
     /// When a given market is already registered
     const E_MARKET_EXISTS: u64 = 7;
     /// When a type is neither base nor quote on given market
@@ -113,6 +125,8 @@ module econia::registry {
 
     /// Custodian ID flag for no delegated custodian
     const NO_CUSTODIAN: u64 = 0;
+    /// When both base and quote assets are coins
+    const PURE_COIN_PAIR: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -199,6 +213,17 @@ module econia::registry {
         borrow_global<Registry>(@econia).n_custodians
     }
 
+    /// Return the number of registered markets, aborting if registry
+    /// is not initialized
+    public fun n_markets():
+    u64
+    acquires Registry {
+        // Assert registry exists
+        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
+        // Return number of registered markets
+        vector::length(&borrow_global<Registry>(@econia).markets)
+    }
+
     /// Update the number of registered custodians and issue a
     /// `CustodianCapability` with the corresponding serial ID. Abort if
     /// registry is not initialized
@@ -231,23 +256,34 @@ module econia::registry {
     /// * `host`: Host of corresponding order book
     /// * `lot_size`: Number of base units exchanged per lot
     /// * `tick_size`: Number of quote units exchanged per lot
-    /// * `custodian_id`: ID of custodian capability required
-    ///   to withdraw/deposit collateral for an asset that is not a coin
+    /// * `custodian_id`: ID of custodian capability required to approve
+    ///    deposits and withdrawals of non-coin assets (passed as no
+    ///    `PURE_COIN_PAIR` when base and quote are both coins)
     ///
     /// # Abort conditions
     /// * If registry is not initialized
-    /// * If `BaseType` and `QuoteType` are the same
     /// * If `lot_size` is zero
     /// * If `tick_size` is zero
-    /// * If market is already registered
+    /// * If `BaseType` and `QuoteType` are the same coin type
+    /// * If corresponding pure-coin market is already registered
     /// * If attempting to register an asset-agnostic order book for an
     ///   invalid `custodian_id`
     ///
     /// # Coin types
-    /// When registering a market with an asset corresponding to an
-    /// `aptos_framework::coin::Coin`, use only the phantom
-    /// `CoinType` as a type parameter. For example pass `MyCoin` rather
-    /// than `Coin<MyCoin>`.
+    /// * When registering a market with an asset corresponding to an
+    ///   `aptos_framework::coin::Coin`, use only the phantom
+    ///   `CoinType` as a type parameter: for example pass `MyCoin`
+    ///   rather than `Coin<MyCoin>`
+    /// * If both `BaseType` and `QuoteType` are coins, only one such
+    ///   market may be registered with the corresponding `lot_size` and
+    ///   `tick_size` for the given base/quote combination
+    ///
+    /// # Non-coin types
+    /// * If either `BaseType` or `QuoteType` is a non-coin type, then
+    ///   the trading pair will be considered asset-agnostic, and
+    ///   registration will thus require a registered custodian ID
+    /// * Registrants may optionally supply their own custom types
+    ///   rather than `GenericAsset`, which is considered the default
     public(friend) fun register_market_internal<
         BaseType,
         QuoteType
@@ -259,33 +295,38 @@ module econia::registry {
     ) acquires Registry {
         // Assert the registry is already initialized
         assert!(exists<Registry>(@econia), E_NO_REGISTRY);
-        // Get base type info
-        let base_type_info = type_info::type_of<BaseType>();
-        // Get quote type info
-        let quote_type_info = type_info::type_of<QuoteType>();
-        // Assert base and quote not same type
-        assert!(base_type_info != quote_type_info, E_SAME_TYPE);
-        // Determine if base is a coin type
-        let base_is_coin = coin::is_coin_initialized<BaseType>();
-        // Determine if quote is a coin type
-        let quote_is_coin = coin::is_coin_initialized<QuoteType>();
         // Assert lot size is nonzero
         assert!(lot_size > 0, E_LOT_SIZE_0);
         // Assert tick size is nonzero
         assert!(tick_size > 0, E_TICK_SIZE_0);
+        // Get base type info
+        let base_type_info = type_info::type_of<BaseType>();
+        // Get quote type info
+        let quote_type_info = type_info::type_of<QuoteType>();
+        // Determine if base is a coin type
+        let base_is_coin = coin::is_coin_initialized<BaseType>();
+        // Determine if quote is a coin type
+        let quote_is_coin = coin::is_coin_initialized<QuoteType>();
+        // Determine if a pure coin pair
+        let pure_coin = base_is_coin && quote_is_coin;
+        // If a pure coin pair, optional agnostic ID should be flagged
+        // as such, otherwise set ID to serial ID of given market
+        let agnostic_id = if (pure_coin) PURE_COIN_PAIR else n_markets();
         // Pack corresponding trading pair info
-        let trading_pair_info = TradingPairInfo{
-            base_type_info, quote_type_info, lot_size, tick_size,
-            base_is_coin, quote_is_coin, custodian_id};
-        assert!(!is_registered_trading_pair(trading_pair_info),
-            E_MARKET_EXISTS); // Assert market is not already registered
-        if (!base_is_coin || !quote_is_coin) { // If asset-agnostic
+        let trading_pair_info = TradingPairInfo{base_type_info,
+            quote_type_info, lot_size, tick_size, custodian_id, agnostic_id};
+        if (pure_coin) { // If attempting to register pure coin pair
+            // Assert base and quote not same type
+            assert!(base_type_info != quote_type_info, E_SAME_COIN);
+            // Assert market is not already registered
+            assert!(!is_registered_trading_pair(trading_pair_info),
+                E_MARKET_EXISTS);
+            // Assert no market-level custodian for withdraw/deposits
+            assert!(custodian_id == PURE_COIN_PAIR, E_INVALID_CUSTODIAN);
+        } else { // If an asset agnostic order book
             // Assert custodian ID has been registered
             assert!(is_registered_custodian_id(custodian_id),
                 E_INVALID_CUSTODIAN);
-        } else { // If both base and quote are coins
-            // Assert no market-level custodian for withdraw/deposits
-            assert!(custodian_id == NO_CUSTODIAN, E_INVALID_CUSTODIAN);
         };
         // Borrow mutable reference to registry
         let registry = borrow_global_mut<Registry>(@econia);
@@ -322,16 +363,15 @@ module econia::registry {
     fun get_market_info_test():
     MarketInfo {
         MarketInfo{
+            host: @user,
             trading_pair_info: TradingPairInfo{
                 base_type_info: type_info::type_of<BC>(),
                 quote_type_info: type_info::type_of<QC>(),
                 lot_size: 100,
                 tick_size: 25,
-                base_is_coin: true,
-                quote_is_coin: true,
-                custodian_id: NO_CUSTODIAN
-            },
-            host: @user
+                custodian_id: PURE_COIN_PAIR,
+                agnostic_id: PURE_COIN_PAIR
+            }
         }
     }
 
@@ -377,8 +417,8 @@ module econia::registry {
         assert!(is_in_market_pair<BC>(&market_info), 0);
         // Assert quote coin returns true
         assert!(is_in_market_pair<QC>(&market_info), 0);
-        // Assert mock asset returns false
-        assert!(!is_in_market_pair<MA>(&market_info), 0);
+        // Assert generic base asset returns false
+        assert!(!is_in_market_pair<BG>(&market_info), 0);
     }
 
     #[test]
@@ -399,7 +439,7 @@ module econia::registry {
         // Define mock market info
         let market_info = get_market_info_test();
         // Attempt invalid check
-        is_market_base<MA>(&market_info);
+        is_market_base<QG>(&market_info);
     }
 
     #[test]
@@ -470,13 +510,12 @@ module econia::registry {
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Initialize module
-        let custodian_id = 3; // Declare custodian ID
-        // Set custodian as registered
-        set_registered_custodian_test(custodian_id);
+        assets::init_coin_types(econia); // Initialize coin types
+        let custodian_id = PURE_COIN_PAIR;
         // Run valid init
-        register_market_internal<BA, QA>(@econia, 1, 2, custodian_id);
+        register_market_internal<BC, QC>(@econia, 1, 2, custodian_id);
         // Attempt invalid re-init
-        register_market_internal<BA, QA>(@econia, 1, 2, custodian_id);
+        register_market_internal<BC, QC>(@econia, 1, 2, custodian_id);
     }
 
     #[test(econia = @econia)]
@@ -487,7 +526,7 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize module
         // Attempt invalid init
-        register_market_internal<BA, QA>(@econia, 1, 2, NO_CUSTODIAN);
+        register_market_internal<BG, QG>(@econia, 1, 2, PURE_COIN_PAIR);
     }
 
     #[test(econia = @econia)]
@@ -510,7 +549,7 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize registry
         // Attempt invalid init
-        register_market_internal<BA, QA>(@econia, 0, 2, 3);
+        register_market_internal<BG, QG>(@econia, 0, 2, 3);
     }
 
     #[test]
@@ -519,7 +558,7 @@ module econia::registry {
     fun test_register_market_internal_no_registry()
     acquires Registry {
         // Attempt invalid init
-        register_market_internal<BA, QA>(@econia, 1, 2, 3);
+        register_market_internal<BG, QG>(@econia, 1, 2, 3);
     }
 
     #[test(econia = @econia)]
@@ -530,18 +569,19 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize registry
         // Attempt invalid init
-        register_market_internal<BA, QA>(@econia, 1, 0, 3);
+        register_market_internal<BG, QG>(@econia, 1, 0, 3);
     }
 
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 6)]
-    /// Verify failure for base and quote are same type
+    /// Verify failure for base and quote are same coin type
     fun test_register_market_internal_same_type(
         econia: &signer
     ) acquires Registry {
+        assets::init_coin_types(econia); // Initialize coin types
         init_registry(econia); // Initialize registry
         // Attempt invalid init
-        register_market_internal<MA, MA>(@econia, 1, 2, 3);
+        register_market_internal<BC, BC>(@econia, 1, 2, 3);
     }
 
     #[test(econia = @econia)]
@@ -557,12 +597,10 @@ module econia::registry {
         let quote_type_info = type_info::type_of<QC>();
         let lot_size = 100;
         let tick_size = 25;
-        let base_is_coin = true;
-        let quote_is_coin = true;
-        let custodian_id = NO_CUSTODIAN;
+        let custodian_id = PURE_COIN_PAIR;
+        let agnostic_id = PURE_COIN_PAIR;
         let trading_pair_info = TradingPairInfo{base_type_info,
-            quote_type_info, lot_size, tick_size, base_is_coin, quote_is_coin,
-            custodian_id};
+            quote_type_info, lot_size, tick_size, custodian_id, agnostic_id};
         let market_info = MarketInfo{trading_pair_info, host};
         register_market_internal<BC, QC>( // Run valid initialization
             @user, lot_size, tick_size, custodian_id);
@@ -573,15 +611,15 @@ module econia::registry {
         // Assert correct market listing
         assert!(*vector::borrow(&registry.markets, 0) == market_info, 0);
         // Declare new asset-agnostic market
-        base_type_info = type_info::type_of<BA>();
-        base_is_coin = false;
+        base_type_info = type_info::type_of<BG>();
         custodian_id = 1;
-        trading_pair_info = TradingPairInfo{base_type_info, quote_type_info,
-            lot_size, tick_size, base_is_coin, quote_is_coin, custodian_id};
+        agnostic_id = 1;
+        trading_pair_info = TradingPairInfo{base_type_info,
+            quote_type_info, lot_size, tick_size, custodian_id, agnostic_id};
         market_info = MarketInfo{trading_pair_info, host};
         // Set custodian ID to be registered
         set_registered_custodian_test(custodian_id);
-        register_market_internal<BA, QC>( // Run valid initialization
+        register_market_internal<BG, QC>( // Run valid initialization
             @user, lot_size, tick_size, custodian_id);
         // Borrow immutable reference to registry
         registry = borrow_global<Registry>(@econia);

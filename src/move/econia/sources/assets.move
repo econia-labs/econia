@@ -134,20 +134,12 @@ module econia::assets {
     // Test-only structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    /// Base agnostic asset type
-    struct BA{}
+    /// Generic base asset type
+    struct BG{}
 
     #[test_only]
-    /// Mock agnostic asset type
-    struct MA{}
-
-    #[test_only]
-    /// Mock coin type
-    struct MC{}
-
-    #[test_only]
-    /// Quote agnostic asset type
-    struct QA{}
+    /// Generic quote asset type
+    struct QG{}
 
     // Test-only structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

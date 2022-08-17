@@ -8,6 +8,7 @@ registration and tracking, delegated custodian registration.
 
 
 -  [Struct `CustodianCapability`](#0xc0deb00c_registry_CustodianCapability)
+-  [Struct `GenericAsset`](#0xc0deb00c_registry_GenericAsset)
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Struct `TradingPairInfo`](#0xc0deb00c_registry_TradingPairInfo)
@@ -20,12 +21,14 @@ registration and tracking, delegated custodian registration.
 -  [Function `is_registered_custodian_id`](#0xc0deb00c_registry_is_registered_custodian_id)
 -  [Function `is_registered_trading_pair`](#0xc0deb00c_registry_is_registered_trading_pair)
 -  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
+-  [Function `n_markets`](#0xc0deb00c_registry_n_markets)
 -  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
     -  [Abort conditions](#@Abort_conditions_3)
     -  [Coin types](#@Coin_types_4)
+    -  [Non-coin types](#@Non-coin_types_5)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -66,11 +69,39 @@ store it as they wish.
 
 </details>
 
+<a name="0xc0deb00c_registry_GenericAsset"></a>
+
+## Struct `GenericAsset`
+
+Type flag for generic asset
+
+
+<pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a>
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>dummy_field: bool</code>
+</dt>
+<dd>
+
+</dd>
+</dl>
+
+
+</details>
+
 <a name="0xc0deb00c_registry_MarketInfo"></a>
 
 ## Struct `MarketInfo`
 
-Unique identifier for a market
+Identifier for a market
 
 
 <pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a> <b>has</b> <b>copy</b>, drop, store
@@ -127,7 +158,8 @@ Container for core registration information
 <code>markets: <a href="">vector</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>&gt;</code>
 </dt>
 <dd>
- List of all available markets
+ List of all available markets, with each market's serial ID
+ defined as its vector index
 </dd>
 <dt>
 <code>n_custodians: u64</code>
@@ -164,7 +196,8 @@ Information about a trading pair
  Base asset type info. When trading an
  <code>aptos_framework::coin::Coin</code>, corresponds to the phantom
  <code>CoinType</code>, for instance <code>MyCoin</code> rather than
- <code>Coin&lt;MyCoin&gt;</code>.
+ <code>Coin&lt;MyCoin&gt;</code>. Otherwise corresponds to <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a></code>, or
+ a non-coin asset indicated by the market host.
 </dd>
 <dt>
 <code>quote_type_info: <a href="_TypeInfo">type_info::TypeInfo</a></code>
@@ -173,7 +206,8 @@ Information about a trading pair
  Quote asset type info. When trading an
  <code>aptos_framework::coin::Coin</code>, corresponds to the phantom
  <code>CoinType</code>, for instance <code>MyCoin</code> rather than
- <code>Coin&lt;MyCoin&gt;</code>.
+ <code>Coin&lt;MyCoin&gt;</code>. Otherwise corresponds to <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a></code>, or
+ a non-coin asset indicated by the market host.
 </dd>
 <dt>
 <code>lot_size: u64</code>
@@ -188,27 +222,29 @@ Information about a trading pair
  Number of quote units exchanged per lot
 </dd>
 <dt>
-<code>base_is_coin: bool</code>
-</dt>
-<dd>
- <code><b>true</b></code> if base asset is an <code>aptos_framework::coin::Coin</code>,
- stored as a field for lookup optimization
-</dd>
-<dt>
-<code>quote_is_coin: bool</code>
-</dt>
-<dd>
- <code><b>true</b></code> if quote asset is an <code>aptos_framework::coin::Coin</code>,
- stored as a field for lookup optimization
-</dd>
-<dt>
 <code>custodian_id: u64</code>
 </dt>
 <dd>
  ID of custodian capability required to withdraw/deposit
  collateral for an asset that is not a coin. A "market-wide"
  collateral transfer custodian ID, required to verify deposit
- and withdraw amounts for asset-agnostic markets.
+ and withdraw amounts for asset-agnostic markets. Marked as
+ <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote types are both coins.
+</dd>
+<dt>
+<code>agnostic_id: u64</code>
+</dt>
+<dd>
+ Additional optional ID for a trading pair in the case of
+ a generic asset on either side. Allows third parties to
+ register multiple unique asset-agnostic order books all
+ having identical values for the above fields: when
+ multiple asset-agnostic trading pairs have the same
+ <code>base_type_info</code>, <code>quote_type_info</code>, <code>lot_size</code>,
+ <code>tick_size</code>, and <code>custodian_id</code>, the <code>agnostic_id</code> helps
+ disambiguate them. Marked <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base
+ and quote are both coins. Otherwise set to the serial ID for
+ given market (its vector index in <code><a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>.markets</code>).
 </dd>
 </dl>
 
@@ -290,12 +326,12 @@ When registry already initialized
 
 
 
-<a name="0xc0deb00c_registry_E_SAME_TYPE"></a>
+<a name="0xc0deb00c_registry_E_SAME_COIN"></a>
 
-When base and quote type are same
+When base and quote coins are same for a pure-coin market
 
 
-<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_SAME_TYPE">E_SAME_TYPE</a>: u64 = 6;
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN">E_SAME_COIN</a>: u64 = 6;
 </code></pre>
 
 
@@ -316,6 +352,16 @@ Custodian ID flag for no delegated custodian
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_PURE_COIN_PAIR"></a>
+
+When both base and quote assets are coins
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a>: u64 = 0;
 </code></pre>
 
 
@@ -563,6 +609,37 @@ u64
 
 </details>
 
+<a name="0xc0deb00c_registry_n_markets"></a>
+
+## Function `n_markets`
+
+Return the number of registered markets, aborting if registry
+is not initialized
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>():
+u64
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> <b>exists</b>
+    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
+    // Return number of registered markets
+    <a href="_length">vector::length</a>(&<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).markets)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_register_custodian_capability"></a>
 
 ## Function `register_custodian_capability`
@@ -623,8 +700,9 @@ Register a market
 * <code>host</code>: Host of corresponding order book
 * <code>lot_size</code>: Number of base units exchanged per lot
 * <code>tick_size</code>: Number of quote units exchanged per lot
-* <code>custodian_id</code>: ID of custodian capability required
-to withdraw/deposit collateral for an asset that is not a coin
+* <code>custodian_id</code>: ID of custodian capability required to approve
+deposits and withdrawals of non-coin assets (passed as no
+<code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote are both coins)
 
 
 <a name="@Abort_conditions_3"></a>
@@ -632,10 +710,10 @@ to withdraw/deposit collateral for an asset that is not a coin
 ### Abort conditions
 
 * If registry is not initialized
-* If <code>BaseType</code> and <code>QuoteType</code> are the same
 * If <code>lot_size</code> is zero
 * If <code>tick_size</code> is zero
-* If market is already registered
+* If <code>BaseType</code> and <code>QuoteType</code> are the same coin type
+* If corresponding pure-coin market is already registered
 * If attempting to register an asset-agnostic order book for an
 invalid <code>custodian_id</code>
 
@@ -644,10 +722,24 @@ invalid <code>custodian_id</code>
 
 ### Coin types
 
-When registering a market with an asset corresponding to an
+* When registering a market with an asset corresponding to an
 <code>aptos_framework::coin::Coin</code>, use only the phantom
-<code>CoinType</code> as a type parameter. For example pass <code>MyCoin</code> rather
-than <code>Coin&lt;MyCoin&gt;</code>.
+<code>CoinType</code> as a type parameter: for example pass <code>MyCoin</code>
+rather than <code>Coin&lt;MyCoin&gt;</code>
+* If both <code>BaseType</code> and <code>QuoteType</code> are coins, only one such
+market may be registered with the corresponding <code>lot_size</code> and
+<code>tick_size</code> for the given base/quote combination
+
+
+<a name="@Non-coin_types_5"></a>
+
+### Non-coin types
+
+* If either <code>BaseType</code> or <code>QuoteType</code> is a non-coin type, then
+the trading pair will be considered asset-agnostic, and
+registration will thus require a registered custodian ID
+* Registrants may optionally supply their own custom types
+rather than <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a></code>, which is considered the default
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, lot_size: u64, tick_size: u64, custodian_id: u64)
@@ -670,33 +762,38 @@ than <code>Coin&lt;MyCoin&gt;</code>.
 ) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Assert the <a href="registry.md#0xc0deb00c_registry">registry</a> is already initialized
     <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
-    // Get base type info
-    <b>let</b> base_type_info = <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;();
-    // Get quote type info
-    <b>let</b> quote_type_info = <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;();
-    // Assert base and quote not same type
-    <b>assert</b>!(base_type_info != quote_type_info, <a href="registry.md#0xc0deb00c_registry_E_SAME_TYPE">E_SAME_TYPE</a>);
-    // Determine <b>if</b> base is a <a href="">coin</a> type
-    <b>let</b> base_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;();
-    // Determine <b>if</b> quote is a <a href="">coin</a> type
-    <b>let</b> quote_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;QuoteType&gt;();
     // Assert lot size is nonzero
     <b>assert</b>!(lot_size &gt; 0, <a href="registry.md#0xc0deb00c_registry_E_LOT_SIZE_0">E_LOT_SIZE_0</a>);
     // Assert tick size is nonzero
     <b>assert</b>!(tick_size &gt; 0, <a href="registry.md#0xc0deb00c_registry_E_TICK_SIZE_0">E_TICK_SIZE_0</a>);
+    // Get base type info
+    <b>let</b> base_type_info = <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;();
+    // Get quote type info
+    <b>let</b> quote_type_info = <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;();
+    // Determine <b>if</b> base is a <a href="">coin</a> type
+    <b>let</b> base_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;();
+    // Determine <b>if</b> quote is a <a href="">coin</a> type
+    <b>let</b> quote_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;QuoteType&gt;();
+    // Determine <b>if</b> a pure <a href="">coin</a> pair
+    <b>let</b> pure_coin = base_is_coin && quote_is_coin;
+    // If a pure <a href="">coin</a> pair, optional agnostic ID should be flagged
+    // <b>as</b> such, otherwise set ID <b>to</b> serial ID of given <a href="market.md#0xc0deb00c_market">market</a>
+    <b>let</b> agnostic_id = <b>if</b> (pure_coin) <a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a> <b>else</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>();
     // Pack corresponding trading pair info
-    <b>let</b> trading_pair_info = <a href="registry.md#0xc0deb00c_registry_TradingPairInfo">TradingPairInfo</a>{
-        base_type_info, quote_type_info, lot_size, tick_size,
-        base_is_coin, quote_is_coin, custodian_id};
-    <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(trading_pair_info),
-        <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>); // Assert <a href="market.md#0xc0deb00c_market">market</a> is not already registered
-    <b>if</b> (!base_is_coin || !quote_is_coin) { // If asset-agnostic
+    <b>let</b> trading_pair_info = <a href="registry.md#0xc0deb00c_registry_TradingPairInfo">TradingPairInfo</a>{base_type_info,
+        quote_type_info, lot_size, tick_size, custodian_id, agnostic_id};
+    <b>if</b> (pure_coin) { // If attempting <b>to</b> register pure <a href="">coin</a> pair
+        // Assert base and quote not same type
+        <b>assert</b>!(base_type_info != quote_type_info, <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN">E_SAME_COIN</a>);
+        // Assert <a href="market.md#0xc0deb00c_market">market</a> is not already registered
+        <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(trading_pair_info),
+            <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
+        // Assert no <a href="market.md#0xc0deb00c_market">market</a>-level custodian for withdraw/deposits
+        <b>assert</b>!(custodian_id == <a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a>, <a href="registry.md#0xc0deb00c_registry_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
+    } <b>else</b> { // If an asset agnostic order book
         // Assert custodian ID <b>has</b> been registered
         <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">is_registered_custodian_id</a>(custodian_id),
             <a href="registry.md#0xc0deb00c_registry_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
-    } <b>else</b> { // If both base and quote are <a href="">coins</a>
-        // Assert no <a href="market.md#0xc0deb00c_market">market</a>-level custodian for withdraw/deposits
-        <b>assert</b>!(custodian_id == <a href="registry.md#0xc0deb00c_registry_NO_CUSTODIAN">NO_CUSTODIAN</a>, <a href="registry.md#0xc0deb00c_registry_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
     };
     // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);

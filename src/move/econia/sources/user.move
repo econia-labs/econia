@@ -20,17 +20,22 @@ module econia::user {
     use econia::registry;
     fun invoke_registry() {registry::n_markets();}
     public(friend) fun return_0(): u8 {0}
-    friend econia::market;
 
-/*
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::coin::{Coin};
+    use aptos_std::type_info;
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
-    use std::signer::address_of;
+     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    friend econia::market;
+
+    // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -43,8 +48,20 @@ module econia::user {
     }
 
     /// Represents a user's open orders and available assets for a given
-    ///`MarketAccountInfo`
+    /// `MarketAccountInfo`
     struct MarketAccount has store {
+        /// Base asset type info. When trading an
+        /// `aptos_framework::coin::Coin`, corresponds to the phantom
+        /// `CoinType`, for instance `MyCoin` rather than
+        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
+        /// a non-coin asset indicated by the market host.
+        base_type_info: type_info::TypeInfo,
+        /// Quote asset type info. When trading an
+        /// `aptos_framework::coin::Coin`, corresponds to the phantom
+        /// `CoinType`, for instance `MyCoin` rather than
+        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
+        /// a non-coin asset indicated by the market host.
+        quote_type_info: type_info::TypeInfo,
         /// Map from order ID to size of outstanding order, measured in
         /// lots lefts to fill
         asks: CritBitTree<u64>,
@@ -61,13 +78,30 @@ module econia::user {
         quote_available: u64
     }
 
-    /// Unique ID describing a market and a user-specific custodian
+    /// Unique ID for a user's market account
     struct MarketAccountInfo has copy, drop, store {
-        /// The market that a user is trading on
-        market_info: registry::MarketInfo,
-        /// Serial ID of registered account custodian, set to 0 when
-        /// given account does not have an authorized custodian
-        custodian_id: u64
+        /// Serial ID of the market that a user is trading on
+        market_id: u64,
+        /// Serial ID of registered account custodian, set to
+        /// `NO_CUSTODIAN` when given account does not have an
+        /// authorized user-level custodian. Otherwise corresponding
+        /// custodian capability required to place trades and, in the
+        /// case of a pure coin market, to withdraw/deposit collateral.
+        /// For an asset-agnostic market, is overridden by
+        /// `market_level_custodian_id` when depositing or withdrawing a
+        /// non-coin asset, since the market-level custodian is required
+        /// to verify deposit and withdraw amounts. Can be the same as
+        /// `market_level_custodian_id`.
+        user_level_custodian_id: u64,
+        /// ID of custodian capability required to withdraw/deposit
+        /// collateral for an asset that is not a coin. A "market-wide"
+        /// collateral transfer custodian ID, required to verify deposit
+        /// and withdraw amounts for asset-agnostic markets. Marked as
+        /// `PURE_COIN_PAIR` when base and quote types are both coins.
+        /// Otherwise overrides the `user_level_custodian_id` for
+        /// deposits and withdrawals only. Can be the same as
+        /// `market_level_custodian_id`.
+        market_level_custodian_id: u64
     }
 
     /// Market account map for all of a user's `MarketAccount`s
@@ -87,16 +121,28 @@ module econia::user {
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Custodian ID flag for no delegated custodian
+    const NO_CUSTODIAN: u64 = 0;
+    /// When both base and quote assets are coins
+    const PURE_COIN_PAIR: u64 = 0;
+
+    // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Register user with a `MarketAccounts` map entry corresponding to
-    /// `market_account_info`, initializing `MarketAccounts` if it does
-    /// not already exist
+    /// Register user with a `MarketAccounts` map entry for given
+    /// `BaseType`, `QuoteType`, and `market_account_info`, initializing
+    /// `MarketAccounts` if it does not already exist
     ///
     /// # Abort conditions
     /// * If user already has a `MarketAccounts` entry for given
     ///   `market_account_info`
-    fun add_market_account(
+    fun register_market_accounts_entry<
+        BaseType,
+        QuoteType
+    >(
         user: &signer,
         market_account_info: MarketAccountInfo,
     ) acquires MarketAccounts {
@@ -114,6 +160,8 @@ module econia::user {
             E_EXISTS_MARKET_ACCOUNT);
         // Add an empty entry for given market account info
         open_table::add(map, market_account_info, MarketAccount{
+            base_type_info: type_info::type_of<BaseType>(),
+            quote_type_info: type_info::type_of<QuoteType>(),
             asks: critbit::empty(),
             bids: critbit::empty(),
             base_total: 0,
@@ -124,7 +172,5 @@ module econia::user {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-*/
 
 }

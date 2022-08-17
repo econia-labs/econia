@@ -50,7 +50,8 @@ module econia::registry {
 
     /// Container for core registration information
     struct Registry has key {
-        /// Map from trading pair to order book host address
+        /// Map from trading pair to order book host address, used for
+        /// duplicacy checks on pure-coin trading pairs
         hosts: table::Table<TradingPairInfo, address>,
         /// List of all available markets, with each market's serial ID
         /// defined as its vector index (0-indexed)
@@ -92,7 +93,7 @@ module econia::registry {
         /// `tick_size`, and `custodian_id`, the `agnostic_id` helps
         /// disambiguate them. Marked `PURE_COIN_PAIR` when base
         /// and quote are both coins. Otherwise set to the 0-indexed
-        /// serial ID for given market (its vector index in
+        /// serial ID for given market (its assigned vector index in
         /// `Registry.markets`).
         agnostic_id: u64
     }

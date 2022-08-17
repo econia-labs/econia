@@ -152,7 +152,8 @@ Container for core registration information
 <code>hosts: <a href="_Table">table::Table</a>&lt;<a href="registry.md#0xc0deb00c_registry_TradingPairInfo">registry::TradingPairInfo</a>, <b>address</b>&gt;</code>
 </dt>
 <dd>
- Map from trading pair to order book host address
+ Map from trading pair to order book host address, used for
+ duplicacy checks on pure-coin trading pairs
 </dd>
 <dt>
 <code>markets: <a href="">vector</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>&gt;</code>
@@ -244,7 +245,7 @@ Information about a trading pair
  <code>tick_size</code>, and <code>custodian_id</code>, the <code>agnostic_id</code> helps
  disambiguate them. Marked <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base
  and quote are both coins. Otherwise set to the 0-indexed
- serial ID for given market (its vector index in
+ serial ID for given market (its assigned vector index in
  <code><a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>.markets</code>).
 </dd>
 </dl>

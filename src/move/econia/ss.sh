@@ -76,6 +76,7 @@ elif test $1 = ac; then
     git add . # Add all files
     git commit # Commit
     cd src/move/econia # Navigate back to Move package
+    substitute_econia_address docgen # Substitute docgen address
 
 # Clear the terminal
 elif test $1 = c; then clear

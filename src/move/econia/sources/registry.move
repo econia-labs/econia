@@ -33,7 +33,8 @@ module econia::registry {
     /// permissions, administered to third-party registrants who may
     /// store it as they wish.
     struct CustodianCapability has store {
-        /// Serial ID generated upon registration as a custodian
+        /// Serial ID, 1-indexed, generated upon registration as a
+        /// custodian
         custodian_id: u64
     }
 
@@ -53,7 +54,7 @@ module econia::registry {
         /// Map from trading pair to order book host address
         hosts: table::Table<TradingPairInfo, address>,
         /// List of all available markets, with each market's serial ID
-        /// defined as its vector index
+        /// defined as its vector index (0-indexed)
         markets: vector<MarketInfo>,
         /// Number of registered custodians
         n_custodians: u64
@@ -156,19 +157,9 @@ module econia::registry {
         });
     }
 
-    /// Return `true` if `T` is either base or quote in `market_info`
-    public fun is_in_market_pair<T>(
-        market_info: &MarketInfo
-    ): bool {
-        let type_info = type_info::type_of<T>(); // Get type info
-        // Return if type is either base or quote
-        type_info == market_info.trading_pair_info.base_type_info ||
-        type_info == market_info.trading_pair_info.quote_type_info
-    }
-
     /// Return `true` if `T` is base type in `market_info`, `false` if
     /// is quote type, and abort otherwise
-    public fun is_market_base<T>(
+    public fun is_base_asset<T>(
         market_info: &MarketInfo
     ): bool {
         let type_info = type_info::type_of<T>(); // Get type info
@@ -177,6 +168,16 @@ module econia::registry {
         if (type_info ==  market_info.trading_pair_info.quote_type_info)
             return false; // Return false if quote match
         abort E_NOT_IN_MARKET_PAIR // Else abort
+    }
+
+    /// Return `true` if `T` is either base or quote in `market_info`
+    public fun is_base_or_quote<T>(
+        market_info: &MarketInfo
+    ): bool {
+        let type_info = type_info::type_of<T>(); // Get type info
+        // Return if type is either base or quote
+        type_info == market_info.trading_pair_info.base_type_info ||
+        type_info == market_info.trading_pair_info.quote_type_info
     }
 
     /// Return `true` if `custodian_id` has been registered
@@ -411,36 +412,36 @@ module econia::registry {
 
     #[test]
     /// Verify correct returns
-    fun test_is_in_market_pair() {
+    fun test_is_base_asset() {
         // Define mock market info
         let market_info = get_market_info_test();
         // Assert base coin returns true
-        assert!(is_in_market_pair<BC>(&market_info), 0);
-        // Assert quote coin returns true
-        assert!(is_in_market_pair<QC>(&market_info), 0);
-        // Assert generic base asset returns false
-        assert!(!is_in_market_pair<BG>(&market_info), 0);
-    }
-
-    #[test]
-    /// Verify correct returns
-    fun test_is_market_base() {
-        // Define mock market info
-        let market_info = get_market_info_test();
-        // Assert base coin returns true
-        assert!(is_market_base<BC>(&market_info), 0);
+        assert!(is_base_asset<BC>(&market_info), 0);
         // Assert quote coin returns false
-        assert!(!is_market_base<QC>(&market_info), 0);
+        assert!(!is_base_asset<QC>(&market_info), 0);
     }
 
     #[test]
     #[expected_failure(abort_code = 8)]
     /// Verify failure for neither base nor quote match
-    fun test_is_market_base_neither() {
+    fun test_is_base_asset_neither() {
         // Define mock market info
         let market_info = get_market_info_test();
         // Attempt invalid check
-        is_market_base<QG>(&market_info);
+        is_base_asset<QG>(&market_info);
+    }
+
+    #[test]
+    /// Verify correct returns
+    fun test_is_base_or_quote() {
+        // Define mock market info
+        let market_info = get_market_info_test();
+        // Assert base coin returns true
+        assert!(is_base_or_quote<BC>(&market_info), 0);
+        // Assert quote coin returns true
+        assert!(is_base_or_quote<QC>(&market_info), 0);
+        // Assert generic base asset returns false
+        assert!(!is_base_or_quote<BG>(&market_info), 0);
     }
 
     #[test]

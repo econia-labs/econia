@@ -16,8 +16,8 @@ registration and tracking, delegated custodian registration.
 -  [Function `return_0`](#0xc0deb00c_registry_return_0)
 -  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
--  [Function `is_in_market_pair`](#0xc0deb00c_registry_is_in_market_pair)
--  [Function `is_market_base`](#0xc0deb00c_registry_is_market_base)
+-  [Function `is_base_asset`](#0xc0deb00c_registry_is_base_asset)
+-  [Function `is_base_or_quote`](#0xc0deb00c_registry_is_base_or_quote)
 -  [Function `is_registered_custodian_id`](#0xc0deb00c_registry_is_registered_custodian_id)
 -  [Function `is_registered_trading_pair`](#0xc0deb00c_registry_is_registered_trading_pair)
 -  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
@@ -62,7 +62,8 @@ store it as they wish.
 <code>custodian_id: u64</code>
 </dt>
 <dd>
- Serial ID generated upon registration as a custodian
+ Serial ID, 1-indexed, generated upon registration as a
+ custodian
 </dd>
 </dl>
 
@@ -159,7 +160,7 @@ Container for core registration information
 </dt>
 <dd>
  List of all available markets, with each market's serial ID
- defined as its vector index
+ defined as its vector index (0-indexed)
 </dd>
 <dt>
 <code>n_custodians: u64</code>
@@ -452,45 +453,15 @@ Move empty registry to the Econia account
 
 </details>
 
-<a name="0xc0deb00c_registry_is_in_market_pair"></a>
+<a name="0xc0deb00c_registry_is_base_asset"></a>
 
-## Function `is_in_market_pair`
-
-Return <code><b>true</b></code> if <code>T</code> is either base or quote in <code>market_info</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_in_market_pair">is_in_market_pair</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_in_market_pair">is_in_market_pair</a>&lt;T&gt;(
-    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
-): bool {
-    <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;T&gt;(); // Get type info
-    // Return <b>if</b> type is either base or quote
-    <a href="">type_info</a> == market_info.trading_pair_info.base_type_info ||
-    <a href="">type_info</a> == market_info.trading_pair_info.quote_type_info
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_market_base"></a>
-
-## Function `is_market_base`
+## Function `is_base_asset`
 
 Return <code><b>true</b></code> if <code>T</code> is base type in <code>market_info</code>, <code><b>false</b></code> if
 is quote type, and abort otherwise
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_market_base">is_market_base</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_asset">is_base_asset</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
 </code></pre>
 
 
@@ -499,7 +470,7 @@ is quote type, and abort otherwise
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_market_base">is_market_base</a>&lt;T&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_asset">is_base_asset</a>&lt;T&gt;(
     market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
 ): bool {
     <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;T&gt;(); // Get type info
@@ -508,6 +479,36 @@ is quote type, and abort otherwise
     <b>if</b> (<a href="">type_info</a> ==  market_info.trading_pair_info.quote_type_info)
         <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> quote match
     <b>abort</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a> // Else <b>abort</b>
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_base_or_quote"></a>
+
+## Function `is_base_or_quote`
+
+Return <code><b>true</b></code> if <code>T</code> is either base or quote in <code>market_info</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_or_quote">is_base_or_quote</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_or_quote">is_base_or_quote</a>&lt;T&gt;(
+    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): bool {
+    <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;T&gt;(); // Get type info
+    // Return <b>if</b> type is either base or quote
+    <a href="">type_info</a> == market_info.trading_pair_info.base_type_info ||
+    <a href="">type_info</a> == market_info.trading_pair_info.quote_type_info
 }
 </code></pre>
 

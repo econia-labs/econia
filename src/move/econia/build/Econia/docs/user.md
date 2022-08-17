@@ -45,7 +45,7 @@ depositing or withdrawing a non-coin asset.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_return_0">registry::return_0</a>();}
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_n_markets">registry::n_markets</a>();}
 </code></pre>
 
 

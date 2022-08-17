@@ -16,7 +16,6 @@ module econia::registry {
 
     friend econia::user;
     friend econia::market;
-    public(friend) fun return_0(): u8 {0} // Dependency solver stub
 
     // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

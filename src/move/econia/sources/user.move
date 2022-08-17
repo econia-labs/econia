@@ -18,7 +18,7 @@ module econia::user {
 
     // Dependency planning stubs
     use econia::registry;
-    fun invoke_registry() {registry::return_0();}
+    fun invoke_registry() {registry::n_markets();}
     public(friend) fun return_0(): u8 {0}
     friend econia::market;
 

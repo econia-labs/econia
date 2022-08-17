@@ -13,7 +13,6 @@ registration and tracking, delegated custodian registration.
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Struct `TradingPairInfo`](#0xc0deb00c_registry_TradingPairInfo)
 -  [Constants](#@Constants_0)
--  [Function `return_0`](#0xc0deb00c_registry_return_0)
 -  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
 -  [Function `is_base_asset`](#0xc0deb00c_registry_is_base_asset)
@@ -367,28 +366,6 @@ When both base and quote assets are coins
 </code></pre>
 
 
-
-<a name="0xc0deb00c_registry_return_0"></a>
-
-## Function `return_0`
-
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_return_0">return_0</a>(): u8
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_return_0">return_0</a>(): u8 {0}
-</code></pre>
-
-
-
-</details>
 
 <a name="0xc0deb00c_registry_custodian_id"></a>
 

@@ -135,14 +135,14 @@ elif test $1 = r; then
     update_rev_hash
 
 # Substitute docgen address into Move.toml
-elif test $1 = sd;
+elif test $1 = sd; then
     conda activate econia # Activate Econia conda environment
-    then substitute_econia_address docgen
+    substitute_econia_address docgen
 
 # Substitute official devnet address into Move.toml
-elif test $1 = so;
+elif test $1 = so; then
     conda activate econia # Activate Econia conda environment
-    then substitute_econia_address official
+    substitute_econia_address official
 
 # Run aptos CLI test on all modules, rebuild documentation
 elif test $1 = ta; then aptos move test; move build --doc

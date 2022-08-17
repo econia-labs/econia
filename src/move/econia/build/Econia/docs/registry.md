@@ -101,7 +101,7 @@ Type flag for generic asset
 
 ## Struct `MarketInfo`
 
-Identifier for a market
+Unique identifier for a market
 
 
 <pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a> <b>has</b> <b>copy</b>, drop, store
@@ -243,8 +243,9 @@ Information about a trading pair
  <code>base_type_info</code>, <code>quote_type_info</code>, <code>lot_size</code>,
  <code>tick_size</code>, and <code>custodian_id</code>, the <code>agnostic_id</code> helps
  disambiguate them. Marked <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base
- and quote are both coins. Otherwise set to the serial ID for
- given market (its vector index in <code><a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>.markets</code>).
+ and quote are both coins. Otherwise set to the 0-indexed
+ serial ID for given market (its vector index in
+ <code><a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>.markets</code>).
 </dd>
 </dl>
 
@@ -328,7 +329,7 @@ When registry already initialized
 
 <a name="0xc0deb00c_registry_E_SAME_COIN"></a>
 
-When base and quote coins are same for a pure-coin market
+When base and quote types are the same for a pure-coin market
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_SAME_COIN">E_SAME_COIN</a>: u64 = 6;

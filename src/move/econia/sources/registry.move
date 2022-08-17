@@ -91,8 +91,9 @@ module econia::registry {
         /// `base_type_info`, `quote_type_info`, `lot_size`,
         /// `tick_size`, and `custodian_id`, the `agnostic_id` helps
         /// disambiguate them. Marked `PURE_COIN_PAIR` when base
-        /// and quote are both coins. Otherwise set to the serial ID for
-        /// given market (its vector index in `Registry.markets`).
+        /// and quote are both coins. Otherwise set to the 0-indexed
+        /// serial ID for given market (its vector index in
+        /// `Registry.markets`).
         agnostic_id: u64
     }
 
@@ -526,7 +527,7 @@ module econia::registry {
     ) acquires Registry {
         init_registry(econia); // Initialize module
         // Attempt invalid init
-        register_market_internal<BG, QG>(@econia, 1, 2, PURE_COIN_PAIR);
+        register_market_internal<BG, QG>(@econia, 1, 2, 2);
     }
 
     #[test(econia = @econia)]
@@ -612,8 +613,8 @@ module econia::registry {
         assert!(*vector::borrow(&registry.markets, 0) == market_info, 0);
         // Declare new asset-agnostic market
         base_type_info = type_info::type_of<BG>();
-        custodian_id = 1;
-        agnostic_id = 1;
+        custodian_id = 3; // Arbitrary custodian
+        agnostic_id = 1; // Serial ID (0-indexed) of new market
         trading_pair_info = TradingPairInfo{base_type_info,
             quote_type_info, lot_size, tick_size, custodian_id, agnostic_id};
         market_info = MarketInfo{trading_pair_info, host};

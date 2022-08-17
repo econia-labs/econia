@@ -28,8 +28,10 @@ depositing or withdrawing a non-coin asset.
 -  [Constants](#@Constants_0)
 -  [Function `invoke_registry`](#0xc0deb00c_user_invoke_registry)
 -  [Function `return_0`](#0xc0deb00c_user_return_0)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
     -  [Abort conditions](#@Abort_conditions_1)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+    -  [Abort conditions](#@Abort_conditions_2)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -318,6 +320,59 @@ When market account already exists for given market account info
 
 </details>
 
+<a name="0xc0deb00c_user_register_collateral_entry"></a>
+
+## Function `register_collateral_entry`
+
+Register <code><a href="user.md#0xc0deb00c_user">user</a></code> with <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> map entry for given <code>CoinType</code>
+and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> if it does
+not already exist.
+
+
+<a name="@Abort_conditions_1"></a>
+
+### Abort conditions
+
+* If user already has a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> entry for given
+<code>market_account_info</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_collateral_entry">register_collateral_entry</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_collateral_entry">register_collateral_entry</a>&lt;
+    CoinType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a> {
+    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a>'s <b>address</b>
+    // If <a href="user.md#0xc0deb00c_user">user</a> does not have a collateral map initialized
+    <b>if</b>(!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(user_address)) {
+        // Pack an empty one and <b>move</b> <b>to</b> their <a href="">account</a>
+        <b>move_to</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
+            <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>{map: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()})
+    };
+    <b>let</b> map = // Borrow mutable reference <b>to</b> collateral map
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(user_address).map;
+    // Assert no entry <b>exists</b> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
+    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(map,
+        market_account_info), <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>);
+    // Add an empty entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
+    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(map, market_account_info, <a href="_zero">coin::zero</a>&lt;CoinType&gt;());
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_market_accounts_entry"></a>
 
 ## Function `register_market_accounts_entry`
@@ -327,7 +382,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_1"></a>
+<a name="@Abort_conditions_2"></a>
 
 ### Abort conditions
 

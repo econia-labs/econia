@@ -10,13 +10,28 @@ This is a temporary directory for storing modules that have unresolved dependenc
 
 flowchart LR
 
-    id0[Before revisions]
+%% Class definitions
+
+    classDef modified_but_not_renamed fill:#00fa9a %% Medium Spring Green
+    classDef modified_and_renamed fill:#a020f0 %% Purple
+    classDef new fill:#87cefa %% Light Sky Blue
+    classDef deleted fill:#708090 %% Slate Gray
+
+    id0[Unverified]
+    style id0 fill:#ffa500 %% Orange
 
     id1[Modified but not renamed]
-    style id1 fill:#ff00ff
+    class id1 modified_but_not_renamed;
 
     id2[Modified and renamed <br/> old function name]
-    style id2 fill:#a020f0
+    class id2 modified_and_renamed;
+
+    id3[New]
+    class id3 new;
+
+    id4[Deleted]
+    class id4 deleted;
+
 ```
 
 
@@ -24,21 +39,30 @@ flowchart LR
 
 ```mermaid
 
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffa500', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
 
 flowchart LR
 
 %% Class definitions
 
-    classDef modified_but_not_renamed fill:#ff00ff
-    classDef modified_and_renamed fill:#a020f0
+    classDef modified_but_not_renamed fill:#00fa9a %% Medium Spring Green
+    classDef modified_and_renamed fill:#a020f0 %% Purple
+    classDef new fill:#87cefa %% Light Sky Blue
+    classDef deleted fill:#708090 %% Slate Gray
 
 %% Node definitions
     Collateral[Collateral]
     MarketAccount[MarketAccount]
     MarketAccountInfo[MarketAccountInfo]
     MarketAccounts[MarketAccounts]
-    register_market_accounts_entry[add_market_account <br/> register_market_accounts_entry]
+    register_market_accounts_entry[register_market_accounts_entry <br/> add_market_account]
+    register_collateral_entry[register_collateral_entry]
+    test_register_collateral_entry[test_register_collateral_entry]
+    test_register_collateral_entry_already_registered[test_register_collateral_entry_already_registered]
+    test_register_market_accounts_entry
+    registry::scale_factor_from_market_info[registry::scale_factor_from_market_info]
+    registry::coin_is_base_coin[registry::is_base_asset <br/> registry::coin_is_base_coin]
+    test_register_market_accounts_entry_duplicate
 
 %% Class definitions
     class Collateral modified_but_not_renamed;
@@ -46,8 +70,25 @@ flowchart LR
     class MarketAccountInfo modified_but_not_renamed;
     class MarketAccounts modified_but_not_renamed;
     class register_market_accounts_entry modified_and_renamed;
+    class register_collateral_entry modified_but_not_renamed;
+    class test_register_collateral_entry modified_but_not_renamed;
+    class test_register_collateral_entry_already_registered modified_but_not_renamed;
+    class test_register_market_accounts_entry new;
+    class test_register_market_accounts_entry_duplicate new;
+    class registry::scale_factor_from_market_info deleted;
+    class registry::coin_is_base_coin modified_and_renamed;
 
-%% Relationships
+%% Relationships for new nodes
+    test_register_market_accounts_entry --> MarketAccounts
+    test_register_market_accounts_entry --> MarketAccountInfo
+    test_register_market_accounts_entry --> register_market_accounts_entry
+
+    test_register_market_accounts_entry_duplicate --> MarketAccounts
+    test_register_market_accounts_entry_duplicate --> MarketAccountInfo
+    test_register_market_accounts_entry_duplicate --> register_market_accounts_entry
+
+%% Initial relationships
+
     deposit_collateral_coinstore --> deposit_collateral
     deposit_collateral_coinstore --> Collateral
     deposit_collateral_coinstore --> MarketAccounts
@@ -135,7 +176,7 @@ flowchart LR
     get_collateral_amounts_test --> Collateral
 
     get_collateral_counts_test --> MarketAccounts
-    get_collateral_counts_test --> coin_is_base_coin
+    get_collateral_counts_test --> registry::coin_is_base_coin
 
     get_collateral_state_test --> Collateral
     get_collateral_state_test --> MarketAccounts
@@ -259,7 +300,7 @@ flowchart LR
     test_register_market_account_no_market --> register_market_account
 
     test_register_market_accounts --> Collateral
-    test_register_market_accounts --> MarketAcounts
+    test_register_market_accounts --> MarketAccounts
     test_register_market_accounts --> registry::register_test_market_internal
     test_register_market_accounts --> registry::register_custodian_capability
     test_register_market_accounts --> register_market_account

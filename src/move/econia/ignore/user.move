@@ -653,33 +653,6 @@ module econia::user {
         ((base_to_fill as u64), (quote_to_fill as u64))
     }
 
-    /// Register user with a `Collateral` map entry for given `CoinType`
-    /// and `market_account_info`, initializing `Collateral` if it does
-    /// not already exist.
-    ///
-    /// # Abort conditions
-    /// * If user already has a `Collateral` entry for given
-    ///   `market_account_info`
-    fun register_collateral_entry<CoinType>(
-        user: &signer,
-        market_account_info: MarketAccountInfo,
-    ) acquires Collateral {
-        let user_address = address_of(user); // Get user's address
-        // If user does not have a collateral map initialized
-        if(!exists<Collateral<CoinType>>(user_address)) {
-            // Pack an empty one and move to their account
-            move_to<Collateral<CoinType>>(user,
-                Collateral{map: open_table::empty()})
-        };
-        let map = // Borrow mutable reference to collateral map
-            &mut borrow_global_mut<Collateral<CoinType>>(user_address).map;
-        // Assert no entry exists for given market account info
-        assert!(!open_table::contains(map,
-            market_account_info), E_MARKET_ACCOUNT_REGISTERED);
-        // Add an empty entry for given market account info
-        open_table::add(map, market_account_info, coin::zero<CoinType>());
-    }
-
     /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
     /// entry corresponding to `market_account_info`, then return it.
     ///
@@ -1444,51 +1417,6 @@ module econia::user {
     /// Verify failure for price set to 0
     fun test_range_check_order_fills_price_0() {
         range_check_order_fills(123, 456, 0); // Attempt invalid call
-    }
-
-    #[test(user = @user)]
-    /// Verify registration for multiple market accounts
-    fun test_register_collateral_entry(
-        user: &signer
-    ) acquires Collateral {
-        let market_account_info_1 = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E1>(),
-            custodian_id: 123 }; // Declare market account info
-        let market_account_info_2 = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E2>(),
-            custodian_id: 456 }; // Declare market account info
-        // Register collateral entry
-        register_collateral_entry<BC>(user, market_account_info_1);
-        // Register another collateral entry
-        register_collateral_entry<BC>(user, market_account_info_2);
-        // Borrow immutable ref to collateral map
-        let collateral_map =
-            &borrow_global<Collateral<BC>>(address_of(user)).map;
-        // Borrow immutable ref to collateral for first market account
-        let collateral_1 =
-            open_table::borrow(collateral_map, market_account_info_1);
-        // Assert amount
-        assert!(coin::value(collateral_1) == 0, 0);
-        // Borrow immutable ref to collateral for second market account
-        let collateral_2 =
-            open_table::borrow(collateral_map, market_account_info_2);
-        // Assert amount
-        assert!(coin::value(collateral_2) == 0, 0);
-    }
-
-    #[test(user = @user)]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for given market account is already registered
-    fun test_register_collateral_entry_already_registered(
-        user: &signer
-    ) acquires Collateral {
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E1>(),
-            custodian_id: 123 }; // Declare market account info
-        // Register collateral entry
-        register_collateral_entry<BC>(user, market_account_info);
-        // Attempt invalid re-registration
-        register_collateral_entry<BC>(user, market_account_info);
     }
 
     #[test(

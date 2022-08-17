@@ -14,20 +14,20 @@ registration and tracking, delegated custodian registration.
 -  [Struct `TradingPairInfo`](#0xc0deb00c_registry_TradingPairInfo)
 -  [Constants](#@Constants_0)
 -  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
+-  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
 -  [Function `is_base_asset`](#0xc0deb00c_registry_is_base_asset)
 -  [Function `is_base_or_quote`](#0xc0deb00c_registry_is_base_or_quote)
 -  [Function `is_registered_custodian_id`](#0xc0deb00c_registry_is_registered_custodian_id)
--  [Function `is_registered_trading_pair`](#0xc0deb00c_registry_is_registered_trading_pair)
--  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
--  [Function `n_markets`](#0xc0deb00c_registry_n_markets)
--  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
     -  [Abort conditions](#@Abort_conditions_3)
     -  [Coin types](#@Coin_types_4)
     -  [Non-coin types](#@Non-coin_types_5)
+-  [Function `is_registered_trading_pair`](#0xc0deb00c_registry_is_registered_trading_pair)
+-  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
+-  [Function `n_markets`](#0xc0deb00c_registry_n_markets)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -395,231 +395,6 @@ Return serial ID of <code><a href="registry.md#0xc0deb00c_registry_CustodianCapa
 
 </details>
 
-<a name="0xc0deb00c_registry_init_registry"></a>
-
-## Function `init_registry`
-
-Move empty registry to the Econia account
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(<a href="">account</a>: &<a href="">signer</a>)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(
-    <a href="">account</a>: &<a href="">signer</a>,
-) {
-    // Assert caller is Econia <a href="">account</a>
-    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> does not already exist at Econia <a href="">account</a>
-    <b>assert</b>!(!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
-    // Move an empty <a href="registry.md#0xc0deb00c_registry">registry</a> <b>to</b> the Econia Account
-    <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(<a href="">account</a>, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
-        hosts: <a href="_new">table::new</a>(),
-        markets: <a href="_empty">vector::empty</a>(),
-        n_custodians: 0
-    });
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_base_asset"></a>
-
-## Function `is_base_asset`
-
-Return <code><b>true</b></code> if <code>T</code> is base type in <code>market_info</code>, <code><b>false</b></code> if
-is quote type, and abort otherwise
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_asset">is_base_asset</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_asset">is_base_asset</a>&lt;T&gt;(
-    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
-): bool {
-    <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;T&gt;(); // Get type info
-    <b>if</b> (<a href="">type_info</a> ==  market_info.trading_pair_info.base_type_info)
-        <b>return</b> <b>true</b>; // Return <b>true</b> <b>if</b> base match
-    <b>if</b> (<a href="">type_info</a> ==  market_info.trading_pair_info.quote_type_info)
-        <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> quote match
-    <b>abort</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a> // Else <b>abort</b>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_base_or_quote"></a>
-
-## Function `is_base_or_quote`
-
-Return <code><b>true</b></code> if <code>T</code> is either base or quote in <code>market_info</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_or_quote">is_base_or_quote</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_or_quote">is_base_or_quote</a>&lt;T&gt;(
-    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
-): bool {
-    <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;T&gt;(); // Get type info
-    // Return <b>if</b> type is either base or quote
-    <a href="">type_info</a> == market_info.trading_pair_info.base_type_info ||
-    <a href="">type_info</a> == market_info.trading_pair_info.quote_type_info
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_registered_custodian_id"></a>
-
-## Function `is_registered_custodian_id`
-
-Return <code><b>true</b></code> if <code>custodian_id</code> has been registered
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">is_registered_custodian_id</a>(custodian_id: u64): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">is_registered_custodian_id</a>(
-    custodian_id: u64
-): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Return <b>false</b> <b>if</b> <a href="registry.md#0xc0deb00c_registry">registry</a> hasn't been initialized
-    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
-    // Return <b>if</b> custodian ID <b>has</b> been registered
-    <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a> &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>() && custodian_id != <a href="registry.md#0xc0deb00c_registry_NO_CUSTODIAN">NO_CUSTODIAN</a>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_is_registered_trading_pair"></a>
-
-## Function `is_registered_trading_pair`
-
-Return <code><b>true</b></code> if <code><a href="registry.md#0xc0deb00c_registry_TradingPairInfo">TradingPairInfo</a></code> is registered, else <code><b>false</b></code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(trading_pair_info: <a href="registry.md#0xc0deb00c_registry_TradingPairInfo">registry::TradingPairInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(
-    trading_pair_info: <a href="registry.md#0xc0deb00c_registry_TradingPairInfo">TradingPairInfo</a>
-): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Return <b>false</b> <b>if</b> no <a href="registry.md#0xc0deb00c_registry">registry</a> initialized
-    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
-    // Borrow immutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
-    <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
-    // Return <b>if</b> hosts <a href="">table</a> contains given trading pair info
-    <a href="_contains">table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.hosts, trading_pair_info)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_n_custodians"></a>
-
-## Function `n_custodians`
-
-Return the number of registered custodians, aborting if registry
-is not initialized
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>(): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>():
-u64
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> <b>exists</b>
-    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
-    // Return number of registered custodians
-    <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).n_custodians
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_n_markets"></a>
-
-## Function `n_markets`
-
-Return the number of registered markets, aborting if registry
-is not initialized
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>(): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>():
-u64
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> <b>exists</b>
-    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
-    // Return number of registered markets
-    <a href="_length">vector::length</a>(&<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).markets)
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_registry_register_custodian_capability"></a>
 
 ## Function `register_custodian_capability`
@@ -651,6 +426,142 @@ registry is not initialized
     <a href="registry.md#0xc0deb00c_registry">registry</a>.n_custodians = custodian_id;
     // Pack and <b>return</b> corresponding capability
     <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>{custodian_id}
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_init_registry"></a>
+
+## Function `init_registry`
+
+Move empty registry to the Econia account
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(<a href="">account</a>: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_registry">init_registry</a>(
+    <a href="">account</a>: &<a href="">signer</a>,
+) {
+    // Assert caller is Econia <a href="">account</a>
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> does not already exist at Econia <a href="">account</a>
+    <b>assert</b>!(!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_REGISTRY_EXISTS">E_REGISTRY_EXISTS</a>);
+    // Move an empty <a href="registry.md#0xc0deb00c_registry">registry</a> <b>to</b> the Econia Account
+    <b>move_to</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(<a href="">account</a>, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
+        hosts: <a href="_new">table::new</a>(),
+        markets: <a href="_empty">vector::empty</a>(),
+        n_custodians: 0
+    });
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_base_asset"></a>
+
+## Function `is_base_asset`
+
+Return <code><b>true</b></code> if <code>T</code> is base type in <code>market_info</code>, <code><b>false</b></code> if
+is quote type, and abort otherwise
+
+Set as friend function to restrict excess registry queries
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_asset">is_base_asset</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_asset">is_base_asset</a>&lt;T&gt;(
+    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): bool {
+    <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;T&gt;(); // Get type info
+    <b>if</b> (<a href="">type_info</a> ==  market_info.trading_pair_info.base_type_info)
+        <b>return</b> <b>true</b>; // Return <b>true</b> <b>if</b> base match
+    <b>if</b> (<a href="">type_info</a> ==  market_info.trading_pair_info.quote_type_info)
+        <b>return</b> <b>false</b>; // Return <b>false</b> <b>if</b> quote match
+    <b>abort</b> <a href="registry.md#0xc0deb00c_registry_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a> // Else <b>abort</b>
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_base_or_quote"></a>
+
+## Function `is_base_or_quote`
+
+Return <code><b>true</b></code> if <code>T</code> is either base or quote in <code>market_info</code>
+
+Set as friend function to restrict excess registry queries
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_or_quote">is_base_or_quote</a>&lt;T&gt;(market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_base_or_quote">is_base_or_quote</a>&lt;T&gt;(
+    market_info: &<a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>
+): bool {
+    <b>let</b> <a href="">type_info</a> = <a href="_type_of">type_info::type_of</a>&lt;T&gt;(); // Get type info
+    // Return <b>if</b> type is either base or quote
+    <a href="">type_info</a> == market_info.trading_pair_info.base_type_info ||
+    <a href="">type_info</a> == market_info.trading_pair_info.quote_type_info
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_registered_custodian_id"></a>
+
+## Function `is_registered_custodian_id`
+
+Return <code><b>true</b></code> if <code>custodian_id</code> has been registered
+
+Set as friend function to restrict excess registry queries
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">is_registered_custodian_id</a>(custodian_id: u64): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">is_registered_custodian_id</a>(
+    custodian_id: u64
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Return <b>false</b> <b>if</b> <a href="registry.md#0xc0deb00c_registry">registry</a> hasn't been initialized
+    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
+    // Return <b>if</b> custodian ID <b>has</b> been registered
+    <a href="registry.md#0xc0deb00c_registry_custodian_id">custodian_id</a> &lt;= <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>() && custodian_id != <a href="registry.md#0xc0deb00c_registry_NO_CUSTODIAN">NO_CUSTODIAN</a>
 }
 </code></pre>
 
@@ -782,6 +693,107 @@ rather than <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">Generic
     // Push back onto markets list a packed <a href="market.md#0xc0deb00c_market">market</a> info
     <a href="_push_back">vector::push_back</a>(&<b>mut</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.markets,
         <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{host, trading_pair_info});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_registered_trading_pair"></a>
+
+## Function `is_registered_trading_pair`
+
+Return <code><b>true</b></code> if <code><a href="registry.md#0xc0deb00c_registry_TradingPairInfo">TradingPairInfo</a></code> is registered, else <code><b>false</b></code>
+
+Set as private function to restrict excess registry queries
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(trading_pair_info: <a href="registry.md#0xc0deb00c_registry_TradingPairInfo">registry::TradingPairInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(
+    trading_pair_info: <a href="registry.md#0xc0deb00c_registry_TradingPairInfo">TradingPairInfo</a>
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Return <b>false</b> <b>if</b> no <a href="registry.md#0xc0deb00c_registry">registry</a> initialized
+    <b>if</b> (!<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia)) <b>return</b> <b>false</b>;
+    // Borrow immutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
+    <b>let</b> <a href="registry.md#0xc0deb00c_registry">registry</a> = <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
+    // Return <b>if</b> hosts <a href="">table</a> contains given trading pair info
+    <a href="_contains">table::contains</a>(&<a href="registry.md#0xc0deb00c_registry">registry</a>.hosts, trading_pair_info)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_n_custodians"></a>
+
+## Function `n_custodians`
+
+Return the number of registered custodians, aborting if registry
+is not initialized
+
+Set as private function to restrict excess registry queries
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_custodians">n_custodians</a>():
+u64
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> <b>exists</b>
+    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
+    // Return number of registered custodians
+    <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).n_custodians
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_n_markets"></a>
+
+## Function `n_markets`
+
+Return the number of registered markets, aborting if registry
+is not initialized
+
+Set as private function to restrict excess registry queries
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>():
+u64
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Assert <a href="registry.md#0xc0deb00c_registry">registry</a> <b>exists</b>
+    <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
+    // Return number of registered markets
+    <a href="_length">vector::length</a>(&<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).markets)
 }
 </code></pre>
 

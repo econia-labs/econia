@@ -141,91 +141,6 @@ module econia::registry {
         custodian_capability_ref.custodian_id // Return serial ID
     }
 
-    /// Move empty registry to the Econia account
-    public fun init_registry(
-        account: &signer,
-    ) {
-        // Assert caller is Econia account
-        assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Assert registry does not already exist at Econia account
-        assert!(!exists<Registry>(@econia), E_REGISTRY_EXISTS);
-        // Move an empty registry to the Econia Account
-        move_to<Registry>(account, Registry{
-            hosts: table::new(),
-            markets: vector::empty(),
-            n_custodians: 0
-        });
-    }
-
-    /// Return `true` if `T` is base type in `market_info`, `false` if
-    /// is quote type, and abort otherwise
-    public fun is_base_asset<T>(
-        market_info: &MarketInfo
-    ): bool {
-        let type_info = type_info::type_of<T>(); // Get type info
-        if (type_info ==  market_info.trading_pair_info.base_type_info)
-            return true; // Return true if base match
-        if (type_info ==  market_info.trading_pair_info.quote_type_info)
-            return false; // Return false if quote match
-        abort E_NOT_IN_MARKET_PAIR // Else abort
-    }
-
-    /// Return `true` if `T` is either base or quote in `market_info`
-    public fun is_base_or_quote<T>(
-        market_info: &MarketInfo
-    ): bool {
-        let type_info = type_info::type_of<T>(); // Get type info
-        // Return if type is either base or quote
-        type_info == market_info.trading_pair_info.base_type_info ||
-        type_info == market_info.trading_pair_info.quote_type_info
-    }
-
-    /// Return `true` if `custodian_id` has been registered
-    public fun is_registered_custodian_id(
-        custodian_id: u64
-    ): bool
-    acquires Registry {
-        // Return false if registry hasn't been initialized
-        if (!exists<Registry>(@econia)) return false;
-        // Return if custodian ID has been registered
-        custodian_id <= n_custodians() && custodian_id != NO_CUSTODIAN
-    }
-
-    /// Return `true` if `TradingPairInfo` is registered, else `false`
-    public fun is_registered_trading_pair(
-        trading_pair_info: TradingPairInfo
-    ): bool
-    acquires Registry {
-        // Return false if no registry initialized
-        if (!exists<Registry>(@econia)) return false;
-        // Borrow immutable reference to registry
-        let registry = borrow_global<Registry>(@econia);
-        // Return if hosts table contains given trading pair info
-        table::contains(&registry.hosts, trading_pair_info)
-    }
-
-    /// Return the number of registered custodians, aborting if registry
-    /// is not initialized
-    public fun n_custodians():
-    u64
-    acquires Registry {
-        // Assert registry exists
-        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
-        // Return number of registered custodians
-        borrow_global<Registry>(@econia).n_custodians
-    }
-
-    /// Return the number of registered markets, aborting if registry
-    /// is not initialized
-    public fun n_markets():
-    u64
-    acquires Registry {
-        // Assert registry exists
-        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
-        // Return number of registered markets
-        vector::length(&borrow_global<Registry>(@econia).markets)
-    }
-
     /// Update the number of registered custodians and issue a
     /// `CustodianCapability` with the corresponding serial ID. Abort if
     /// registry is not initialized
@@ -246,7 +161,68 @@ module econia::registry {
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Move empty registry to the Econia account
+    public entry fun init_registry(
+        account: &signer,
+    ) {
+        // Assert caller is Econia account
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Assert registry does not already exist at Econia account
+        assert!(!exists<Registry>(@econia), E_REGISTRY_EXISTS);
+        // Move an empty registry to the Econia Account
+        move_to<Registry>(account, Registry{
+            hosts: table::new(),
+            markets: vector::empty(),
+            n_custodians: 0
+        });
+    }
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return `true` if `T` is base type in `market_info`, `false` if
+    /// is quote type, and abort otherwise
+    ///
+    /// Set as friend function to restrict excess registry queries
+    public(friend) fun is_base_asset<T>(
+        market_info: &MarketInfo
+    ): bool {
+        let type_info = type_info::type_of<T>(); // Get type info
+        if (type_info ==  market_info.trading_pair_info.base_type_info)
+            return true; // Return true if base match
+        if (type_info ==  market_info.trading_pair_info.quote_type_info)
+            return false; // Return false if quote match
+        abort E_NOT_IN_MARKET_PAIR // Else abort
+    }
+
+    /// Return `true` if `T` is either base or quote in `market_info`
+    ///
+    /// Set as friend function to restrict excess registry queries
+    public(friend) fun is_base_or_quote<T>(
+        market_info: &MarketInfo
+    ): bool {
+        let type_info = type_info::type_of<T>(); // Get type info
+        // Return if type is either base or quote
+        type_info == market_info.trading_pair_info.base_type_info ||
+        type_info == market_info.trading_pair_info.quote_type_info
+    }
+
+    /// Return `true` if `custodian_id` has been registered
+    ///
+    /// Set as friend function to restrict excess registry queries
+    public(friend) fun is_registered_custodian_id(
+        custodian_id: u64
+    ): bool
+    acquires Registry {
+        // Return false if registry hasn't been initialized
+        if (!exists<Registry>(@econia)) return false;
+        // Return if custodian ID has been registered
+        custodian_id <= n_custodians() && custodian_id != NO_CUSTODIAN
+    }
 
     /// Register a market
     ///
@@ -340,6 +316,51 @@ module econia::registry {
     }
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return `true` if `TradingPairInfo` is registered, else `false`
+    ///
+    /// Set as private function to restrict excess registry queries
+    fun is_registered_trading_pair(
+        trading_pair_info: TradingPairInfo
+    ): bool
+    acquires Registry {
+        // Return false if no registry initialized
+        if (!exists<Registry>(@econia)) return false;
+        // Borrow immutable reference to registry
+        let registry = borrow_global<Registry>(@econia);
+        // Return if hosts table contains given trading pair info
+        table::contains(&registry.hosts, trading_pair_info)
+    }
+
+    /// Return the number of registered custodians, aborting if registry
+    /// is not initialized
+    ///
+    /// Set as private function to restrict excess registry queries
+    fun n_custodians():
+    u64
+    acquires Registry {
+        // Assert registry exists
+        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
+        // Return number of registered custodians
+        borrow_global<Registry>(@econia).n_custodians
+    }
+
+    /// Return the number of registered markets, aborting if registry
+    /// is not initialized
+    ///
+    /// Set as private function to restrict excess registry queries
+    fun n_markets():
+    u64
+    acquires Registry {
+        // Assert registry exists
+        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
+        // Return number of registered markets
+        vector::length(&borrow_global<Registry>(@econia).markets)
+    }
+
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

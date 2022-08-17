@@ -31,7 +31,7 @@ Stub for dependency planning
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_n_markets">registry::n_markets</a>();}
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(0);}
 </code></pre>
 
 

@@ -76,6 +76,7 @@ elif test $1 = ac; then
     git add . # Add all files
     git commit # Commit
     cd src/move/econia # Navigate back to Move package
+    conda activate econia # Activate Econia conda environment
     substitute_econia_address docgen # Substitute docgen address
 
 # Clear the terminal
@@ -91,6 +92,7 @@ elif test $1 = cl; then
 
 # Build documentation
 elif test $1 = d; then
+    conda activate econia # Activate Econia conda environment
     substitute_econia_address docgen # Substitute docgen address
     move build --doc # Build docs
 
@@ -98,13 +100,16 @@ elif test $1 = d; then
 elif test $1 = er; then cd ../../../
 
 # Generate a temporary keyfile account in secrets directory
-elif test $1 = gt; then python ../../python/econia/build.py generate ../../../
+elif test $1 = gt; then
+    conda activate econia # Activate Econia conda environment
+    python ../../python/econia/build.py generate ../../../
 
 # Verify that this script can be invoked
 elif test $1 = hello; then echo Hello, Econia developer
 
 # Run pre-commit checks
 elif test $1 = pc; then
+    conda activate econia # Activate Econia conda environment
     update_rev_hash # Update revision hash for devnet dependency
     substitute_econia_address docgen # Substitute docgen address
     aptos move test # Run all tests
@@ -113,10 +118,12 @@ elif test $1 = pc; then
 
 # Publish bytecode using official devnet address
 elif test $1 = po; then
+    conda activate econia # Activate Econia conda environment
     publish_from_keyfile official
 
 # Publish bytecode using a temporary devnet address
 elif test $1 = pt; then
+    conda activate econia # Activate Econia conda environment
     # Generate temporary address
     python ../../python/econia/build.py generate ../../../
     # Publish from temporary keyfile
@@ -124,13 +131,18 @@ elif test $1 = pt; then
 
 # Update devnet revision hash in Move.toml
 elif test $1 = r; then
+    conda activate econia # Activate Econia conda environment
     update_rev_hash
 
 # Substitute docgen address into Move.toml
-elif test $1 = sd; then substitute_econia_address docgen
+elif test $1 = sd;
+    conda activate econia # Activate Econia conda environment
+    then substitute_econia_address docgen
 
 # Substitute official devnet address into Move.toml
-elif test $1 = so; then substitute_econia_address official
+elif test $1 = so;
+    conda activate econia # Activate Econia conda environment
+    then substitute_econia_address official
 
 # Run aptos CLI test on all modules, rebuild documentation
 elif test $1 = ta; then aptos move test; move build --doc
@@ -141,6 +153,7 @@ elif test $1 = tf; then aptos move test --filter $2
 # Watch source code and rebuild documentation if it changes
 # May require `brew install entr` beforehand
 elif test $1 = wd; then
+    conda activate econia # Activate Econia conda environment
     # Substitute docgen address into Move.toml
     substitute_econia_address docgen
     ls sources/*.move | entr move build --doc

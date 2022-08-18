@@ -265,6 +265,109 @@ module econia::user {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return asset counts of `user`'s market account for given
+    /// `market_id` and `user_level_custodian_id`
+    public fun asset_counts_test(
+        user: address,
+        market_id: u64,
+        user_level_custodian_id: u64
+    ): (
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        // Borrow immutable reference to user's market accounts
+        let market_accounts_ref = borrow_global<MarketAccounts>(user);
+        // Borrow immutable reference to corresponding market account
+        let market_account_ref = borrow_market_account_test(
+            market_id, user_level_custodian_id, market_accounts_ref);
+        (
+            market_account_ref.base_total,
+            market_account_ref.base_available,
+            market_account_ref.quote_total,
+            market_account_ref.quote_available
+        )
+    }
+
+    #[test_only]
+    /// Return immutable reference to market account for given
+    /// `market_id` and `user_level_custodian_id` in `MarketAccounts`
+    /// indicated by `market_accounts_ref`
+    fun borrow_market_account_test(
+        market_id: u64,
+        user_level_custodian_id: u64,
+        market_accounts_ref: &MarketAccounts
+    ): &MarketAccount {
+        // Get corresponding market account info
+        let market_account_info = get_market_account_info_test(
+            market_id, user_level_custodian_id);
+        // Return immutable reference to market account
+        open_table::borrow(&market_accounts_ref.map, market_account_info)
+    }
+
+    #[test_only]
+    /// Return `Coin.value` of `user`'s entry in `Collateral` for given
+    /// `AssetType`, `market_id`, and `user_level_custodian_id`
+    public fun collateral_value_test<CoinType>(
+        user: address,
+        market_id: u64,
+        user_level_custodian_id: u64
+    ): u64
+    acquires Collateral {
+        // Get corresponding market account info
+        let market_account_info = get_market_account_info_test(
+            market_id, user_level_custodian_id);
+        // Borrow immutable reference to collateral map
+        let collateral_map_ref =
+            &borrow_global<Collateral<CoinType>>(user).map;
+        // Borrow immutable reference to corresonding coin collateral
+        let coin_ref = open_table::borrow(
+            collateral_map_ref, market_account_info);
+        coin::value(coin_ref) // Return value of coin
+    }
+
+    #[test_only]
+    /// Return market account info for given `market_id` and
+    /// `user_level_custodian_id`
+    fun get_market_account_info_test(
+        market_id: u64,
+        user_level_custodian_id: u64
+    ): MarketAccountInfo {
+        // Get market-level custodian ID
+        let market_level_custodian_id =
+            registry::get_market_level_custodian_id_test(market_id);
+        // Pack and return corresponding market account info
+        MarketAccountInfo{
+            market_id, user_level_custodian_id, market_level_custodian_id}
+    }
+
+    #[test_only]
+    /// Return `true` if `user` has an entry in `Collateral` for given
+    /// `AssetType`, `market_id`, and `user_level_custodian_id`
+    public fun has_collateral_test<AssetType>(
+        user: address,
+        market_id: u64,
+        user_level_custodian_id: u64
+    ): bool
+    acquires Collateral {
+        // Return false if does not even have collateral map
+        if (!exists<Collateral<AssetType>>(user)) return false;
+        // Get corresponding market account info
+        let market_account_info = get_market_account_info_test(
+            market_id, user_level_custodian_id);
+        // Borrow immutable reference to collateral map
+        let collateral_map_ref =
+            &borrow_global<Collateral<AssetType>>(user).map;
+        // Return if table contains entry for market account info
+        open_table::contains(collateral_map_ref, market_account_info)
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test(user = @user)]

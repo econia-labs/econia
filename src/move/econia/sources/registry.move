@@ -429,6 +429,18 @@ module econia::registry {
     }
 
     #[test_only]
+    /// Return market-level custodian ID for valid `market_id`
+    public fun get_market_level_custodian_id_test(
+        market_id: u64
+    ): u64
+    acquires Registry {
+        // Borrow immutable reference to markets list
+        let markets_ref = &borrow_global<Registry>(@econia).markets;
+        // Return custodian ID for corresponding market
+        vector::borrow(markets_ref, market_id).trading_pair_info.custodian_id
+    }
+
+    #[test_only]
     /// Register several test markets, given `econia` signature
     public fun register_market_internal_multiple_test(
         econia: &signer

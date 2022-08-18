@@ -75,6 +75,12 @@ flowchart LR
     test_register_market_accounts_entry[test_register_market_accounts_entry]
     test_register_market_accounts_entry_already_registered[test_register_market_accounts_entry_already_registered]
     test_register_market_accounts[test_register_market_accounts]
+    registry::get_market_level_custodian_id_test[    registry::get_market_level_custodian_id_test]
+    get_market_account_info_test[get_market_account_info_test]
+    borrow_market_account_test[borrow_market_account_test]
+    has_collateral_test[has_collateral_test]
+    collateral_value_test[collateral_value_test]
+    asset_counts_test[asset_counts_test]
 
 %% Class definitions
     class Collateral modified_but_not_renamed;
@@ -101,8 +107,29 @@ flowchart LR
     class test_register_market_accounts_entry modified_but_not_renamed;
     class test_register_market_accounts_entry_already_registered modified_but_not_renamed;
     class test_register_market_accounts modified_but_not_renamed;
+    class registry::get_market_level_custodian_id_test new;
+    class get_market_account_info_test new;
+    class borrow_market_account_test new;
+    class has_collateral_test new;
+    class collateral_value_test new;
+    class asset_counts_test new;
 
 %% Relationships involving new nodes
+
+    asset_counts_test --> MarketAccounts
+    asset_counts_test --> borrow_market_account_test
+
+    collateral_value_test --> Collateral
+    collateral_value_test --> get_market_account_info_test
+
+    has_collateral_test --> Collateral
+    has_collateral_test --> get_market_account_info_test
+
+    borrow_market_account_test --> MarketAccounts
+    borrow_market_account_test --> get_market_account_info_test
+
+    get_market_account_info_test --> registry::get_market_level_custodian_id_test
+
     test_register_market_accounts_entry --> MarketAccounts
     test_register_market_accounts_entry --> MarketAccountInfo
     test_register_market_accounts_entry --> register_market_accounts_entry

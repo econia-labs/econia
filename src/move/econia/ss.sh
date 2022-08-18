@@ -64,7 +64,7 @@ get_keyfile_info() {
 # stored in global memory
 init_econia() {
     aptos move run \
-        --function-id 0x$addr::init::init_econia \
+        --function-id 0x$addr::registry::init_registry \
         --private-key-file $keyfile > /dev/null
 }
 

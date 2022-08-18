@@ -394,42 +394,6 @@ module econia::user {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Look up the `MarketAccount` in `market_accounts_map` having
-    /// `market_account_info`, then return a mutable reference to the
-    /// number of coins of `CoinType` held as collateral, and a mutable
-    /// reference to the number of coins available for withdraw.
-    ///
-    /// # Abort conditions
-    /// * If `CoinType` is neither base nor quote coin in
-    ///   `market_account_info`.
-    ///
-    /// # Assumes
-    /// * `market_accounts_map` has an entry with `market_account_info`
-    fun borrow_coin_counts_mut<CoinType>(
-        market_accounts_map:
-            &mut open_table::OpenTable<MarketAccountInfo, MarketAccount>,
-        market_account_info: MarketAccountInfo
-    ): (
-        &mut u64,
-        &mut u64
-    )
-    {
-        // Determine if coin is base coin for market (aborts if is
-        // neither base nor quote
-        let is_base_coin = registry::coin_is_base_coin<CoinType>(
-            &market_account_info.market_info);
-        // Borrow mutable reference to market account
-        let market_account =
-            open_table::borrow_mut(market_accounts_map, market_account_info);
-        if (is_base_coin) ( // If is base coin, return base coin refs
-            &mut market_account.base_coins_total,
-            &mut market_account.base_coins_available
-        ) else ( // Else quote coin refs
-            &mut market_account.quote_coins_total,
-            &mut market_account.quote_coins_available
-        )
-    }
-
     /// Return `true` if `user` has an `MarketAccounts` entry for
     /// `market_account_info`, otherwise `false`.
     fun exists_market_account(

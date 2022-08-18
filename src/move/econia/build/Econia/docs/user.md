@@ -32,10 +32,13 @@ depositing or withdrawing a non-coin asset.
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
     -  [Abort conditions](#@Abort_conditions_3)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_4)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+-  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
+    -  [Assumes](#@Assumes_4)
     -  [Abort conditions](#@Abort_conditions_5)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
+    -  [Abort conditions](#@Abort_conditions_6)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+    -  [Abort conditions](#@Abort_conditions_7)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -250,6 +253,16 @@ Market account map for all of a user's <code><a href="user.md#0xc0deb00c_user_Ma
 ## Constants
 
 
+<a name="0xc0deb00c_user_E_NOT_IN_MARKET_PAIR"></a>
+
+When indicated asset is not in the market pair
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_NO_CUSTODIAN"></a>
 
 Custodian ID flag for no delegated custodian
@@ -411,6 +424,74 @@ if signing user required for authorization on market account
 
 </details>
 
+<a name="0xc0deb00c_user_borrow_asset_counts_mut"></a>
+
+## Function `borrow_asset_counts_mut`
+
+Look up the <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> in <code>market_accounts_map</code> having
+<code>market_account_info</code>, then return a mutable reference to the
+amount of <code>AssetType</code> holdings, and a mutable reference to the
+reference to the amount of <code>AssetType</code> available for withdraw.
+
+
+<a name="@Assumes_4"></a>
+
+### Assumes
+
+* <code>market_accounts_map</code> has an entry with <code>market_account_info</code>
+
+
+<a name="@Abort_conditions_5"></a>
+
+### Abort conditions
+
+* If <code>AssetType</code> is neither base nor quote for given market
+account
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map: &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>&gt;, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>): (&<b>mut</b> u64, &<b>mut</b> u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(
+    market_accounts_map:
+        &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>&gt;,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>
+): (
+    &<b>mut</b> u64,
+    &<b>mut</b> u64
+) {
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <b>let</b> market_account =
+        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts_map, market_account_info);
+    // Get asset type info
+    <b>let</b> asset_type_info = <a href="_type_of">type_info::type_of</a>&lt;AssetType&gt;();
+    // If is base asset, <b>return</b> mutable references <b>to</b> base fields
+    <b>if</b> (asset_type_info == market_account.base_type_info) {
+        <b>return</b> (
+            &<b>mut</b> market_account.base_total,
+            &<b>mut</b> market_account.base_available
+        )
+    // If is quote asset, <b>return</b> mutable references <b>to</b> quote fields
+    } <b>else</b> <b>if</b> (asset_type_info == market_account.quote_type_info) {
+        <b>return</b> (
+            &<b>mut</b> market_account.quote_total,
+            &<b>mut</b> market_account.quote_available
+        )
+    }; // Otherwise <b>abort</b>
+    <b>abort</b> <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_collateral_entry"></a>
 
 ## Function `register_collateral_entry`
@@ -420,7 +501,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_4"></a>
+<a name="@Abort_conditions_6"></a>
 
 ### Abort conditions
 
@@ -475,7 +556,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_5"></a>
+<a name="@Abort_conditions_7"></a>
 
 ### Abort conditions
 

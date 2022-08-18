@@ -123,6 +123,8 @@ module econia::user {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// When indicated asset is not in the market pair
+    const E_NOT_IN_MARKET_PAIR: u64 = 0;
     /// When the passed custodian ID is invalid
     const E_INVALID_CUSTODIAN_ID: u64 = 1;
     /// When market account already exists for given market account info
@@ -190,6 +192,46 @@ module econia::user {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Look up the `MarketAccount` in `market_accounts_map` having
+    /// `market_account_info`, then return a mutable reference to the
+    /// amount of `AssetType` holdings, and a mutable reference to the
+    /// reference to the amount of `AssetType` available for withdraw.
+    ///
+    /// # Assumes
+    /// * `market_accounts_map` has an entry with `market_account_info`
+    ///
+    /// # Abort conditions
+    /// * If `AssetType` is neither base nor quote for given market
+    ///   account
+    fun borrow_asset_counts_mut<AssetType>(
+        market_accounts_map:
+            &mut open_table::OpenTable<MarketAccountInfo, MarketAccount>,
+        market_account_info: MarketAccountInfo
+    ): (
+        &mut u64,
+        &mut u64
+    ) {
+        // Borrow mutable reference to market account
+        let market_account =
+            open_table::borrow_mut(market_accounts_map, market_account_info);
+        // Get asset type info
+        let asset_type_info = type_info::type_of<AssetType>();
+        // If is base asset, return mutable references to base fields
+        if (asset_type_info == market_account.base_type_info) {
+            return (
+                &mut market_account.base_total,
+                &mut market_account.base_available
+            )
+        // If is quote asset, return mutable references to quote fields
+        } else if (asset_type_info == market_account.quote_type_info) {
+            return (
+                &mut market_account.quote_total,
+                &mut market_account.quote_available
+            )
+        }; // Otherwise abort
+        abort E_NOT_IN_MARKET_PAIR
+    }
 
     /// Register `user` with `Collateral` map entry for given `CoinType`
     /// and `market_account_info`, initializing `Collateral` if it does

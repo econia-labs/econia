@@ -81,6 +81,7 @@ flowchart LR
     has_collateral_test[has_collateral_test]
     collateral_value_test[collateral_value_test]
     asset_counts_test[asset_counts_test]
+    borrow_coin_counts_mut[borrow_asset_counts_mut <br/> borrow_coin_counts_mut]
 
 %% Class definitions
     class Collateral modified_but_not_renamed;
@@ -113,6 +114,7 @@ flowchart LR
     class has_collateral_test new;
     class collateral_value_test new;
     class asset_counts_test new;
+    class borrow_coin_counts_mut modified_and_renamed;
 
 %% Relationships involving new nodes
 

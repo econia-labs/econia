@@ -63,6 +63,18 @@ flowchart LR
     registry::scale_factor_from_market_info[registry::scale_factor_from_market_info]
     registry::coin_is_base_coin[registry::is_base_asset <br/> registry::coin_is_base_coin]
     test_register_market_accounts_entry_duplicate
+    register_market_account[register_market_account]
+    registry::get_verified_market_custodian_id[registry::get_verified_market_custodian_id]
+    registry::is_registered[registry::is_registered]
+    registry::market_info[registry::market_info]
+    registry::is_valid_custodian_id[registry::is_registered_custodian_id <br/> registry::is_valid_custodian_id]
+    test_register_market_account_invalid_custodian_id[test_register_market_account_invalid_custodian_id]
+    registry::register_test_market_internal[registry::register_market_internal_multiple_test <br/> registry::register_test_market_internal]
+    test_register_market_account_invalid_custodian_id[test_register_market_account_invalid_custodian_id]
+    test_register_market_account_no_market[test_register_market_account_no_market]
+    test_register_market_accounts_entry[test_register_market_accounts_entry]
+    test_register_market_accounts_entry_already_registered[test_register_market_accounts_entry_already_registered]
+    test_register_market_accounts[test_register_market_accounts]
 
 %% Class definitions
     class Collateral modified_but_not_renamed;
@@ -77,8 +89,20 @@ flowchart LR
     class test_register_market_accounts_entry_duplicate new;
     class registry::scale_factor_from_market_info deleted;
     class registry::coin_is_base_coin modified_and_renamed;
+    class register_market_account modified_but_not_renamed;
+    class registry::get_verified_market_custodian_id new;
+    class registry::is_registered deleted;
+    class registry::market_info deleted;
+    class registry::is_valid_custodian_id modified_and_renamed;
+    class test_register_market_account_invalid_custodian_id modified_but_not_renamed;
+    class registry::register_test_market_internal modified_and_renamed;
+    class test_register_market_account_invalid_custodian_id modified_but_not_renamed;
+    class test_register_market_account_no_market deleted;
+    class test_register_market_accounts_entry modified_but_not_renamed;
+    class test_register_market_accounts_entry_already_registered modified_but_not_renamed;
+    class test_register_market_accounts modified_but_not_renamed;
 
-%% Relationships for new nodes
+%% Relationships involving new nodes
     test_register_market_accounts_entry --> MarketAccounts
     test_register_market_accounts_entry --> MarketAccountInfo
     test_register_market_accounts_entry --> register_market_accounts_entry
@@ -86,6 +110,8 @@ flowchart LR
     test_register_market_accounts_entry_duplicate --> MarketAccounts
     test_register_market_accounts_entry_duplicate --> MarketAccountInfo
     test_register_market_accounts_entry_duplicate --> register_market_accounts_entry
+
+    register_market_account --> registry::get_verified_market_custodian_id
 
 %% Initial relationships
 

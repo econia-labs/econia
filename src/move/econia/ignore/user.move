@@ -22,10 +22,6 @@ module econia::user {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When no such market has been registered
-    const E_NO_MARKET: u64 = 0;
-    /// When the passed custodian ID is invalid
-    const E_INVALID_CUSTODIAN_ID: u64 = 1;
     /// When a collateral transfer does not have specified amount
     const E_NO_MARKET_ACCOUNT: u64 = 3;
     /// When not enough collateral
@@ -87,39 +83,6 @@ module econia::user {
                 coin::withdraw<B>(user, amount)) else // Else quote
             deposit_collateral<Q>(address_of(user), market_account_info,
                 coin::withdraw<Q>(user, amount));
-    }
-
-    #[cmd]
-    /// Register `user` with a `MarketAccount` and `Collateral` entries
-    /// for given market and `custodian_id`. If `custodian_id` is 0,
-    /// register user with an account that only they can manage via a
-    /// signature.
-    ///
-    /// # Abort conditions
-    /// * If market is not already registered
-    /// * If invalid `custodian_id`
-    public entry fun register_market_account<B, Q, E>(
-        user: &signer,
-        custodian_id: u64
-    ) acquires Collateral, MarketAccounts {
-        // Get market info
-        let market_info = registry::market_info<B, Q, E>();
-        // Assert market has already been registered
-        assert!(registry::is_registered(market_info), E_NO_MARKET);
-        // Assert given custodian ID is in bounds
-        assert!(registry::is_valid_custodian_id(custodian_id),
-            E_INVALID_CUSTODIAN_ID);
-        let market_account_info = // Pack market account info
-            MarketAccountInfo{market_info, custodian_id};
-        // Register entry in market accounts map (aborts if already
-        // registered)
-        register_market_accounts_entry(user, market_account_info);
-        // Registry collateral entry for base coin (aborts if already
-        // registered)
-        register_collateral_entry<B>(user, market_account_info);
-        // Registry collateral entry for quote coin (aborts if already
-        // registered)
-        register_collateral_entry<Q>(user, market_account_info);
     }
 
     #[cmd]
@@ -1417,145 +1380,6 @@ module econia::user {
     /// Verify failure for price set to 0
     fun test_range_check_order_fills_price_0() {
         range_check_order_fills(123, 456, 0); // Attempt invalid call
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for invalid custodian
-    fun test_register_market_account_invalid_custodian_id(
-        econia: &signer,
-        user: &signer
-    ) acquires Collateral, MarketAccounts {
-       // Init test market
-       registry::register_test_market_internal(econia);
-       // Attempt invalid registration
-       register_market_account<BC, QC, E1>(user, 1);
-    }
-
-    #[test(user = @user)]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for no such registered market
-    fun test_register_market_account_no_market(
-        user: &signer
-    ) acquires Collateral, MarketAccounts {
-       // Attempt invalid registration
-       register_market_account<BC, QC, E1>(user, 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify successful market account registration
-    fun test_register_market_accounts(
-        econia: &signer,
-        user: &signer
-    ): registry::CustodianCapability
-    acquires Collateral, MarketAccounts {
-        // Init test market
-        registry::register_test_market_internal(econia);
-        // Register a custodian
-        let custodian_capability = registry::register_custodian_capability();
-        // Register uncustodied and custodied test market accounts
-        register_market_account<BC, QC, E1>(user, 0);
-        register_market_account<BC, QC, E1>(user, 1);
-        // Get market account info for both market accounts
-        let market_account_info_0 = market_account_info<BC, QC, E1>(0);
-        let market_account_info_1 = market_account_info<BC, QC, E1>(1);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map =
-            &borrow_global<MarketAccounts>(address_of(user)).map;
-        // Assert entries added to table
-        assert!(open_table::contains(
-            market_accounts_map, market_account_info_0), 0);
-        assert!(open_table::contains(
-            market_accounts_map, market_account_info_1), 0);
-        // Borrow immutable ref to base coin collateral map
-        let base_collateral_map =
-            &borrow_global<Collateral<BC>>(address_of(user)).map;
-        // Assert entries added to table
-        assert!(open_table::contains(
-            base_collateral_map, market_account_info_0), 0);
-        assert!(open_table::contains(
-            base_collateral_map, market_account_info_1), 0);
-        // Borrow immutable ref to quote coin collateral map
-        let quote_collateral_map =
-            &borrow_global<Collateral<QC>>(address_of(user)).map;
-        assert!(open_table::contains(
-            quote_collateral_map, market_account_info_0), 0);
-        assert!(open_table::contains(
-            quote_collateral_map, market_account_info_1), 0);
-        custodian_capability // Return registered custodian capability
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify registration for multiple market accounts
-    fun test_register_market_accounts_entry(
-        econia: &signer,
-        user: &signer
-    ) acquires MarketAccounts {
-        registry::init_registry(econia); // Initialize registry
-        let market_account_info_1 = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E1>(),
-            custodian_id: 123}; // Declare mock market account info
-        let market_account_info_2 = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E2>(),
-            custodian_id: 456}; // Declare mock market account info
-        // Register market accounts entry
-        register_market_accounts_entry(user, market_account_info_1);
-        // Register another market accounts entry
-        register_market_accounts_entry(user, market_account_info_2);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map =
-            &borrow_global<MarketAccounts>(address_of(user)).map;
-        // Borrow immutable ref to first market account
-        let market_account_1 = open_table::borrow(
-            market_accounts_map, market_account_info_1);
-        // Assert fields
-        assert!(market_account_1.scale_factor == 10, 0);
-        assert!(critbit::is_empty(&market_account_1.asks), 0);
-        assert!(critbit::is_empty(&market_account_1.bids), 0);
-        assert!(market_account_1.base_coins_total == 0, 0);
-        assert!(market_account_1.base_coins_available == 0, 0);
-        assert!(market_account_1.quote_coins_total == 0, 0);
-        assert!(market_account_1.quote_coins_available == 0, 0);
-        // Borrow immutable ref to second market account
-        let market_account_2 = open_table::borrow(
-            market_accounts_map, market_account_info_2);
-        // Assert fields
-        assert!(market_account_2.scale_factor == 100, 0);
-        assert!(critbit::is_empty(&market_account_2.asks), 0);
-        assert!(critbit::is_empty(&market_account_2.bids), 0);
-        assert!(market_account_2.base_coins_total == 0, 0);
-        assert!(market_account_2.base_coins_available == 0, 0);
-        assert!(market_account_2.quote_coins_total == 0, 0);
-        assert!(market_account_2.quote_coins_available == 0, 0);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for given market account is already registered
-    fun test_register_market_accounts_entry_already_registered(
-        econia: &signer,
-        user: &signer
-    ) acquires MarketAccounts {
-        registry::init_registry(econia); // Initialize registry
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, registry::E1>(),
-            custodian_id: 123 }; // Declare market account info
-        // Register market accounts entry
-        register_market_accounts_entry(user, market_account_info);
-        // Attempt invalid re-registration
-        register_market_accounts_entry(user, market_account_info);
     }
 
     #[test(user = @user)]

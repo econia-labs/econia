@@ -28,10 +28,14 @@ depositing or withdrawing a non-coin asset.
 -  [Constants](#@Constants_0)
 -  [Function `invoke_registry`](#0xc0deb00c_user_invoke_registry)
 -  [Function `return_0`](#0xc0deb00c_user_return_0)
+-  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
+    -  [Type parameters](#@Type_parameters_1)
+    -  [Parameters](#@Parameters_2)
+    -  [Abort conditions](#@Abort_conditions_3)
 -  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_1)
+    -  [Abort conditions](#@Abort_conditions_4)
 -  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
-    -  [Abort conditions](#@Abort_conditions_2)
+    -  [Abort conditions](#@Abort_conditions_5)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -276,6 +280,16 @@ When market account already exists for given market account info
 
 
 
+<a name="0xc0deb00c_user_E_INVALID_CUSTODIAN_ID"></a>
+
+When the passed custodian ID is invalid
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_INVALID_CUSTODIAN_ID">E_INVALID_CUSTODIAN_ID</a>: u64 = 1;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_invoke_registry"></a>
 
 ## Function `invoke_registry`
@@ -291,7 +305,7 @@ When market account already exists for given market account info
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_n_markets">registry::n_markets</a>();}
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(0);}
 </code></pre>
 
 
@@ -320,6 +334,83 @@ When market account already exists for given market account info
 
 </details>
 
+<a name="0xc0deb00c_user_register_market_account"></a>
+
+## Function `register_market_account`
+
+Register user with a market account
+
+
+<a name="@Type_parameters_1"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_2"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Signing user
+* <code>market_id</code>: Serial ID of corresonding market
+* <code>user_level_custodian_id</code>: Serial ID of custodian capability
+required for user-level authorization, set to <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>
+if signing user required for authorization on market account
+
+
+<a name="@Abort_conditions_3"></a>
+
+### Abort conditions
+
+* If market is not already registered
+* If invalid <code>custodian_id</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, user_level_custodian_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    user_level_custodian_id: u64
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Get <a href="market.md#0xc0deb00c_market">market</a>-level custodian ID for verified <a href="market.md#0xc0deb00c_market">market</a>
+    <b>let</b> market_level_custodian_id = registry::
+        get_verified_market_custodian_id&lt;BaseType, QuoteType&gt;(market_id);
+    // If <a href="user.md#0xc0deb00c_user">user</a>-level custodian ID indicated, <b>assert</b> it is registered
+    <b>if</b> (user_level_custodian_id != <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>) <b>assert</b>!(
+        <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(user_level_custodian_id),
+        <a href="user.md#0xc0deb00c_user_E_INVALID_CUSTODIAN_ID">E_INVALID_CUSTODIAN_ID</a>);
+    // Pack corresonding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
+    <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id,
+        user_level_custodian_id, market_level_custodian_id};
+    // Register entry in <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <a href="user.md#0xc0deb00c_user_register_market_accounts_entry">register_market_accounts_entry</a>&lt;BaseType, QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
+    // If base asset is <a href="">coin</a>, register collateral entry
+    <b>if</b> (<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;())
+        <a href="user.md#0xc0deb00c_user_register_collateral_entry">register_collateral_entry</a>&lt;BaseType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
+    // If quote asset is <a href="">coin</a>, register collateral entry
+    <b>if</b> (<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;QuoteType&gt;())
+        <a href="user.md#0xc0deb00c_user_register_collateral_entry">register_collateral_entry</a>&lt;QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_collateral_entry"></a>
 
 ## Function `register_collateral_entry`
@@ -329,7 +420,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_1"></a>
+<a name="@Abort_conditions_4"></a>
 
 ### Abort conditions
 
@@ -359,13 +450,15 @@ not already exist.
         <b>move_to</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
             <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>{map: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()})
     };
-    <b>let</b> map = // Borrow mutable reference <b>to</b> collateral map
+    // Borrow mutable reference <b>to</b> collateral map
+    <b>let</b> collateral_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(user_address).map;
     // Assert no entry <b>exists</b> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
-    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(map,
+    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(collateral_map_ref_mut,
         market_account_info), <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>);
     // Add an empty entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
-    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(map, market_account_info, <a href="_zero">coin::zero</a>&lt;CoinType&gt;());
+    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(collateral_map_ref_mut, market_account_info,
+        <a href="_zero">coin::zero</a>&lt;CoinType&gt;());
 }
 </code></pre>
 
@@ -382,7 +475,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_2"></a>
+<a name="@Abort_conditions_5"></a>
 
 ### Abort conditions
 
@@ -414,20 +507,22 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
             <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>{map: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()})
     };
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
-    <b>let</b> map = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
     // Assert no entry <b>exists</b> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
-    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(map, market_account_info),
-        <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>);
+    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(market_accounts_map_ref_mut,
+        market_account_info), <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>);
     // Add an empty entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
-    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(map, market_account_info, <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>{
-        base_type_info: <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(),
-        quote_type_info: <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;(),
-        asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
-        bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
-        base_total: 0,
-        base_available: 0,
-        quote_total: 0,
-        quote_available: 0
+    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(market_accounts_map_ref_mut, market_account_info,
+        <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>{
+            base_type_info: <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(),
+            quote_type_info: <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;(),
+            asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
+            bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
+            base_total: 0,
+            base_available: 0,
+            quote_total: 0,
+            quote_available: 0
     });
 }
 </code></pre>

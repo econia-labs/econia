@@ -16,18 +16,19 @@ registration and tracking, delegated custodian registration.
 -  [Function `custodian_id`](#0xc0deb00c_registry_custodian_id)
 -  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
 -  [Function `init_registry`](#0xc0deb00c_registry_init_registry)
--  [Function `get_market_custodian_id`](#0xc0deb00c_registry_get_market_custodian_id)
-    -  [Parameters](#@Parameters_1)
-    -  [Returns](#@Returns_2)
+-  [Function `get_verified_market_custodian_id`](#0xc0deb00c_registry_get_verified_market_custodian_id)
+    -  [Type parameters](#@Type_parameters_1)
+    -  [Parameters](#@Parameters_2)
+    -  [Returns](#@Returns_3)
 -  [Function `is_base_asset`](#0xc0deb00c_registry_is_base_asset)
 -  [Function `is_base_or_quote`](#0xc0deb00c_registry_is_base_or_quote)
 -  [Function `is_registered_custodian_id`](#0xc0deb00c_registry_is_registered_custodian_id)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
-    -  [Type parameters](#@Type_parameters_3)
-    -  [Parameters](#@Parameters_4)
-    -  [Abort conditions](#@Abort_conditions_5)
-    -  [Coin types](#@Coin_types_6)
-    -  [Non-coin types](#@Non-coin_types_7)
+    -  [Type parameters](#@Type_parameters_4)
+    -  [Parameters](#@Parameters_5)
+    -  [Abort conditions](#@Abort_conditions_6)
+    -  [Coin types](#@Coin_types_7)
+    -  [Non-coin types](#@Non-coin_types_8)
 -  [Function `is_registered_trading_pair`](#0xc0deb00c_registry_is_registered_trading_pair)
 -  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
 -  [Function `n_markets`](#0xc0deb00c_registry_n_markets)
@@ -486,24 +487,30 @@ Move empty registry to the Econia account
 
 </details>
 
-<a name="0xc0deb00c_registry_get_market_custodian_id"></a>
+<a name="0xc0deb00c_registry_get_verified_market_custodian_id"></a>
 
-## Function `get_market_custodian_id`
+## Function `get_verified_market_custodian_id`
 
 Verify assets for market with given serial ID, then return
 corresponding custodian ID
 
 
-<a name="@Parameters_1"></a>
+<a name="@Type_parameters_1"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_2"></a>
 
 ### Parameters
 
 * <code>market_id</code>: Serial ID of market to look up
-* <code>base_type_info</code>: Base asset type info for market
-* <code>quote_type_info</code>: Quote asset type info for market
 
 
-<a name="@Returns_2"></a>
+<a name="@Returns_3"></a>
 
 ### Returns
 
@@ -511,7 +518,7 @@ corresponding custodian ID
 collateral on an asset-agnostic market, else <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_custodian_id">get_market_custodian_id</a>(market_id: u64, base_type_info: <a href="_TypeInfo">type_info::TypeInfo</a>, quote_type_info: <a href="_TypeInfo">type_info::TypeInfo</a>): u64
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_verified_market_custodian_id">get_verified_market_custodian_id</a>&lt;BaseType, QuoteType&gt;(market_id: u64): u64
 </code></pre>
 
 
@@ -520,10 +527,11 @@ collateral on an asset-agnostic market, else <code><a href="registry.md#0xc0deb0
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_custodian_id">get_market_custodian_id</a>(
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_verified_market_custodian_id">get_verified_market_custodian_id</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
     market_id: u64,
-    base_type_info: <a href="_TypeInfo">type_info::TypeInfo</a>,
-    quote_type_info: <a href="_TypeInfo">type_info::TypeInfo</a>
 ): u64
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Assert the <a href="registry.md#0xc0deb00c_registry">registry</a> is already initialized
@@ -537,11 +545,11 @@ collateral on an asset-agnostic market, else <code><a href="registry.md#0xc0deb0
     <b>let</b> trading_pair_info_ref = &<a href="_borrow">vector::borrow</a>(
         &registry_ref.markets, market_id).trading_pair_info;
     // Assert valid base asset type info
-    <b>assert</b>!(trading_pair_info_ref.base_type_info == base_type_info,
-        <a href="registry.md#0xc0deb00c_registry_E_INVALID_BASE_ASSET">E_INVALID_BASE_ASSET</a>);
+    <b>assert</b>!(trading_pair_info_ref.base_type_info ==
+        <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(), <a href="registry.md#0xc0deb00c_registry_E_INVALID_BASE_ASSET">E_INVALID_BASE_ASSET</a>);
     // Assert valid quote asset type info
-    <b>assert</b>!(trading_pair_info_ref.quote_type_info == quote_type_info,
-        <a href="registry.md#0xc0deb00c_registry_E_INVALID_QUOTE_ASSET">E_INVALID_QUOTE_ASSET</a>);
+    <b>assert</b>!(trading_pair_info_ref.quote_type_info ==
+        <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;(), <a href="registry.md#0xc0deb00c_registry_E_INVALID_QUOTE_ASSET">E_INVALID_QUOTE_ASSET</a>);
     // Return <a href="market.md#0xc0deb00c_market">market</a>-wide collateral transfer custodian ID
     trading_pair_info_ref.custodian_id
 }
@@ -658,7 +666,7 @@ Set as friend function to restrict excess registry queries
 Register a market
 
 
-<a name="@Type_parameters_3"></a>
+<a name="@Type_parameters_4"></a>
 
 ### Type parameters
 
@@ -666,7 +674,7 @@ Register a market
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_4"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -678,7 +686,7 @@ deposits and withdrawals of non-coin assets (passed as no
 <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote are both coins)
 
 
-<a name="@Abort_conditions_5"></a>
+<a name="@Abort_conditions_6"></a>
 
 ### Abort conditions
 
@@ -691,7 +699,7 @@ deposits and withdrawals of non-coin assets (passed as no
 invalid <code>custodian_id</code>
 
 
-<a name="@Coin_types_6"></a>
+<a name="@Coin_types_7"></a>
 
 ### Coin types
 
@@ -704,7 +712,7 @@ market may be registered with the corresponding <code>lot_size</code> and
 <code>tick_size</code> for the given base/quote combination
 
 
-<a name="@Non-coin_types_7"></a>
+<a name="@Non-coin_types_8"></a>
 
 ### Non-coin types
 

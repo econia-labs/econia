@@ -181,18 +181,21 @@ module econia::registry {
     /// Verify assets for market with given serial ID, then return
     /// corresponding custodian ID
     ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
     /// # Parameters
     /// * `market_id`: Serial ID of market to look up
-    /// * `base_type_info`: Base asset type info for market
-    /// * `quote_type_info`: Quote asset type info for market
     ///
     /// # Returns
     /// * ID of custodian capability required to withdraw/deposit
     ///   collateral on an asset-agnostic market, else `PURE_COIN_PAIR`
-    public(friend) fun get_market_custodian_id(
+    public(friend) fun get_verified_market_custodian_id<
+        BaseType,
+        QuoteType
+    >(
         market_id: u64,
-        base_type_info: type_info::TypeInfo,
-        quote_type_info: type_info::TypeInfo
     ): u64
     acquires Registry {
         // Assert the registry is already initialized
@@ -206,11 +209,11 @@ module econia::registry {
         let trading_pair_info_ref = &vector::borrow(
             &registry_ref.markets, market_id).trading_pair_info;
         // Assert valid base asset type info
-        assert!(trading_pair_info_ref.base_type_info == base_type_info,
-            E_INVALID_BASE_ASSET);
+        assert!(trading_pair_info_ref.base_type_info ==
+            type_info::type_of<BaseType>(), E_INVALID_BASE_ASSET);
         // Assert valid quote asset type info
-        assert!(trading_pair_info_ref.quote_type_info == quote_type_info,
-            E_INVALID_QUOTE_ASSET);
+        assert!(trading_pair_info_ref.quote_type_info ==
+            type_info::type_of<QuoteType>(), E_INVALID_QUOTE_ASSET);
         // Return market-wide collateral transfer custodian ID
         trading_pair_info_ref.custodian_id
     }
@@ -426,6 +429,51 @@ module econia::registry {
     }
 
     #[test_only]
+    /// Register several test markets, given `econia` signature
+    public fun register_market_internal_multiple_test(
+        econia: &signer
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+    ) acquires Registry {
+        init_registry(econia); // Initialize registry
+        assets::init_coin_types(econia); // Initialize coin types
+        // Define mock market parameters for agnostic market
+        let lot_size_agnostic = 1;
+        let tick_size_agnostic = 2;
+        let market_level_custodian_id_agnostic = 3;
+        let market_id_agnostic = 0;
+        // Define mock market parameters for pure coin market
+        let lot_size_pure_coin = 4;
+        let tick_size_pure_coin = 5;
+        let market_level_custodian_id_pure_coin = PURE_COIN_PAIR;
+        let market_id_pure_coin = 1;
+        // Set market-level agnostic custodian ID to be valid
+        set_registered_custodian_test(market_level_custodian_id_agnostic);
+        // Register markets
+        register_market_internal<BG, QG>(@econia, lot_size_agnostic,
+            tick_size_agnostic, market_level_custodian_id_agnostic);
+        register_market_internal<BC, QC>(@econia, lot_size_pure_coin,
+            tick_size_pure_coin, market_level_custodian_id_pure_coin);
+        ( // Return market parameters
+            lot_size_agnostic,
+            tick_size_agnostic,
+            market_level_custodian_id_agnostic,
+            market_id_agnostic,
+            lot_size_pure_coin,
+            tick_size_pure_coin,
+            market_level_custodian_id_pure_coin,
+            market_id_pure_coin
+        )
+    }
+
+    #[test_only]
     /// Update registry to indicate `custodian_id` as valid. Assumes
     /// registry already initialized under Econia account.
     public fun set_registered_custodian_test(
@@ -442,7 +490,7 @@ module econia::registry {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 10)]
     /// Verify failure for invalid base asset
-    fun test_get_market_custodian_id_invalid_base(
+    fun test_get_verified_market_custodian_id_invalid_base(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Init registry
@@ -451,31 +499,25 @@ module econia::registry {
         set_registered_custodian_test(3); // Set custodian ID as valid
         register_market_internal<BG, QG>( // Register mock market
             host, lot_size, tick_size, custodian_id);
-        // Get type info for mock base coin
-        let base_coin_type = type_info::type_of<BC>();
-        // Get type info for mock quote generic asset
-        let quote_generic_type = type_info::type_of<QG>();
         // Attempt invalid invocation
-        get_market_custodian_id(0, base_coin_type, quote_generic_type);
+        get_verified_market_custodian_id<BC, QG>(0);
     }
 
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 9)]
     /// Verify failure for invalid market ID
-    fun test_get_market_custodian_id_invalid_market(
+    fun test_get_verified_market_custodian_id_invalid_market(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Init registry
-        // Get type info for mock base coin
-        let base_coin_type = type_info::type_of<BC>();
         // Attempt invalid invocation
-        get_market_custodian_id(1, base_coin_type, base_coin_type);
+        get_verified_market_custodian_id<BC, BC>(1);
     }
 
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 11)]
     /// Verify failure for invalid base asset
-    fun test_get_market_custodian_id_invalid_quote(
+    fun test_get_verified_market_custodian_id_invalid_quote(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Init registry
@@ -484,17 +526,13 @@ module econia::registry {
         set_registered_custodian_test(3); // Set custodian ID as valid
         register_market_internal<BG, QG>( // Register mock market
             host, lot_size, tick_size, custodian_id);
-        // Get type info for mock base coin
-        let base_generic_type = type_info::type_of<BG>();
-        // Get type info for mock quote generic asset
-        let quote_coin_type = type_info::type_of<QC>();
         // Attempt invalid invocation
-        get_market_custodian_id(0, base_generic_type, quote_coin_type);
+        get_verified_market_custodian_id<BG, QC>(0);
     }
 
     #[test(econia = @econia)]
     /// Verify failure for invalid base asset
-    fun test_get_market_custodian_id_success(
+    fun test_get_verified_market_custodian_id_success(
         econia: &signer
     ) acquires Registry {
         init_registry(econia); // Init registry
@@ -504,12 +542,8 @@ module econia::registry {
         set_registered_custodian_test(custodian_id);
         register_market_internal<BG, QG>( // Register mock market
             host, lot_size, tick_size, custodian_id);
-        // Get type info for mock base generic asset
-        let base_generic_type = type_info::type_of<BG>();
-        // Get type info for mock quote generic asset
-        let quote_generic_type = type_info::type_of<QG>();
-        let return_val = // Get returned custodian ID
-            get_market_custodian_id(0, base_generic_type, quote_generic_type);
+        // Get returned custodian ID
+        let return_val = get_verified_market_custodian_id<BG, QG>(0);
         // Assert correct return
         assert!(return_val == custodian_id, 0);
         // Declare new mock market parameters
@@ -518,8 +552,8 @@ module econia::registry {
         set_registered_custodian_test(custodian_id);
         register_market_internal<BG, QG>( // Register mock market
             host, lot_size, tick_size, custodian_id);
-        let return_val = // Get returned custodian ID
-            get_market_custodian_id(1, base_generic_type, quote_generic_type);
+        // Get returned custodian ID
+        let return_val = get_verified_market_custodian_id<BG, QG>(1);
         // Assert correct return
         assert!(return_val == custodian_id, 0);
     }
@@ -527,12 +561,10 @@ module econia::registry {
     #[test]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for registry not initialized
-    fun test_get_market_custodian_id_no_registry()
+    fun test_get_verified_market_custodian_id_no_registry()
     acquires Registry {
-        // Get type info for mock base coin
-        let base_coin_type = type_info::type_of<BC>();
         // Attempt invalid invocation
-        get_market_custodian_id(1, base_coin_type, base_coin_type);
+        get_verified_market_custodian_id<BC, QC>(1);
     }
 
     #[test(account = @econia)]

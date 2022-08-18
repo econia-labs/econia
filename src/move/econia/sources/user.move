@@ -18,7 +18,7 @@ module econia::user {
 
     // Dependency planning stubs
     use econia::registry;
-    fun invoke_registry() {registry::n_markets();}
+    fun invoke_registry() {registry::is_registered_custodian_id(0);}
     public(friend) fun return_0(): u8 {0}
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -40,7 +40,7 @@ module econia::user {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::assets::{BC, QC};
+    use econia::assets::{BC, BG, QC, QG};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -123,6 +123,8 @@ module econia::user {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// When the passed custodian ID is invalid
+    const E_INVALID_CUSTODIAN_ID: u64 = 1;
     /// When market account already exists for given market account info
     const E_EXISTS_MARKET_ACCOUNT: u64 = 2;
 
@@ -136,6 +138,56 @@ module econia::user {
     const PURE_COIN_PAIR: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Register user with a market account
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `user`: Signing user
+    /// * `market_id`: Serial ID of corresonding market
+    /// * `user_level_custodian_id`: Serial ID of custodian capability
+    ///   required for user-level authorization, set to `NO_CUSTODIAN`
+    ///   if signing user required for authorization on market account
+    ///
+    /// # Abort conditions
+    /// * If market is not already registered
+    /// * If invalid `custodian_id`
+    public entry fun register_market_account<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        user_level_custodian_id: u64
+    ) acquires Collateral, MarketAccounts {
+        // Get market-level custodian ID for verified market
+        let market_level_custodian_id = registry::
+            get_verified_market_custodian_id<BaseType, QuoteType>(market_id);
+        // If user-level custodian ID indicated, assert it is registered
+        if (user_level_custodian_id != NO_CUSTODIAN) assert!(
+            registry::is_registered_custodian_id(user_level_custodian_id),
+            E_INVALID_CUSTODIAN_ID);
+        // Pack corresonding market account info
+        let market_account_info = MarketAccountInfo{market_id,
+            user_level_custodian_id, market_level_custodian_id};
+        // Register entry in market accounts map
+        register_market_accounts_entry<BaseType, QuoteType>(
+            user, market_account_info);
+        // If base asset is coin, register collateral entry
+        if (coin::is_coin_initialized<BaseType>())
+            register_collateral_entry<BaseType>(user, market_account_info);
+        // If quote asset is coin, register collateral entry
+        if (coin::is_coin_initialized<QuoteType>())
+            register_collateral_entry<QuoteType>(user, market_account_info);
+    }
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -159,13 +211,15 @@ module econia::user {
             move_to<Collateral<CoinType>>(user,
                 Collateral{map: open_table::empty()})
         };
-        let map = // Borrow mutable reference to collateral map
+        // Borrow mutable reference to collateral map
+        let collateral_map_ref_mut =
             &mut borrow_global_mut<Collateral<CoinType>>(user_address).map;
         // Assert no entry exists for given market account info
-        assert!(!open_table::contains(map,
+        assert!(!open_table::contains(collateral_map_ref_mut,
             market_account_info), E_EXISTS_MARKET_ACCOUNT);
         // Add an empty entry for given market account info
-        open_table::add(map, market_account_info, coin::zero<CoinType>());
+        open_table::add(collateral_map_ref_mut, market_account_info,
+            coin::zero<CoinType>());
     }
 
     /// Register user with a `MarketAccounts` map entry for given
@@ -190,20 +244,22 @@ module econia::user {
                 MarketAccounts{map: open_table::empty()})
         };
         // Borrow mutable reference to market accounts map
-        let map = &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
         // Assert no entry exists for given market account info
-        assert!(!open_table::contains(map, market_account_info),
-            E_EXISTS_MARKET_ACCOUNT);
+        assert!(!open_table::contains(market_accounts_map_ref_mut,
+            market_account_info), E_EXISTS_MARKET_ACCOUNT);
         // Add an empty entry for given market account info
-        open_table::add(map, market_account_info, MarketAccount{
-            base_type_info: type_info::type_of<BaseType>(),
-            quote_type_info: type_info::type_of<QuoteType>(),
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            base_total: 0,
-            base_available: 0,
-            quote_total: 0,
-            quote_available: 0
+        open_table::add(market_accounts_map_ref_mut, market_account_info,
+            MarketAccount{
+                base_type_info: type_info::type_of<BaseType>(),
+                quote_type_info: type_info::type_of<QuoteType>(),
+                asks: critbit::empty(),
+                bids: critbit::empty(),
+                base_total: 0,
+                base_available: 0,
+                quote_total: 0,
+                quote_available: 0
         });
     }
 
@@ -231,18 +287,18 @@ module econia::user {
         // Register another collateral entry
         register_collateral_entry<BC>(user, market_account_info_2);
         // Borrow immutable ref to collateral map
-        let collateral_map =
+        let collateral_map_ref =
             &borrow_global<Collateral<BC>>(address_of(user)).map;
         // Borrow immutable ref to collateral for first market account
-        let collateral_1 =
-            open_table::borrow(collateral_map, market_account_info_1);
+        let collateral_ref_1 =
+            open_table::borrow(collateral_map_ref, market_account_info_1);
         // Assert amount
-        assert!(coin::value(collateral_1) == 0, 0);
+        assert!(coin::value(collateral_ref_1) == 0, 0);
         // Borrow immutable ref to collateral for second market account
-        let collateral_2 =
-            open_table::borrow(collateral_map, market_account_info_2);
+        let collateral_ref_2 =
+            open_table::borrow(collateral_map_ref, market_account_info_2);
         // Assert amount
-        assert!(coin::value(collateral_2) == 0, 0);
+        assert!(coin::value(collateral_ref_2) == 0, 0);
     }
 
     #[test(user = @user)]
@@ -260,6 +316,24 @@ module econia::user {
         register_collateral_entry<BC>(user, market_account_info);
         // Attempt invalid re-registration
         register_collateral_entry<BC>(user, market_account_info);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for invalid user-level custodian ID
+    fun test_register_market_account_invalid_custodian_id(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Register test markets
+        registry::register_market_internal_multiple_test(econia);
+        let agnostic_test_market_serial_id = 0; // Declare market ID
+        // Attempt invalid registration
+        register_market_account<BG, QG>(
+            user, agnostic_test_market_serial_id, 1000000000);
     }
 
     #[test(user = @user)]
@@ -282,42 +356,42 @@ module econia::user {
         // Register market accounts entry
         register_market_accounts_entry<BC, QC>(user, market_account_info_2);
         // Borrow immutable reference to market accounts map
-        let market_accounts_map =
+        let market_accounts_map_ref =
             &borrow_global<MarketAccounts>(address_of(user)).map;
         // Borrow immutable reference to first market account
-        let market_account_1 =
-            open_table::borrow(market_accounts_map, market_account_info_1);
+        let market_account_ref_1 =
+            open_table::borrow(market_accounts_map_ref, market_account_info_1);
         // Assert fields
-        assert!(
-            market_account_1.base_type_info == type_info::type_of<BC>(), 0);
-        assert!(
-            market_account_1.quote_type_info == type_info::type_of<QC>(), 0);
-        assert!(critbit::is_empty(&market_account_1.asks), 0);
-        assert!(critbit::is_empty(&market_account_1.bids), 0);
-        assert!(market_account_1.base_total == 0, 0);
-        assert!(market_account_1.base_available == 0, 0);
-        assert!(market_account_1.quote_total == 0, 0);
-        assert!(market_account_1.quote_available == 0, 0);
+        assert!(market_account_ref_1.base_type_info ==
+            type_info::type_of<BC>(), 0);
+        assert!(market_account_ref_1.quote_type_info ==
+            type_info::type_of<QC>(), 0);
+        assert!(critbit::is_empty(&market_account_ref_1.asks), 0);
+        assert!(critbit::is_empty(&market_account_ref_1.bids), 0);
+        assert!(market_account_ref_1.base_total == 0, 0);
+        assert!(market_account_ref_1.base_available == 0, 0);
+        assert!(market_account_ref_1.quote_total == 0, 0);
+        assert!(market_account_ref_1.quote_available == 0, 0);
         // Borrow immutable reference to second market account
-        let market_account_2 =
-            open_table::borrow(market_accounts_map, market_account_info_1);
+        let market_account_ref_2 =
+            open_table::borrow(market_accounts_map_ref, market_account_info_1);
         // Assert fields
-        assert!(
-            market_account_2.base_type_info == type_info::type_of<BC>(), 0);
-        assert!(
-            market_account_2.quote_type_info == type_info::type_of<QC>(), 0);
-        assert!(critbit::is_empty(&market_account_2.asks), 0);
-        assert!(critbit::is_empty(&market_account_2.bids), 0);
-        assert!(market_account_2.base_total == 0, 0);
-        assert!(market_account_2.base_available == 0, 0);
-        assert!(market_account_2.quote_total == 0, 0);
-        assert!(market_account_2.quote_available == 0, 0);
+        assert!(market_account_ref_2.base_type_info ==
+            type_info::type_of<BC>(), 0);
+        assert!(market_account_ref_2.quote_type_info ==
+            type_info::type_of<QC>(), 0);
+        assert!(critbit::is_empty(&market_account_ref_2.asks), 0);
+        assert!(critbit::is_empty(&market_account_ref_2.bids), 0);
+        assert!(market_account_ref_2.base_total == 0, 0);
+        assert!(market_account_ref_2.base_available == 0, 0);
+        assert!(market_account_ref_2.quote_total == 0, 0);
+        assert!(market_account_ref_2.quote_available == 0, 0);
     }
 
     #[test(user = @user)]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for attempting to re-register market account
-    fun test_register_market_accounts_duplicate(
+    fun test_register_market_accounts_entry_already_registered(
         user: &signer
     ) acquires MarketAccounts {
         let market_account_info = MarketAccountInfo{
@@ -329,6 +403,63 @@ module econia::user {
         register_market_accounts_entry<BC, QC>(user, market_account_info);
         // Attemp invalid re-registration
         register_market_accounts_entry<BC, QC>(user, market_account_info);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful market account registration
+    fun test_register_market_accounts(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Init test markets, storing relevant parameters
+        let  (_, _, market_level_custodian_id_agnostic,  market_id_agnostic,
+              _, _, market_level_custodian_id_pure_coin, market_id_pure_coin) =
+            registry::register_market_internal_multiple_test(econia);
+        // Declare custodian IDs
+        let user_level_custodian_id_agnostic = NO_CUSTODIAN;
+        let user_level_custodian_id_pure_coin = 2;
+        // Register corresponding market accounts
+        register_market_account<BG, QG>(
+            user, market_id_agnostic, user_level_custodian_id_agnostic);
+        register_market_account<BC, QC>(
+            user, market_id_pure_coin, user_level_custodian_id_pure_coin);
+        // Get market account info for both market accounts
+        let market_account_info_agnostic = MarketAccountInfo{
+            market_id: market_id_agnostic,
+            user_level_custodian_id: user_level_custodian_id_agnostic,
+            market_level_custodian_id: market_level_custodian_id_agnostic
+        };
+        let market_account_info_pure_coin = MarketAccountInfo{
+            market_id: market_id_pure_coin,
+            user_level_custodian_id: user_level_custodian_id_pure_coin,
+            market_level_custodian_id: market_level_custodian_id_pure_coin
+        };
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(@user).map;
+        // Assert entries added to table
+        assert!(open_table::contains(
+            market_accounts_map_ref, market_account_info_agnostic), 0);
+        assert!(open_table::contains(
+            market_accounts_map_ref, market_account_info_pure_coin), 0);
+        // Assert no initialized collateral map for generic assets
+        assert!(!exists<Collateral<BG>>(@user), 0);
+        assert!(!exists<Collateral<QG>>(@user), 0);
+        // Borrow immutable reference to base coin collateral map
+        let collateral_map_ref =
+            &borrow_global<Collateral<BC>>(@user).map;
+        // Assert entry added for pure coin market account
+        assert!(open_table::contains(collateral_map_ref,
+            market_account_info_pure_coin), 0);
+        // Borrow immutable reference to quote coin collateral map
+        let collateral_map_ref =
+            &borrow_global<Collateral<QC>>(@user).map;
+        // Assert entry added for pure coin market account
+        assert!(open_table::contains(collateral_map_ref,
+            market_account_info_pure_coin), 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

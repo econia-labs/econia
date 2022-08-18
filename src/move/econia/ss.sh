@@ -79,7 +79,10 @@ publish_from_keyfile() {
     # Fund the account
     aptos account fund --account $addr > /dev/null
     # Publish the package
-    aptos move publish --private-key-file $keyfile > /dev/null
+    aptos move publish \
+        --private-key-file $keyfile \
+        --legacy-flow false \
+        > /dev/null
     init_econia # Run the initialization function
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr

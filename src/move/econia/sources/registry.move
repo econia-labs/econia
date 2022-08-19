@@ -84,6 +84,13 @@ module econia::registry {
         /// and withdraw amounts for asset-agnostic markets. Marked as
         /// `PURE_COIN_PAIR` when base and quote types are both coins.
         custodian_id: u64,
+        /// `PURE_COIN_PAIR` when base and quote types are both coins,
+        /// otherwise the serial ID of the corresponding market. Used to
+        /// disambiguate between asset-agnostic trading pairs having
+        /// identical values for all of the above fields, without which
+        /// such trading pairs would collide as key entries in
+        /// `Registry.hosts`.
+        agnostic_disambiguator: u64,
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -321,9 +328,14 @@ module econia::registry {
         let quote_is_coin = coin::is_coin_initialized<QuoteType>();
         // Determine if a pure coin pair
         let pure_coin = base_is_coin && quote_is_coin;
+        // If a pure coin pair, flag as such, otherwise set agnostic
+        // disambiguator to serial ID (0-indexed) of the current market
+        let agnostic_disambiguator =
+            if (pure_coin) PURE_COIN_PAIR else n_markets();
         // Pack corresponding trading pair info
         let trading_pair_info = TradingPairInfo{base_type_info,
-            quote_type_info, lot_size, tick_size, custodian_id};
+            quote_type_info, lot_size, tick_size, custodian_id,
+            agnostic_disambiguator};
         if (pure_coin) { // If attempting to register pure coin pair
             // Assert base and quote not same type
             assert!(base_type_info != quote_type_info, E_SAME_COIN);
@@ -424,6 +436,7 @@ module econia::registry {
                 lot_size: 100,
                 tick_size: 25,
                 custodian_id: PURE_COIN_PAIR,
+                agnostic_disambiguator: PURE_COIN_PAIR
             }
         }
     }
@@ -695,7 +708,7 @@ module econia::registry {
 
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 7)]
-    /// Verify failure for market already exists
+    /// Verify failure for pure-coin market already exists
     fun test_register_market_internal_duplicate(
         econia: &signer
     ) acquires Registry {
@@ -788,8 +801,10 @@ module econia::registry {
         let lot_size = 100;
         let tick_size = 25;
         let custodian_id = PURE_COIN_PAIR;
+        let agnostic_disambiguator  = PURE_COIN_PAIR;
         let trading_pair_info = TradingPairInfo{base_type_info,
-            quote_type_info, lot_size, tick_size, custodian_id};
+            quote_type_info, lot_size, tick_size, custodian_id,
+            agnostic_disambiguator};
         let market_info = MarketInfo{trading_pair_info, host};
         register_market_internal<BC, QC>( // Run valid initialization
             @user, lot_size, tick_size, custodian_id);
@@ -803,8 +818,10 @@ module econia::registry {
         // Declare new asset-agnostic market
         base_type_info = type_info::type_of<BG>();
         custodian_id = 3; // Arbitrary custodian
+        agnostic_disambiguator = 1; // Serial ID of corresponding market
         trading_pair_info = TradingPairInfo{base_type_info,
-            quote_type_info, lot_size, tick_size, custodian_id};
+            quote_type_info, lot_size, tick_size, custodian_id,
+            agnostic_disambiguator};
         market_info = MarketInfo{trading_pair_info, host};
         // Set custodian ID to be registered
         set_registered_custodian_test(custodian_id);
@@ -818,6 +835,21 @@ module econia::registry {
         // Assert correct market listing
         assert!(
             *vector::borrow(&registry_ref.markets, 1) == market_info, 0);
+        // Register a second asset-agnostic market with same parameters
+        register_market_internal<BG, QC>( // Run valid initialization
+            @user, lot_size, tick_size, custodian_id);
+        // Borrow immutable reference to registry
+        registry_ref = borrow_global<Registry>(@econia);
+        // Set new serial ID for agnostic disambiguator
+        trading_pair_info.agnostic_disambiguator = 2;
+        // Assert correct host registration
+        assert!(
+            *table::borrow(&registry_ref.hosts, trading_pair_info) == host, 0);
+        // Update market info for new agnostic mnarket
+        market_info = MarketInfo{trading_pair_info, host};
+        // Assert correct market listing
+        assert!(
+            *vector::borrow(&registry_ref.markets, 2) == market_info, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

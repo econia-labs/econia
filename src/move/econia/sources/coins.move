@@ -15,6 +15,7 @@ module econia::coins {
     struct CoinCapabilities<phantom CoinType> has key {
         mint_capability: coin::MintCapability<CoinType>,
         burn_capability: coin::BurnCapability<CoinType>,
+        freeze_capability: coin::FreezeCapability<CoinType>,
     }
 
     /// Base coin type
@@ -43,13 +44,13 @@ module econia::coins {
     /// Base coin symbol
     const BASE_COIN_SYMBOL: vector<u8> = b"BC";
     /// Base coin decimals
-    const BASE_COIN_DECIMALS: u64 = 4;
+    const BASE_COIN_DECIMALS: u8 = 4;
     /// Quote coin name
     const QUOTE_COIN_NAME: vector<u8> = b"Quote coin";
     /// Quote coin symbol
     const QUOTE_COIN_SYMBOL: vector<u8> = b"QC";
     /// Quote coin decimals
-    const QUOTE_COIN_DECIMALS: u64 = 12;
+    const QUOTE_COIN_DECIMALS: u8 = 12;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -114,7 +115,7 @@ module econia::coins {
         account: &signer,
         coin_name: vector<u8>,
         coin_symbol: vector<u8>,
-        decimals: u64,
+        decimals: u8,
     ) {
         // Assert caller is Econia
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
@@ -122,11 +123,19 @@ module econia::coins {
         assert!(!exists<CoinCapabilities<CoinType>>(@econia),
             E_HAS_CAPABILITIES);
         // Initialize coin, storing capabilities
-        let (mint_capability, burn_capability) = coin::initialize<CoinType>(
+        let (
+            burn_capability, 
+            freeze_capability, 
+            mint_capability
+        ) = coin::initialize<CoinType>(
             account, utf8(coin_name), utf8(coin_symbol), decimals, false);
         // Store capabilities under Econia account
         move_to<CoinCapabilities<CoinType>>(account,
-            CoinCapabilities<CoinType>{mint_capability, burn_capability});
+            CoinCapabilities<CoinType>{
+                mint_capability, 
+                burn_capability, 
+                freeze_capability
+            });
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

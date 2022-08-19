@@ -182,6 +182,9 @@ To clean up cache files and intermediate artifacts, consider the following tools
 * [`cargo cache`](https://github.com/matthiaskrgr/cargo-cache)
 * [`detox`](https://github.com/whitfin/detox)
 
+In particular, if using a Mac [local Time Machine snapshots](https://discussions.apple.com/thread/7676695) of intermediate artifacts may lead to excessive "purgable" disk space should substantial time pass between backups.
+It is possible to disable snapshots as mentioned in the support thread, but backing up to Time Machine should also help purge snapshots of intermediate artifacts, once the above tools are invoked.
+
 ## Major filetypes
 
 ### Jupyter

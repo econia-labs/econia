@@ -53,6 +53,12 @@ Container for mock coin type capabilities
 <dd>
 
 </dd>
+<dt>
+<code>freeze_capability: <a href="_FreezeCapability">coin::FreezeCapability</a>&lt;CoinType&gt;</code>
+</dt>
+<dd>
+
+</dd>
 </dl>
 
 
@@ -134,7 +140,7 @@ When caller is not Econia
 Base coin decimals
 
 
-<pre><code><b>const</b> <a href="coins.md#0xc0deb00c_coins_BASE_COIN_DECIMALS">BASE_COIN_DECIMALS</a>: u64 = 4;
+<pre><code><b>const</b> <a href="coins.md#0xc0deb00c_coins_BASE_COIN_DECIMALS">BASE_COIN_DECIMALS</a>: u8 = 4;
 </code></pre>
 
 
@@ -184,7 +190,7 @@ When coin capabilities have not been initialized
 Quote coin decimals
 
 
-<pre><code><b>const</b> <a href="coins.md#0xc0deb00c_coins_QUOTE_COIN_DECIMALS">QUOTE_COIN_DECIMALS</a>: u64 = 12;
+<pre><code><b>const</b> <a href="coins.md#0xc0deb00c_coins_QUOTE_COIN_DECIMALS">QUOTE_COIN_DECIMALS</a>: u8 = 12;
 </code></pre>
 
 
@@ -324,7 +330,7 @@ Econia account or if <code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">
 Initialize given coin type under Econia account
 
 
-<pre><code><b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;CoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, coin_name: <a href="">vector</a>&lt;u8&gt;, coin_symbol: <a href="">vector</a>&lt;u8&gt;, decimals: u64)
+<pre><code><b>fun</b> <a href="coins.md#0xc0deb00c_coins_init_coin_type">init_coin_type</a>&lt;CoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, coin_name: <a href="">vector</a>&lt;u8&gt;, coin_symbol: <a href="">vector</a>&lt;u8&gt;, decimals: u8)
 </code></pre>
 
 
@@ -337,7 +343,7 @@ Initialize given coin type under Econia account
     <a href="">account</a>: &<a href="">signer</a>,
     coin_name: <a href="">vector</a>&lt;u8&gt;,
     coin_symbol: <a href="">vector</a>&lt;u8&gt;,
-    decimals: u64,
+    decimals: u8,
 ) {
     // Assert caller is Econia
     <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="coins.md#0xc0deb00c_coins_E_NOT_ECONIA">E_NOT_ECONIA</a>);
@@ -345,11 +351,19 @@ Initialize given coin type under Econia account
     <b>assert</b>!(!<b>exists</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(@econia),
         <a href="coins.md#0xc0deb00c_coins_E_HAS_CAPABILITIES">E_HAS_CAPABILITIES</a>);
     // Initialize <a href="">coin</a>, storing capabilities
-    <b>let</b> (mint_capability, burn_capability) = <a href="_initialize">coin::initialize</a>&lt;CoinType&gt;(
+    <b>let</b> (
+        burn_capability,
+        freeze_capability,
+        mint_capability
+    ) = <a href="_initialize">coin::initialize</a>&lt;CoinType&gt;(
         <a href="">account</a>, utf8(coin_name), utf8(coin_symbol), decimals, <b>false</b>);
     // Store capabilities under Econia <a href="">account</a>
     <b>move_to</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(<a href="">account</a>,
-        <a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;{mint_capability, burn_capability});
+        <a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;{
+            mint_capability,
+            burn_capability,
+            freeze_capability
+        });
 }
 </code></pre>
 

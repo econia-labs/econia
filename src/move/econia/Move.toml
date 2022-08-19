@@ -1,6 +1,6 @@
 [package]
 name = 'Econia'
-version = '2.0.4' # Per SemVer
+version = '2.0.5' # Per SemVer
 
 [addresses]
 econia = '0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7'
@@ -14,4 +14,4 @@ user_3 = '0x5678'
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = 'a58060f88d66b90a0548a506e22270b04a328db3'
+rev = '30bbd57d6b8e46714c606957588ebac2aa782ae9'

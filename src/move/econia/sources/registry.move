@@ -109,7 +109,7 @@ module econia::registry {
     const E_LOT_SIZE_0: u64 = 3;
     /// When tick size specified as 0
     const E_TICK_SIZE_0: u64 = 4;
-    /// When invalid custodian ID
+    /// When invalid custodian ID for given operation
     const E_INVALID_CUSTODIAN: u64 = 5;
     /// When base and quote types are the same for a pure-coin market
     const E_SAME_COIN: u64 = 6;

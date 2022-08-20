@@ -281,7 +281,7 @@ When an invalid base asset specified
 
 <a name="0xc0deb00c_registry_E_INVALID_CUSTODIAN"></a>
 
-When invalid custodian ID
+When invalid custodian ID for given operation
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>: u64 = 5;

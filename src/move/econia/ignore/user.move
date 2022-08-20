@@ -22,12 +22,6 @@ module econia::user {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When not enough collateral
-    const E_NOT_ENOUGH_COLLATERAL: u64 = 4;
-    /// When unauthorized custodian ID
-    const E_UNAUTHORIZED_CUSTODIAN: u64 = 5;
-    /// When user attempts invalid custodian override
-    const E_CUSTODIAN_OVERRIDE: u64 = 6;
     /// When an order has no price listed
     const E_PRICE_0: u64 = 8;
     /// When an order has no base parcel count listed
@@ -41,8 +35,6 @@ module econia::user {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Custodian ID flag for no delegated custodian
-    const NO_CUSTODIAN: u64 = 0;
     /// Flag for asks side
     const ASK: bool = true;
     /// Flag for asks side
@@ -55,57 +47,6 @@ module econia::user {
     const OUT: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[cmd]
-    /// For given market, withdraw `amount` of `user`'s coins from their
-    /// `Collateral`, depositing them to their
-    /// `aptos_framework::coin::CoinStore`: base coins if `base` is true
-    /// else quote coins. See wrapped function `withdraw_collateral()`.
-    ///
-    /// # Patch notes
-    /// * Previously allowed for any `custodian_id`, which would
-    ///   inappropriately allow for user to override a custodian. Rather
-    ///   than removing the `custodian_id` parameter, however, the
-    ///   assert statement was instead added so as not to introduce
-    ///   breaking API changes.
-    public entry fun withdraw_collateral_coinstore<B, Q, E>(
-        user: &signer,
-        custodian_id: u64,
-        base: bool,
-        amount: u64
-    ) acquires Collateral, MarketAccounts {
-        // Assert custodian ID indicates no custodian
-        assert!(custodian_id == NO_CUSTODIAN, E_CUSTODIAN_OVERRIDE);
-        // Get corresponding market account info
-        let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        if (base) // If marked for withdrawing base coins, use base type
-            coin::deposit<B>(address_of(user), withdraw_collateral<B>(
-                address_of(user), market_account_info, amount)) else
-            // Else withdraw quote coins from collateral to coinstore
-            coin::deposit<Q>(address_of(user), withdraw_collateral<Q>(
-                address_of(user), market_account_info, amount));
-    }
-
-    /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
-    /// entry corresponding to `market_account_info`, then return it.
-    /// Aborts if custodian serial ID for given market account is not 0.
-    public entry fun withdraw_collateral_user<CoinType>(
-        user: &signer,
-        market_account_info: MarketAccountInfo,
-        amount: u64,
-    ): coin::Coin<CoinType>
-    acquires Collateral, MarketAccounts {
-        // Assert user is not trying to override delegated custody
-        assert!(market_account_info.custodian_id == NO_CUSTODIAN,
-            E_CUSTODIAN_OVERRIDE);
-        // Withdraw collateral from user's market account
-        withdraw_collateral<CoinType>(
-            address_of(user), market_account_info, amount)
-    }
-
-    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -287,26 +228,6 @@ module econia::user {
         let coins_unlocked = base_parcels * base_parcel_multiplier;
         // Increment available coin amount
         *coins_available_ref_mut = *coins_available_ref_mut + coins_unlocked;
-    }
-
-    /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
-    /// entry corresponding to `market_account_info`, then return it.
-    /// Requires a reference to a `registry::CustodianCapability` for
-    /// authorization, and aborts if custodian serial ID does not
-    /// correspond to that specified in `market_account_info`.
-    public fun withdraw_collateral_custodian<CoinType>(
-        user: address,
-        market_account_info: MarketAccountInfo,
-        amount: u64,
-        custodian_capability_ref: &registry::CustodianCapability,
-    ): coin::Coin<CoinType>
-    acquires Collateral, MarketAccounts {
-        // Assert serial custodian ID from capability matches ID from
-        // market account info
-        assert!(registry::custodian_id(custodian_capability_ref) ==
-            market_account_info.custodian_id, E_UNAUTHORIZED_CUSTODIAN);
-        // Withdraw collateral from user's market account
-        withdraw_collateral<CoinType>(user, market_account_info, amount)
     }
 
     /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`

@@ -127,16 +127,24 @@ module econia::user {
 
     /// When indicated asset is not in the market pair
     const E_NOT_IN_MARKET_PAIR: u64 = 0;
-    /// When the passed custodian ID is invalid
-    const E_INVALID_CUSTODIAN_ID: u64 = 1;
+    /// When indicated custodian ID is not registered
+    const E_UNREGISTERED_CUSTODIAN_ID: u64 = 1;
     /// When market account already exists for given market account info
     const E_EXISTS_MARKET_ACCOUNT: u64 = 2;
     /// When indicated market account does not exist
     const E_NO_MARKET_ACCOUNT: u64 = 3;
+    /// When not enough asset avaialable for withdraw
+    const E_NOT_ENOUGH_ASSET_AVAILABLE: u64 = 4;
+    /// When indicated custodian does not have authority for operation
+    const E_UNAUTHORIZED_CUSTODIAN: u64 = 5;
+    /// When user attempts invalid custodian override
+    const E_CUSTODIAN_OVERRIDE: u64 = 6;
     /// When a user does not a `MarketAccounts`
     const E_NO_MARKET_ACCOUNTS: u64 = 7;
     /// When asset indicated as generic actually corresponds to a coin
     const E_NOT_GENERIC_ASSET: u64 = 12;
+    /// When asset indicated as coin actually corresponds to a generic
+    const E_NOT_COIN_ASSET: u64 = 13;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -172,8 +180,8 @@ module econia::user {
         )
     }
 
-    /// Deposit `coins` of `CoinType` to `user`'s market account having
-    /// `market_id`, `general_custodian_id`, and
+    /// Deposit `amount` of non-coin assets of `AssetType` to `user`'s
+    /// market account having `market_id`, `general_custodian_id`, and
     /// `generic_asset_transfer_custodian_id`, under authority of
     /// custodian indicated by
     /// `generic_asset_transfer_custodian_capability_ref`
@@ -194,11 +202,11 @@ module econia::user {
         amount: u64,
         generic_asset_transfer_custodian_capability_ref: &CustodianCapability
     ) acquires Collateral, MarketAccounts {
-        // Assert generic asset transfer custodian capability has same
-        // ID as that indicated for given market account
+        // Assert indicated generic asset transfer custodian ID matches
+        // that of capability
         assert!(registry::custodian_id(
             generic_asset_transfer_custodian_capability_ref) ==
-            generic_asset_transfer_custodian_id, E_INVALID_CUSTODIAN_ID);
+            generic_asset_transfer_custodian_id, E_UNAUTHORIZED_CUSTODIAN);
         // Assert asset type does not correspond to an initialized coin
         assert!(!coin::is_coin_initialized<AssetType>(), E_NOT_GENERIC_ASSET);
         deposit_asset<AssetType>( // Deposit generic asset
@@ -210,6 +218,104 @@ module econia::user {
         )
     }
 
+    /// Withdraw `amount` of coins of `CoinType` from `user`'s market
+    /// account having `market_id`, `general_custodian_id`, and
+    /// `generic_asset_transfer_custodian_id`, under authority of
+    /// custodian indicated by `general_custodian_capability_ref`
+    ///
+    /// See wrapped function `withdraw_coins()`
+    ///
+    /// # Abort conditions
+    /// * If `CoinType` does not correspond to a coin
+    /// * If `general_custodian_id` is not `NO_CUSTODIAN`
+    public fun withdraw_coins_custodian<CoinType>(
+        user: address,
+        market_id: u64,
+        general_custodian_id: u64,
+        generic_asset_transfer_custodian_id: u64,
+        amount: u64,
+        general_custodian_capability_ref: &CustodianCapability
+    ): coin::Coin<CoinType>
+    acquires Collateral, MarketAccounts {
+        // Assert indicated general custodian ID matches that of
+        // capability
+        assert!(registry::custodian_id(general_custodian_capability_ref) ==
+            general_custodian_id, E_UNAUTHORIZED_CUSTODIAN);
+        withdraw_coins<CoinType>(
+            user,
+            market_id,
+            general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            amount
+        ) // Withdraw coins from market account and return
+    }
+
+    /// Withdraw `amount` of coins of `CoinType` from `user`'s market
+    /// account having `market_id`, `general_custodian_id`, and
+    /// `generic_asset_transfer_custodian_id`, returning coins
+    ///
+    /// See wrapped function `withdraw_coins()`
+    ///
+    /// # Abort conditions
+    /// * If `CoinType` does not correspond to a coin
+    /// * If `general_custodian_id` is not `NO_CUSTODIAN`
+    public fun withdraw_coins_user<CoinType>(
+        user: &signer,
+        market_id: u64,
+        general_custodian_id: u64,
+        generic_asset_transfer_custodian_id: u64,
+        amount: u64,
+    ): coin::Coin<CoinType>
+    acquires Collateral, MarketAccounts {
+        // Assert custodian ID indicates no custodian
+        assert!(general_custodian_id == NO_CUSTODIAN, E_CUSTODIAN_OVERRIDE);
+        withdraw_coins<CoinType>(
+            address_of(user),
+            market_id,
+            general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            amount
+        ) // Withdraw coins from market account and return
+    }
+
+    /// Withdraw `amount` of non-coin assets of `AssetType` from
+    /// `user`'s market account having `market_id`,
+    /// `general_custodian_id`, and
+    /// `generic_asset_transfer_custodian_id`, under authority of
+    /// custodian indicated by
+    /// `generic_asset_transfer_custodian_capability_ref`
+    ///
+    /// See wrapped function `withdraw_asset()`
+    ///
+    /// # Abort conditions
+    /// * If generic asset transfer custodian ID for market does not
+    ///   match that indicated by
+    ///   `generic_asset_transfer_custodian_capbility_ref`
+    /// * If `AssetType` corresponds to the `CoinType` of an initialized
+    ///   coin
+    public fun withdraw_generic_asset<AssetType>(
+        user: address,
+        market_id: u64,
+        general_custodian_id: u64,
+        generic_asset_transfer_custodian_id: u64,
+        amount: u64,
+        generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+    ) acquires Collateral, MarketAccounts {
+        // Assert indicated generic asset transfer custodian ID matches
+        // that of capability
+        assert!(registry::custodian_id(
+            generic_asset_transfer_custodian_capability_ref) ==
+            generic_asset_transfer_custodian_id, E_UNAUTHORIZED_CUSTODIAN);
+        // Assert asset type does not correspond to an initialized coin
+        assert!(!coin::is_coin_initialized<AssetType>(), E_NOT_GENERIC_ASSET);
+        // Pack market account info
+        let market_account_info = MarketAccountInfo{market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id};
+        let empty_option = withdraw_asset<AssetType>(user, market_account_info,
+            amount, false); // Withdraw asset as empty option
+        option::destroy_none(empty_option); // Destroy empty option
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -217,7 +323,7 @@ module econia::user {
     #[cmd]
     /// Transfer `amount` of coins of `CoinType` from `user`'s
     /// `aptos_framework::coin::CoinStore` to their `Collateral` for
-    /// market accoutn having `market_id`, `general_custodian_id`, and
+    /// market account having `market_id`, `general_custodian_id`, and
     /// `generic_asset_transfer_custodian_id`.
     ///
     /// See wrapped function `deposit_coins()`
@@ -269,7 +375,7 @@ module econia::user {
         // If general custodian ID indicated, assert it is registered
         if (general_custodian_id != NO_CUSTODIAN) assert!(
             registry::is_registered_custodian_id(general_custodian_id),
-            E_INVALID_CUSTODIAN_ID);
+            E_UNREGISTERED_CUSTODIAN_ID);
         // Pack corresonding market account info
         let market_account_info = MarketAccountInfo{market_id,
             general_custodian_id, generic_asset_transfer_custodian_id};
@@ -282,6 +388,27 @@ module econia::user {
         // If quote asset is coin, register collateral entry
         if (coin::is_coin_initialized<QuoteType>())
             register_collateral_entry<QuoteType>(user, market_account_info);
+    }
+
+    #[cmd]
+    /// Transfer `amount` of coins of `CoinType` from `user`'s
+    /// `Collateral` to their `aptos_framework::coin::CoinStore` for
+    /// market account having `market_id`, `general_custodian_id`, and
+    /// `generic_asset_transfer_custodian_id`.
+    ///
+    /// See wrapped function `withdraw_coins_user()`
+    public entry fun withdraw_to_coinstore<CoinType>(
+        user: &signer,
+        market_id: u64,
+        general_custodian_id: u64,
+        generic_asset_transfer_custodian_id: u64,
+        amount: u64
+    ) acquires Collateral, MarketAccounts {
+        // Withdraw coins from user's market account
+        let coins = withdraw_coins_user<CoinType>(user, market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id, amount);
+        // Deposit coins to user's coin store
+        coin::deposit<CoinType>(address_of(user), coins);
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -478,6 +605,76 @@ module econia::user {
         // Assert user has an entry in map for market account info
         assert!(open_table::contains(market_accounts_map_ref,
             market_account_info), E_NO_MARKET_ACCOUNT);
+    }
+
+    /// Withdraw `amount` of `AssetType` from `user`'s market account,
+    /// optionally returning coins if `asset_is_coin` is `true`
+    ///
+    /// # Abort conditions
+    /// * If `user` has insufficient assets available for withdrawal
+    fun withdraw_asset<AssetType>(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        amount: u64,
+        asset_is_coin: bool
+    ): option::Option<Coin<AssetType>>
+    acquires Collateral, MarketAccounts {
+        // Verify user has corresponding market account
+        verify_market_account_exists(user, market_account_info);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map_ref_mut =
+                &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to total asset holdings, and mutable
+        // reference to amount of assets available for withdrawal
+        let (asset_total_ref_mut, asset_available_ref_mut) =
+            borrow_asset_counts_mut<AssetType>(market_accounts_map_ref_mut,
+                market_account_info);
+        // Assert user has enough available asset to withdraw
+        assert!(amount <= *asset_available_ref_mut,
+            E_NOT_ENOUGH_ASSET_AVAILABLE);
+        // Decrement total asset holdings amount
+        *asset_total_ref_mut = *asset_total_ref_mut - amount;
+        // Decrement assets available for withdrawal amount
+        *asset_available_ref_mut = *asset_available_ref_mut - amount;
+        if (asset_is_coin) { // If asset is coin type
+            // Borrow mutable reference to collateral map
+            let collateral_map_ref_mut =
+                &mut borrow_global_mut<Collateral<AssetType>>(user).map;
+            // Borrow mutable reference to collateral for market account
+            let collateral_ref_mut = open_table::borrow_mut(
+                collateral_map_ref_mut, market_account_info);
+            // Return coin in an option wrapper
+            return option::some<Coin<AssetType>>(
+                coin::extract(collateral_ref_mut, amount))
+        } else { // If asset is not coin type
+            // Return empty option wrapper
+            return option::none<Coin<AssetType>>()
+        }
+    }
+
+    /// Withdraw `amount` of coins of `CoinType` from `user`'s market
+    /// account having `market_id`, `general_custodian_id`, and
+    /// `generic_asset_transfer_custodian_id`, returning coins
+    ///
+    /// # Abort conditions
+    /// * If `CoinType` does not correspond to a coin
+    fun withdraw_coins<CoinType>(
+        user: address,
+        market_id: u64,
+        general_custodian_id: u64,
+        generic_asset_transfer_custodian_id: u64,
+        amount: u64,
+    ): coin::Coin<CoinType>
+    acquires Collateral, MarketAccounts {
+        // Assert type corresponds to an initialized coin
+        assert!(coin::is_coin_initialized<CoinType>(), E_NOT_COIN_ASSET);
+        // Pack market account info
+        let market_account_info = MarketAccountInfo{market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id};
+        // Withdraw corresponding amount of coins, as an option
+        let option_coins = withdraw_asset<CoinType>(
+            user, market_account_info, amount, true);
+        option::destroy_some(option_coins) // Return extracted coins
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -706,32 +903,6 @@ module econia::user {
         econia = @econia,
         user = @user
     )]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for invalid generic asset transfer custodian
-    fun test_deposit_generic_asset_invalid_custodian(
-        econia: &signer,
-        user: &signer
-    ) acquires Collateral, MarketAccounts {
-        // Register user with agnostic market account
-        let (market_account_info, _) = register_user_with_market_accounts_test(
-            econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
-        // Unpack market account info fields
-        let MarketAccountInfo{market_id, general_custodian_id,
-                generic_asset_transfer_custodian_id} = market_account_info;
-        // Get capability for invalid custodian
-        let custodian_capability = registry::get_custodian_capability_test(
-            generic_asset_transfer_custodian_id + 1);
-        // Attempt invalid invocation
-        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
-            generic_asset_transfer_custodian_id, 500, &custodian_capability);
-        // Destroy custodian capability
-        registry::destroy_custodian_capability_test(custodian_capability);
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
     #[expected_failure(abort_code = 12)]
     /// Verify failure for calling with a coin type
     fun test_deposit_generic_asset_not_generic_asset(
@@ -755,6 +926,32 @@ module econia::user {
         register_market_account<BG, QC>(user, market_id, general_custodian_id);
         // Attempt invalid invocation
         deposit_generic_asset<QC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, 500, &custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(custodian_capability);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for invalid generic asset transfer custodian
+    fun test_deposit_generic_asset_unauthorized_custodian(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Register user with agnostic market account
+        let (market_account_info, _) = register_user_with_market_accounts_test(
+            econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
+        // Unpack market account info fields
+        let MarketAccountInfo{market_id, general_custodian_id,
+                generic_asset_transfer_custodian_id} = market_account_info;
+        // Get capability for invalid custodian
+        let custodian_capability = registry::get_custodian_capability_test(
+            generic_asset_transfer_custodian_id + 1);
+        // Attempt invalid invocation
+        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
             generic_asset_transfer_custodian_id, 500, &custodian_capability);
         // Destroy custodian capability
         registry::destroy_custodian_capability_test(custodian_capability);
@@ -992,6 +1189,68 @@ module econia::user {
         market_account_info.general_custodian_id = 1;
         // Attempt invalid existence verification
         verify_market_account_exists(@user, market_account_info);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify state for withdrawing generic and coin assets
+    fun test_withdraw_assets_mixed(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Declare asset count deposit parameters
+        let coin_deposit_amount = 700;
+        let generic_deposit_amount = 500;
+        let coin_withdrawal_amount = 600;
+        let generic_withdrawal_amount = generic_deposit_amount;
+        let coin_end_amount = coin_deposit_amount - coin_withdrawal_amount;
+        let generic_end_amount = 0;
+        let coinstore_end_amount = coin_withdrawal_amount;
+        // Declare user-level general custodian ID
+        let general_custodian_id = NO_CUSTODIAN;
+        assets::init_coin_types(econia); // Initialize coin types
+        registry::init_registry(econia); // Initalize registry
+        // Register a custodian capability
+        let custodian_capability = registry::register_custodian_capability();
+        // Get ID of custodian capability
+        let generic_asset_transfer_custodian_id = registry::custodian_id(
+            &custodian_capability);
+        // Register market with generic base asset and coin quote asset
+        registry::register_market_internal<BG, QC>(@econia, 1, 2,
+            generic_asset_transfer_custodian_id);
+        let market_id = 0; // Declare market ID
+        // Register user to trade on the account
+        register_market_account<BG, QC>(user, market_id, general_custodian_id);
+        coin::register_for_test<QC>(user); // Register coin store
+        coin::deposit(@user, assets::mint<QC>(econia, coin_deposit_amount));
+        // Deposit coin asset
+        deposit_from_coinstore<QC>(user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, coin_deposit_amount);
+        // Deposit generic asset
+        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, generic_deposit_amount,
+            &custodian_capability);
+        // Withdraw coin asset to coinstore
+        withdraw_to_coinstore<QC>(user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, coin_withdrawal_amount);
+        // Withdraw generic asset
+        withdraw_generic_asset<BG>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, generic_withdrawal_amount,
+            &custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(custodian_capability);
+        // Assert state
+        let (base_total, base_available, quote_total, quote_available) =
+            asset_counts_test(@user, market_id, general_custodian_id);
+        assert!(base_total      == generic_end_amount, 0);
+        assert!(base_available  == generic_end_amount, 0);
+        assert!(quote_total     == coin_end_amount,    0);
+        assert!(quote_available == coin_end_amount,    0);
+        assert!(collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) == coin_end_amount, 0);
+        assert!(coin::balance<QC>(@user) == coinstore_end_amount, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

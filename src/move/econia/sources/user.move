@@ -170,7 +170,10 @@ module econia::user {
         general_custodian_id: u64,
         generic_asset_transfer_custodian_id: u64,
         coins: Coin<CoinType>
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         deposit_asset<CoinType>(
             user,
             MarketAccountInfo{market_id, general_custodian_id,
@@ -201,7 +204,10 @@ module econia::user {
         generic_asset_transfer_custodian_id: u64,
         amount: u64,
         generic_asset_transfer_custodian_capability_ref: &CustodianCapability
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Assert indicated generic asset transfer custodian ID matches
         // that of capability
         assert!(registry::custodian_id(
@@ -236,7 +242,10 @@ module econia::user {
         amount: u64,
         general_custodian_capability_ref: &CustodianCapability
     ): coin::Coin<CoinType>
-    acquires Collateral, MarketAccounts {
+    acquires
+        Collateral,
+        MarketAccounts
+    {
         // Assert indicated general custodian ID matches that of
         // capability
         assert!(registry::custodian_id(general_custodian_capability_ref) ==
@@ -266,7 +275,10 @@ module econia::user {
         generic_asset_transfer_custodian_id: u64,
         amount: u64,
     ): coin::Coin<CoinType>
-    acquires Collateral, MarketAccounts {
+    acquires
+        Collateral,
+        MarketAccounts
+    {
         // Assert custodian ID indicates no custodian
         assert!(general_custodian_id == NO_CUSTODIAN, E_CUSTODIAN_OVERRIDE);
         withdraw_coins<CoinType>(
@@ -300,7 +312,10 @@ module econia::user {
         generic_asset_transfer_custodian_id: u64,
         amount: u64,
         generic_asset_transfer_custodian_capability_ref: &CustodianCapability
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Assert asset type does not correspond to an initialized coin
         assert!(!coin::is_coin_initialized<AssetType>(), E_NOT_GENERIC_ASSET);
         // Assert indicated generic asset transfer custodian ID matches
@@ -333,7 +348,10 @@ module econia::user {
         general_custodian_id: u64,
         generic_asset_transfer_custodian_id: u64,
         amount: u64
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         deposit_coins<CoinType>(
             address_of(user),
             market_id,
@@ -368,7 +386,10 @@ module econia::user {
         user: &signer,
         market_id: u64,
         general_custodian_id: u64
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Get generic asset transfer custodian ID for verified market
         let generic_asset_transfer_custodian_id = registry::
             get_verified_market_custodian_id<BaseType, QuoteType>(market_id);
@@ -403,7 +424,10 @@ module econia::user {
         general_custodian_id: u64,
         generic_asset_transfer_custodian_id: u64,
         amount: u64
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Withdraw coins from user's market account
         let coins = withdraw_coins_user<CoinType>(user, market_id,
             general_custodian_id, generic_asset_transfer_custodian_id, amount);
@@ -485,7 +509,10 @@ module econia::user {
         market_account_info: MarketAccountInfo,
         amount: u64,
         optional_coins: option::Option<Coin<AssetType>>
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Verify user has corresponding market account
         verify_market_account_exists(user, market_account_info);
         // Borrow mutable reference to market accounts map
@@ -618,7 +645,10 @@ module econia::user {
         amount: u64,
         asset_is_coin: bool
     ): option::Option<Coin<AssetType>>
-    acquires Collateral, MarketAccounts {
+    acquires
+        Collateral,
+        MarketAccounts
+    {
         // Verify user has corresponding market account
         verify_market_account_exists(user, market_account_info);
         // Borrow mutable reference to market accounts map
@@ -665,7 +695,10 @@ module econia::user {
         generic_asset_transfer_custodian_id: u64,
         amount: u64,
     ): coin::Coin<CoinType>
-    acquires Collateral, MarketAccounts {
+    acquires
+        Collateral,
+        MarketAccounts
+    {
         // Assert type corresponds to an initialized coin
         assert!(coin::is_coin_initialized<CoinType>(), E_NOT_COIN_ASSET);
         // Pack market account info
@@ -792,7 +825,10 @@ module econia::user {
     ): (
         MarketAccountInfo,
         MarketAccountInfo
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Init test markets, storing relevant parameters
         let  (_, _,
               generic_asset_transfer_custodian_id_agnostic,
@@ -836,7 +872,10 @@ module econia::user {
     fun test_borrow_asset_counts_mut_not_in_pair(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Register user with agnostic market account
         let (market_account_info, _) = register_user_with_market_accounts_test(
             econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
@@ -855,7 +894,10 @@ module econia::user {
     fun test_deposit_assets_mixed(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Declare deposit parameters
         let coin_amount = 700;
         let generic_amount = 500;
@@ -908,7 +950,10 @@ module econia::user {
     fun test_deposit_generic_asset_not_generic_asset(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         assets::init_coin_types(econia); // Initialize coin types
         registry::init_registry(econia); // Initalize registry
         // Register a custodian capability
@@ -940,7 +985,10 @@ module econia::user {
     fun test_deposit_generic_asset_unauthorized_custodian(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Register user with agnostic market account
         let (market_account_info, _) = register_user_with_market_accounts_test(
             econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
@@ -1017,7 +1065,10 @@ module econia::user {
     fun test_register_market_account_invalid_custodian_id(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Register test markets
         registry::register_market_internal_multiple_test(econia);
         let agnostic_test_market_id = 0; // Declare market ID
@@ -1103,7 +1154,10 @@ module econia::user {
     fun test_register_market_accounts(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Init test markets, storing relevant parameters
         let  (_, _,
               generic_asset_transfer_custodian_id_agnostic,
@@ -1181,7 +1235,10 @@ module econia::user {
     fun test_verify_market_account_exists_wrong_market_account(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Register user with agnostic market account
         let (market_account_info, _) = register_user_with_market_accounts_test(
             econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
@@ -1220,7 +1277,10 @@ module econia::user {
     fun test_withdraw_assets_mixed(
         econia: &signer,
         user: &signer
-    ) acquires Collateral, MarketAccounts {
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
         // Declare asset count deposit parameters
         let coin_deposit_amount = 700;
         let generic_deposit_amount = 500;

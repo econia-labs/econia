@@ -444,7 +444,10 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">depos
     general_custodian_id: u64,
     generic_asset_transfer_custodian_id: u64,
     <a href="">coins</a>: Coin&lt;CoinType&gt;
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;CoinType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>,
         <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id, general_custodian_id,
@@ -499,7 +502,10 @@ coin
     generic_asset_transfer_custodian_id: u64,
     amount: u64,
     generic_asset_transfer_custodian_capability_ref: &CustodianCapability
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Assert indicated generic asset transfer custodian ID matches
     // that of capability
     <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
@@ -558,7 +564,10 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
     amount: u64,
     general_custodian_capability_ref: &CustodianCapability
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+<b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Assert indicated general custodian ID matches that of
     // capability
     <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref) ==
@@ -612,7 +621,10 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
     generic_asset_transfer_custodian_id: u64,
     amount: u64,
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+<b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Assert custodian ID indicates no custodian
     <b>assert</b>!(general_custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>, <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
     <a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>&lt;CoinType&gt;(
@@ -670,7 +682,10 @@ match that indicated by
     generic_asset_transfer_custodian_id: u64,
     amount: u64,
     generic_asset_transfer_custodian_capability_ref: &CustodianCapability
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Assert asset type does not correspond <b>to</b> an initialized <a href="">coin</a>
     <b>assert</b>!(!<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;AssetType&gt;(), <a href="user.md#0xc0deb00c_user_E_NOT_GENERIC_ASSET">E_NOT_GENERIC_ASSET</a>);
     // Assert indicated generic asset transfer custodian ID matches
@@ -718,7 +733,10 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_coins">depos
     general_custodian_id: u64,
     generic_asset_transfer_custodian_id: u64,
     amount: u64
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>),
         market_id,
@@ -784,7 +802,10 @@ market account
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_id: u64,
     general_custodian_id: u64
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Get generic asset transfer custodian ID for verified <a href="market.md#0xc0deb00c_market">market</a>
     <b>let</b> generic_asset_transfer_custodian_id = registry::
         get_verified_market_custodian_id&lt;BaseType, QuoteType&gt;(market_id);
@@ -838,7 +859,10 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
     general_custodian_id: u64,
     generic_asset_transfer_custodian_id: u64,
     amount: u64
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Withdraw <a href="">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <b>let</b> <a href="">coins</a> = <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_id,
         general_custodian_id, generic_asset_transfer_custodian_id, amount);
@@ -976,7 +1000,10 @@ registered
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
     amount: u64,
     optional_coins: <a href="_Option">option::Option</a>&lt;Coin&lt;AssetType&gt;&gt;
-) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
@@ -1205,7 +1232,10 @@ optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></c
     amount: u64,
     asset_is_coin: bool
 ): <a href="_Option">option::Option</a>&lt;Coin&lt;AssetType&gt;&gt;
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+<b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
@@ -1276,7 +1306,10 @@ account having <code>market_id</code>, <code>general_custodian_id</code>, and
     generic_asset_transfer_custodian_id: u64,
     amount: u64,
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-<b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+<b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
     // Assert type corresponds <b>to</b> an initialized <a href="">coin</a>
     <b>assert</b>!(<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;CoinType&gt;(), <a href="user.md#0xc0deb00c_user_E_NOT_COIN_ASSET">E_NOT_COIN_ASSET</a>);
     // Pack <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info

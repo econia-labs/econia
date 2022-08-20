@@ -80,10 +80,14 @@ module econia::user {
         base_total: u64,
         /// Base asset units available for withdraw
         base_available: u64,
+        /// Amount `base_total` will increase to if all open bids fill
+        base_ceiling: u64,
         /// Total quote asset units held as collateral
         quote_total: u64,
         /// Quote asset units available for withdraw
-        quote_available: u64
+        quote_available: u64,
+        /// Amount `quote_total` will increase to if all open asks fill
+        quote_ceiling: u64
     }
 
     /// Unique ID for a user's market account
@@ -454,6 +458,9 @@ module econia::user {
     /// * `u64`: Mutable reference to `MarketAccount.base_available` for
     ///   corresponding market account if `AssetType` is market base,
     ///   else mutable reference to `MarketAccount.quote_available`
+    /// * `u64`: Mutable reference to `MarketAccount.base_ceiling` for
+    ///   corresponding market account if `AssetType` is market base,
+    ///   else mutable reference to `MarketAccount.quote_ceiling`
     ///
     /// # Assumes
     /// * `market_accounts_map` has an entry with `market_account_info`
@@ -467,6 +474,7 @@ module econia::user {
         market_account_info: MarketAccountInfo
     ): (
         &mut u64,
+        &mut u64,
         &mut u64
     ) {
         // Borrow mutable reference to market account
@@ -479,13 +487,15 @@ module econia::user {
         if (asset_type_info == market_account_ref_mut.base_type_info) {
             return (
                 &mut market_account_ref_mut.base_total,
-                &mut market_account_ref_mut.base_available
+                &mut market_account_ref_mut.base_available,
+                &mut market_account_ref_mut.base_ceiling,
             )
         // If is quote asset, return mutable references to quote fields
         } else if (asset_type_info == market_account_ref_mut.quote_type_info) {
             return (
                 &mut market_account_ref_mut.quote_total,
-                &mut market_account_ref_mut.quote_available
+                &mut market_account_ref_mut.quote_available,
+                &mut market_account_ref_mut.quote_ceiling
             )
         }; // Otherwise abort
         abort E_NOT_IN_MARKET_PAIR
@@ -518,15 +528,18 @@ module econia::user {
         // Borrow mutable reference to market accounts map
         let market_accounts_map_ref_mut =
                 &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to total asset holdings, and mutable
-        // reference to amount of assets available for withdrawal
-        let (asset_total_ref_mut, asset_available_ref_mut) =
-            borrow_asset_counts_mut<AssetType>(market_accounts_map_ref_mut,
-                market_account_info);
+        // Borrow mutable reference to total asset holdings, mutable
+        // reference to amount of assets available for withdrawal,
+        // and mutable reference to total asset holdings ceiling
+        let (asset_total_ref_mut, asset_available_ref_mut,
+             asset_ceiling_ref_mut) = borrow_asset_counts_mut<AssetType>(
+                market_accounts_map_ref_mut, market_account_info);
         // Increment total asset holdings amount
         *asset_total_ref_mut = *asset_total_ref_mut + amount;
         // Increment assets available for withdrawal amount
         *asset_available_ref_mut = *asset_available_ref_mut + amount;
+        // Increment total asset holdings ceiling amount
+        *asset_ceiling_ref_mut = *asset_ceiling_ref_mut + amount;
         if (option::is_some(&optional_coins)) { // If asset is coin type
             // Borrow mutable reference to collateral map
             let collateral_map_ref_mut =
@@ -609,8 +622,10 @@ module econia::user {
                 bids: critbit::empty(),
                 base_total: 0,
                 base_available: 0,
+                base_ceiling: 0,
                 quote_total: 0,
-                quote_available: 0
+                quote_available: 0,
+                quote_ceiling: 0
         });
     }
 
@@ -654,11 +669,12 @@ module econia::user {
         // Borrow mutable reference to market accounts map
         let market_accounts_map_ref_mut =
                 &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to total asset holdings, and mutable
-        // reference to amount of assets available for withdrawal
-        let (asset_total_ref_mut, asset_available_ref_mut) =
-            borrow_asset_counts_mut<AssetType>(market_accounts_map_ref_mut,
-                market_account_info);
+        // Borrow mutable reference to total asset holdings, mutable
+        // reference to amount of assets available for withdrawal,
+        // and mutable reference to total asset holdings ceiling
+        let (asset_total_ref_mut, asset_available_ref_mut,
+             asset_ceiling_ref_mut) = borrow_asset_counts_mut<AssetType>(
+                market_accounts_map_ref_mut, market_account_info);
         // Assert user has enough available asset to withdraw
         assert!(amount <= *asset_available_ref_mut,
             E_NOT_ENOUGH_ASSET_AVAILABLE);
@@ -666,6 +682,8 @@ module econia::user {
         *asset_total_ref_mut = *asset_total_ref_mut - amount;
         // Decrement assets available for withdrawal amount
         *asset_available_ref_mut = *asset_available_ref_mut - amount;
+        // Decrement total asset holdings ceiling amount
+        *asset_ceiling_ref_mut = *asset_ceiling_ref_mut - amount;
         if (asset_is_coin) { // If asset is coin type
             // Borrow mutable reference to collateral map
             let collateral_map_ref_mut =
@@ -725,6 +743,8 @@ module econia::user {
         u64,
         u64,
         u64,
+        u64,
+        u64,
         u64
     ) acquires MarketAccounts {
         // Borrow immutable reference to user's market accounts
@@ -735,8 +755,10 @@ module econia::user {
         (
             market_account_ref.base_total,
             market_account_ref.base_available,
+            market_account_ref.base_ceiling,
             market_account_ref.quote_total,
-            market_account_ref.quote_available
+            market_account_ref.quote_available,
+            market_account_ref.quote_ceiling,
         )
     }
 
@@ -928,17 +950,19 @@ module econia::user {
         // Destroy custodian capability
         registry::destroy_custodian_capability_test(custodian_capability);
         // Assert state
-        let (base_total, base_available, quote_total, quote_available) =
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
             asset_counts_test(@user, market_id, general_custodian_id);
         assert!(base_total      == generic_amount, 0);
         assert!(base_available  == generic_amount, 0);
+        assert!(base_ceiling    == generic_amount, 0);
         assert!(quote_total     == coin_amount,    0);
         assert!(quote_available == coin_amount,    0);
+        assert!(quote_ceiling   == coin_amount,    0);
         assert!(!has_collateral_test<BG>(
             @user, market_id, general_custodian_id), 0);
         assert!(collateral_value_test<QC>(
             @user, market_id, general_custodian_id) == coin_amount, 0);
-
     }
 
     #[test(
@@ -1111,8 +1135,10 @@ module econia::user {
         assert!(critbit::is_empty(&market_account_ref_1.bids), 0);
         assert!(market_account_ref_1.base_total == 0, 0);
         assert!(market_account_ref_1.base_available == 0, 0);
+        assert!(market_account_ref_1.base_ceiling == 0, 0);
         assert!(market_account_ref_1.quote_total == 0, 0);
         assert!(market_account_ref_1.quote_available == 0, 0);
+        assert!(market_account_ref_1.quote_ceiling == 0, 0);
         // Borrow immutable reference to second market account
         let market_account_ref_2 =
             open_table::borrow(market_accounts_map_ref, market_account_info_1);
@@ -1125,8 +1151,10 @@ module econia::user {
         assert!(critbit::is_empty(&market_account_ref_2.bids), 0);
         assert!(market_account_ref_2.base_total == 0, 0);
         assert!(market_account_ref_2.base_available == 0, 0);
+        assert!(market_account_ref_2.base_ceiling == 0, 0);
         assert!(market_account_ref_2.quote_total == 0, 0);
         assert!(market_account_ref_2.quote_available == 0, 0);
+        assert!(market_account_ref_2.quote_ceiling == 0, 0);
     }
 
     #[test(user = @user)]
@@ -1323,12 +1351,15 @@ module econia::user {
         // Destroy custodian capability
         registry::destroy_custodian_capability_test(custodian_capability);
         // Assert state
-        let (base_total, base_available, quote_total, quote_available) =
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
             asset_counts_test(@user, market_id, general_custodian_id);
         assert!(base_total      == generic_end_amount, 0);
         assert!(base_available  == generic_end_amount, 0);
+        assert!(base_ceiling    == generic_end_amount, 0);
         assert!(quote_total     == coin_end_amount,    0);
         assert!(quote_available == coin_end_amount,    0);
+        assert!(quote_ceiling   == coin_end_amount,    0);
         assert!(collateral_value_test<QC>(
             @user, market_id, general_custodian_id) == coin_end_amount, 0);
         assert!(coin::balance<QC>(@user) == coinstore_end_amount, 0);
@@ -1374,10 +1405,11 @@ module econia::user {
         // Assert raw coin value
         assert!(coin::value(&coins) == coin_withdrawal_amount, 0);
         // Assert market account state
-        let (_, _, quote_total, quote_available) = asset_counts_test(
-            @user, market_id, general_custodian_id);
+        let (_, _, _, quote_total, quote_available, quote_ceiling) =
+            asset_counts_test(@user, market_id, general_custodian_id);
         assert!(quote_total     == coin_end_amount,    0);
         assert!(quote_available == coin_end_amount,    0);
+        assert!(quote_ceiling   == coin_end_amount,    0);
         assert!(collateral_value_test<QC>(
             @user, market_id, general_custodian_id) == coin_end_amount, 0);
         // Destroy resources

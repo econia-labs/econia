@@ -168,6 +168,12 @@ Represents a user's open orders and available assets for a given
  Base asset units available for withdraw
 </dd>
 <dt>
+<code>base_ceiling: u64</code>
+</dt>
+<dd>
+ Amount <code>base_total</code> will increase to if all open bids fill
+</dd>
+<dt>
 <code>quote_total: u64</code>
 </dt>
 <dd>
@@ -178,6 +184,12 @@ Represents a user's open orders and available assets for a given
 </dt>
 <dd>
  Quote asset units available for withdraw
+</dd>
+<dt>
+<code>quote_ceiling: u64</code>
+</dt>
+<dd>
+ Amount <code>quote_total</code> will increase to if all open asks fill
 </dd>
 </dl>
 
@@ -898,6 +910,9 @@ else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">
 * <code>u64</code>: Mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_available</code> for
 corresponding market account if <code>AssetType</code> is market base,
 else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_available</code>
+* <code>u64</code>: Mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_ceiling</code> for
+corresponding market account if <code>AssetType</code> is market base,
+else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
 <a name="@Assumes_9"></a>
@@ -915,7 +930,7 @@ else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">
 account
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map_ref_mut: &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>&gt;, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>): (&<b>mut</b> u64, &<b>mut</b> u64)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map_ref_mut: &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>&gt;, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>): (&<b>mut</b> u64, &<b>mut</b> u64, &<b>mut</b> u64)
 </code></pre>
 
 
@@ -930,6 +945,7 @@ account
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>
 ): (
     &<b>mut</b> u64,
+    &<b>mut</b> u64,
     &<b>mut</b> u64
 ) {
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
@@ -942,13 +958,15 @@ account
     <b>if</b> (asset_type_info == market_account_ref_mut.base_type_info) {
         <b>return</b> (
             &<b>mut</b> market_account_ref_mut.base_total,
-            &<b>mut</b> market_account_ref_mut.base_available
+            &<b>mut</b> market_account_ref_mut.base_available,
+            &<b>mut</b> market_account_ref_mut.base_ceiling,
         )
     // If is quote asset, <b>return</b> mutable references <b>to</b> quote fields
     } <b>else</b> <b>if</b> (asset_type_info == market_account_ref_mut.quote_type_info) {
         <b>return</b> (
             &<b>mut</b> market_account_ref_mut.quote_total,
-            &<b>mut</b> market_account_ref_mut.quote_available
+            &<b>mut</b> market_account_ref_mut.quote_available,
+            &<b>mut</b> market_account_ref_mut.quote_ceiling
         )
     }; // Otherwise <b>abort</b>
     <b>abort</b> <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>
@@ -1009,15 +1027,18 @@ registered
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map_ref_mut =
             &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> total asset holdings, and mutable
-    // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal
-    <b>let</b> (asset_total_ref_mut, asset_available_ref_mut) =
-        <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map_ref_mut,
-            market_account_info);
+    // Borrow mutable reference <b>to</b> total asset holdings, mutable
+    // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal,
+    // and mutable reference <b>to</b> total asset holdings ceiling
+    <b>let</b> (asset_total_ref_mut, asset_available_ref_mut,
+         asset_ceiling_ref_mut) = <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(
+            market_accounts_map_ref_mut, market_account_info);
     // Increment total asset holdings amount
     *asset_total_ref_mut = *asset_total_ref_mut + amount;
     // Increment <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal amount
     *asset_available_ref_mut = *asset_available_ref_mut + amount;
+    // Increment total asset holdings ceiling amount
+    *asset_ceiling_ref_mut = *asset_ceiling_ref_mut + amount;
     <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_coins)) { // If asset is <a href="">coin</a> type
         // Borrow mutable reference <b>to</b> collateral map
         <b>let</b> collateral_map_ref_mut =
@@ -1148,8 +1169,10 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
             bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
             base_total: 0,
             base_available: 0,
+            base_ceiling: 0,
             quote_total: 0,
-            quote_available: 0
+            quote_available: 0,
+            quote_ceiling: 0
     });
 }
 </code></pre>
@@ -1241,11 +1264,12 @@ optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></c
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map_ref_mut =
             &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> total asset holdings, and mutable
-    // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal
-    <b>let</b> (asset_total_ref_mut, asset_available_ref_mut) =
-        <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map_ref_mut,
-            market_account_info);
+    // Borrow mutable reference <b>to</b> total asset holdings, mutable
+    // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal,
+    // and mutable reference <b>to</b> total asset holdings ceiling
+    <b>let</b> (asset_total_ref_mut, asset_available_ref_mut,
+         asset_ceiling_ref_mut) = <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(
+            market_accounts_map_ref_mut, market_account_info);
     // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> enough available asset <b>to</b> withdraw
     <b>assert</b>!(amount &lt;= *asset_available_ref_mut,
         <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_AVAILABLE">E_NOT_ENOUGH_ASSET_AVAILABLE</a>);
@@ -1253,6 +1277,8 @@ optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></c
     *asset_total_ref_mut = *asset_total_ref_mut - amount;
     // Decrement <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal amount
     *asset_available_ref_mut = *asset_available_ref_mut - amount;
+    // Decrement total asset holdings ceiling amount
+    *asset_ceiling_ref_mut = *asset_ceiling_ref_mut - amount;
     <b>if</b> (asset_is_coin) { // If asset is <a href="">coin</a> type
         // Borrow mutable reference <b>to</b> collateral map
         <b>let</b> collateral_map_ref_mut =

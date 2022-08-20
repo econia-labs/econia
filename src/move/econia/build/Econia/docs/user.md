@@ -570,7 +570,6 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
         generic_asset_transfer_custodian_id,
         amount
     ) // Withdraw <a href="">coins</a> from <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> and <b>return</b>
-
 }
 </code></pre>
 
@@ -648,11 +647,11 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_asset">with
 
 ### Abort conditions
 
+* If <code>AssetType</code> corresponds to the <code>CoinType</code> of an initialized
+coin
 * If generic asset transfer custodian ID for market does not
 match that indicated by
 <code>generic_asset_transfer_custodian_capbility_ref</code>
-* If <code>AssetType</code> corresponds to the <code>CoinType</code> of an initialized
-coin
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_generic_asset">withdraw_generic_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
@@ -672,13 +671,13 @@ coin
     amount: u64,
     generic_asset_transfer_custodian_capability_ref: &CustodianCapability
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert asset type does not correspond <b>to</b> an initialized <a href="">coin</a>
+    <b>assert</b>!(!<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;AssetType&gt;(), <a href="user.md#0xc0deb00c_user_E_NOT_GENERIC_ASSET">E_NOT_GENERIC_ASSET</a>);
     // Assert indicated generic asset transfer custodian ID matches
     // that of capability
     <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
         generic_asset_transfer_custodian_capability_ref) ==
         generic_asset_transfer_custodian_id, <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
-    // Assert asset type does not correspond <b>to</b> an initialized <a href="">coin</a>
-    <b>assert</b>!(!<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;AssetType&gt;(), <a href="user.md#0xc0deb00c_user_E_NOT_GENERIC_ASSET">E_NOT_GENERIC_ASSET</a>);
     // Pack <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
     <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id,
         general_custodian_id, generic_asset_transfer_custodian_id};

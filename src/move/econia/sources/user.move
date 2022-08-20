@@ -288,11 +288,11 @@ module econia::user {
     /// See wrapped function `withdraw_asset()`
     ///
     /// # Abort conditions
+    /// * If `AssetType` corresponds to the `CoinType` of an initialized
+    ///   coin
     /// * If generic asset transfer custodian ID for market does not
     ///   match that indicated by
     ///   `generic_asset_transfer_custodian_capbility_ref`
-    /// * If `AssetType` corresponds to the `CoinType` of an initialized
-    ///   coin
     public fun withdraw_generic_asset<AssetType>(
         user: address,
         market_id: u64,
@@ -301,13 +301,13 @@ module econia::user {
         amount: u64,
         generic_asset_transfer_custodian_capability_ref: &CustodianCapability
     ) acquires Collateral, MarketAccounts {
+        // Assert asset type does not correspond to an initialized coin
+        assert!(!coin::is_coin_initialized<AssetType>(), E_NOT_GENERIC_ASSET);
         // Assert indicated generic asset transfer custodian ID matches
         // that of capability
         assert!(registry::custodian_id(
             generic_asset_transfer_custodian_capability_ref) ==
             generic_asset_transfer_custodian_id, E_UNAUTHORIZED_CUSTODIAN);
-        // Assert asset type does not correspond to an initialized coin
-        assert!(!coin::is_coin_initialized<AssetType>(), E_NOT_GENERIC_ASSET);
         // Pack market account info
         let market_account_info = MarketAccountInfo{market_id,
             general_custodian_id, generic_asset_transfer_custodian_id};
@@ -784,7 +784,7 @@ module econia::user {
     /// Register user to trade on markets initialized via
     /// `registry::register_market_internal_multiple_test`, returning
     /// corresponding `MarketAccountInfo` for each market
-    public fun register_user_with_market_accounts_test(
+    fun register_user_with_market_accounts_test(
         econia: &signer,
         user: &signer,
         general_custodian_id_agnostic: u64,
@@ -1195,6 +1195,27 @@ module econia::user {
         econia = @econia,
         user = @user
     )]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for attempting to withdraw more than available
+    fun test_withdraw_asset_not_enough_asset_available(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register user to trade on generic asset market
+        let (market_account_info, _) = register_user_with_market_accounts_test(
+            econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
+        let empty_option = // Attempt invalid invocation
+            withdraw_asset<BG>(@user, market_account_info, 1, false);
+        option::destroy_none(empty_option); // Destroy empty result
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
     /// Verify state for withdrawing generic and coin assets
     fun test_withdraw_assets_mixed(
         econia: &signer,
@@ -1251,6 +1272,137 @@ module econia::user {
         assert!(collateral_value_test<QC>(
             @user, market_id, general_custodian_id) == coin_end_amount, 0);
         assert!(coin::balance<QC>(@user) == coinstore_end_amount, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful withdrawal
+    fun test_withdraw_coins_custodian_success(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Declare user-specific general custodian ID
+        let general_custodian_id = 3;
+        // Declare asset count deposit parameters
+        let coin_deposit_amount = 700;
+        let coin_withdrawal_amount = 600;
+        let coin_end_amount = coin_deposit_amount - coin_withdrawal_amount;
+        // Register user to trade on pure coin market
+        let (_, market_account_info) = register_user_with_market_accounts_test(
+            econia, user, NO_CUSTODIAN, general_custodian_id);
+        // Extract market account fields
+        let market_id = market_account_info.market_id;
+        let generic_asset_transfer_custodian_id = market_account_info.
+            generic_asset_transfer_custodian_id;
+        // Get custodian capability
+        let custodian_capability =
+            registry::get_custodian_capability_test(general_custodian_id);
+        // Deposit coins to market account
+        deposit_coins<QC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            assets::mint<QC>(econia, coin_deposit_amount));
+        // Withdraw from market account
+        let coins = withdraw_coins_custodian<QC>(
+            @user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, coin_withdrawal_amount,
+            &custodian_capability);
+        // Assert raw coin value
+        assert!(coin::value(&coins) == coin_withdrawal_amount, 0);
+        // Assert market account state
+        let (_, _, quote_total, quote_available) = asset_counts_test(
+            @user, market_id, general_custodian_id);
+        assert!(quote_total     == coin_end_amount,    0);
+        assert!(quote_available == coin_end_amount,    0);
+        assert!(collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) == coin_end_amount, 0);
+        // Destroy resources
+        registry::destroy_custodian_capability_test(custodian_capability);
+        assets::burn(coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for unauthorized custodian
+    fun test_withdraw_coins_custodian_unauthorized_custodian()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Get custodian capability
+        let custodian_capability = registry::get_custodian_capability_test(5);
+        // Attempt invalid invocation, storing coins for later
+        let coins = withdraw_coins_custodian<BC>(
+            @user, 1, 2, 3, 4, &custodian_capability);
+        // Destroy resources
+        registry::destroy_custodian_capability_test(custodian_capability);
+        assets::burn(coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for not a coin asset type
+    fun test_withdraw_coins_not_coins()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Attempt invalid invocation, burning result
+        assets::burn(withdraw_coins<BG>(@user, 1, 1, 1, 1));
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for attempting to override custodian
+    fun test_withdraw_coins_user_custodian_override(
+        user: &signer
+    ): coin::Coin<BC>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Attempt invalid invocation
+        withdraw_coins_user<BC>(user, 1, 2, 3, 4)
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for coin type
+    fun test_withdraw_generic_asset_not_generic(
+        econia: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        assets::init_coin_types(econia); // Initialize coin types
+        // Get mock custodian capability
+        let custodian_capability = registry::get_custodian_capability_test(1);
+        // Attempt invalid invocation
+        withdraw_generic_asset<BC>(@user, 1, 2, 3, 4, &custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(custodian_capability);
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for unauthorized custodian
+    fun test_withdraw_generic_asset_unauthorized_custodian(
+        econia: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        assets::init_coin_types(econia); // Initialize coin types
+        // Get mock custodian capability
+        let custodian_capability = registry::get_custodian_capability_test(2);
+        // Attempt invalid invocation
+        withdraw_generic_asset<BG>(@user, 1, 1, 1, 1, &custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(custodian_capability);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -43,27 +43,29 @@ withdrawing a non-coin asset.
     -  [Parameters](#@Parameters_6)
     -  [Abort conditions](#@Abort_conditions_7)
 -  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
+-  [Function `register_order_internal`](#0xc0deb00c_user_register_order_internal)
+    -  [Parameters](#@Parameters_8)
 -  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
-    -  [Returns](#@Returns_8)
-    -  [Assumes](#@Assumes_9)
-    -  [Abort conditions](#@Abort_conditions_10)
+    -  [Returns](#@Returns_9)
+    -  [Assumes](#@Assumes_10)
+    -  [Abort conditions](#@Abort_conditions_11)
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Assumes](#@Assumes_11)
-    -  [Abort conditions](#@Abort_conditions_12)
+    -  [Assumes](#@Assumes_12)
+    -  [Abort conditions](#@Abort_conditions_13)
 -  [Function `range_check_new_order`](#0xc0deb00c_user_range_check_new_order)
-    -  [Parameters](#@Parameters_13)
-    -  [Returns](#@Returns_14)
-    -  [Abort conditions](#@Abort_conditions_15)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
+    -  [Parameters](#@Parameters_14)
+    -  [Returns](#@Returns_15)
     -  [Abort conditions](#@Abort_conditions_16)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
     -  [Abort conditions](#@Abort_conditions_17)
--  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
     -  [Abort conditions](#@Abort_conditions_18)
--  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+-  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
     -  [Abort conditions](#@Abort_conditions_19)
--  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+-  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
     -  [Abort conditions](#@Abort_conditions_20)
+-  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Abort conditions](#@Abort_conditions_21)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -362,6 +364,16 @@ When user attempts invalid custodian override
 
 
 
+<a name="0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING"></a>
+
+When depositing an asset would overflow total holdings ceiling
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>: u64 = 14;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT"></a>
 
 When market account already exists for given market account info
@@ -384,7 +396,7 @@ When asset indicated as coin actually corresponds to a generic
 
 <a name="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_AVAILABLE"></a>
 
-When not enough asset avaialable for withdraw
+When not enough asset available for operation
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_AVAILABLE">E_NOT_ENOUGH_ASSET_AVAILABLE</a>: u64 = 4;
@@ -422,22 +434,22 @@ When a user does not a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Ma
 
 
 
-<a name="0xc0deb00c_user_E_OVERFLOW_BASE"></a>
+<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
 
-When filling a proposed order would cause a base asset overflow
+When filling proposed order overflows asset received from trade
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>: u64 = 10;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>: u64 = 10;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_user_E_OVERFLOW_QUOTE"></a>
+<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_OUT"></a>
 
-When filling a proposed order would cause a quote asset overflow
+When filling proposed order overflows asset traded away
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>: u64 = 11;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_OUT">E_OVERFLOW_ASSET_OUT</a>: u64 = 11;
 </code></pre>
 
 
@@ -961,6 +973,88 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
 
 </details>
 
+<a name="0xc0deb00c_user_register_order_internal"></a>
+
+## Function `register_order_internal`
+
+Register a new order under a user's market account
+
+
+<a name="@Parameters_8"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>market_account_info</code>: Corresponding <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code>
+* <code>side:</code> <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
+* <code>size</code>: Size of order in lots
+* <code>price</code>: Price of order in ticks per lot
+* <code>lot_size</code>: Base asset units per lot
+* <code>tick_size</code>: Quote asset units per tick
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_register_order_internal">register_order_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, size: u64, price: u64, lot_size: u64, tick_size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_register_order_internal">register_order_internal</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+    size: u64,
+    price: u64,
+    lot_size: u64,
+    tick_size: u64,
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> a corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <b>let</b> market_account_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
+        market_accounts_map_ref_mut, market_account_info);
+    // Borrow mutable reference <b>to</b> open orders tree, mutable
+    // reference <b>to</b> ceiling field for asset received from trade, and
+    // mutable reference <b>to</b> available field for asset traded away
+    <b>let</b> (
+        tree_ref_mut,
+        in_asset_ceiling_ref_mut,
+        out_asset_available_ref_mut
+    ) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (
+            &<b>mut</b> market_account_ref_mut.asks,
+            &<b>mut</b> market_account_ref_mut.quote_ceiling,
+            &<b>mut</b> market_account_ref_mut.base_available
+        ) <b>else</b> (
+            &<b>mut</b> market_account_ref_mut.bids,
+            &<b>mut</b> market_account_ref_mut.base_ceiling,
+            &<b>mut</b> market_account_ref_mut.quote_available
+        );
+    // Range check proposed order, store fill amounts
+    <b>let</b> (in_asset_fill, out_asset_fill) = <a href="user.md#0xc0deb00c_user_range_check_new_order">range_check_new_order</a>(
+        side, size, price, lot_size, tick_size,
+        *in_asset_ceiling_ref_mut, *out_asset_available_ref_mut);
+    // Add order <b>to</b> corresponding tree
+    <a href="critbit.md#0xc0deb00c_critbit_insert">critbit::insert</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, size);
+    // Increment asset ceiling amount for asset received from trade
+    *in_asset_ceiling_ref_mut = *in_asset_ceiling_ref_mut + in_asset_fill;
+    // Decrement asset available amount for asset traded away
+    *out_asset_available_ref_mut =
+        *out_asset_available_ref_mut - out_asset_fill;
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_borrow_asset_counts_mut"></a>
 
 ## Function `borrow_asset_counts_mut`
@@ -974,7 +1068,7 @@ holdings, and a mutable reference to the reference to the amount
 of <code>AssetType</code> available for withdraw.
 
 
-<a name="@Returns_8"></a>
+<a name="@Returns_9"></a>
 
 ### Returns
 
@@ -989,14 +1083,14 @@ corresponding market account if <code>AssetType</code> is market base,
 else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Assumes_9"></a>
+<a name="@Assumes_10"></a>
 
 ### Assumes
 
 * <code>market_accounts_map</code> has an entry with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_10"></a>
+<a name="@Abort_conditions_11"></a>
 
 ### Abort conditions
 
@@ -1059,7 +1153,7 @@ Deposit <code>amount</code> of <code>AssetType</code> to <code><a href="user.md#
 which may include <code>optional_coins</code>
 
 
-<a name="@Assumes_11"></a>
+<a name="@Assumes_12"></a>
 
 ### Assumes
 
@@ -1069,13 +1163,11 @@ which may include <code>optional_coins</code>
 exists, then a corresponding collateral container does too
 
 
-<a name="@Abort_conditions_12"></a>
+<a name="@Abort_conditions_13"></a>
 
 ### Abort conditions
 
-* If <code><a href="user.md#0xc0deb00c_user">user</a></code> does not have corresponding market account
-registered
-* If <code>AssetType</code> is neither base nor quote for market account
+* If deposit would overflow the total asset holdings ceiling
 
 
 <pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64, optional_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;)
@@ -1107,6 +1199,9 @@ registered
     <b>let</b> (asset_total_ref_mut, asset_available_ref_mut,
          asset_ceiling_ref_mut) = <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(
             market_accounts_map_ref_mut, market_account_info);
+    // Assert deposit does not overflow asset ceiling
+    <b>assert</b>!(!((*asset_ceiling_ref_mut <b>as</b> u128) + (amount <b>as</b> u128) &gt;
+        (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>);
     // Increment total asset holdings amount
     *asset_total_ref_mut = *asset_total_ref_mut + amount;
     // Increment <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal amount
@@ -1137,41 +1232,48 @@ registered
 
 ## Function `range_check_new_order`
 
-Range check new order parameters
+Range check proposed order
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_14"></a>
 
 ### Parameters
 
 * <code>side:</code> <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
-* <code>size</code>: Size of order in lots
-* <code>price</code>: Price of order in ticks per lot
+* <code>size</code>: Order size, in lots
+* <code>price</code>: Order price, in ticks per lot
 * <code>lot_size</code>: Base asset units per lot
 * <code>tick_size</code>: Quote asset units per tick
-* <code>asset_ceiling</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code> if <code>side</code> is
+* <code>in_asset_ceiling</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code> if <code>side</code> is
 <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, and <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_ceiling</code> if <code>side</code> is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+(total holdings ceiling amount for asset received from trade)
+* <code>out_asset_available</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_available</code> if
+<code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, and <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_available</code> if <code>side</code>
+is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code> (available withdraw amount for asset traded away)
 
 
-<a name="@Returns_14"></a>
+<a name="@Returns_15"></a>
 
 ### Returns
 
-* <code>u64</code>: Base asset units required to fill order
-* <code>u64</code>: Quote asset units required to fill order
+* <code>u64</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> quote asset units required to fill
+order, else base asset units (inbound asset fill)
+* <code>u64</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> base asset units required to fill
+order, else quote asset units (outbound asset fill)
 
 
-<a name="@Abort_conditions_15"></a>
+<a name="@Abort_conditions_16"></a>
 
 ### Abort conditions
 
 * If <code>size</code> is 0
 * If <code>price</code> is 0
-* If filling the order results in a base overflow
-* If filling the order results in a quote overflow
+* If filling the order results in an overflow for incoming asset
+* If filling the order results in an overflow for outgoing asset
+* If not enough available outgoing asset to fill the order
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_range_check_new_order">range_check_new_order</a>(side: bool, size: u64, price: u64, lot_size: u64, tick_size: u64, asset_ceiling: u64): (u64, u64)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_range_check_new_order">range_check_new_order</a>(side: bool, size: u64, price: u64, lot_size: u64, tick_size: u64, in_asset_ceiling: u64, out_asset_available: u64): (u64, u64)
 </code></pre>
 
 
@@ -1186,7 +1288,8 @@ Range check new order parameters
     price: u64,
     lot_size: u64,
     tick_size: u64,
-    asset_ceiling: u64
+    in_asset_ceiling: u64,
+    out_asset_available: u64
 ): (
     u64,
     u64
@@ -1196,22 +1299,22 @@ Range check new order parameters
     // Assert order <b>has</b> actual size
     <b>assert</b>!(price &gt; 0, <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>);
     // Calculate base units needed <b>to</b> fill order
-    <b>let</b> base_to_fill = (size <b>as</b> u128) * (lot_size <b>as</b> u128);
-    <b>let</b> quote_to_fill = // Calculate quote units <b>to</b> fill order
+    <b>let</b> base_fill = (size <b>as</b> u128) * (lot_size <b>as</b> u128);
+    <b>let</b> quote_fill = // Calculate quote units <b>to</b> fill order
         (size <b>as</b> u128) * (price <b>as</b> u128) * (tick_size <b>as</b> u128);
-    // If an ask, base <b>to</b> check is amount traded away and quote <b>to</b>
-    // check is quote ceiling amount plus quote received from fill
-    <b>let</b> (base_to_check, quote_to_check) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
-        (base_to_fill, (asset_ceiling <b>as</b> u128) + quote_to_fill) <b>else</b>
-        // If a bid, base <b>to</b> check is base ceiling amount plus base
-        // received from fill, quote <b>to</b> check is amount traded away
-        ((asset_ceiling <b>as</b> u128) + base_to_fill, quote_to_fill);
-    // Assert base does not overflow
-    <b>assert</b>!(!(base_to_check &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>);
-    // Assert quote does not overflow
-    <b>assert</b>!(!(quote_to_check &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>);
-    // Return casted, range-checked amounts
-    ((base_to_fill <b>as</b> u64), (quote_to_fill <b>as</b> u64))
+    // If an ask, <a href="user.md#0xc0deb00c_user">user</a> gets quote and trades away base, <b>else</b> flipped
+    <b>let</b> (in_asset_fill, out_asset_fill) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
+        (quote_fill, base_fill) <b>else</b> (base_fill, quote_fill);
+    <b>assert</b>!( // Assert inbound asset does not overflow
+        !(in_asset_fill + (in_asset_ceiling <b>as</b> u128) &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)),
+        <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>);
+    // Assert outbound asset fill amount fits in a u64
+    <b>assert</b>!(!(out_asset_fill &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_OUT">E_OVERFLOW_ASSET_OUT</a>);
+    // Assert enough outbound asset <b>to</b> cover the fill
+    <b>assert</b>!(!(out_asset_fill &gt; (out_asset_available <b>as</b> u128)),
+        <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_AVAILABLE">E_NOT_ENOUGH_ASSET_AVAILABLE</a>);
+    // Return re-casted, range-checked amounts
+    ((in_asset_fill <b>as</b> u64), (out_asset_fill <b>as</b> u64))
 }
 </code></pre>
 
@@ -1228,7 +1331,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_16"></a>
+<a name="@Abort_conditions_17"></a>
 
 ### Abort conditions
 
@@ -1283,7 +1386,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_17"></a>
+<a name="@Abort_conditions_18"></a>
 
 ### Abort conditions
 
@@ -1348,7 +1451,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a market account with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_18"></a>
+<a name="@Abort_conditions_19"></a>
 
 ### Abort conditions
 
@@ -1393,7 +1496,7 @@ Withdraw <code>amount</code> of <code>AssetType</code> from <code><a href="user.
 optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></code>
 
 
-<a name="@Abort_conditions_19"></a>
+<a name="@Abort_conditions_20"></a>
 
 ### Abort conditions
 
@@ -1431,7 +1534,7 @@ optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></c
          asset_ceiling_ref_mut) = <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(
             market_accounts_map_ref_mut, market_account_info);
     // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> enough available asset <b>to</b> withdraw
-    <b>assert</b>!(amount &lt;= *asset_available_ref_mut,
+    <b>assert</b>!(!(amount &gt; *asset_available_ref_mut),
         <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_AVAILABLE">E_NOT_ENOUGH_ASSET_AVAILABLE</a>);
     // Decrement total asset holdings amount
     *asset_total_ref_mut = *asset_total_ref_mut - amount;
@@ -1469,7 +1572,7 @@ account having <code>market_id</code>, <code>general_custodian_id</code>, and
 <code>generic_asset_transfer_custodian_id</code>, returning coins
 
 
-<a name="@Abort_conditions_20"></a>
+<a name="@Abort_conditions_21"></a>
 
 ### Abort conditions
 

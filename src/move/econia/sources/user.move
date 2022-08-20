@@ -137,7 +137,7 @@ module econia::user {
     const E_EXISTS_MARKET_ACCOUNT: u64 = 2;
     /// When indicated market account does not exist
     const E_NO_MARKET_ACCOUNT: u64 = 3;
-    /// When not enough asset avaialable for withdraw
+    /// When not enough asset available for operation
     const E_NOT_ENOUGH_ASSET_AVAILABLE: u64 = 4;
     /// When indicated custodian does not have authority for operation
     const E_UNAUTHORIZED_CUSTODIAN: u64 = 5;
@@ -149,14 +149,16 @@ module econia::user {
     const E_SIZE_0: u64 = 8;
     /// When proposed order indicates a price of 0
     const E_PRICE_0: u64 = 9;
-    /// When filling a proposed order would cause a base asset overflow
-    const E_OVERFLOW_BASE: u64 = 10;
-    /// When filling a proposed order would cause a quote asset overflow
-    const E_OVERFLOW_QUOTE: u64 = 11;
+    /// When filling proposed order overflows asset received from trade
+    const E_OVERFLOW_ASSET_IN: u64 = 10;
+    /// When filling proposed order overflows asset traded away
+    const E_OVERFLOW_ASSET_OUT: u64 = 11;
     /// When asset indicated as generic actually corresponds to a coin
     const E_NOT_GENERIC_ASSET: u64 = 12;
     /// When asset indicated as coin actually corresponds to a generic
     const E_NOT_COIN_ASSET: u64 = 13;
+    /// When depositing an asset would overflow total holdings ceiling
+    const E_DEPOSIT_OVERFLOW_ASSET_CEILING: u64 = 14;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -455,6 +457,68 @@ module econia::user {
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Register a new order under a user's market account
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `market_account_info`: Corresponding `MarketAccountInfo`
+    /// * `side:` `ASK` or `BID`
+    /// * `order_id`: Order ID for given order
+    /// * `size`: Size of order in lots
+    /// * `price`: Price of order in ticks per lot
+    /// * `lot_size`: Base asset units per lot
+    /// * `tick_size`: Quote asset units per tick
+    public(friend) fun register_order_internal(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        side: bool,
+        order_id: u128,
+        size: u64,
+        price: u64,
+        lot_size: u64,
+        tick_size: u64,
+    ) acquires MarketAccounts {
+        // Verify user has a corresponding market account
+        verify_market_account_exists(user, market_account_info);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account_ref_mut = open_table::borrow_mut(
+            market_accounts_map_ref_mut, market_account_info);
+        // Borrow mutable reference to open orders tree, mutable
+        // reference to ceiling field for asset received from trade, and
+        // mutable reference to available field for asset traded away
+        let (
+            tree_ref_mut,
+            in_asset_ceiling_ref_mut,
+            out_asset_available_ref_mut
+        ) = if (side == ASK) (
+                &mut market_account_ref_mut.asks,
+                &mut market_account_ref_mut.quote_ceiling,
+                &mut market_account_ref_mut.base_available
+            ) else (
+                &mut market_account_ref_mut.bids,
+                &mut market_account_ref_mut.base_ceiling,
+                &mut market_account_ref_mut.quote_available
+            );
+        // Range check proposed order, store fill amounts
+        let (in_asset_fill, out_asset_fill) = range_check_new_order(
+            side, size, price, lot_size, tick_size,
+            *in_asset_ceiling_ref_mut, *out_asset_available_ref_mut);
+        // Add order to corresponding tree
+        critbit::insert(tree_ref_mut, order_id, size);
+        // Increment asset ceiling amount for asset received from trade
+        *in_asset_ceiling_ref_mut = *in_asset_ceiling_ref_mut + in_asset_fill;
+        // Decrement asset available amount for asset traded away
+        *out_asset_available_ref_mut =
+            *out_asset_available_ref_mut - out_asset_fill;
+    }
+
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Borrow mutable references to market account `AssetType` counts
@@ -525,9 +589,7 @@ module econia::user {
     ///   exists, then a corresponding collateral container does too
     ///
     /// # Abort conditions
-    /// * If `user` does not have corresponding market account
-    ///   registered
-    /// * If `AssetType` is neither base nor quote for market account
+    /// * If deposit would overflow the total asset holdings ceiling
     fun deposit_asset<AssetType>(
         user: address,
         market_account_info: MarketAccountInfo,
@@ -548,6 +610,9 @@ module econia::user {
         let (asset_total_ref_mut, asset_available_ref_mut,
              asset_ceiling_ref_mut) = borrow_asset_counts_mut<AssetType>(
                 market_accounts_map_ref_mut, market_account_info);
+        // Assert deposit does not overflow asset ceiling
+        assert!(!((*asset_ceiling_ref_mut as u128) + (amount as u128) >
+            (HI_64 as u128)), E_DEPOSIT_OVERFLOW_ASSET_CEILING);
         // Increment total asset holdings amount
         *asset_total_ref_mut = *asset_total_ref_mut + amount;
         // Increment assets available for withdrawal amount
@@ -573,29 +638,37 @@ module econia::user {
     ///
     /// # Parameters
     /// * `side:` `ASK` or `BID`
-    /// * `size`: Size of order in lots
-    /// * `price`: Price of order in ticks per lot
+    /// * `size`: Order size, in lots
+    /// * `price`: Order price, in ticks per lot
     /// * `lot_size`: Base asset units per lot
     /// * `tick_size`: Quote asset units per tick
-    /// * `asset_ceiling`: `MarketAccount.quote_ceiling` if `side` is
+    /// * `in_asset_ceiling`: `MarketAccount.quote_ceiling` if `side` is
     ///   `ASK`, and `MarketAccount.base_ceiling` if `side` is `BID`
+    ///   (total holdings ceiling amount for asset received from trade)
+    /// * `out_asset_available`: `MarketAccount.base_available` if
+    ///   `side` is `ASK`, and `MarketAccount.quote_available` if `side`
+    ///   is `BID` (available withdraw amount for asset traded away)
     ///
     /// # Returns
-    /// * `u64`: Base asset units required to fill order
-    /// * `u64`: Quote asset units required to fill order
+    /// * `u64`: If `side` is `ASK` quote asset units required to fill
+    ///   order, else base asset units (inbound asset fill)
+    /// * `u64`: If `side` is `ASK` base asset units required to fill
+    ///   order, else quote asset units (outbound asset fill)
     ///
     /// # Abort conditions
     /// * If `size` is 0
     /// * If `price` is 0
-    /// * If filling the order results in a base overflow
-    /// * If filling the order results in a quote overflow
+    /// * If filling the order results in an overflow for incoming asset
+    /// * If filling the order results in an overflow for outgoing asset
+    /// * If not enough available outgoing asset to fill the order
     fun range_check_new_order(
         side: bool,
         size: u64,
         price: u64,
         lot_size: u64,
         tick_size: u64,
-        asset_ceiling: u64
+        in_asset_ceiling: u64,
+        out_asset_available: u64
     ): (
         u64,
         u64
@@ -605,22 +678,22 @@ module econia::user {
         // Assert order has actual size
         assert!(price > 0, E_PRICE_0);
         // Calculate base units needed to fill order
-        let base_to_fill = (size as u128) * (lot_size as u128);
-        let quote_to_fill = // Calculate quote units to fill order
+        let base_fill = (size as u128) * (lot_size as u128);
+        let quote_fill = // Calculate quote units to fill order
             (size as u128) * (price as u128) * (tick_size as u128);
-        // If an ask, base to check is amount traded away and quote to
-        // check is quote ceiling amount plus quote received from fill
-        let (base_to_check, quote_to_check) = if (side == ASK)
-            (base_to_fill, (asset_ceiling as u128) + quote_to_fill) else
-            // If a bid, base to check is base ceiling amount plus base
-            // received from fill, quote to check is amount traded away
-            ((asset_ceiling as u128) + base_to_fill, quote_to_fill);
-        // Assert base does not overflow
-        assert!(!(base_to_check > (HI_64 as u128)), E_OVERFLOW_BASE);
-        // Assert quote does not overflow
-        assert!(!(quote_to_check > (HI_64 as u128)), E_OVERFLOW_QUOTE);
-        // Return casted, range-checked amounts
-        ((base_to_fill as u64), (quote_to_fill as u64))
+        // If an ask, user gets quote and trades away base, else flipped
+        let (in_asset_fill, out_asset_fill) = if (side == ASK)
+            (quote_fill, base_fill) else (base_fill, quote_fill);
+        assert!( // Assert inbound asset does not overflow
+            !(in_asset_fill + (in_asset_ceiling as u128) > (HI_64 as u128)),
+            E_OVERFLOW_ASSET_IN);
+        // Assert outbound asset fill amount fits in a u64
+        assert!(!(out_asset_fill > (HI_64 as u128)), E_OVERFLOW_ASSET_OUT);
+        // Assert enough outbound asset to cover the fill
+        assert!(!(out_asset_fill > (out_asset_available as u128)),
+            E_NOT_ENOUGH_ASSET_AVAILABLE);
+        // Return re-casted, range-checked amounts
+        ((in_asset_fill as u64), (out_asset_fill as u64))
     }
 
     /// Register `user` with `Collateral` map entry for given `CoinType`
@@ -744,7 +817,7 @@ module econia::user {
              asset_ceiling_ref_mut) = borrow_asset_counts_mut<AssetType>(
                 market_accounts_map_ref_mut, market_account_info);
         // Assert user has enough available asset to withdraw
-        assert!(amount <= *asset_available_ref_mut,
+        assert!(!(amount > *asset_available_ref_mut),
             E_NOT_ENOUGH_ASSET_AVAILABLE);
         // Decrement total asset holdings amount
         *asset_total_ref_mut = *asset_total_ref_mut - amount;
@@ -1098,63 +1171,54 @@ module econia::user {
     }
 
     #[test]
-    #[expected_failure(abort_code = 10)]
-    /// Verify failure for overflowing base on an ask
-    fun test_range_check_new_order_overflow_base_ask() {
-        // Define order parameters
-        let side = ASK;
-        let size = 2;
-        let price = 1;
-        let lot_size = HI_64 - 1;
-        let tick_size = 1;
-        let asset_ceiling = 1;
-        range_check_new_order( // Attempt invalid range check
-            side, size, price, lot_size, tick_size, asset_ceiling);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 10)]
-    /// Verify failure for overflowing base on a bid
-    fun test_range_check_new_order_overflow_base_bid() {
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for overflowing asset traded away
+    fun test_range_check_new_order_not_enough_asset() {
         // Define order parameters
         let side = BID;
         let size = 2;
         let price = 1;
         let lot_size = 1;
         let tick_size = 1;
-        let asset_ceiling = HI_64 - 1;
-        range_check_new_order( // Attempt invalid range check
-            side, size, price, lot_size, tick_size, asset_ceiling);
+        let in_asset_ceiling = 1;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
     }
 
     #[test]
-    #[expected_failure(abort_code = 11)]
-    /// Verify failure for overflowing quote on an ask
-    fun test_range_check_new_order_overflow_quote_ask() {
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for overflowing asset received from trade
+    fun test_range_check_new_order_overflow_asset_in() {
         // Define order parameters
         let side = ASK;
-        let size = 2;
+        let size = 1;
         let price = 1;
         let lot_size = 1;
         let tick_size = 1;
-        let asset_ceiling = HI_64 - 1;
-        range_check_new_order( // Attempt invalid range check
-            side, size, price, lot_size, tick_size, asset_ceiling);
+        let in_asset_ceiling = HI_64;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
     }
 
     #[test]
     #[expected_failure(abort_code = 11)]
-    /// Verify failure for overflowing quote on a bid
-    fun test_range_check_new_order_overflow_quote_bid() {
+    /// Verify failure for overflowing asset traded away
+    fun test_range_check_new_order_overflow_asset_out() {
         // Define order parameters
         let side = BID;
         let size = 2;
         let price = 1;
         let lot_size = 1;
-        let tick_size = HI_64 - 1;
-        let asset_ceiling = 1;
-        range_check_new_order( // Attempt invalid range check
-            side, size, price, lot_size, tick_size, asset_ceiling);
+        let tick_size = HI_64;
+        let in_asset_ceiling = 1;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
     }
 
     #[test]
@@ -1167,9 +1231,11 @@ module econia::user {
         let price = 0;
         let lot_size = 2;
         let tick_size = 3;
-        let asset_ceiling = 4;
-        range_check_new_order( // Attempt invalid range check
-            side, size, price, lot_size, tick_size, asset_ceiling);
+        let in_asset_ceiling = 4;
+        let out_asset_available = 5;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
     }
 
     #[test]
@@ -1182,27 +1248,37 @@ module econia::user {
         let price = 1;
         let lot_size = 2;
         let tick_size = 3;
-        let asset_ceiling = 4;
-        range_check_new_order( // Attempt invalid range check
-            side, size, price, lot_size, tick_size, asset_ceiling);
+        let in_asset_ceiling = 4;
+        let out_asset_available = 5;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
     }
 
     #[test]
     /// Verify successful returns
-    fun range_check_new_order_success() {
+    fun test_range_check_new_order_success() {
         // Define order parameters
         let side = ASK;
-        let size = 2;
-        let price = 3;
-        let lot_size = 4;
-        let tick_size = 5;
-        let asset_ceiling = 6;
-        // Calculate base and quote needed to fill order
-        let (base_to_fill, quote_to_fill) = range_check_new_order(
-            side, size, price, lot_size, tick_size, asset_ceiling);
-        // Assert values
-        assert!(base_to_fill == size * lot_size, 0);
-        assert!(quote_to_fill == size * price * tick_size, 0);
+        let size = 3;
+        let price = 4;
+        let lot_size = 5;
+        let tick_size = 6;
+        let in_asset_ceiling = 1000;
+        let out_asset_available = 2000;
+        // Range check order, store asset in and asset out fill amounts
+        let (in_asset_fill, out_asset_fill) = range_check_new_order(side, size,
+            price, lot_size, tick_size, in_asset_ceiling, out_asset_available);
+        // Assert returns
+        assert!(in_asset_fill  == size * price * tick_size, 0);
+        assert!(out_asset_fill == size * lot_size         , 0);
+        // Swtich side and re-evaluate
+        side = BID;
+        (in_asset_fill, out_asset_fill) = range_check_new_order(side, size,
+            price, lot_size, tick_size, in_asset_ceiling, out_asset_available);
+        assert!(in_asset_fill  == size * lot_size         , 0);
+        assert!(out_asset_fill == size * price * tick_size, 0);
+
     }
 
     #[test(user = @user)]

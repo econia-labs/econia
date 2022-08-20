@@ -12,13 +12,14 @@ account has a particular "user-specific" custodian ID. For a given
 <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code>, a user has entries in a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> map for each
 asset that is a coin type.
 
-For assets that are not a coin type, the "market-wide" custodian
-(<code><a href="registry.md#0xc0deb00c_registry_TradingPairInfo">registry::TradingPairInfo</a></code>) is required to verify
-deposits and withdrawals. Hence a user-specific custodian ID
-overrides a market-wide custodian ID when placing or cancelling
-trades on an asset-agnostic market, whereas the market-wide
-custodian ID overrides the user-specific custodian ID when
-depositing or withdrawing a non-coin asset.
+For assets that are not a coin type, the "market-wide generic asset
+transfer" custodian (<code><a href="registry.md#0xc0deb00c_registry_TradingPairInfo">registry::TradingPairInfo</a></code>) is required to
+verify deposits and withdrawals. Hence a user-specific general
+custodian overrides a market-wide generic asset transfer
+custodian when placing or cancelling trades on an asset-agnostic
+market, whereas the market-wide generic asset transfer custodian
+overrides the user-specific general custodian ID when depositing or
+withdrawing a non-coin asset.
 
 
 -  [Resource `Collateral`](#0xc0deb00c_user_Collateral)
@@ -26,22 +27,32 @@ depositing or withdrawing a non-coin asset.
 -  [Struct `MarketAccountInfo`](#0xc0deb00c_user_MarketAccountInfo)
 -  [Resource `MarketAccounts`](#0xc0deb00c_user_MarketAccounts)
 -  [Constants](#@Constants_0)
--  [Function `invoke_registry`](#0xc0deb00c_user_invoke_registry)
 -  [Function `return_0`](#0xc0deb00c_user_return_0)
+-  [Function `deposit_coins`](#0xc0deb00c_user_deposit_coins)
+-  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
+    -  [Abort conditions](#@Abort_conditions_1)
+-  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
-    -  [Type parameters](#@Type_parameters_1)
-    -  [Parameters](#@Parameters_2)
-    -  [Abort conditions](#@Abort_conditions_3)
+    -  [Type parameters](#@Type_parameters_2)
+    -  [Parameters](#@Parameters_3)
+    -  [Abort conditions](#@Abort_conditions_4)
 -  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
-    -  [Assumes](#@Assumes_4)
-    -  [Abort conditions](#@Abort_conditions_5)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_6)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+    -  [Returns](#@Returns_5)
+    -  [Assumes](#@Assumes_6)
     -  [Abort conditions](#@Abort_conditions_7)
+-  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
+    -  [Assumes](#@Assumes_8)
+    -  [Abort conditions](#@Abort_conditions_9)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
+    -  [Abort conditions](#@Abort_conditions_10)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+    -  [Abort conditions](#@Abort_conditions_11)
+-  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
+    -  [Abort conditions](#@Abort_conditions_12)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
@@ -186,32 +197,33 @@ Unique ID for a user's market account
  Serial ID of the market that a user is trading on
 </dd>
 <dt>
-<code>user_level_custodian_id: u64</code>
+<code>general_custodian_id: u64</code>
 </dt>
 <dd>
  Serial ID of registered account custodian, set to
  <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code> when given account does not have an
- authorized user-level custodian. Otherwise corresponding
- custodian capability required to place trades and, in the
- case of a pure coin market, to withdraw/deposit collateral.
- For an asset-agnostic market, is overridden by
- <code>market_level_custodian_id</code> when depositing or withdrawing a
- non-coin asset, since the market-level custodian is required
- to verify deposit and withdraw amounts. Can be the same as
- <code>market_level_custodian_id</code>.
+ authorized custodian for general purposes. Otherwise
+ corresponding custodian capability required to place trades
+ and deposit or withdraw coin assets. Is overridden by
+ <code>generic_asset_transfer_custodian_id</code> when depositing or
+ withdrawing a non-coin asset, since the market-level
+ custodian is required to verify deposit and withdraw amounts
+ for non-coin assets. Can be the same as
+ <code>generic_asset_transfer_custodian_id</code>.
 </dd>
 <dt>
-<code>market_level_custodian_id: u64</code>
+<code>generic_asset_transfer_custodian_id: u64</code>
 </dt>
 <dd>
- ID of custodian capability required to withdraw/deposit
- collateral for an asset that is not a coin. A "market-wide"
- collateral transfer custodian ID, required to verify deposit
- and withdraw amounts for asset-agnostic markets. Marked as
- <code><a href="user.md#0xc0deb00c_user_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote types are both coins.
- Otherwise overrides the <code>user_level_custodian_id</code> for
- deposits and withdrawals only. Can be the same as
- <code>market_level_custodian_id</code>.
+ ID of custodian capability required to verify deposits and
+ withdrawals of assets that are not coins. A "market-wide
+ asset transfer custodian ID" that only applies to markets
+ having at least one non-coin asset. For a market having
+ one coin asset and one generic asset, only applies to the
+ generic asset. Marked <code><a href="user.md#0xc0deb00c_user_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote
+ types are both coins, otherwise overrides
+ <code>general_custodian_id</code> for deposits and withdraws of generic
+ assets. Can be the same as <code>general_custodian_id</code>.
 </dd>
 </dl>
 
@@ -303,27 +315,35 @@ When the passed custodian ID is invalid
 
 
 
-<a name="0xc0deb00c_user_invoke_registry"></a>
+<a name="0xc0deb00c_user_E_NOT_GENERIC_ASSET"></a>
 
-## Function `invoke_registry`
+When asset indicated as generic actually corresponds to a coin
 
 
-
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_invoke_registry">invoke_registry</a>()
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_GENERIC_ASSET">E_NOT_GENERIC_ASSET</a>: u64 = 12;
 </code></pre>
 
 
 
-<details>
-<summary>Implementation</summary>
+<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
+
+When indicated market account does not exist
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(0);}
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>: u64 = 3;
 </code></pre>
 
 
 
-</details>
+<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNTS"></a>
+
+When a user does not a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code>
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 7;
+</code></pre>
+
+
 
 <a name="0xc0deb00c_user_return_0"></a>
 
@@ -347,6 +367,151 @@ When the passed custodian ID is invalid
 
 </details>
 
+<a name="0xc0deb00c_user_deposit_coins"></a>
+
+## Function `deposit_coins`
+
+Deposit <code><a href="">coins</a></code> of <code>CoinType</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account having
+<code>market_id</code>, <code>general_custodian_id</code>, and
+<code>generic_asset_transfer_custodian_id</code>
+
+See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, <a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_id: u64,
+    general_custodian_id: u64,
+    generic_asset_transfer_custodian_id: u64,
+    <a href="">coins</a>: Coin&lt;CoinType&gt;
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;CoinType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>,
+        <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id},
+        <a href="_value">coin::value</a>(&<a href="">coins</a>),
+        <a href="_some">option::some</a>(<a href="">coins</a>)
+    )
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_deposit_generic_asset"></a>
+
+## Function `deposit_generic_asset`
+
+Deposit <code><a href="">coins</a></code> of <code>CoinType</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account having
+<code>market_id</code>, <code>general_custodian_id</code>, and
+<code>generic_asset_transfer_custodian_id</code>, under authority of
+custodian indicated by
+<code>generic_asset_transfer_custodian_capability_ref</code>
+
+See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code>
+
+
+<a name="@Abort_conditions_1"></a>
+
+### Abort conditions
+
+* If generic asset transfer custodian ID for market does not
+match that indicated by
+<code>generic_asset_transfer_custodian_capbility_ref</code>
+* If <code>AssetType</code> corresponds to the <code>CoinType</code> of an initialized
+coin
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>&lt;AssetType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_id: u64,
+    general_custodian_id: u64,
+    generic_asset_transfer_custodian_id: u64,
+    amount: u64,
+    generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert generic asset transfer custodian capability <b>has</b> same
+    // ID <b>as</b> that indicated for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
+        generic_asset_transfer_custodian_capability_ref) ==
+        generic_asset_transfer_custodian_id, <a href="user.md#0xc0deb00c_user_E_INVALID_CUSTODIAN_ID">E_INVALID_CUSTODIAN_ID</a>);
+    // Assert asset type does not correspond <b>to</b> an initialized <a href="">coin</a>
+    <b>assert</b>!(!<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;AssetType&gt;(), <a href="user.md#0xc0deb00c_user_E_NOT_GENERIC_ASSET">E_NOT_GENERIC_ASSET</a>);
+    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;( // Deposit generic asset
+        <a href="user.md#0xc0deb00c_user">user</a>,
+        <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id},
+        amount,
+        <a href="_none">option::none</a>&lt;Coin&lt;AssetType&gt;&gt;()
+    )
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_deposit_from_coinstore"></a>
+
+## Function `deposit_from_coinstore`
+
+Transfer <code>amount</code> of coins of <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s
+<code>aptos_framework::coin::CoinStore</code> to their <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> for
+market accoutn having <code>market_id</code>, <code>general_custodian_id</code>, and
+<code>generic_asset_transfer_custodian_id</code>.
+
+See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_from_coinstore">deposit_from_coinstore</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_from_coinstore">deposit_from_coinstore</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    general_custodian_id: u64,
+    generic_asset_transfer_custodian_id: u64,
+    amount: u64
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        market_id,
+        general_custodian_id,
+        generic_asset_transfer_custodian_id,
+        <a href="_withdraw">coin::withdraw</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, amount)
+    )
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_market_account"></a>
 
 ## Function `register_market_account`
@@ -354,7 +519,7 @@ When the passed custodian ID is invalid
 Register user with a market account
 
 
-<a name="@Type_parameters_1"></a>
+<a name="@Type_parameters_2"></a>
 
 ### Type parameters
 
@@ -362,18 +527,19 @@ Register user with a market account
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_2"></a>
+<a name="@Parameters_3"></a>
 
 ### Parameters
 
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Signing user
 * <code>market_id</code>: Serial ID of corresonding market
-* <code>user_level_custodian_id</code>: Serial ID of custodian capability
-required for user-level authorization, set to <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>
-if signing user required for authorization on market account
+* <code>general_custodian_id</code>: Serial ID of custodian capability
+required for general account authorization, set to
+<code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code> if signing user required for authorization on
+market account
 
 
-<a name="@Abort_conditions_3"></a>
+<a name="@Abort_conditions_4"></a>
 
 ### Abort conditions
 
@@ -381,7 +547,7 @@ if signing user required for authorization on market account
 * If invalid <code>custodian_id</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, user_level_custodian_id: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, general_custodian_id: u64)
 </code></pre>
 
 
@@ -396,18 +562,18 @@ if signing user required for authorization on market account
 &gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_id: u64,
-    user_level_custodian_id: u64
+    general_custodian_id: u64
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Get <a href="market.md#0xc0deb00c_market">market</a>-level custodian ID for verified <a href="market.md#0xc0deb00c_market">market</a>
-    <b>let</b> market_level_custodian_id = registry::
+    // Get generic asset transfer custodian ID for verified <a href="market.md#0xc0deb00c_market">market</a>
+    <b>let</b> generic_asset_transfer_custodian_id = registry::
         get_verified_market_custodian_id&lt;BaseType, QuoteType&gt;(market_id);
-    // If <a href="user.md#0xc0deb00c_user">user</a>-level custodian ID indicated, <b>assert</b> it is registered
-    <b>if</b> (user_level_custodian_id != <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>) <b>assert</b>!(
-        <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(user_level_custodian_id),
+    // If general custodian ID indicated, <b>assert</b> it is registered
+    <b>if</b> (general_custodian_id != <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>) <b>assert</b>!(
+        <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(general_custodian_id),
         <a href="user.md#0xc0deb00c_user_E_INVALID_CUSTODIAN_ID">E_INVALID_CUSTODIAN_ID</a>);
     // Pack corresonding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
     <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id,
-        user_level_custodian_id, market_level_custodian_id};
+        general_custodian_id, generic_asset_transfer_custodian_id};
     // Register entry in <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <a href="user.md#0xc0deb00c_user_register_market_accounts_entry">register_market_accounts_entry</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
@@ -428,20 +594,35 @@ if signing user required for authorization on market account
 
 ## Function `borrow_asset_counts_mut`
 
-Look up the <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> in <code>market_accounts_map</code> having
-<code>market_account_info</code>, then return a mutable reference to the
-amount of <code>AssetType</code> holdings, and a mutable reference to the
-reference to the amount of <code>AssetType</code> available for withdraw.
+Borrow mutable references to market account <code>AssetType</code> counts
+
+Look up the <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> having <code>market_account_info</code> in the
+market accounts map indicated by <code>market_accounts_map_ref_mut</code>,
+then return a mutable reference to the amount of <code>AssetType</code>
+holdings, and a mutable reference to the reference to the amount
+of <code>AssetType</code> available for withdraw.
 
 
-<a name="@Assumes_4"></a>
+<a name="@Returns_5"></a>
+
+### Returns
+
+* <code>u64</code>: Mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_total</code> for
+corresponding market account if <code>AssetType</code> is market base,
+else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_total</code>
+* <code>u64</code>: Mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_available</code> for
+corresponding market account if <code>AssetType</code> is market base,
+else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_available</code>
+
+
+<a name="@Assumes_6"></a>
 
 ### Assumes
 
 * <code>market_accounts_map</code> has an entry with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_5"></a>
+<a name="@Abort_conditions_7"></a>
 
 ### Abort conditions
 
@@ -449,7 +630,7 @@ reference to the amount of <code>AssetType</code> available for withdraw.
 account
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map: &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>&gt;, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>): (&<b>mut</b> u64, &<b>mut</b> u64)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map_ref_mut: &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>&gt;, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>): (&<b>mut</b> u64, &<b>mut</b> u64)
 </code></pre>
 
 
@@ -459,7 +640,7 @@ account
 
 
 <pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(
-    market_accounts_map:
+    market_accounts_map_ref_mut:
         &<b>mut</b> <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;<a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>, <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>&gt;,
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>
 ): (
@@ -467,24 +648,101 @@ account
     &<b>mut</b> u64
 ) {
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
-    <b>let</b> market_account =
-        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts_map, market_account_info);
+    <b>let</b> market_account_ref_mut =
+        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
+            market_accounts_map_ref_mut, market_account_info);
     // Get asset type info
     <b>let</b> asset_type_info = <a href="_type_of">type_info::type_of</a>&lt;AssetType&gt;();
     // If is base asset, <b>return</b> mutable references <b>to</b> base fields
-    <b>if</b> (asset_type_info == market_account.base_type_info) {
+    <b>if</b> (asset_type_info == market_account_ref_mut.base_type_info) {
         <b>return</b> (
-            &<b>mut</b> market_account.base_total,
-            &<b>mut</b> market_account.base_available
+            &<b>mut</b> market_account_ref_mut.base_total,
+            &<b>mut</b> market_account_ref_mut.base_available
         )
     // If is quote asset, <b>return</b> mutable references <b>to</b> quote fields
-    } <b>else</b> <b>if</b> (asset_type_info == market_account.quote_type_info) {
+    } <b>else</b> <b>if</b> (asset_type_info == market_account_ref_mut.quote_type_info) {
         <b>return</b> (
-            &<b>mut</b> market_account.quote_total,
-            &<b>mut</b> market_account.quote_available
+            &<b>mut</b> market_account_ref_mut.quote_total,
+            &<b>mut</b> market_account_ref_mut.quote_available
         )
     }; // Otherwise <b>abort</b>
     <b>abort</b> <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_deposit_asset"></a>
+
+## Function `deposit_asset`
+
+Deposit <code>amount</code> of <code>AssetType</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account,
+which may include <code>optional_coins</code>
+
+
+<a name="@Assumes_8"></a>
+
+### Assumes
+
+* That if depositing a coin asset, <code>amount</code> matches value of
+<code>optional_coins</code>
+* That when depositing a coin asset, if the market account
+exists, then a corresponding collateral container does too
+
+
+<a name="@Abort_conditions_9"></a>
+
+### Abort conditions
+
+* If <code><a href="user.md#0xc0deb00c_user">user</a></code> does not have corresponding market account
+registered
+* If <code>AssetType</code> is neither base nor quote for market account
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64, optional_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64,
+    optional_coins: <a href="_Option">option::Option</a>&lt;Coin&lt;AssetType&gt;&gt;
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> total asset holdings, and mutable
+    // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal
+    <b>let</b> (asset_total_ref_mut, asset_available_ref_mut) =
+        <a href="user.md#0xc0deb00c_user_borrow_asset_counts_mut">borrow_asset_counts_mut</a>&lt;AssetType&gt;(market_accounts_map_ref_mut,
+            market_account_info);
+    // Increment total asset holdings amount
+    *asset_total_ref_mut = *asset_total_ref_mut + amount;
+    // Increment <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal amount
+    *asset_available_ref_mut = *asset_available_ref_mut + amount;
+    <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_coins)) { // If asset is <a href="">coin</a> type
+        // Borrow mutable reference <b>to</b> collateral map
+        <b>let</b> collateral_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;AssetType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+        // Borrow mutable reference <b>to</b> collateral for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+        <b>let</b> collateral_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
+            collateral_map_ref_mut, market_account_info);
+        <a href="_merge">coin::merge</a>( // Merge optional <a href="">coins</a> into collateral
+            collateral_ref_mut, <a href="_destroy_some">option::destroy_some</a>(optional_coins));
+    } <b>else</b> { // If asset is not <a href="">coin</a> type
+        // Destroy empty <a href="">option</a> resource
+        <a href="_destroy_none">option::destroy_none</a>(optional_coins);
+    }
 }
 </code></pre>
 
@@ -501,7 +759,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_6"></a>
+<a name="@Abort_conditions_10"></a>
 
 ### Abort conditions
 
@@ -556,7 +814,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_7"></a>
+<a name="@Abort_conditions_11"></a>
 
 ### Abort conditions
 
@@ -605,6 +863,50 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
             quote_total: 0,
             quote_available: 0
     });
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_verify_market_account_exists"></a>
+
+## Function `verify_market_account_exists`
+
+Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a market account with <code>market_account_info</code>
+
+
+<a name="@Abort_conditions_12"></a>
+
+### Abort conditions
+
+* If user does not have a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code>
+* If user does not have a <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> for given
+<code>market_account_info</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> a <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
+    // Borrow immutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map_ref =
+        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> an entry in map for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
+    <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(market_accounts_map_ref,
+        market_account_info), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
 }
 </code></pre>
 

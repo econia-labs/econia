@@ -16,6 +16,7 @@ flowchart LR
     classDef modified_and_renamed fill:#a020f0 %% Purple
     classDef new fill:#87cefa %% Light Sky Blue
     classDef deleted fill:#708090 %% Slate Gray
+    classDef unmodified fill:#32cd32 %% Lime green
 
     id0[Unverified]
     style id0 fill:#ffa500 %% Orange
@@ -31,6 +32,9 @@ flowchart LR
 
     id4[Deleted]
     class id4 deleted;
+
+    id5[Unmodified]
+    class id5 unmodified;
 
 ```
 
@@ -49,6 +53,7 @@ flowchart LR
     classDef modified_and_renamed fill:#a020f0 %% Purple
     classDef new fill:#87cefa %% Light Sky Blue
     classDef deleted fill:#708090 %% Slate Gray
+    classDef unmodified fill:#32cd32 %% Lime green
 
 %% Node definitions
     Collateral[Collateral]
@@ -75,13 +80,19 @@ flowchart LR
     test_register_market_accounts_entry[test_register_market_accounts_entry]
     test_register_market_accounts_entry_already_registered[test_register_market_accounts_entry_already_registered]
     test_register_market_accounts[test_register_market_accounts]
-    registry::get_market_level_custodian_id_test[    registry::get_market_level_custodian_id_test]
+    registry::get_generic_asset_transfer_custodian_id_test[    registry::get_generic_asset_transfer_custodian_id_test]
     get_market_account_info_test[get_market_account_info_test]
     borrow_market_account_test[borrow_market_account_test]
     has_collateral_test[has_collateral_test]
     collateral_value_test[collateral_value_test]
     asset_counts_test[asset_counts_test]
     borrow_coin_counts_mut[borrow_asset_counts_mut <br/> borrow_coin_counts_mut]
+    deposit_collateral[deposit_asset <br/> deposit_collateral]
+    exists_market_account[verify_market_account_exists <br/> exists_market_account]
+    deposit_coins[deposit_coins]
+    deposit_collateral_coinstore[deposit_from_coinstore <br/> deposit_collateral_coinstore]
+    test_deposit_asset_no_market_accounts[test_deposit_asset_no_market_accounts]
+    test_deposit_asset_wrong_market_account[test_deposit_asset_wrong_market_account]
 
 %% Class definitions
     class Collateral modified_but_not_renamed;
@@ -108,15 +119,27 @@ flowchart LR
     class test_register_market_accounts_entry modified_but_not_renamed;
     class test_register_market_accounts_entry_already_registered modified_but_not_renamed;
     class test_register_market_accounts modified_but_not_renamed;
-    class registry::get_market_level_custodian_id_test new;
+    class registry::get_generic_asset_transfer_custodian_id_test new;
     class get_market_account_info_test new;
     class borrow_market_account_test new;
     class has_collateral_test new;
     class collateral_value_test new;
     class asset_counts_test new;
     class borrow_coin_counts_mut modified_and_renamed;
+    class deposit_collateral modified_and_renamed;
+    class exists_market_account modified_and_renamed;
+    class deposit_coins new;
+    class deposit_collateral_coinstore modified_and_renamed;
+    class test_deposit_asset_no_market_accounts new;
+    class test_deposit_asset_wrong_market_account new;
 
 %% Relationships involving new nodes
+
+    test_deposit_asset_wrong_market_account --> deposit_collateral
+
+    test_deposit_asset_no_market_accounts --> deposit_collateral
+
+    deposit_coins --> deposit_collateral
 
     asset_counts_test --> MarketAccounts
     asset_counts_test --> borrow_market_account_test
@@ -130,7 +153,7 @@ flowchart LR
     borrow_market_account_test --> MarketAccounts
     borrow_market_account_test --> get_market_account_info_test
 
-    get_market_account_info_test --> registry::get_market_level_custodian_id_test
+    get_market_account_info_test --> registry::get_generic_asset_transfer_custodian_id_test
 
     test_register_market_accounts_entry --> MarketAccounts
     test_register_market_accounts_entry --> MarketAccountInfo
@@ -144,7 +167,7 @@ flowchart LR
 
 %% Initial relationships
 
-    deposit_collateral_coinstore --> deposit_collateral
+    deposit_collateral_coinstore --> deposit_coins
     deposit_collateral_coinstore --> Collateral
     deposit_collateral_coinstore --> MarketAccounts
 
@@ -173,6 +196,7 @@ flowchart LR
     deposit_collateral --> MarketAccountInfo
     deposit_collateral --> Collateral
     deposit_collateral --> MarketAccounts
+    deposit_collateral --> exists_market_account
     deposit_collateral --> borrow_coin_counts_mut
 
     fill_order_internal --> Collateral

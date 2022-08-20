@@ -22,16 +22,12 @@ module econia::user {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When a collateral transfer does not have specified amount
-    const E_NO_MARKET_ACCOUNT: u64 = 3;
     /// When not enough collateral
     const E_NOT_ENOUGH_COLLATERAL: u64 = 4;
     /// When unauthorized custodian ID
     const E_UNAUTHORIZED_CUSTODIAN: u64 = 5;
     /// When user attempts invalid custodian override
     const E_CUSTODIAN_OVERRIDE: u64 = 6;
-    /// When a user does not a market accounts map
-    const E_NO_MARKET_ACCOUNTS: u64 = 7;
     /// When an order has no price listed
     const E_PRICE_0: u64 = 8;
     /// When an order has no base parcel count listed
@@ -61,29 +57,6 @@ module econia::user {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[cmd]
-    /// For given market and `custodian_id`, deposit `amount` of
-    /// `user`'s coins to their `Collateral`, after withdrawing from
-    /// their `aptos_framework::coin::CoinStore`. See wrapped function
-    /// `deposit_collateral()`.
-    ///
-    /// # Parameters
-    /// * `base`: If `true`, deposit base coins, else quote coins
-    public entry fun deposit_collateral_coinstore<B, Q, E>(
-        user: &signer,
-        custodian_id: u64,
-        base: bool,
-        amount: u64
-    ) acquires Collateral, MarketAccounts {
-        // Get corresponding market account info
-        let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        if (base) // If marked for depositing base coins, use base type
-            deposit_collateral<B>(address_of(user), market_account_info,
-                coin::withdraw<B>(user, amount)) else // Else quote
-            deposit_collateral<Q>(address_of(user), market_account_info,
-                coin::withdraw<Q>(user, amount));
-    }
 
     #[cmd]
     /// For given market, withdraw `amount` of `user`'s coins from their
@@ -199,45 +172,6 @@ module econia::user {
         *coins_available_ref_mut = *coins_available_ref_mut - coins_required;
         // Add order to corresponding tree
         critbit::insert(tree_ref_mut, order_id, base_parcels);
-    }
-
-    /// Deposit `coins` to `user`'s `Collateral` for given
-    /// `market_account_info`.
-    ///
-    /// # Abort conditions
-    /// * If `CoinType` is neither base nor quote for market account
-    /// * If `user` does not have corresponding market account
-    ///   registered
-    public fun deposit_collateral<CoinType>(
-        user: address,
-        market_account_info: MarketAccountInfo,
-        coins: coin::Coin<CoinType>
-    ) acquires Collateral, MarketAccounts {
-        // Assert market account registered for market account info
-        assert!(exists_market_account(market_account_info, user),
-            E_NO_MARKET_ACCOUNT);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to total coins held as collateral,
-        // and mutable reference to amount of coins available for
-        // withdraw (aborts if coin type is neither base nor quote for
-        // given market account)
-        let (coins_total_ref_mut, coins_available_ref_mut) =
-            borrow_coin_counts_mut<CoinType>(market_accounts_map,
-                market_account_info);
-        *coins_total_ref_mut = // Increment total coin count
-            *coins_total_ref_mut + coin::value(&coins);
-        *coins_available_ref_mut = // Increment available coin count
-            *coins_available_ref_mut + coin::value(&coins);
-        // Borrow mutable reference to collateral map
-        let collateral_map =
-            &mut borrow_global_mut<Collateral<CoinType>>(user).map;
-        // Borrow mutable reference to collateral for market account
-        let collateral =
-            open_table::borrow_mut(collateral_map, market_account_info);
-        // Merge coins into market account collateral
-        coin::merge(collateral, coins);
     }
 
     /// Fill a user's order, routing collateral accordingly.
@@ -393,21 +327,6 @@ module econia::user {
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Return `true` if `user` has an `MarketAccounts` entry for
-    /// `market_account_info`, otherwise `false`.
-    fun exists_market_account(
-        market_account_info: MarketAccountInfo,
-        user: address
-    ): bool
-    acquires MarketAccounts {
-        // Return false if no market accounts map exists
-        if(!exists<MarketAccounts>(user)) return false;
-        // Borrow immutable ref to market accounts map
-        let market_accounts_map = &borrow_global<MarketAccounts>(user).map;
-        // Return if market account is registered in table
-        open_table::contains(market_accounts_map, market_account_info)
-    }
 
     /// Route collateral when filling an order.
     ///
@@ -626,138 +545,6 @@ module econia::user {
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test_only]
-    /// Return number of coins `user` holds as collateral for given
-    /// market, `custodian_id`, and `BaseOrQuote` type specifier.
-    ///
-    /// # Assumes
-    /// * `user` has `Collateral` for given market account
-    ///
-    /// # Restrictions
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   and thus transaction collisions
-    public fun get_collateral_amount_test<B, Q, E, BaseOrQuote>(
-        user: address,
-        custodian_id: u64
-    ): u64
-    acquires Collateral {
-        // Get market account info for given custodian ID
-        let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        // Borrow immutable reference to collateral map
-        let collateral_map = &borrow_global<Collateral<BaseOrQuote>>(user).map;
-        let collateral_ref = // Get immutable ref to collateral coins
-            open_table::borrow(collateral_map, market_account_info);
-        coin::value(collateral_ref) // Return amount of coins held
-    }
-
-    #[test_only]
-    /// Return amount of collateral a `user` has under market account
-    /// with corresonding `custodian_id`.
-    ///
-    /// # Returns
-    /// * `u64`: Base coins held as collateral
-    /// * `u64`: Quote coins held as collateral
-    ///
-    /// # Restrictions
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   and thus transaction collisions
-    public fun get_collateral_amounts_test<B, Q, E>(
-        user: address,
-        custodian_id: u64
-    ): (
-        u64,
-        u64
-    ) acquires Collateral {
-       (
-        get_collateral_amount_test<B, Q, E, B>(user, custodian_id),
-        get_collateral_amount_test<B, Q, E, Q>(user, custodian_id)
-       )
-    }
-
-    #[test_only]
-    /// Return market account counter for coins available and total
-    /// coins, for given `user`, `custodian`, and `BaseOrQuote` coin
-    /// type.
-    ///
-    /// # Returns
-    /// * `u64`: `base_coins_total` if `BaseOrQuote` is `B`, and
-    ///   `quote_coins_total` if `BaseOrQuote` is `Q`
-    /// * `u64`: `base_coins_available` if `BaseOrQuote` is `B`, and
-    ///   `quote_coins_available` if `BaseOrQuote` is `Q`
-    ///
-    /// # Assumes
-    /// * `user` market account as specified
-    ///
-    /// # Restrictions
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   and thus transaction collisions
-    public fun get_collateral_counts_test<B, Q, E, BaseOrQuote>(
-        user: address,
-        custodian_id: u64
-    ): (
-        u64,
-        u64
-    ) acquires MarketAccounts {
-        // Declare market account info
-        let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map = &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to corresponding market account
-        let market_account =
-            open_table::borrow(market_accounts_map, market_account_info);
-        // If base collateral counts requested, return them
-        if (registry::coin_is_base_coin<BaseOrQuote>(
-            &market_account_info.market_info)) (
-                market_account.base_coins_total,
-                market_account.base_coins_available,
-            ) else ( // Else return quote collateral counts
-                market_account.quote_coins_total,
-                market_account.quote_coins_available,
-            )
-    }
-
-    #[test_only]
-    /// Inspect all collateral state for given `user` and `custodian_id`
-    /// on given market account.
-    ///
-    /// # Assumes
-    /// * `user` market account as specified
-    ///
-    /// # Returns
-    /// * `u64`: `Collateral<B>` value for given market account
-    /// * `u64`: `MarketAccount.base_coins_total`
-    /// * `u64`: `MarketAccount.base_coins_available`
-    /// * `u64`: `Collateral<Q>` value for given market account
-    /// * `u64`: `MarketAccount.quote_coins_total`
-    /// * `u64`: `MarketAccount.quote_coins_available`
-    ///
-    /// # Restrictions
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   and thus transaction collisions
-    public fun get_collateral_state_test<B, Q, E>(
-        user: address,
-        custodian_id: u64,
-    ): (
-        u64,
-        u64,
-        u64,
-        u64,
-        u64,
-        u64
-    ) acquires Collateral, MarketAccounts {
-        // Get value of actual coins held as collateral
-        let (base_collateral, quote_collateral) =
-            get_collateral_amounts_test<B, Q, E>(user, custodian_id);
-        // Get base total and available fields from market account
-        let (base_total_field, base_available_field) =
-            get_collateral_counts_test<B, Q, E, B>(user, custodian_id);
-        // Get quote total and available fields from market account
-        let (quote_total_field, quote_available_field) =
-            get_collateral_counts_test<B, Q, E, Q>(user, custodian_id);
-        (base_collateral, base_total_field, base_available_field,
-         quote_collateral, quote_total_field, quote_available_field)
-    }
 
     #[test_only]
     /// Return `true` if `user` has order with given `order_id` on given
@@ -1021,72 +808,6 @@ module econia::user {
         assert!(market_account.base_coins_available == 0, 0);
         assert!(market_account.quote_coins_total == quote_coins_start, 0);
         assert!(market_account.quote_coins_available == quote_coins_start, 0);
-    }
-
-    #[test(econia = @econia)]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for attempting to deposit when no market account
-    fun test_deposit_collateral_no_market_account(
-        econia: &signer
-    ) acquires Collateral, MarketAccounts {
-        coins::init_coin_types(econia); // Initialize coin types
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E1>(),
-            custodian_id: 123 }; // Declare market account info
-        // Attempt invalid deposit
-        deposit_collateral<BC>(@user, market_account_info,
-            coins::mint<BC>(econia, 25));
-    }
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    /// Verify successful collateral deposit
-    fun test_deposit_collateral(
-        econia: &signer,
-        user: &signer
-    ) acquires Collateral, MarketAccounts {
-        let deposit_amount = 25; // Declare deposit amount
-        // Register a test market for trading
-        registry::register_test_market_internal(econia);
-        let market_account_info = MarketAccountInfo{
-            market_info: registry::market_info<BC, QC, E1>(),
-            custodian_id: 0}; // Declare market account info
-        // Register user with market account
-        register_market_account<BC, QC, E1>(user, 0);
-        // Attempt valid deposit
-        deposit_collateral<BC>(@user, market_account_info,
-            coins::mint<BC>(econia, deposit_amount));
-        // Borrow immutable ref to collateral map
-        let collateral_map = &borrow_global<Collateral<BC>>(@user).map;
-        // Borrow immutable ref to collateral for market account
-        let collateral =
-            open_table::borrow(collateral_map, market_account_info);
-        // Assert amount
-        assert!(coin::value(collateral) == deposit_amount, 0);
-        // Borrow immutable ref to market accounts map
-        let market_accounts_map = &borrow_global<MarketAccounts>(@user).map;
-        // Borrow mutable reference to market account
-        let market_account =
-            open_table::borrow(market_accounts_map, market_account_info);
-        // Assert total base coin count
-        assert!(market_account.base_coins_total == deposit_amount, 0);
-        // Assert available base coin count
-        assert!(market_account.base_coins_available == deposit_amount, 0);
-        deposit_amount = 30; // Declare new deposit amount
-        // Register user with quote coin store
-        coin::register_for_test<QC>(user);
-        coin::deposit<QC>(@user, coins::mint<QC>(econia, deposit_amount));
-        // Attempt valid deposit from coin store
-        deposit_collateral_coinstore<BC, QC, E1>(
-            user, NO_CUSTODIAN, false, deposit_amount);
-        // Get total and available quote amounts
-        let (quote_total, quote_available) =
-            get_collateral_counts_test<BC, QC, E1, QC>(@user, NO_CUSTODIAN);
-        // Assert correct values
-        assert!(quote_total == deposit_amount, 0);
-        assert!(quote_available == deposit_amount, 0);
     }
 
     #[test(

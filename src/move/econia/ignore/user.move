@@ -7,40 +7,8 @@ module econia::user {
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test_only]
-    use econia::capability::get_econia_capability_test;
-
-    #[test_only]
-    use econia::coins::{Self, BC, QC};
-
-    #[test_only]
-    use econia::registry::{E1, E2};
-
-    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// When an order has no price listed
-    const E_PRICE_0: u64 = 8;
-    /// When an order has no base parcel count listed
-    const E_BASE_PARCELS_0: u64 = 9;
-    /// When a base fill amount would not fit into a `u64`
-    const E_OVERFLOW_BASE: u64 = 10;
-    /// When a quote fill amount would not fit into a `u64`
-    const E_OVERFLOW_QUOTE: u64 = 11;
-
-    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Flag for asks side
-    const ASK: bool = true;
-    /// Flag for asks side
-    const BID: bool = false;
-    /// `u64` bitmask with all bits set
-    const HI_64: u64 = 0xffffffffffffffff;
     /// Flag for inbound coins
     const IN: bool = true;
     /// Flag for outbound coins
@@ -391,76 +359,6 @@ module econia::user {
         *coins_in_total_ref_mut = *coins_in_total_ref_mut + coins_in;
         *coins_in_available_ref_mut = *coins_in_available_ref_mut + coins_in;
         *coins_out_total_ref_mut = *coins_out_total_ref_mut - coins_out;
-    }
-
-    /// For order with given `scale_factor`, `base_parcels`, and
-    /// `price`, check that price and size are zero, and that fill
-    /// amounts can fit in a `u64`. Then return the number of base coins
-    /// and quote coins required to fill the order.
-    fun range_check_order_fills(
-        scale_factor: u64,
-        base_parcels: u64,
-        price: u64
-    ): (
-        u64,
-        u64
-    ) {
-        assert!(price > 0, E_PRICE_0); // Assert order has actual price
-        // Assert actually trying to trade amount of base parcels
-        assert!(base_parcels > 0, E_BASE_PARCELS_0);
-        // Calculate base coins required to fill the order
-        let base_to_fill = (scale_factor as u128) * (base_parcels as u128);
-        // Assert that amount can fit in a u64
-        assert!(!(base_to_fill > (HI_64 as u128)), E_OVERFLOW_BASE);
-        // Determine amount of quote coins needed to fill order
-        let quote_to_fill = (price as u128) * (base_parcels as u128);
-        // Assert that amount can fit in a u64
-        assert!(!(quote_to_fill > (HI_64 as u128)), E_OVERFLOW_QUOTE);
-        // Return casted, range-checked amounts
-        ((base_to_fill as u64), (quote_to_fill as u64))
-    }
-
-    /// Withdraw `amount` of `Coin` having `CoinType` from `Collateral`
-    /// entry corresponding to `market_account_info`, then return it.
-    ///
-    /// # Abort conditions
-    /// * If `CoinType` is neither base nor quote for market account
-    /// * If `user` does not have corresponding market account
-    ///   registered
-    /// * If `user` has insufficient collateral to withdraw
-    fun withdraw_collateral<CoinType>(
-        user: address,
-        market_account_info: MarketAccountInfo,
-        amount: u64
-    ): coin::Coin<CoinType>
-    acquires Collateral, MarketAccounts {
-        // Assert market account registered for market account info
-        assert!(exists_market_account(market_account_info, user),
-            E_NO_MARKET_ACCOUNT);
-        // Borrow mutable reference to market accounts map
-        let market_accounts_map =
-            &mut borrow_global_mut<MarketAccounts>(user).map;
-        // Borrow mutable reference to total coins held as collateral,
-        // and mutable reference to amount of coins available for
-        // withdraw (aborts if coin type is neither base nor quote for
-        // given market account)
-        let (coins_total_ref_mut, coins_available_ref_mut) =
-            borrow_coin_counts_mut<CoinType>(market_accounts_map,
-                market_account_info);
-        // Assert user has enough available collateral to withdraw
-        assert!(amount <= *coins_available_ref_mut, E_NOT_ENOUGH_COLLATERAL);
-        // Decrement withdrawn amount from total coin count
-        *coins_total_ref_mut = *coins_total_ref_mut - amount;
-        // Decrement withdrawn amount from available coin count
-        *coins_available_ref_mut = *coins_available_ref_mut - amount;
-        // Borrow mutable reference to collateral map
-        let collateral_map =
-            &mut borrow_global_mut<Collateral<CoinType>>(user).map;
-        // Borrow mutable reference to collateral for market account
-        let collateral =
-            open_table::borrow_mut(collateral_map, market_account_info);
-        // Extract collateral from market account and return
-        coin::extract(collateral, amount)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -943,49 +841,6 @@ module econia::user {
             quote_to_route_1 + quote_to_route_2, 0);
         // Burn matching engine's coins
         coins::burn(engine_base_coins); coins::burn(engine_quote_coins);
-    }
-
-    #[test]
-    /// Verify successful returns
-    fun test_range_check_order_fills() {
-        // Define function parameters
-        let (scale_factor, base_parcels, price) = (10, 11, 12);
-        // Run calculations
-        let (base_to_fill, quote_to_fill) = range_check_order_fills(
-            scale_factor, base_parcels, price);
-        // Assert returns
-        assert!(base_to_fill == scale_factor * base_parcels, 0);
-        assert!(quote_to_fill == price * base_parcels, 0);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 9)]
-    /// Verify failure for base parcels set to 0
-    fun test_range_check_order_fills_base_parcels_0() {
-        range_check_order_fills(123, 0, 456); // Attempt invalid call
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 10)]
-    /// Verify failure for base fill overflow
-    fun test_range_check_order_fills_overflow_base() {
-        // Attempt invalid call
-        range_check_order_fills(10, HI_64 / 9, 1);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 11)]
-    /// Verify failure for quote fill overflow
-    fun test_range_check_order_fills_overflow_quote() {
-        // Attempt invalid call
-        range_check_order_fills(1, HI_64, 2);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 8)]
-    /// Verify failure for price set to 0
-    fun test_range_check_order_fills_price_0() {
-        range_check_order_fills(123, 456, 0); // Attempt invalid call
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

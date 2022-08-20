@@ -145,6 +145,14 @@ module econia::user {
     const E_CUSTODIAN_OVERRIDE: u64 = 6;
     /// When a user does not a `MarketAccounts`
     const E_NO_MARKET_ACCOUNTS: u64 = 7;
+    /// When proposed order indicates a size of 0
+    const E_SIZE_0: u64 = 8;
+    /// When proposed order indicates a price of 0
+    const E_PRICE_0: u64 = 9;
+    /// When filling a proposed order would cause a base asset overflow
+    const E_OVERFLOW_BASE: u64 = 10;
+    /// When filling a proposed order would cause a quote asset overflow
+    const E_OVERFLOW_QUOTE: u64 = 11;
     /// When asset indicated as generic actually corresponds to a coin
     const E_NOT_GENERIC_ASSET: u64 = 12;
     /// When asset indicated as coin actually corresponds to a generic
@@ -154,6 +162,12 @@ module econia::user {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Flag for asks side
+    const ASK: bool = true;
+    /// Flag for asks side
+    const BID: bool = false;
+    /// `u64` bitmask with all bits set
+    const HI_64: u64 = 0xffffffffffffffff;
     /// Custodian ID flag for no delegated custodian
     const NO_CUSTODIAN: u64 = 0;
     /// When both base and quote assets are coins
@@ -553,6 +567,60 @@ module econia::user {
             // Destroy empty option resource
             option::destroy_none(optional_coins);
         }
+    }
+
+    /// Range check proposed order
+    ///
+    /// # Parameters
+    /// * `side:` `ASK` or `BID`
+    /// * `size`: Size of order in lots
+    /// * `price`: Price of order in ticks per lot
+    /// * `lot_size`: Base asset units per lot
+    /// * `tick_size`: Quote asset units per tick
+    /// * `asset_ceiling`: `MarketAccount.quote_ceiling` if `side` is
+    ///   `ASK`, and `MarketAccount.base_ceiling` if `side` is `BID`
+    ///
+    /// # Returns
+    /// * `u64`: Base asset units required to fill order
+    /// * `u64`: Quote asset units required to fill order
+    ///
+    /// # Abort conditions
+    /// * If `size` is 0
+    /// * If `price` is 0
+    /// * If filling the order results in a base overflow
+    /// * If filling the order results in a quote overflow
+    fun range_check_new_order(
+        side: bool,
+        size: u64,
+        price: u64,
+        lot_size: u64,
+        tick_size: u64,
+        asset_ceiling: u64
+    ): (
+        u64,
+        u64
+    ) {
+        // Assert order has actual price
+        assert!(size > 0, E_SIZE_0);
+        // Assert order has actual size
+        assert!(price > 0, E_PRICE_0);
+        // Calculate base units needed to fill order
+        let base_to_fill = (size as u128) * (lot_size as u128);
+        let quote_to_fill = // Calculate quote units to fill order
+            (size as u128) * (price as u128) * (tick_size as u128);
+        // If an ask, base to check is amount traded away and quote to
+        // check is quote ceiling amount plus quote received from fill
+        let (base_to_check, quote_to_check) = if (side == ASK)
+            (base_to_fill, (asset_ceiling as u128) + quote_to_fill) else
+            // If a bid, base to check is base ceiling amount plus base
+            // received from fill, quote to check is amount traded away
+            ((asset_ceiling as u128) + base_to_fill, quote_to_fill);
+        // Assert base does not overflow
+        assert!(!(base_to_check > (HI_64 as u128)), E_OVERFLOW_BASE);
+        // Assert quote does not overflow
+        assert!(!(quote_to_check > (HI_64 as u128)), E_OVERFLOW_QUOTE);
+        // Return casted, range-checked amounts
+        ((base_to_fill as u64), (quote_to_fill as u64))
     }
 
     /// Register `user` with `Collateral` map entry for given `CoinType`
@@ -1027,6 +1095,114 @@ module econia::user {
             generic_asset_transfer_custodian_id, 500, &custodian_capability);
         // Destroy custodian capability
         registry::destroy_custodian_capability_test(custodian_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for overflowing base on an ask
+    fun test_range_check_new_order_overflow_base_ask() {
+        // Define order parameters
+        let side = ASK;
+        let size = 2;
+        let price = 1;
+        let lot_size = HI_64 - 1;
+        let tick_size = 1;
+        let asset_ceiling = 1;
+        range_check_new_order( // Attempt invalid range check
+            side, size, price, lot_size, tick_size, asset_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for overflowing base on a bid
+    fun test_range_check_new_order_overflow_base_bid() {
+        // Define order parameters
+        let side = BID;
+        let size = 2;
+        let price = 1;
+        let lot_size = 1;
+        let tick_size = 1;
+        let asset_ceiling = HI_64 - 1;
+        range_check_new_order( // Attempt invalid range check
+            side, size, price, lot_size, tick_size, asset_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for overflowing quote on an ask
+    fun test_range_check_new_order_overflow_quote_ask() {
+        // Define order parameters
+        let side = ASK;
+        let size = 2;
+        let price = 1;
+        let lot_size = 1;
+        let tick_size = 1;
+        let asset_ceiling = HI_64 - 1;
+        range_check_new_order( // Attempt invalid range check
+            side, size, price, lot_size, tick_size, asset_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for overflowing quote on a bid
+    fun test_range_check_new_order_overflow_quote_bid() {
+        // Define order parameters
+        let side = BID;
+        let size = 2;
+        let price = 1;
+        let lot_size = 1;
+        let tick_size = HI_64 - 1;
+        let asset_ceiling = 1;
+        range_check_new_order( // Attempt invalid range check
+            side, size, price, lot_size, tick_size, asset_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for price 0
+    fun test_range_check_new_order_price_0() {
+        // Define order parameters
+        let side = ASK;
+        let size = 1;
+        let price = 0;
+        let lot_size = 2;
+        let tick_size = 3;
+        let asset_ceiling = 4;
+        range_check_new_order( // Attempt invalid range check
+            side, size, price, lot_size, tick_size, asset_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for size 0
+    fun test_range_check_new_order_size_0() {
+        // Define order parameters
+        let side = ASK;
+        let size = 0;
+        let price = 1;
+        let lot_size = 2;
+        let tick_size = 3;
+        let asset_ceiling = 4;
+        range_check_new_order( // Attempt invalid range check
+            side, size, price, lot_size, tick_size, asset_ceiling);
+    }
+
+    #[test]
+    /// Verify successful returns
+    fun range_check_new_order_success() {
+        // Define order parameters
+        let side = ASK;
+        let size = 2;
+        let price = 3;
+        let lot_size = 4;
+        let tick_size = 5;
+        let asset_ceiling = 6;
+        // Calculate base and quote needed to fill order
+        let (base_to_fill, quote_to_fill) = range_check_new_order(
+            side, size, price, lot_size, tick_size, asset_ceiling);
+        // Assert values
+        assert!(base_to_fill == size * lot_size, 0);
+        assert!(quote_to_fill == size * price * tick_size, 0);
     }
 
     #[test(user = @user)]

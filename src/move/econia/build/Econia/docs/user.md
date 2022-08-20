@@ -50,16 +50,20 @@ withdrawing a non-coin asset.
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
     -  [Assumes](#@Assumes_11)
     -  [Abort conditions](#@Abort_conditions_12)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_13)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
-    -  [Abort conditions](#@Abort_conditions_14)
--  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
+-  [Function `range_check_new_order`](#0xc0deb00c_user_range_check_new_order)
+    -  [Parameters](#@Parameters_13)
+    -  [Returns](#@Returns_14)
     -  [Abort conditions](#@Abort_conditions_15)
--  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
     -  [Abort conditions](#@Abort_conditions_16)
--  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
     -  [Abort conditions](#@Abort_conditions_17)
+-  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
+    -  [Abort conditions](#@Abort_conditions_18)
+-  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+    -  [Abort conditions](#@Abort_conditions_19)
+-  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Abort conditions](#@Abort_conditions_20)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -288,6 +292,36 @@ Market account map for all of a user's <code><a href="user.md#0xc0deb00c_user_Ma
 ## Constants
 
 
+<a name="0xc0deb00c_user_ASK"></a>
+
+Flag for asks side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_BID"></a>
+
+Flag for asks side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_NOT_IN_MARKET_PAIR"></a>
 
 When indicated asset is not in the market pair
@@ -384,6 +418,46 @@ When a user does not a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Ma
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 7;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_OVERFLOW_BASE"></a>
+
+When filling a proposed order would cause a base asset overflow
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>: u64 = 10;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_OVERFLOW_QUOTE"></a>
+
+When filling a proposed order would cause a quote asset overflow
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>: u64 = 11;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_PRICE_0"></a>
+
+When proposed order indicates a price of 0
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>: u64 = 9;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_SIZE_0"></a>
+
+When proposed order indicates a size of 0
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_SIZE_0">E_SIZE_0</a>: u64 = 8;
 </code></pre>
 
 
@@ -1059,6 +1133,92 @@ registered
 
 </details>
 
+<a name="0xc0deb00c_user_range_check_new_order"></a>
+
+## Function `range_check_new_order`
+
+Range check new order parameters
+
+
+<a name="@Parameters_13"></a>
+
+### Parameters
+
+* <code>side:</code> <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code>size</code>: Size of order in lots
+* <code>price</code>: Price of order in ticks per lot
+* <code>lot_size</code>: Base asset units per lot
+* <code>tick_size</code>: Quote asset units per tick
+* <code>asset_ceiling</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code> if <code>side</code> is
+<code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, and <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.base_ceiling</code> if <code>side</code> is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+
+
+<a name="@Returns_14"></a>
+
+### Returns
+
+* <code>u64</code>: Base asset units required to fill order
+* <code>u64</code>: Quote asset units required to fill order
+
+
+<a name="@Abort_conditions_15"></a>
+
+### Abort conditions
+
+* If <code>size</code> is 0
+* If <code>price</code> is 0
+* If filling the order results in a base overflow
+* If filling the order results in a quote overflow
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_range_check_new_order">range_check_new_order</a>(side: bool, size: u64, price: u64, lot_size: u64, tick_size: u64, asset_ceiling: u64): (u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_range_check_new_order">range_check_new_order</a>(
+    side: bool,
+    size: u64,
+    price: u64,
+    lot_size: u64,
+    tick_size: u64,
+    asset_ceiling: u64
+): (
+    u64,
+    u64
+) {
+    // Assert order <b>has</b> actual price
+    <b>assert</b>!(size &gt; 0, <a href="user.md#0xc0deb00c_user_E_SIZE_0">E_SIZE_0</a>);
+    // Assert order <b>has</b> actual size
+    <b>assert</b>!(price &gt; 0, <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>);
+    // Calculate base units needed <b>to</b> fill order
+    <b>let</b> base_to_fill = (size <b>as</b> u128) * (lot_size <b>as</b> u128);
+    <b>let</b> quote_to_fill = // Calculate quote units <b>to</b> fill order
+        (size <b>as</b> u128) * (price <b>as</b> u128) * (tick_size <b>as</b> u128);
+    // If an ask, base <b>to</b> check is amount traded away and quote <b>to</b>
+    // check is quote ceiling amount plus quote received from fill
+    <b>let</b> (base_to_check, quote_to_check) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
+        (base_to_fill, (asset_ceiling <b>as</b> u128) + quote_to_fill) <b>else</b>
+        // If a bid, base <b>to</b> check is base ceiling amount plus base
+        // received from fill, quote <b>to</b> check is amount traded away
+        ((asset_ceiling <b>as</b> u128) + base_to_fill, quote_to_fill);
+    // Assert base does not overflow
+    <b>assert</b>!(!(base_to_check &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>);
+    // Assert quote does not overflow
+    <b>assert</b>!(!(quote_to_check &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>);
+    // Return casted, range-checked amounts
+    ((base_to_fill <b>as</b> u64), (quote_to_fill <b>as</b> u64))
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_collateral_entry"></a>
 
 ## Function `register_collateral_entry`
@@ -1068,7 +1228,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_13"></a>
+<a name="@Abort_conditions_16"></a>
 
 ### Abort conditions
 
@@ -1123,7 +1283,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_14"></a>
+<a name="@Abort_conditions_17"></a>
 
 ### Abort conditions
 
@@ -1188,7 +1348,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a market account with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_15"></a>
+<a name="@Abort_conditions_18"></a>
 
 ### Abort conditions
 
@@ -1233,7 +1393,7 @@ Withdraw <code>amount</code> of <code>AssetType</code> from <code><a href="user.
 optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></code>
 
 
-<a name="@Abort_conditions_16"></a>
+<a name="@Abort_conditions_19"></a>
 
 ### Abort conditions
 
@@ -1309,7 +1469,7 @@ account having <code>market_id</code>, <code>general_custodian_id</code>, and
 <code>generic_asset_transfer_custodian_id</code>, returning coins
 
 
-<a name="@Abort_conditions_17"></a>
+<a name="@Abort_conditions_20"></a>
 
 ### Abort conditions
 

@@ -30,21 +30,6 @@ module econia::market {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Stores an `EconiaCapability` for cross-module authorization
-    struct EconiaCapabilityStore has key {
-        econia_capability: EconiaCapability
-    }
-
-    /// An order on the order book
-    struct Order has store {
-        /// Number of base parcels to be filled
-        base_parcels: u64,
-        /// Address of corresponding user
-        user: address,
-        /// For given user, custodian ID of corresponding market account
-        custodian_id: u64
-    }
-
     #[method(
         book_orders_sdk,
         book_price_levels_sdk,

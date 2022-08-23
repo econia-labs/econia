@@ -26,6 +26,7 @@ module econia::user {
     use aptos_std::type_info;
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
+    use econia::order_id;
     use econia::registry::{Self, CustodianCapability};
     use std::option;
     use std::signer::address_of;
@@ -42,8 +43,6 @@ module econia::user {
 
     #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
-    #[test_only]
-    use econia::order_id;
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -541,6 +540,69 @@ module econia::user {
             *out_asset_available_ref_mut - out_asset_fill;
     }
 
+    /// Remove an order from a user's market account
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `market_accont_info`: `MarketAccountInfo` for corresponding
+    ///   market account
+    /// * `lot_size`: Base asset units per lot
+    /// * `tick_size`: Quote asset units per tick
+    /// * `side`: `ASK` or `BID`
+    /// * `order_id`: Order ID for given order
+    ///
+    /// # Assumes
+    /// * That order has already been cancelled from the order book, and
+    ///   as such that user necessarily has an open order as specified:
+    ///   if an order has been cancelled from the book, then it had to
+    ///   have been placed on the book, which means that the
+    ///   corresponding user successfully placed it to begin with.
+    public(friend) fun remove_order_internal(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        lot_size: u64,
+        tick_size: u64,
+        side: bool,
+        order_id: u128,
+    ) acquires MarketAccounts {
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account_ref_mut = open_table::borrow_mut(
+            market_accounts_map_ref_mut, market_account_info);
+        // Get mutable reference to corresponding tree, mutable
+        // reference to corresponding assets available field, mutable
+        // reference to corresponding asset ceiling fields, available
+        // size multiplier, and ceiling size multipler, based on side
+        let (tree_ref_mut, asset_available_ref_mut, asset_ceiling_ref_mut,
+             size_multiplier_available, size_multiplier_ceiling) =
+            if (side == ASK) (
+                &mut market_account_ref_mut.asks,
+                &mut market_account_ref_mut.base_available,
+                &mut market_account_ref_mut.quote_ceiling,
+                lot_size,
+                order_id::price(order_id) * tick_size
+            ) else (
+                &mut market_account_ref_mut.bids,
+                &mut market_account_ref_mut.quote_available,
+                &mut market_account_ref_mut.base_ceiling,
+                order_id::price(order_id) * tick_size,
+                lot_size
+            );
+        // Pop order from corresponding tree, storing specified size
+        let size = critbit::pop(tree_ref_mut, order_id);
+        // Calculate amount of asset unlocked by order cancellation
+        let unlocked = size * size_multiplier_available;
+        // Update available asset field for amount unlocked
+        *asset_available_ref_mut = *asset_available_ref_mut + unlocked;
+        // Calculate amount that ceiling decrements due to cancellation
+        let ceiling_decrement_amount = size * size_multiplier_ceiling;
+        // Decrement ceiling amount accordingly
+        *asset_ceiling_ref_mut = *asset_ceiling_ref_mut -
+            ceiling_decrement_amount;
+    }
+
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1003,6 +1065,36 @@ module econia::user {
             &borrow_global<Collateral<AssetType>>(user).map;
         // Return if table contains entry for market account info
         open_table::contains(collateral_map_ref, market_account_info)
+    }
+
+    #[test_only]
+    /// Return `true` if `user` has an open order for given
+    /// `market_account_info`, `side`, and `order_id`, else `false`
+    ///
+    /// # Assumes
+    /// * `user` has a market account as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun has_order_test(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        side: bool,
+        order_id: u128
+    ): bool
+    acquires MarketAccounts {
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to market account
+        let market_account_ref = open_table::borrow(market_accounts_map_ref,
+            market_account_info);
+        // Get immutable reference to corresponding orders tree
+        let tree_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return if tree has given order
+        critbit::has_key(tree_ref, order_id)
     }
 
     #[test_only]
@@ -1602,8 +1694,8 @@ module econia::user {
         econia = @econia,
         user = @user
     )]
-    /// Verify adding an ask
-    fun test_register_order_internal_ask(
+    /// Verify adding an ask, then removing it
+    fun test_register_remove_order_internal_ask(
         econia: &signer,
         user: &signer
     ) acquires
@@ -1650,14 +1742,30 @@ module econia::user {
         // Assert order added to corresponding tree with correct size
         assert!(get_order_size_test(@user, market_account_info, side, order_id)
             == size, 0);
+        // Remove the order from the user's market account
+        remove_order_internal(@user, market_account_info, lot_size, tick_size,
+            side, order_id);
+        // Get asset counts
+        ( base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      == base_required, 0);
+        assert!(base_available  == base_required, 0);
+        assert!(base_ceiling    == base_required, 0);
+        assert!(quote_total     ==             0, 0);
+        assert!(quote_available ==             0, 0);
+        assert!(quote_ceiling   ==             0, 0);
+        assert!( // Assert user no longer has order in market account
+            !has_order_test(@user, market_account_info, side, order_id), 0);
     }
 
     #[test(
         econia = @econia,
         user = @user
     )]
-    /// Verify adding a bid
-    fun test_register_order_internal_bid(
+    /// Verify adding a bid, then removing it
+    fun test_register_remove_order_internal_bid(
         econia: &signer,
         user: &signer
     ) acquires
@@ -1704,7 +1812,24 @@ module econia::user {
         // Assert order added to corresponding tree with correct size
         assert!(get_order_size_test(@user, market_account_info, side, order_id)
             == size, 0);
+        // Remove the order from the user's market account
+        remove_order_internal(@user, market_account_info, lot_size, tick_size,
+            side, order_id);
+        // Get asset counts
+        ( base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      ==              0, 0);
+        assert!(base_available  ==              0, 0);
+        assert!(base_ceiling    ==              0, 0);
+        assert!(quote_total     == quote_required, 0);
+        assert!(quote_available == quote_required, 0);
+        assert!(quote_ceiling   == quote_required, 0);
+        assert!( // Assert user no longer has order in market account
+            !has_order_test(@user, market_account_info, side, order_id), 0);
     }
+
     #[test]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for no market accounts

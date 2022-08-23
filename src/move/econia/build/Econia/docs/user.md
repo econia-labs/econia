@@ -47,27 +47,30 @@ withdrawing a non-coin asset.
 -  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
 -  [Function `register_order_internal`](#0xc0deb00c_user_register_order_internal)
     -  [Parameters](#@Parameters_9)
--  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
-    -  [Returns](#@Returns_10)
+-  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
+    -  [Parameters](#@Parameters_10)
     -  [Assumes](#@Assumes_11)
-    -  [Abort conditions](#@Abort_conditions_12)
--  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
+-  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
+    -  [Returns](#@Returns_12)
     -  [Assumes](#@Assumes_13)
     -  [Abort conditions](#@Abort_conditions_14)
+-  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
+    -  [Assumes](#@Assumes_15)
+    -  [Abort conditions](#@Abort_conditions_16)
 -  [Function `range_check_new_order`](#0xc0deb00c_user_range_check_new_order)
-    -  [Parameters](#@Parameters_15)
-    -  [Returns](#@Returns_16)
-    -  [Abort conditions](#@Abort_conditions_17)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_18)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+    -  [Parameters](#@Parameters_17)
+    -  [Returns](#@Returns_18)
     -  [Abort conditions](#@Abort_conditions_19)
--  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
     -  [Abort conditions](#@Abort_conditions_20)
--  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
     -  [Abort conditions](#@Abort_conditions_21)
--  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+-  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
     -  [Abort conditions](#@Abort_conditions_22)
+-  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+    -  [Abort conditions](#@Abort_conditions_23)
+-  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Abort conditions](#@Abort_conditions_24)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -76,6 +79,7 @@ withdrawing a non-coin asset.
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
+<b>use</b> <a href="order_id.md#0xc0deb00c_order_id">0xc0deb00c::order_id</a>;
 <b>use</b> <a href="registry.md#0xc0deb00c_registry">0xc0deb00c::registry</a>;
 </code></pre>
 
@@ -296,26 +300,6 @@ Market account map for all of a user's <code><a href="user.md#0xc0deb00c_user_Ma
 ## Constants
 
 
-<a name="0xc0deb00c_user_ASK"></a>
-
-Flag for asks side
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_BID"></a>
-
-Flag for asks side
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_HI_64"></a>
 
 <code>u64</code> bitmask with all bits set
@@ -352,6 +336,26 @@ When both base and quote assets are coins
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_PURE_COIN_PAIR">PURE_COIN_PAIR</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_ASK"></a>
+
+Flag for asks side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_BID"></a>
+
+Flag for asks side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -1111,6 +1115,97 @@ Register a new order under a user's market account
 
 </details>
 
+<a name="0xc0deb00c_user_remove_order_internal"></a>
+
+## Function `remove_order_internal`
+
+Remove an order from a user's market account
+
+
+<a name="@Parameters_10"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>market_accont_info</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code> for corresponding
+market account
+* <code>lot_size</code>: Base asset units per lot
+* <code>tick_size</code>: Quote asset units per tick
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
+
+
+<a name="@Assumes_11"></a>
+
+### Assumes
+
+* That order has already been cancelled from the order book, and
+as such that user necessarily has an open order as specified:
+if an order has been cancelled from the book, then it had to
+have been placed on the book, which means that the
+corresponding user successfully placed it to begin with.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_remove_order_internal">remove_order_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, lot_size: u64, tick_size: u64, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_remove_order_internal">remove_order_internal</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    lot_size: u64,
+    tick_size: u64,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <b>let</b> market_account_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
+        market_accounts_map_ref_mut, market_account_info);
+    // Get mutable reference <b>to</b> corresponding tree, mutable
+    // reference <b>to</b> corresponding <a href="assets.md#0xc0deb00c_assets">assets</a> available field, mutable
+    // reference <b>to</b> corresponding asset ceiling fields, available
+    // size multiplier, and ceiling size multipler, based on side
+    <b>let</b> (tree_ref_mut, asset_available_ref_mut, asset_ceiling_ref_mut,
+         size_multiplier_available, size_multiplier_ceiling) =
+        <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (
+            &<b>mut</b> market_account_ref_mut.asks,
+            &<b>mut</b> market_account_ref_mut.base_available,
+            &<b>mut</b> market_account_ref_mut.quote_ceiling,
+            lot_size,
+            <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>) * tick_size
+        ) <b>else</b> (
+            &<b>mut</b> market_account_ref_mut.bids,
+            &<b>mut</b> market_account_ref_mut.quote_available,
+            &<b>mut</b> market_account_ref_mut.base_ceiling,
+            <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>) * tick_size,
+            lot_size
+        );
+    // Pop order from corresponding tree, storing specified size
+    <b>let</b> size = <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+    // Calculate amount of asset unlocked by order cancellation
+    <b>let</b> unlocked = size * size_multiplier_available;
+    // Update available asset field for amount unlocked
+    *asset_available_ref_mut = *asset_available_ref_mut + unlocked;
+    // Calculate amount that ceiling decrements due <b>to</b> cancellation
+    <b>let</b> ceiling_decrement_amount = size * size_multiplier_ceiling;
+    // Decrement ceiling amount accordingly
+    *asset_ceiling_ref_mut = *asset_ceiling_ref_mut -
+        ceiling_decrement_amount;
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_borrow_asset_counts_mut"></a>
 
 ## Function `borrow_asset_counts_mut`
@@ -1124,7 +1219,7 @@ holdings, and a mutable reference to the reference to the amount
 of <code>AssetType</code> available for withdraw.
 
 
-<a name="@Returns_10"></a>
+<a name="@Returns_12"></a>
 
 ### Returns
 
@@ -1139,14 +1234,14 @@ corresponding market account if <code>AssetType</code> is market base,
 else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Assumes_11"></a>
+<a name="@Assumes_13"></a>
 
 ### Assumes
 
 * <code>market_accounts_map</code> has an entry with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_12"></a>
+<a name="@Abort_conditions_14"></a>
 
 ### Abort conditions
 
@@ -1209,7 +1304,7 @@ Deposit <code>amount</code> of <code>AssetType</code> to <code><a href="user.md#
 which may include <code>optional_coins</code>
 
 
-<a name="@Assumes_13"></a>
+<a name="@Assumes_15"></a>
 
 ### Assumes
 
@@ -1219,7 +1314,7 @@ which may include <code>optional_coins</code>
 exists, then a corresponding collateral container does too
 
 
-<a name="@Abort_conditions_14"></a>
+<a name="@Abort_conditions_16"></a>
 
 ### Abort conditions
 
@@ -1291,7 +1386,7 @@ exists, then a corresponding collateral container does too
 Range check proposed order
 
 
-<a name="@Parameters_15"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1308,7 +1403,7 @@ Range check proposed order
 is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code> (available withdraw amount for asset traded away)
 
 
-<a name="@Returns_16"></a>
+<a name="@Returns_18"></a>
 
 ### Returns
 
@@ -1318,7 +1413,7 @@ order, else base asset units (inbound asset fill)
 order, else quote asset units (outbound asset fill)
 
 
-<a name="@Abort_conditions_17"></a>
+<a name="@Abort_conditions_19"></a>
 
 ### Abort conditions
 
@@ -1392,7 +1487,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_18"></a>
+<a name="@Abort_conditions_20"></a>
 
 ### Abort conditions
 
@@ -1447,7 +1542,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_19"></a>
+<a name="@Abort_conditions_21"></a>
 
 ### Abort conditions
 
@@ -1512,7 +1607,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a market account with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_20"></a>
+<a name="@Abort_conditions_22"></a>
 
 ### Abort conditions
 
@@ -1557,7 +1652,7 @@ Withdraw <code>amount</code> of <code>AssetType</code> from <code><a href="user.
 optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></code>
 
 
-<a name="@Abort_conditions_21"></a>
+<a name="@Abort_conditions_23"></a>
 
 ### Abort conditions
 
@@ -1633,7 +1728,7 @@ account having <code>market_id</code>, <code>general_custodian_id</code>, and
 <code>generic_asset_transfer_custodian_id</code>, returning coins
 
 
-<a name="@Abort_conditions_22"></a>
+<a name="@Abort_conditions_24"></a>
 
 ### Abort conditions
 

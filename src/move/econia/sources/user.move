@@ -159,6 +159,8 @@ module econia::user {
     const E_NOT_COIN_ASSET: u64 = 13;
     /// When depositing an asset would overflow total holdings ceiling
     const E_DEPOSIT_OVERFLOW_ASSET_CEILING: u64 = 14;
+    /// When number of ticks to fill order overflows a `u64`
+    const E_TICKS_OVERFLOW: u64 = 15;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -658,6 +660,7 @@ module econia::user {
     /// # Abort conditions
     /// * If `size` is 0
     /// * If `price` is 0
+    /// * If number of ticks required to fill order overflows a `u64`
     /// * If filling the order results in an overflow for incoming asset
     /// * If filling the order results in an overflow for outgoing asset
     /// * If not enough available outgoing asset to fill the order
@@ -679,8 +682,12 @@ module econia::user {
         assert!(price > 0, E_PRICE_0);
         // Calculate base units needed to fill order
         let base_fill = (size as u128) * (lot_size as u128);
-        let quote_fill = // Calculate quote units to fill order
-            (size as u128) * (price as u128) * (tick_size as u128);
+        // Calculate ticks to fill order
+        let ticks = (size as u128) * (price as u128);
+        // Assert ticks count can fit in a u64
+        assert!(!(ticks > (HI_64 as u128)), E_TICKS_OVERFLOW);
+        // Calculate quote units to fill order
+        let quote_fill = ticks * (tick_size as u128);
         // If an ask, user gets quote and trades away base, else flipped
         let (in_asset_fill, out_asset_fill) = if (side == ASK)
             (quote_fill, base_fill) else (base_fill, quote_fill);
@@ -1214,6 +1221,23 @@ module econia::user {
         let price = 1;
         let lot_size = 1;
         let tick_size = HI_64;
+        let in_asset_ceiling = 1;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for overflowing ticks required to fill trade
+    fun test_range_check_new_order_overflow_ticks() {
+        // Define order parameters
+        let side = BID;
+        let size = HI_64;
+        let price = 2;
+        let lot_size = 1;
+        let tick_size = 1;
         let in_asset_ceiling = 1;
         let out_asset_available = 1;
         // Attempt invalid range check

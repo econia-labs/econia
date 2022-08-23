@@ -474,6 +474,16 @@ When proposed order indicates a size of 0
 
 
 
+<a name="0xc0deb00c_user_E_TICKS_OVERFLOW"></a>
+
+When number of ticks to fill order overflows a <code>u64</code>
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_TICKS_OVERFLOW">E_TICKS_OVERFLOW</a>: u64 = 15;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN"></a>
 
 When indicated custodian does not have authority for operation
@@ -1268,6 +1278,7 @@ order, else quote asset units (outbound asset fill)
 
 * If <code>size</code> is 0
 * If <code>price</code> is 0
+* If number of ticks required to fill order overflows a <code>u64</code>
 * If filling the order results in an overflow for incoming asset
 * If filling the order results in an overflow for outgoing asset
 * If not enough available outgoing asset to fill the order
@@ -1300,8 +1311,12 @@ order, else quote asset units (outbound asset fill)
     <b>assert</b>!(price &gt; 0, <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>);
     // Calculate base units needed <b>to</b> fill order
     <b>let</b> base_fill = (size <b>as</b> u128) * (lot_size <b>as</b> u128);
-    <b>let</b> quote_fill = // Calculate quote units <b>to</b> fill order
-        (size <b>as</b> u128) * (price <b>as</b> u128) * (tick_size <b>as</b> u128);
+    // Calculate ticks <b>to</b> fill order
+    <b>let</b> ticks = (size <b>as</b> u128) * (price <b>as</b> u128);
+    // Assert ticks count can fit in a u64
+    <b>assert</b>!(!(ticks &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_TICKS_OVERFLOW">E_TICKS_OVERFLOW</a>);
+    // Calculate quote units <b>to</b> fill order
+    <b>let</b> quote_fill = ticks * (tick_size <b>as</b> u128);
     // If an ask, <a href="user.md#0xc0deb00c_user">user</a> gets quote and trades away base, <b>else</b> flipped
     <b>let</b> (in_asset_fill, out_asset_fill) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
         (quote_fill, base_fill) <b>else</b> (base_fill, quote_fill);

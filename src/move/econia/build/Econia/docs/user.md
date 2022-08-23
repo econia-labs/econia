@@ -31,6 +31,7 @@ withdrawing a non-coin asset.
 -  [Function `deposit_coins`](#0xc0deb00c_user_deposit_coins)
 -  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
     -  [Abort conditions](#@Abort_conditions_1)
+-  [Function `get_market_account_info`](#0xc0deb00c_user_get_market_account_info)
 -  [Function `get_market_account_info_fields`](#0xc0deb00c_user_get_market_account_info_fields)
     -  [Returns](#@Returns_2)
 -  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
@@ -51,6 +52,7 @@ withdrawing a non-coin asset.
 -  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
     -  [Parameters](#@Parameters_10)
     -  [Assumes](#@Assumes_11)
+-  [Function `withdraw_coins_as_option_internal`](#0xc0deb00c_user_withdraw_coins_as_option_internal)
 -  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
     -  [Returns](#@Returns_12)
     -  [Assumes](#@Assumes_13)
@@ -637,6 +639,41 @@ coin
         amount,
         <a href="_none">option::none</a>&lt;Coin&lt;AssetType&gt;&gt;()
     )
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_get_market_account_info"></a>
+
+## Function `get_market_account_info`
+
+Return a <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a></code> having <code>market_id</code>,
+<code>general_custodian_id</code>, and
+<code>generic_asset_transfer_custodian_id</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_info">get_market_account_info</a>(market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64): <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_info">get_market_account_info</a>(
+    market_id: u64,
+    general_custodian_id: u64,
+    generic_asset_transfer_custodian_id: u64
+): <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a> {
+    <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{
+        market_id,
+        general_custodian_id,
+        generic_asset_transfer_custodian_id
+    }
 }
 </code></pre>
 
@@ -1255,6 +1292,41 @@ corresponding user successfully placed it to begin with.
     // Decrement ceiling amount accordingly
     *asset_ceiling_ref_mut = *asset_ceiling_ref_mut -
         ceiling_decrement_amount;
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_withdraw_coins_as_option_internal"></a>
+
+## Function `withdraw_coins_as_option_internal`
+
+Withdraw <code>amount</code> of coins of <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
+account indicated by <code>market_account_info</code>, returning them
+wrapped in an option
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_as_option_internal">withdraw_coins_as_option_internal</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, amount: u64): <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;CoinType&gt;&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_as_option_internal">withdraw_coins_as_option_internal</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
+    amount: u64
+): <a href="_Option">option::Option</a>&lt;Coin&lt;CoinType&gt;&gt;
+<b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, amount, <b>true</b>)
 }
 </code></pre>
 

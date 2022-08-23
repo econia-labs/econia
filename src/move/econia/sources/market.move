@@ -1292,7 +1292,7 @@ module econia::market {
     /// # Restrictions
     /// * Restricted to private and test-only to prevent excessive
     ///   public queries and thus transaction collisions
-    fun has_order_test<B, Q, E>(
+    public fun has_order_test<B, Q, E>(
         host: address,
         side: bool,
         order_id: u128,
@@ -1311,7 +1311,7 @@ module econia::market {
     /// Initialize a `user` to trade on `<BC, QC, E1>`, hosted by
     /// `econia`, with market account having `custodian_id`, and fund
     /// with `base_coins` and `quote_coins`
-    fun init_funded_user(
+    public fun init_funded_user(
         econia: &signer,
         user: &signer,
         custodian_id: u64,
@@ -1338,7 +1338,7 @@ module econia::market {
     /// `<BC, QC, E1>` hosted by `econia`, then place limit orders
     /// for `user_1`, `user_2`, `user_3`, on `side`, returning the order
     /// ID for each respective position
-    fun init_market_test(
+    public fun init_market_test(
         side: bool,
         econia: &signer,
         user_0: &signer,
@@ -1422,7 +1422,7 @@ module econia::market {
     /// # Restrictions
     /// * Restricted to private and test-only to prevent excessive
     ///   public queries and thus transaction collisions
-    fun order_fields_test<B, Q, E>(
+    public fun order_fields_test<B, Q, E>(
         host: address,
         order_id: u128,
         side: bool
@@ -1445,7 +1445,7 @@ module econia::market {
     #[test_only]
     /// Initialize a test market hosted by Econia, then register `user`
     /// with corresponding market account having `custodian_id`.
-    fun register_market_with_user_test(
+    public fun register_market_with_user_test(
         econia: &signer,
         user: &signer,
         custodian_id: u64
@@ -1481,7 +1481,7 @@ module econia::market {
     /// # Restrictions
     /// * Restricted to private and test-only to prevent excessive
     ///   public queries and thus transaction collisions
-    fun spread_maker_test<B, Q, E>(
+    public fun spread_maker_test<B, Q, E>(
         host: address,
         side: bool
     ): u128

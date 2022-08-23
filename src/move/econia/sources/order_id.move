@@ -109,7 +109,7 @@ module econia::order_id {
         (order_id & (HI_64 as u128) as u64)
     }
 
-    /// Return counter a bid having `order_id`
+    /// Return counter of a bid having `order_id`
     public fun counter_bid(
         order_id: u128
     ): u64 {

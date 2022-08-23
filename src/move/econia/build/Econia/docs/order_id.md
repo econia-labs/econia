@@ -204,7 +204,7 @@ Return counter of an ask having <code><a href="order_id.md#0xc0deb00c_order_id">
 
 ## Function `counter_bid`
 
-Return counter a bid having <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
+Return counter of a bid having <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_counter_bid">counter_bid</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128): u64

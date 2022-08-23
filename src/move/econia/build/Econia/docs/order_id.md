@@ -12,9 +12,9 @@
 An order id is a 128-bit number, where the most-significant
 ("first") 64 bits indicate the price of the order, regardless of
 whether it is an ask or bid. The least-significant ("last") 64 bits
-are derived from a serial ID for the market on which the order is
+are derived from a counter for the market on which the order is
 placed, or more specifically, from the corresponding
-<code>econia::market::OrderBook.counter</code>. This encoded serial ID is
+<code>econia::market::OrderBook.counter</code>. This encoded counter value is
 unmodified in the case of an ask, but has each bit flipped in the
 case of a bid.
 
@@ -24,8 +24,8 @@ case of a bid.
 ### Example ask
 
 
-For a scaled integer price of <code>255</code> (<code>0b11111111</code>) and a serial ID
-of <code>170</code> (<code>0b10101010</code>), an ask would have an order ID with the
+For a scaled integer price of <code>255</code> (<code>0b11111111</code>) and a counter of
+<code>170</code> (<code>0b10101010</code>), an ask would have an order ID with the
 first 64 bits
 <code>0000000000000000000000000000000000000000000000000000000011111111</code>
 and the last 64 bits
@@ -38,7 +38,7 @@ corresponding to the base-10 integer <code>4703919738795935662250</code>
 ### Example bid
 
 
-For a scaled integer price of <code>15</code> (<code>0b1111</code>) and a serial ID <code>63</code>
+For a scaled integer price of <code>15</code> (<code>0b1111</code>) and a counter of <code>63</code>
 (<code>0b111111</code>), a bid would have an order ID with the first 64 bits
 <code>0000000000000000000000000000000000000000000000000000000000001111</code>
 and the last 64 bits
@@ -70,10 +70,10 @@ next-lowest price level, similarly filling against positions in
 chronological priority.
 
 Here, with the first 64 bits of the order ID corresponding to price
-and the last 64 bits corresponding to a serial ID, asks are
+and the last 64 bits corresponding to a counter, asks are
 automatically sorted, upon insertion to the tree, into price-time
 priority: first ascending from lowest price to highest price, then
-ascending from lowest serial ID to highest serial ID within a price
+ascending from lowest counter to highest counter within a price
 level. All the matching engine must do is iterate through inorder
 successor traversals until the market buy has been filled.
 
@@ -93,20 +93,20 @@ iterate through inorder predecessor traversals until the market buy
 has been filled.
 
 More specifically, by flipping the final 64 bits, order IDs from
-lower serial IDs numbers are sorted above those from higher serial
-IDs, within a given price level: at a scaled integer price of
-<code>1</code> (<code>0b1</code>), an order with serial ID <code>15</code> (<code>0b1111</code>) has an order
-ID with bits
+lower counter values are sorted above those from higher counter
+values, within a given price level: at a scaled integer price of
+<code>1</code> (<code>0b1</code>), an order with counter <code>15</code> (<code>0b1111</code>) has an order ID
+with bits
 <code>11111111111111111111111111111111111111111111111111111111111110000</code>,
 corresponding to the base-10 integer <code>36893488147419103216</code>, while
-an order at the same price with serial ID <code>63</code> (<code>0b111111</code>) has an
+an order at the same price with counter <code>63</code> (<code>0b111111</code>) has an
 order ID with bits
 <code>11111111111111111111111111111111111111111111111111111111111000000</code>,
 corresponding to the base-10 integer <code>36893488147419103168</code>. The
-order with the serial ID <code>63</code> thus has an order ID of lesser value
-than that of the order with serial ID <code>15</code>, and as such, during
-the matching engine's iterated inorder predecessor traversal, the
-order with serial ID <code>63</code> will be filled second.
+order with the counter <code>63</code> thus has an order ID of lesser value
+than that of the order with counter <code>15</code>, and as such, during the
+matching engine's iterated inorder predecessor traversal, the
+order with counter <code>63</code> will be filled second.
 
 
 -  [Bit structure](#@Bit_structure_0)
@@ -116,12 +116,12 @@ order with serial ID <code>63</code> will be filled second.
     -  [Market buy example](#@Market_buy_example_4)
     -  [Market sell example](#@Market_sell_example_5)
 -  [Constants](#@Constants_6)
+-  [Function `counter_ask`](#0xc0deb00c_order_id_counter_ask)
+-  [Function `counter_bid`](#0xc0deb00c_order_id_counter_bid)
 -  [Function `order_id`](#0xc0deb00c_order_id_order_id)
 -  [Function `order_id_ask`](#0xc0deb00c_order_id_order_id_ask)
 -  [Function `order_id_bid`](#0xc0deb00c_order_id_order_id_bid)
 -  [Function `price`](#0xc0deb00c_order_id_price)
--  [Function `serial_id_ask`](#0xc0deb00c_order_id_serial_id_ask)
--  [Function `serial_id_bid`](#0xc0deb00c_order_id_serial_id_bid)
 
 
 <pre><code></code></pre>
@@ -173,14 +173,68 @@ Positions to bitshift for operating on first 64 bits
 
 
 
+<a name="0xc0deb00c_order_id_counter_ask"></a>
+
+## Function `counter_ask`
+
+Return counter of an ask having <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_counter_ask">counter_ask</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_counter_ask">counter_ask</a>(
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128
+): u64 {
+    (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> & (<a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_order_id_counter_bid"></a>
+
+## Function `counter_bid`
+
+Return counter a bid having <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_counter_bid">counter_bid</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_counter_bid">counter_bid</a>(
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128
+): u64 {
+    (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> & (<a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64) ^ <a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a>
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_order_id_order_id"></a>
 
 ## Function `order_id`
 
-Return order ID for <code>price</code> and <code>serial_id</code> on given <code>side</code>
+Return order ID for <code>price</code> and <code>counter</code> on given <code>side</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a>(price: u64, serial_id: u64, side: bool): u128
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a>(price: u64, counter: u64, side: bool): u128
 </code></pre>
 
 
@@ -191,12 +245,12 @@ Return order ID for <code>price</code> and <code>serial_id</code> on given <code
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a>(
     price: u64,
-    serial_id: u64,
+    counter: u64,
     side: bool
 ): u128 {
     // Return corresponding order ID type based on side
-    <b>if</b> (side == <a href="order_id.md#0xc0deb00c_order_id_ASK">ASK</a>) <a href="order_id.md#0xc0deb00c_order_id_order_id_ask">order_id_ask</a>(price, serial_id) <b>else</b>
-        <a href="order_id.md#0xc0deb00c_order_id_order_id_bid">order_id_bid</a>(price, serial_id)
+    <b>if</b> (side == <a href="order_id.md#0xc0deb00c_order_id_ASK">ASK</a>) <a href="order_id.md#0xc0deb00c_order_id_order_id_ask">order_id_ask</a>(price, counter) <b>else</b>
+        <a href="order_id.md#0xc0deb00c_order_id_order_id_bid">order_id_bid</a>(price, counter)
 }
 </code></pre>
 
@@ -208,10 +262,10 @@ Return order ID for <code>price</code> and <code>serial_id</code> on given <code
 
 ## Function `order_id_ask`
 
-Return order ID for ask with <code>price</code> and <code>serial_id</code>
+Return order ID for ask with <code>price</code> and <code>counter</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_order_id_ask">order_id_ask</a>(price: u64, serial_id: u64): u128
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_order_id_ask">order_id_ask</a>(price: u64, counter: u64): u128
 </code></pre>
 
 
@@ -222,9 +276,9 @@ Return order ID for ask with <code>price</code> and <code>serial_id</code>
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_order_id_ask">order_id_ask</a>(
     price: u64,
-    serial_id: u64
+    counter: u64
 ): u128 {
-    (price <b>as</b> u128) &lt;&lt; <a href="order_id.md#0xc0deb00c_order_id_FIRST_64">FIRST_64</a> | (serial_id <b>as</b> u128)
+    (price <b>as</b> u128) &lt;&lt; <a href="order_id.md#0xc0deb00c_order_id_FIRST_64">FIRST_64</a> | (counter <b>as</b> u128)
 }
 </code></pre>
 
@@ -236,10 +290,10 @@ Return order ID for ask with <code>price</code> and <code>serial_id</code>
 
 ## Function `order_id_bid`
 
-Return order ID for bid with <code>price</code> and <code>serial_id</code>
+Return order ID for bid with <code>price</code> and <code>counter</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_order_id_bid">order_id_bid</a>(price: u64, serial_id: u64): u128
+<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_order_id_bid">order_id_bid</a>(price: u64, counter: u64): u128
 </code></pre>
 
 
@@ -250,9 +304,9 @@ Return order ID for bid with <code>price</code> and <code>serial_id</code>
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_order_id_bid">order_id_bid</a>(
     price: u64,
-    serial_id: u64
+    counter: u64
 ): u128 {
-    (price <b>as</b> u128) &lt;&lt; <a href="order_id.md#0xc0deb00c_order_id_FIRST_64">FIRST_64</a> | (serial_id ^ <a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a> <b>as</b> u128)
+    (price <b>as</b> u128) &lt;&lt; <a href="order_id.md#0xc0deb00c_order_id_FIRST_64">FIRST_64</a> | (counter ^ <a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a> <b>as</b> u128)
 }
 </code></pre>
 
@@ -277,60 +331,6 @@ Return price of given <code><a href="order_id.md#0xc0deb00c_order_id">order_id</
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_price">price</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128): u64 {(<a href="order_id.md#0xc0deb00c_order_id">order_id</a> &gt;&gt; <a href="order_id.md#0xc0deb00c_order_id_FIRST_64">FIRST_64</a> <b>as</b> u64)}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_order_id_serial_id_ask"></a>
-
-## Function `serial_id_ask`
-
-Return serial ID of an ask having <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_serial_id_ask">serial_id_ask</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_serial_id_ask">serial_id_ask</a>(
-    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128
-): u64 {
-    (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> & (<a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_order_id_serial_id_bid"></a>
-
-## Function `serial_id_bid`
-
-Return serial ID of a bid having <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_serial_id_bid">serial_id_bid</a>(<a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="order_id.md#0xc0deb00c_order_id_serial_id_bid">serial_id_bid</a>(
-    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128
-): u64 {
-    (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> & (<a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64) ^ <a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a>
-}
 </code></pre>
 
 

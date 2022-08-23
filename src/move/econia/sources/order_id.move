@@ -3,16 +3,16 @@
 /// An order id is a 128-bit number, where the most-significant
 /// ("first") 64 bits indicate the price of the order, regardless of
 /// whether it is an ask or bid. The least-significant ("last") 64 bits
-/// are derived from a serial ID for the market on which the order is
+/// are derived from a counter for the market on which the order is
 /// placed, or more specifically, from the corresponding
-/// `econia::market::OrderBook.counter`. This encoded serial ID is
+/// `econia::market::OrderBook.counter`. This encoded counter value is
 /// unmodified in the case of an ask, but has each bit flipped in the
 /// case of a bid.
 ///
 /// ## Example ask
 ///
-/// For a scaled integer price of `255` (`0b11111111`) and a serial ID
-/// of `170` (`0b10101010`), an ask would have an order ID with the
+/// For a scaled integer price of `255` (`0b11111111`) and a counter of
+/// `170` (`0b10101010`), an ask would have an order ID with the
 /// first 64 bits
 /// `0000000000000000000000000000000000000000000000000000000011111111`
 /// and the last 64 bits
@@ -21,7 +21,7 @@
 ///
 /// ## Example bid
 ///
-/// For a scaled integer price of `15` (`0b1111`) and a serial ID `63`
+/// For a scaled integer price of `15` (`0b1111`) and a counter of `63`
 /// (`0b111111`), a bid would have an order ID with the first 64 bits
 /// `0000000000000000000000000000000000000000000000000000000000001111`
 /// and the last 64 bits
@@ -45,10 +45,10 @@
 /// chronological priority.
 ///
 /// Here, with the first 64 bits of the order ID corresponding to price
-/// and the last 64 bits corresponding to a serial ID, asks are
+/// and the last 64 bits corresponding to a counter, asks are
 /// automatically sorted, upon insertion to the tree, into price-time
 /// priority: first ascending from lowest price to highest price, then
-/// ascending from lowest serial ID to highest serial ID within a price
+/// ascending from lowest counter to highest counter within a price
 /// level. All the matching engine must do is iterate through inorder
 /// successor traversals until the market buy has been filled.
 ///
@@ -64,20 +64,20 @@
 /// has been filled.
 ///
 /// More specifically, by flipping the final 64 bits, order IDs from
-/// lower serial IDs numbers are sorted above those from higher serial
-/// IDs, within a given price level: at a scaled integer price of
-/// `1` (`0b1`), an order with serial ID `15` (`0b1111`) has an order
-/// ID with bits
+/// lower counter values are sorted above those from higher counter
+/// values, within a given price level: at a scaled integer price of
+/// `1` (`0b1`), an order with counter `15` (`0b1111`) has an order ID
+/// with bits
 /// `11111111111111111111111111111111111111111111111111111111111110000`,
 /// corresponding to the base-10 integer `36893488147419103216`, while
-/// an order at the same price with serial ID `63` (`0b111111`) has an
+/// an order at the same price with counter `63` (`0b111111`) has an
 /// order ID with bits
 /// `11111111111111111111111111111111111111111111111111111111111000000`,
 /// corresponding to the base-10 integer `36893488147419103168`. The
-/// order with the serial ID `63` thus has an order ID of lesser value
-/// than that of the order with serial ID `15`, and as such, during
-/// the matching engine's iterated inorder predecessor traversal, the
-/// order with serial ID `63` will be filled second.
+/// order with the counter `63` thus has an order ID of lesser value
+/// than that of the order with counter `15`, and as such, during the
+/// matching engine's iterated inorder predecessor traversal, the
+/// order with counter `63` will be filled second.
 module econia::order_id {
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -102,53 +102,79 @@ module econia::order_id {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return order ID for `price` and `serial_id` on given `side`
-    public fun order_id(
-        price: u64,
-        serial_id: u64,
-        side: bool
-    ): u128 {
-        // Return corresponding order ID type based on side
-        if (side == ASK) order_id_ask(price, serial_id) else
-            order_id_bid(price, serial_id)
-    }
-
-    /// Return order ID for ask with `price` and `serial_id`
-    public fun order_id_ask(
-        price: u64,
-        serial_id: u64
-    ): u128 {
-        (price as u128) << FIRST_64 | (serial_id as u128)
-    }
-
-    /// Return order ID for bid with `price` and `serial_id`
-    public fun order_id_bid(
-        price: u64,
-        serial_id: u64
-    ): u128 {
-        (price as u128) << FIRST_64 | (serial_id ^ HI_64 as u128)
-    }
-
-    /// Return price of given `order_id`, (works for ask or bid)
-    public fun price(order_id: u128): u64 {(order_id >> FIRST_64 as u64)}
-
-    /// Return serial ID of an ask having `order_id`
-    public fun serial_id_ask(
+    /// Return counter of an ask having `order_id`
+    public fun counter_ask(
         order_id: u128
     ): u64 {
         (order_id & (HI_64 as u128) as u64)
     }
 
-    /// Return serial ID of a bid having `order_id`
-    public fun serial_id_bid(
+    /// Return counter a bid having `order_id`
+    public fun counter_bid(
         order_id: u128
     ): u64 {
         (order_id & (HI_64 as u128) as u64) ^ HI_64
     }
 
+    /// Return order ID for `price` and `counter` on given `side`
+    public fun order_id(
+        price: u64,
+        counter: u64,
+        side: bool
+    ): u128 {
+        // Return corresponding order ID type based on side
+        if (side == ASK) order_id_ask(price, counter) else
+            order_id_bid(price, counter)
+    }
+
+    /// Return order ID for ask with `price` and `counter`
+    public fun order_id_ask(
+        price: u64,
+        counter: u64
+    ): u128 {
+        (price as u128) << FIRST_64 | (counter as u128)
+    }
+
+    /// Return order ID for bid with `price` and `counter`
+    public fun order_id_bid(
+        price: u64,
+        counter: u64
+    ): u128 {
+        (price as u128) << FIRST_64 | (counter ^ HI_64 as u128)
+    }
+
+    /// Return price of given `order_id`, (works for ask or bid)
+    public fun price(order_id: u128): u64 {(order_id >> FIRST_64 as u64)}
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify expected return
+    fun test_counter_ask() {
+        // Define order id (60 characters on first two lines, 8 on last)
+        let order_id = u_long(
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"111100000000000000000000000000000000000000000000000000000000",
+            b"10101010"
+        );
+        // Assert expected return
+        assert!(counter_ask(order_id) == (u(b"10101010") as u64), 0);
+    }
+
+    #[test]
+    /// Verify expected return
+    fun test_counter_bid() {
+        // Define order id (60 characters on first two lines, 8 on last)
+        let order_id = u_long(
+            b"111111111111111111111111111111111111111111111111111111111111",
+            b"111011111111111111111111111111111111111111111111111111111111",
+            b"11110101"
+        );
+        // Assert expected return
+        assert!(counter_bid(order_id) == (u(b"1010") as u64), 0);
+    }
 
     #[test]
     /// Assert wrapped returns same as unwrapped returns
@@ -160,8 +186,8 @@ module econia::order_id {
     #[test]
     /// Verify expected return
     fun test_order_id_ask() {
-        // Define price and serial ID
-        let (price, serial_id) = ((u(b"1101") as u64), (u(b"1010") as u64));
+        // Define price and counter
+        let (price, counter) = ((u(b"1101") as u64), (u(b"1010") as u64));
         // Define expected return (60 characters on first two lines, 8
         // on last)
         let order_id = u_long(
@@ -170,14 +196,14 @@ module econia::order_id {
             b"00001010"
         );
         // Assert expected return
-        assert!(order_id_ask(price, serial_id) == order_id, 0);
+        assert!(order_id_ask(price, counter) == order_id, 0);
     }
 
     #[test]
     /// Verify expected return
     fun test_order_id_bid() {
-        // Define price and serial ID
-        let (price, serial_id) = ((u(b"1000") as u64), (u(b"1010") as u64));
+        // Define price and counter
+        let (price, counter) = ((u(b"1000") as u64), (u(b"1010") as u64));
         // Define expected return (60 characters on first two lines, 8
         // on last)
         let order_id = u_long(
@@ -186,7 +212,7 @@ module econia::order_id {
             b"11110101"
         );
         // Assert expected return
-        assert!(order_id_bid(price, serial_id) == order_id, 0);
+        assert!(order_id_bid(price, counter) == order_id, 0);
     }
 
     #[test]
@@ -200,32 +226,6 @@ module econia::order_id {
         );
         // Assert expected return
         assert!(price(order_id) == (u(b"10101010") as u64), 0);
-    }
-
-    #[test]
-    /// Verify expected return
-    fun test_serial_id_ask() {
-        // Define order id (60 characters on first two lines, 8 on last)
-        let order_id = u_long(
-            b"111111111111111111111111111111111111111111111111111111111111",
-            b"111100000000000000000000000000000000000000000000000000000000",
-            b"10101010"
-        );
-        // Assert expected return
-        assert!(serial_id_ask(order_id) == (u(b"10101010") as u64), 0);
-    }
-
-    #[test]
-    /// Verify expected return
-    fun test_serial_id_bid() {
-        // Define order id (60 characters on first two lines, 8 on last)
-        let order_id = u_long(
-            b"111111111111111111111111111111111111111111111111111111111111",
-            b"111011111111111111111111111111111111111111111111111111111111",
-            b"11110101"
-        );
-        // Assert expected return
-        assert!(serial_id_bid(order_id) == (u(b"1010") as u64), 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

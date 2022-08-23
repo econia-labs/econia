@@ -42,6 +42,8 @@ module econia::user {
 
     #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
+    #[test_only]
+    use econia::order_id;
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1616,9 +1618,10 @@ module econia::user {
         let general_custodian_id = NO_CUSTODIAN;
         // Declare order parameters
         let side = ASK;
-        let order_id = 123;
-        let size = 456;
-        let price = 789;
+        let counter = 123;
+        let price = 456;
+        let order_id = order_id::order_id(price, counter, side);
+        let size = 789;
         let base_required = lot_size * size;
         let quote_received = size * price * tick_size;
         // Register user with a market account for given market
@@ -1669,9 +1672,10 @@ module econia::user {
         let general_custodian_id = NO_CUSTODIAN;
         // Declare order parameters
         let side = BID;
-        let order_id = 123;
-        let size = 456;
-        let price = 789;
+        let counter = 123;
+        let price = 456;
+        let order_id = order_id::order_id(price, counter, side);
+        let size = 789;
         let base_received = lot_size * size;
         let quote_required = size * price * tick_size;
         // Register user with a market account for given market

@@ -34,55 +34,53 @@ withdrawing a non-coin asset.
 -  [Function `get_market_account_info_fields`](#0xc0deb00c_user_get_market_account_info_fields)
     -  [Returns](#@Returns_2)
 -  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
-    -  [Abort conditions](#@Abort_conditions_3)
 -  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
-    -  [Abort conditions](#@Abort_conditions_4)
 -  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
-    -  [Abort conditions](#@Abort_conditions_5)
+    -  [Abort conditions](#@Abort_conditions_3)
 -  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
-    -  [Type parameters](#@Type_parameters_6)
-    -  [Parameters](#@Parameters_7)
-    -  [Abort conditions](#@Abort_conditions_8)
+    -  [Type parameters](#@Type_parameters_4)
+    -  [Parameters](#@Parameters_5)
+    -  [Abort conditions](#@Abort_conditions_6)
 -  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
 -  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
-    -  [Type parameters](#@Type_parameters_9)
-    -  [Parameters](#@Parameters_10)
+    -  [Type parameters](#@Type_parameters_7)
+    -  [Parameters](#@Parameters_8)
 -  [Function `register_order_internal`](#0xc0deb00c_user_register_order_internal)
-    -  [Parameters](#@Parameters_11)
+    -  [Parameters](#@Parameters_9)
 -  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
-    -  [Parameters](#@Parameters_12)
-    -  [Assumes](#@Assumes_13)
+    -  [Parameters](#@Parameters_10)
+    -  [Assumes](#@Assumes_11)
 -  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
-    -  [Returns](#@Returns_14)
+    -  [Returns](#@Returns_12)
+    -  [Assumes](#@Assumes_13)
+    -  [Abort conditions](#@Abort_conditions_14)
+-  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
     -  [Assumes](#@Assumes_15)
     -  [Abort conditions](#@Abort_conditions_16)
--  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Assumes](#@Assumes_17)
-    -  [Abort conditions](#@Abort_conditions_18)
 -  [Function `fill_order_route_collateral`](#0xc0deb00c_user_fill_order_route_collateral)
-    -  [Type parameters](#@Type_parameters_19)
-    -  [Parameters](#@Parameters_20)
+    -  [Type parameters](#@Type_parameters_17)
+    -  [Parameters](#@Parameters_18)
 -  [Function `fill_order_route_collateral_single`](#0xc0deb00c_user_fill_order_route_collateral_single)
-    -  [Assumes](#@Assumes_21)
-    -  [Parameters](#@Parameters_22)
+    -  [Assumes](#@Assumes_19)
+    -  [Parameters](#@Parameters_20)
 -  [Function `fill_order_update_market_account`](#0xc0deb00c_user_fill_order_update_market_account)
-    -  [Parameters](#@Parameters_23)
-    -  [Assumes](#@Assumes_24)
+    -  [Parameters](#@Parameters_21)
+    -  [Assumes](#@Assumes_22)
 -  [Function `range_check_new_order`](#0xc0deb00c_user_range_check_new_order)
-    -  [Parameters](#@Parameters_25)
-    -  [Returns](#@Returns_26)
-    -  [Abort conditions](#@Abort_conditions_27)
+    -  [Parameters](#@Parameters_23)
+    -  [Returns](#@Returns_24)
+    -  [Abort conditions](#@Abort_conditions_25)
 -  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_28)
+    -  [Abort conditions](#@Abort_conditions_26)
 -  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
-    -  [Abort conditions](#@Abort_conditions_29)
+    -  [Abort conditions](#@Abort_conditions_27)
 -  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
-    -  [Abort conditions](#@Abort_conditions_30)
+    -  [Abort conditions](#@Abort_conditions_28)
 -  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
-    -  [Abort conditions](#@Abort_conditions_31)
+    -  [Abort conditions](#@Abort_conditions_29)
 -  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
-    -  [Abort conditions](#@Abort_conditions_32)
+    -  [Abort conditions](#@Abort_conditions_30)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -372,22 +370,12 @@ Flag for asks side
 
 
 
-<a name="0xc0deb00c_user_E_CUSTODIAN_OVERRIDE"></a>
-
-When user attempts invalid custodian override
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>: u64 = 6;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING"></a>
 
 When depositing an asset would overflow total holdings ceiling
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>: u64 = 14;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>: u64 = 5;
 </code></pre>
 
 
@@ -497,17 +485,7 @@ When proposed order indicates a size of 0
 When number of ticks to fill order overflows a <code>u64</code>
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_TICKS_OVERFLOW">E_TICKS_OVERFLOW</a>: u64 = 15;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN"></a>
-
-When indicated custodian does not have authority for operation
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>: u64 = 5;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_TICKS_OVERFLOW">E_TICKS_OVERFLOW</a>: u64 = 6;
 </code></pre>
 
 
@@ -613,9 +591,8 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">depos
 ## Function `deposit_generic_asset`
 
 Deposit <code>amount</code> of non-coin assets of <code>AssetType</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s
-market account having <code>market_id</code>, <code>general_custodian_id</code>, and
-<code>generic_asset_transfer_custodian_id</code>, under authority of
-custodian indicated by
+market account having <code>market_id</code> and <code>general_custodian_id</code>,
+under authority of custodian indicated by
 <code>generic_asset_transfer_custodian_capability_ref</code>
 
 See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code>
@@ -625,14 +602,11 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">depos
 
 ### Abort conditions
 
-* If generic asset transfer custodian ID for market does not
-match that indicated by
-<code>generic_asset_transfer_custodian_capbility_ref</code>
 * If <code>AssetType</code> corresponds to the <code>CoinType</code> of an initialized
 coin
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, amount: u64, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
 </code></pre>
 
 
@@ -645,20 +619,17 @@ coin
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_id: u64,
     general_custodian_id: u64,
-    generic_asset_transfer_custodian_id: u64,
     amount: u64,
     generic_asset_transfer_custodian_capability_ref: &CustodianCapability
 ) <b>acquires</b>
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    // Assert indicated generic asset transfer custodian ID matches
-    // that of capability
-    <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
-        generic_asset_transfer_custodian_capability_ref) ==
-        generic_asset_transfer_custodian_id, <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
     // Assert asset type does not correspond <b>to</b> an initialized <a href="">coin</a>
     <b>assert</b>!(!<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;AssetType&gt;(), <a href="user.md#0xc0deb00c_user_E_NOT_GENERIC_ASSET">E_NOT_GENERIC_ASSET</a>);
+    // Get generic asset transfer custodian ID
+    <b>let</b> generic_asset_transfer_custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
+        generic_asset_transfer_custodian_capability_ref);
     <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;( // Deposit generic asset
         <a href="user.md#0xc0deb00c_user">user</a>,
         <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id, general_custodian_id,
@@ -722,22 +693,14 @@ Return <code>market_account_info</code> fields
 ## Function `withdraw_coins_custodian`
 
 Withdraw <code>amount</code> of coins of <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
-account having <code>market_id</code>, <code>general_custodian_id</code>, and
+account having <code>market_id</code>, and
 <code>generic_asset_transfer_custodian_id</code>, under authority of
 custodian indicated by <code>general_custodian_capability_ref</code>
 
 See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>()</code>
 
 
-<a name="@Abort_conditions_3"></a>
-
-### Abort conditions
-
-* If <code>CoinType</code> does not correspond to a coin
-* If <code>general_custodian_id</code> is not <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_custodian">withdraw_coins_custodian</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64, general_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_custodian">withdraw_coins_custodian</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64, general_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 </code></pre>
 
 
@@ -749,7 +712,6 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_custodian">withdraw_coins_custodian</a>&lt;CoinType&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_id: u64,
-    general_custodian_id: u64,
     generic_asset_transfer_custodian_id: u64,
     amount: u64,
     general_custodian_capability_ref: &CustodianCapability
@@ -758,17 +720,13 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    // Assert indicated general custodian ID matches that of
-    // capability
-    <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref) ==
-        general_custodian_id, <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
     <a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>&lt;CoinType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>,
         market_id,
-        general_custodian_id,
+        <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref),
         generic_asset_transfer_custodian_id,
         amount
-    ) // Withdraw <a href="">coins</a> from <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> and <b>return</b>
+    )
 }
 </code></pre>
 
@@ -781,21 +739,14 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
 ## Function `withdraw_coins_user`
 
 Withdraw <code>amount</code> of coins of <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
-account having <code>market_id</code>, <code>general_custodian_id</code>, and
-<code>generic_asset_transfer_custodian_id</code>, returning coins
+account having <code>market_id</code> and
+<code>generic_asset_transfer_custodian_id</code> but no general custodian,
+returning coins
 
 See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>()</code>
 
 
-<a name="@Abort_conditions_4"></a>
-
-### Abort conditions
-
-* If <code>CoinType</code> does not correspond to a coin
-* If <code>general_custodian_id</code> is not <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 </code></pre>
 
 
@@ -807,7 +758,6 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_id: u64,
-    general_custodian_id: u64,
     generic_asset_transfer_custodian_id: u64,
     amount: u64,
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
@@ -815,15 +765,13 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    // Assert custodian ID indicates no custodian
-    <b>assert</b>!(general_custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>, <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
     <a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>&lt;CoinType&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>),
         market_id,
-        general_custodian_id,
+        <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         generic_asset_transfer_custodian_id,
         amount
-    ) // Withdraw <a href="">coins</a> from <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> and <b>return</b>
+    )
 }
 </code></pre>
 
@@ -836,27 +784,22 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
 ## Function `withdraw_generic_asset`
 
 Withdraw <code>amount</code> of non-coin assets of <code>AssetType</code> from
-<code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account having <code>market_id</code>,
-<code>general_custodian_id</code>, and
-<code>generic_asset_transfer_custodian_id</code>, under authority of
-custodian indicated by
-<code>generic_asset_transfer_custodian_capability_ref</code>
+<code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account having <code>market_id</code> and
+<code>general_custodian_id</code>, under authority of custodian indicated
+by <code>generic_asset_transfer_custodian_capability_ref</code>
 
 See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code>
 
 
-<a name="@Abort_conditions_5"></a>
+<a name="@Abort_conditions_3"></a>
 
 ### Abort conditions
 
 * If <code>AssetType</code> corresponds to the <code>CoinType</code> of an initialized
 coin
-* If generic asset transfer custodian ID for market does not
-match that indicated by
-<code>generic_asset_transfer_custodian_capbility_ref</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_generic_asset">withdraw_generic_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_generic_asset">withdraw_generic_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, amount: u64, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
 </code></pre>
 
 
@@ -869,7 +812,6 @@ match that indicated by
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_id: u64,
     general_custodian_id: u64,
-    generic_asset_transfer_custodian_id: u64,
     amount: u64,
     generic_asset_transfer_custodian_capability_ref: &CustodianCapability
 ) <b>acquires</b>
@@ -878,11 +820,9 @@ match that indicated by
 {
     // Assert asset type does not correspond <b>to</b> an initialized <a href="">coin</a>
     <b>assert</b>!(!<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;AssetType&gt;(), <a href="user.md#0xc0deb00c_user_E_NOT_GENERIC_ASSET">E_NOT_GENERIC_ASSET</a>);
-    // Assert indicated generic asset transfer custodian ID matches
-    // that of capability
-    <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
-        generic_asset_transfer_custodian_capability_ref) ==
-        generic_asset_transfer_custodian_id, <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
+    // Get generic asset transfer custodian ID
+    <b>let</b> generic_asset_transfer_custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
+        generic_asset_transfer_custodian_capability_ref);
     // Pack <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
     <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>{market_id,
         general_custodian_id, generic_asset_transfer_custodian_id};
@@ -948,7 +888,7 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_coins">depos
 Register user with a market account
 
 
-<a name="@Type_parameters_6"></a>
+<a name="@Type_parameters_4"></a>
 
 ### Type parameters
 
@@ -956,7 +896,7 @@ Register user with a market account
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -968,7 +908,7 @@ required for general account authorization, set to
 market account
 
 
-<a name="@Abort_conditions_8"></a>
+<a name="@Abort_conditions_6"></a>
 
 ### Abort conditions
 
@@ -1028,13 +968,13 @@ market account
 
 Transfer <code>amount</code> of coins of <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s
 <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> to their <code>aptos_framework::coin::CoinStore</code> for
-market account having <code>market_id</code>, <code>general_custodian_id</code>, and
-<code>generic_asset_transfer_custodian_id</code>.
+market account having <code>market_id</code> and
+<code>generic_asset_transfer_custodian_id</code> but no general custodian
 
 See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_to_coinstore">withdraw_to_coinstore</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, general_custodian_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_to_coinstore">withdraw_to_coinstore</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, generic_asset_transfer_custodian_id: u64, amount: u64)
 </code></pre>
 
 
@@ -1046,7 +986,6 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
 <pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_to_coinstore">withdraw_to_coinstore</a>&lt;CoinType&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_id: u64,
-    general_custodian_id: u64,
     generic_asset_transfer_custodian_id: u64,
     amount: u64
 ) <b>acquires</b>
@@ -1055,7 +994,7 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
 {
     // Withdraw <a href="">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <b>let</b> <a href="">coins</a> = <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_id,
-        general_custodian_id, generic_asset_transfer_custodian_id, amount);
+        generic_asset_transfer_custodian_id, amount);
     // Deposit <a href="">coins</a> <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store
     <a href="_deposit">coin::deposit</a>&lt;CoinType&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), <a href="">coins</a>);
 }
@@ -1078,7 +1017,7 @@ given user has the indicated open order and sufficient assets
 to fill it. Hence no error checking.
 
 
-<a name="@Type_parameters_9"></a>
+<a name="@Type_parameters_7"></a>
 
 ### Type parameters
 
@@ -1086,7 +1025,7 @@ to fill it. Hence no error checking.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_8"></a>
 
 ### Parameters
 
@@ -1157,7 +1096,7 @@ units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else fr
 Register a new order under a user's market account
 
 
-<a name="@Parameters_11"></a>
+<a name="@Parameters_9"></a>
 
 ### Parameters
 
@@ -1239,7 +1178,7 @@ Register a new order under a user's market account
 Remove an order from a user's market account
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -1252,7 +1191,7 @@ market account
 * <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
 
 
-<a name="@Assumes_13"></a>
+<a name="@Assumes_11"></a>
 
 ### Assumes
 
@@ -1336,7 +1275,7 @@ holdings, and a mutable reference to the reference to the amount
 of <code>AssetType</code> available for withdraw.
 
 
-<a name="@Returns_14"></a>
+<a name="@Returns_12"></a>
 
 ### Returns
 
@@ -1351,14 +1290,14 @@ corresponding market account if <code>AssetType</code> is market base,
 else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Assumes_15"></a>
+<a name="@Assumes_13"></a>
 
 ### Assumes
 
 * <code>market_accounts_map</code> has an entry with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_16"></a>
+<a name="@Abort_conditions_14"></a>
 
 ### Abort conditions
 
@@ -1421,7 +1360,7 @@ Deposit <code>amount</code> of <code>AssetType</code> to <code><a href="user.md#
 which may include <code>optional_coins</code>
 
 
-<a name="@Assumes_17"></a>
+<a name="@Assumes_15"></a>
 
 ### Assumes
 
@@ -1431,7 +1370,7 @@ which may include <code>optional_coins</code>
 exists, then a corresponding collateral container does too
 
 
-<a name="@Abort_conditions_18"></a>
+<a name="@Abort_conditions_16"></a>
 
 ### Abort conditions
 
@@ -1505,7 +1444,7 @@ Route collateral when filling an order, for coin assets.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
-<a name="@Type_parameters_19"></a>
+<a name="@Type_parameters_17"></a>
 
 ### Type parameters
 
@@ -1513,7 +1452,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">f
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_18"></a>
 
 ### Parameters
 
@@ -1588,7 +1527,7 @@ from or to, respectively, coins at <code>external_coins_ref_mut</code>.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>()</code>.
 
 
-<a name="@Assumes_21"></a>
+<a name="@Assumes_19"></a>
 
 ### Assumes
 
@@ -1598,7 +1537,7 @@ only be called after a user has successfully placed an order
 in the first place.
 
 
-<a name="@Parameters_22"></a>
+<a name="@Parameters_20"></a>
 
 ### Parameters
 
@@ -1656,7 +1595,7 @@ Update a user's market account when filling an order.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
-<a name="@Parameters_23"></a>
+<a name="@Parameters_21"></a>
 
 ### Parameters
 
@@ -1672,7 +1611,7 @@ units routed from <code><a href="user.md#0xc0deb00c_user">user</a></code>, else 
 units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
 
 
-<a name="@Assumes_24"></a>
+<a name="@Assumes_22"></a>
 
 ### Assumes
 
@@ -1759,7 +1698,7 @@ place.
 Range check proposed order
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_23"></a>
 
 ### Parameters
 
@@ -1776,7 +1715,7 @@ Range check proposed order
 is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code> (available withdraw amount for asset traded away)
 
 
-<a name="@Returns_26"></a>
+<a name="@Returns_24"></a>
 
 ### Returns
 
@@ -1786,7 +1725,7 @@ order, else base asset units (inbound asset fill)
 order, else quote asset units (outbound asset fill)
 
 
-<a name="@Abort_conditions_27"></a>
+<a name="@Abort_conditions_25"></a>
 
 ### Abort conditions
 
@@ -1860,7 +1799,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_28"></a>
+<a name="@Abort_conditions_26"></a>
 
 ### Abort conditions
 
@@ -1915,7 +1854,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_29"></a>
+<a name="@Abort_conditions_27"></a>
 
 ### Abort conditions
 
@@ -1980,7 +1919,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a market account with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_30"></a>
+<a name="@Abort_conditions_28"></a>
 
 ### Abort conditions
 
@@ -2025,7 +1964,7 @@ Withdraw <code>amount</code> of <code>AssetType</code> from <code><a href="user.
 optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></code>
 
 
-<a name="@Abort_conditions_31"></a>
+<a name="@Abort_conditions_29"></a>
 
 ### Abort conditions
 
@@ -2101,7 +2040,7 @@ account having <code>market_id</code>, <code>general_custodian_id</code>, and
 <code>generic_asset_transfer_custodian_id</code>, returning coins
 
 
-<a name="@Abort_conditions_32"></a>
+<a name="@Abort_conditions_30"></a>
 
 ### Abort conditions
 

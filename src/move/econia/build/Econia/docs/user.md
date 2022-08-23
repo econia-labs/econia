@@ -31,41 +31,43 @@ withdrawing a non-coin asset.
 -  [Function `deposit_coins`](#0xc0deb00c_user_deposit_coins)
 -  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
     -  [Abort conditions](#@Abort_conditions_1)
+-  [Function `get_market_account_info_fields`](#0xc0deb00c_user_get_market_account_info_fields)
+    -  [Returns](#@Returns_2)
 -  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
-    -  [Abort conditions](#@Abort_conditions_2)
--  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
     -  [Abort conditions](#@Abort_conditions_3)
--  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
+-  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
     -  [Abort conditions](#@Abort_conditions_4)
+-  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
+    -  [Abort conditions](#@Abort_conditions_5)
 -  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
-    -  [Type parameters](#@Type_parameters_5)
-    -  [Parameters](#@Parameters_6)
-    -  [Abort conditions](#@Abort_conditions_7)
+    -  [Type parameters](#@Type_parameters_6)
+    -  [Parameters](#@Parameters_7)
+    -  [Abort conditions](#@Abort_conditions_8)
 -  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
 -  [Function `register_order_internal`](#0xc0deb00c_user_register_order_internal)
-    -  [Parameters](#@Parameters_8)
+    -  [Parameters](#@Parameters_9)
 -  [Function `borrow_asset_counts_mut`](#0xc0deb00c_user_borrow_asset_counts_mut)
-    -  [Returns](#@Returns_9)
-    -  [Assumes](#@Assumes_10)
-    -  [Abort conditions](#@Abort_conditions_11)
+    -  [Returns](#@Returns_10)
+    -  [Assumes](#@Assumes_11)
+    -  [Abort conditions](#@Abort_conditions_12)
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Assumes](#@Assumes_12)
-    -  [Abort conditions](#@Abort_conditions_13)
+    -  [Assumes](#@Assumes_13)
+    -  [Abort conditions](#@Abort_conditions_14)
 -  [Function `range_check_new_order`](#0xc0deb00c_user_range_check_new_order)
-    -  [Parameters](#@Parameters_14)
-    -  [Returns](#@Returns_15)
-    -  [Abort conditions](#@Abort_conditions_16)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
+    -  [Parameters](#@Parameters_15)
+    -  [Returns](#@Returns_16)
     -  [Abort conditions](#@Abort_conditions_17)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
     -  [Abort conditions](#@Abort_conditions_18)
--  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
     -  [Abort conditions](#@Abort_conditions_19)
--  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+-  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
     -  [Abort conditions](#@Abort_conditions_20)
--  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+-  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
     -  [Abort conditions](#@Abort_conditions_21)
+-  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Abort conditions](#@Abort_conditions_22)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -635,6 +637,50 @@ coin
 
 </details>
 
+<a name="0xc0deb00c_user_get_market_account_info_fields"></a>
+
+## Function `get_market_account_info_fields`
+
+Return <code>market_account_info</code> fields
+
+
+<a name="@Returns_2"></a>
+
+### Returns
+
+* <code>u64</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>.market_id</code>
+* <code>u64</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>.general_custodian_id</code>
+* <code>u64</code>: <code><a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>.generic_asset_transfer_custodian_id</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_info_fields">get_market_account_info_fields</a>(market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>): (u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_market_account_info_fields">get_market_account_info_fields</a>(
+    market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>
+): (
+    u64,
+    u64,
+    u64
+) {
+    (
+        market_account_info.market_id,
+        market_account_info.general_custodian_id,
+        market_account_info.generic_asset_transfer_custodian_id
+    )
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_withdraw_coins_custodian"></a>
 
 ## Function `withdraw_coins_custodian`
@@ -647,7 +693,7 @@ custodian indicated by <code>general_custodian_capability_ref</code>
 See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>()</code>
 
 
-<a name="@Abort_conditions_2"></a>
+<a name="@Abort_conditions_3"></a>
 
 ### Abort conditions
 
@@ -705,7 +751,7 @@ account having <code>market_id</code>, <code>general_custodian_id</code>, and
 See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>()</code>
 
 
-<a name="@Abort_conditions_3"></a>
+<a name="@Abort_conditions_4"></a>
 
 ### Abort conditions
 
@@ -763,7 +809,7 @@ custodian indicated by
 See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code>
 
 
-<a name="@Abort_conditions_4"></a>
+<a name="@Abort_conditions_5"></a>
 
 ### Abort conditions
 
@@ -866,7 +912,7 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_coins">depos
 Register user with a market account
 
 
-<a name="@Type_parameters_5"></a>
+<a name="@Type_parameters_6"></a>
 
 ### Type parameters
 
@@ -874,7 +920,7 @@ Register user with a market account
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_6"></a>
+<a name="@Parameters_7"></a>
 
 ### Parameters
 
@@ -886,7 +932,7 @@ required for general account authorization, set to
 market account
 
 
-<a name="@Abort_conditions_7"></a>
+<a name="@Abort_conditions_8"></a>
 
 ### Abort conditions
 
@@ -990,7 +1036,7 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
 Register a new order under a user's market account
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_9"></a>
 
 ### Parameters
 
@@ -1078,7 +1124,7 @@ holdings, and a mutable reference to the reference to the amount
 of <code>AssetType</code> available for withdraw.
 
 
-<a name="@Returns_9"></a>
+<a name="@Returns_10"></a>
 
 ### Returns
 
@@ -1093,14 +1139,14 @@ corresponding market account if <code>AssetType</code> is market base,
 else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Assumes_10"></a>
+<a name="@Assumes_11"></a>
 
 ### Assumes
 
 * <code>market_accounts_map</code> has an entry with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_11"></a>
+<a name="@Abort_conditions_12"></a>
 
 ### Abort conditions
 
@@ -1163,7 +1209,7 @@ Deposit <code>amount</code> of <code>AssetType</code> to <code><a href="user.md#
 which may include <code>optional_coins</code>
 
 
-<a name="@Assumes_12"></a>
+<a name="@Assumes_13"></a>
 
 ### Assumes
 
@@ -1173,7 +1219,7 @@ which may include <code>optional_coins</code>
 exists, then a corresponding collateral container does too
 
 
-<a name="@Abort_conditions_13"></a>
+<a name="@Abort_conditions_14"></a>
 
 ### Abort conditions
 
@@ -1202,7 +1248,7 @@ exists, then a corresponding collateral container does too
     <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info);
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map_ref_mut =
-            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
     // Borrow mutable reference <b>to</b> total asset holdings, mutable
     // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal,
     // and mutable reference <b>to</b> total asset holdings ceiling
@@ -1245,7 +1291,7 @@ exists, then a corresponding collateral container does too
 Range check proposed order
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
@@ -1262,7 +1308,7 @@ Range check proposed order
 is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code> (available withdraw amount for asset traded away)
 
 
-<a name="@Returns_15"></a>
+<a name="@Returns_16"></a>
 
 ### Returns
 
@@ -1272,7 +1318,7 @@ order, else base asset units (inbound asset fill)
 order, else quote asset units (outbound asset fill)
 
 
-<a name="@Abort_conditions_16"></a>
+<a name="@Abort_conditions_17"></a>
 
 ### Abort conditions
 
@@ -1346,7 +1392,7 @@ and <code>market_account_info</code>, initializing <code><a href="user.md#0xc0de
 not already exist.
 
 
-<a name="@Abort_conditions_17"></a>
+<a name="@Abort_conditions_18"></a>
 
 ### Abort conditions
 
@@ -1401,7 +1447,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_18"></a>
+<a name="@Abort_conditions_19"></a>
 
 ### Abort conditions
 
@@ -1466,7 +1512,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a market account with <code>market_account_info</code>
 
 
-<a name="@Abort_conditions_19"></a>
+<a name="@Abort_conditions_20"></a>
 
 ### Abort conditions
 
@@ -1511,7 +1557,7 @@ Withdraw <code>amount</code> of <code>AssetType</code> from <code><a href="user.
 optionally returning coins if <code>asset_is_coin</code> is <code><b>true</b></code>
 
 
-<a name="@Abort_conditions_20"></a>
+<a name="@Abort_conditions_21"></a>
 
 ### Abort conditions
 
@@ -1587,7 +1633,7 @@ account having <code>market_id</code>, <code>general_custodian_id</code>, and
 <code>generic_asset_transfer_custodian_id</code>, returning coins
 
 
-<a name="@Abort_conditions_21"></a>
+<a name="@Abort_conditions_22"></a>
 
 ### Abort conditions
 

@@ -396,38 +396,6 @@ module econia::user {
         critbit::has_key(tree_ref, order_id)
     }
 
-    #[test_only]
-    /// Return number of base parcels indicated for order having
-    /// `order_id` on given `side` of `user`'s market account having
-    /// `custodian_id`.
-    ///
-    /// # Assumes
-    /// * `user` has an open order as specified
-    ///
-    /// # Restrictions
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   and thus transaction collisions
-    public fun order_base_parcels_test<B, Q, E>(
-        user: address,
-        custodian_id: u64,
-        side: bool,
-        order_id: u128
-    ): u64
-    acquires MarketAccounts {
-        // Declare market account info
-        let market_account_info = market_account_info<B, Q, E>(custodian_id);
-        // Borrow immutable reference to market accounts map
-        let market_accounts_map = &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to corresponding market account
-        let market_account =
-            open_table::borrow(market_accounts_map, market_account_info);
-        // Get immutable reference to orders tree for given side
-        let tree_ref = if (side == ASK) &market_account.asks else
-            &market_account.bids;
-        // Return order base parcels
-        *critbit::borrow(tree_ref, order_id)
-    }
-
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

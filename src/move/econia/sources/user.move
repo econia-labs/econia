@@ -246,6 +246,26 @@ module econia::user {
         )
     }
 
+    /// Return `market_account_info` fields
+    ///
+    /// # Returns
+    /// * `u64`: `MarketAccountInfo.market_id`
+    /// * `u64`: `MarketAccountInfo.general_custodian_id`
+    /// * `u64`: `MarketAccountInfo.generic_asset_transfer_custodian_id`
+    public fun get_market_account_info_fields(
+        market_account_info: MarketAccountInfo
+    ): (
+        u64,
+        u64,
+        u64
+    ) {
+        (
+            market_account_info.market_id,
+            market_account_info.general_custodian_id,
+            market_account_info.generic_asset_transfer_custodian_id
+        )
+    }
+
     /// Withdraw `amount` of coins of `CoinType` from `user`'s market
     /// account having `market_id`, `general_custodian_id`, and
     /// `generic_asset_transfer_custodian_id`, under authority of
@@ -605,7 +625,7 @@ module econia::user {
         verify_market_account_exists(user, market_account_info);
         // Borrow mutable reference to market accounts map
         let market_accounts_map_ref_mut =
-                &mut borrow_global_mut<MarketAccounts>(user).map;
+            &mut borrow_global_mut<MarketAccounts>(user).map;
         // Borrow mutable reference to total asset holdings, mutable
         // reference to amount of assets available for withdrawal,
         // and mutable reference to total asset holdings ceiling
@@ -881,9 +901,25 @@ module econia::user {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Return immutable reference to market account for given
+    /// `market_id` and `general_custodian_id` in `MarketAccounts`
+    /// indicated by `market_accounts_ref`
+    fun borrow_market_account_test(
+        market_id: u64,
+        general_custodian_id: u64,
+        market_accounts_ref: &MarketAccounts
+    ): &MarketAccount {
+        // Get corresponding market account info
+        let market_account_info = get_market_account_info_test(
+            market_id, general_custodian_id);
+        // Return immutable reference to market account
+        open_table::borrow(&market_accounts_ref.map, market_account_info)
+    }
+
+    #[test_only]
     /// Return asset counts of `user`'s market account for given
     /// `market_id` and `general_custodian_id`
-    public fun asset_counts_test(
+    public fun get_asset_counts_test(
         user: address,
         market_id: u64,
         general_custodian_id: u64
@@ -911,25 +947,9 @@ module econia::user {
     }
 
     #[test_only]
-    /// Return immutable reference to market account for given
-    /// `market_id` and `general_custodian_id` in `MarketAccounts`
-    /// indicated by `market_accounts_ref`
-    fun borrow_market_account_test(
-        market_id: u64,
-        general_custodian_id: u64,
-        market_accounts_ref: &MarketAccounts
-    ): &MarketAccount {
-        // Get corresponding market account info
-        let market_account_info = get_market_account_info_test(
-            market_id, general_custodian_id);
-        // Return immutable reference to market account
-        open_table::borrow(&market_accounts_ref.map, market_account_info)
-    }
-
-    #[test_only]
     /// Return `Coin.value` of `user`'s entry in `Collateral` for given
     /// `AssetType`, `market_id`, and `general_custodian_id`
-    public fun collateral_value_test<CoinType>(
+    public fun get_collateral_value_test<CoinType>(
         user: address,
         market_id: u64,
         general_custodian_id: u64
@@ -981,6 +1001,36 @@ module econia::user {
             &borrow_global<Collateral<AssetType>>(user).map;
         // Return if table contains entry for market account info
         open_table::contains(collateral_map_ref, market_account_info)
+    }
+
+    #[test_only]
+    /// Return size of order for given `user`, `market_account_info`,
+    /// `side`, and `order_id`
+    ///
+    /// # Assumes
+    /// * `user` has an open order as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun get_order_size_test(
+        user: address,
+        market_account_info: MarketAccountInfo,
+        side: bool,
+        order_id: u128
+    ): u64
+    acquires MarketAccounts {
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to market account
+        let market_account_ref = open_table::borrow(market_accounts_map_ref,
+            market_account_info);
+        // Get immutable reference to corresponding orders tree
+        let tree_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return order size for given order ID in tree
+        *critbit::borrow(tree_ref, order_id)
     }
 
     #[test_only]
@@ -1100,7 +1150,7 @@ module econia::user {
         // Assert state
         let ( base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            asset_counts_test(@user, market_id, general_custodian_id);
+            get_asset_counts_test(@user, market_id, general_custodian_id);
         assert!(base_total      == generic_amount, 0);
         assert!(base_available  == generic_amount, 0);
         assert!(base_ceiling    == generic_amount, 0);
@@ -1109,8 +1159,38 @@ module econia::user {
         assert!(quote_ceiling   == coin_amount,    0);
         assert!(!has_collateral_test<BG>(
             @user, market_id, general_custodian_id), 0);
-        assert!(collateral_value_test<QC>(
+        assert!(get_collateral_value_test<QC>(
             @user, market_id, general_custodian_id) == coin_amount, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for deposit that overflows asset ceiling
+    fun test_deposit_asset_overflow_ceiling(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Declare general custodian ID
+        let general_custodian_id = NO_CUSTODIAN;
+        // Register user with pure coin market account
+        let (_, market_account_info) = register_user_with_market_accounts_test(
+            econia, user, NO_CUSTODIAN, general_custodian_id);
+        // Get market account info fields
+        let (market_id, _, generic_asset_transfer_custodian_id) =
+            get_market_account_info_fields(market_account_info);
+        // Deposit as many coins as possible to market account
+        deposit_coins<BC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            assets::mint<BC>(econia, HI_64));
+        // Try to deposit one more coin
+        deposit_coins<BC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, assets::mint<BC>(econia, 1));
     }
 
     #[test(
@@ -1516,6 +1596,111 @@ module econia::user {
             market_account_info_pure_coin), 0);
     }
 
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify adding an ask
+    fun test_register_order_internal_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register a pure coin market for trading
+        let (_, _, _, _, lot_size, tick_size,
+            generic_asset_transfer_custodian_id, market_id
+        ) = registry::register_market_internal_multiple_test(econia);
+        // Declare user-specific general custodian ID
+        let general_custodian_id = NO_CUSTODIAN;
+        // Declare order parameters
+        let side = ASK;
+        let order_id = 123;
+        let size = 456;
+        let price = 789;
+        let base_required = lot_size * size;
+        let quote_received = size * price * tick_size;
+        // Register user with a market account for given market
+        register_market_account<BC, QC>(user, market_id, general_custodian_id);
+        // Declare market account info
+        let market_account_info = MarketAccountInfo{market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id};
+        // Deposit enough base coins to cover the ask
+        deposit_coins<BC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            assets::mint<BC>(econia, base_required));
+        // Register user's market account with given order
+        register_order_internal(@user, market_account_info, side, order_id,
+            size, price, lot_size, tick_size);
+        // Get asset counts
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      ==  base_required, 0);
+        assert!(base_available  ==              0, 0);
+        assert!(base_ceiling    ==  base_required, 0);
+        assert!(quote_total     ==              0, 0);
+        assert!(quote_available ==              0, 0);
+        assert!(quote_ceiling   == quote_received, 0);
+        // Assert order added to corresponding tree with correct size
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify adding a bid
+    fun test_register_order_internal_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register a pure coin market for trading
+        let (_, _, _, _, lot_size, tick_size,
+            generic_asset_transfer_custodian_id, market_id
+        ) = registry::register_market_internal_multiple_test(econia);
+        // Declare user-specific general custodian ID
+        let general_custodian_id = NO_CUSTODIAN;
+        // Declare order parameters
+        let side = BID;
+        let order_id = 123;
+        let size = 456;
+        let price = 789;
+        let base_received = lot_size * size;
+        let quote_required = size * price * tick_size;
+        // Register user with a market account for given market
+        register_market_account<BC, QC>(user, market_id, general_custodian_id);
+        // Declare market account info
+        let market_account_info = MarketAccountInfo{market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id};
+        // Deposit enough quote coins to cover the bid
+        deposit_coins<QC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            assets::mint<QC>(econia, quote_required));
+        // Register user's market account with given order
+        register_order_internal(@user, market_account_info, side, order_id,
+            size, price, lot_size, tick_size);
+        // Get asset counts
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      ==              0, 0);
+        assert!(base_available  ==              0, 0);
+        assert!(base_ceiling    ==  base_received, 0);
+        assert!(quote_total     == quote_required, 0);
+        assert!(quote_available ==              0, 0);
+        assert!(quote_ceiling   == quote_required, 0);
+        // Assert order added to corresponding tree with correct size
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size, 0);
+    }
     #[test]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for no market accounts
@@ -1629,14 +1814,14 @@ module econia::user {
         // Assert state
         let ( base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            asset_counts_test(@user, market_id, general_custodian_id);
+            get_asset_counts_test(@user, market_id, general_custodian_id);
         assert!(base_total      == generic_end_amount, 0);
         assert!(base_available  == generic_end_amount, 0);
         assert!(base_ceiling    == generic_end_amount, 0);
         assert!(quote_total     == coin_end_amount,    0);
         assert!(quote_available == coin_end_amount,    0);
         assert!(quote_ceiling   == coin_end_amount,    0);
-        assert!(collateral_value_test<QC>(
+        assert!(get_collateral_value_test<QC>(
             @user, market_id, general_custodian_id) == coin_end_amount, 0);
         assert!(coin::balance<QC>(@user) == coinstore_end_amount, 0);
     }
@@ -1682,11 +1867,11 @@ module econia::user {
         assert!(coin::value(&coins) == coin_withdrawal_amount, 0);
         // Assert market account state
         let (_, _, _, quote_total, quote_available, quote_ceiling) =
-            asset_counts_test(@user, market_id, general_custodian_id);
+            get_asset_counts_test(@user, market_id, general_custodian_id);
         assert!(quote_total     == coin_end_amount,    0);
         assert!(quote_available == coin_end_amount,    0);
         assert!(quote_ceiling   == coin_end_amount,    0);
-        assert!(collateral_value_test<QC>(
+        assert!(get_collateral_value_test<QC>(
             @user, market_id, general_custodian_id) == coin_end_amount, 0);
         // Destroy resources
         registry::destroy_custodian_capability_test(custodian_capability);

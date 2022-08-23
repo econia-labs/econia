@@ -218,6 +218,14 @@ elif test $1 = wd; then
     substitute_econia_address docgen
     ls sources/*.move | entr move build --doc
 
+# Watch source code and run a specific test if it changes
+# May require `brew install entr` beforehand
+elif test $1 = wt; then
+    conda activate econia # Activate Econia conda environment
+    # Substitute docgen address into Move.toml
+    substitute_econia_address docgen
+    ls sources/*.move | entr aptos move test --filter $2
+
 else echo Invalid option; fi
 
 # Commands <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

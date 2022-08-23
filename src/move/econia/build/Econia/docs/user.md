@@ -1139,7 +1139,7 @@ units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else fr
     <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info, side,
         <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, complete_fill, size_filled, base_to_route,
         quote_to_route);
-    // Route collateral accordingly
+    // Route collateral accordingly, <b>as</b> needed
     <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
         market_account_info, side, optional_base_coins_ref_mut,
         optional_quote_coins_ref_mut, base_to_route, quote_to_route);

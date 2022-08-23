@@ -1267,7 +1267,7 @@ module econia::user {
     #[test_only]
     /// Return market account info for given `market_id` and
     /// `general_custodian_id`
-    fun get_market_account_info_test(
+    public fun get_market_account_info_test(
         market_id: u64,
         general_custodian_id: u64
     ): MarketAccountInfo {
@@ -1364,7 +1364,7 @@ module econia::user {
     /// Register user to trade on markets initialized via
     /// `registry::register_market_internal_multiple_test`, returning
     /// corresponding `MarketAccountInfo` for each market
-    fun register_user_with_market_accounts_test(
+    public fun register_user_with_market_accounts_test(
         econia: &signer,
         user: &signer,
         general_custodian_id_agnostic: u64,
@@ -1582,6 +1582,413 @@ module econia::user {
             generic_asset_transfer_custodian_id, 500, &custodian_capability);
         // Destroy custodian capability
         registry::destroy_custodian_capability_test(custodian_capability);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify filling asks for a market with base coin/quote generic
+    fun test_fill_order_internal_asks_base_coin_quote_generic(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Initialize registry
+        registry::init_registry(econia);
+        // Initialize coin types
+        assets::init_coin_types(econia);
+        // Declare market parameters
+        let lot_size = 10;
+        let tick_size = 125;
+        let generic_asset_transfer_custodian_id = 5;
+        let market_id = 0;
+        // Declare user-specific parameters
+        let general_custodian_id = NO_CUSTODIAN;
+        let market_account_info = MarketAccountInfo{market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id};
+        // Declare order values
+        let side = ASK;
+        let size = 123;
+        let price = 456;
+        let counter = 0;
+        let order_id = order_id::order_id(price, counter, side);
+        // Declare fill values
+        let size_filled_1 = 5; // Partial fill
+        let size_filled_2 = size - size_filled_1; // Complete fill
+        let base_start = size * lot_size;
+        let quote_filled_total = size * price * tick_size;
+        let base_to_route_1 = size_filled_1 * lot_size;
+        let base_to_route_2 = size_filled_2 * lot_size;
+        let quote_to_route_1 = size_filled_1 * price * tick_size;
+        let quote_to_route_2 = size_filled_2 * price * tick_size;
+        let optional_base_coins = option::some<Coin<BC>>(coin::zero<BC>());
+        let optional_quote_coins = option::none<Coin<QG>>();
+        // Set generic asset transfer cusotdian ID as valid
+        registry::set_registered_custodian_test(
+            generic_asset_transfer_custodian_id);
+        // Get custodian ID
+        let generic_asset_transfer_custodian_capability = registry::
+            get_custodian_capability_test(generic_asset_transfer_custodian_id);
+        // Register mixed market
+        registry::register_market_internal<BC, QG>(@econia, lot_size,
+            tick_size, generic_asset_transfer_custodian_id);
+        // Register user with market account for given market
+        register_market_account<BC, QG>(user, market_id, general_custodian_id);
+        // Deposit coin asset to user's market account
+        deposit_coins<BC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            assets::mint(econia, base_start));
+        // Register user with order
+        register_order_internal(@user, market_account_info, side, order_id,
+            size, price, lot_size, tick_size);
+        // Assert has base collateral deposited
+        assert!(get_collateral_value_test<BC>(
+            @user, market_id, general_custodian_id) == base_start, 0);
+        // Assert has no quote collateral structure
+        assert!(!has_collateral_test<QG>(
+            @user, market_id, general_custodian_id), 0);
+        // Get asset counts
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == base_start, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == base_start, 0);
+        assert!(quote_total     == 0, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == quote_filled_total, 0);
+        // Assert order added to corresponding tree with correct size
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size, 0);
+        // Execute partial fill
+        fill_order_internal<BC, QG>(@user, market_account_info, side, order_id,
+            false, size_filled_1, &mut optional_base_coins,
+            &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
+        // Assert optional coin count
+        assert!(coin::value(option::borrow(&optional_base_coins)) ==
+            base_to_route_1, 0);
+        // Assert base collateral withdrawn
+        assert!(get_collateral_value_test<BC>(
+            @user, market_id, general_custodian_id) ==
+            base_start - base_to_route_1, 0);
+        // Get asset counts
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == base_start - base_to_route_1, 0);
+        assert!(base_available  ==                            0, 0);
+        assert!(base_ceiling    == base_start - base_to_route_1, 0);
+        assert!(quote_total     ==             quote_to_route_1, 0);
+        assert!(quote_available ==             quote_to_route_1, 0);
+        assert!(quote_ceiling   ==           quote_filled_total, 0);
+        // Assert order size update
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size - size_filled_1, 0);
+        // Execute complete fill
+        fill_order_internal<BC, QG>(@user, market_account_info, side, order_id,
+            true, size_filled_2, &mut optional_base_coins,
+            &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
+        // Assert optional coin count
+        assert!(coin::value(option::borrow(&optional_base_coins)) ==
+            base_start, 0);
+        // Assert all base collateral withdrawn
+        assert!(get_collateral_value_test<BC>(
+            @user, market_id, general_custodian_id) == 0, 0);
+        // Get asset counts
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == 0, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == 0, 0);
+        assert!(quote_total     == quote_filled_total, 0);
+        assert!(quote_available == quote_filled_total, 0);
+        assert!(quote_ceiling   == quote_filled_total, 0);
+        assert!( // Assert order removed from tree
+            !has_order_test(@user, market_account_info, side, order_id), 0);
+        // Destroy optional coin structures
+        assets::burn(option::destroy_some(optional_base_coins));
+        option::destroy_none(optional_quote_coins);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability)
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify filling asks for a market with base generic/quote coin
+    fun test_fill_order_internal_asks_base_generic_quote_coin(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Initialize registry
+        registry::init_registry(econia);
+        // Initialize coin types
+        assets::init_coin_types(econia);
+        // Declare market parameters
+        let lot_size = 10;
+        let tick_size = 125;
+        let generic_asset_transfer_custodian_id = 5;
+        let market_id = 0;
+        // Declare user-specific parameters
+        let general_custodian_id = NO_CUSTODIAN;
+        let market_account_info = MarketAccountInfo{market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id};
+        // Declare order values
+        let side = ASK;
+        let size = 123;
+        let price = 456;
+        let counter = 0;
+        let order_id = order_id::order_id(price, counter, side);
+        // Declare fill values
+        let size_filled_1 = 5; // Partial fill
+        let size_filled_2 = size - size_filled_1; // Complete fill
+        let base_start = size * lot_size;
+        let quote_filled_total = size * price * tick_size;
+        let base_to_route_1 = size_filled_1 * lot_size;
+        let base_to_route_2 = size_filled_2 * lot_size;
+        let quote_to_route_1 = size_filled_1 * price * tick_size;
+        let quote_to_route_2 = size_filled_2 * price * tick_size;
+        let optional_base_coins = option::none<Coin<BG>>();
+        let optional_quote_coins = option::some<Coin<QC>>(
+            assets::mint<QC>(econia, quote_filled_total));
+        // Set generic asset transfer cusotdian ID as valid
+        registry::set_registered_custodian_test(
+            generic_asset_transfer_custodian_id);
+        // Get custodian ID
+        let generic_asset_transfer_custodian_capability = registry::
+            get_custodian_capability_test(generic_asset_transfer_custodian_id);
+        // Register mixed market
+        registry::register_market_internal<BG, QC>(@econia, lot_size,
+            tick_size, generic_asset_transfer_custodian_id);
+        // Register user with market account for given market
+        register_market_account<BG, QC>(user, market_id, general_custodian_id);
+        // Deposit generic asset to user's market account
+        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id, base_start,
+            &generic_asset_transfer_custodian_capability);
+        // Register user with order
+        register_order_internal(@user, market_account_info, side, order_id,
+            size, price, lot_size, tick_size);
+        // Assert has no base collateral structure
+        assert!(!has_collateral_test<BG>(
+            @user, market_id, general_custodian_id), 0);
+        // Assert has no quote collateral deposited
+        assert!(get_collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) == 0, 0);
+        // Get asset counts
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == base_start, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == base_start, 0);
+        assert!(quote_total     == 0, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == quote_filled_total, 0);
+        // Assert order added to corresponding tree with correct size
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size, 0);
+        // Execute partial fill
+        fill_order_internal<BG, QC>(@user, market_account_info, side, order_id,
+            false, size_filled_1, &mut optional_base_coins,
+            &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
+        // Assert optional coin count
+        assert!(coin::value(option::borrow(&optional_quote_coins)) ==
+            quote_filled_total - quote_to_route_1, 0);
+        // Assert quote collateral deposited
+        assert!(get_collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) == quote_to_route_1, 0);
+        // Get asset counts
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == base_start - base_to_route_1, 0);
+        assert!(base_available  ==                            0, 0);
+        assert!(base_ceiling    == base_start - base_to_route_1, 0);
+        assert!(quote_total     ==             quote_to_route_1, 0);
+        assert!(quote_available ==             quote_to_route_1, 0);
+        assert!(quote_ceiling   ==           quote_filled_total, 0);
+        // Assert order size update
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size - size_filled_1, 0);
+        // Execute complete fill
+        fill_order_internal<BG, QC>(@user, market_account_info, side, order_id,
+            true, size_filled_2, &mut optional_base_coins,
+            &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
+        // Assert optional coin count
+        assert!(coin::value(option::borrow(&optional_quote_coins)) == 0, 0);
+        // Assert quote collateral deposited
+        assert!(get_collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) == quote_filled_total, 0);
+        // Get asset counts
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == 0, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == 0, 0);
+        assert!(quote_total     == quote_filled_total, 0);
+        assert!(quote_available == quote_filled_total, 0);
+        assert!(quote_ceiling   == quote_filled_total, 0);
+        assert!( // Assert order removed from tree
+            !has_order_test(@user, market_account_info, side, order_id), 0);
+        // Destroy optional coin structures
+        option::destroy_none(optional_base_coins);
+        coin::destroy_zero(option::destroy_some(optional_quote_coins));
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability)
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify filling bids for a market with base generic/quote coin
+    fun test_fill_order_internal_bids_base_generic_quote_coin(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Initialize registry
+        registry::init_registry(econia);
+        // Initialize coin types
+        assets::init_coin_types(econia);
+        // Declare market parameters
+        let lot_size = 10;
+        let tick_size = 125;
+        let generic_asset_transfer_custodian_id = 5;
+        let market_id = 0;
+        // Declare user-specific parameters
+        let general_custodian_id = NO_CUSTODIAN;
+        let market_account_info = MarketAccountInfo{market_id,
+            general_custodian_id, generic_asset_transfer_custodian_id};
+        // Declare order values
+        let side = BID;
+        let size = 123;
+        let price = 456;
+        let counter = 0;
+        let order_id = order_id::order_id(price, counter, side);
+        // Declare fill values
+        let size_filled_1 = 5; // Partial fill
+        let size_filled_2 = size - size_filled_1; // Complete fill
+        let quote_start = size * price * tick_size;
+        let base_filled_total = size * lot_size;
+        let base_to_route_1 = size_filled_1 * lot_size;
+        let base_to_route_2 = size_filled_2 * lot_size;
+        let quote_to_route_1 = size_filled_1 * price * tick_size;
+        let quote_to_route_2 = size_filled_2 * price * tick_size;
+        let optional_base_coins = option::none<Coin<BG>>();
+        let optional_quote_coins = option::some<Coin<QC>>(coin::zero<QC>());
+        // Set generic asset transfer cusotdian ID as valid
+        registry::set_registered_custodian_test(
+            generic_asset_transfer_custodian_id);
+        // Get custodian ID
+        let generic_asset_transfer_custodian_capability = registry::
+            get_custodian_capability_test(generic_asset_transfer_custodian_id);
+        // Register mixed market
+        registry::register_market_internal<BG, QC>(@econia, lot_size,
+            tick_size, generic_asset_transfer_custodian_id);
+        // Register user with market account for given market
+        register_market_account<BG, QC>(user, market_id, general_custodian_id);
+        // Deposit coin asset to user's market account
+        deposit_coins<QC>(@user, market_id, general_custodian_id,
+            generic_asset_transfer_custodian_id,
+            assets::mint(econia, quote_start));
+        // Register user with order
+        register_order_internal(@user, market_account_info, side, order_id,
+            size, price, lot_size, tick_size);
+        // Assert has no base collateral structure
+        assert!(!has_collateral_test<BG>(
+            @user, market_id, general_custodian_id), 0);
+        // Assert has quote collateral deposited
+        assert!(get_collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) == quote_start, 0);
+        // Get asset counts
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == 0, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == base_filled_total, 0);
+        assert!(quote_total     == quote_start, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == quote_start, 0);
+        // Assert order added to corresponding tree with correct size
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size, 0);
+        // Execute partial fill
+        fill_order_internal<BG, QC>(@user, market_account_info, side, order_id,
+            false, size_filled_1, &mut optional_base_coins,
+            &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
+        // Assert optional coin count
+        assert!(coin::value(option::borrow(&optional_quote_coins)) ==
+            quote_to_route_1, 0);
+        // Assert quote collateral withdrawn
+        assert!(get_collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) ==
+            quote_start - quote_to_route_1, 0);
+        // Get asset counts
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == base_to_route_1, 0);
+        assert!(base_available  == base_to_route_1, 0);
+        assert!(base_ceiling    == base_filled_total, 0);
+        assert!(quote_total     == quote_start - quote_to_route_1, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == quote_start - quote_to_route_1, 0);
+        // Assert order size update
+        assert!(get_order_size_test(@user, market_account_info, side, order_id)
+            == size - size_filled_1, 0);
+        // Execute complete fill
+        fill_order_internal<BG, QC>(@user, market_account_info, side, order_id,
+            true, size_filled_2, &mut optional_base_coins,
+            &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
+        // Assert optional coin count
+        assert!(coin::value(option::borrow(&optional_quote_coins)) ==
+            quote_to_route_1 + quote_to_route_2, 0);
+        // Assert no more quote collateral
+        assert!(get_collateral_value_test<QC>(
+            @user, market_id, general_custodian_id) == 0, 0);
+        // Get asset counts
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert values
+        assert!(base_total      == base_filled_total, 0);
+        assert!(base_available  == base_filled_total, 0);
+        assert!(base_ceiling    == base_filled_total, 0);
+        assert!(quote_total     == 0, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == 0, 0);
+        assert!( // Assert order removed from tree
+            !has_order_test(@user, market_account_info, side, order_id), 0);
+        // Destroy optional coin structures
+        option::destroy_none(optional_base_coins);
+        assets::burn(option::destroy_some(optional_quote_coins));
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability)
     }
 
     #[test]

@@ -5,6 +5,13 @@ module econia::market {
     fun invoke_registry() {registry::is_registered_custodian_id(0);}
     fun invoke_user() {user::return_0();}
 
+    // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    use aptos_std::type_info;
+    use econia::critbit::{CritBitTree};
+
+    // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// An order on the order book

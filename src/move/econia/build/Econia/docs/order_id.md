@@ -133,16 +133,6 @@ order with counter <code>63</code> will be filled second.
 ## Constants
 
 
-<a name="0xc0deb00c_order_id_HI_64"></a>
-
-<code>u64</code> bitmask with all bits set
-
-
-<pre><code><b>const</b> <a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a>: u64 = 18446744073709551615;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_order_id_ASK"></a>
 
 Ask flag
@@ -169,6 +159,16 @@ Positions to bitshift for operating on first 64 bits
 
 
 <pre><code><b>const</b> <a href="order_id.md#0xc0deb00c_order_id_FIRST_64">FIRST_64</a>: u8 = 64;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_order_id_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="order_id.md#0xc0deb00c_order_id_HI_64">HI_64</a>: u64 = 18446744073709551615;
 </code></pre>
 
 

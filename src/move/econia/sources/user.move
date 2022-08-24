@@ -55,6 +55,9 @@
 /// that when a user opts to sign general transactions rather than
 /// delegate to a general custodian, the market account ID uses a
 /// general custodian ID of `NO_CUSTODIAN`, corresponding to `0`.
+///
+/// ---
+///
 module econia::user {
 
     // Dependency planning stubs

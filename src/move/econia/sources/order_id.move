@@ -78,6 +78,9 @@
 /// than that of the order with counter `15`, and as such, during the
 /// matching engine's iterated inorder predecessor traversal, the
 /// order with counter `63` will be filled second.
+///
+/// ---
+///
 module econia::order_id {
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

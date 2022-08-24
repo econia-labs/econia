@@ -93,33 +93,45 @@ general custodian ID of <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_
     -  [Parameters](#@Parameters_6)
     -  [Abort conditions](#@Abort_conditions_7)
 -  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
--  [Function `register_order_internal`](#0xc0deb00c_user_register_order_internal)
-    -  [Parameters](#@Parameters_8)
--  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
+-  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
+    -  [Type parameters](#@Type_parameters_8)
     -  [Parameters](#@Parameters_9)
-    -  [Assumes](#@Assumes_10)
+-  [Function `register_order_internal`](#0xc0deb00c_user_register_order_internal)
+    -  [Parameters](#@Parameters_10)
+-  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
+    -  [Parameters](#@Parameters_11)
+    -  [Assumes](#@Assumes_12)
 -  [Function `withdraw_coins_as_option_internal`](#0xc0deb00c_user_withdraw_coins_as_option_internal)
--  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Assumes](#@Assumes_11)
-    -  [Abort conditions](#@Abort_conditions_12)
 -  [Function `borrow_transfer_fields_mixed`](#0xc0deb00c_user_borrow_transfer_fields_mixed)
     -  [Returns](#@Returns_13)
     -  [Assumes](#@Assumes_14)
     -  [Abort conditions](#@Abort_conditions_15)
+-  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
+    -  [Assumes](#@Assumes_16)
+    -  [Abort conditions](#@Abort_conditions_17)
+-  [Function `fill_order_route_collateral`](#0xc0deb00c_user_fill_order_route_collateral)
+    -  [Type parameters](#@Type_parameters_18)
+    -  [Parameters](#@Parameters_19)
+-  [Function `fill_order_route_collateral_single`](#0xc0deb00c_user_fill_order_route_collateral_single)
+    -  [Parameters](#@Parameters_20)
+    -  [Assumes](#@Assumes_21)
+-  [Function `fill_order_update_market_account`](#0xc0deb00c_user_fill_order_update_market_account)
+    -  [Parameters](#@Parameters_22)
+    -  [Assumes](#@Assumes_23)
 -  [Function `range_check_new_order`](#0xc0deb00c_user_range_check_new_order)
-    -  [Parameters](#@Parameters_16)
-    -  [Returns](#@Returns_17)
-    -  [Abort conditions](#@Abort_conditions_18)
+    -  [Parameters](#@Parameters_24)
+    -  [Returns](#@Returns_25)
+    -  [Abort conditions](#@Abort_conditions_26)
 -  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
-    -  [Abort conditions](#@Abort_conditions_19)
+    -  [Abort conditions](#@Abort_conditions_27)
 -  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
-    -  [Abort conditions](#@Abort_conditions_20)
+    -  [Abort conditions](#@Abort_conditions_28)
 -  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
-    -  [Abort conditions](#@Abort_conditions_21)
+    -  [Abort conditions](#@Abort_conditions_29)
 -  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
-    -  [Abort conditions](#@Abort_conditions_22)
+    -  [Abort conditions](#@Abort_conditions_30)
 -  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
-    -  [Abort conditions](#@Abort_conditions_23)
+    -  [Abort conditions](#@Abort_conditions_31)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -169,7 +181,7 @@ Collateral map for given coin type, across all <code><a href="user.md#0xc0deb00c
 ## Struct `MarketAccount`
 
 Represents a user's open orders and available assets for a given
-<code>MarketAccountInfo</code>
+market account ID
 
 
 <pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a> <b>has</b> store
@@ -1052,6 +1064,91 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
 
 </details>
 
+<a name="0xc0deb00c_user_fill_order_internal"></a>
+
+## Function `fill_order_internal`
+
+Fill a user's order, routing coin collateral as needed.
+
+Only to be called by the matching engine, which has already
+calculated the corresponding amount of assets to fill. If the
+matching engine gets to this stage, then it is assumed that
+given user has the indicated open order and sufficient assets
+to fill it. Hence no error checking.
+
+
+<a name="@Type_parameters_8"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_9"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>market_account_id</code>: Corresponding market account ID
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
+* <code>complete_fill</code>: If <code><b>true</b></code>, the order is completely filled
+* <code>size_filled</code>: Number of lots filled
+* <code>optional_base_coins_ref_mut</code>: Mutable reference to optional
+base coins passing through the matching engine
+* <code>optional_quote_coins_ref_mut</code>: Mutable reference to optional
+quote coins passing through the matching engine
+* <code>base_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base asset
+units routed from <code><a href="user.md#0xc0deb00c_user">user</a></code>, else to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>quote_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote asset
+units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, size_filled: u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, base_to_route: u64, quote_to_route: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+    complete_fill: bool,
+    size_filled: u64,
+    optional_base_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;,
+    optional_quote_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;,
+    base_to_route: u64,
+    quote_to_route: u64,
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    // Update <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side,
+        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, complete_fill, size_filled, base_to_route,
+        quote_to_route);
+    // Route collateral accordingly, <b>as</b> needed
+    <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
+        market_account_id, side, optional_base_coins_ref_mut,
+        optional_quote_coins_ref_mut, base_to_route, quote_to_route);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_order_internal"></a>
 
 ## Function `register_order_internal`
@@ -1059,7 +1156,7 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
 Register a new order under a user's market account
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -1141,7 +1238,7 @@ Register a new order under a user's market account
 Remove an order from a user's market account
 
 
-<a name="@Parameters_9"></a>
+<a name="@Parameters_11"></a>
 
 ### Parameters
 
@@ -1153,7 +1250,7 @@ Remove an order from a user's market account
 * <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
 
 
-<a name="@Assumes_10"></a>
+<a name="@Assumes_12"></a>
 
 ### Assumes
 
@@ -1260,101 +1357,6 @@ wrapped in an option
 
 </details>
 
-<a name="0xc0deb00c_user_deposit_asset"></a>
-
-## Function `deposit_asset`
-
-Deposit <code>amount</code> of <code>AssetType</code>, which may include
-<code>optional_coins</code>, to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account
-having <code>market_account_id</code>, optionally verifying
-<code>generic_asset_transfer_custodian_id</code> in the case of depositing
-a generic asset (ignored if depositing coin type)
-
-
-<a name="@Assumes_11"></a>
-
-### Assumes
-
-* That if depositing a coin asset, <code>amount</code> matches value of
-<code>optional_coins</code>
-* That when depositing a coin asset, if the market account
-exists, then a corresponding collateral container does too
-
-
-<a name="@Abort_conditions_12"></a>
-
-### Abort conditions
-
-* If deposit would overflow the total asset holdings ceiling
-* If unauthorized <code>generic_asset_transfer_custodian_id</code> in the
-case of depositing a generic asset
-
-
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, amount: u64, optional_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;, generic_asset_transfer_custodian_id: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
-    market_account_id: u128,
-    amount: u64,
-    optional_coins: <a href="_Option">option::Option</a>&lt;Coin&lt;AssetType&gt;&gt;,
-    generic_asset_transfer_custodian_id: u64
-) <b>acquires</b>
-    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
-{
-    // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
-    <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id);
-    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
-    <b>let</b> market_accounts_map_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> total asset holdings, mutable
-    // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal,
-    // mutable reference <b>to</b> total asset holdings ceiling, and
-    // immutable reference <b>to</b> generic asset transfer custodian ID
-    <b>let</b> (asset_total_ref_mut, asset_available_ref_mut,
-         asset_ceiling_ref_mut, generic_asset_transfer_custodian_id_ref) =
-            <a href="user.md#0xc0deb00c_user_borrow_transfer_fields_mixed">borrow_transfer_fields_mixed</a>&lt;AssetType&gt;(
-                market_accounts_map_ref_mut, market_account_id);
-    // Assert deposit does not overflow asset ceiling
-    <b>assert</b>!(!((*asset_ceiling_ref_mut <b>as</b> u128) + (amount <b>as</b> u128) &gt;
-        (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>);
-    // Increment total asset holdings amount
-    *asset_total_ref_mut = *asset_total_ref_mut + amount;
-    // Increment <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal amount
-    *asset_available_ref_mut = *asset_available_ref_mut + amount;
-    // Increment total asset holdings ceiling amount
-    *asset_ceiling_ref_mut = *asset_ceiling_ref_mut + amount;
-    <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_coins)) { // If asset is <a href="">coin</a> type
-        // Borrow mutable reference <b>to</b> collateral map
-        <b>let</b> collateral_map_ref_mut =
-            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;AssetType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-        // Borrow mutable reference <b>to</b> collateral for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
-        <b>let</b> collateral_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
-            collateral_map_ref_mut, market_account_id);
-        <a href="_merge">coin::merge</a>( // Merge optional <a href="">coins</a> into collateral
-            collateral_ref_mut, <a href="_destroy_some">option::destroy_some</a>(optional_coins));
-    } <b>else</b> { // If asset is not <a href="">coin</a> type
-        // Verify indicated generic asset transfer custodian ID
-        <b>assert</b>!(generic_asset_transfer_custodian_id ==
-            *generic_asset_transfer_custodian_id_ref,
-            <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
-        // Destroy empty <a href="">option</a> resource
-        <a href="_destroy_none">option::destroy_none</a>(optional_coins);
-    }
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_user_borrow_transfer_fields_mixed"></a>
 
 ## Function `borrow_transfer_fields_mixed`
@@ -1453,6 +1455,360 @@ account
 
 </details>
 
+<a name="0xc0deb00c_user_deposit_asset"></a>
+
+## Function `deposit_asset`
+
+Deposit <code>amount</code> of <code>AssetType</code>, which may include
+<code>optional_coins</code>, to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account
+having <code>market_account_id</code>, optionally verifying
+<code>generic_asset_transfer_custodian_id</code> in the case of depositing
+a generic asset (ignored if depositing coin type)
+
+
+<a name="@Assumes_16"></a>
+
+### Assumes
+
+* That if depositing a coin asset, <code>amount</code> matches value of
+<code>optional_coins</code>
+* That when depositing a coin asset, if the market account
+exists, then a corresponding collateral container does too
+
+
+<a name="@Abort_conditions_17"></a>
+
+### Abort conditions
+
+* If deposit would overflow the total asset holdings ceiling
+* If unauthorized <code>generic_asset_transfer_custodian_id</code> in the
+case of depositing a generic asset
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, amount: u64, optional_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;, generic_asset_transfer_custodian_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128,
+    amount: u64,
+    optional_coins: <a href="_Option">option::Option</a>&lt;Coin&lt;AssetType&gt;&gt;,
+    generic_asset_transfer_custodian_id: u64
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    // Verify <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_verify_market_account_exists">verify_market_account_exists</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id);
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> total asset holdings, mutable
+    // reference <b>to</b> amount of <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal,
+    // mutable reference <b>to</b> total asset holdings ceiling, and
+    // immutable reference <b>to</b> generic asset transfer custodian ID
+    <b>let</b> (asset_total_ref_mut, asset_available_ref_mut,
+         asset_ceiling_ref_mut, generic_asset_transfer_custodian_id_ref) =
+            <a href="user.md#0xc0deb00c_user_borrow_transfer_fields_mixed">borrow_transfer_fields_mixed</a>&lt;AssetType&gt;(
+                market_accounts_map_ref_mut, market_account_id);
+    // Assert deposit does not overflow asset ceiling
+    <b>assert</b>!(!((*asset_ceiling_ref_mut <b>as</b> u128) + (amount <b>as</b> u128) &gt;
+        (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>);
+    // Increment total asset holdings amount
+    *asset_total_ref_mut = *asset_total_ref_mut + amount;
+    // Increment <a href="assets.md#0xc0deb00c_assets">assets</a> available for withdrawal amount
+    *asset_available_ref_mut = *asset_available_ref_mut + amount;
+    // Increment total asset holdings ceiling amount
+    *asset_ceiling_ref_mut = *asset_ceiling_ref_mut + amount;
+    <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_coins)) { // If asset is <a href="">coin</a> type
+        // Borrow mutable reference <b>to</b> collateral map
+        <b>let</b> collateral_map_ref_mut =
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;AssetType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+        // Borrow mutable reference <b>to</b> collateral for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+        <b>let</b> collateral_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
+            collateral_map_ref_mut, market_account_id);
+        <a href="_merge">coin::merge</a>( // Merge optional <a href="">coins</a> into collateral
+            collateral_ref_mut, <a href="_destroy_some">option::destroy_some</a>(optional_coins));
+    } <b>else</b> { // If asset is not <a href="">coin</a> type
+        // Verify indicated generic asset transfer custodian ID
+        <b>assert</b>!(generic_asset_transfer_custodian_id ==
+            *generic_asset_transfer_custodian_id_ref,
+            <a href="user.md#0xc0deb00c_user_E_UNAUTHORIZED_CUSTODIAN">E_UNAUTHORIZED_CUSTODIAN</a>);
+        // Destroy empty <a href="">option</a> resource
+        <a href="_destroy_none">option::destroy_none</a>(optional_coins);
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_fill_order_route_collateral"></a>
+
+## Function `fill_order_route_collateral`
+
+Route collateral when filling an order, for coin assets.
+
+Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
+
+
+<a name="@Type_parameters_18"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_19"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>market_account_id</code>: Corresponding market account ID
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code>optional_base_coins_ref_mut</code>: Mutable reference to optional
+base coins passing through the matching engine
+* <code>optional_quote_coins_ref_mut</code>: Mutable reference to optional
+quote coins passing through the matching engine
+* <code>base_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base coins to
+route from <code><a href="user.md#0xc0deb00c_user">user</a></code> to <code>base_coins_ref_mut</code>, else from
+<code>base_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>quote_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote coins to
+route from <code>quote_coins_ref_mut</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
+to <code>quote_coins_ref_mut</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, side: bool, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, base_to_route: u64, quote_to_route: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128,
+    side: bool,
+    optional_base_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;,
+    optional_quote_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;,
+    base_to_route: u64,
+    quote_to_route: u64,
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a> {
+    // Determine route direction for base and quote relative <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>
+    <b>let</b> (base_direction, quote_direction) =
+        <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (<a href="user.md#0xc0deb00c_user_OUT">OUT</a>, <a href="user.md#0xc0deb00c_user_IN">IN</a>) <b>else</b> (<a href="user.md#0xc0deb00c_user_IN">IN</a>, <a href="user.md#0xc0deb00c_user_OUT">OUT</a>);
+    // If base asset is <a href="">coin</a> type then route base <a href="">coins</a>
+    <b>if</b> (<a href="_is_some">option::is_some</a>(optional_base_coins_ref_mut))
+        <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;BaseType&gt;(
+            <a href="user.md#0xc0deb00c_user">user</a>, market_account_id,
+            <a href="_borrow_mut">option::borrow_mut</a>(optional_base_coins_ref_mut),
+            base_to_route, base_direction);
+    // If quote asset is <a href="">coin</a> type then route quote <a href="">coins</a>
+    <b>if</b> (<a href="_is_some">option::is_some</a>(optional_quote_coins_ref_mut))
+        <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;QuoteType&gt;(
+            <a href="user.md#0xc0deb00c_user">user</a>, market_account_id,
+            <a href="_borrow_mut">option::borrow_mut</a>(optional_quote_coins_ref_mut),
+            quote_to_route, quote_direction);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_fill_order_route_collateral_single"></a>
+
+## Function `fill_order_route_collateral_single`
+
+Route <code>amount</code> of <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> in <code>direction</code> either <code><a href="user.md#0xc0deb00c_user_IN">IN</a></code> or
+<code><a href="user.md#0xc0deb00c_user_OUT">OUT</a></code>, relative to <code><a href="user.md#0xc0deb00c_user">user</a></code> with <code>market_account_id</code>, either
+from or to, respectively, coins at <code>external_coins_ref_mut</code>.
+
+Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>()</code>.
+
+
+<a name="@Parameters_20"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>market_account_id</code>: Corresponding market account id
+* <code>external_coins_ref_mut</code>: Effectively a counterparty to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>amount</code>: Amount of coins to route
+* <code>direction</code>: <code><a href="user.md#0xc0deb00c_user_IN">IN</a></code> or <code><a href="user.md#0xc0deb00c_user_OUT">OUT</a></code>
+
+
+<a name="@Assumes_21"></a>
+
+### Assumes
+
+* User has a <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> entry for given <code>market_account_id</code>
+with range-checked coin amount for given operation: should
+only be called after a user has successfully placed an order
+in the first place.
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, external_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;, amount: u64, direction: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128,
+    external_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;,
+    amount: u64,
+    direction: bool
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a> {
+    // Borrow mutable reference <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s collateral map
+    <b>let</b> collateral_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s collateral
+    <b>let</b> collateral_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(collateral_map_ref_mut,
+        market_account_id);
+    // If inbound collateral <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>
+    <b>if</b> (direction == <a href="user.md#0xc0deb00c_user_IN">IN</a>)
+        // Merge <b>to</b> their collateral the extracted external <a href="">coins</a>
+        <a href="_merge">coin::merge</a>(collateral_ref_mut,
+            <a href="_extract">coin::extract</a>(external_coins_ref_mut, amount)) <b>else</b>
+        // If outbound collateral from <a href="user.md#0xc0deb00c_user">user</a>, merge <b>to</b> external <a href="">coins</a>
+        // those extracted from <a href="user.md#0xc0deb00c_user">user</a>'s collateral
+        <a href="_merge">coin::merge</a>(external_coins_ref_mut,
+            <a href="_extract">coin::extract</a>(collateral_ref_mut, amount));
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_fill_order_update_market_account"></a>
+
+## Function `fill_order_update_market_account`
+
+Update a user's market account when filling an order.
+
+Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
+
+
+<a name="@Parameters_22"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of corresponding user
+* <code>market_account_id</code>: Corresponding market account ID
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
+* <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
+* <code>complete_fill</code>: If <code><b>true</b></code>, the order is completely filled
+* <code>size_filled</code>: Number of lots filled
+* <code>base_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base asset
+units routed from <code><a href="user.md#0xc0deb00c_user">user</a></code>, else to <code><a href="user.md#0xc0deb00c_user">user</a></code>
+* <code>quote_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote asset
+units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
+
+
+<a name="@Assumes_23"></a>
+
+### Assumes
+
+* User has an open order as specified: should only be called
+after a user has successfully placed an order in the first
+place.
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, size_filled: u64, base_to_route: u64, quote_to_route: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+    complete_fill: bool,
+    size_filled: u64,
+    base_to_route: u64,
+    quote_to_route: u64,
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
+    // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <b>let</b> market_account_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
+        market_accounts_map_ref_mut, market_account_id);
+    <b>let</b> ( // Get mutable reference <b>to</b> corresponding orders tree,
+        tree_ref_mut,
+        asset_in, // Amount of inbound asset
+        asset_in_total_ref_mut, // Inbound asset total field
+        asset_in_available_ref_mut, // Available field
+        asset_out, // Amount of outbound asset
+        asset_out_total_ref_mut, // Outbound asset total field
+        asset_out_ceiling_ref_mut, // Ceiling field
+    ) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) ( // If an ask is matched
+        &<b>mut</b> market_account_ref_mut.asks,
+        quote_to_route,
+        &<b>mut</b> market_account_ref_mut.quote_total,
+        &<b>mut</b> market_account_ref_mut.quote_available,
+        base_to_route,
+        &<b>mut</b> market_account_ref_mut.base_total,
+        &<b>mut</b> market_account_ref_mut.base_ceiling,
+    ) <b>else</b> ( // If a bid is matched
+        &<b>mut</b> market_account_ref_mut.bids,
+        base_to_route,
+        &<b>mut</b> market_account_ref_mut.base_total,
+        &<b>mut</b> market_account_ref_mut.base_available,
+        quote_to_route,
+        &<b>mut</b> market_account_ref_mut.quote_total,
+        &<b>mut</b> market_account_ref_mut.quote_ceiling,
+    );
+    <b>if</b> (complete_fill) { // If completely filling the order
+        <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>); // Pop order
+    } <b>else</b> { // If only partially filling the order
+        // Get mutable reference <b>to</b> size left <b>to</b> fill on order
+        <b>let</b> order_size_ref_mut =
+            <a href="critbit.md#0xc0deb00c_critbit_borrow_mut">critbit::borrow_mut</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
+        // Decrement amount still unfilled
+        *order_size_ref_mut = *order_size_ref_mut - size_filled;
+    };
+    // Increment asset in total amount by asset in amount
+    *asset_in_total_ref_mut = *asset_in_total_ref_mut + asset_in;
+    // Increment asset in available amount by asset in amount
+    *asset_in_available_ref_mut = *asset_in_available_ref_mut + asset_in;
+    // Decrement asset out total amount by asset out amount
+    *asset_out_total_ref_mut = *asset_out_total_ref_mut - asset_out;
+    // Decrement asset out ceiling amount by asset out amount
+    *asset_out_ceiling_ref_mut = *asset_out_ceiling_ref_mut - asset_out;
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_range_check_new_order"></a>
 
 ## Function `range_check_new_order`
@@ -1460,7 +1816,7 @@ account
 Range check proposed order
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_24"></a>
 
 ### Parameters
 
@@ -1477,7 +1833,7 @@ Range check proposed order
 is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code> (available withdraw amount for asset traded away)
 
 
-<a name="@Returns_17"></a>
+<a name="@Returns_25"></a>
 
 ### Returns
 
@@ -1487,7 +1843,7 @@ order, else base asset units (inbound asset fill)
 order, else quote asset units (outbound asset fill)
 
 
-<a name="@Abort_conditions_18"></a>
+<a name="@Abort_conditions_26"></a>
 
 ### Abort conditions
 
@@ -1561,7 +1917,7 @@ and <code>market_account_id</code>, initializing <code><a href="user.md#0xc0deb0
 not already exist.
 
 
-<a name="@Abort_conditions_19"></a>
+<a name="@Abort_conditions_27"></a>
 
 ### Abort conditions
 
@@ -1616,7 +1972,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_20"></a>
+<a name="@Abort_conditions_28"></a>
 
 ### Abort conditions
 
@@ -1686,7 +2042,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a market account with <code>market_account_id</code>
 
 
-<a name="@Abort_conditions_21"></a>
+<a name="@Abort_conditions_29"></a>
 
 ### Abort conditions
 
@@ -1734,7 +2090,7 @@ indicated by <code>market_account_id</code>, optionally returning coins if
 a generic asset (ignored for withdrawing coin type)
 
 
-<a name="@Abort_conditions_22"></a>
+<a name="@Abort_conditions_30"></a>
 
 ### Abort conditions
 
@@ -1819,7 +2175,7 @@ account having <code>market_id</code> and <code>general_custodian_id</code>,
 returning coins
 
 
-<a name="@Abort_conditions_23"></a>
+<a name="@Abort_conditions_31"></a>
 
 ### Abort conditions
 

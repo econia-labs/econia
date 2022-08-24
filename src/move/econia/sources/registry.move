@@ -278,9 +278,9 @@ module econia::registry {
     /// * `lot_size`: Number of base units exchanged per lot
     /// * `tick_size`: Number of quote units exchanged per lot
     /// * `generic_asset_transfer_custodian_id`: ID of custodian
-    ///    capability required to approve deposits and withdrawals of
-    ///    non-coin assets (passed as `PURE_COIN_PAIR` when base and
-    ///    quote assets are both coins)
+    ///   capability required to approve deposits and withdrawals of
+    ///   non-coin assets (pass as `PURE_COIN_PAIR` when base and quote
+    ///   assets are both coins)
     ///
     /// # Returns
     /// * `u64`: Market's ID
@@ -351,10 +351,10 @@ module econia::registry {
             // Assert market is not already registered
             assert!(!is_registered_trading_pair(trading_pair_info),
                 E_MARKET_EXISTS);
-            // Assert no inidicated generic asset transfer custodian
+            // Assert no indicated generic asset transfer custodian
             assert!(generic_asset_transfer_custodian_id == PURE_COIN_PAIR,
                 E_INVALID_CUSTODIAN);
-        } else { // If an asset agnostic order book
+        } else { // If an asset-agnostic order book
             // Assert generic asset transfer custodian ID has been
             // registered
             assert!(is_registered_custodian_id(

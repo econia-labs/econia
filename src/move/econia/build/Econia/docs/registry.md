@@ -697,8 +697,8 @@ Register a market, returning its market ID
 * <code>tick_size</code>: Number of quote units exchanged per lot
 * <code>generic_asset_transfer_custodian_id</code>: ID of custodian
 capability required to approve deposits and withdrawals of
-non-coin assets (passed as <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and
-quote assets are both coins)
+non-coin assets (pass as <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote
+assets are both coins)
 
 
 <a name="@Returns_6"></a>
@@ -796,10 +796,10 @@ rather than <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">Generic
         // Assert <a href="market.md#0xc0deb00c_market">market</a> is not already registered
         <b>assert</b>!(!<a href="registry.md#0xc0deb00c_registry_is_registered_trading_pair">is_registered_trading_pair</a>(trading_pair_info),
             <a href="registry.md#0xc0deb00c_registry_E_MARKET_EXISTS">E_MARKET_EXISTS</a>);
-        // Assert no inidicated generic asset transfer custodian
+        // Assert no indicated generic asset transfer custodian
         <b>assert</b>!(generic_asset_transfer_custodian_id == <a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a>,
             <a href="registry.md#0xc0deb00c_registry_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
-    } <b>else</b> { // If an asset agnostic order book
+    } <b>else</b> { // If an asset-agnostic order book
         // Assert generic asset transfer custodian ID <b>has</b> been
         // registered
         <b>assert</b>!(<a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">is_registered_custodian_id</a>(

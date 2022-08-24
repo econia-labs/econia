@@ -137,22 +137,6 @@ module econia::market {
             max_quote_units);
     }
 
-    /// Initializes an `EconiaCapabilityStore`, aborting if one already
-    /// exists under the Econia account or if caller is not Econia
-    public fun init_econia_capability_store(
-        account: &signer
-    ) {
-        // Assert caller is Econia account
-        assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Assert capability store not already registered
-        assert!(!exists<EconiaCapabilityStore>(@econia),
-            E_ECONIA_CAPABILITY_STORE_EXISTS);
-        // Get new capability instance (aborts if caller is not Econia)
-        let econia_capability = capability::get_econia_capability(account);
-        move_to<EconiaCapabilityStore>(account, EconiaCapabilityStore{
-            econia_capability}); // Move to account capability store
-    }
-
     /// Place a limit order on the book and in a user's market account.
     /// Invoked by a custodian, who passes an immutable reference to
     /// their `registry::CustodianCapability`. See wrapped call
@@ -256,19 +240,6 @@ module econia::market {
         fill_market_order_from_market_account<B, Q, E>(
             address_of(user), host, NO_CUSTODIAN, style, max_base_parcels,
             max_quote_units);
-    }
-
-    #[cmd]
-    /// Register a market for the given base type, quote type,
-    /// scale exponent type, and move an `OrderBook` to `host`.
-    public entry fun register_market<B, Q, E>(
-        host: &signer,
-    ) acquires EconiaCapabilityStore {
-        // Add an entry to the market registry table
-        registry::register_market_internal<B, Q, E>(address_of(host),
-            &get_econia_capability());
-        // Initialize an order book under host account
-        init_book<B, Q, E>(host, registry::scale_factor<E>());
     }
 
     #[cmd]
@@ -861,37 +832,6 @@ module econia::market {
         let count = *counter_ref_mut; // Get count
         *counter_ref_mut = count + 1; // Set new count
         count // Return original count
-    }
-
-    /// Return an `EconiaCapability`, aborting if Econia account has no
-    /// `EconiaCapabilityStore`
-    fun get_econia_capability():
-    EconiaCapability
-    acquires EconiaCapabilityStore {
-        // Assert capability store has been initialized
-        assert!(exists<EconiaCapabilityStore>(@econia),
-            E_NO_ECONIA_CAPABILITY_STORE);
-        // Return a copy of an Econia capability
-        borrow_global<EconiaCapabilityStore>(@econia).econia_capability
-    }
-
-    /// Initialize `OrderBook` with given `scale_factor` under `host`
-    /// account, aborting if one already exists
-    fun init_book<B, Q, E>(
-        host: &signer,
-        scale_factor: u64,
-    ) {
-        // Assert book does not already exist under host account
-        assert!(!exists<OrderBook<B, Q, E>>(address_of(host)), E_BOOK_EXISTS);
-        // Move to host a newly-packed order book
-        move_to<OrderBook<B, Q, E>>(host, OrderBook{
-            scale_factor,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        });
     }
 
     /// Place limit order on the book and in user's market account.

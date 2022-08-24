@@ -10,11 +10,15 @@ Market-level book keeping functionality, with matching engine.
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Constants](#@Constants_0)
--  [Function `invoke_registry`](#0xc0deb00c_market_invoke_registry)
 -  [Function `invoke_user`](#0xc0deb00c_market_invoke_user)
--  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+-  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
+-  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
+-  [Function `register_market`](#0xc0deb00c_market_register_market)
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
+-  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+    -  [Type parameters](#@Type_parameters_3)
+    -  [Parameters](#@Parameters_4)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
@@ -189,6 +193,16 @@ Order book map for all of a user's <code><a href="market.md#0xc0deb00c_market_Or
 ## Constants
 
 
+<a name="0xc0deb00c_market_PURE_COIN_PAIR"></a>
+
+When both base and quote assets are coins
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_ORDER_BOOK_EXISTS"></a>
 
 When an order book already exists at given address
@@ -219,33 +233,11 @@ Default value for minimum ask order ID
 
 
 
-<a name="0xc0deb00c_market_invoke_registry"></a>
-
-## Function `invoke_registry`
-
-Dependency stub planning
-
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_registry">invoke_registry</a>()
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_registry">invoke_registry</a>() {<a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(0);}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_market_invoke_user"></a>
 
 ## Function `invoke_user`
 
+Dependency stub planning
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_user">invoke_user</a>()
@@ -264,12 +256,93 @@ Dependency stub planning
 
 </details>
 
-<a name="0xc0deb00c_market_register_order_book"></a>
+<a name="0xc0deb00c_market_register_market_generic"></a>
 
-## Function `register_order_book`
+## Function `register_market_generic`
 
-Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>, initializing their
-<code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
+Register a market having at least one asset that is not a coin
+type, which requires the authority of custodian indicated by
+<code>generic_asset_transfer_custodian_id_ref</code> to verify deposits
+and withdrawals of non-coin assets.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market">register_market</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_generic">register_market_generic</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_generic">register_market_generic</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    host: &<a href="">signer</a>,
+    lot_size: u64,
+    tick_size: u64,
+    generic_asset_transfer_custodian_id_ref: &CustodianCapability
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseType, QuoteType&gt;(
+        host,
+        lot_size,
+        tick_size,
+        <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(generic_asset_transfer_custodian_id_ref)
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_register_market_pure_coin"></a>
+
+## Function `register_market_pure_coin`
+
+Register a market for both base and quote assets as coin types.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market">register_market</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_pure_coin">register_market_pure_coin</a>&lt;BaseCoinType, QuoteCoinType&gt;(host: &<a href="">signer</a>, lot_size: u64, tick_size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_pure_coin">register_market_pure_coin</a>&lt;
+    BaseCoinType,
+    QuoteCoinType
+&gt;(
+    host: &<a href="">signer</a>,
+    lot_size: u64,
+    tick_size: u64,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseCoinType, QuoteCoinType&gt;(
+        host,
+        lot_size,
+        tick_size,
+        <a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a>
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_register_market"></a>
+
+## Function `register_market`
+
+Register new market under signing host
 
 
 <a name="@Type_parameters_1"></a>
@@ -281,6 +354,67 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 
 
 <a name="@Parameters_2"></a>
+
+### Parameters
+
+* <code>host</code>: Account where order book should be stored
+* <code>lot_size</code>: Number of base units exchanged per lot
+* <code>tick_size</code>: Number of quote units exchanged per tick
+* <code>generic_asset_transfer_custodian_id</code>: ID of custodian
+capability required to approve deposits and withdrawals of
+non-coin assets
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    host: &<a href="">signer</a>,
+    lot_size: u64,
+    tick_size: u64,
+    generic_asset_transfer_custodian_id: u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Register the <a href="market.md#0xc0deb00c_market">market</a> in the <b>global</b> <a href="registry.md#0xc0deb00c_registry">registry</a>, storing <a href="market.md#0xc0deb00c_market">market</a> ID
+    <b>let</b> market_id =
+        <a href="registry.md#0xc0deb00c_registry_register_market_internal">registry::register_market_internal</a>&lt;BaseType, QuoteType&gt;(
+            address_of(host), lot_size, tick_size,
+            generic_asset_transfer_custodian_id);
+    // Register an under book under host's <a href="">account</a>
+    <a href="market.md#0xc0deb00c_market_register_order_book">register_order_book</a>&lt;BaseType, QuoteType&gt;(
+        host, market_id, lot_size, tick_size);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_register_order_book"></a>
+
+## Function `register_order_book`
+
+Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>, initializing their
+<code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
+
+
+<a name="@Type_parameters_3"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_4"></a>
 
 ### Parameters
 

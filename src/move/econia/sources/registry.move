@@ -76,7 +76,7 @@ module econia::registry {
         quote_type_info: type_info::TypeInfo,
         /// Number of base units exchanged per lot
         lot_size: u64,
-        /// Number of quote units exchanged per lot
+        /// Number of quote units exchanged per tick
         tick_size: u64,
         /// ID of custodian capability required to verify deposits and
         /// withdrawals of assets that are not coins. A "market-wide

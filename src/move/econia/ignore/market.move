@@ -58,8 +58,6 @@ module econia::market {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When an order book already exists at given address
-    const E_BOOK_EXISTS: u64 = 0;
     /// When caller is not Econia
     const E_NOT_ECONIA: u64 = 1;
     /// When `EconiaCapabilityStore` already exists under Econia account
@@ -91,10 +89,6 @@ module econia::market {
     const HI_64: u64 = 0xffffffffffffffff;
     /// Left direction, denoting predecessor traversal
     const LEFT: bool = true;
-    /// Default value for maximum bid order ID
-    const MAX_BID_DEFAULT: u128 = 0;
-    /// Default value for minimum ask order ID
-    const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
     /// Custodian ID flag for no delegated custodian
     const NO_CUSTODIAN: u64 = 0;
     /// Right direction, denoting successor traversal

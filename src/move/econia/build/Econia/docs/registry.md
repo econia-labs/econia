@@ -224,7 +224,7 @@ Information about a trading pair
 <code>tick_size: u64</code>
 </dt>
 <dd>
- Number of quote units exchanged per lot
+ Number of quote units exchanged per tick
 </dd>
 <dt>
 <code>generic_asset_transfer_custodian_id: u64</code>

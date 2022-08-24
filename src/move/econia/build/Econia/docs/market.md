@@ -8,12 +8,19 @@ Market-level book keeping functionality, with matching engine.
 
 -  [Struct `Order`](#0xc0deb00c_market_Order)
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
+-  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
+-  [Constants](#@Constants_0)
 -  [Function `invoke_registry`](#0xc0deb00c_market_invoke_registry)
 -  [Function `invoke_user`](#0xc0deb00c_market_invoke_user)
+-  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+    -  [Type parameters](#@Type_parameters_1)
+    -  [Parameters](#@Parameters_2)
 
 
-<pre><code><b>use</b> <a href="">0x1::type_info</a>;
+<pre><code><b>use</b> <a href="">0x1::signer</a>;
+<b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
+<b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
 <b>use</b> <a href="registry.md#0xc0deb00c_registry">0xc0deb00c::registry</a>;
 <b>use</b> <a href="user.md#0xc0deb00c_user">0xc0deb00c::user</a>;
 </code></pre>
@@ -108,7 +115,7 @@ An order book for a given market
 <code>tick_size: u64</code>
 </dt>
 <dd>
- Number of quote units exchanged per lot
+ Number of quote units exchanged per tick
 </dd>
 <dt>
 <code>asks: <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
@@ -147,10 +154,76 @@ An order book for a given market
 
 </details>
 
+<a name="0xc0deb00c_market_OrderBooks"></a>
+
+## Resource `OrderBooks`
+
+Order book map for all of a user's <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>s
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> <b>has</b> key
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>map: <a href="open_table.md#0xc0deb00c_open_table_OpenTable">open_table::OpenTable</a>&lt;u64, <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&gt;</code>
+</dt>
+<dd>
+ Map from market ID to <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>. Separated into different
+ table entries to reduce transaction collisions across
+ markets
+</dd>
+</dl>
+
+
+</details>
+
+<a name="@Constants_0"></a>
+
+## Constants
+
+
+<a name="0xc0deb00c_market_E_ORDER_BOOK_EXISTS"></a>
+
+When an order book already exists at given address
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_ORDER_BOOK_EXISTS">E_ORDER_BOOK_EXISTS</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_MAX_BID_DEFAULT"></a>
+
+Default value for maximum bid order ID
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>: u128 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_MIN_ASK_DEFAULT"></a>
+
+Default value for minimum ask order ID
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>: u128 = 340282366920938463463374607431768211455;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_invoke_registry"></a>
 
 ## Function `invoke_registry`
 
+Dependency stub planning
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_registry">invoke_registry</a>()
@@ -185,6 +258,79 @@ An order book for a given market
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_user">invoke_user</a>() {<a href="user.md#0xc0deb00c_user_return_0">user::return_0</a>();}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_register_order_book"></a>
+
+## Function `register_order_book`
+
+Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>, initializing their
+<code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
+
+
+<a name="@Type_parameters_1"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_2"></a>
+
+### Parameters
+
+* <code>host</code>: Account where order book should be stored
+* <code>market_id</code>: Market ID
+* <code>lot_size</code>: Number of base units exchanged per lot
+* <code>tick_size</code>: Number of quote units exchanged per tick
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_order_book">register_order_book</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, market_id: u64, lot_size: u64, tick_size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_order_book">register_order_book</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    host: &<a href="">signer</a>,
+    market_id: u64,
+    lot_size: u64,
+    tick_size: u64,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <b>let</b> host_address = address_of(host); // Get host <b>address</b>
+    // If host does not have an order books map
+    <b>if</b> (!<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(host_address))
+        // Move one <b>to</b> their <a href="">account</a>
+        <b>move_to</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(host, <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>{map: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()});
+    // Borrow mutable reference <b>to</b> order books map
+    <b>let</b> order_books_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(host_address).map;
+    // Assert order book does not already exist under host <a href="">account</a>
+    <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(order_books_map_ref_mut, market_id),
+        <a href="market.md#0xc0deb00c_market_E_ORDER_BOOK_EXISTS">E_ORDER_BOOK_EXISTS</a>);
+    <a href="open_table.md#0xc0deb00c_open_table_add">open_table::add</a>(order_books_map_ref_mut, market_id, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>{
+        base_type_info: <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(),
+        quote_type_info: <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;(),
+        lot_size,
+        tick_size,
+        asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
+        bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
+        min_ask: <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>,
+        max_bid: <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>,
+        counter: 0
+    });
+}
 </code></pre>
 
 

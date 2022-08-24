@@ -66,19 +66,12 @@ module econia::user {
     use aptos_std::type_info;
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
-    //use econia::order_id;
+    use econia::order_id;
     use econia::registry::{Self, CustodianCapability};
     use std::option;
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test_only]
-    use econia::assets::{Self, BC, BG, QC, QG};
-
-    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -88,6 +81,8 @@ module econia::user {
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test_only]
+    use econia::assets::{Self, BC, BG, QC, QG};
     #[test_only]
     use econia::critbit::{u, u_long};
 
@@ -471,6 +466,128 @@ module econia::user {
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Register a new order under a user's market account
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `market_account_id`: Corresponding market account ID
+    /// * `side:` `ASK` or `BID`
+    /// * `order_id`: Order ID for given order
+    /// * `size`: Size of order in lots
+    /// * `price`: Price of order in ticks per lot
+    /// * `lot_size`: Base asset units per lot
+    /// * `tick_size`: Quote asset units per tick
+    public(friend) fun register_order_internal(
+        user: address,
+        market_account_id: u128,
+        side: bool,
+        order_id: u128,
+        size: u64,
+        price: u64,
+        lot_size: u64,
+        tick_size: u64,
+    ) acquires MarketAccounts {
+        // Verify user has a corresponding market account
+        verify_market_account_exists(user, market_account_id);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account_ref_mut = open_table::borrow_mut(
+            market_accounts_map_ref_mut, market_account_id);
+        // Borrow mutable reference to open orders tree, mutable
+        // reference to ceiling field for asset received from trade, and
+        // mutable reference to available field for asset traded away
+        let (
+            tree_ref_mut,
+            in_asset_ceiling_ref_mut,
+            out_asset_available_ref_mut
+        ) = if (side == ASK) (
+                &mut market_account_ref_mut.asks,
+                &mut market_account_ref_mut.quote_ceiling,
+                &mut market_account_ref_mut.base_available
+            ) else (
+                &mut market_account_ref_mut.bids,
+                &mut market_account_ref_mut.base_ceiling,
+                &mut market_account_ref_mut.quote_available
+            );
+        // Range check proposed order, store fill amounts
+        let (in_asset_fill, out_asset_fill) = range_check_new_order(
+            side, size, price, lot_size, tick_size,
+            *in_asset_ceiling_ref_mut, *out_asset_available_ref_mut);
+        // Add order to corresponding tree
+        critbit::insert(tree_ref_mut, order_id, size);
+        // Increment asset ceiling amount for asset received from trade
+        *in_asset_ceiling_ref_mut = *in_asset_ceiling_ref_mut + in_asset_fill;
+        // Decrement asset available amount for asset traded away
+        *out_asset_available_ref_mut =
+            *out_asset_available_ref_mut - out_asset_fill;
+    }
+
+    /// Remove an order from a user's market account
+    ///
+    /// # Parameters
+    /// * `user`: Address of corresponding user
+    /// * `market_account_id`: Corresponding market account ID
+    /// * `lot_size`: Base asset units per lot
+    /// * `tick_size`: Quote asset units per tick
+    /// * `side`: `ASK` or `BID`
+    /// * `order_id`: Order ID for given order
+    ///
+    /// # Assumes
+    /// * That order has already been cancelled from the order book, and
+    ///   as such that user necessarily has an open order as specified:
+    ///   if an order has been cancelled from the book, then it had to
+    ///   have been placed on the book, which means that the
+    ///   corresponding user successfully placed it to begin with.
+    public(friend) fun remove_order_internal(
+        user: address,
+        market_account_id: u128,
+        lot_size: u64,
+        tick_size: u64,
+        side: bool,
+        order_id: u128,
+    ) acquires MarketAccounts {
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user).map;
+        // Borrow mutable reference to corresponding market account
+        let market_account_ref_mut = open_table::borrow_mut(
+            market_accounts_map_ref_mut, market_account_id);
+        // Get mutable reference to corresponding tree, mutable
+        // reference to corresponding assets available field, mutable
+        // reference to corresponding asset ceiling fields, available
+        // size multiplier, and ceiling size multipler, based on side
+        let (tree_ref_mut, asset_available_ref_mut, asset_ceiling_ref_mut,
+             size_multiplier_available, size_multiplier_ceiling) =
+            if (side == ASK) (
+                &mut market_account_ref_mut.asks,
+                &mut market_account_ref_mut.base_available,
+                &mut market_account_ref_mut.quote_ceiling,
+                lot_size,
+                order_id::price(order_id) * tick_size
+            ) else (
+                &mut market_account_ref_mut.bids,
+                &mut market_account_ref_mut.quote_available,
+                &mut market_account_ref_mut.base_ceiling,
+                order_id::price(order_id) * tick_size,
+                lot_size
+            );
+        // Pop order from corresponding tree, storing specified size
+        let size = critbit::pop(tree_ref_mut, order_id);
+        // Calculate amount of asset unlocked by order cancellation
+        let unlocked = size * size_multiplier_available;
+        // Update available asset field for amount unlocked
+        *asset_available_ref_mut = *asset_available_ref_mut + unlocked;
+        // Calculate amount that ceiling decrements due to cancellation
+        let ceiling_decrement_amount = size * size_multiplier_ceiling;
+        // Decrement ceiling amount accordingly
+        *asset_ceiling_ref_mut = *asset_ceiling_ref_mut -
+            ceiling_decrement_amount;
+    }
+
     /// Withdraw `amount` of coins of `CoinType` from `user`'s market
     /// account indicated by `market_account_id`, returning them
     /// wrapped in an option
@@ -486,8 +603,6 @@ module econia::user {
         withdraw_asset<CoinType>(user, market_account_id, amount, true,
             COIN_ASSET_TRANSFER)
     }
-
-    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -624,6 +739,73 @@ module econia::user {
             )
         }; // Otherwise abort
         abort E_NOT_IN_MARKET_PAIR
+    }
+
+    /// Range check proposed order
+    ///
+    /// # Parameters
+    /// * `side:` `ASK` or `BID`
+    /// * `size`: Order size, in lots
+    /// * `price`: Order price, in ticks per lot
+    /// * `lot_size`: Base asset units per lot
+    /// * `tick_size`: Quote asset units per tick
+    /// * `in_asset_ceiling`: `MarketAccount.quote_ceiling` if `side` is
+    ///   `ASK`, and `MarketAccount.base_ceiling` if `side` is `BID`
+    ///   (total holdings ceiling amount for asset received from trade)
+    /// * `out_asset_available`: `MarketAccount.base_available` if
+    ///   `side` is `ASK`, and `MarketAccount.quote_available` if `side`
+    ///   is `BID` (available withdraw amount for asset traded away)
+    ///
+    /// # Returns
+    /// * `u64`: If `side` is `ASK` quote asset units required to fill
+    ///   order, else base asset units (inbound asset fill)
+    /// * `u64`: If `side` is `ASK` base asset units required to fill
+    ///   order, else quote asset units (outbound asset fill)
+    ///
+    /// # Abort conditions
+    /// * If `size` is 0
+    /// * If `price` is 0
+    /// * If number of ticks required to fill order overflows a `u64`
+    /// * If filling the order results in an overflow for incoming asset
+    /// * If filling the order results in an overflow for outgoing asset
+    /// * If not enough available outgoing asset to fill the order
+    fun range_check_new_order(
+        side: bool,
+        size: u64,
+        price: u64,
+        lot_size: u64,
+        tick_size: u64,
+        in_asset_ceiling: u64,
+        out_asset_available: u64
+    ): (
+        u64,
+        u64
+    ) {
+        // Assert order has actual price
+        assert!(size > 0, E_SIZE_0);
+        // Assert order has actual size
+        assert!(price > 0, E_PRICE_0);
+        // Calculate base units needed to fill order
+        let base_fill = (size as u128) * (lot_size as u128);
+        // Calculate ticks to fill order
+        let ticks = (size as u128) * (price as u128);
+        // Assert ticks count can fit in a u64
+        assert!(!(ticks > (HI_64 as u128)), E_TICKS_OVERFLOW);
+        // Calculate quote units to fill order
+        let quote_fill = ticks * (tick_size as u128);
+        // If an ask, user gets quote and trades away base, else flipped
+        let (in_asset_fill, out_asset_fill) = if (side == ASK)
+            (quote_fill, base_fill) else (base_fill, quote_fill);
+        assert!( // Assert inbound asset does not overflow
+            !(in_asset_fill + (in_asset_ceiling as u128) > (HI_64 as u128)),
+            E_OVERFLOW_ASSET_IN);
+        // Assert outbound asset fill amount fits in a u64
+        assert!(!(out_asset_fill > (HI_64 as u128)), E_OVERFLOW_ASSET_OUT);
+        // Assert enough outbound asset to cover the fill
+        assert!(!(out_asset_fill > (out_asset_available as u128)),
+            E_NOT_ENOUGH_ASSET_AVAILABLE);
+        // Return re-casted, range-checked amounts
+        ((in_asset_fill as u64), (out_asset_fill as u64))
     }
 
     /// Register `user` with `Collateral` map entry for given `CoinType`
@@ -887,6 +1069,36 @@ module econia::user {
     }
 
     #[test_only]
+    /// Return size of order for given `user`, `market_account_id`,
+    /// `side`, and `order_id`
+    ///
+    /// # Assumes
+    /// * `user` has an open order as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun get_order_size_test(
+        user: address,
+        market_account_id: u128,
+        side: bool,
+        order_id: u128
+    ): u64
+    acquires MarketAccounts {
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to market account
+        let market_account_ref = open_table::borrow(market_accounts_map_ref,
+            market_account_id);
+        // Get immutable reference to corresponding orders tree
+        let tree_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return order size for given order ID in tree
+        *critbit::borrow(tree_ref, order_id)
+    }
+
+    #[test_only]
     /// Return `true` if `user` has an entry in `Collateral` for given
     /// `AssetType`, `market_id`, and `general_custodian_id`
     public fun has_collateral_test<AssetType>(
@@ -905,6 +1117,36 @@ module econia::user {
             &borrow_global<Collateral<AssetType>>(user).map;
         // Return if table contains entry for market account ID
         open_table::contains(collateral_map_ref, market_account_id)
+    }
+
+    #[test_only]
+    /// Return `true` if `user` has an open order for given
+    /// `market_account_id`, `side`, and `order_id`, else `false`
+    ///
+    /// # Assumes
+    /// * `user` has a market account as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions
+    public fun has_order_test(
+        user: address,
+        market_account_id: u128,
+        side: bool,
+        order_id: u128
+    ): bool
+    acquires MarketAccounts {
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to market account
+        let market_account_ref = open_table::borrow(market_accounts_map_ref,
+            market_account_id);
+        // Get immutable reference to corresponding orders tree
+        let tree_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Return if tree has given order
+        critbit::has_key(tree_ref, order_id)
     }
 
     #[test_only]
@@ -1177,6 +1419,133 @@ module econia::user {
             (u(b"10101010") as u64), 0);
     }
 
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for overflowing asset traded away
+    fun test_range_check_new_order_not_enough_asset() {
+        // Define order parameters
+        let side = BID;
+        let size = 2;
+        let price = 1;
+        let lot_size = 1;
+        let tick_size = 1;
+        let in_asset_ceiling = 1;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for overflowing asset received from trade
+    fun test_range_check_new_order_overflow_asset_in() {
+        // Define order parameters
+        let side = ASK;
+        let size = 1;
+        let price = 1;
+        let lot_size = 1;
+        let tick_size = 1;
+        let in_asset_ceiling = HI_64;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for overflowing asset traded away
+    fun test_range_check_new_order_overflow_asset_out() {
+        // Define order parameters
+        let side = BID;
+        let size = 2;
+        let price = 1;
+        let lot_size = 1;
+        let tick_size = HI_64;
+        let in_asset_ceiling = 1;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for overflowing ticks required to fill trade
+    fun test_range_check_new_order_overflow_ticks() {
+        // Define order parameters
+        let side = BID;
+        let size = HI_64;
+        let price = 2;
+        let lot_size = 1;
+        let tick_size = 1;
+        let in_asset_ceiling = 1;
+        let out_asset_available = 1;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for price 0
+    fun test_range_check_new_order_price_0() {
+        // Define order parameters
+        let side = ASK;
+        let size = 1;
+        let price = 0;
+        let lot_size = 2;
+        let tick_size = 3;
+        let in_asset_ceiling = 4;
+        let out_asset_available = 5;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for size 0
+    fun test_range_check_new_order_size_0() {
+        // Define order parameters
+        let side = ASK;
+        let size = 0;
+        let price = 1;
+        let lot_size = 2;
+        let tick_size = 3;
+        let in_asset_ceiling = 4;
+        let out_asset_available = 5;
+        // Attempt invalid range check
+        range_check_new_order(side, size, price, lot_size, tick_size,
+            in_asset_ceiling, out_asset_available);
+    }
+
+    #[test]
+    /// Verify successful returns
+    fun test_range_check_new_order_success() {
+        // Define order parameters
+        let side = ASK;
+        let size = 3;
+        let price = 4;
+        let lot_size = 5;
+        let tick_size = 6;
+        let in_asset_ceiling = 1000;
+        let out_asset_available = 2000;
+        // Range check order, store asset in and asset out fill amounts
+        let (in_asset_fill, out_asset_fill) = range_check_new_order(side, size,
+            price, lot_size, tick_size, in_asset_ceiling, out_asset_available);
+        // Assert returns
+        assert!(in_asset_fill  == size * price * tick_size, 0);
+        assert!(out_asset_fill == size * lot_size         , 0);
+        // Swtich side and re-evaluate
+        side = BID;
+        (in_asset_fill, out_asset_fill) = range_check_new_order(side, size,
+            price, lot_size, tick_size, in_asset_ceiling, out_asset_available);
+        assert!(in_asset_fill  == size * lot_size         , 0);
+        assert!(out_asset_fill == size * price * tick_size, 0);
+    }
+
     #[test(user = @user)]
     /// Verify registration for multiple market accounts
     fun test_register_collateral_entry(
@@ -1398,6 +1767,142 @@ module econia::user {
         register_market_accounts_entry<BC, QC>(user, market_account_id_1);
         // Register market accounts entry
         register_market_accounts_entry<BC, QC>(user, market_account_id_1);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify adding an ask, then removing it
+    fun test_register_remove_order_internal_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register a pure coin market for trading
+        let (_, _, _, _, lot_size, tick_size, _, market_id) =
+            registry::register_market_internal_multiple_test(econia);
+        // Declare user-specific general custodian ID
+        let general_custodian_id = NO_CUSTODIAN;
+        // Declare order parameters
+        let side = ASK;
+        let counter = 123;
+        let price = 456;
+        let order_id = order_id::order_id(price, counter, side);
+        let size = 789;
+        let base_required = lot_size * size;
+        let quote_received = size * price * tick_size;
+        // Register user with a market account for given market
+        register_market_account<BC, QC>(user, market_id, general_custodian_id);
+        // Get market account ID
+        let market_account_id = get_market_account_id(market_id,
+            general_custodian_id);
+        // Deposit enough base coins to cover the ask
+        deposit_coins<BC>(@user, market_id, general_custodian_id,
+            assets::mint<BC>(econia, base_required));
+        // Register user's market account with given order
+        register_order_internal(@user, market_account_id, side, order_id,
+            size, price, lot_size, tick_size);
+        // Get asset counts
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      ==  base_required, 0);
+        assert!(base_available  ==              0, 0);
+        assert!(base_ceiling    ==  base_required, 0);
+        assert!(quote_total     ==              0, 0);
+        assert!(quote_available ==              0, 0);
+        assert!(quote_ceiling   == quote_received, 0);
+        // Assert order added to corresponding tree with correct size
+        assert!(get_order_size_test(@user, market_account_id, side, order_id)
+            == size, 0);
+        // Remove the order from the user's market account
+        remove_order_internal(@user, market_account_id, lot_size, tick_size,
+            side, order_id);
+        // Get asset counts
+        ( base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      == base_required, 0);
+        assert!(base_available  == base_required, 0);
+        assert!(base_ceiling    == base_required, 0);
+        assert!(quote_total     ==             0, 0);
+        assert!(quote_available ==             0, 0);
+        assert!(quote_ceiling   ==             0, 0);
+        assert!( // Assert user no longer has order in market account
+            !has_order_test(@user, market_account_id, side, order_id), 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify adding a bid, then removing it
+    fun test_register_remove_order_internal_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register a pure coin market for trading
+        let (_, _, _, _, lot_size, tick_size, _, market_id) =
+            registry::register_market_internal_multiple_test(econia);
+        // Declare user-specific general custodian ID
+        let general_custodian_id = NO_CUSTODIAN;
+        // Declare order parameters
+        let side = BID;
+        let counter = 123;
+        let price = 456;
+        let order_id = order_id::order_id(price, counter, side);
+        let size = 789;
+        let base_received = lot_size * size;
+        let quote_required = size * price * tick_size;
+        // Register user with a market account for given market
+        register_market_account<BC, QC>(user, market_id, general_custodian_id);
+        // Get market account ID
+        let market_account_id = get_market_account_id(market_id,
+            general_custodian_id);
+        // Deposit enough quote coins to cover the bid
+        deposit_coins<QC>(@user, market_id, general_custodian_id,
+            assets::mint<QC>(econia, quote_required));
+        // Register user's market account with given order
+        register_order_internal(@user, market_account_id, side, order_id,
+            size, price, lot_size, tick_size);
+        // Get asset counts
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      ==              0, 0);
+        assert!(base_available  ==              0, 0);
+        assert!(base_ceiling    ==  base_received, 0);
+        assert!(quote_total     == quote_required, 0);
+        assert!(quote_available ==              0, 0);
+        assert!(quote_ceiling   == quote_required, 0);
+        // Assert order added to corresponding tree with correct size
+        assert!(get_order_size_test(@user, market_account_id, side, order_id)
+            == size, 0);
+        // Remove the order from the user's market account
+        remove_order_internal(@user, market_account_id, lot_size, tick_size,
+            side, order_id);
+        // Get asset counts
+        ( base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling,
+        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      ==              0, 0);
+        assert!(base_available  ==              0, 0);
+        assert!(base_ceiling    ==              0, 0);
+        assert!(quote_total     == quote_required, 0);
+        assert!(quote_available == quote_required, 0);
+        assert!(quote_ceiling   == quote_required, 0);
+        assert!( // Assert user no longer has order in market account
+            !has_order_test(@user, market_account_id, side, order_id), 0);
     }
 
     #[test]

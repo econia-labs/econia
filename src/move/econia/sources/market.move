@@ -81,6 +81,10 @@ module econia::market {
 
     /// When an order book already exists at given address
     const E_ORDER_BOOK_EXISTS: u64 = 0;
+    /// When a host does not have an `OrderBooks`
+    const E_NO_ORDER_BOOKS: u64 = 1;
+    /// When indicated `OrderBook` does not exist
+    const E_NO_ORDER_BOOK: u64 = 2;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -222,6 +226,25 @@ module econia::market {
         });
     }
 
+    /// Verify `host` has an `OrderBook` with `market_id`
+    ///
+    /// # Abort conditions
+    /// * If user does not have an `OrderBooks`
+    /// * If user does not have an `OrderBook` for given `market_id`
+    fun verify_order_book_exists(
+        host: address,
+        market_id: u64
+    ) acquires OrderBooks {
+        // Assert host has an order books map
+        assert!(exists<OrderBooks>(host), E_NO_ORDER_BOOKS);
+        // Borrow immutable reference to order books map
+        // Borrow immutable reference to market accounts map
+        let order_books_map_ref = &borrow_global<OrderBooks>(host).map;
+        // Assert host has an entry in map for market account ID
+        assert!(open_table::contains(order_books_map_ref, market_id),
+            E_NO_ORDER_BOOK);
+    }
+
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -317,6 +340,38 @@ module econia::market {
         register_order_book<BC, QC>(user, 1, 2, 3);
         // Attempt invalid re-registration
         register_order_book<BC, QC>(user, 1, 2, 3);
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no `OrderBook` with given market ID
+    fun test_verify_order_book_exists_no_order_book(
+        user: &signer
+    ) acquires OrderBooks {
+        // Register an order book
+        register_order_book<BG, QG>(user, 0, 1, 2);
+        // Attempt invalid invocation
+        verify_order_book_exists(@user, 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for no `OrderBooks`
+    fun test_verify_order_book_exists_no_order_books()
+    acquires OrderBooks {
+        // Attempt invalid invocation
+        verify_order_book_exists(@user, 0);
+    }
+
+    #[test(user = @user)]
+    /// Verify run to completion without error
+    fun test_verify_order_book_exists(
+        user: &signer
+    ) acquires OrderBooks {
+        // Register an order book
+        register_order_book<BG, QG>(user, 0, 1, 2);
+        // Verify it was registered
+        verify_order_book_exists(@user, 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

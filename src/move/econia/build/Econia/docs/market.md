@@ -19,6 +19,8 @@ Market-level book keeping functionality, with matching engine.
 -  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
     -  [Type parameters](#@Type_parameters_3)
     -  [Parameters](#@Parameters_4)
+-  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
+    -  [Abort conditions](#@Abort_conditions_5)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
@@ -199,6 +201,26 @@ When both base and quote assets are coins
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_NO_ORDER_BOOK"></a>
+
+When indicated <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> does not exist
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_NO_ORDER_BOOKS"></a>
+
+When a host does not have an <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code>
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOKS">E_NO_ORDER_BOOKS</a>: u64 = 1;
 </code></pre>
 
 
@@ -464,6 +486,49 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
         max_bid: <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>,
         counter: 0
     });
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_verify_order_book_exists"></a>
+
+## Function `verify_order_book_exists`
+
+Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
+
+
+<a name="@Abort_conditions_5"></a>
+
+### Abort conditions
+
+* If user does not have an <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code>
+* If user does not have an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> for given <code>market_id</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(host: <b>address</b>, market_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(
+    host: <b>address</b>,
+    market_id: u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Assert host <b>has</b> an order books map
+    <b>assert</b>!(<b>exists</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(host), <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOKS">E_NO_ORDER_BOOKS</a>);
+    // Borrow immutable reference <b>to</b> order books map
+    // Borrow immutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
+    <b>let</b> order_books_map_ref = &<b>borrow_global</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(host).map;
+    // Assert host <b>has</b> an entry in map for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
+    <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(order_books_map_ref, market_id),
+        <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>);
 }
 </code></pre>
 

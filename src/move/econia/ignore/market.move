@@ -58,15 +58,11 @@ module econia::market {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When caller is not Econia
-    const E_NOT_ECONIA: u64 = 1;
     /// When `EconiaCapabilityStore` already exists under Econia account
     const E_ECONIA_CAPABILITY_STORE_EXISTS: u64 = 2;
     /// When no `EconiaCapabilityStore` exists under Econia account
     const E_NO_ECONIA_CAPABILITY_STORE: u64 = 3;
-    /// When no `OrderBook` exists under given address
-    const E_NO_ORDER_BOOK: u64 = 4;
-    /// When corresponding order not found on book for given side
+   /// When corresponding order not found on book for given side
     const E_NO_SUCH_ORDER: u64 = 5;
     /// When invalid user attempts to manage an order
     const E_INVALID_USER: u64 = 6;

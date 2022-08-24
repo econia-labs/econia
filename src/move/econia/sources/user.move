@@ -1119,11 +1119,11 @@ module econia::user {
         });
     }
 
-    /// Verify `user` has a market account with `market_account_id`
+    /// Verify `user` has a `MarketAccount` with `market_account_id`
     ///
     /// # Abort conditions
-    /// * If user does not have a `MarketAccounts`
-    /// * If user does not have a `MarketAccount` for given
+    /// * If `user` does not have a `MarketAccounts`
+    /// * If `user` does not have a `MarketAccount` for given
     ///   `market_account_id`
     fun verify_market_account_exists(
         user: address,
@@ -1132,8 +1132,7 @@ module econia::user {
         // Assert user has a market accounts map
         assert!(exists<MarketAccounts>(user), E_NO_MARKET_ACCOUNTS);
         // Borrow immutable reference to market accounts map
-        let market_accounts_map_ref =
-            &borrow_global<MarketAccounts>(user).map;
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
         // Assert user has an entry in map for market account ID
         assert!(open_table::contains(market_accounts_map_ref,
             market_account_id), E_NO_MARKET_ACCOUNT);

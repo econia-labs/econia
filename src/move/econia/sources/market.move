@@ -149,7 +149,19 @@ module econia::market {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Register new market under signing host
+    /// Increment counter for number of orders placed on `OrderBook`,
+    /// returning the original value.
+    fun get_counter(
+        order_book_ref_mut: &mut OrderBook
+    ): u64 {
+        // Borrow mutable reference to order book serial counter
+        let counter_ref_mut = &mut order_book_ref_mut.counter;
+        let count = *counter_ref_mut; // Get count
+        *counter_ref_mut = count + 1; // Set new count
+        count // Return original count
+    }
+
+    /// Register new market under signing host.
     ///
     /// # Type parameters
     /// * `BaseType`: Base type for market
@@ -248,6 +260,26 @@ module econia::market {
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test(user = @user)]
+    fun test_get_counter(
+        user: &signer
+    ) acquires OrderBooks {
+        // Declare order book parameters
+        let (market_id, tick_size, lot_size) = (0, 1, 2);
+        // Register an order book
+        register_order_book<BG, QG>(user, market_id, lot_size, tick_size);
+        // Borrow mutable reference to order books map
+        let order_books_map_ref_mut =
+            &mut borrow_global_mut<OrderBooks>(@user).map;
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            open_table::borrow_mut(order_books_map_ref_mut, market_id);
+        // Assert counter returns
+        assert!(get_counter(order_book_ref_mut) == 0, 0);
+        assert!(get_counter(order_book_ref_mut) == 1, 0);
+        assert!(get_counter(order_book_ref_mut) == 2, 0);
+    }
 
     #[test(
         econia = @econia,

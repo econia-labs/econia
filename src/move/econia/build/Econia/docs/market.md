@@ -13,6 +13,7 @@ Market-level book keeping functionality, with matching engine.
 -  [Function `invoke_user`](#0xc0deb00c_market_invoke_user)
 -  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
+-  [Function `get_counter`](#0xc0deb00c_market_get_counter)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
@@ -360,11 +361,43 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market"
 
 </details>
 
+<a name="0xc0deb00c_market_get_counter"></a>
+
+## Function `get_counter`
+
+Increment counter for number of orders placed on <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>,
+returning the original value.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_counter">get_counter</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_get_counter">get_counter</a>(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>
+): u64 {
+    // Borrow mutable reference <b>to</b> order book serial counter
+    <b>let</b> counter_ref_mut = &<b>mut</b> order_book_ref_mut.counter;
+    <b>let</b> count = *counter_ref_mut; // Get count
+    *counter_ref_mut = count + 1; // Set new count
+    count // Return original count
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_register_market"></a>
 
 ## Function `register_market`
 
-Register new market under signing host
+Register new market under signing host.
 
 
 <a name="@Type_parameters_1"></a>

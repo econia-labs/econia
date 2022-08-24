@@ -818,18 +818,6 @@ module econia::market {
         };
     }
 
-    /// Increment counter for number of orders placed on an `OrderBook`,
-    /// returning the original value.
-    fun get_serial_id<B, Q, E>(
-        order_book_ref_mut: &mut OrderBook<B, Q, E>
-    ): u64 {
-        // Borrow mutable reference to order book serial counter
-        let counter_ref_mut = &mut order_book_ref_mut.counter;
-        let count = *counter_ref_mut; // Get count
-        *counter_ref_mut = count + 1; // Set new count
-        count // Return original count
-    }
-
     /// Place limit order on the book and in user's market account.
     ///
     /// # Parameters
@@ -1410,18 +1398,6 @@ module econia::market {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test(host = @user)]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for re-registering an order book
-    fun test_book_exists(
-        host: &signer,
-    ) {
-        // Initialize a book
-        init_book<BC, QC, E1>(host, 10);
-        // Attemp invalid re-initialization
-        init_book<BC, QC, E1>(host, 10);
-    }
 
     #[test(
         econia = @econia,
@@ -2685,66 +2661,6 @@ module econia::market {
                 @user_3, USER_3_CUSTODIAN_ID, side, order_id_3), 0);
     }
 
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for uninitialized capability store
-    fun test_get_econia_capability_not_exists()
-    acquires EconiaCapabilityStore{
-        get_econia_capability(); // Attempt invalid invocation
-    }
-
-    #[test(econia = @econia)]
-    /// Verify successful serial ID generation
-    fun test_get_order_serial_id(
-        econia: &signer
-    ) acquires OrderBook {
-        init_book<BC, QC, E1>(econia, 10); // Initalize order book
-        // Borrow mutable reference to order book
-        let order_book_ref_mut =
-            borrow_global_mut<OrderBook<BC, QC, E1>>(@econia);
-        // Assert serial ID returns
-        assert!(get_serial_id(order_book_ref_mut) == 0, 0);
-        assert!(get_serial_id(order_book_ref_mut) == 1, 0);
-        assert!(get_serial_id(order_book_ref_mut) == 2, 0);
-    }
-
-    #[test(host = @user)]
-    /// Verify successful initialization of order book
-    fun test_init_book(
-        host: &signer,
-    ) acquires OrderBook {
-        // Initialize a book
-        init_book<BC, QC, E1>(host, 10);
-        // Borrow immutable reference to new book
-        let book = borrow_global<OrderBook<BC, QC, E1>>(@user);
-        // Assert fields initialized correctly
-        assert!(book.scale_factor == 10, 0);
-        assert!(critbit::is_empty(&book.asks), 0);
-        assert!(critbit::is_empty(&book.bids), 0);
-        assert!(book.min_ask == MIN_ASK_DEFAULT, 0);
-        assert!(book.max_bid == MAX_BID_DEFAULT, 0);
-        assert!(book.counter == 0, 0);
-    }
-
-    #[test(econia = @econia)]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for attempting to re-init under Econia account
-    fun test_init_econia_capability_store_exists(
-        econia: &signer
-    ) {
-        init_econia_capability_store(econia); // Initialize store
-        init_econia_capability_store(econia); // Attempt invalid re-init
-    }
-
-    #[test(account = @user)]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for attempting to init under non-Econia account
-    fun test_init_econia_capability_store_not_econia(
-        account: &signer
-    ) {
-        init_econia_capability_store(account); // Attempt invalid init
-    }
-
     #[test(
         econia = @econia,
         user = @user
@@ -2984,21 +2900,6 @@ module econia::market {
     acquires EconiaCapabilityStore, OrderBook {
         place_limit_order<BC, QC, E1>(@user, @econia, NO_CUSTODIAN, ASK,
             10, 10); // Attempt invalid invocation
-    }
-
-    #[test(econia = @econia)]
-    /// Verify successful registration
-    fun test_register_market(
-        econia: &signer
-    ) acquires EconiaCapabilityStore {
-        init_econia_capability_store(econia);
-        coins::init_coin_types(econia); // Init coin types
-        registry::init_registry(econia); // Initialize registry
-        register_market<BC, QC, E1>(econia); // Register market
-        // Assert entry added to registry
-        assert!(registry::is_registered_types<BC, QC, E1>(), 0);
-        // Assert corresponding order book initialized under host
-        assert!(exists<OrderBook<BC, QC, E1>>(@econia), 0);
     }
 
     #[test]

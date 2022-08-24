@@ -267,7 +267,7 @@ module econia::registry {
         custodian_id <= n_custodians() && custodian_id != NO_CUSTODIAN
     }
 
-    /// Register a market
+    /// Register a market, returning its market ID
     ///
     /// # Type parameters
     /// * `BaseType`: Base type for market
@@ -281,6 +281,9 @@ module econia::registry {
     ///    capability required to approve deposits and withdrawals of
     ///    non-coin assets (passed as `PURE_COIN_PAIR` when base and
     ///    quote assets are both coins)
+    ///
+    /// # Returns
+    /// * `u64`: Market's ID
     ///
     /// # Abort conditions
     /// * If registry is not initialized
@@ -314,7 +317,8 @@ module econia::registry {
         lot_size: u64,
         tick_size: u64,
         generic_asset_transfer_custodian_id: u64,
-    ) acquires Registry {
+    ): u64
+    acquires Registry {
         // Assert the registry is already initialized
         assert!(exists<Registry>(@econia), E_NO_REGISTRY);
         // Assert lot size is nonzero
@@ -331,10 +335,12 @@ module econia::registry {
         let quote_is_coin = coin::is_coin_initialized<QuoteType>();
         // Determine if a pure coin pair
         let pure_coin = base_is_coin && quote_is_coin;
+        // Get 0-indexed market ID
+        let market_id = n_markets();
         // If a pure coin pair, flag as such, otherwise set agnostic
-        // disambiguator to serial ID (0-indexed) of the current market
+        // disambiguator to market ID
         let agnostic_disambiguator =
-            if (pure_coin) PURE_COIN_PAIR else n_markets();
+            if (pure_coin) PURE_COIN_PAIR else market_id;
         // Pack corresponding trading pair info
         let trading_pair_info = TradingPairInfo{base_type_info,
             quote_type_info, lot_size, tick_size,
@@ -361,6 +367,7 @@ module econia::registry {
         // Push back onto markets list a packed market info
         vector::push_back(&mut registry_ref_mut.markets,
             MarketInfo{host, trading_pair_info});
+        market_id // Return market ID
     }
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -814,8 +821,11 @@ module econia::registry {
             generic_asset_transfer_custodian_id,
             agnostic_disambiguator};
         let market_info = MarketInfo{trading_pair_info, host};
-        register_market_internal<BC, QC>( // Run valid initialization
+        // Run valid initialization
+        let market_id = register_market_internal<BC, QC>(
             @user, lot_size, tick_size, generic_asset_transfer_custodian_id);
+        // Assert market ID administered correctly
+        assert!(market_id == 0, 0);
         // Borrow immutable reference to registry
         let registry_ref = borrow_global<Registry>(@econia);
         // Assert correct host registration
@@ -834,8 +844,11 @@ module econia::registry {
         market_info = MarketInfo{trading_pair_info, host};
         // Set custodian ID to be registered
         set_registered_custodian_test(generic_asset_transfer_custodian_id);
-        register_market_internal<BG, QC>( // Run valid initialization
+        // Run valid initialization
+        market_id = register_market_internal<BG, QC>(
             @user, lot_size, tick_size, generic_asset_transfer_custodian_id);
+        // Assert market ID administered correctly
+        assert!(market_id == 1, 0);
         // Borrow immutable reference to registry
         registry_ref = borrow_global<Registry>(@econia);
         // Assert correct host registration

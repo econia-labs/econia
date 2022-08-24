@@ -26,9 +26,10 @@ registration and tracking, delegated custodian registration.
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
     -  [Type parameters](#@Type_parameters_4)
     -  [Parameters](#@Parameters_5)
-    -  [Abort conditions](#@Abort_conditions_6)
-    -  [Coin types](#@Coin_types_7)
-    -  [Non-coin types](#@Non-coin_types_8)
+    -  [Returns](#@Returns_6)
+    -  [Abort conditions](#@Abort_conditions_7)
+    -  [Coin types](#@Coin_types_8)
+    -  [Non-coin types](#@Non-coin_types_9)
 -  [Function `is_registered_trading_pair`](#0xc0deb00c_registry_is_registered_trading_pair)
 -  [Function `n_custodians`](#0xc0deb00c_registry_n_custodians)
 -  [Function `n_markets`](#0xc0deb00c_registry_n_markets)
@@ -676,7 +677,7 @@ Set as friend function to restrict excess registry queries
 
 ## Function `register_market_internal`
 
-Register a market
+Register a market, returning its market ID
 
 
 <a name="@Type_parameters_4"></a>
@@ -700,7 +701,14 @@ non-coin assets (passed as <code><a href="registry.md#0xc0deb00c_registry_PURE_C
 quote assets are both coins)
 
 
-<a name="@Abort_conditions_6"></a>
+<a name="@Returns_6"></a>
+
+### Returns
+
+* <code>u64</code>: Market's ID
+
+
+<a name="@Abort_conditions_7"></a>
 
 ### Abort conditions
 
@@ -713,7 +721,7 @@ quote assets are both coins)
 invalid <code>custodian_id</code>
 
 
-<a name="@Coin_types_7"></a>
+<a name="@Coin_types_8"></a>
 
 ### Coin types
 
@@ -726,7 +734,7 @@ market may be registered with the corresponding <code>lot_size</code> and
 <code>tick_size</code> for the given base/quote combination
 
 
-<a name="@Non-coin_types_8"></a>
+<a name="@Non-coin_types_9"></a>
 
 ### Non-coin types
 
@@ -737,7 +745,7 @@ registration will thus require a registered custodian ID
 rather than <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a></code>, which is considered the default
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id: u64): u64
 </code></pre>
 
 
@@ -754,7 +762,8 @@ rather than <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">Generic
     lot_size: u64,
     tick_size: u64,
     generic_asset_transfer_custodian_id: u64,
-) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+): u64
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Assert the <a href="registry.md#0xc0deb00c_registry">registry</a> is already initialized
     <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
     // Assert lot size is nonzero
@@ -771,10 +780,12 @@ rather than <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">Generic
     <b>let</b> quote_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;QuoteType&gt;();
     // Determine <b>if</b> a pure <a href="">coin</a> pair
     <b>let</b> pure_coin = base_is_coin && quote_is_coin;
+    // Get 0-indexed <a href="market.md#0xc0deb00c_market">market</a> ID
+    <b>let</b> market_id = <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>();
     // If a pure <a href="">coin</a> pair, flag <b>as</b> such, otherwise set agnostic
-    // disambiguator <b>to</b> serial ID (0-indexed) of the current <a href="market.md#0xc0deb00c_market">market</a>
+    // disambiguator <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> ID
     <b>let</b> agnostic_disambiguator =
-        <b>if</b> (pure_coin) <a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a> <b>else</b> <a href="registry.md#0xc0deb00c_registry_n_markets">n_markets</a>();
+        <b>if</b> (pure_coin) <a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a> <b>else</b> market_id;
     // Pack corresponding trading pair info
     <b>let</b> trading_pair_info = <a href="registry.md#0xc0deb00c_registry_TradingPairInfo">TradingPairInfo</a>{base_type_info,
         quote_type_info, lot_size, tick_size,
@@ -801,6 +812,7 @@ rather than <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">Generic
     // Push back onto markets list a packed <a href="market.md#0xc0deb00c_market">market</a> info
     <a href="_push_back">vector::push_back</a>(&<b>mut</b> registry_ref_mut.markets,
         <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{host, trading_pair_info});
+    market_id // Return <a href="market.md#0xc0deb00c_market">market</a> ID
 }
 </code></pre>
 

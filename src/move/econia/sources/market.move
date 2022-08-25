@@ -669,8 +669,7 @@ module econia::market {
         // Get user state
         let (base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            user::get_asset_counts_test(@user, MARKET_ID,
-                general_custodian_id);
+            user::get_asset_counts_test(@user, market_account_id);
         let order_size = user::get_order_size_test(@user, market_account_id,
             side, order_id_1);
         // Assert user state
@@ -696,8 +695,7 @@ module econia::market {
         // Get user state
         (base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling) =
-            user::get_asset_counts_test(@user, MARKET_ID,
-                general_custodian_id);
+            user::get_asset_counts_test(@user, market_account_id);
         order_size = user::get_order_size_test(@user, market_account_id,
             side, order_id_2);
         // Assert user state
@@ -762,8 +760,7 @@ module econia::market {
         // Get user state
         let (base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            user::get_asset_counts_test(@user, MARKET_ID,
-                general_custodian_id);
+            user::get_asset_counts_test(@user, market_account_id);
         let order_size = user::get_order_size_test(@user, market_account_id,
             side, order_id_1);
         // Assert user state
@@ -789,8 +786,7 @@ module econia::market {
         // Get user state
         (base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling) =
-            user::get_asset_counts_test(@user, MARKET_ID,
-                general_custodian_id);
+            user::get_asset_counts_test(@user, market_account_id);
         order_size = user::get_order_size_test(@user, market_account_id,
             side, order_id_2);
         // Assert user state

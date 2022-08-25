@@ -1236,28 +1236,11 @@ module econia::user {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    /// Return immutable reference to market account for given
-    /// `market_id` and `general_custodian_id` in `MarketAccounts`
-    /// indicated by `market_accounts_ref`
-    fun borrow_market_account_test(
-        market_id: u64,
-        general_custodian_id: u64,
-        market_accounts_ref: &MarketAccounts
-    ): &MarketAccount {
-        // Get corresponding market account ID
-        let market_account_id = get_market_account_id(
-            market_id, general_custodian_id);
-        // Return immutable reference to market account
-        open_table::borrow(&market_accounts_ref.map, market_account_id)
-    }
-
-    #[test_only]
     /// Return asset counts of `user`'s market account for given
-    /// `market_id` and `general_custodian_id`
+    /// `market_account_id`
     public fun get_asset_counts_test(
         user: address,
-        market_id: u64,
-        general_custodian_id: u64
+        market_account_id: u128,
     ): (
         u64,
         u64,
@@ -1266,11 +1249,11 @@ module econia::user {
         u64,
         u64
     ) acquires MarketAccounts {
-        // Borrow immutable reference to user's market accounts
-        let market_accounts_ref = borrow_global<MarketAccounts>(user);
+        // Borrow immutable reference to user's market accounts map
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
         // Borrow immutable reference to corresponding market account
-        let market_account_ref = borrow_market_account_test(
-            market_id, general_custodian_id, market_accounts_ref);
+        let market_account_ref =
+            open_table::borrow(market_accounts_map_ref, market_account_id);
         // Extract fields
         let (base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -1289,16 +1272,12 @@ module econia::user {
 
     #[test_only]
     /// Return `Coin.value` of `user`'s entry in `Collateral` for given
-    /// `AssetType`, `market_id`, and `general_custodian_id`
+    /// `AssetType` and `market_account_id`
     public fun get_collateral_value_test<CoinType>(
         user: address,
-        market_id: u64,
-        general_custodian_id: u64
+        market_account_id: u128,
     ): u64
     acquires Collateral {
-        // Get corresponding market account ID
-        let market_account_id = get_market_account_id(
-            market_id, general_custodian_id);
         // Borrow immutable reference to collateral map
         let collateral_map_ref =
             &borrow_global<Collateral<CoinType>>(user).map;
@@ -1340,18 +1319,14 @@ module econia::user {
 
     #[test_only]
     /// Return `true` if `user` has an entry in `Collateral` for given
-    /// `AssetType`, `market_id`, and `general_custodian_id`
+    /// `AssetType` and `market_account_id`
     public fun has_collateral_test<AssetType>(
         user: address,
-        market_id: u64,
-        general_custodian_id: u64
+        market_account_id: u128,
     ): bool
     acquires Collateral {
         // Return false if does not even have collateral map
         if (!exists<Collateral<AssetType>>(user)) return false;
-        // Get corresponding market account ID
-        let market_account_id = get_market_account_id(
-            market_id, general_custodian_id);
         // Borrow immutable reference to collateral map
         let collateral_map_ref =
             &borrow_global<Collateral<AssetType>>(user).map;
@@ -1507,6 +1482,8 @@ module econia::user {
         registry::register_market_internal<BG, QC>(@econia, 1, 2,
             generic_asset_transfer_custodian_id);
         let market_id = 0; // Declare market ID
+        let market_account_id = // Declare market account ID
+            get_market_account_id(market_id, general_custodian_id);
         // Register user to trade on the account
         register_market_account<BG, QC>(user, market_id, general_custodian_id);
         coin::register_for_test<QC>(user); // Register coin store
@@ -1522,17 +1499,16 @@ module econia::user {
         // Assert state
         let ( base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_id, general_custodian_id);
+            get_asset_counts_test(@user, market_account_id);
         assert!(base_total      == generic_amount, 0);
         assert!(base_available  == generic_amount, 0);
         assert!(base_ceiling    == generic_amount, 0);
         assert!(quote_total     == coin_amount,    0);
         assert!(quote_available == coin_amount,    0);
         assert!(quote_ceiling   == coin_amount,    0);
-        assert!(!has_collateral_test<BG>(
-            @user, market_id, general_custodian_id), 0);
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == coin_amount, 0);
+        assert!(!has_collateral_test<BG>(@user, market_account_id), 0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            coin_amount, 0);
     }
 
     #[test(
@@ -1670,15 +1646,14 @@ module econia::user {
         register_order_internal(@user, market_account_id, side, order_id,
             size, price, lot_size, tick_size);
         // Assert has base collateral deposited
-        assert!(get_collateral_value_test<BC>(
-            @user, market_id, general_custodian_id) == base_start, 0);
+        assert!(get_collateral_value_test<BC>(@user, market_account_id) ==
+            base_start, 0);
         // Assert has no quote collateral structure
-        assert!(!has_collateral_test<QG>(
-            @user, market_id, general_custodian_id), 0);
+        assert!(!has_collateral_test<QG>(@user, market_account_id), 0);
         // Get asset counts
         let (base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == base_start, 0);
         assert!(base_available  == 0, 0);
@@ -1697,13 +1672,12 @@ module econia::user {
         assert!(coin::value(option::borrow(&optional_base_coins)) ==
             base_to_route_1, 0);
         // Assert base collateral withdrawn
-        assert!(get_collateral_value_test<BC>(
-            @user, market_id, general_custodian_id) ==
+        assert!(get_collateral_value_test<BC>(@user, market_account_id) ==
             base_start - base_to_route_1, 0);
         // Get asset counts
         (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == base_start - base_to_route_1, 0);
         assert!(base_available  ==                            0, 0);
@@ -1721,13 +1695,12 @@ module econia::user {
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_base_coins)) ==
             base_start, 0);
-        // Assert all base collateral withdrawn
-        assert!(get_collateral_value_test<BC>(
-            @user, market_id, general_custodian_id) == 0, 0);
+        assert!( // Assert all base collateral withdrawn
+            get_collateral_value_test<BC>(@user, market_account_id) == 0, 0);
         // Get asset counts
         (base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == 0, 0);
         assert!(base_available  == 0, 0);
@@ -1806,15 +1779,13 @@ module econia::user {
         register_order_internal(@user, market_account_id, side, order_id,
             size, price, lot_size, tick_size);
         // Assert has no base collateral structure
-        assert!(!has_collateral_test<BG>(
-            @user, market_id, general_custodian_id), 0);
-        // Assert has no quote collateral deposited
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == 0, 0);
+        assert!(!has_collateral_test<BG>(@user, market_account_id), 0);
+        assert!( // Assert has no quote collateral deposited
+            get_collateral_value_test<QC>(@user, market_account_id) == 0, 0);
         // Get asset counts
         let (base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == base_start, 0);
         assert!(base_available  == 0, 0);
@@ -1833,12 +1804,12 @@ module econia::user {
         assert!(coin::value(option::borrow(&optional_quote_coins)) ==
             quote_filled_total - quote_to_route_1, 0);
         // Assert quote collateral deposited
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == quote_to_route_1, 0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            quote_to_route_1, 0);
         // Get asset counts
         (base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == base_start - base_to_route_1, 0);
         assert!(base_available  ==                            0, 0);
@@ -1856,12 +1827,12 @@ module econia::user {
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_quote_coins)) == 0, 0);
         // Assert quote collateral deposited
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == quote_filled_total, 0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            quote_filled_total, 0);
         // Get asset counts
         (base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == 0, 0);
         assert!(base_available  == 0, 0);
@@ -1939,15 +1910,14 @@ module econia::user {
         register_order_internal(@user, market_account_id, side, order_id,
             size, price, lot_size, tick_size);
         // Assert has no base collateral structure
-        assert!(!has_collateral_test<BG>(
-            @user, market_id, general_custodian_id), 0);
+        assert!(!has_collateral_test<BG>(@user, market_account_id), 0);
         // Assert has quote collateral deposited
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == quote_start, 0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            quote_start, 0);
         // Get asset counts
         let (base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == 0, 0);
         assert!(base_available  == 0, 0);
@@ -1966,13 +1936,12 @@ module econia::user {
         assert!(coin::value(option::borrow(&optional_quote_coins)) ==
             quote_to_route_1, 0);
         // Assert quote collateral withdrawn
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) ==
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
             quote_start - quote_to_route_1, 0);
         // Get asset counts
         (base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == base_to_route_1, 0);
         assert!(base_available  == base_to_route_1, 0);
@@ -1990,13 +1959,12 @@ module econia::user {
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_quote_coins)) ==
             quote_to_route_1 + quote_to_route_2, 0);
-        // Assert no more quote collateral
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == 0, 0);
+        assert!( // Assert no more quote collateral
+            get_collateral_value_test<QC>(@user, market_account_id) == 0, 0);
         // Get asset counts
         (base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert values
         assert!(base_total      == base_filled_total, 0);
         assert!(base_available  == base_filled_total, 0);
@@ -2452,7 +2420,7 @@ module econia::user {
         // Get asset counts
         let ( base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert asset counts
         assert!(base_total      ==  base_required, 0);
         assert!(base_available  ==              0, 0);
@@ -2469,7 +2437,7 @@ module econia::user {
         // Get asset counts
         ( base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert asset counts
         assert!(base_total      == base_required, 0);
         assert!(base_available  == base_required, 0);
@@ -2520,7 +2488,7 @@ module econia::user {
         // Get asset counts
         let ( base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert asset counts
         assert!(base_total      ==              0, 0);
         assert!(base_available  ==              0, 0);
@@ -2537,7 +2505,7 @@ module econia::user {
         // Get asset counts
         ( base_total,  base_available,  base_ceiling,
          quote_total, quote_available, quote_ceiling,
-        ) = get_asset_counts_test(@user, market_id, general_custodian_id);
+        ) = get_asset_counts_test(@user, market_account_id);
         // Assert asset counts
         assert!(base_total      ==              0, 0);
         assert!(base_available  ==              0, 0);
@@ -2632,6 +2600,8 @@ module econia::user {
         registry::register_market_internal<BG, QC>(@econia, 1, 2,
             generic_asset_transfer_custodian_id);
         let market_id = 0; // Declare market ID
+        let market_account_id =  // Declare market account ID
+            get_market_account_id(market_id, general_custodian_id);
         // Register user to trade on the account
         register_market_account<BG, QC>(user, market_id, general_custodian_id);
         coin::register_for_test<QC>(user); // Register coin store
@@ -2652,15 +2622,15 @@ module econia::user {
         // Assert state
         let ( base_total,  base_available,  base_ceiling,
              quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_id, general_custodian_id);
+            get_asset_counts_test(@user, market_account_id);
         assert!(base_total      == generic_end_amount, 0);
         assert!(base_available  == generic_end_amount, 0);
         assert!(base_ceiling    == generic_end_amount, 0);
         assert!(quote_total     == coin_end_amount,    0);
         assert!(quote_available == coin_end_amount,    0);
         assert!(quote_ceiling   == coin_end_amount,    0);
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == coin_end_amount, 0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            coin_end_amount, 0);
         assert!(coin::balance<QC>(@user) == coinstore_end_amount, 0);
     }
 
@@ -2700,12 +2670,12 @@ module econia::user {
         assert!(coin::value(&coins) == coin_withdrawal_amount, 0);
         // Assert market account state
         let (_, _, _, quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_id, general_custodian_id);
+            get_asset_counts_test(@user, market_account_id);
         assert!(quote_total     == coin_end_amount, 0);
         assert!(quote_available == coin_end_amount, 0);
         assert!(quote_ceiling   == coin_end_amount, 0);
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == coin_end_amount, 0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            coin_end_amount, 0);
         // Destroy resources
         registry::destroy_custodian_capability_test(custodian_capability);
         assets::burn(coins);
@@ -2748,12 +2718,12 @@ module econia::user {
             coin_withdrawal_amount, 0);
         // Assert market account state
         let (_, _, _, quote_total, quote_available, quote_ceiling) =
-            get_asset_counts_test(@user, market_id, general_custodian_id);
+            get_asset_counts_test(@user, market_account_id);
         assert!(quote_total     == coin_end_amount, 0);
         assert!(quote_available == coin_end_amount, 0);
         assert!(quote_ceiling   == coin_end_amount, 0);
-        assert!(get_collateral_value_test<QC>(
-            @user, market_id, general_custodian_id) == coin_end_amount, 0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            coin_end_amount, 0);
         // Destroy resources
         registry::destroy_custodian_capability_test(custodian_capability);
         assets::burn(option::destroy_some(option_coins));

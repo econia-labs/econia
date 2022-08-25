@@ -51,13 +51,16 @@ See `ss.sh` within a given directory for its available options
 
 1. First follow the [official Aptos developer setup guide](https://aptos.dev/guides/getting-started)
 
-1. Then [install the `aptos` CLI](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli) (note that this will go faster if [adding a precompiled binary](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode) to `~/.cargo/bin` rather than installing via `cargo`):
+1. Then [install the `aptos` CLI](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli)
 
     ```zsh
     cargo install --git https://github.com/aptos-labs/aptos-core.git aptos --branch devnet
     aptos config set-global-config --config-type global
     aptos init
     ```
+    * Note that this will go faster if [adding a precompiled binary](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode) to `~/.cargo/bin` rather than installing via `cargo`
+    * If the precompiled binary has not been released yet, additionally consider [installing from Git](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-from-git)
+
 
 1. Now you should be able to run all Move tests:
 

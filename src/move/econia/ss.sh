@@ -60,6 +60,9 @@ get_keyfile_info() {
     get_keyfile_address $keyfile
 }
 
+# Print git log in one line
+git_log_one_line() {git log --oneline --max-count=1}
+
 # Init Econia once published on chain, assuming `keyfile` and `addr` are
 # stored in global memory
 init_econia() {
@@ -130,6 +133,7 @@ elif test $1 = ac; then
     cd src/move/econia # Navigate back to Move package
     conda activate econia # Activate Econia conda environment
     substitute_econia_address docgen # Substitute docgen address
+    git_log_one_line # Show git log with one line
 
 # Clear the terminal
 elif test $1 = c; then clear
@@ -153,6 +157,9 @@ elif test $1 = er; then cd $repo_root
 
 # Get address of keyfile with relative path
 elif test $1 = ga; then get_keyfile_address $2; echo $addr
+
+# Show git log with one line
+elif test $1 = gl; then git_log_one_line
 
 # Generate a temporary keyfile in secrets directory
 elif test $1 = gt; then

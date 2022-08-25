@@ -56,17 +56,6 @@ module econia::market {
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-   /// When corresponding order not found on book for given side
-    const E_NO_SUCH_ORDER: u64 = 5;
-    /// When invalid user attempts to manage an order
-    const E_INVALID_USER: u64 = 6;
-    /// When invalid custodian attempts to manage an order
-    const E_INVALID_CUSTODIAN: u64 = 7;
-
-    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Market buy flag
@@ -247,67 +236,6 @@ module econia::market {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Cancel limit order on book, remove from user's market account.
-    ///
-    /// # Parameters
-    /// * `user`: Address of corresponding user
-    /// * `host`: Where corresponding `OrderBook` is hosted
-    /// * `custodian_id`: Serial ID of delegated custodian for given
-    ///   market account
-    /// * `side`: `ASK` or `BID`
-    /// * `order_id`: Order ID for given order
-    ///
-    /// # Abort conditions
-    /// * If no such `OrderBook` under `host` account
-    /// * If the specified `order_id` is not on given `side` for
-    ///   corresponding `OrderBook`
-    /// * If `user` is not the user who placed the order with the
-    ///   corresponding `order_id`
-    /// * If `custodian_id` is not the same as that indicated on order
-    ///   with the corresponding `order_id`
-    fun cancel_limit_order<B, Q, E>(
-        user: address,
-        host: address,
-        custodian_id: u64,
-        side: bool,
-        order_id: u128
-    ) acquires EconiaCapabilityStore, OrderBook {
-        // Assert host has an order book
-        assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
-        // Borrow mutable reference to order book
-        let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
-        // Get mutable reference to orders tree for corresponding side
-        let tree_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
-            &mut order_book_ref_mut.bids;
-        // Assert order is on book
-        assert!(critbit::has_key(tree_ref_mut, order_id), E_NO_SUCH_ORDER);
-        let Order{ // Pop and unpack order from book,
-            base_parcels: _, // Drop base parcel count
-            user: order_user, // Save indicated user for checking later
-            custodian_id: order_custodian_id // Save indicated custodian
-        } = critbit::pop(tree_ref_mut, order_id);
-        // Assert user attempting to cancel is user on order
-        assert!(user == order_user, E_INVALID_USER);
-        // Assert custodian attempting to cancel is custodian on order
-        assert!(custodian_id == order_custodian_id, E_INVALID_CUSTODIAN);
-        // If cancelling an ask that was previously the spread maker
-        if (side == ASK && order_id == order_book_ref_mut.min_ask) {
-            // Update minimum ask to default value if tree is empty
-            order_book_ref_mut.min_ask = if (critbit::is_empty(tree_ref_mut))
-                // Else to the minimum ask on the book
-                MIN_ASK_DEFAULT else critbit::min_key(tree_ref_mut);
-        // Else if cancelling a bid that was previously the spread maker
-        } else if (side == BID && order_id == order_book_ref_mut.max_bid) {
-            // Update maximum bid to default value if tree is empty
-            order_book_ref_mut.max_bid = if (critbit::is_empty(tree_ref_mut))
-                // Else to the maximum bid on the book
-                MAX_BID_DEFAULT else critbit::max_key(tree_ref_mut);
-        };
-        // Remove order from corresponding user's market account
-        user::remove_order_internal<B, Q, E>(user, custodian_id, side,
-            order_id, &get_econia_capability());
-    }
 
     /// For an `OrderBook` accessed by `order_book_ref_mut`, fill a
     /// market order for given `style` and `max_base_parcels`,

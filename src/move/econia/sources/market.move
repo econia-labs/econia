@@ -91,6 +91,12 @@ module econia::market {
     const E_NO_ORDER_BOOKS: u64 = 1;
     /// When indicated `OrderBook` does not exist
     const E_NO_ORDER_BOOK: u64 = 2;
+   /// When order not found in book
+    const E_NO_ORDER: u64 = 5;
+    /// When invalid user attempts to manage an order
+    const E_INVALID_USER: u64 = 6;
+    /// When invalid custodian attempts to manage an order
+    const E_INVALID_CUSTODIAN: u64 = 7;
     /// When a post-or-abort limit order crosses the spread
     const E_POST_OR_ABORT_CROSSED_SPREAD: u64 = 8;
 
@@ -163,6 +169,78 @@ module econia::market {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Cancel limit order on book, remove from user's market account.
+    ///
+    /// # Parameters
+    /// * `user`: Address of user cancelling order
+    /// * `host`: Where corresponding `OrderBook` is hosted
+    /// * `market_id`: Market ID
+    /// * `general_custodian_id`: General custodian ID for `user`'s
+    ///   market account
+    /// * `side`: `ASK` or `BID`
+    ///
+    /// # Abort conditions
+    /// * If the specified `order_id` is not on given `side` for
+    ///   corresponding `OrderBook`
+    /// * If `user` is not the user who placed the order with the
+    ///   corresponding `order_id`
+    /// * If `custodian_id` is not the same as that indicated on order
+    ///   with the corresponding `order_id`
+    fun cancel_limit_order(
+        user: address,
+        host: address,
+        market_id: u64,
+        general_custodian_id: u64,
+        side: bool,
+        order_id: u128
+    ) acquires OrderBooks {
+        // Verify order book exists
+        verify_order_book_exists(host, market_id);
+        // Borrow mutable reference to order books map
+        let order_books_map_ref_mut =
+            &mut borrow_global_mut<OrderBooks>(host).map;
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            open_table::borrow_mut(order_books_map_ref_mut, market_id);
+        // Get mutable reference to orders tree for corresponding side
+        let tree_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
+            &mut order_book_ref_mut.bids;
+        // Assert order is on book
+        assert!(critbit::has_key(tree_ref_mut, order_id), E_NO_ORDER);
+        let Order{ // Pop and unpack order from book,
+            size: _, // Drop size count
+            user: order_user, // Save indicated user for checking later
+            // Save indicated general custodian ID for checking later
+            general_custodian_id: order_general_custodian_id
+        } = critbit::pop(tree_ref_mut, order_id);
+        // Assert user attempting to cancel is user on order
+        assert!(user == order_user, E_INVALID_USER);
+        // Assert custodian attempting to cancel is custodian on order
+        assert!(general_custodian_id == order_general_custodian_id,
+            E_INVALID_CUSTODIAN);
+        // If cancelling an ask that was previously the spread maker
+        if (side == ASK && order_id == order_book_ref_mut.min_ask) {
+            // Update minimum ask to default value if tree is empty
+            order_book_ref_mut.min_ask = if (critbit::is_empty(tree_ref_mut))
+                // Else to the minimum ask on the book
+                MIN_ASK_DEFAULT else critbit::min_key(tree_ref_mut);
+        // Else if cancelling a bid that was previously the spread maker
+        } else if (side == BID && order_id == order_book_ref_mut.max_bid) {
+            // Update maximum bid to default value if tree is empty
+            order_book_ref_mut.max_bid = if (critbit::is_empty(tree_ref_mut))
+                // Else to the maximum bid on the book
+                MAX_BID_DEFAULT else critbit::max_key(tree_ref_mut);
+        };
+        // Get market account ID, lot size, and tick size for order
+        let (market_account_id, lot_size, tick_size) = (
+            user::get_market_account_id(market_id, general_custodian_id),
+            order_book_ref_mut.lot_size,
+            order_book_ref_mut.tick_size);
+        // Remove order from corresponding user's market account
+        user::remove_order_internal(user, market_account_id, lot_size,
+            tick_size, side, order_id);
+    }
+
     /// Increment counter for number of orders placed on `OrderBook`,
     /// returning the original value.
     fun get_counter(
@@ -196,6 +274,14 @@ module econia::market {
     ///
     /// # Abort conditions
     /// * If `post_or_abort` is `true` and order crosses the spread
+    ///
+    /// # Assumes
+    /// * That user-side order registration will abort for invalid
+    ///   arguments
+    /// * That matching against the book will abort for invalid
+    ///   arguments
+    /// * That if `size` is as 0 and price does not cross spread, will
+    ///   simply return silently
     fun place_limit_order(
         user: address,
         host: address,
@@ -608,6 +694,86 @@ module econia::market {
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for invalid custodian cancelling order
+    fun cancel_limit_order_invalid_custodian(
+        econia: &signer,
+        user: &signer
+    ) acquires OrderBooks {
+        // Declare signing user for transactions
+        let general_custodian_id = NO_CUSTODIAN;
+        // Declare invalid custodian ID
+        let invalid_custodian_id = general_custodian_id + 1;
+        // Declare market parameters
+        let side = ASK;
+        let base_is_coin = true;
+        let quote_is_coin = true;
+        let has_general_custodian = general_custodian_id != NO_CUSTODIAN;
+        // Register market and funded user
+        register_market_funded_user_test(econia, user, base_is_coin,
+            quote_is_coin, has_general_custodian);
+        // Declare order parameters
+        let size = 123;
+        let price = 456;
+        let post_or_abort = false;
+        let order_id = order_id::order_id(price, 0, side);
+        // Place order
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size, price, post_or_abort);
+        // Attempt invalid cancellation
+        cancel_limit_order(@user, @econia, MARKET_ID, invalid_custodian_id,
+            side, order_id);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid user cancelling order
+    fun cancel_limit_order_invalid_user(
+        econia: &signer,
+        user: &signer
+    ) acquires OrderBooks {
+        // Declare signing user for transactions
+        let general_custodian_id = NO_CUSTODIAN;
+        // Declare market parameters
+        let side = ASK;
+        let base_is_coin = true;
+        let quote_is_coin = true;
+        let has_general_custodian = general_custodian_id != NO_CUSTODIAN;
+        // Register market and funded user
+        register_market_funded_user_test(econia, user, base_is_coin,
+            quote_is_coin, has_general_custodian);
+        // Declare order parameters
+        let size = 123;
+        let price = 456;
+        let post_or_abort = false;
+        let order_id = order_id::order_id(price, 0, side);
+        // Place order
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size, price, post_or_abort);
+        // Attempt invalid cancellation
+        cancel_limit_order(@econia, @econia, MARKET_ID, general_custodian_id,
+            side, order_id);
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for no such order on book
+    fun cancel_limit_order_no_order(
+        econia: &signer
+    ) acquires OrderBooks {
+        // Register order book
+        register_order_book<BG, QG>(econia, MARKET_ID, LOT_SIZE, TICK_SIZE);
+        // Attempt invalid invocation
+        cancel_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, ASK, 0);
+    }
+
     #[test(user = @user)]
     fun test_get_counter(
         user: &signer
@@ -632,8 +798,15 @@ module econia::market {
         econia = @econia,
         user = @user
     )]
-    /// Verify successful ask placement
-    fun test_place_limit_order_ask(
+    /// Verify successful placement and cancellation for multiple orders
+    ///
+    /// 1. Place order
+    /// 2. Place order with same price as first order
+    /// 3. Place order with price further away from spread
+    /// 4. Cancel order from (1)
+    /// 5. Cancel order from (3)
+    /// 6. Cancel order from (2)
+    fun test_place_cancel_limit_orders_ask(
         econia: &signer,
         user: &signer
     ) acquires OrderBooks {
@@ -659,7 +832,13 @@ module econia::market {
         let post_or_abort_2 = false;
         let order_id_2 = order_id::order_id(price_2, 1, side);
         let base_fill_2 = size_2 * LOT_SIZE;
-        let quote_fill_2 = size_2 * price_1 * TICK_SIZE;
+        let quote_fill_2 = size_2 * price_2 * TICK_SIZE;
+        let size_3 = 987;
+        let price_3 = price_1 + 1; // Further away from spread
+        let post_or_abort_3 = false;
+        let order_id_3 = order_id::order_id(price_3, 2, side);
+        let base_fill_3 = size_3 * LOT_SIZE;
+        let quote_fill_3 = size_3 * price_3 * TICK_SIZE;
         // Register market and funded user
         register_market_funded_user_test(econia, user, base_is_coin,
             quote_is_coin, has_general_custodian);
@@ -717,14 +896,114 @@ module econia::market {
         assert!(order_user                 == @user, 0);
         assert!(order_general_custodian_id == general_custodian_id, 0);
         assert!(spread_maker               == order_id_1, 0);
+        // Place new order further away from spread
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size_3, price_3, post_or_abort_3);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        order_size = user::get_order_size_test(@user, market_account_id,
+            side, order_id_3);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE -
+            (base_fill_1 + base_fill_2 + base_fill_3), 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE +
+            (quote_fill_1 + quote_fill_2 + quote_fill_3), 0);
+        assert!(order_size      == size_3, 0);
+        // Get book state
+        (order_size, order_user, order_general_custodian_id) =
+            get_order_fields_test(@econia, MARKET_ID, order_id_3, side);
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(order_size                 == size_3, 0);
+        assert!(order_user                 == @user, 0);
+        assert!(order_general_custodian_id == general_custodian_id, 0);
+        assert!(spread_maker               == order_id_1, 0);
+        // Cancel spread maker
+        cancel_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, order_id_1);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE -
+                                   (base_fill_2 + base_fill_3), 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE +
+                                   (quote_fill_2 + quote_fill_3), 0);
+        assert!(!user::has_order_test(
+            @user, market_account_id, side, order_id_1), 0);
+        // Get book state
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(spread_maker == order_id_2, 0);
+        assert!(!has_order_test(@econia, MARKET_ID, side, order_id_1), 0);
+        // Cancel order that is not spread maker
+        cancel_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, order_id_3);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE - base_fill_2, 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE + quote_fill_2, 0);
+        assert!(!user::has_order_test(
+            @user, market_account_id, side, order_id_3), 0);
+        // Get book state
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(spread_maker == order_id_2, 0);
+        assert!(!has_order_test(@econia, MARKET_ID, side, order_id_3), 0);
+        // Cancel only remaining order
+        cancel_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, order_id_2);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+        assert!(!user::has_order_test(
+            @user, market_account_id, side, order_id_2), 0);
+        // Get book state
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(spread_maker == MIN_ASK_DEFAULT, 0);
+        assert!(!has_order_test(@econia, MARKET_ID, side, order_id_3), 0);
     }
 
     #[test(
         econia = @econia,
         user = @user
     )]
-    /// Verify successful bid placement
-    fun test_place_limit_order_bid(
+    /// Verify successful placement and cancellation for multiple orders
+    ///
+    /// 1. Place order
+    /// 2. Place order with same price as first order
+    /// 3. Place order with price further away from spread
+    /// 4. Cancel order from (1)
+    /// 5. Cancel order from (3)
+    /// 6. Cancel order from (2)
+    fun test_place_cancel_limit_orders_bid(
         econia: &signer,
         user: &signer
     ) acquires OrderBooks {
@@ -750,7 +1029,13 @@ module econia::market {
         let post_or_abort_2 = false;
         let order_id_2 = order_id::order_id(price_2, 1, side);
         let base_fill_2 = size_2 * LOT_SIZE;
-        let quote_fill_2 = size_2 * price_1 * TICK_SIZE;
+        let quote_fill_2 = size_2 * price_2 * TICK_SIZE;
+        let size_3 = 987;
+        let price_3 = price_1 - 1; // Further away from spread
+        let post_or_abort_3 = false;
+        let order_id_3 = order_id::order_id(price_3, 2, side);
+        let base_fill_3 = size_3 * LOT_SIZE;
+        let quote_fill_3 = size_3 * price_3 * TICK_SIZE;
         // Register market and funded user
         register_market_funded_user_test(econia, user, base_is_coin,
             quote_is_coin, has_general_custodian);
@@ -808,6 +1093,99 @@ module econia::market {
         assert!(order_user                 == @user, 0);
         assert!(order_general_custodian_id == general_custodian_id, 0);
         assert!(spread_maker               == order_id_1, 0);
+        // Place new order further away from spread
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size_3, price_3, post_or_abort_3);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        order_size = user::get_order_size_test(@user, market_account_id,
+            side, order_id_3);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE +
+            (base_fill_1 + base_fill_2 + base_fill_3), 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE -
+            (quote_fill_1 + quote_fill_2 + quote_fill_3), 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+        assert!(order_size      == size_3, 0);
+        // Get book state
+        (order_size, order_user, order_general_custodian_id) =
+            get_order_fields_test(@econia, MARKET_ID, order_id_3, side);
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(order_size                 == size_3, 0);
+        assert!(order_user                 == @user, 0);
+        assert!(order_general_custodian_id == general_custodian_id, 0);
+        assert!(spread_maker               == order_id_1, 0);
+        // Cancel spread maker
+        cancel_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, order_id_1);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE +
+                                   (base_fill_2 + base_fill_3), 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE -
+                                   (quote_fill_2 + quote_fill_3), 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+        assert!(!user::has_order_test(
+            @user, market_account_id, side, order_id_1), 0);
+        // Get book state
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(spread_maker == order_id_2, 0);
+        assert!(!has_order_test(@econia, MARKET_ID, side, order_id_1), 0);
+        // Cancel order that is not spread maker
+        cancel_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, order_id_3);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE + base_fill_2, 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE - quote_fill_2, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+        assert!(!user::has_order_test(
+            @user, market_account_id, side, order_id_3), 0);
+        // Get book state
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(spread_maker == order_id_2, 0);
+        assert!(!has_order_test(@econia, MARKET_ID, side, order_id_3), 0);
+        // Cancel only remaining order
+        cancel_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, order_id_2);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, market_account_id);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+        assert!(!user::has_order_test(
+            @user, market_account_id, side, order_id_2), 0);
+        // Get book state
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(spread_maker == MAX_BID_DEFAULT, 0);
+        assert!(!has_order_test(@econia, MARKET_ID, side, order_id_3), 0);
     }
 
     #[test(

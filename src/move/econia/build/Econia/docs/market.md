@@ -196,12 +196,42 @@ Order book map for all of a user's <code><a href="market.md#0xc0deb00c_market_Or
 ## Constants
 
 
+<a name="0xc0deb00c_market_NO_CUSTODIAN"></a>
+
+Custodian ID flag for no delegated custodian
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_PURE_COIN_PAIR"></a>
 
 When both base and quote assets are coins
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_ASK"></a>
+
+Ask flag
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_BID"></a>
+
+Bid flag
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>: bool = <b>false</b>;
 </code></pre>
 
 

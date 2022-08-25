@@ -18,6 +18,8 @@ module econia::market {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    use aptos_framework::coin;
+    #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -90,10 +92,16 @@ module econia::market {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Ask flag
+    const ASK: bool = true;
+    /// Bid flag
+    const BID: bool = false;
     /// Default value for maximum bid order ID
     const MAX_BID_DEFAULT: u128 = 0;
     /// Default value for minimum ask order ID
     const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// Custodian ID flag for no delegated custodian
+    const NO_CUSTODIAN: u64 = 0;
     /// When both base and quote assets are coins
     const PURE_COIN_PAIR: u64 = 0;
 
@@ -259,9 +267,263 @@ module econia::market {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    // Market parameters
+    #[test_only]
+    /// Market ID for first registered market
+    const MARKET_ID: u64 = 0;
+    #[test_only]
+    /// Lot size for test market
+    const LOT_SIZE: u64 = 10;
+    #[test_only]
+    /// Tick size for test market
+    const TICK_SIZE: u64 = 25;
+    #[test_only]
+    /// Generic asset transfer custodian ID for test market
+    const GENERIC_ASSET_TRANSFER_CUSTODIAN_ID: u64 = 1;
+
+    // User parameters
+    #[test_only]
+    /// Base asset amount `@user` starts with
+    const USER_START_BASE: u64 = 1000000;
+    #[test_only]
+    /// Quote asset amount `@user` starts with
+    const USER_START_QUOTE: u64 = 2000000;
+    #[test_only]
+    /// General custodian ID for test market user
+    const GENERAL_CUSTODIAN_ID: u64 = 2;
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Return fields of `Order` for given `host`, `market_id`,
+    /// `order_id`, and `side`.
+    ///
+    /// # Assumes
+    /// * `OrderBook` for given `market_id` exists at `host` with
+    ///   `Order` having `order_id` on given `side`
+    ///
+    /// # Returns
+    /// * `u64`: `Order.size`
+    /// * `address`: `Order.user`
+    /// * `u64`: `Order.general_custodian_id`
+    ///
+    /// # Restrictions
+    /// * Restricted to private and test-only to prevent excessive
+    ///   public queries and thus transaction collisions
+    fun get_order_fields_test(
+        host: address,
+        market_id: u64,
+        order_id: u128,
+        side: bool
+    ): (
+        u64,
+        address,
+        u64
+    ) acquires OrderBooks {
+        // Borrow immutable reference to order books map
+        let order_books_map_ref = &borrow_global_mut<OrderBooks>(host).map;
+        // Borrow immutable reference to order book
+        let order_book_ref =
+            open_table::borrow(order_books_map_ref, market_id);
+        // Borrow immutable reference to orders tree for given side
+        let tree_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Get immutable reference to order with given ID
+        let order_ref = critbit::borrow(tree_ref, order_id);
+        // Return order fields
+        (order_ref.size, order_ref.user, order_ref.general_custodian_id)
+    }
+
+    #[test_only]
+    /// If `side` is `ASK`, return minimum ask order ID field for
+    /// `OrderBook` at `host` with `market_id`, else the maximum bid
+    /// order ID field.
+    ///
+    /// # Assumes
+    /// * `OrderBook` for given market exists at `host`
+    ///
+    /// # Restrictions
+    /// * Restricted to private and test-only to prevent excessive
+    ///   public queries and thus transaction collisions
+    fun get_spread_maker_test(
+        host: address,
+        market_id: u64,
+        side: bool
+    ): u128
+    acquires OrderBooks {
+        // Borrow immutable reference to order books map
+        let order_books_map_ref = &borrow_global_mut<OrderBooks>(host).map;
+        // Borrow immutable reference to order book
+        let order_book_ref =
+            open_table::borrow(order_books_map_ref, market_id);
+        // Return spread maker
+        if (side == ASK) order_book_ref.min_ask else order_book_ref.max_bid
+    }
+
+    #[test_only]
+    /// Return `true` if `OrderBook` at `host` for given `market_id` has
+    /// `Order` with given `order_id` on given `side`.
+    ///
+    /// # Assumes
+    /// * `host` has `OrderBook` as specified
+    ///
+    /// # Restrictions
+    /// * Restricted to private and test-only to prevent excessive
+    ///   public queries and thus transaction collisions
+    fun has_order_test(
+        host: address,
+        market_id: u64,
+        side: bool,
+        order_id: u128,
+    ): bool
+    acquires OrderBooks {
+        // Borrow immutable reference to order books map
+        let order_books_map_ref = &borrow_global_mut<OrderBooks>(host).map;
+        // Borrow immutable reference to order book
+        let order_book_ref =
+            open_table::borrow(order_books_map_ref, market_id);
+        // Borrow immutable reference to orders tree for given side
+        let tree_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Return if orders tree has given order ID
+        critbit::has_key(tree_ref, order_id)
+    }
+
+
+    #[test_only]
+    /// Register test market and market account for given parameters,
+    /// then fund `user`.
+    ///
+    /// Inner function for `register_market_with_user_test()`
+    fun register_market_and_funded_account_test<
+        BaseType,
+        QuoteType
+    >(
+        econia: &signer,
+        user: &signer,
+        generic_asset_transfer_custodian_id: u64,
+        general_custodian_id: u64
+    ) acquires OrderBooks {
+        // Register market for given parameters
+        register_market<BaseType, QuoteType>(econia, LOT_SIZE, TICK_SIZE,
+            generic_asset_transfer_custodian_id);
+        // Register user for corresponding marking account
+        user::register_market_account<BaseType, QuoteType>(user, MARKET_ID,
+            general_custodian_id);
+        // Determine if base is a coin type
+        let base_is_coin = coin::is_coin_initialized<BaseType>();
+        // Determine if quote is a coin type
+        let quote_is_coin = coin::is_coin_initialized<QuoteType>();
+        // Determine if a pure coin pair
+        let pure_coin = base_is_coin && quote_is_coin;
+        if (!pure_coin) { // If not a pure coin market
+            // Get generic asset transfer custodian capability
+            let generic_asset_transfer_custodian_capability = registry::
+                get_custodian_capability_test(
+                    generic_asset_transfer_custodian_id);
+            // If base asset is generic, deposit asset accordingly
+            if (!base_is_coin) user::deposit_generic_asset<BG>(
+                    address_of(user), MARKET_ID, general_custodian_id,
+                    USER_START_BASE,
+                    &generic_asset_transfer_custodian_capability
+                );
+            // If quote asset is generic, deposit asset accordingly
+            if (!quote_is_coin) user::deposit_generic_asset<QG>(
+                    address_of(user), MARKET_ID, general_custodian_id,
+                    USER_START_QUOTE,
+                    &generic_asset_transfer_custodian_capability
+                );
+            // Destroy custodian capability
+            registry::destroy_custodian_capability_test(
+                generic_asset_transfer_custodian_capability);
+        };
+        // If base asset is coin, deposit asset accordingly
+        if (base_is_coin) user::deposit_coins<BC>(
+            address_of(user), MARKET_ID, general_custodian_id,
+            assets::mint<BC>(econia, USER_START_BASE)
+        );
+        // If quote asset is coin, deposit asset accordingly
+        if (quote_is_coin) user::deposit_coins<QC>(
+            address_of(user), MARKET_ID, general_custodian_id,
+            assets::mint<QC>(econia, USER_START_QUOTE)
+        );
+    }
+
+    #[test_only]
+    /// Initialize Econia-hosted test market with registered user.
+    ///
+    /// See test-only constants for market parameters.
+    ///
+    /// Parameters
+    /// * `econia`: `@econia` signature
+    /// * `user`: `@user` signature
+    /// * `base_is_coin`: If `true` use `BC` for base asset, else `BG`
+    /// * `quote_is_coin`: If `true` use `QC` for quote asset, else `QG`
+    /// * `has_general_custodian`: If `true`, register user's market to
+    ///   require a general custodian ID
+    fun register_market_with_user_test(
+        econia: &signer,
+        user: &signer,
+        base_is_coin: bool,
+        quote_is_coin: bool,
+        has_general_custodian: bool
+    ) acquires OrderBooks {
+        // Determine if market is pure coin market
+        let pure_coin = base_is_coin && quote_is_coin;
+        // Determine if market is pure generic market
+        let pure_generic = !base_is_coin && !quote_is_coin;
+        // Initialize coin types if not purely generic
+        if (!pure_generic) assets::init_coin_types(econia);
+        registry::init_registry(econia); // Initialize registry
+        // Get generic asset transfer custodian ID if not pure coin
+        let generic_asset_transfer_custodian_id = if (pure_coin)
+            PURE_COIN_PAIR else GENERIC_ASSET_TRANSFER_CUSTODIAN_ID;
+        // Get general custodian ID if one is indicated
+        let general_custodian_id = if (has_general_custodian)
+            GENERAL_CUSTODIAN_ID else NO_CUSTODIAN;
+        // Set as a registered custodian ID the higher ID number
+        if (general_custodian_id > generic_asset_transfer_custodian_id)
+            registry::set_registered_custodian_test(general_custodian_id) else
+            registry::set_registered_custodian_test(
+                generic_asset_transfer_custodian_id);
+        if (base_is_coin) { // If base asset is coin
+            if (quote_is_coin) { // If quote asset is coin
+                // Register market and market account accordingly
+                register_market_and_funded_account_test<BC, QC>(econia, user,
+                    generic_asset_transfer_custodian_id, general_custodian_id);
+            } else { // If quote asset is generic
+                // Register market and market account accordingly
+                register_market_and_funded_account_test<BC, QG>(econia, user,
+                    generic_asset_transfer_custodian_id, general_custodian_id);
+            };
+        } else { // If base asset is generic
+            if (quote_is_coin) { // If quote asset is coin
+                // Register market and market account accordingly
+                register_market_and_funded_account_test<BG, QC>(econia, user,
+                    generic_asset_transfer_custodian_id, general_custodian_id);
+            } else { // If quote asset is generic
+                // Register market and market account accordingly
+                register_market_and_funded_account_test<BG, QG>(econia, user,
+                    generic_asset_transfer_custodian_id, general_custodian_id);
+            };
+        };
+        // Get asset counts
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+             user::get_asset_counts_test(address_of(user), MARKET_ID,
+                general_custodian_id);
+        // Assert asset counts
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+    }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

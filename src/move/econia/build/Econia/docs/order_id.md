@@ -108,6 +108,8 @@ than that of the order with counter <code>15</code>, and as such, during the
 matching engine's iterated inorder predecessor traversal, the
 order with counter <code>63</code> will be filled second.
 
+---
+
 
 -  [Bit structure](#@Bit_structure_0)
     -  [Example ask](#@Example_ask_1)

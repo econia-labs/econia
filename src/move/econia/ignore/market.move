@@ -75,10 +75,6 @@ module econia::market {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Ask flag
-    const ASK: bool = true;
-    /// Bid flag
-    const BID: bool = false;
     /// Market buy flag
     const BUY: bool = true;
     /// `u64` bitmask with all bits set
@@ -1186,31 +1182,6 @@ module econia::market {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    /// Return `true` if `OrderBook` at `host` has `Order` with given
-    /// `order_id` on given `side`.
-    ///
-    /// # Assumes
-    /// * `host` has `OrderBook` as specified
-    ///
-    /// # Restrictions
-    /// * Restricted to private and test-only to prevent excessive
-    ///   public queries and thus transaction collisions
-    fun has_order_test<B, Q, E>(
-        host: address,
-        side: bool,
-        order_id: u128,
-    ): bool
-    acquires OrderBook {
-        // Borrow immutable reference to order book
-        let order_book_ref = borrow_global<OrderBook<B, Q, E>>(host);
-        // Borrow immutable reference to orders tree for given side
-        let tree_ref = if (side == ASK) &order_book_ref.asks else
-            &order_book_ref.bids;
-        // Return if orders tree has given order ID
-        critbit::has_key(tree_ref, order_id)
-    }
-
-    #[test_only]
     /// Initialize a `user` to trade on `<BC, QC, E1>`, hosted by
     /// `econia`, with market account having `custodian_id`, and fund
     /// with `base_coins` and `quote_coins`
@@ -1307,92 +1278,6 @@ module econia::market {
         registry::destroy_custodian_capability(custodian_capability_2);
         registry::destroy_custodian_capability(custodian_capability_3);
         (order_id_1, order_id_2, order_id_3) // Return order IDs
-    }
-
-    #[test_only]
-    /// Return fields of `Order` having `order_id` on `side` of
-    /// `OrderBook` at `host`.
-    ///
-    /// # Assumes
-    /// * `OrderBook` for given market exists at `host` with `Order`
-    ///   having `order_id` on given `side`
-    ///
-    /// # Returns
-    /// * `u64`: `Order.base_parcels`
-    /// * `address`: `Order.user`
-    /// * `u64`: `Order.custodian_id`
-    ///
-    /// # Restrictions
-    /// * Restricted to private and test-only to prevent excessive
-    ///   public queries and thus transaction collisions
-    fun order_fields_test<B, Q, E>(
-        host: address,
-        order_id: u128,
-        side: bool
-    ): (
-        u64,
-        address,
-        u64
-    ) acquires OrderBook {
-        // Borrow immutable reference to order book
-        let order_book_ref = borrow_global<OrderBook<B, Q, E>>(host);
-        // Borrow immutable reference to orders tree for given side
-        let tree_ref = if (side == ASK) &order_book_ref.asks else
-            &order_book_ref.bids;
-        // Get immutable reference to order with given ID
-        let order_ref = critbit::borrow(tree_ref, order_id);
-        // Return order fields
-        (order_ref.base_parcels, order_ref.user, order_ref.custodian_id)
-    }
-
-    #[test_only]
-    /// Initialize a test market hosted by Econia, then register `user`
-    /// with corresponding market account having `custodian_id`.
-    fun register_market_with_user_test(
-        econia: &signer,
-        user: &signer,
-        custodian_id: u64
-    ) acquires EconiaCapabilityStore {
-        coins::init_coin_types(econia); // Initialize coin types
-        registry::init_registry(econia); // Initialize registry
-        // Initialize Econia capability store
-        init_econia_capability_store(econia);
-        // Register test market with Econia as host
-        register_market<BC, QC, E1>(econia);
-        // Set custodian ID as in bounds
-        registry::set_registered_custodian(custodian_id);
-        // Register user to trade on the market
-        user::register_market_account<BC, QC, E1>(user, custodian_id);
-        // Get market account info
-        let market_account_info =
-            user::market_account_info<BC, QC, E1>(custodian_id);
-        // Deposit base coin collateral
-        user::deposit_collateral<BC>(address_of(user), market_account_info,
-            coins::mint<BC>(econia, USER_BASE_COINS_START));
-        // Deposit quote coin collateral
-        user::deposit_collateral<QC>(address_of(user), market_account_info,
-            coins::mint<QC>(econia, USER_QUOTE_COINS_START));
-    }
-
-    #[test_only]
-    /// If `side` is `ASK`, return minimum ask order ID field for
-    /// `OrderBook` at `host`, else the maximum bid order ID field.
-    ///
-    /// # Assumes
-    /// * `OrderBook` for given market exists at `host`
-    ///
-    /// # Restrictions
-    /// * Restricted to private and test-only to prevent excessive
-    ///   public queries and thus transaction collisions
-    fun spread_maker_test<B, Q, E>(
-        host: address,
-        side: bool
-    ): u128
-    acquires OrderBook {
-        // Borrow immutable reference to order book
-        let order_book_ref = borrow_global<OrderBook<B, Q, E>>(host);
-        // Return spread maker
-        if (side == ASK) order_book_ref.min_ask else order_book_ref.max_bid
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

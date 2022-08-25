@@ -69,6 +69,8 @@ that when a user opts to sign general transactions rather than
 delegate to a general custodian, the market account ID uses a
 general custodian ID of <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>, corresponding to <code>0</code>.
 
+---
+
 
 -  [Market account custodians](#@Market_account_custodians_0)
 -  [Market account ID](#@Market_account_ID_1)

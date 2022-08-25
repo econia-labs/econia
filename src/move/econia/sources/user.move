@@ -1271,6 +1271,9 @@ module econia::user {
         // Borrow immutable reference to corresponding market account
         let market_account_ref = borrow_market_account_test(
             market_id, general_custodian_id, market_accounts_ref);
+        // Extract fields
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
         (
             market_account_ref.base_total,
             market_account_ref.base_available,
@@ -1278,7 +1281,10 @@ module econia::user {
             market_account_ref.quote_total,
             market_account_ref.quote_available,
             market_account_ref.quote_ceiling,
-        )
+        );
+        // Return extracted fields
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling)
     }
 
     #[test_only]

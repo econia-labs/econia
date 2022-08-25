@@ -58,18 +58,12 @@ module econia::market {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When `EconiaCapabilityStore` already exists under Econia account
-    const E_ECONIA_CAPABILITY_STORE_EXISTS: u64 = 2;
-    /// When no `EconiaCapabilityStore` exists under Econia account
-    const E_NO_ECONIA_CAPABILITY_STORE: u64 = 3;
    /// When corresponding order not found on book for given side
     const E_NO_SUCH_ORDER: u64 = 5;
     /// When invalid user attempts to manage an order
     const E_INVALID_USER: u64 = 6;
     /// When invalid custodian attempts to manage an order
     const E_INVALID_CUSTODIAN: u64 = 7;
-    /// When a limit order crosses the spread
-    const E_CROSSED_SPREAD: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -812,69 +806,6 @@ module econia::market {
                 break // Break out of loop
             };
         };
-    }
-
-    /// Place limit order on the book and in user's market account.
-    ///
-    /// # Parameters
-    /// * `user`: Address of user submitting order
-    /// * `host`: Where corresponding `OrderBook` is hosted
-    /// * `custodian_id`: Serial ID of delegated custodian for `user`'s
-    ///   market account
-    /// * `side`: `ASK` or `BID`
-    /// * `base_parcels`: Number of base parcels the order is for
-    /// * `price`: Order price
-    ///
-    /// # Abort conditions
-    /// * If `host` does not have corresponding `OrderBook`
-    /// * If order does not pass `user::add_order_internal` error checks
-    /// * If new order crosses the spread (temporary)
-    ///
-    /// # Assumes
-    /// * Orders tree will not already have an order with the same ID as
-    ///   the new order because order IDs are generated from a
-    ///   counter that increases when queried (via `get_serial_id`)
-    fun place_limit_order<B, Q, E>(
-        user: address,
-        host: address,
-        custodian_id: u64,
-        side: bool,
-        base_parcels: u64,
-        price: u64
-    ) acquires EconiaCapabilityStore, OrderBook {
-        // Assert host has an order book
-        assert!(exists<OrderBook<B, Q, E>>(host), E_NO_ORDER_BOOK);
-        // Borrow mutable reference to order book
-        let order_book_ref_mut = borrow_global_mut<OrderBook<B, Q, E>>(host);
-        let order_id = // Get order ID based on new book serial ID/side
-            order_id::order_id(price, get_serial_id(order_book_ref_mut), side);
-        // Add order to user's market account (performs extensive error
-        // checking)
-        user::add_order_internal<B, Q, E>(user, custodian_id, side, order_id,
-            base_parcels, price, &get_econia_capability());
-        // Get mutable reference to orders tree for corresponding side,
-        // determine if new order ID is new spread maker, determine if
-        // new order crosses the spread, and get mutable reference to
-        // spread maker for given side
-        let (tree_ref_mut, new_spread_maker, crossed_spread,
-            spread_maker_ref_mut) = if (side == ASK) (
-                &mut order_book_ref_mut.asks,
-                (order_id < order_book_ref_mut.min_ask),
-                (price <= order_id::price(order_book_ref_mut.max_bid)),
-                &mut order_book_ref_mut.min_ask
-            ) else ( // If order is a bid
-                &mut order_book_ref_mut.bids,
-                (order_id > order_book_ref_mut.max_bid),
-                (price >= order_id::price(order_book_ref_mut.min_ask)),
-                &mut order_book_ref_mut.max_bid
-            );
-        // Assert spread uncrossed
-        assert!(!crossed_spread, E_CROSSED_SPREAD);
-        // If a new spread maker, mark as such on book
-        if (new_spread_maker) *spread_maker_ref_mut = order_id;
-        // Insert order to corresponding tree
-        critbit::insert(tree_ref_mut, order_id,
-            Order{base_parcels, user, custodian_id});
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

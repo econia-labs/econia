@@ -1,4 +1,7 @@
 /// Market-level book keeping functionality, with matching engine.
+/// Allows for self-matched trades since preventing them is practically
+/// impossible in a permissionless market: all a user has to do is
+/// open two wallets and trade them against each other.
 module econia::market {
 
     /// Dependency stub planning
@@ -9,6 +12,7 @@ module econia::market {
     use aptos_std::type_info;
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
+    use econia::order_id;
     use econia::registry::{Self, CustodianCapability};
     use econia::user;
     use std::signer::address_of;
@@ -87,6 +91,8 @@ module econia::market {
     const E_NO_ORDER_BOOKS: u64 = 1;
     /// When indicated `OrderBook` does not exist
     const E_NO_ORDER_BOOK: u64 = 2;
+    /// When a post-or-abort limit order crosses the spread
+    const E_POST_OR_ABORT_CROSSED_SPREAD: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -167,6 +173,89 @@ module econia::market {
         let count = *counter_ref_mut; // Get count
         *counter_ref_mut = count + 1; // Set new count
         count // Return original count
+    }
+
+    /// Place limit order against book and optionally register in user's
+    /// market account.
+    ///
+    /// If `post_or_abort` is false and the order crosses the spread, it
+    /// will match as a taker order against all orders it crosses, then
+    /// the remaining `size` will be placed as a maker order.
+    ///
+    /// # Parameters
+    /// * `user`: Address of user submitting order
+    /// * `host`: Where corresponding `OrderBook` is hosted
+    /// * `market_id`: Market ID
+    /// * `general_custodian_id`: General custodian ID for `user`'s
+    ///   market account
+    /// * `side`: `ASK` or `BID`
+    /// * `size`: Number of lots the order is for
+    /// * `price`: Order price, in ticks per lot
+    /// * `post_or_abort`:  If `true`, abort for orders that cross the
+    ///   spread, otherwise fill across the spread when applicable
+    ///
+    /// # Abort conditions
+    /// * If `post_or_abort` is `true` and order crosses the spread
+    fun place_limit_order(
+        user: address,
+        host: address,
+        market_id: u64,
+        general_custodian_id: u64,
+        side: bool,
+        size: u64,
+        price: u64,
+        post_or_abort: bool
+    ) acquires OrderBooks {
+        // Verify order book exists
+        verify_order_book_exists(host, market_id);
+        // Borrow mutable reference to order books map
+        let order_books_map_ref_mut =
+            &mut borrow_global_mut<OrderBooks>(host).map;
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            open_table::borrow_mut(order_books_map_ref_mut, market_id);
+        // Determine if spread crossed
+        let crossed_spread = if (side == ASK)
+            (price <= order_id::price(order_book_ref_mut.max_bid)) else
+            (price >= order_id::price(order_book_ref_mut.min_ask));
+        // Assert spread uncrossed if a post-or-abort order
+        assert!(!(post_or_abort && crossed_spread),
+            E_POST_OR_ABORT_CROSSED_SPREAD);
+        if (crossed_spread) {
+            abort 0 // Temporary
+            // Match against book until price threshold hit
+            // Store return value as new size
+        };
+        if (size > 0) { // If still size left to fill
+            // Get new order ID based on book counter/side
+            let order_id = order_id::order_id(
+                price, get_counter(order_book_ref_mut), side);
+            // Get market account ID for given user
+            let market_account_id = user::get_market_account_id(market_id,
+                general_custodian_id);
+            // Add order to user's market account
+            user::register_order_internal(user, market_account_id, side,
+                order_id, size, price, order_book_ref_mut.lot_size,
+                order_book_ref_mut.tick_size);
+            // Get mutable reference to orders tree for given side,
+            // determine if order is new spread maker, and get mutable
+            // reference to spread maker for given side
+            let (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) =
+                if (side == ASK) (
+                    &mut order_book_ref_mut.asks,
+                    (order_id < order_book_ref_mut.min_ask),
+                    &mut order_book_ref_mut.min_ask
+                ) else ( // If order is a bid
+                    &mut order_book_ref_mut.bids,
+                    (order_id > order_book_ref_mut.max_bid),
+                    &mut order_book_ref_mut.max_bid
+                );
+            // If a new spread maker, mark as such on book
+            if (new_spread_maker) *spread_maker_ref_mut = order_id;
+            // Insert order to corresponding tree
+            critbit::insert(tree_ref_mut, order_id,
+                Order{size, user, general_custodian_id});
+        }
     }
 
     /// Register new market under signing host.
@@ -547,6 +636,46 @@ module econia::market {
         assert!(get_counter(order_book_ref_mut) == 0, 0);
         assert!(get_counter(order_book_ref_mut) == 1, 0);
         assert!(get_counter(order_book_ref_mut) == 2, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for post-or-abort crossed spread
+    fun test_place_limit_order_crossed_spread_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires OrderBooks {
+        // Register market and user
+        register_market_with_user_test(econia, user, true, true, false);
+        // Place a bid
+        place_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, BID, 10,
+            5, false);
+        // Place a post-or-abort limit order that crosses spread
+        place_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, ASK, 10,
+            4, true);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for post-or-abort crossed spread
+    fun test_place_limit_order_crossed_spread_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires OrderBooks {
+        // Register market and user
+        register_market_with_user_test(econia, user, true, true, false);
+        // Place a bid
+        place_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, ASK, 10,
+            5, false);
+        // Place a post-or-abort limit order that crosses spread
+        place_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, BID, 10,
+            6, true);
     }
 
     #[test(

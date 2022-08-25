@@ -4,6 +4,9 @@
 # Module `0xc0deb00c::market`
 
 Market-level book keeping functionality, with matching engine.
+Allows for self-matched trades since preventing them is practically
+impossible in a permissionless market: all a user has to do is
+open two wallets and trade them against each other.
 
 
 -  [Struct `Order`](#0xc0deb00c_market_Order)
@@ -14,20 +17,24 @@ Market-level book keeping functionality, with matching engine.
 -  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
 -  [Function `get_counter`](#0xc0deb00c_market_get_counter)
+-  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+    -  [Parameters](#@Parameters_1)
+    -  [Abort conditions](#@Abort_conditions_2)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_1)
-    -  [Parameters](#@Parameters_2)
--  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
     -  [Type parameters](#@Type_parameters_3)
     -  [Parameters](#@Parameters_4)
+-  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+    -  [Type parameters](#@Type_parameters_5)
+    -  [Parameters](#@Parameters_6)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_5)
+    -  [Abort conditions](#@Abort_conditions_7)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
+<b>use</b> <a href="order_id.md#0xc0deb00c_order_id">0xc0deb00c::order_id</a>;
 <b>use</b> <a href="registry.md#0xc0deb00c_registry">0xc0deb00c::registry</a>;
 <b>use</b> <a href="user.md#0xc0deb00c_user">0xc0deb00c::user</a>;
 </code></pre>
@@ -266,6 +273,16 @@ When an order book already exists at given address
 
 
 
+<a name="0xc0deb00c_market_E_POST_OR_ABORT_CROSSED_SPREAD"></a>
+
+When a post-or-abort limit order crosses the spread
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_POST_OR_ABORT_CROSSED_SPREAD">E_POST_OR_ABORT_CROSSED_SPREAD</a>: u64 = 8;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_MAX_BID_DEFAULT"></a>
 
 Default value for maximum bid order ID
@@ -423,6 +440,117 @@ returning the original value.
 
 </details>
 
+<a name="0xc0deb00c_market_place_limit_order"></a>
+
+## Function `place_limit_order`
+
+Place limit order against book and optionally register in user's
+market account.
+
+If <code>post_or_abort</code> is false and the order crosses the spread, it
+will match as a taker order against all orders it crosses, then
+the remaining <code>size</code> will be placed as a maker order.
+
+
+<a name="@Parameters_1"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user submitting order
+* <code>host</code>: Where corresponding <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> is hosted
+* <code>market_id</code>: Market ID
+* <code>general_custodian_id</code>: General custodian ID for <code><a href="user.md#0xc0deb00c_user">user</a></code>'s
+market account
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+* <code>size</code>: Number of lots the order is for
+* <code>price</code>: Order price, in ticks per lot
+* <code>post_or_abort</code>:  If <code><b>true</b></code>, abort for orders that cross the
+spread, otherwise fill across the spread when applicable
+
+
+<a name="@Abort_conditions_2"></a>
+
+### Abort conditions
+
+* If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, general_custodian_id: u64, side: bool, size: u64, price: u64, post_or_abort: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    market_id: u64,
+    general_custodian_id: u64,
+    side: bool,
+    size: u64,
+    price: u64,
+    post_or_abort: bool
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Verify order book <b>exists</b>
+    <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(host, market_id);
+    // Borrow mutable reference <b>to</b> order books map
+    <b>let</b> order_books_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(host).map;
+    // Borrow mutable reference <b>to</b> order book
+    <b>let</b> order_book_ref_mut =
+        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    // Determine <b>if</b> spread crossed
+    <b>let</b> crossed_spread = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+        (price &lt;= <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(order_book_ref_mut.max_bid)) <b>else</b>
+        (price &gt;= <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(order_book_ref_mut.min_ask));
+    // Assert spread uncrossed <b>if</b> a <b>post</b>-or-<b>abort</b> order
+    <b>assert</b>!(!(post_or_abort && crossed_spread),
+        <a href="market.md#0xc0deb00c_market_E_POST_OR_ABORT_CROSSED_SPREAD">E_POST_OR_ABORT_CROSSED_SPREAD</a>);
+    <b>if</b> (crossed_spread) {
+        <b>abort</b> 0 // Temporary
+        // Match against book until price threshold hit
+        // Store <b>return</b> value <b>as</b> new size
+    };
+    <b>if</b> (size &gt; 0) { // If still size left <b>to</b> fill
+        // Get new order ID based on book counter/side
+        <b>let</b> <a href="order_id.md#0xc0deb00c_order_id">order_id</a> = <a href="order_id.md#0xc0deb00c_order_id_order_id">order_id::order_id</a>(
+            price, <a href="market.md#0xc0deb00c_market_get_counter">get_counter</a>(order_book_ref_mut), side);
+        // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID for given <a href="user.md#0xc0deb00c_user">user</a>
+        <b>let</b> market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">user::get_market_account_id</a>(market_id,
+            general_custodian_id);
+        // Add order <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+        <a href="user.md#0xc0deb00c_user_register_order_internal">user::register_order_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side,
+            <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, size, price, order_book_ref_mut.lot_size,
+            order_book_ref_mut.tick_size);
+        // Get mutable reference <b>to</b> orders tree for given side,
+        // determine <b>if</b> order is new spread maker, and get mutable
+        // reference <b>to</b> spread maker for given side
+        <b>let</b> (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) =
+            <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) (
+                &<b>mut</b> order_book_ref_mut.asks,
+                (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> &lt; order_book_ref_mut.min_ask),
+                &<b>mut</b> order_book_ref_mut.min_ask
+            ) <b>else</b> ( // If order is a bid
+                &<b>mut</b> order_book_ref_mut.bids,
+                (<a href="order_id.md#0xc0deb00c_order_id">order_id</a> &gt; order_book_ref_mut.max_bid),
+                &<b>mut</b> order_book_ref_mut.max_bid
+            );
+        // If a new spread maker, mark <b>as</b> such on book
+        <b>if</b> (new_spread_maker) *spread_maker_ref_mut = <a href="order_id.md#0xc0deb00c_order_id">order_id</a>;
+        // Insert order <b>to</b> corresponding tree
+        <a href="critbit.md#0xc0deb00c_critbit_insert">critbit::insert</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>,
+            <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, <a href="user.md#0xc0deb00c_user">user</a>, general_custodian_id});
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_register_market"></a>
 
 ## Function `register_market`
@@ -430,7 +558,7 @@ returning the original value.
 Register new market under signing host.
 
 
-<a name="@Type_parameters_1"></a>
+<a name="@Type_parameters_3"></a>
 
 ### Type parameters
 
@@ -438,7 +566,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_2"></a>
+<a name="@Parameters_4"></a>
 
 ### Parameters
 
@@ -491,7 +619,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_3"></a>
+<a name="@Type_parameters_5"></a>
 
 ### Type parameters
 
@@ -499,7 +627,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_4"></a>
+<a name="@Parameters_6"></a>
 
 ### Parameters
 
@@ -563,7 +691,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_5"></a>
+<a name="@Abort_conditions_7"></a>
 
 ### Abort conditions
 

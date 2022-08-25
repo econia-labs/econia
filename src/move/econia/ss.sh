@@ -165,6 +165,9 @@ elif test $1 = gl; then git_log_one_line
 elif test $1 = gt; then
     generate_temporary_devnet_address
 
+# Git push then show the log in one line
+elif test $1 = gp; then git push; git_log_one_line
+
 # Verify that this script can be invoked
 elif test $1 = hello; then echo Hello, Econia developer
 

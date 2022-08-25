@@ -375,10 +375,10 @@ module econia::market {
     // User parameters
     #[test_only]
     /// Base asset amount `@user` starts with
-    const USER_START_BASE: u64 = 1000000;
+    const USER_START_BASE: u64  = 100000000000;
     #[test_only]
     /// Quote asset amount `@user` starts with
-    const USER_START_QUOTE: u64 = 2000000;
+    const USER_START_QUOTE: u64 = 200000000000;
     #[test_only]
     /// General custodian ID for test market user
     const GENERAL_CUSTODIAN_ID: u64 = 2;
@@ -423,8 +423,11 @@ module econia::market {
             &order_book_ref.bids;
         // Get immutable reference to order with given ID
         let order_ref = critbit::borrow(tree_ref, order_id);
+        // Get order fields, shortened
+        let (size, user, general_custodian_id) =
+            (order_ref.size, order_ref.user, order_ref.general_custodian_id);
         // Return order fields
-        (order_ref.size, order_ref.user, order_ref.general_custodian_id)
+        (size, user, general_custodian_id)
     }
 
     #[test_only]
@@ -482,13 +485,12 @@ module econia::market {
         critbit::has_key(tree_ref, order_id)
     }
 
-
     #[test_only]
     /// Register test market and market account for given parameters,
     /// then fund `user`.
     ///
-    /// Inner function for `register_market_with_user_test()`
-    fun register_market_and_funded_account_test<
+    /// Inner function for `register_market_funded_user_test()`
+    fun register_market_funded_user_inner_test<
         BaseType,
         QuoteType
     >(
@@ -554,7 +556,7 @@ module econia::market {
     /// * `quote_is_coin`: If `true` use `QC` for quote asset, else `QG`
     /// * `has_general_custodian`: If `true`, register user's market to
     ///   require a general custodian ID
-    fun register_market_with_user_test(
+    fun register_market_funded_user_test(
         econia: &signer,
         user: &signer,
         base_is_coin: bool,
@@ -582,36 +584,24 @@ module econia::market {
         if (base_is_coin) { // If base asset is coin
             if (quote_is_coin) { // If quote asset is coin
                 // Register market and market account accordingly
-                register_market_and_funded_account_test<BC, QC>(econia, user,
+                register_market_funded_user_inner_test<BC, QC>(econia, user,
                     generic_asset_transfer_custodian_id, general_custodian_id);
             } else { // If quote asset is generic
                 // Register market and market account accordingly
-                register_market_and_funded_account_test<BC, QG>(econia, user,
+                register_market_funded_user_inner_test<BC, QG>(econia, user,
                     generic_asset_transfer_custodian_id, general_custodian_id);
             };
         } else { // If base asset is generic
             if (quote_is_coin) { // If quote asset is coin
                 // Register market and market account accordingly
-                register_market_and_funded_account_test<BG, QC>(econia, user,
+                register_market_funded_user_inner_test<BG, QC>(econia, user,
                     generic_asset_transfer_custodian_id, general_custodian_id);
             } else { // If quote asset is generic
                 // Register market and market account accordingly
-                register_market_and_funded_account_test<BG, QG>(econia, user,
+                register_market_funded_user_inner_test<BG, QG>(econia, user,
                     generic_asset_transfer_custodian_id, general_custodian_id);
             };
         };
-        // Get asset counts
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-             user::get_asset_counts_test(address_of(user), MARKET_ID,
-                general_custodian_id);
-        // Assert asset counts
-        assert!(base_total      == USER_START_BASE , 0);
-        assert!(base_available  == USER_START_BASE , 0);
-        assert!(base_ceiling    == USER_START_BASE , 0);
-        assert!(quote_total     == USER_START_QUOTE, 0);
-        assert!(quote_available == USER_START_QUOTE, 0);
-        assert!(quote_ceiling   == USER_START_QUOTE, 0);
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -642,6 +632,192 @@ module econia::market {
         econia = @econia,
         user = @user
     )]
+    /// Verify successful ask placement
+    fun test_place_limit_order_ask(
+        econia: &signer,
+        user: &signer
+    ) acquires OrderBooks {
+        // Declare signing user for transactions
+        let general_custodian_id = NO_CUSTODIAN;
+        // Get market account ID
+        let market_account_id =
+            user::get_market_account_id(MARKET_ID, general_custodian_id);
+        // Declare market parameters
+        let side = ASK;
+        let base_is_coin = true;
+        let quote_is_coin = true;
+        let has_general_custodian = general_custodian_id != NO_CUSTODIAN;
+        // Declare order parameters
+        let size_1 = 123;
+        let price_1 = 456;
+        let post_or_abort_1 = false;
+        let order_id_1 = order_id::order_id(price_1, 0, side);
+        let base_fill_1 = size_1 * LOT_SIZE;
+        let quote_fill_1 = size_1 * price_1 * TICK_SIZE;
+        let size_2 = 789;
+        let price_2 = price_1; // Same price as first order
+        let post_or_abort_2 = false;
+        let order_id_2 = order_id::order_id(price_2, 1, side);
+        let base_fill_2 = size_2 * LOT_SIZE;
+        let quote_fill_2 = size_2 * price_1 * TICK_SIZE;
+        // Register market and funded user
+        register_market_funded_user_test(econia, user, base_is_coin,
+            quote_is_coin, has_general_custodian);
+        // Place order, setting a new spread maker
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size_1, price_1, post_or_abort_1);
+        // Get user state
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, MARKET_ID,
+                general_custodian_id);
+        let order_size = user::get_order_size_test(@user, market_account_id,
+            side, order_id_1);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE - base_fill_1, 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE + quote_fill_1, 0);
+        assert!(order_size      == size_1, 0);
+        // Get book state
+        let (order_size, order_user, order_general_custodian_id) =
+            get_order_fields_test(@econia, MARKET_ID, order_id_1, side);
+        let spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(order_size                 == size_1, 0);
+        assert!(order_user                 == @user, 0);
+        assert!(order_general_custodian_id == general_custodian_id, 0);
+        assert!(spread_maker               == order_id_1, 0);
+        // Place order at same price, not setting a new spread maker
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size_2, price_2, post_or_abort_2);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, MARKET_ID,
+                general_custodian_id);
+        order_size = user::get_order_size_test(@user, market_account_id,
+            side, order_id_2);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE -
+                                   (base_fill_1 + base_fill_2), 0);
+        assert!(base_ceiling    == USER_START_BASE , 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE +
+                                   (quote_fill_1 + quote_fill_2), 0);
+        assert!(order_size      == size_2, 0);
+        // Get book state
+        (order_size, order_user, order_general_custodian_id) =
+            get_order_fields_test(@econia, MARKET_ID, order_id_2, side);
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(order_size                 == size_2, 0);
+        assert!(order_user                 == @user, 0);
+        assert!(order_general_custodian_id == general_custodian_id, 0);
+        assert!(spread_maker               == order_id_1, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify successful bid placement
+    fun test_place_limit_order_bid(
+        econia: &signer,
+        user: &signer
+    ) acquires OrderBooks {
+        // Declare signing user for transactions
+        let general_custodian_id = NO_CUSTODIAN;
+        // Get market account ID
+        let market_account_id =
+            user::get_market_account_id(MARKET_ID, general_custodian_id);
+        // Declare market parameters
+        let side = BID;
+        let base_is_coin = true;
+        let quote_is_coin = true;
+        let has_general_custodian = general_custodian_id != NO_CUSTODIAN;
+        // Declare order parameters
+        let size_1 = 123;
+        let price_1 = 456;
+        let post_or_abort_1 = false;
+        let order_id_1 = order_id::order_id(price_1, 0, side);
+        let base_fill_1 = size_1 * LOT_SIZE;
+        let quote_fill_1 = size_1 * price_1 * TICK_SIZE;
+        let size_2 = 789;
+        let price_2 = price_1; // Same price as first order
+        let post_or_abort_2 = false;
+        let order_id_2 = order_id::order_id(price_2, 1, side);
+        let base_fill_2 = size_2 * LOT_SIZE;
+        let quote_fill_2 = size_2 * price_1 * TICK_SIZE;
+        // Register market and funded user
+        register_market_funded_user_test(econia, user, base_is_coin,
+            quote_is_coin, has_general_custodian);
+        // Place order, setting a new spread maker
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size_1, price_1, post_or_abort_1);
+        // Get user state
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, MARKET_ID,
+                general_custodian_id);
+        let order_size = user::get_order_size_test(@user, market_account_id,
+            side, order_id_1);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE + base_fill_1, 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE - quote_fill_1, 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+        assert!(order_size      == size_1, 0);
+        // Get book state
+        let (order_size, order_user, order_general_custodian_id) =
+            get_order_fields_test(@econia, MARKET_ID, order_id_1, side);
+        let spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(order_size                 == size_1, 0);
+        assert!(order_user                 == @user, 0);
+        assert!(order_general_custodian_id == general_custodian_id, 0);
+        assert!(spread_maker               == order_id_1, 0);
+        // Place order at same price, not setting a new spread maker
+        place_limit_order(@user, @econia, MARKET_ID, general_custodian_id,
+            side, size_2, price_2, post_or_abort_2);
+        // Get user state
+        (base_total,  base_available,  base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_test(@user, MARKET_ID,
+                general_custodian_id);
+        order_size = user::get_order_size_test(@user, market_account_id,
+            side, order_id_2);
+        // Assert user state
+        assert!(base_total      == USER_START_BASE , 0);
+        assert!(base_available  == USER_START_BASE , 0);
+        assert!(base_ceiling    == USER_START_BASE +
+                                   (base_fill_1 + base_fill_2), 0);
+        assert!(quote_total     == USER_START_QUOTE, 0);
+        assert!(quote_available == USER_START_QUOTE -
+                                   (quote_fill_1 + quote_fill_2), 0);
+        assert!(quote_ceiling   == USER_START_QUOTE, 0);
+        assert!(order_size      == size_2, 0);
+        // Get book state
+        (order_size, order_user, order_general_custodian_id) =
+            get_order_fields_test(@econia, MARKET_ID, order_id_2, side);
+        spread_maker = get_spread_maker_test(@econia, MARKET_ID, side);
+        // Assert book state
+        assert!(order_size                 == size_2, 0);
+        assert!(order_user                 == @user, 0);
+        assert!(order_general_custodian_id == general_custodian_id, 0);
+        assert!(spread_maker               == order_id_1, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
     #[expected_failure(abort_code = 8)]
     /// Verify failure for post-or-abort crossed spread
     fun test_place_limit_order_crossed_spread_ask(
@@ -649,7 +825,7 @@ module econia::market {
         user: &signer
     ) acquires OrderBooks {
         // Register market and user
-        register_market_with_user_test(econia, user, true, true, false);
+        register_market_funded_user_test(econia, user, true, true, false);
         // Place a bid
         place_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, BID, 10,
             5, false);
@@ -669,7 +845,7 @@ module econia::market {
         user: &signer
     ) acquires OrderBooks {
         // Register market and user
-        register_market_with_user_test(econia, user, true, true, false);
+        register_market_funded_user_test(econia, user, true, true, false);
         // Place a bid
         place_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, ASK, 10,
             5, false);

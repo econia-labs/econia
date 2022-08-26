@@ -69,6 +69,8 @@ flowchart TD
     match_loop_order_fills[match_loop_order_fills <br/> fill_market_order_check_base_parcels_to_fill]
     match_loop_order_follow_up[match_loop_order_follow_up <br/> fill_market_order_loop_order_follow_up]
     match_loop_break[match_loop_break <br/> fill_market_order_break_cleanup]
+    swap_coins[swap_coins]
+    swap_generic[swap_generic]
 
 
 %% Class definitions
@@ -77,6 +79,8 @@ flowchart TD
     classDef implemented fill:#32cd32 %% Lime Green
     classDef unimplemented fill:#708090 %% Slate Gray
 
+    class swap_coins unimplemented;
+    class swap_generic unimplemented
     class match unimplemented;
     class match_from_market_account unimplemented;
     class match_init unimplemented;
@@ -95,6 +99,8 @@ flowchart TD
 
 %% Node relationships
 
+    swap_generic --> swap
+    swap_coins --> swap
     place_limit_order_user --> place_limit_order
     place_limit_order_custodian --> place_limit_order
     place_limit_order --> match_from_market_account
@@ -110,28 +116,4 @@ flowchart TD
     match_loop --> match_loop_order_follow_up
     match_loop --> match_loop_break
 
-```
-
-```move
-fun match<
-    BaseType,
-    QuoteType
->(
-    order_book_ref_mut: &mut OrderBook,
-    lot_size: u64,
-    tick_size: bool,
-    direction: bool, // BUY or SELL
-    max_lots: u64,
-    max_ticks: u64,
-    price_threshold: u64, // Can rail to 0 or HI_64
-    optional_base_coins_ref_mut:
-        &mut option::Option<coin::Coin<BaseType>>,
-    optional_quote_coins_ref_mut:
-        &mut option::Option<coin::Coin<QuoteType>>,
-): (
-    u64, // Lots unfilled
-    u64 // Ticks unfilled
-) {
-    let (lots_unfilled, ticks_unfilled) = (max_lots, max_ticks);
-}
 ```

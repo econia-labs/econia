@@ -13,26 +13,33 @@ open two wallets and trade them against each other.
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Constants](#@Constants_0)
+-  [Function `cancel_all_limit_orders_custodian`](#0xc0deb00c_market_cancel_all_limit_orders_custodian)
+-  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
+-  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
+-  [Function `cancel_all_limit_orders_user`](#0xc0deb00c_market_cancel_all_limit_orders_user)
+-  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
+-  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
 -  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
 -  [Function `cancel_all_limit_orders`](#0xc0deb00c_market_cancel_all_limit_orders)
     -  [Parameters](#@Parameters_1)
+    -  [Assumes](#@Assumes_2)
 -  [Function `cancel_limit_order`](#0xc0deb00c_market_cancel_limit_order)
-    -  [Parameters](#@Parameters_2)
-    -  [Abort conditions](#@Abort_conditions_3)
+    -  [Parameters](#@Parameters_3)
+    -  [Abort conditions](#@Abort_conditions_4)
 -  [Function `get_counter`](#0xc0deb00c_market_get_counter)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Parameters](#@Parameters_4)
-    -  [Abort conditions](#@Abort_conditions_5)
-    -  [Assumes](#@Assumes_6)
+    -  [Parameters](#@Parameters_5)
+    -  [Abort conditions](#@Abort_conditions_6)
+    -  [Assumes](#@Assumes_7)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_7)
-    -  [Parameters](#@Parameters_8)
+    -  [Type parameters](#@Type_parameters_8)
+    -  [Parameters](#@Parameters_9)
 -  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
-    -  [Type parameters](#@Type_parameters_9)
-    -  [Parameters](#@Parameters_10)
+    -  [Type parameters](#@Type_parameters_10)
+    -  [Parameters](#@Parameters_11)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_11)
+    -  [Abort conditions](#@Abort_conditions_12)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
@@ -338,6 +345,256 @@ Default value for minimum ask order ID
 
 
 
+<a name="0xc0deb00c_market_cancel_all_limit_orders_custodian"></a>
+
+## Function `cancel_all_limit_orders_custodian`
+
+Cancel all limit order on behalf of user, via
+<code>general_custodian_capability_ref</code>.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_all_limit_orders">cancel_all_limit_orders</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders_custodian">cancel_all_limit_orders_custodian</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, side: bool, general_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders_custodian">cancel_all_limit_orders_custodian</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+    general_custodian_capability_ref: &CustodianCapability
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders">cancel_all_limit_orders</a>(
+        <a href="user.md#0xc0deb00c_user">user</a>,
+        host,
+        market_id,
+        <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref),
+        side
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_limit_order_custodian"></a>
+
+## Function `cancel_limit_order_custodian`
+
+Cancel a limit order on behalf of user, via
+<code>general_custodian_capability_ref</code>.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, general_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_custodian">cancel_limit_order_custodian</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
+    general_custodian_capability_ref: &CustodianCapability
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>(
+        <a href="user.md#0xc0deb00c_user">user</a>,
+        host,
+        market_id,
+        <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref),
+        side,
+        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order_custodian"></a>
+
+## Function `place_limit_order_custodian`
+
+Place a limit order on behalf of user, via
+<code>general_custodian_capability_ref</code>.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, side: bool, size: u64, price: u64, post_or_abort: bool, general_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+    size: u64,
+    price: u64,
+    post_or_abort: bool,
+    general_custodian_capability_ref: &CustodianCapability
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>(
+        <a href="user.md#0xc0deb00c_user">user</a>,
+        host,
+        market_id,
+        <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref),
+        side,
+        size,
+        price,
+        post_or_abort
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_all_limit_orders_user"></a>
+
+## Function `cancel_all_limit_orders_user`
+
+Cancel all limit orders as a signing user.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_all_limit_orders">cancel_all_limit_orders</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders_user">cancel_all_limit_orders_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, market_id: u64, side: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders_user">cancel_all_limit_orders_user</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders">cancel_all_limit_orders</a>(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        host,
+        market_id,
+        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        side,
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_limit_order_user"></a>
+
+## Function `cancel_limit_order_user`
+
+Cancel a limit order as a signing user.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_user">cancel_limit_order_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, market_id: u64, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_limit_order_user">cancel_limit_order_user</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+    <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        host,
+        market_id,
+        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        side,
+        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order_user"></a>
+
+## Function `place_limit_order_user`
+
+Place a limit order as a signing user.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, market_id: u64, side: bool, size: u64, price: u64, post_or_abort: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+    size: u64,
+    price: u64,
+    post_or_abort: bool
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        host,
+        market_id,
+        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        side,
+        size,
+        price,
+        post_or_abort
+    );
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_register_market_generic"></a>
 
 ## Function `register_market_generic`
@@ -425,9 +682,10 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market"
 ## Function `cancel_all_limit_orders`
 
 Cancel all of a user's limit orders on the book, and remove from
-their market account.
+their market account, silently returning if they have no open
+orders.
 
-See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>
+See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>.
 
 
 <a name="@Parameters_1"></a>
@@ -440,6 +698,14 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_ord
 * <code>general_custodian_id</code>: General custodian ID for <code><a href="user.md#0xc0deb00c_user">user</a></code>'s
 market account
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+
+
+<a name="@Assumes_2"></a>
+
+### Assumes
+
+* That <code>get_n_orders_internal()</code> aborts if no corresponding user
+orders tree available to cancel from
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders">cancel_all_limit_orders</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, general_custodian_id: u64, side: bool)
@@ -486,7 +752,7 @@ market account
 Cancel limit order on book, remove from user's market account.
 
 
-<a name="@Parameters_2"></a>
+<a name="@Parameters_3"></a>
 
 ### Parameters
 
@@ -498,7 +764,7 @@ market account
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
 
 
-<a name="@Abort_conditions_3"></a>
+<a name="@Abort_conditions_4"></a>
 
 ### Abort conditions
 
@@ -623,7 +889,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_4"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -639,14 +905,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_5"></a>
+<a name="@Abort_conditions_6"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_6"></a>
+<a name="@Assumes_7"></a>
 
 ### Assumes
 
@@ -741,7 +1007,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_7"></a>
+<a name="@Type_parameters_8"></a>
 
 ### Type parameters
 
@@ -749,7 +1015,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_9"></a>
 
 ### Parameters
 
@@ -802,7 +1068,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_9"></a>
+<a name="@Type_parameters_10"></a>
 
 ### Type parameters
 
@@ -810,7 +1076,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_11"></a>
 
 ### Parameters
 
@@ -874,7 +1140,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_11"></a>
+<a name="@Abort_conditions_12"></a>
 
 ### Abort conditions
 

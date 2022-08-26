@@ -463,7 +463,7 @@ market account
     <b>let</b> n_orders = // Get number of orders on given side
         <a href="user.md#0xc0deb00c_user_get_n_orders_internal">user::get_n_orders_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side);
     <b>while</b> (n_orders &gt; 0) {
-        // Get order ID of order nearest <b>to</b> the spread
+        // Get order ID of order nearest the spread
         <b>let</b> order_id_nearest_spread =
             <a href="user.md#0xc0deb00c_user_get_order_id_nearest_spread_internal">user::get_order_id_nearest_spread_internal</a>(
                 <a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side);

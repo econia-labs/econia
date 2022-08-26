@@ -576,13 +576,13 @@ Flag for outbound coins
 
 ## Function `deposit_coins`
 
-Deposit <code><a href="">coins</a></code> of <code>CoinType</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account having
+Deposit <code>coins</code> of <code>CoinType</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account having
 <code>market_id</code> and <code>general_custodian_id</code>
 
 See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, <a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, general_custodian_id: u64, coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
 </code></pre>
 
 
@@ -595,7 +595,7 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">depos
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_id: u64,
     general_custodian_id: u64,
-    <a href="">coins</a>: Coin&lt;CoinType&gt;
+    coins: Coin&lt;CoinType&gt;
 ) <b>acquires</b>
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
@@ -603,8 +603,8 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">depos
     <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;CoinType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>,
         <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id, general_custodian_id),
-        <a href="_value">coin::value</a>(&<a href="">coins</a>),
-        <a href="_some">option::some</a>(<a href="">coins</a>),
+        <a href="_value">coin::value</a>(&coins),
+        <a href="_some">option::some</a>(coins),
         <a href="user.md#0xc0deb00c_user_COIN_ASSET_TRANSFER">COIN_ASSET_TRANSFER</a>
     )
 }
@@ -1047,10 +1047,10 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    // Withdraw <a href="">coins</a> from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
-    <b>let</b> <a href="">coins</a> = <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_id, amount);
-    // Deposit <a href="">coins</a> <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store
-    <a href="_deposit">coin::deposit</a>&lt;CoinType&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), <a href="">coins</a>);
+    // Withdraw coins from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <b>let</b> coins = <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_id, amount);
+    // Deposit coins <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store
+    <a href="_deposit">coin::deposit</a>&lt;CoinType&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), coins);
 }
 </code></pre>
 
@@ -1638,7 +1638,7 @@ case of depositing a generic asset
         // Borrow mutable reference <b>to</b> collateral for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
         <b>let</b> collateral_ref_mut = <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(
             collateral_map_ref_mut, market_account_id);
-        <a href="_merge">coin::merge</a>( // Merge optional <a href="">coins</a> into collateral
+        <a href="_merge">coin::merge</a>( // Merge optional coins into collateral
             collateral_ref_mut, <a href="_destroy_some">option::destroy_some</a>(optional_coins));
     } <b>else</b> { // If asset is not <a href="">coin</a> type
         // Verify indicated generic asset transfer custodian ID
@@ -1717,13 +1717,13 @@ to <code>quote_coins_ref_mut</code>
     // Determine route direction for base and quote relative <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>
     <b>let</b> (base_direction, quote_direction) =
         <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (<a href="user.md#0xc0deb00c_user_OUT">OUT</a>, <a href="user.md#0xc0deb00c_user_IN">IN</a>) <b>else</b> (<a href="user.md#0xc0deb00c_user_IN">IN</a>, <a href="user.md#0xc0deb00c_user_OUT">OUT</a>);
-    // If base asset is <a href="">coin</a> type then route base <a href="">coins</a>
+    // If base asset is <a href="">coin</a> type then route base coins
     <b>if</b> (<a href="_is_some">option::is_some</a>(optional_base_coins_ref_mut))
         <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;BaseType&gt;(
             <a href="user.md#0xc0deb00c_user">user</a>, market_account_id,
             <a href="_borrow_mut">option::borrow_mut</a>(optional_base_coins_ref_mut),
             base_to_route, base_direction);
-    // If quote asset is <a href="">coin</a> type then route quote <a href="">coins</a>
+    // If quote asset is <a href="">coin</a> type then route quote coins
     <b>if</b> (<a href="_is_some">option::is_some</a>(optional_quote_coins_ref_mut))
         <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;QuoteType&gt;(
             <a href="user.md#0xc0deb00c_user">user</a>, market_account_id,
@@ -1792,10 +1792,10 @@ in the first place.
         market_account_id);
     // If inbound collateral <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>
     <b>if</b> (direction == <a href="user.md#0xc0deb00c_user_IN">IN</a>)
-        // Merge <b>to</b> their collateral the extracted external <a href="">coins</a>
+        // Merge <b>to</b> their collateral the extracted external coins
         <a href="_merge">coin::merge</a>(collateral_ref_mut,
             <a href="_extract">coin::extract</a>(external_coins_ref_mut, amount)) <b>else</b>
-        // If outbound collateral from <a href="user.md#0xc0deb00c_user">user</a>, merge <b>to</b> external <a href="">coins</a>
+        // If outbound collateral from <a href="user.md#0xc0deb00c_user">user</a>, merge <b>to</b> external coins
         // those extracted from <a href="user.md#0xc0deb00c_user">user</a>'s collateral
         <a href="_merge">coin::merge</a>(external_coins_ref_mut,
             <a href="_extract">coin::extract</a>(collateral_ref_mut, amount));
@@ -2310,10 +2310,10 @@ returning coins
     // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
     <b>let</b> market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">get_market_account_id</a>(market_id,
         general_custodian_id);
-    // Withdraw corresponding amount of <a href="">coins</a>, <b>as</b> an <a href="">option</a>
+    // Withdraw corresponding amount of coins, <b>as</b> an <a href="">option</a>
     <b>let</b> option_coins = <a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;CoinType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_account_id, amount, <b>true</b>, <a href="user.md#0xc0deb00c_user_COIN_ASSET_TRANSFER">COIN_ASSET_TRANSFER</a>);
-    <a href="_destroy_some">option::destroy_some</a>(option_coins) // Return extracted <a href="">coins</a>
+    <a href="_destroy_some">option::destroy_some</a>(option_coins) // Return extracted coins
 }
 </code></pre>
 

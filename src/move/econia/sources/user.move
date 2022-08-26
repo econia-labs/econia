@@ -82,6 +82,8 @@ module econia::user {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    use aptos_framework::account;
+    #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
     #[test_only]
     use econia::critbit::{u, u_long};
@@ -1544,7 +1546,8 @@ module econia::user {
             get_market_account_id(market_id, general_custodian_id);
         // Register user to trade on the account
         register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        coin::register_for_test<QC>(user); // Register coin store
+        account::create_account_for_test(@user); // Create account
+        coin::register<QC>(user); // Register coin store
         coin::deposit(@user, assets::mint<QC>(econia, coin_amount));
         // Deposit coin asset
         deposit_from_coinstore<QC>(user, market_id, general_custodian_id,
@@ -2744,7 +2747,8 @@ module econia::user {
             get_market_account_id(market_id, general_custodian_id);
         // Register user to trade on the account
         register_market_account<BG, QC>(user, market_id, general_custodian_id);
-        coin::register_for_test<QC>(user); // Register coin store
+        account::create_account_for_test(@user); // Create account
+        coin::register<QC>(user); // Register coin store
         coin::deposit(@user, assets::mint<QC>(econia, coin_deposit_amount));
         // Deposit coin asset
         deposit_from_coinstore<QC>(user, market_id, general_custodian_id,

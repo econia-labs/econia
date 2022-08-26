@@ -59,7 +59,7 @@ See `ss.sh` within a given directory for its available options
     aptos init
     ```
     * Note that this will go faster if [adding a precompiled binary](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode) to `~/.cargo/bin` rather than installing via `cargo`
-    * If the precompiled binary has not been released yet, additionally consider [installing from Git](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-from-git)
+    * If the precompiled binary has not been released yet, additionally consider [installing from Git](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-from-git), a method that does not always require rebuilding intermediate artifacts
 
 
 1. Now you should be able to run all Move tests:

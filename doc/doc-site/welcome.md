@@ -20,7 +20,7 @@ Then try out the Econia [APIs](apis.md), and let's see what we can build togethe
 
 ## Devnet account
 
-As of 2022-08-19, Econia is initialized on the Aptos devnet at account [0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7](https://aptos-explorer.netlify.app/account/0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7).
+As of 2022-08-25, Econia is initialized on the Aptos devnet at account [0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7](https://aptos-explorer.netlify.app/account/0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7).
 
 Note that the Aptos devnet typically resets each Thursday, occasionally with breaking changes.
 Pending the reconciliation of such breaking changes after devnet reset, Econia is typically republished as soon as the necessary patches are implemented.

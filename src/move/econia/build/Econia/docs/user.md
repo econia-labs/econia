@@ -445,7 +445,7 @@ their <code>aptos_framework::coin::CoinStore</code>. See wrapped function
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Get corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
     <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
-    <b>if</b> (base) // If marked for depositing base <a href="">coins</a>, <b>use</b> base type
+    <b>if</b> (base) // If marked for depositing base <a href="coins.md#0xc0deb00c_coins">coins</a>, <b>use</b> base type
         <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;B&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info,
             <a href="_withdraw">coin::withdraw</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, amount)) <b>else</b> // Else quote
         <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;Q&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info,
@@ -553,10 +553,10 @@ breaking API changes.
     <b>assert</b>!(custodian_id == <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>, <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>);
     // Get corresponding <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
     <b>let</b> market_account_info = <a href="user.md#0xc0deb00c_user_market_account_info">market_account_info</a>&lt;B, Q, E&gt;(custodian_id);
-    <b>if</b> (base) // If marked for withdrawing base <a href="">coins</a>, <b>use</b> base type
+    <b>if</b> (base) // If marked for withdrawing base <a href="coins.md#0xc0deb00c_coins">coins</a>, <b>use</b> base type
         <a href="_deposit">coin::deposit</a>&lt;B&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;B&gt;(
             address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount)) <b>else</b>
-        // Else withdraw quote <a href="">coins</a> from collateral <b>to</b> coinstore
+        // Else withdraw quote <a href="coins.md#0xc0deb00c_coins">coins</a> from collateral <b>to</b> coinstore
         <a href="_deposit">coin::deposit</a>&lt;Q&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_withdraw_collateral">withdraw_collateral</a>&lt;Q&gt;(
             address_of(<a href="user.md#0xc0deb00c_user">user</a>), market_account_info, amount));
 }
@@ -633,8 +633,8 @@ given type arguments and <code>custodian_id</code>
     <b>let</b> (base_to_fill, quote_to_fill) = <a href="user.md#0xc0deb00c_user_range_check_order_fills">range_check_order_fills</a>(
         market_account.scale_factor, base_parcels, price);
     // Get mutable reference <b>to</b> corresponding tree, mutable
-    // reference <b>to</b> corresponding <a href="">coins</a> available field, and
-    // <a href="">coins</a> required for lockup based on given side
+    // reference <b>to</b> corresponding <a href="coins.md#0xc0deb00c_coins">coins</a> available field, and
+    // <a href="coins.md#0xc0deb00c_coins">coins</a> required for lockup based on given side
     <b>let</b> (tree_ref_mut, coins_available_ref_mut, coins_required) =
         <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (
             &<b>mut</b> market_account.asks,
@@ -663,7 +663,7 @@ given type arguments and <code>custodian_id</code>
 
 ## Function `deposit_collateral`
 
-Deposit <code><a href="">coins</a></code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> for given
+Deposit <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> for given
 <code>market_account_info</code>.
 
 
@@ -676,7 +676,7 @@ Deposit <code><a href="">coins</a></code> to <code><a href="user.md#0xc0deb00c_u
 registered
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">user::MarketAccountInfo</a>, <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
 </code></pre>
 
 
@@ -688,7 +688,7 @@ registered
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_collateral">deposit_collateral</a>&lt;CoinType&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_account_info: <a href="user.md#0xc0deb00c_user_MarketAccountInfo">MarketAccountInfo</a>,
-    <a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+    <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     // Assert <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> registered for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> info
     <b>assert</b>!(<a href="user.md#0xc0deb00c_user_exists_market_account">exists_market_account</a>(market_account_info, <a href="user.md#0xc0deb00c_user">user</a>),
@@ -696,25 +696,25 @@ registered
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> total <a href="">coins</a> held <b>as</b> collateral,
-    // and mutable reference <b>to</b> amount of <a href="">coins</a> available for
+    // Borrow mutable reference <b>to</b> total <a href="coins.md#0xc0deb00c_coins">coins</a> held <b>as</b> collateral,
+    // and mutable reference <b>to</b> amount of <a href="coins.md#0xc0deb00c_coins">coins</a> available for
     // withdraw (aborts <b>if</b> <a href="">coin</a> type is neither base nor quote for
     // given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>)
     <b>let</b> (coins_total_ref_mut, coins_available_ref_mut) =
         <a href="user.md#0xc0deb00c_user_borrow_coin_counts_mut">borrow_coin_counts_mut</a>&lt;CoinType&gt;(market_accounts_map,
             market_account_info);
     *coins_total_ref_mut = // Increment total <a href="">coin</a> count
-        *coins_total_ref_mut + <a href="_value">coin::value</a>(&<a href="">coins</a>);
+        *coins_total_ref_mut + <a href="_value">coin::value</a>(&<a href="coins.md#0xc0deb00c_coins">coins</a>);
     *coins_available_ref_mut = // Increment available <a href="">coin</a> count
-        *coins_available_ref_mut + <a href="_value">coin::value</a>(&<a href="">coins</a>);
+        *coins_available_ref_mut + <a href="_value">coin::value</a>(&<a href="coins.md#0xc0deb00c_coins">coins</a>);
     // Borrow mutable reference <b>to</b> collateral map
     <b>let</b> collateral_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
     // Borrow mutable reference <b>to</b> collateral for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <b>let</b> collateral =
         <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(collateral_map, market_account_info);
-    // Merge <a href="">coins</a> into <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> collateral
-    <a href="_merge">coin::merge</a>(collateral, <a href="">coins</a>);
+    // Merge <a href="coins.md#0xc0deb00c_coins">coins</a> into <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> collateral
+    <a href="_merge">coin::merge</a>(collateral, <a href="coins.md#0xc0deb00c_coins">coins</a>);
 }
 </code></pre>
 
@@ -883,7 +883,7 @@ corresponding user successfully placed it to begin with.
     <b>let</b> market_account =
         <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(market_accounts_map, market_account_info);
     // Get mutable reference <b>to</b> corresponding tree, mutable
-    // reference <b>to</b> corresponding <a href="">coins</a> available field, and
+    // reference <b>to</b> corresponding <a href="coins.md#0xc0deb00c_coins">coins</a> available field, and
     // base parcel multiplier based on given side
     <b>let</b> (tree_ref_mut, coins_available_ref_mut, base_parcel_multiplier) =
         <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (
@@ -898,7 +898,7 @@ corresponding user successfully placed it to begin with.
     // Pop order from corresponding tree, storing number of base
     // parcels it specified
     <b>let</b> base_parcels = <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
-    // Calculate number of <a href="">coins</a> unlocked by order cancellation
+    // Calculate number of <a href="coins.md#0xc0deb00c_coins">coins</a> unlocked by order cancellation
     <b>let</b> coins_unlocked = base_parcels * base_parcel_multiplier;
     // Increment available <a href="">coin</a> amount
     *coins_available_ref_mut = *coins_available_ref_mut + coins_unlocked;
@@ -1169,10 +1169,10 @@ to <code>quote_coins_ref_mut</code>
     // Determine route direction for base and quote relative <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>
     <b>let</b> (base_direction, quote_direction) =
         <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (<a href="user.md#0xc0deb00c_user_OUT">OUT</a>, <a href="user.md#0xc0deb00c_user_IN">IN</a>) <b>else</b> (<a href="user.md#0xc0deb00c_user_IN">IN</a>, <a href="user.md#0xc0deb00c_user_OUT">OUT</a>);
-    // Route base <a href="">coins</a>
+    // Route base <a href="coins.md#0xc0deb00c_coins">coins</a>
     <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;B&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info,
         base_coins_ref_mut, base_to_route, base_direction);
-    // Route quote <a href="">coins</a>
+    // Route quote <a href="coins.md#0xc0deb00c_coins">coins</a>
     <a href="user.md#0xc0deb00c_user_fill_order_route_collateral_single">fill_order_route_collateral_single</a>&lt;Q&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_info,
         quote_coins_ref_mut, quote_to_route, quote_direction);
 }
@@ -1228,10 +1228,10 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_route_colla
         market_account_info);
     // If inbound collateral <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>
     <b>if</b> (direction == <a href="user.md#0xc0deb00c_user_IN">IN</a>)
-        // Merge <b>to</b> their collateral store extracted external <a href="">coins</a>
+        // Merge <b>to</b> their collateral store extracted external <a href="coins.md#0xc0deb00c_coins">coins</a>
         <a href="_merge">coin::merge</a>(collateral_ref_mut,
             <a href="_extract">coin::extract</a>(external_coins_ref_mut, amount)) <b>else</b>
-        // If outbound collateral from <a href="user.md#0xc0deb00c_user">user</a>, merge <b>to</b> external <a href="">coins</a>
+        // If outbound collateral from <a href="user.md#0xc0deb00c_user">user</a>, merge <b>to</b> external <a href="coins.md#0xc0deb00c_coins">coins</a>
         // those extracted from <a href="user.md#0xc0deb00c_user">user</a>'s collateral
         <a href="_merge">coin::merge</a>(external_coins_ref_mut,
             <a href="_extract">coin::extract</a>(collateral_ref_mut, amount));
@@ -1294,11 +1294,11 @@ routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <co
         market_accounts_map_ref_mut, market_account_info);
     <b>let</b> ( // Get mutable reference <b>to</b> corresponding orders tree,
         order_tree_ref_mut,
-        coins_in, // Amount of inbound <a href="">coins</a>
-        coins_in_total_ref_mut, // Totals field for inbound <a href="">coins</a>
+        coins_in, // Amount of inbound <a href="coins.md#0xc0deb00c_coins">coins</a>
+        coins_in_total_ref_mut, // Totals field for inbound <a href="coins.md#0xc0deb00c_coins">coins</a>
         coins_in_available_ref_mut, // Available field
-        coins_out, // Amount of outbound <a href="">coins</a>
-        coins_out_total_ref_mut, // Totals field for outbound <a href="">coins</a>
+        coins_out, // Amount of outbound <a href="coins.md#0xc0deb00c_coins">coins</a>
+        coins_out_total_ref_mut, // Totals field for outbound <a href="coins.md#0xc0deb00c_coins">coins</a>
     ) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) ( // If an ask is matched
         &<b>mut</b> market_account_ref_mut.asks,
         quote_to_route,
@@ -1325,7 +1325,7 @@ routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <co
         *order_base_parcels_ref_mut = *order_base_parcels_ref_mut -
             base_parcels_filled;
     };
-    // Update <a href="">coin</a> counts for incoming and outgoing <a href="">coins</a>
+    // Update <a href="">coin</a> counts for incoming and outgoing <a href="coins.md#0xc0deb00c_coins">coins</a>
     *coins_in_total_ref_mut = *coins_in_total_ref_mut + coins_in;
     *coins_in_available_ref_mut = *coins_in_available_ref_mut + coins_in;
     *coins_out_total_ref_mut = *coins_out_total_ref_mut - coins_out;
@@ -1366,11 +1366,11 @@ and quote coins required to fill the order.
     <b>assert</b>!(price &gt; 0, <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>); // Assert order <b>has</b> actual price
     // Assert actually trying <b>to</b> trade amount of base parcels
     <b>assert</b>!(base_parcels &gt; 0, <a href="user.md#0xc0deb00c_user_E_BASE_PARCELS_0">E_BASE_PARCELS_0</a>);
-    // Calculate base <a href="">coins</a> required <b>to</b> fill the order
+    // Calculate base <a href="coins.md#0xc0deb00c_coins">coins</a> required <b>to</b> fill the order
     <b>let</b> base_to_fill = (scale_factor <b>as</b> u128) * (base_parcels <b>as</b> u128);
     // Assert that amount can fit in a u64
     <b>assert</b>!(!(base_to_fill &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_BASE">E_OVERFLOW_BASE</a>);
-    // Determine amount of quote <a href="">coins</a> needed <b>to</b> fill order
+    // Determine amount of quote <a href="coins.md#0xc0deb00c_coins">coins</a> needed <b>to</b> fill order
     <b>let</b> quote_to_fill = (price <b>as</b> u128) * (base_parcels <b>as</b> u128);
     // Assert that amount can fit in a u64
     <b>assert</b>!(!(quote_to_fill &gt; (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128)), <a href="user.md#0xc0deb00c_user_E_OVERFLOW_QUOTE">E_OVERFLOW_QUOTE</a>);
@@ -1535,8 +1535,8 @@ registered
     // Borrow mutable reference <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> accounts map
     <b>let</b> market_accounts_map =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Borrow mutable reference <b>to</b> total <a href="">coins</a> held <b>as</b> collateral,
-    // and mutable reference <b>to</b> amount of <a href="">coins</a> available for
+    // Borrow mutable reference <b>to</b> total <a href="coins.md#0xc0deb00c_coins">coins</a> held <b>as</b> collateral,
+    // and mutable reference <b>to</b> amount of <a href="coins.md#0xc0deb00c_coins">coins</a> available for
     // withdraw (aborts <b>if</b> <a href="">coin</a> type is neither base nor quote for
     // given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>)
     <b>let</b> (coins_total_ref_mut, coins_available_ref_mut) =

@@ -219,18 +219,18 @@ Quote coin symbol
 
 ## Function `burn`
 
-Burn <code><a href="">coins</a></code>
+Burn <code><a href="coins.md#0xc0deb00c_coins">coins</a></code>
 
 
 <a name="@Assumes_1"></a>
 
 ### Assumes
 
-* That since <code><a href="">coins</a></code> exist in the first place, that
+* That since <code><a href="coins.md#0xc0deb00c_coins">coins</a></code> exist in the first place, that
 <code><a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a></code> must exist in the Econia account
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(<a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(<a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
 </code></pre>
 
 
@@ -240,12 +240,12 @@ Burn <code><a href="">coins</a></code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="coins.md#0xc0deb00c_coins_burn">burn</a>&lt;CoinType&gt;(
-    <a href="">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+    <a href="coins.md#0xc0deb00c_coins">coins</a>: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 ) <b>acquires</b> <a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a> {
     // Borrow immutable reference <b>to</b> burn <a href="capability.md#0xc0deb00c_capability">capability</a>
     <b>let</b> burn_capability = &<b>borrow_global</b>&lt;<a href="coins.md#0xc0deb00c_coins_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
             @econia).burn_capability;
-    <a href="_burn">coin::burn</a>&lt;CoinType&gt;(<a href="">coins</a>, burn_capability); // Burn <a href="">coins</a>
+    <a href="_burn">coin::burn</a>&lt;CoinType&gt;(<a href="coins.md#0xc0deb00c_coins">coins</a>, burn_capability); // Burn <a href="coins.md#0xc0deb00c_coins">coins</a>
 }
 </code></pre>
 

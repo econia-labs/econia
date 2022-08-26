@@ -20,6 +20,9 @@ module econia::user {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    use aptos_framework::account;
+
+    #[test_only]
     use econia::capability::get_econia_capability_test;
 
     #[test_only]
@@ -1274,8 +1277,9 @@ module econia::user {
         // Assert available base coin count
         assert!(market_account.base_coins_available == deposit_amount, 0);
         deposit_amount = 30; // Declare new deposit amount
+        account::create_account_for_test(@user); // Create user account
         // Register user with quote coin store
-        coin::register_for_test<QC>(user);
+        coin::register<QC>(user);
         coin::deposit<QC>(@user, coins::mint<QC>(econia, deposit_amount));
         // Attempt valid deposit from coin store
         deposit_collateral_coinstore<BC, QC, E1>(
@@ -1788,8 +1792,9 @@ module econia::user {
         assert!( // Assert correct value
             coin::value(collateral) == deposit_amount - withdraw_amount_1, 0);
         coins::burn(coins); // Burn withdrawn coins
+        account::create_account_for_test(@user); // Create user account
         // Register user with quote coin store
-        coin::register_for_test<QC>(user);
+        coin::register<QC>(user);
         // Withdraw second withdraw amount
         withdraw_collateral_coinstore<BC, QC, E1>(
             user, NO_CUSTODIAN, false, withdraw_amount_2);

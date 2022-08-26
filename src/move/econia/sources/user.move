@@ -186,6 +186,8 @@ module econia::user {
     const E_NOT_COIN_ASSET: u64 = 13;
     /// When indicated custodian unauthorized to perform operation
     const E_UNAUTHORIZED_CUSTODIAN: u64 = 14;
+    /// When no orders for indicated operation
+    const E_NO_ORDERS: u64 = 15;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -528,6 +530,51 @@ module econia::user {
             optional_quote_coins_ref_mut, base_to_route, quote_to_route);
     }
 
+    /// Return number of open orders for given `user`,
+    /// `market_account_id`, and `side`
+    public(friend) fun get_n_orders(
+        user: address,
+        market_account_id: u128,
+        side: bool
+    ): u64
+    acquires MarketAccounts {
+        // Verify user has a corresponding market account
+        verify_market_account_exists(user, market_account_id);
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to corresponding market account
+        let market_account_ref =
+            open_table::borrow(market_accounts_map_ref, market_account_id);
+        // Borrow immutable reference to corresponding orders tree
+        let tree_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        critbit::length(tree_ref) // Return number of orders
+    }
+
+    /// Return order ID of order nearest the spread, for given `user`,
+    /// `market_account_id`, and `side`
+    public(friend) fun get_order_id_nearest_spread(
+        user: address,
+        market_account_id: u128,
+        side: bool
+    ): u128
+    acquires MarketAccounts {
+        // Verify user has a corresponding market account
+        verify_market_account_exists(user, market_account_id);
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to corresponding market account
+        let market_account_ref =
+            open_table::borrow(market_accounts_map_ref, market_account_id);
+        // Borrow immutable reference to corresponding orders tree
+        let tree_ref = if (side == ASK) &market_account_ref.asks else
+            &market_account_ref.bids;
+        // Assert tree is not empty
+        assert!(!critbit::is_empty(tree_ref), E_NO_ORDERS);
+        if (side == ASK) critbit::min_key(tree_ref) else
+            critbit::max_key(tree_ref)
+    }
+
     /// Register a new order under a user's market account
     ///
     /// # Parameters
@@ -539,6 +586,12 @@ module econia::user {
     /// * `price`: Price of order in ticks per lot
     /// * `lot_size`: Base asset units per lot
     /// * `tick_size`: Quote asset units per tick
+    ///
+    /// # Assumes
+    /// * `price` is same as that encoded in `order_id`, since called by
+    ///   the matching engine
+    /// * `lot_size` and `tick_size` correspond to market ID encoded in
+    ///   `market_account_id`, since called by the matching engine
     public(friend) fun register_order_internal(
         user: address,
         market_account_id: u128,
@@ -2029,6 +2082,88 @@ module econia::user {
         // Assert expected return
         assert!(get_market_id(market_account_id) ==
             (u(b"10101010") as u64), 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify returns for both sides
+    fun test_get_n_orders_order_id_nearest_spread(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Declare order IDs
+        let ask_id_1 = 400;
+        let ask_id_2 = 500;
+        let ask_id_3 = 600;
+        let bid_id_1 = 100;
+        let bid_id_2 = 200;
+        let bid_id_3 = 300;
+        // Register user with pure coin market account
+        let (_, market_account_id) = register_user_with_market_accounts_test(
+            econia, user, 1, NO_CUSTODIAN);
+        // Deposit collateral for both sides
+        deposit_coins<BC>(
+            @user, 1, NO_CUSTODIAN, assets::mint<BC>(econia, 1000000));
+        deposit_coins<QC>(
+            @user, 1, NO_CUSTODIAN, assets::mint<QC>(econia, 1000000));
+        // Assert order counts
+        assert!(get_n_orders(@user, market_account_id, ASK) == 0, 0);
+        assert!(get_n_orders(@user, market_account_id, BID) == 0, 0);
+        register_order_internal( // Register order
+            @user, market_account_id, ASK, ask_id_1, 1, 1, 1, 1);
+        // Assert order counts
+        assert!(get_n_orders(@user, market_account_id, ASK) == 1, 0);
+        assert!(get_n_orders(@user, market_account_id, BID) == 0, 0);
+        // Assert order lookup
+        assert!(get_order_id_nearest_spread(@user, market_account_id, ASK)
+            == ask_id_1, 0);
+        register_order_internal( // Register order
+            @user, market_account_id, ASK, ask_id_2, 1, 1, 1, 1);
+        // Assert order lookup
+        assert!(get_order_id_nearest_spread(@user, market_account_id, ASK)
+            == ask_id_1, 0);
+        register_order_internal( // Register order
+            @user, market_account_id, ASK, ask_id_3, 1, 1, 1, 1);
+        // Assert order lookup
+        assert!(get_order_id_nearest_spread(@user, market_account_id, ASK)
+            == ask_id_1, 0);
+        // Assert order counts
+        assert!(get_n_orders(@user, market_account_id, ASK) == 3, 0);
+        assert!(get_n_orders(@user, market_account_id, BID) == 0, 0);
+        register_order_internal( // Register order
+            @user, market_account_id, BID, bid_id_1, 1, 1, 1, 1);
+        // Assert order lookup
+        assert!(get_order_id_nearest_spread(@user, market_account_id, BID)
+            == bid_id_1, 0);
+        register_order_internal( // Register order
+            @user, market_account_id, BID, bid_id_2, 1, 1, 1, 1);
+        // Assert order lookup
+        assert!(get_order_id_nearest_spread(@user, market_account_id, BID)
+            == bid_id_2, 0);
+        register_order_internal( // Register order
+            @user, market_account_id, BID, bid_id_3, 1, 1, 1, 1);
+        // Assert order lookup
+        assert!(get_order_id_nearest_spread(@user, market_account_id, BID)
+            == bid_id_3, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for no orders
+    fun test_get_order_id_nearest_spread_no_orders(
+        econia: &signer,
+        user: &signer
+    ) acquires Collateral, MarketAccounts {
+        // Register user with pure coin market account
+        let (_, market_account_id) = register_user_with_market_accounts_test(
+            econia, user, 1, NO_CUSTODIAN);
+        // Attempt invalid invocation
+        get_order_id_nearest_spread(@user, market_account_id, ASK);
     }
 
     #[test]

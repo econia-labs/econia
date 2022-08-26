@@ -13,25 +13,26 @@ open two wallets and trade them against each other.
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Constants](#@Constants_0)
--  [Function `invoke_user`](#0xc0deb00c_market_invoke_user)
 -  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
--  [Function `cancel_limit_order`](#0xc0deb00c_market_cancel_limit_order)
+-  [Function `cancel_all_limit_orders`](#0xc0deb00c_market_cancel_all_limit_orders)
     -  [Parameters](#@Parameters_1)
-    -  [Abort conditions](#@Abort_conditions_2)
+-  [Function `cancel_limit_order`](#0xc0deb00c_market_cancel_limit_order)
+    -  [Parameters](#@Parameters_2)
+    -  [Abort conditions](#@Abort_conditions_3)
 -  [Function `get_counter`](#0xc0deb00c_market_get_counter)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Parameters](#@Parameters_3)
-    -  [Abort conditions](#@Abort_conditions_4)
-    -  [Assumes](#@Assumes_5)
+    -  [Parameters](#@Parameters_4)
+    -  [Abort conditions](#@Abort_conditions_5)
+    -  [Assumes](#@Assumes_6)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_6)
-    -  [Parameters](#@Parameters_7)
+    -  [Type parameters](#@Type_parameters_7)
+    -  [Parameters](#@Parameters_8)
 -  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
-    -  [Type parameters](#@Type_parameters_8)
-    -  [Parameters](#@Parameters_9)
+    -  [Type parameters](#@Type_parameters_9)
+    -  [Parameters](#@Parameters_10)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_10)
+    -  [Abort conditions](#@Abort_conditions_11)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
@@ -337,29 +338,6 @@ Default value for minimum ask order ID
 
 
 
-<a name="0xc0deb00c_market_invoke_user"></a>
-
-## Function `invoke_user`
-
-Dependency stub planning
-
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_user">invoke_user</a>()
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_invoke_user">invoke_user</a>() {<a href="user.md#0xc0deb00c_user_return_0">user::return_0</a>();}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_market_register_market_generic"></a>
 
 ## Function `register_market_generic`
@@ -442,11 +420,14 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market"
 
 </details>
 
-<a name="0xc0deb00c_market_cancel_limit_order"></a>
+<a name="0xc0deb00c_market_cancel_all_limit_orders"></a>
 
-## Function `cancel_limit_order`
+## Function `cancel_all_limit_orders`
 
-Cancel limit order on book, remove from user's market account.
+Cancel all of a user's limit orders on the book, and remove from
+their market account.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>
 
 
 <a name="@Parameters_1"></a>
@@ -461,7 +442,63 @@ market account
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
 
 
-<a name="@Abort_conditions_2"></a>
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders">cancel_all_limit_orders</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, general_custodian_id: u64, side: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_limit_orders">cancel_all_limit_orders</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    market_id: u64,
+    general_custodian_id: u64,
+    side: bool,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <b>let</b> market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">user::get_market_account_id</a>(market_id,
+        general_custodian_id); // Get <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
+    <b>let</b> n_orders = // Get number of orders on given side
+        <a href="user.md#0xc0deb00c_user_get_n_orders_internal">user::get_n_orders_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side);
+    <b>while</b> (n_orders &gt; 0) {
+        // Get order ID of order nearest <b>to</b> the spread
+        <b>let</b> order_id_nearest_spread =
+            <a href="user.md#0xc0deb00c_user_get_order_id_nearest_spread_internal">user::get_order_id_nearest_spread_internal</a>(
+                <a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side);
+        // Cancel the order
+        <a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>(<a href="user.md#0xc0deb00c_user">user</a>, host, market_id, general_custodian_id,
+            side, order_id_nearest_spread);
+        n_orders = n_orders - 1; // Decrement order count
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_limit_order"></a>
+
+## Function `cancel_limit_order`
+
+Cancel limit order on book, remove from user's market account.
+
+
+<a name="@Parameters_2"></a>
+
+### Parameters
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user cancelling order
+* <code>host</code>: Where corresponding <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> is hosted
+* <code>market_id</code>: Market ID
+* <code>general_custodian_id</code>: General custodian ID for <code><a href="user.md#0xc0deb00c_user">user</a></code>'s
+market account
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+
+
+<a name="@Abort_conditions_3"></a>
 
 ### Abort conditions
 
@@ -586,7 +623,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_3"></a>
+<a name="@Parameters_4"></a>
 
 ### Parameters
 
@@ -602,14 +639,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_4"></a>
+<a name="@Abort_conditions_5"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_5"></a>
+<a name="@Assumes_6"></a>
 
 ### Assumes
 
@@ -704,7 +741,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_6"></a>
+<a name="@Type_parameters_7"></a>
 
 ### Type parameters
 
@@ -712,7 +749,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_8"></a>
 
 ### Parameters
 
@@ -765,7 +802,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_8"></a>
+<a name="@Type_parameters_9"></a>
 
 ### Type parameters
 
@@ -773,7 +810,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_9"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -837,7 +874,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_10"></a>
+<a name="@Abort_conditions_11"></a>
 
 ### Abort conditions
 

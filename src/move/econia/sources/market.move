@@ -4,9 +4,6 @@
 /// open two wallets and trade them against each other.
 module econia::market {
 
-    /// Dependency stub planning
-    fun invoke_user() {user::return_0();}
-
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_std::type_info;
@@ -168,6 +165,41 @@ module econia::market {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Cancel all of a user's limit orders on the book, and remove from
+    /// their market account.
+    ///
+    /// See wrapped function `cancel_limit_order()`
+    ///
+    /// # Parameters
+    /// * `user`: Address of user cancelling order
+    /// * `host`: Where corresponding `OrderBook` is hosted
+    /// * `market_id`: Market ID
+    /// * `general_custodian_id`: General custodian ID for `user`'s
+    ///   market account
+    /// * `side`: `ASK` or `BID`
+    fun cancel_all_limit_orders(
+        user: address,
+        host: address,
+        market_id: u64,
+        general_custodian_id: u64,
+        side: bool,
+    ) acquires OrderBooks {
+        let market_account_id = user::get_market_account_id(market_id,
+            general_custodian_id); // Get user's market account ID
+        let n_orders = // Get number of orders on given side
+            user::get_n_orders_internal(user, market_account_id, side);
+        while (n_orders > 0) {
+            // Get order ID of order nearest the spread
+            let order_id_nearest_spread =
+                user::get_order_id_nearest_spread_internal(
+                    user, market_account_id, side);
+            // Cancel the order
+            cancel_limit_order(user, host, market_id, general_custodian_id,
+                side, order_id_nearest_spread);
+            n_orders = n_orders - 1; // Decrement order count
+        }
+    }
 
     /// Cancel limit order on book, remove from user's market account.
     ///

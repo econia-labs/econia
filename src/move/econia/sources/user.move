@@ -60,9 +60,6 @@
 ///
 module econia::user {
 
-    // Dependency planning stubs
-    public(friend) fun return_0(): u8 {0}
-
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::coin::{Self, Coin};
@@ -532,7 +529,11 @@ module econia::user {
 
     /// Return number of open orders for given `user`,
     /// `market_account_id`, and `side`
-    public(friend) fun get_n_orders(
+    ///
+    /// # Restrictions
+    /// * Restricted to friends prevent excessive public queries and
+    ///   thus transaction collisions
+    public(friend) fun get_n_orders_internal(
         user: address,
         market_account_id: u128,
         side: bool
@@ -553,7 +554,11 @@ module econia::user {
 
     /// Return order ID of order nearest the spread, for given `user`,
     /// `market_account_id`, and `side`
-    public(friend) fun get_order_id_nearest_spread(
+    ///
+    /// # Restrictions
+    /// * Restricted to friends prevent excessive public queries and
+    ///   thus transaction collisions
+    public(friend) fun get_order_id_nearest_spread_internal(
         user: address,
         market_account_id: u128,
         side: bool
@@ -2089,7 +2094,7 @@ module econia::user {
         user = @user
     )]
     /// Verify returns for both sides
-    fun test_get_n_orders_order_id_nearest_spread(
+    fun test_get_n_orders_order_id_nearest_spread_internal(
         econia: &signer,
         user: &signer
     ) acquires Collateral, MarketAccounts {
@@ -2109,44 +2114,44 @@ module econia::user {
         deposit_coins<QC>(
             @user, 1, NO_CUSTODIAN, assets::mint<QC>(econia, 1000000));
         // Assert order counts
-        assert!(get_n_orders(@user, market_account_id, ASK) == 0, 0);
-        assert!(get_n_orders(@user, market_account_id, BID) == 0, 0);
+        assert!(get_n_orders_internal(@user, market_account_id, ASK) == 0, 0);
+        assert!(get_n_orders_internal(@user, market_account_id, BID) == 0, 0);
         register_order_internal( // Register order
             @user, market_account_id, ASK, ask_id_1, 1, 1, 1, 1);
         // Assert order counts
-        assert!(get_n_orders(@user, market_account_id, ASK) == 1, 0);
-        assert!(get_n_orders(@user, market_account_id, BID) == 0, 0);
+        assert!(get_n_orders_internal(@user, market_account_id, ASK) == 1, 0);
+        assert!(get_n_orders_internal(@user, market_account_id, BID) == 0, 0);
         // Assert order lookup
-        assert!(get_order_id_nearest_spread(@user, market_account_id, ASK)
-            == ask_id_1, 0);
+        assert!(get_order_id_nearest_spread_internal(
+            @user, market_account_id, ASK) == ask_id_1, 0);
         register_order_internal( // Register order
             @user, market_account_id, ASK, ask_id_2, 1, 1, 1, 1);
         // Assert order lookup
-        assert!(get_order_id_nearest_spread(@user, market_account_id, ASK)
-            == ask_id_1, 0);
+        assert!(get_order_id_nearest_spread_internal(
+            @user, market_account_id, ASK) == ask_id_1, 0);
         register_order_internal( // Register order
             @user, market_account_id, ASK, ask_id_3, 1, 1, 1, 1);
         // Assert order lookup
-        assert!(get_order_id_nearest_spread(@user, market_account_id, ASK)
-            == ask_id_1, 0);
+        assert!(get_order_id_nearest_spread_internal(
+            @user, market_account_id, ASK) == ask_id_1, 0);
         // Assert order counts
-        assert!(get_n_orders(@user, market_account_id, ASK) == 3, 0);
-        assert!(get_n_orders(@user, market_account_id, BID) == 0, 0);
+        assert!(get_n_orders_internal(@user, market_account_id, ASK) == 3, 0);
+        assert!(get_n_orders_internal(@user, market_account_id, BID) == 0, 0);
         register_order_internal( // Register order
             @user, market_account_id, BID, bid_id_1, 1, 1, 1, 1);
         // Assert order lookup
-        assert!(get_order_id_nearest_spread(@user, market_account_id, BID)
-            == bid_id_1, 0);
+        assert!(get_order_id_nearest_spread_internal(
+            @user, market_account_id, BID) == bid_id_1, 0);
         register_order_internal( // Register order
             @user, market_account_id, BID, bid_id_2, 1, 1, 1, 1);
         // Assert order lookup
-        assert!(get_order_id_nearest_spread(@user, market_account_id, BID)
-            == bid_id_2, 0);
+        assert!(get_order_id_nearest_spread_internal(
+            @user, market_account_id, BID) == bid_id_2, 0);
         register_order_internal( // Register order
             @user, market_account_id, BID, bid_id_3, 1, 1, 1, 1);
         // Assert order lookup
-        assert!(get_order_id_nearest_spread(@user, market_account_id, BID)
-            == bid_id_3, 0);
+        assert!(get_order_id_nearest_spread_internal(
+            @user, market_account_id, BID) == bid_id_3, 0);
     }
 
     #[test(
@@ -2155,7 +2160,7 @@ module econia::user {
     )]
     #[expected_failure(abort_code = 15)]
     /// Verify failure for no orders
-    fun test_get_order_id_nearest_spread_no_orders(
+    fun test_get_order_id_nearest_spread_internal_no_orders(
         econia: &signer,
         user: &signer
     ) acquires Collateral, MarketAccounts {
@@ -2163,7 +2168,7 @@ module econia::user {
         let (_, market_account_id) = register_user_with_market_accounts_test(
             econia, user, 1, NO_CUSTODIAN);
         // Attempt invalid invocation
-        get_order_id_nearest_spread(@user, market_account_id, ASK);
+        get_order_id_nearest_spread_internal(@user, market_account_id, ASK);
     }
 
     #[test]

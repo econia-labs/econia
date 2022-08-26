@@ -331,7 +331,7 @@ module econia::market {
             general_custodian_id); // Get user's market account ID
         let n_orders = // Get number of orders on given side
             user::get_n_orders_internal(user, market_account_id, side);
-        while (n_orders > 0) {
+        while (n_orders > 0) { // While user has open orders
             // Get order ID of order nearest the spread
             let order_id_nearest_spread =
                 user::get_order_id_nearest_spread_internal(

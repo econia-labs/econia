@@ -728,7 +728,7 @@ orders tree available to cancel from
         general_custodian_id); // Get <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
     <b>let</b> n_orders = // Get number of orders on given side
         <a href="user.md#0xc0deb00c_user_get_n_orders_internal">user::get_n_orders_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side);
-    <b>while</b> (n_orders &gt; 0) {
+    <b>while</b> (n_orders &gt; 0) { // While <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> open orders
         // Get order ID of order nearest the spread
         <b>let</b> order_id_nearest_spread =
             <a href="user.md#0xc0deb00c_user_get_order_id_nearest_spread_internal">user::get_order_id_nearest_spread_internal</a>(

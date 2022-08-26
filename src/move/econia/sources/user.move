@@ -271,6 +271,59 @@ module econia::user {
         )
     }
 
+    /// Return `MarketAccount` asset count fields for given `user` and
+    /// `market_account_id`, under authority of general custodian
+    /// indicated by `general_custodian_capability_ref()`.
+    ///
+    /// See wrapped call `get_asset_counts()`.
+    ///
+    /// # Restrictions
+    /// * Restricted to general custodian for given account to prevent
+    ///   excessive public queries and thus transaction collisions
+    public fun get_asset_counts_custodian(
+        user: address,
+        market_id: u64,
+        general_custodian_capability_ref: &CustodianCapability
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_asset_counts(user, get_market_account_id(
+            market_id,
+            registry::custodian_id(general_custodian_capability_ref)
+        ))
+    }
+
+    /// Return `MarketAccount` asset count fields for given `user` and
+    /// `market_account_id`, under authority of signing user for a
+    /// market account without a delegated general custodian.
+    ///
+    /// See wrapped call `get_asset_counts()`.
+    ///
+    /// # Restrictions
+    /// * Restricted to signing user for given account to prevent
+    ///   excessive public queries and thus transaction collisions
+    public fun get_asset_counts_user(
+        user: &signer,
+        market_id: u64,
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_asset_counts(
+            address_of(user),
+            get_market_account_id(market_id, NO_CUSTODIAN)
+        )
+    }
+
     /// Return market account ID for given `market_id` and
     /// `general_custodian_id`
     public fun get_market_account_id(
@@ -1036,6 +1089,48 @@ module econia::user {
         *asset_out_ceiling_ref_mut = *asset_out_ceiling_ref_mut - asset_out;
     }
 
+    /// Return `MarketAccount` asset count fields for given `user` and
+    /// `market_account_id`.
+    ///
+    /// # Returns
+    /// * `MarketAccount.base_total`
+    /// * `MarketAccount.base_available`
+    /// * `MarketAccount.base_ceiling`
+    /// * `MarketAccount.quote_total`
+    /// * `MarketAccount.quote_available`
+    /// * `MarketAccount.quote_ceiling`
+    ///
+    /// # Restrictions
+    /// * Restricted to private function to prevent excessive public
+    ///   queries and thus transaction collisions
+    fun get_asset_counts(
+        user: address,
+        market_account_id: u128
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        // Verify user has a corresponding market account
+        verify_market_account_exists(user, market_account_id);
+        // Borrow immutable reference to market accounts map
+        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
+        // Borrow immutable reference to corresponding market account
+        let market_account_ref =
+            open_table::borrow(market_accounts_map_ref, market_account_id);
+        ( // Return asset count fields
+            market_account_ref.base_total,
+            market_account_ref.base_available,
+            market_account_ref.base_ceiling,
+            market_account_ref.quote_total,
+            market_account_ref.quote_available,
+            market_account_ref.quote_ceiling
+        )
+    }
+
     /// Range check proposed order
     ///
     /// # Parameters
@@ -1297,7 +1392,7 @@ module econia::user {
 
     #[test_only]
     /// Return asset counts of `user`'s market account for given
-    /// `market_account_id`
+    /// `market_account_id`, via wrapped call to `get_asset_counts()`.
     public fun get_asset_counts_test(
         user: address,
         market_account_id: u128,
@@ -1309,25 +1404,7 @@ module econia::user {
         u64,
         u64
     ) acquires MarketAccounts {
-        // Borrow immutable reference to user's market accounts map
-        let market_accounts_map_ref = &borrow_global<MarketAccounts>(user).map;
-        // Borrow immutable reference to corresponding market account
-        let market_account_ref =
-            open_table::borrow(market_accounts_map_ref, market_account_id);
-        // Extract fields
-        let (base_total,  base_available,  base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-        (
-            market_account_ref.base_total,
-            market_account_ref.base_available,
-            market_account_ref.base_ceiling,
-            market_account_ref.quote_total,
-            market_account_ref.quote_available,
-            market_account_ref.quote_ceiling,
-        );
-        // Return extracted fields
-        (base_total,  base_available,  base_ceiling,
-         quote_total, quote_available, quote_ceiling)
+        get_asset_counts(user, market_account_id)
     }
 
     #[test_only]
@@ -2041,6 +2118,98 @@ module econia::user {
         // Destroy custodian capability
         registry::destroy_custodian_capability_test(
             generic_asset_transfer_custodian_capability)
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify expected returns
+    fun get_asset_counts_custodian_user(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Define mock market parameters
+        let market_id_pure_generic = 0;
+        let market_id_pure_coin = 1;
+        let general_custodian_id_pure_generic = NO_CUSTODIAN;
+        let general_custodian_id_pure_coin = 1;
+        let market_account_id_pure_generic = get_market_account_id(
+            market_id_pure_generic, general_custodian_id_pure_generic);
+        let market_account_id_pure_coin = get_market_account_id(
+            market_id_pure_coin, general_custodian_id_pure_coin);
+        // Define bogus asset counts
+        let base_total_pure_generic      = 0;
+        let base_available_pure_generic  = 1;
+        let base_ceiling_pure_generic    = 2;
+        let quote_total_pure_generic     = 3;
+        let quote_available_pure_generic = 4;
+        let quote_ceiling_pure_generic   = 5;
+        let base_total_pure_coin         = 6;
+        let base_available_pure_coin     = 7;
+        let base_ceiling_pure_coin       = 8;
+        let quote_total_pure_coin        = 9;
+        let quote_available_pure_coin    = 10;
+        let quote_ceiling_pure_coin      = 11;
+        // Register user to trade on markets
+        register_user_with_market_accounts_test(econia, user,
+            general_custodian_id_pure_generic, general_custodian_id_pure_coin);
+        // Get general custodian capability for pure coin market
+        let general_custodian_capability_pure_coin =
+            registry::get_custodian_capability_test(
+                general_custodian_id_pure_coin);
+        // Borrow mutable reference to market accounts map
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(@user).map;
+        // Borrow mutable reference to pure generic market account
+        let market_account_ref_mut = open_table::borrow_mut(
+            market_accounts_map_ref_mut, market_account_id_pure_generic);
+        // Set fields to mock values
+        market_account_ref_mut.base_total      = base_total_pure_generic;
+        market_account_ref_mut.base_available  = base_available_pure_generic;
+        market_account_ref_mut.base_ceiling    = base_ceiling_pure_generic;
+        market_account_ref_mut.quote_total     = quote_total_pure_generic;
+        market_account_ref_mut.quote_available = quote_available_pure_generic;
+        market_account_ref_mut.quote_ceiling   = quote_ceiling_pure_generic;
+        // Borrow mutable reference to pure coin market account
+        let market_account_ref_mut = open_table::borrow_mut(
+            market_accounts_map_ref_mut, market_account_id_pure_coin);
+        // Set fields to mock values
+        market_account_ref_mut.base_total      = base_total_pure_coin;
+        market_account_ref_mut.base_available  = base_available_pure_coin;
+        market_account_ref_mut.base_ceiling    = base_ceiling_pure_coin;
+        market_account_ref_mut.quote_total     = quote_total_pure_coin;
+        market_account_ref_mut.quote_available = quote_available_pure_coin;
+        market_account_ref_mut.quote_ceiling   = quote_ceiling_pure_coin;
+        // Get pure generic market account asset fields
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_user(user, market_id_pure_generic);
+        // Assert fields
+        assert!(base_total      == base_total_pure_generic, 0);
+        assert!(base_available  == base_available_pure_generic, 0);
+        assert!(base_ceiling    == base_ceiling_pure_generic, 0);
+        assert!(quote_total     == quote_total_pure_generic, 0);
+        assert!(quote_available == quote_available_pure_generic, 0);
+        assert!(quote_ceiling   == quote_ceiling_pure_generic, 0);
+        // Get pure coin market account asset fields
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_custodian(@user, market_id_pure_coin,
+                &general_custodian_capability_pure_coin);
+        // Assert fields
+        assert!(base_total      == base_total_pure_coin, 0);
+        assert!(base_available  == base_available_pure_coin, 0);
+        assert!(base_ceiling    == base_ceiling_pure_coin, 0);
+        assert!(quote_total     == quote_total_pure_coin, 0);
+        assert!(quote_available == quote_available_pure_coin, 0);
+        assert!(quote_ceiling   == quote_ceiling_pure_coin, 0);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(
+            general_custodian_capability_pure_coin);
     }
 
     #[test]

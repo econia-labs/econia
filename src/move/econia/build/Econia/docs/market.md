@@ -37,6 +37,8 @@ open two wallets and trade them against each other.
 -  [Function `match_loop_order_fill_size`](#0xc0deb00c_market_match_loop_order_fill_size)
     -  [Parameters](#@Parameters_9)
     -  [Returns](#@Returns_10)
+-  [Function `match_loop_order_follow_up`](#0xc0deb00c_market_match_loop_order_follow_up)
+-  [Function `reassign_in_func`](#0xc0deb00c_market_reassign_in_func)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
     -  [Parameters](#@Parameters_11)
     -  [Abort conditions](#@Abort_conditions_12)
@@ -1168,6 +1170,114 @@ price for incoming user
             (target_order_ref.size, <b>true</b>);
     // Return fill size and <b>if</b> target order is completely filled
     (fill_size, complete_target_fill)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_match_loop_order_follow_up"></a>
+
+## Function `match_loop_order_follow_up`
+
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order_follow_up">match_loop_order_follow_up</a>(new_spread_maker_ref_mut: &<b>mut</b> u128, should_break_ref_mut: &<b>mut</b> bool, should_pop_last_ref_mut: &<b>mut</b> bool, n_orders_ref_mut: &<b>mut</b> u64, complete_target_fill_ref: &bool, side_ref: &bool, target_order_id_ref_mut: &<b>mut</b> u128, null_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">market::Order</a>, target_parent_index_ref_mut: &<b>mut</b> u64, target_child_index_ref_mut: &<b>mut</b> u64, tree_ref_mut: &<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;, traversal_direction_ref: &bool): &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">market::Order</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order_follow_up">match_loop_order_follow_up</a>(
+    new_spread_maker_ref_mut: &<b>mut</b> u128,
+    should_break_ref_mut: &<b>mut</b> bool,
+    should_pop_last_ref_mut: &<b>mut</b> bool,
+    n_orders_ref_mut: &<b>mut</b> u64,
+    complete_target_fill_ref: &bool,
+    side_ref: &bool,
+    target_order_id_ref_mut: &<b>mut</b> u128,
+    null_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    target_parent_index_ref_mut: &<b>mut</b> u64,
+    target_child_index_ref_mut: &<b>mut</b> u64,
+    tree_ref_mut: &<b>mut</b> CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;,
+    traversal_direction_ref: &bool
+): &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a> {
+    // Assume should set new spread maker field <b>to</b> target order ID
+    *new_spread_maker_ref_mut = *target_order_id_ref_mut;
+    // Assume should <b>break</b> out of <b>loop</b> after follow up
+    *should_break_ref_mut = <b>true</b>;
+    // Assume should not pop last order off book after followup
+    *should_pop_last_ref_mut = <b>false</b>;
+    <b>if</b> (*n_orders_ref_mut == 1) { // If no orders left on book
+        // If target order completely filled
+        <b>if</b> (*complete_target_fill_ref) {
+            // Market that should pop last order on book
+            *should_pop_last_ref_mut = <b>true</b>;
+            // Set new spread maker value <b>to</b> default value for side
+            *new_spread_maker_ref_mut = <b>if</b> (*side_ref == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+                <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a> <b>else</b> <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>;
+        }; // If not complete target order fill, <b>use</b> default flags
+        // Return mutable reference <b>to</b> null order
+        <b>return</b> null_order_ref_mut
+    } <b>else</b> { // If orders still left on book
+        // If target order completely filled
+        <b>if</b> (*complete_target_fill_ref) {
+            // Traverse pop <b>to</b> next order on book
+            <b>let</b> (target_order_id, target_order_ref_mut,
+                 target_parent_index, target_child_index,
+                 empty_order) = <a href="critbit.md#0xc0deb00c_critbit_traverse_pop_mut">critbit::traverse_pop_mut</a>(tree_ref_mut,
+                    *target_order_id_ref_mut, *target_parent_index_ref_mut,
+                    *target_child_index_ref_mut, *n_orders_ref_mut,
+                    *traversal_direction_ref);
+            // Reassign traverse returns via deference, which is not
+            // permitted inside of the above function <b>return</b> tuple
+            *target_order_id_ref_mut     = target_order_id;
+            *target_parent_index_ref_mut = target_parent_index;
+            *target_child_index_ref_mut  = target_child_index;
+            // Unpack popped empty order and discard
+            <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, <a href="user.md#0xc0deb00c_user">user</a>: _, general_custodian_id: _} = empty_order;
+            // Flag that match <b>loop</b> should <b>continue</b>
+            *should_break_ref_mut = <b>false</b>;
+            // Decrement count of orders on book for given side
+            *n_orders_ref_mut = *n_orders_ref_mut - 1;
+            // Return mutable reference <b>to</b> next target order on book
+            <b>return</b> target_order_ref_mut
+        }; // If not complete target order fill, <b>use</b> default flags
+        // And <b>return</b> mutable reference <b>to</b> null order
+        <b>return</b> null_order_ref_mut
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_reassign_in_func"></a>
+
+## Function `reassign_in_func`
+
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_reassign_in_func">reassign_in_func</a>(val_ref_mut: &<b>mut</b> bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_reassign_in_func">reassign_in_func</a>(
+    val_ref_mut: &<b>mut</b> bool
+) {
+    *val_ref_mut = *(&<b>mut</b> <b>false</b>);
+    <b>assert</b>!(*val_ref_mut == <b>false</b>, 0);
+    val_ref_mut;
 }
 </code></pre>
 

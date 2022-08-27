@@ -614,6 +614,81 @@ module econia::market {
         (fill_size, complete_target_fill)
     }
 
+    fun match_loop_order_follow_up(
+        new_spread_maker_ref_mut: &mut u128,
+        should_break_ref_mut: &mut bool,
+        should_pop_last_ref_mut: &mut bool,
+        n_orders_ref_mut: &mut u64,
+        complete_target_fill_ref: &bool,
+        side_ref: &bool,
+        target_order_id_ref_mut: &mut u128,
+        null_order_ref_mut: &mut Order,
+        target_parent_index_ref_mut: &mut u64,
+        target_child_index_ref_mut: &mut u64,
+        tree_ref_mut: &mut CritBitTree<Order>,
+        traversal_direction_ref: &bool
+    ): &mut Order {
+        // Assume should set new spread maker field to target order ID
+        *new_spread_maker_ref_mut = *target_order_id_ref_mut;
+        // Assume should break out of loop after follow up
+        *should_break_ref_mut = true;
+        // Assume should not pop last order off book after followup
+        *should_pop_last_ref_mut = false;
+        if (*n_orders_ref_mut == 1) { // If no orders left on book
+            // If target order completely filled
+            if (*complete_target_fill_ref) {
+                // Market that should pop last order on book
+                *should_pop_last_ref_mut = true;
+                // Set new spread maker value to default value for side
+                *new_spread_maker_ref_mut = if (*side_ref == ASK)
+                    MIN_ASK_DEFAULT else MAX_BID_DEFAULT;
+            }; // If not complete target order fill, use default flags
+            // Return mutable reference to null order
+            return null_order_ref_mut
+        } else { // If orders still left on book
+            // If target order completely filled
+            if (*complete_target_fill_ref) {
+                // Traverse pop to next order on book
+                let (target_order_id, target_order_ref_mut,
+                     target_parent_index, target_child_index,
+                     empty_order) = critbit::traverse_pop_mut(tree_ref_mut,
+                        *target_order_id_ref_mut, *target_parent_index_ref_mut,
+                        *target_child_index_ref_mut, *n_orders_ref_mut,
+                        *traversal_direction_ref);
+                // Reassign traverse returns via deference, which is not
+                // permitted inside of the above function return tuple
+                *target_order_id_ref_mut     = target_order_id;
+                *target_parent_index_ref_mut = target_parent_index;
+                *target_child_index_ref_mut  = target_child_index;
+                // Unpack popped empty order and discard
+                Order{size: _, user: _, general_custodian_id: _} = empty_order;
+                // Flag that match loop should continue
+                *should_break_ref_mut = false;
+                // Decrement count of orders on book for given side
+                *n_orders_ref_mut = *n_orders_ref_mut - 1;
+                // Return mutable reference to next target order on book
+                return target_order_ref_mut
+            }; // If not complete target order fill, use default flags
+            // And return mutable reference to null order
+            return null_order_ref_mut
+        }
+    }
+
+    fun reassign_in_func(
+        val_ref_mut: &mut bool
+    ) {
+        *val_ref_mut = *(&mut false);
+        assert!(*val_ref_mut == false, 0);
+        val_ref_mut;
+    }
+
+    #[test]
+    fun test_ref_passing() {
+        let val = true;
+        reassign_in_func(&mut val);
+        assert!(val == false, 0);
+    }
+
     /// Place limit order against book and optionally register in user's
     /// market account.
     ///

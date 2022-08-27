@@ -95,7 +95,7 @@ flowchart TD
     class match_loop unimplemented;
     class match_loop_order implemented;
     class match_loop_order_fill_size implemented;
-    class match_loop_order_follow_up unimplemented;
+    class match_loop_order_follow_up partially_implemented;
     class match_loop_break implemented;
 
 %% Node relationships

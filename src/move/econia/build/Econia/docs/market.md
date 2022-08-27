@@ -28,24 +28,29 @@ open two wallets and trade them against each other.
     -  [Parameters](#@Parameters_3)
     -  [Abort conditions](#@Abort_conditions_4)
 -  [Function `get_counter`](#0xc0deb00c_market_get_counter)
+-  [Function `match_loop_order`](#0xc0deb00c_market_match_loop_order)
+    -  [Type parameters](#@Type_parameters_5)
+    -  [Parameters](#@Parameters_6)
 -  [Function `match_loop_order_fill_size`](#0xc0deb00c_market_match_loop_order_fill_size)
-    -  [Parameters](#@Parameters_5)
-    -  [Returns](#@Returns_6)
--  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
     -  [Parameters](#@Parameters_7)
-    -  [Abort conditions](#@Abort_conditions_8)
-    -  [Assumes](#@Assumes_9)
+    -  [Returns](#@Returns_8)
+-  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+    -  [Parameters](#@Parameters_9)
+    -  [Abort conditions](#@Abort_conditions_10)
+    -  [Assumes](#@Assumes_11)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_10)
-    -  [Parameters](#@Parameters_11)
--  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
     -  [Type parameters](#@Type_parameters_12)
     -  [Parameters](#@Parameters_13)
+-  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+    -  [Type parameters](#@Type_parameters_14)
+    -  [Parameters](#@Parameters_15)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_14)
+    -  [Abort conditions](#@Abort_conditions_16)
 
 
-<pre><code><b>use</b> <a href="">0x1::signer</a>;
+<pre><code><b>use</b> <a href="">0x1::coin</a>;
+<b>use</b> <a href="">0x1::option</a>;
+<b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
@@ -890,6 +895,115 @@ returning the original value.
 
 </details>
 
+<a name="0xc0deb00c_market_match_loop_order"></a>
+
+## Function `match_loop_order`
+
+Fill order from "incoming user" against "target order" on the
+book.
+
+Inner function for <code>match_loop()</code>
+
+
+<a name="@Type_parameters_5"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_6"></a>
+
+### Parameters
+
+* <code>market_id_ref</code>: Immutable reference to corresponding market
+ID
+* <code>side_ref</code>: <code>&<a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code>&<a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+* <code>lot_size_ref</code>: Immutable reference to lot size for market
+* <code>tick_size_ref</code>: Immutable reference to tick size for market
+* <code>lots_until_max_ref</code>: Immutable reference to counter for
+number of lots that can be filled before exceeding max allowed
+for incoming user
+* <code>ticks_until_max_ref</code>: Immutable reference to counter for
+number of ticks that can be filled before exceeding max
+allowed for incoming user
+* <code>target_order_id_ref</code>: Immutable reference to target order ID
+* <code>target_order_ref_mut</code>: Mutable reference to target order
+* <code>optional_base_coins_ref_mut</code>: Mutable reference to optional
+base coins passing through the matching engine
+* <code>optional_quote_coins_ref_mut</code>: Mutable reference to optional
+quote coins passing through the matching engine
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>&lt;BaseType, QuoteType&gt;(market_id_ref: &u64, side_ref: &bool, lot_size_ref: &u64, tick_size_ref: &u64, lots_until_max_ref_mut: &<b>mut</b> u64, ticks_until_max_ref_mut: &<b>mut</b> u64, target_order_id_ref: &u128, target_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">market::Order</a>, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    market_id_ref: &u64,
+    side_ref: &bool,
+    lot_size_ref: &u64,
+    tick_size_ref: &u64,
+    lots_until_max_ref_mut: &<b>mut</b> u64,
+    ticks_until_max_ref_mut: &<b>mut</b> u64,
+    target_order_id_ref: &u128,
+    target_order_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    optional_base_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;,
+    optional_quote_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;
+): bool {
+    // Calculate target order price
+    <b>let</b> target_order_price = <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(*target_order_id_ref);
+    // Calculate size filled and determine <b>if</b> a complete fill
+    // against target order
+    <b>let</b> (fill_size, complete_target_fill) = <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(
+        lots_until_max_ref_mut, ticks_until_max_ref_mut,
+        &target_order_price, target_order_ref_mut);
+    // If nothing filled, <b>return</b> flag for <b>if</b> target order
+    // completely filled
+    <b>if</b> (fill_size == 0) <b>return</b> complete_target_fill;
+    // Calculate number of ticks filled
+    <b>let</b> ticks_filled = fill_size * target_order_price;
+    // Decrement counter for lots until max
+    *lots_until_max_ref_mut = *lots_until_max_ref_mut - fill_size;
+    // Decrement counter for ticks until max
+    *ticks_until_max_ref_mut = *ticks_until_max_ref_mut - ticks_filled;
+    // Calculate base and quote units <b>to</b> route
+    <b>let</b> (base_to_route, quote_to_route) = (
+        fill_size * *lot_size_ref, ticks_filled * *tick_size_ref);
+    // Get the target order <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
+    <b>let</b> target_order_market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">user::get_market_account_id</a>(
+        *market_id_ref, target_order_ref_mut.general_custodian_id);
+    // Fill the target order <a href="user.md#0xc0deb00c_user">user</a>-side
+    <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;BaseType, QuoteType&gt;(
+        target_order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, target_order_market_account_id,
+        *side_ref, *target_order_id_ref, complete_target_fill, fill_size,
+        optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
+        base_to_route, quote_to_route);
+    // Decrement target order size by size filled (should be popped
+    // later <b>if</b> completely filled, and so this step is redundant in
+    // the case of a complete fill, but adding an extra <b>if</b> statement
+    // <b>to</b> check whether or not <b>to</b> decrement would add computational
+    // overhead in the case of an incomplete fill)
+    target_order_ref_mut.size = target_order_ref_mut.size - fill_size;
+    complete_target_fill // Return <b>if</b> target order completely filled
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_match_loop_order_fill_size"></a>
 
 ## Function `match_loop_order_fill_size`
@@ -898,21 +1012,24 @@ Calculate fill size and whether an order on the book is
 completely filled during a match. The "incoming user" fills
 against the "target order" on the book.
 
+Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code>.
 
-<a name="@Parameters_5"></a>
+
+<a name="@Parameters_7"></a>
 
 ### Parameters
 
 * <code>lots_until_max_ref</code>: Immutable reference to counter for
-number of lots that can be filled before max allowed
+number of lots that can be filled before exceeding max allowed
 * <code>ticks_until_max_ref</code>: Immutable reference to counter for
-number of ticks that can be filled before max allowed
+number of ticks that can be filled before exceeding max
+allowed for incoming user
 * <code>target_order_price_ref</code>: Immutable reference to target order
-price
+price for incoming user
 * <code>target_order_ref</code>: Immutable reference to target order
 
 
-<a name="@Returns_6"></a>
+<a name="@Returns_8"></a>
 
 ### Returns
 
@@ -981,7 +1098,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_9"></a>
 
 ### Parameters
 
@@ -997,14 +1114,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_8"></a>
+<a name="@Abort_conditions_10"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_9"></a>
+<a name="@Assumes_11"></a>
 
 ### Assumes
 
@@ -1099,7 +1216,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_10"></a>
+<a name="@Type_parameters_12"></a>
 
 ### Type parameters
 
@@ -1107,7 +1224,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_11"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1160,7 +1277,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_12"></a>
+<a name="@Type_parameters_14"></a>
 
 ### Type parameters
 
@@ -1168,7 +1285,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
@@ -1232,7 +1349,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_14"></a>
+<a name="@Abort_conditions_16"></a>
 
 ### Abort conditions
 

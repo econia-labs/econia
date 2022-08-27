@@ -6,6 +6,7 @@ module econia::market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use aptos_framework::coin;
     use aptos_std::type_info;
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
@@ -13,13 +14,12 @@ module econia::market {
     use econia::registry::{Self, CustodianCapability};
     use econia::user;
     use std::signer::address_of;
+    use std::option;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[test_only]
-    use aptos_framework::coin;
     #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
 
@@ -429,18 +429,101 @@ module econia::market {
         count // Return original count
     }
 
+    /// Fill order from "incoming user" against "target order" on the
+    /// book.
+    ///
+    /// Inner function for `match_loop()`
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `market_id_ref`: Immutable reference to corresponding market
+    ///   ID
+    /// * `side_ref`: `&ASK` or `&BID`
+    /// * `lot_size_ref`: Immutable reference to lot size for market
+    /// * `tick_size_ref`: Immutable reference to tick size for market
+    /// * `lots_until_max_ref`: Immutable reference to counter for
+    ///   number of lots that can be filled before exceeding max allowed
+    ///   for incoming user
+    /// * `ticks_until_max_ref`: Immutable reference to counter for
+    ///   number of ticks that can be filled before exceeding max
+    ///   allowed for incoming user
+    /// * `target_order_id_ref`: Immutable reference to target order ID
+    /// * `target_order_ref_mut`: Mutable reference to target order
+    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
+    ///   base coins passing through the matching engine
+    /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
+    ///   quote coins passing through the matching engine
+    fun match_loop_order<
+        BaseType,
+        QuoteType
+    >(
+        market_id_ref: &u64,
+        side_ref: &bool,
+        lot_size_ref: &u64,
+        tick_size_ref: &u64,
+        lots_until_max_ref_mut: &mut u64,
+        ticks_until_max_ref_mut: &mut u64,
+        target_order_id_ref: &u128,
+        target_order_ref_mut: &mut Order,
+        optional_base_coins_ref_mut:
+            &mut option::Option<coin::Coin<BaseType>>,
+        optional_quote_coins_ref_mut:
+            &mut option::Option<coin::Coin<QuoteType>>
+    ): bool {
+        // Calculate target order price
+        let target_order_price = order_id::price(*target_order_id_ref);
+        // Calculate size filled and determine if a complete fill
+        // against target order
+        let (fill_size, complete_target_fill) = match_loop_order_fill_size(
+            lots_until_max_ref_mut, ticks_until_max_ref_mut,
+            &target_order_price, target_order_ref_mut);
+        // If nothing filled, return flag for if target order
+        // completely filled
+        if (fill_size == 0) return complete_target_fill;
+        // Calculate number of ticks filled
+        let ticks_filled = fill_size * target_order_price;
+        // Decrement counter for lots until max
+        *lots_until_max_ref_mut = *lots_until_max_ref_mut - fill_size;
+        // Decrement counter for ticks until max
+        *ticks_until_max_ref_mut = *ticks_until_max_ref_mut - ticks_filled;
+        // Calculate base and quote units to route
+        let (base_to_route, quote_to_route) = (
+            fill_size * *lot_size_ref, ticks_filled * *tick_size_ref);
+        // Get the target order user's market account ID
+        let target_order_market_account_id = user::get_market_account_id(
+            *market_id_ref, target_order_ref_mut.general_custodian_id);
+        // Fill the target order user-side
+        user::fill_order_internal<BaseType, QuoteType>(
+            target_order_ref_mut.user, target_order_market_account_id,
+            *side_ref, *target_order_id_ref, complete_target_fill, fill_size,
+            optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
+            base_to_route, quote_to_route);
+        // Decrement target order size by size filled (should be popped
+        // later if completely filled, and so this step is redundant in
+        // the case of a complete fill, but adding an extra if statement
+        // to check whether or not to decrement would add computational
+        // overhead in the case of an incomplete fill)
+        target_order_ref_mut.size = target_order_ref_mut.size - fill_size;
+        complete_target_fill // Return if target order completely filled
+    }
+
     /// Calculate fill size and whether an order on the book is
     /// completely filled during a match. The "incoming user" fills
     /// against the "target order" on the book.
+    ///
+    /// Inner function for `match_loop_order()`.
     ///
     /// # Parameters
     /// * `lots_until_max_ref`: Immutable reference to counter for
     ///   number of lots that can be filled before exceeding max allowed
     /// * `ticks_until_max_ref`: Immutable reference to counter for
     ///   number of ticks that can be filled before exceeding max
-    ///   allowed
+    ///   allowed for incoming user
     /// * `target_order_price_ref`: Immutable reference to target order
-    ///   price
+    ///   price for incoming user
     /// * `target_order_ref`: Immutable reference to target order
     ///
     /// # Returns
@@ -1092,6 +1175,21 @@ module econia::market {
         // Assert correct returns
         assert!(fill_size == size_filled_all_limited, 0);
         assert!(complete_target_fill == complete_target_fill_all_limited, 0);
+        // Declare parameters for no fill, limited by quote
+        let size_filled_no_limited = 0;
+        let complete_target_fill_no_limited = false;
+        let lots_until_max_no_limited = HI_64;
+        let ticks_until_max_no_limited = target_order_price - 1;
+        // Calculate fill size and if complete fill
+        (fill_size, complete_target_fill) = match_loop_order_fill_size(
+            &lots_until_max_no_limited,
+            &ticks_until_max_no_limited,
+            &target_order_price,
+            &target_order,
+        );
+        // Assert correct returns
+        assert!(fill_size == size_filled_no_limited, 0);
+        assert!(complete_target_fill == complete_target_fill_no_limited, 0);
         // Unpack target order
         Order{size: _, user: _, general_custodian_id: _} = target_order;
     }

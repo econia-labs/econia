@@ -92,9 +92,9 @@ flowchart TD
     class place_limit_order partially_implemented;
     class place_limit_order_custodian partially_implemented;
     class place_limit_order_user partially_implemented;
-    class match_loop unimplemented;
-    class match_loop_order implemented;
-    class match_loop_order_fill_size implemented;
+    class match_loop partially_implemented;
+    class match_loop_order partially_implemented;
+    class match_loop_order_fill_size partially_implemented;
     class match_loop_order_follow_up partially_implemented;
     class match_loop_break implemented;
 

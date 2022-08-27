@@ -113,8 +113,12 @@ module econia::market {
     const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
     /// Custodian ID flag for no delegated custodian
     const NO_CUSTODIAN: u64 = 0;
-    /// Flag for not a complete fill against target order on book
-    const NOT_COMPLETE_TARGET_FILL: bool = false;
+    /// Null order general custodian ID
+    const NULL_GENERAL_CUSTODIAN_ID: u64 = 0;
+    /// Null order size
+    const NULL_SIZE: u64 = 0;
+    /// Null order user
+    const NULL_USER: address = @0x0;
     /// When both base and quote assets are coins
     const PURE_COIN_PAIR: u64 = 0;
 
@@ -431,6 +435,104 @@ module econia::market {
         count // Return original count
     }
 
+    /// # Passing considerations
+    /// * Pass-by-reference instituted for improved efficiency
+    /// * See `match_loop_order_follow_up()` for a discussion on its
+    ///   return schema
+    fun match_loop<
+        BaseType,
+        QuoteType
+    >(
+        market_id_ref: &u64,
+        side_ref: &bool,
+        lot_size_ref: &u64,
+        tick_size_ref: &u64,
+        tree_ref_mut: &mut CritBitTree<Order>,
+        limit_price_ref: &u64,
+        traversal_direction_ref: &bool,
+        n_orders_ref_mut: &mut u64,
+        spread_maker_ref_mut: &mut u128,
+        optional_base_coins_ref_mut:
+            &mut option::Option<coin::Coin<BaseType>>,
+        optional_quote_coins_ref_mut:
+            &mut option::Option<coin::Coin<QuoteType>>
+    ) {
+        // Initialize iterated traversal, storing order ID of target
+        // order, mutable reference to target order, the parent field
+        // of the target node, and child field index of target node
+        let (target_order_id, target_order_ref_mut, target_parent_index,
+             target_child_index) = critbit::traverse_init_mut(
+                tree_ref_mut, *traversal_direction_ref);
+        // Declare a null order for generating default mutable reference
+        let null_order = Order{size: NULL_SIZE, user: NULL_USER,
+            general_custodian_id: NULL_GENERAL_CUSTODIAN_ID};
+        let (should_pop_last, new_spread_maker) = (false, MAX_BID_DEFAULT);
+        let complete_target_fill = false;
+        let lots_until_max = 0;
+        let ticks_until_max = 0;
+        // Declare locally-scoped return variable for below loop, which
+        // can not be initialized without a value in the above function,
+        // and which raises a warning if it is assigned a value within
+        // the present scope. It could be declared within the loop
+        // scope, but this would involve a redeclaration for each
+        // iteration. Hence it is declared here, such that the return
+        // function in which it is assigned does not locally re-bind the
+        // other variables in the function return tuple, which would
+        // occur if they were to be assigned via a `let` expression.
+        let should_break;
+        loop { // Begin loopwise matching
+            // Process the order for current iteration, storing flag for
+            // if the target order was completely filled
+            match_loop_order<
+                BaseType,
+                QuoteType
+            >(
+                market_id_ref,
+                side_ref,
+                lot_size_ref,
+                tick_size_ref,
+                &mut lots_until_max,
+                &mut ticks_until_max,
+                limit_price_ref,
+                &target_order_id,
+                target_order_ref_mut,
+                &mut complete_target_fill,
+                optional_base_coins_ref_mut,
+                optional_quote_coins_ref_mut
+            );
+            // Follow up on order processing, assigning variable returns
+            // that cannot be reassigned via pass-by-reference
+            (
+                target_order_id,
+                target_order_ref_mut,
+                should_break
+            ) = match_loop_order_follow_up(
+                tree_ref_mut,
+                side_ref,
+                traversal_direction_ref,
+                n_orders_ref_mut,
+                &complete_target_fill,
+                &mut should_pop_last,
+                target_order_id,
+                &mut null_order,
+                &mut target_parent_index,
+                &mut target_child_index,
+                &mut new_spread_maker
+            );
+            if (should_break) { // If should break out of loop
+                match_loop_break(
+                    null_order,
+                    spread_maker_ref_mut,
+                    &new_spread_maker,
+                    &should_pop_last,
+                    tree_ref_mut,
+                    &target_order_id
+                );
+                break
+            }
+        }
+    }
+
     /// Execute break cleanup after loopwise matching.
     ///
     /// Inner function for `match_loop()`.
@@ -470,7 +572,7 @@ module econia::market {
     /// Fill order from "incoming user" against "target order" on the
     /// book.
     ///
-    /// Inner function for `match_loop()`
+    /// Inner function for `match_loop()`.
     ///
     /// # Type parameters
     /// * `BaseType`: Base type for market
@@ -493,13 +595,12 @@ module econia::market {
     ///   indicates `BID`
     /// * `target_order_id_ref`: Immutable reference to target order ID
     /// * `target_order_ref_mut`: Mutable reference to target order
+    /// * `complete_target_fill_ref_mut`: Mutable reference to flag for
+    ///   if target order is completely filled
     /// * `optional_base_coins_ref_mut`: Mutable reference to optional
     ///   base coins passing through the matching engine
     /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
     ///   quote coins passing through the matching engine
-    ///
-    /// # Returns
-    /// * `bool`: `true` if target order completely filled, else `false`
     fun match_loop_order<
         BaseType,
         QuoteType
@@ -513,26 +614,27 @@ module econia::market {
         limit_price_ref: &u64,
         target_order_id_ref: &u128,
         target_order_ref_mut: &mut Order,
+        complete_target_fill_ref_mut: &mut bool,
         optional_base_coins_ref_mut:
             &mut option::Option<coin::Coin<BaseType>>,
         optional_quote_coins_ref_mut:
             &mut option::Option<coin::Coin<QuoteType>>
-    ): bool {
+    ) {
         // Calculate target order price
         let target_order_price = order_id::price(*target_order_id_ref);
         // If ask price is higher than limit price
         if ((*side_ref == ASK && target_order_price > *limit_price_ref) ||
             // Or if bid price is lower than limit price
             (*side_ref == BID && target_order_price < *limit_price_ref))
-                // Do not fill, return flag for not complete target fill
-                return NOT_COMPLETE_TARGET_FILL;
+                // Flag that there was not a complete target fill
+                *complete_target_fill_ref_mut = false;
         // Calculate size filled and determine if a complete fill
         // against target order
         let (fill_size, complete_target_fill) = match_loop_order_fill_size(
             lots_until_max_ref_mut, ticks_until_max_ref_mut,
             &target_order_price, target_order_ref_mut);
-        // If nothing filled, return flag for not a complete target fill
-        if (fill_size == 0) return NOT_COMPLETE_TARGET_FILL;
+        // If nothing filled, flag that not a complete target fill
+        if (fill_size == 0) *complete_target_fill_ref_mut = false;
         // Calculate number of ticks filled
         let ticks_filled = fill_size * target_order_price;
         // Decrement counter for lots until max
@@ -557,7 +659,8 @@ module econia::market {
         // to check whether or not to decrement would add computational
         // overhead in the case of an incomplete fill)
         target_order_ref_mut.size = target_order_ref_mut.size - fill_size;
-        complete_target_fill // Return if target order completely filled
+        // Reassign flag for if target order completely filled
+        *complete_target_fill_ref_mut = complete_target_fill;
     }
 
     /// Calculate fill size and whether an order on the book is
@@ -614,26 +717,43 @@ module econia::market {
         (fill_size, complete_target_fill)
     }
 
+    /// # Passing considerations
+    /// * Returns a mutable reference to an `Order` rather than
+    ///   reassigning to the underlying value because doing so would
+    ///   require `Order` to have the `drop` ability, which it does not
+    /// * Returns `target_order_id` and `should_break` as values rather
+    ///   than reassigning to passed in references, because the calling
+    ///   function `match_loop_order()` accesses these variables
+    ///   elsewhere in a loop, such that passing references to them
+    ///   consitutes an invalid borrow within the loop context
+    /// * Accepts `target_order_id` as pass-by-value even though it
+    ///   would be valid to pass-by-reference, because if it were to be
+    ///   passed by reference, the underlying value would still have to
+    ///   be copied into a local variable anyways in order to return
+    ///   by value as described above
     fun match_loop_order_follow_up(
-        new_spread_maker_ref_mut: &mut u128,
-        should_break_ref_mut: &mut bool,
-        should_pop_last_ref_mut: &mut bool,
+        tree_ref_mut: &mut CritBitTree<Order>,
+        side_ref: &bool,
+        traversal_direction_ref: &bool,
         n_orders_ref_mut: &mut u64,
         complete_target_fill_ref: &bool,
-        side_ref: &bool,
-        target_order_id_ref_mut: &mut u128,
-        null_order_ref_mut: &mut Order,
+        should_pop_last_ref_mut: &mut bool,
+        target_order_id: u128,
+        target_order_ref_mut: &mut Order,
         target_parent_index_ref_mut: &mut u64,
         target_child_index_ref_mut: &mut u64,
-        tree_ref_mut: &mut CritBitTree<Order>,
-        traversal_direction_ref: &bool
-    ): &mut Order {
+        new_spread_maker_ref_mut: &mut u128
+    ):  (
+        u128, // Target order ID
+        &mut Order, // Mut ref to null order or next order to process
+        bool // If should break
+    ) {
         // Assume should set new spread maker field to target order ID
-        *new_spread_maker_ref_mut = *target_order_id_ref_mut;
-        // Assume should break out of loop after follow up
-        *should_break_ref_mut = true;
+        *new_spread_maker_ref_mut = target_order_id;
         // Assume should not pop last order off book after followup
         *should_pop_last_ref_mut = false;
+        // Assume should break out of loop after follow up
+        let should_break = true;
         if (*n_orders_ref_mut == 1) { // If no orders left on book
             // If target order completely filled
             if (*complete_target_fill_ref) {
@@ -643,50 +763,30 @@ module econia::market {
                 *new_spread_maker_ref_mut = if (*side_ref == ASK)
                     MIN_ASK_DEFAULT else MAX_BID_DEFAULT;
             }; // If not complete target order fill, use default flags
-            // Return mutable reference to null order
-            return null_order_ref_mut
         } else { // If orders still left on book
             // If target order completely filled
             if (*complete_target_fill_ref) {
-                // Traverse pop to next order on book
-                let (target_order_id, target_order_ref_mut,
-                     target_parent_index, target_child_index,
-                     empty_order) = critbit::traverse_pop_mut(tree_ref_mut,
-                        *target_order_id_ref_mut, *target_parent_index_ref_mut,
-                        *target_child_index_ref_mut, *n_orders_ref_mut,
-                        *traversal_direction_ref);
+                // Declare locally-scoped temporary return variables
+                let (target_parent_index, target_child_index, empty_order);
+                // Traverse pop to next order on book, reassigning to
+                // variables from calling scope
+                (target_order_id, target_order_ref_mut, target_parent_index,
+                 target_child_index, empty_order) = critbit::traverse_pop_mut(
+                    tree_ref_mut, target_order_id,
+                    *target_parent_index_ref_mut, *target_child_index_ref_mut,
+                    *n_orders_ref_mut, *traversal_direction_ref);
                 // Reassign traverse returns via deference, which is not
                 // permitted inside of the above function return tuple
-                *target_order_id_ref_mut     = target_order_id;
                 *target_parent_index_ref_mut = target_parent_index;
                 *target_child_index_ref_mut  = target_child_index;
                 // Unpack popped empty order and discard
                 Order{size: _, user: _, general_custodian_id: _} = empty_order;
-                // Flag that match loop should continue
-                *should_break_ref_mut = false;
+                should_break = false; // Flag not to break out of loop
                 // Decrement count of orders on book for given side
                 *n_orders_ref_mut = *n_orders_ref_mut - 1;
-                // Return mutable reference to next target order on book
-                return target_order_ref_mut
             }; // If not complete target order fill, use default flags
-            // And return mutable reference to null order
-            return null_order_ref_mut
-        }
-    }
-
-    fun reassign_in_func(
-        val_ref_mut: &mut bool
-    ) {
-        *val_ref_mut = *(&mut false);
-        assert!(*val_ref_mut == false, 0);
-        val_ref_mut;
-    }
-
-    #[test]
-    fun test_ref_passing() {
-        let val = true;
-        reassign_in_func(&mut val);
-        assert!(val == false, 0);
+        };
+        (target_order_id, target_order_ref_mut, should_break)
     }
 
     /// Place limit order against book and optionally register in user's

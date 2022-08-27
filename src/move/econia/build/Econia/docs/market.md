@@ -28,25 +28,27 @@ open two wallets and trade them against each other.
     -  [Parameters](#@Parameters_3)
     -  [Abort conditions](#@Abort_conditions_4)
 -  [Function `get_counter`](#0xc0deb00c_market_get_counter)
+-  [Function `match_loop_break`](#0xc0deb00c_market_match_loop_break)
+    -  [Parameters](#@Parameters_5)
 -  [Function `match_loop_order`](#0xc0deb00c_market_match_loop_order)
-    -  [Type parameters](#@Type_parameters_5)
-    -  [Parameters](#@Parameters_6)
-    -  [Returns](#@Returns_7)
+    -  [Type parameters](#@Type_parameters_6)
+    -  [Parameters](#@Parameters_7)
+    -  [Returns](#@Returns_8)
 -  [Function `match_loop_order_fill_size`](#0xc0deb00c_market_match_loop_order_fill_size)
-    -  [Parameters](#@Parameters_8)
-    -  [Returns](#@Returns_9)
+    -  [Parameters](#@Parameters_9)
+    -  [Returns](#@Returns_10)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Parameters](#@Parameters_10)
-    -  [Abort conditions](#@Abort_conditions_11)
-    -  [Assumes](#@Assumes_12)
+    -  [Parameters](#@Parameters_11)
+    -  [Abort conditions](#@Abort_conditions_12)
+    -  [Assumes](#@Assumes_13)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_13)
-    -  [Parameters](#@Parameters_14)
+    -  [Type parameters](#@Type_parameters_14)
+    -  [Parameters](#@Parameters_15)
 -  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
-    -  [Type parameters](#@Type_parameters_15)
-    -  [Parameters](#@Parameters_16)
+    -  [Type parameters](#@Type_parameters_16)
+    -  [Parameters](#@Parameters_17)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_17)
+    -  [Abort conditions](#@Abort_conditions_18)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -360,6 +362,16 @@ Default value for minimum ask order ID
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>: u128 = 340282366920938463463374607431768211455;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_NOT_COMPLETE_TARGET_FILL"></a>
+
+Flag for not a complete fill against target order on book
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NOT_COMPLETE_TARGET_FILL">NOT_COMPLETE_TARGET_FILL</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -896,6 +908,66 @@ returning the original value.
 
 </details>
 
+<a name="0xc0deb00c_market_match_loop_break"></a>
+
+## Function `match_loop_break`
+
+Execute break cleanup after loopwise matching.
+
+Inner function for <code>match_loop()</code>.
+
+
+<a name="@Parameters_5"></a>
+
+### Parameters
+
+* <code>null_order</code>: A null order used for mutable reference passing
+* <code>spread_maker_ref_mut</code>: Mutable reference to the spread maker
+field for order tree just filled against
+* <code>new_spread_maker_ref</code>: Immutable reference to new spread
+maker value to assign
+* <code>should_pop_last_ref</code>: <code>&<b>true</b></code> if loopwise matching ends on a
+complete fill against the last order on the book, which should
+be popped off
+* <code>tree_ref_mut</code>: Mutable reference to orders tree just matched
+against
+* <code>final_order_id_ref</code>: If <code>should_pop_last_ref</code> indicates
+<code><b>true</b></code>, an immutable reference to the order ID of the last
+order in the book, which should be popped
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_break">match_loop_break</a>(null_order: <a href="market.md#0xc0deb00c_market_Order">market::Order</a>, spread_maker_ref_mut: &<b>mut</b> u128, new_spread_maker_ref: &u128, should_pop_last_ref: &bool, tree_ref_mut: &<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;, final_order_id_ref: &u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_break">match_loop_break</a>(
+    null_order: <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    spread_maker_ref_mut: &<b>mut</b> u128,
+    new_spread_maker_ref: &u128,
+    should_pop_last_ref: &bool,
+    tree_ref_mut: &<b>mut</b> CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;,
+    final_order_id_ref: &u128
+) {
+    // Unpack null order
+    <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, <a href="user.md#0xc0deb00c_user">user</a>: _, general_custodian_id: _} = null_order;
+    // Update spread maker field
+    *spread_maker_ref_mut = *new_spread_maker_ref;
+    // Pop and unpack last order on book <b>if</b> flagged <b>to</b> do so
+    <b>if</b> (*should_pop_last_ref)
+        <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: _, <a href="user.md#0xc0deb00c_user">user</a>: _, general_custodian_id: _} =
+            <a href="critbit.md#0xc0deb00c_critbit_pop">critbit::pop</a>(tree_ref_mut, *final_order_id_ref);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_match_loop_order"></a>
 
 ## Function `match_loop_order`
@@ -906,7 +978,7 @@ book.
 Inner function for <code>match_loop()</code>
 
 
-<a name="@Type_parameters_5"></a>
+<a name="@Type_parameters_6"></a>
 
 ### Type parameters
 
@@ -914,7 +986,7 @@ Inner function for <code>match_loop()</code>
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_6"></a>
+<a name="@Parameters_7"></a>
 
 ### Parameters
 
@@ -940,7 +1012,7 @@ base coins passing through the matching engine
 quote coins passing through the matching engine
 
 
-<a name="@Returns_7"></a>
+<a name="@Returns_8"></a>
 
 ### Returns
 
@@ -980,15 +1052,15 @@ quote coins passing through the matching engine
     <b>if</b> ((*side_ref == <a href="market.md#0xc0deb00c_market_ASK">ASK</a> && target_order_price &gt; *limit_price_ref) ||
         // Or <b>if</b> bid price is lower than limit price
         (*side_ref == <a href="market.md#0xc0deb00c_market_BID">BID</a> && target_order_price &lt; *limit_price_ref))
-            // Do not fill, <b>return</b> flag for incomplete fill
-            <b>return</b> <b>false</b>;
+            // Do not fill, <b>return</b> flag for not complete target fill
+            <b>return</b> <a href="market.md#0xc0deb00c_market_NOT_COMPLETE_TARGET_FILL">NOT_COMPLETE_TARGET_FILL</a>;
     // Calculate size filled and determine <b>if</b> a complete fill
     // against target order
     <b>let</b> (fill_size, complete_target_fill) = <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(
         lots_until_max_ref_mut, ticks_until_max_ref_mut,
         &target_order_price, target_order_ref_mut);
-    // If nothing filled, <b>return</b> flag for incomplete fill
-    <b>if</b> (fill_size == 0) <b>return</b> <b>false</b>;
+    // If nothing filled, <b>return</b> flag for not a complete target fill
+    <b>if</b> (fill_size == 0) <b>return</b> <a href="market.md#0xc0deb00c_market_NOT_COMPLETE_TARGET_FILL">NOT_COMPLETE_TARGET_FILL</a>;
     // Calculate number of ticks filled
     <b>let</b> ticks_filled = fill_size * target_order_price;
     // Decrement counter for lots until max
@@ -1032,7 +1104,7 @@ against the "target order" on the book.
 Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code>.
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_9"></a>
 
 ### Parameters
 
@@ -1046,7 +1118,7 @@ price for incoming user
 * <code>target_order_ref</code>: Immutable reference to target order
 
 
-<a name="@Returns_9"></a>
+<a name="@Returns_10"></a>
 
 ### Returns
 
@@ -1115,7 +1187,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_11"></a>
 
 ### Parameters
 
@@ -1131,14 +1203,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_11"></a>
+<a name="@Abort_conditions_12"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_12"></a>
+<a name="@Assumes_13"></a>
 
 ### Assumes
 
@@ -1233,7 +1305,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_13"></a>
+<a name="@Type_parameters_14"></a>
 
 ### Type parameters
 
@@ -1241,7 +1313,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
@@ -1294,7 +1366,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_15"></a>
+<a name="@Type_parameters_16"></a>
 
 ### Type parameters
 
@@ -1302,7 +1374,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1366,7 +1438,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_17"></a>
+<a name="@Abort_conditions_18"></a>
 
 ### Abort conditions
 

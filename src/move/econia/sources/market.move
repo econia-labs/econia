@@ -113,6 +113,8 @@ module econia::market {
     const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
     /// Custodian ID flag for no delegated custodian
     const NO_CUSTODIAN: u64 = 0;
+    /// Flag for not a complete fill against target order on book
+    const NOT_COMPLETE_TARGET_FILL: bool = false;
     /// When both base and quote assets are coins
     const PURE_COIN_PAIR: u64 = 0;
 
@@ -429,6 +431,42 @@ module econia::market {
         count // Return original count
     }
 
+    /// Execute break cleanup after loopwise matching.
+    ///
+    /// Inner function for `match_loop()`.
+    ///
+    /// # Parameters
+    /// * `null_order`: A null order used for mutable reference passing
+    /// * `spread_maker_ref_mut`: Mutable reference to the spread maker
+    ///   field for order tree just filled against
+    /// * `new_spread_maker_ref`: Immutable reference to new spread
+    ///   maker value to assign
+    /// * `should_pop_last_ref`: `&true` if loopwise matching ends on a
+    ///   complete fill against the last order on the book, which should
+    ///   be popped off
+    /// * `tree_ref_mut`: Mutable reference to orders tree just matched
+    ///   against
+    /// * `final_order_id_ref`: If `should_pop_last_ref` indicates
+    ///   `true`, an immutable reference to the order ID of the last
+    ///   order in the book, which should be popped
+    fun match_loop_break(
+        null_order: Order,
+        spread_maker_ref_mut: &mut u128,
+        new_spread_maker_ref: &u128,
+        should_pop_last_ref: &bool,
+        tree_ref_mut: &mut CritBitTree<Order>,
+        final_order_id_ref: &u128
+    ) {
+        // Unpack null order
+        Order{size: _, user: _, general_custodian_id: _} = null_order;
+        // Update spread maker field
+        *spread_maker_ref_mut = *new_spread_maker_ref;
+        // Pop and unpack last order on book if flagged to do so
+        if (*should_pop_last_ref)
+            Order{size: _, user: _, general_custodian_id: _} =
+                critbit::pop(tree_ref_mut, *final_order_id_ref);
+    }
+
     /// Fill order from "incoming user" against "target order" on the
     /// book.
     ///
@@ -486,15 +524,15 @@ module econia::market {
         if ((*side_ref == ASK && target_order_price > *limit_price_ref) ||
             // Or if bid price is lower than limit price
             (*side_ref == BID && target_order_price < *limit_price_ref))
-                // Do not fill, return flag for incomplete fill
-                return false;
+                // Do not fill, return flag for not complete target fill
+                return NOT_COMPLETE_TARGET_FILL;
         // Calculate size filled and determine if a complete fill
         // against target order
         let (fill_size, complete_target_fill) = match_loop_order_fill_size(
             lots_until_max_ref_mut, ticks_until_max_ref_mut,
             &target_order_price, target_order_ref_mut);
-        // If nothing filled, return flag for incomplete fill
-        if (fill_size == 0) return false;
+        // If nothing filled, return flag for not a complete target fill
+        if (fill_size == 0) return NOT_COMPLETE_TARGET_FILL;
         // Calculate number of ticks filled
         let ticks_filled = fill_size * target_order_price;
         // Decrement counter for lots until max

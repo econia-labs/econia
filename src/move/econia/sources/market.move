@@ -113,12 +113,18 @@ module econia::market {
     const MIN_ASK_DEFAULT: u128 = 0xffffffffffffffffffffffffffffffff;
     /// Custodian ID flag for no delegated custodian
     const NO_CUSTODIAN: u64 = 0;
-    /// Null order general custodian ID
-    const NULL_GENERAL_CUSTODIAN_ID: u64 = 0;
-    /// Null order size
-    const NULL_SIZE: u64 = 0;
-    /// Null order user
-    const NULL_USER: address = @0x0;
+    /// Quasi-null `address` value assigned to a variable when it will
+    /// be reassigned via pass-by-reference, since declaration without
+    /// assignment before use is invalid
+    const NULL_ADDRESS: address = @0x0;
+    /// Quasi-null `bool` value assigned to a variable when it will be
+    /// reassigned via pass-by-reference, since declaration without
+    /// assignment before use is invalid
+    const NULL_BOOL: bool = false;
+    /// Quasi-null `u64` value assigned to a variable when it will be
+    /// reassigned via pass-by-reference, since declaration without
+    /// assignment before use is invalid
+    const NULL_U64: u64 = 0;
     /// When both base and quote assets are coins
     const PURE_COIN_PAIR: u64 = 0;
 
@@ -464,21 +470,21 @@ module econia::market {
              target_child_index) = critbit::traverse_init_mut(
                 tree_ref_mut, *traversal_direction_ref);
         // Declare a null order for generating default mutable reference
-        let null_order = Order{size: NULL_SIZE, user: NULL_USER,
-            general_custodian_id: NULL_GENERAL_CUSTODIAN_ID};
+        let null_order = Order{size: NULL_U64, user: NULL_ADDRESS,
+            general_custodian_id: NULL_U64};
         let (should_pop_last, new_spread_maker) = (false, MAX_BID_DEFAULT);
         let complete_target_fill = false;
         let lots_until_max = 0;
         let ticks_until_max = 0;
         // Declare locally-scoped return variable for below loop, which
-        // can not be initialized without a value in the above function,
+        // can not be declared without a value in the above function,
         // and which raises a warning if it is assigned a value within
         // the present scope. It could be declared within the loop
         // scope, but this would involve a redeclaration for each
-        // iteration. Hence it is declared here, such that the return
-        // function in which it is assigned does not locally re-bind the
-        // other variables in the function return tuple, which would
-        // occur if they were to be assigned via a `let` expression.
+        // iteration. Hence it is declared here, such that the statement
+        // in which it is assigned does not locally re-bind the other
+        // variables in the function return tuple, which would occur if
+        // they were to be assigned via a `let` expression.
         let should_break;
         loop { // Begin loopwise matching
             // Process the order for current iteration, storing flag for
@@ -520,6 +526,7 @@ module econia::market {
                 &mut new_spread_maker
             );
             if (should_break) { // If should break out of loop
+                // Clean up as needed before breaking out of loop
                 match_loop_break(
                     null_order,
                     spread_maker_ref_mut,
@@ -528,7 +535,7 @@ module econia::market {
                     tree_ref_mut,
                     &target_order_id
                 );
-                break
+                break // Break out of loop
             }
         }
     }
@@ -579,20 +586,19 @@ module econia::market {
     /// * `QuoteType`: Quote type for market
     ///
     /// # Parameters
-    /// * `market_id_ref`: Immutable reference to corresponding market
-    ///   ID
+    /// * `market_id_ref`: Immutable reference to market ID
     /// * `side_ref`: `&ASK` or `&BID`
     /// * `lot_size_ref`: Immutable reference to lot size for market
     /// * `tick_size_ref`: Immutable reference to tick size for market
-    /// * `lots_until_max_ref`: Immutable reference to counter for
-    ///   number of lots that can be filled before exceeding max allowed
-    ///   for incoming user
-    /// * `ticks_until_max_ref`: Immutable reference to counter for
-    ///   number of ticks that can be filled before exceeding max
+    /// * `lots_until_max_ref_mut`: Mutable reference to counter for
+    ///   number of lots that can be filled before exceeding max
     ///   allowed for incoming user
-    /// * `limit_price`: Max price to match against if `side_ref`
-    ///   indicates `ASK`, and min price to match against if `side_ref`
-    ///   indicates `BID`
+    /// * `ticks_until_max_ref_mut`: Mutable reference to counter
+    ///   for number of ticks that can be filled before exceeding max
+    ///   allowed for incoming user
+    /// * `limit_price_ref`: Immutable reference to max price to match
+    ///   against if `side_ref` indicates `ASK`, and min price to match
+    ///   against if `side_ref` indicates `BID`
     /// * `target_order_id_ref`: Immutable reference to target order ID
     /// * `target_order_ref_mut`: Mutable reference to target order
     /// * `complete_target_fill_ref_mut`: Mutable reference to flag for
@@ -625,16 +631,23 @@ module econia::market {
         // If ask price is higher than limit price
         if ((*side_ref == ASK && target_order_price > *limit_price_ref) ||
             // Or if bid price is lower than limit price
-            (*side_ref == BID && target_order_price < *limit_price_ref))
+            (*side_ref == BID && target_order_price < *limit_price_ref)) {
                 // Flag that there was not a complete target fill
                 *complete_target_fill_ref_mut = false;
+                return // Do not attempt to fill
+            };
+        // Declare fill size for pass-by-reference
+        let fill_size = NULL_U64;
         // Calculate size filled and determine if a complete fill
         // against target order
-        let (fill_size, complete_target_fill) = match_loop_order_fill_size(
-            lots_until_max_ref_mut, ticks_until_max_ref_mut,
-            &target_order_price, target_order_ref_mut);
-        // If nothing filled, flag that not a complete target fill
-        if (fill_size == 0) *complete_target_fill_ref_mut = false;
+        match_loop_order_fill_size(lots_until_max_ref_mut,
+            ticks_until_max_ref_mut, &target_order_price, target_order_ref_mut,
+            &mut fill_size, complete_target_fill_ref_mut);
+        if (fill_size == 0) { // If no lots to fill
+            // Flag that there was not a complete target fill
+            *complete_target_fill_ref_mut = false;
+            return // Do not attempt to fill
+        };
         // Calculate number of ticks filled
         let ticks_filled = fill_size * target_order_price;
         // Decrement counter for lots until max
@@ -650,17 +663,15 @@ module econia::market {
         // Fill the target order user-side
         user::fill_order_internal<BaseType, QuoteType>(
             target_order_ref_mut.user, target_order_market_account_id,
-            *side_ref, *target_order_id_ref, complete_target_fill, fill_size,
-            optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
-            base_to_route, quote_to_route);
+            *side_ref, *target_order_id_ref, *complete_target_fill_ref_mut,
+            fill_size, optional_base_coins_ref_mut,
+            optional_quote_coins_ref_mut, base_to_route, quote_to_route);
         // Decrement target order size by size filled (should be popped
         // later if completely filled, and so this step is redundant in
         // the case of a complete fill, but adding an extra if statement
         // to check whether or not to decrement would add computational
         // overhead in the case of an incomplete fill)
         target_order_ref_mut.size = target_order_ref_mut.size - fill_size;
-        // Reassign flag for if target order completely filled
-        *complete_target_fill_ref_mut = complete_target_fill;
     }
 
     /// Calculate fill size and whether an order on the book is
@@ -672,24 +683,23 @@ module econia::market {
     /// # Parameters
     /// * `lots_until_max_ref`: Immutable reference to counter for
     ///   number of lots that can be filled before exceeding max allowed
+    ///   for incoming user
     /// * `ticks_until_max_ref`: Immutable reference to counter for
     ///   number of ticks that can be filled before exceeding max
     ///   allowed for incoming user
     /// * `target_order_price_ref`: Immutable reference to target order
-    ///   price for incoming user
+    ///   price
     /// * `target_order_ref`: Immutable reference to target order
-    ///
-    /// # Returns
-    /// * `u64`: Fill size, in lots
-    /// * `u64`: `true` if target order is completely filled
+    /// * `fill_size_ref_mut`: Mutable reference to fill size, in lots
+    /// * `complete_target_fill_ref_mut`: Mutable reference to flag
+    ///   marked `true` if target order is completely filled
     fun match_loop_order_fill_size(
         lots_until_max_ref: &u64,
         ticks_until_max_ref: &u64,
         target_order_price_ref: &u64,
-        target_order_ref: &Order
-    ):(
-        u64,
-        bool
+        target_order_ref: &Order,
+        fill_size_ref_mut: &mut u64,
+        complete_target_fill_ref_mut: &mut bool
     ) {
         // Calculate max number of lots that could be filled without
         // exceeding the maximum number of filled ticks: number of lots
@@ -713,21 +723,67 @@ module econia::market {
                 // Otherwise fill size is target order size, and target
                 // order is completely filled
                 (target_order_ref.size, true);
-        // Return fill size and if target order is completely filled
-        (fill_size, complete_target_fill)
+        // Reassign to passed in references, since cannot reassign
+        // to references within ternary operation result tuple above
+        *fill_size_ref_mut = fill_size;
+        *complete_target_fill_ref_mut = complete_target_fill;
     }
 
+    /// Follow up after processing a fill against an order on the book.
+    ///
+    /// Checks if traversal is still possible, computes new spread maker
+    /// value as needed, and determines if loop has hit break condition,
+    /// following up on an "incoming user" filling against a "target
+    /// order" on the book.
+    ///
+    /// Inner function for `fill_market_order_traverse_loop()`.
+    ///
+    /// # Parameters
+    /// * `tree_ref_mut`: Mutable reference to orders tree
+    /// * `side_ref`: `&ASK` or `&BID`
+    /// * `traversal_direction_ref`: `&LEFT` or `&RIGHT`
+    /// * `n_orders_ref_mut`: Mutable reference to counter for number of
+    ///   orders in tree, including the target order that was just
+    ///   processed
+    /// * `complete_target_fill_ref`: `&true` if the target order was
+    ///   completely filled
+    /// * `should_pop_last_ref_mut`: Reassigned to `&true` if just
+    ///   processed a complete fill against the last order on the book,
+    ///   which should be popped
+    /// * `target_order_id`: Order ID of target order just processed
+    /// * `target_order_ref_mut`: Mutable reference to an `Order`.
+    ///   Reassigned only when traversal should proceed to the next
+    ///   order on the book, otherwise left unmodified. Intended to
+    ///   accept as an input a mutable reference to a null `Order`.
+    /// * `target_parent_index_ref_mut`: Mutable reference to loop
+    ///   variable for iterated traversal along outer nodes of a
+    ///   `CritBitTree`
+    /// * `target_child_index_ref_mut`: Mutable reference to loop
+    ///   variable for iterated traversal along outer nodes of a
+    ///   `CritBitTree`
+    /// * `new_spread_maker_ref_mut`: Mutable reference to the value
+    ///   that should be assigned to the spread maker field for the
+    ///   side indicated by `side_ref`, if one should be set
+    ///
+    /// # Returns
+    /// * `u128`: Target order ID, updated from `target_order_id` if
+    ///   traversal proceeds to the next order on the book
+    /// * `&mut Order`: Mutable reference to next order on the book to
+    ///   process, only reassigned when iterated traversal proceeds
+    /// * `bool`: `true` if should break out of loop after follow up
+    ///
     /// # Passing considerations
     /// * Returns a mutable reference to an `Order` rather than
     ///   reassigning to the underlying value because doing so would
     ///   require `Order` to have the `drop` ability, which it does not
-    /// * Returns `target_order_id` and `should_break` as values rather
-    ///   than reassigning to passed in references, because the calling
-    ///   function `match_loop_order()` accesses these variables
-    ///   elsewhere in a loop, such that passing references to them
-    ///   consitutes an invalid borrow within the loop context
-    /// * Accepts `target_order_id` as pass-by-value even though it
-    ///   would be valid to pass-by-reference, because if it were to be
+    /// * Returns local `target_order_id` and `should_break` variables
+    ///   as values rather than reassigning to passed in references,
+    ///   because the calling function `match_loop_order()` accesses
+    ///   these variables elsewhere in a loop, such that passing
+    ///   references to them consitutes an invalid borrow within the
+    ///   loop context
+    /// * Accepts `target_order_id` as pass-by-value even though
+    ///   pass-by-reference would be valid, because if it were to be
     ///   passed by reference, the underlying value would still have to
     ///   be copied into a local variable anyways in order to return
     ///   by value as described above
@@ -744,9 +800,9 @@ module econia::market {
         target_child_index_ref_mut: &mut u64,
         new_spread_maker_ref_mut: &mut u128
     ):  (
-        u128, // Target order ID
-        &mut Order, // Mut ref to null order or next order to process
-        bool // If should break
+        u128,
+        &mut Order,
+        bool
     ) {
         // Assume should set new spread maker field to target order ID
         *new_spread_maker_ref_mut = target_order_id;
@@ -769,14 +825,15 @@ module econia::market {
                 // Declare locally-scoped temporary return variables
                 let (target_parent_index, target_child_index, empty_order);
                 // Traverse pop to next order on book, reassigning to
-                // variables from calling scope
+                // temporary variables and those from calling scope
                 (target_order_id, target_order_ref_mut, target_parent_index,
                  target_child_index, empty_order) = critbit::traverse_pop_mut(
                     tree_ref_mut, target_order_id,
                     *target_parent_index_ref_mut, *target_child_index_ref_mut,
                     *n_orders_ref_mut, *traversal_direction_ref);
-                // Reassign traverse returns via deference, which is not
-                // permitted inside of the above function return tuple
+                // Reassign temporary traverse returns to variables from
+                // calling scope, since dereferencing is not permitted
+                // inside of the above function return tuple
                 *target_parent_index_ref_mut = target_parent_index;
                 *target_child_index_ref_mut  = target_child_index;
                 // Unpack popped empty order and discard
@@ -1337,6 +1394,9 @@ module econia::market {
         let target_order_price = 123;
         let target_order =
             Order{size: 456, user: @user, general_custodian_id: NO_CUSTODIAN};
+        // Declare variables for pass-by-reference
+        let fill_size = NULL_U64;
+        let complete_target_fill = NULL_BOOL;
         // Declare parameters for a tick-limited fill
         let size_filled_tick_limited = target_order.size - 1;
         let complete_target_fill_tick_limited = false;
@@ -1344,12 +1404,10 @@ module econia::market {
         let ticks_until_max_tick_limited =
             size_filled_tick_limited * target_order_price + 1;
         // Calculate fill size and if complete fill
-        let (fill_size, complete_target_fill) = match_loop_order_fill_size(
-            &lots_until_max_tick_limited,
-            &ticks_until_max_tick_limited,
-            &target_order_price,
-            &target_order,
-        );
+        match_loop_order_fill_size(
+            &lots_until_max_tick_limited, &ticks_until_max_tick_limited,
+            &target_order_price, &target_order, &mut fill_size,
+            &mut complete_target_fill);
         // Assert correct returns
         assert!(fill_size == size_filled_tick_limited, 0);
         assert!(complete_target_fill == complete_target_fill_tick_limited, 0);
@@ -1359,12 +1417,10 @@ module econia::market {
         let lots_until_max_lot_limited = size_filled_lot_limited;
         let ticks_until_max_lot_limited = HI_64;
         // Calculate fill size and if complete fill
-        (fill_size, complete_target_fill) = match_loop_order_fill_size(
-            &lots_until_max_lot_limited,
-            &ticks_until_max_lot_limited,
-            &target_order_price,
-            &target_order,
-        );
+        match_loop_order_fill_size(
+            &lots_until_max_lot_limited, &ticks_until_max_lot_limited,
+            &target_order_price, &target_order, &mut fill_size,
+            &mut complete_target_fill);
         // Assert correct returns
         assert!(fill_size == size_filled_lot_limited, 0);
         assert!(complete_target_fill == complete_target_fill_lot_limited, 0);
@@ -1374,12 +1430,10 @@ module econia::market {
         let lots_until_max_target_limited = HI_64;
         let ticks_until_max_target_limited = HI_64;
         // Calculate fill size and if complete fill
-        (fill_size, complete_target_fill) = match_loop_order_fill_size(
-            &lots_until_max_target_limited,
-            &ticks_until_max_target_limited,
-            &target_order_price,
-            &target_order,
-        );
+        match_loop_order_fill_size(
+            &lots_until_max_target_limited, &ticks_until_max_target_limited,
+            &target_order_price, &target_order, &mut fill_size,
+            &mut complete_target_fill);
         // Assert correct returns
         assert!(fill_size == size_filled_target_limited, 0);
         assert!(complete_target_fill ==
@@ -1391,12 +1445,10 @@ module econia::market {
         let ticks_until_max_all_limited =
             target_order.size * target_order_price;
         // Calculate fill size and if complete fill
-        (fill_size, complete_target_fill) = match_loop_order_fill_size(
-            &lots_until_max_all_limited,
-            &ticks_until_max_all_limited,
-            &target_order_price,
-            &target_order,
-        );
+        match_loop_order_fill_size(
+            &lots_until_max_all_limited, &ticks_until_max_all_limited,
+            &target_order_price, &target_order, &mut fill_size,
+            &mut complete_target_fill);
         // Assert correct returns
         assert!(fill_size == size_filled_all_limited, 0);
         assert!(complete_target_fill == complete_target_fill_all_limited, 0);
@@ -1406,12 +1458,10 @@ module econia::market {
         let lots_until_max_no_limited = HI_64;
         let ticks_until_max_no_limited = target_order_price - 1;
         // Calculate fill size and if complete fill
-        (fill_size, complete_target_fill) = match_loop_order_fill_size(
-            &lots_until_max_no_limited,
-            &ticks_until_max_no_limited,
-            &target_order_price,
-            &target_order,
-        );
+        match_loop_order_fill_size(
+            &lots_until_max_no_limited, &ticks_until_max_no_limited,
+            &target_order_price, &target_order, &mut fill_size,
+            &mut complete_target_fill);
         // Assert correct returns
         assert!(fill_size == size_filled_no_limited, 0);
         assert!(complete_target_fill == complete_target_fill_no_limited, 0);

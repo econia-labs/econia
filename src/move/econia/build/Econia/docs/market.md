@@ -37,21 +37,22 @@ open two wallets and trade them against each other.
     -  [Parameters](#@Parameters_8)
 -  [Function `match_loop_order_fill_size`](#0xc0deb00c_market_match_loop_order_fill_size)
     -  [Parameters](#@Parameters_9)
-    -  [Returns](#@Returns_10)
 -  [Function `match_loop_order_follow_up`](#0xc0deb00c_market_match_loop_order_follow_up)
-    -  [Passing considerations](#@Passing_considerations_11)
+    -  [Parameters](#@Parameters_10)
+    -  [Returns](#@Returns_11)
+    -  [Passing considerations](#@Passing_considerations_12)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Parameters](#@Parameters_12)
-    -  [Abort conditions](#@Abort_conditions_13)
-    -  [Assumes](#@Assumes_14)
+    -  [Parameters](#@Parameters_13)
+    -  [Abort conditions](#@Abort_conditions_14)
+    -  [Assumes](#@Assumes_15)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_15)
-    -  [Parameters](#@Parameters_16)
+    -  [Type parameters](#@Type_parameters_16)
+    -  [Parameters](#@Parameters_17)
 -  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
-    -  [Type parameters](#@Type_parameters_17)
-    -  [Parameters](#@Parameters_18)
+    -  [Type parameters](#@Type_parameters_18)
+    -  [Parameters](#@Parameters_19)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_19)
+    -  [Abort conditions](#@Abort_conditions_20)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -369,32 +370,38 @@ Default value for minimum ask order ID
 
 
 
-<a name="0xc0deb00c_market_NULL_GENERAL_CUSTODIAN_ID"></a>
+<a name="0xc0deb00c_market_NULL_ADDRESS"></a>
 
-Null order general custodian ID
+Quasi-null <code><b>address</b></code> value assigned to a variable when it will
+be reassigned via pass-by-reference, since declaration without
+assignment before use is invalid
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NULL_GENERAL_CUSTODIAN_ID">NULL_GENERAL_CUSTODIAN_ID</a>: u64 = 0;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NULL_ADDRESS">NULL_ADDRESS</a>: <b>address</b> = 0;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_market_NULL_SIZE"></a>
+<a name="0xc0deb00c_market_NULL_BOOL"></a>
 
-Null order size
+Quasi-null <code>bool</code> value assigned to a variable when it will be
+reassigned via pass-by-reference, since declaration without
+assignment before use is invalid
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NULL_SIZE">NULL_SIZE</a>: u64 = 0;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NULL_BOOL">NULL_BOOL</a>: bool = <b>false</b>;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_market_NULL_USER"></a>
+<a name="0xc0deb00c_market_NULL_U64"></a>
 
-Null order user
+Quasi-null <code>u64</code> value assigned to a variable when it will be
+reassigned via pass-by-reference, since declaration without
+assignment before use is invalid
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NULL_USER">NULL_USER</a>: <b>address</b> = 0;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NULL_U64">NULL_U64</a>: u64 = 0;
 </code></pre>
 
 
@@ -979,21 +986,21 @@ return schema
          target_child_index) = <a href="critbit.md#0xc0deb00c_critbit_traverse_init_mut">critbit::traverse_init_mut</a>(
             tree_ref_mut, *traversal_direction_ref);
     // Declare a null order for generating default mutable reference
-    <b>let</b> null_order = <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: <a href="market.md#0xc0deb00c_market_NULL_SIZE">NULL_SIZE</a>, <a href="user.md#0xc0deb00c_user">user</a>: <a href="market.md#0xc0deb00c_market_NULL_USER">NULL_USER</a>,
-        general_custodian_id: <a href="market.md#0xc0deb00c_market_NULL_GENERAL_CUSTODIAN_ID">NULL_GENERAL_CUSTODIAN_ID</a>};
+    <b>let</b> null_order = <a href="market.md#0xc0deb00c_market_Order">Order</a>{size: <a href="market.md#0xc0deb00c_market_NULL_U64">NULL_U64</a>, <a href="user.md#0xc0deb00c_user">user</a>: <a href="market.md#0xc0deb00c_market_NULL_ADDRESS">NULL_ADDRESS</a>,
+        general_custodian_id: <a href="market.md#0xc0deb00c_market_NULL_U64">NULL_U64</a>};
     <b>let</b> (should_pop_last, new_spread_maker) = (<b>false</b>, <a href="market.md#0xc0deb00c_market_MAX_BID_DEFAULT">MAX_BID_DEFAULT</a>);
     <b>let</b> complete_target_fill = <b>false</b>;
     <b>let</b> lots_until_max = 0;
     <b>let</b> ticks_until_max = 0;
     // Declare locally-scoped <b>return</b> variable for below <b>loop</b>, which
-    // can not be initialized without a value in the above function,
+    // can not be declared without a value in the above function,
     // and which raises a warning <b>if</b> it is assigned a value within
     // the present scope. It could be declared within the <b>loop</b>
     // scope, but this would involve a redeclaration for each
-    // iteration. Hence it is declared here, such that the <b>return</b>
-    // function in which it is assigned does not locally re-bind the
-    // other variables in the function <b>return</b> tuple, which would
-    // occur <b>if</b> they were <b>to</b> be assigned via a `<b>let</b>` expression.
+    // iteration. Hence it is declared here, such that the statement
+    // in which it is assigned does not locally re-bind the other
+    // variables in the function <b>return</b> tuple, which would occur <b>if</b>
+    // they were <b>to</b> be assigned via a `<b>let</b>` expression.
     <b>let</b> should_break;
     <b>loop</b> { // Begin loopwise matching
         // Process the order for current iteration, storing flag for
@@ -1035,6 +1042,7 @@ return schema
             &<b>mut</b> new_spread_maker
         );
         <b>if</b> (should_break) { // If should <b>break</b> out of <b>loop</b>
+            // Clean up <b>as</b> needed before breaking out of <b>loop</b>
             <a href="market.md#0xc0deb00c_market_match_loop_break">match_loop_break</a>(
                 null_order,
                 spread_maker_ref_mut,
@@ -1043,7 +1051,7 @@ return schema
                 tree_ref_mut,
                 &target_order_id
             );
-            <b>break</b>
+            <b>break</b> // Break out of <b>loop</b>
         }
     }
 }
@@ -1135,20 +1143,19 @@ Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop">match_
 
 ### Parameters
 
-* <code>market_id_ref</code>: Immutable reference to corresponding market
-ID
+* <code>market_id_ref</code>: Immutable reference to market ID
 * <code>side_ref</code>: <code>&<a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code>&<a href="market.md#0xc0deb00c_market_BID">BID</a></code>
 * <code>lot_size_ref</code>: Immutable reference to lot size for market
 * <code>tick_size_ref</code>: Immutable reference to tick size for market
-* <code>lots_until_max_ref</code>: Immutable reference to counter for
-number of lots that can be filled before exceeding max allowed
-for incoming user
-* <code>ticks_until_max_ref</code>: Immutable reference to counter for
-number of ticks that can be filled before exceeding max
+* <code>lots_until_max_ref_mut</code>: Mutable reference to counter for
+number of lots that can be filled before exceeding max
 allowed for incoming user
-* <code>limit_price</code>: Max price to match against if <code>side_ref</code>
-indicates <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>, and min price to match against if <code>side_ref</code>
-indicates <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+* <code>ticks_until_max_ref_mut</code>: Mutable reference to counter
+for number of ticks that can be filled before exceeding max
+allowed for incoming user
+* <code>limit_price_ref</code>: Immutable reference to max price to match
+against if <code>side_ref</code> indicates <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>, and min price to match
+against if <code>side_ref</code> indicates <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
 * <code>target_order_id_ref</code>: Immutable reference to target order ID
 * <code>target_order_ref_mut</code>: Mutable reference to target order
 * <code>complete_target_fill_ref_mut</code>: Mutable reference to flag for
@@ -1192,16 +1199,23 @@ quote coins passing through the matching engine
     // If ask price is higher than limit price
     <b>if</b> ((*side_ref == <a href="market.md#0xc0deb00c_market_ASK">ASK</a> && target_order_price &gt; *limit_price_ref) ||
         // Or <b>if</b> bid price is lower than limit price
-        (*side_ref == <a href="market.md#0xc0deb00c_market_BID">BID</a> && target_order_price &lt; *limit_price_ref))
+        (*side_ref == <a href="market.md#0xc0deb00c_market_BID">BID</a> && target_order_price &lt; *limit_price_ref)) {
             // Flag that there was not a complete target fill
             *complete_target_fill_ref_mut = <b>false</b>;
+            <b>return</b> // Do not attempt <b>to</b> fill
+        };
+    // Declare fill size for pass-by-reference
+    <b>let</b> fill_size = <a href="market.md#0xc0deb00c_market_NULL_U64">NULL_U64</a>;
     // Calculate size filled and determine <b>if</b> a complete fill
     // against target order
-    <b>let</b> (fill_size, complete_target_fill) = <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(
-        lots_until_max_ref_mut, ticks_until_max_ref_mut,
-        &target_order_price, target_order_ref_mut);
-    // If nothing filled, flag that not a complete target fill
-    <b>if</b> (fill_size == 0) *complete_target_fill_ref_mut = <b>false</b>;
+    <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(lots_until_max_ref_mut,
+        ticks_until_max_ref_mut, &target_order_price, target_order_ref_mut,
+        &<b>mut</b> fill_size, complete_target_fill_ref_mut);
+    <b>if</b> (fill_size == 0) { // If no lots <b>to</b> fill
+        // Flag that there was not a complete target fill
+        *complete_target_fill_ref_mut = <b>false</b>;
+        <b>return</b> // Do not attempt <b>to</b> fill
+    };
     // Calculate number of ticks filled
     <b>let</b> ticks_filled = fill_size * target_order_price;
     // Decrement counter for lots until max
@@ -1217,17 +1231,15 @@ quote coins passing through the matching engine
     // Fill the target order <a href="user.md#0xc0deb00c_user">user</a>-side
     <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;BaseType, QuoteType&gt;(
         target_order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, target_order_market_account_id,
-        *side_ref, *target_order_id_ref, complete_target_fill, fill_size,
-        optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
-        base_to_route, quote_to_route);
+        *side_ref, *target_order_id_ref, *complete_target_fill_ref_mut,
+        fill_size, optional_base_coins_ref_mut,
+        optional_quote_coins_ref_mut, base_to_route, quote_to_route);
     // Decrement target order size by size filled (should be popped
     // later <b>if</b> completely filled, and so this step is redundant in
     // the case of a complete fill, but adding an extra <b>if</b> statement
     // <b>to</b> check whether or not <b>to</b> decrement would add computational
     // overhead in the case of an incomplete fill)
     target_order_ref_mut.size = target_order_ref_mut.size - fill_size;
-    // Reassign flag for <b>if</b> target order completely filled
-    *complete_target_fill_ref_mut = complete_target_fill;
 }
 </code></pre>
 
@@ -1252,23 +1264,19 @@ Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop_order">
 
 * <code>lots_until_max_ref</code>: Immutable reference to counter for
 number of lots that can be filled before exceeding max allowed
+for incoming user
 * <code>ticks_until_max_ref</code>: Immutable reference to counter for
 number of ticks that can be filled before exceeding max
 allowed for incoming user
 * <code>target_order_price_ref</code>: Immutable reference to target order
-price for incoming user
+price
 * <code>target_order_ref</code>: Immutable reference to target order
+* <code>fill_size_ref_mut</code>: Mutable reference to fill size, in lots
+* <code>complete_target_fill_ref_mut</code>: Mutable reference to flag
+marked <code><b>true</b></code> if target order is completely filled
 
 
-<a name="@Returns_10"></a>
-
-### Returns
-
-* <code>u64</code>: Fill size, in lots
-* <code>u64</code>: <code><b>true</b></code> if target order is completely filled
-
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(lots_until_max_ref: &u64, ticks_until_max_ref: &u64, target_order_price_ref: &u64, target_order_ref: &<a href="market.md#0xc0deb00c_market_Order">market::Order</a>): (u64, bool)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(lots_until_max_ref: &u64, ticks_until_max_ref: &u64, target_order_price_ref: &u64, target_order_ref: &<a href="market.md#0xc0deb00c_market_Order">market::Order</a>, fill_size_ref_mut: &<b>mut</b> u64, complete_target_fill_ref_mut: &<b>mut</b> bool)
 </code></pre>
 
 
@@ -1281,10 +1289,9 @@ price for incoming user
     lots_until_max_ref: &u64,
     ticks_until_max_ref: &u64,
     target_order_price_ref: &u64,
-    target_order_ref: &<a href="market.md#0xc0deb00c_market_Order">Order</a>
-):(
-    u64,
-    bool
+    target_order_ref: &<a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    fill_size_ref_mut: &<b>mut</b> u64,
+    complete_target_fill_ref_mut: &<b>mut</b> bool
 ) {
     // Calculate max number of lots that could be filled without
     // exceeding the maximum number of filled ticks: number of lots
@@ -1308,8 +1315,10 @@ price for incoming user
             // Otherwise fill size is target order size, and target
             // order is completely filled
             (target_order_ref.size, <b>true</b>);
-    // Return fill size and <b>if</b> target order is completely filled
-    (fill_size, complete_target_fill)
+    // Reassign <b>to</b> passed in references, since cannot reassign
+    // <b>to</b> references within ternary operation result tuple above
+    *fill_size_ref_mut = fill_size;
+    *complete_target_fill_ref_mut = complete_target_fill;
 }
 </code></pre>
 
@@ -1321,21 +1330,73 @@ price for incoming user
 
 ## Function `match_loop_order_follow_up`
 
+Follow up after processing a fill against an order on the book.
 
-<a name="@Passing_considerations_11"></a>
+Checks if traversal is still possible, computes new spread maker
+value as needed, and determines if loop has hit break condition,
+following up on an "incoming user" filling against a "target
+order" on the book.
+
+Inner function for <code>fill_market_order_traverse_loop()</code>.
+
+
+<a name="@Parameters_10"></a>
+
+### Parameters
+
+* <code>tree_ref_mut</code>: Mutable reference to orders tree
+* <code>side_ref</code>: <code>&<a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code>&<a href="market.md#0xc0deb00c_market_BID">BID</a></code>
+* <code>traversal_direction_ref</code>: <code>&LEFT</code> or <code>&RIGHT</code>
+* <code>n_orders_ref_mut</code>: Mutable reference to counter for number of
+orders in tree, including the target order that was just
+processed
+* <code>complete_target_fill_ref</code>: <code>&<b>true</b></code> if the target order was
+completely filled
+* <code>should_pop_last_ref_mut</code>: Reassigned to <code>&<b>true</b></code> if just
+processed a complete fill against the last order on the book,
+which should be popped
+* <code>target_order_id</code>: Order ID of target order just processed
+* <code>target_order_ref_mut</code>: Mutable reference to an <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>.
+Reassigned only when traversal should proceed to the next
+order on the book, otherwise left unmodified. Intended to
+accept as an input a mutable reference to a null <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>.
+* <code>target_parent_index_ref_mut</code>: Mutable reference to loop
+variable for iterated traversal along outer nodes of a
+<code>CritBitTree</code>
+* <code>target_child_index_ref_mut</code>: Mutable reference to loop
+variable for iterated traversal along outer nodes of a
+<code>CritBitTree</code>
+* <code>new_spread_maker_ref_mut</code>: Mutable reference to the value
+that should be assigned to the spread maker field for the
+side indicated by <code>side_ref</code>, if one should be set
+
+
+<a name="@Returns_11"></a>
+
+### Returns
+
+* <code>u128</code>: Target order ID, updated from <code>target_order_id</code> if
+traversal proceeds to the next order on the book
+* <code>&<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a></code>: Mutable reference to next order on the book to
+process, only reassigned when iterated traversal proceeds
+* <code>bool</code>: <code><b>true</b></code> if should break out of loop after follow up
+
+
+<a name="@Passing_considerations_12"></a>
 
 ### Passing considerations
 
 * Returns a mutable reference to an <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code> rather than
 reassigning to the underlying value because doing so would
 require <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code> to have the <code>drop</code> ability, which it does not
-* Returns <code>target_order_id</code> and <code>should_break</code> as values rather
-than reassigning to passed in references, because the calling
-function <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code> accesses these variables
-elsewhere in a loop, such that passing references to them
-consitutes an invalid borrow within the loop context
-* Accepts <code>target_order_id</code> as pass-by-value even though it
-would be valid to pass-by-reference, because if it were to be
+* Returns local <code>target_order_id</code> and <code>should_break</code> variables
+as values rather than reassigning to passed in references,
+because the calling function <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code> accesses
+these variables elsewhere in a loop, such that passing
+references to them consitutes an invalid borrow within the
+loop context
+* Accepts <code>target_order_id</code> as pass-by-value even though
+pass-by-reference would be valid, because if it were to be
 passed by reference, the underlying value would still have to
 be copied into a local variable anyways in order to return
 by value as described above
@@ -1363,9 +1424,9 @@ by value as described above
     target_child_index_ref_mut: &<b>mut</b> u64,
     new_spread_maker_ref_mut: &<b>mut</b> u128
 ):  (
-    u128, // Target order ID
-    &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>, // Mut ref <b>to</b> null order or next order <b>to</b> process
-    bool // If should <b>break</b>
+    u128,
+    &<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>,
+    bool
 ) {
     // Assume should set new spread maker field <b>to</b> target order ID
     *new_spread_maker_ref_mut = target_order_id;
@@ -1388,14 +1449,15 @@ by value as described above
             // Declare locally-scoped temporary <b>return</b> variables
             <b>let</b> (target_parent_index, target_child_index, empty_order);
             // Traverse pop <b>to</b> next order on book, reassigning <b>to</b>
-            // variables from calling scope
+            // temporary variables and those from calling scope
             (target_order_id, target_order_ref_mut, target_parent_index,
              target_child_index, empty_order) = <a href="critbit.md#0xc0deb00c_critbit_traverse_pop_mut">critbit::traverse_pop_mut</a>(
                 tree_ref_mut, target_order_id,
                 *target_parent_index_ref_mut, *target_child_index_ref_mut,
                 *n_orders_ref_mut, *traversal_direction_ref);
-            // Reassign traverse returns via deference, which is not
-            // permitted inside of the above function <b>return</b> tuple
+            // Reassign temporary traverse returns <b>to</b> variables from
+            // calling scope, since dereferencing is not permitted
+            // inside of the above function <b>return</b> tuple
             *target_parent_index_ref_mut = target_parent_index;
             *target_child_index_ref_mut  = target_child_index;
             // Unpack popped empty order and discard
@@ -1425,7 +1487,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1441,14 +1503,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_13"></a>
+<a name="@Abort_conditions_14"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_14"></a>
+<a name="@Assumes_15"></a>
 
 ### Assumes
 
@@ -1543,7 +1605,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_15"></a>
+<a name="@Type_parameters_16"></a>
 
 ### Type parameters
 
@@ -1551,7 +1613,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1604,7 +1666,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_17"></a>
+<a name="@Type_parameters_18"></a>
 
 ### Type parameters
 
@@ -1612,7 +1674,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_18"></a>
+<a name="@Parameters_19"></a>
 
 ### Parameters
 
@@ -1676,7 +1738,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_19"></a>
+<a name="@Abort_conditions_20"></a>
 
 ### Abort conditions
 

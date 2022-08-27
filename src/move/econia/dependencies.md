@@ -66,7 +66,7 @@ flowchart TD
     place_limit_order_user[place_limit_order_user]
     match_loop[match_loop <br/> fill_market_order_traverse_loop]
     match_loop_order[match_loop_order <br/> fill_market_order_process_loop_order]
-    match_loop_order_fills[match_loop_order_fills <br/> fill_market_order_check_base_parcels_to_fill]
+    match_loop_order_fill_size[match_loop_order_fill_size <br/> fill_market_order_check_base_parcels_to_fill]
     match_loop_order_follow_up[match_loop_order_follow_up <br/> fill_market_order_loop_order_follow_up]
     match_loop_break[match_loop_break <br/> fill_market_order_break_cleanup]
     swap_coins[swap_coins]
@@ -93,7 +93,7 @@ flowchart TD
     class place_limit_order_user partially_implemented;
     class match_loop unimplemented;
     class match_loop_order unimplemented;
-    class match_loop_order_fills unimplemented;
+    class match_loop_order_fill_size implemented;
     class match_loop_order_follow_up unimplemented;
     class match_loop_break unimplemented
 
@@ -111,7 +111,7 @@ flowchart TD
     match --> match_init
     match --> match_loop
     match_from_market_account --> match
-    match_loop_order --> match_loop_order_fills
+    match_loop_order --> match_loop_order_fill_size
     match_loop --> match_loop_order
     match_loop --> match_loop_order_follow_up
     match_loop --> match_loop_break

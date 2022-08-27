@@ -105,6 +105,8 @@ module econia::market {
     const ASK: bool = true;
     /// Bid flag
     const BID: bool = false;
+    /// `u64` bitmask with all bits set
+    const HI_64: u64 = 0xffffffffffffffff;
     /// Default value for maximum bid order ID
     const MAX_BID_DEFAULT: u128 = 0;
     /// Default value for minimum ask order ID
@@ -425,6 +427,58 @@ module econia::market {
         let count = *counter_ref_mut; // Get count
         *counter_ref_mut = count + 1; // Set new count
         count // Return original count
+    }
+
+    /// Calculate fill size and whether an order on the book is
+    /// completely filled during a match. The "incoming user" fills
+    /// against the "target order" on the book.
+    ///
+    /// # Parameters
+    /// * `lots_until_max_ref`: Immutable reference to counter for
+    ///   number of lots that can be filled before exceeding max allowed
+    /// * `ticks_until_max_ref`: Immutable reference to counter for
+    ///   number of ticks that can be filled before exceeding max
+    ///   allowed
+    /// * `target_order_price_ref`: Immutable reference to target order
+    ///   price
+    /// * `target_order_ref`: Immutable reference to target order
+    ///
+    /// # Returns
+    /// * `u64`: Fill size, in lots
+    /// * `u64`: `true` if target order is completely filled
+    fun match_loop_order_fill_size(
+        lots_until_max_ref: &u64,
+        ticks_until_max_ref: &u64,
+        target_order_price_ref: &u64,
+        target_order_ref: &Order
+    ):(
+        u64,
+        bool
+    ) {
+        // Calculate max number of lots that could be filled without
+        // exceeding the maximum number of filled ticks: number of lots
+        // that incoming user can afford to buy at target price in the
+        // case of a buy, else number of lots that user could sell at
+        // target order price without receiving too many ticks
+        let fill_size_tick_limited =
+            *ticks_until_max_ref / *target_order_price_ref;
+        // Max-limited fill size is the lesser of tick-limited fill size
+        // and lot-limited fill size
+        let fill_size_max_limited =
+            if (fill_size_tick_limited < *lots_until_max_ref)
+                fill_size_tick_limited else *lots_until_max_ref;
+        // Get fill size and if target order is completely filled
+        let (fill_size, complete_target_fill) =
+            // If max-limited fill size is less than target order size
+            if (fill_size_max_limited < target_order_ref.size)
+                // Fill size is max-limited fill size, target order is
+                // not completely filled
+                (fill_size_max_limited, false) else
+                // Otherwise fill size is target order size, and target
+                // order is completely filled
+                (target_order_ref.size, true);
+        // Return fill size and if target order is completely filled
+        (fill_size, complete_target_fill)
     }
 
     /// Place limit order against book and optionally register in user's
@@ -966,6 +1020,80 @@ module econia::market {
         assert!(get_counter(order_book_ref_mut) == 0, 0);
         assert!(get_counter(order_book_ref_mut) == 1, 0);
         assert!(get_counter(order_book_ref_mut) == 2, 0);
+    }
+
+    #[test]
+    /// Verify successful returns
+    fun test_match_loop_order_fill_size() {
+        // Declare target order parameters
+        let target_order_price = 123;
+        let target_order =
+            Order{size: 456, user: @user, general_custodian_id: NO_CUSTODIAN};
+        // Declare parameters for a tick-limited fill
+        let size_filled_tick_limited = target_order.size - 1;
+        let complete_target_fill_tick_limited = false;
+        let lots_until_max_tick_limited = HI_64;
+        let ticks_until_max_tick_limited =
+            size_filled_tick_limited * target_order_price + 1;
+        // Calculate fill size and if complete fill
+        let (fill_size, complete_target_fill) = match_loop_order_fill_size(
+            &lots_until_max_tick_limited,
+            &ticks_until_max_tick_limited,
+            &target_order_price,
+            &target_order,
+        );
+        // Assert correct returns
+        assert!(fill_size == size_filled_tick_limited, 0);
+        assert!(complete_target_fill == complete_target_fill_tick_limited, 0);
+        // Declare parameters for a lot-limited fill
+        let size_filled_lot_limited = target_order.size - 1;
+        let complete_target_fill_lot_limited = false;
+        let lots_until_max_lot_limited = size_filled_lot_limited;
+        let ticks_until_max_lot_limited = HI_64;
+        // Calculate fill size and if complete fill
+        (fill_size, complete_target_fill) = match_loop_order_fill_size(
+            &lots_until_max_lot_limited,
+            &ticks_until_max_lot_limited,
+            &target_order_price,
+            &target_order,
+        );
+        // Assert correct returns
+        assert!(fill_size == size_filled_lot_limited, 0);
+        assert!(complete_target_fill == complete_target_fill_lot_limited, 0);
+        // Declare parameters for a target order-limited fill
+        let size_filled_target_limited = target_order.size;
+        let complete_target_fill_target_limited = true;
+        let lots_until_max_target_limited = HI_64;
+        let ticks_until_max_target_limited = HI_64;
+        // Calculate fill size and if complete fill
+        (fill_size, complete_target_fill) = match_loop_order_fill_size(
+            &lots_until_max_target_limited,
+            &ticks_until_max_target_limited,
+            &target_order_price,
+            &target_order,
+        );
+        // Assert correct returns
+        assert!(fill_size == size_filled_target_limited, 0);
+        assert!(complete_target_fill ==
+            complete_target_fill_target_limited, 0);
+        // Declare parameters for a fill equally limited by all inputs
+        let size_filled_all_limited = target_order.size;
+        let complete_target_fill_all_limited = true;
+        let lots_until_max_all_limited = target_order.size;
+        let ticks_until_max_all_limited =
+            target_order.size * target_order_price;
+        // Calculate fill size and if complete fill
+        (fill_size, complete_target_fill) = match_loop_order_fill_size(
+            &lots_until_max_all_limited,
+            &ticks_until_max_all_limited,
+            &target_order_price,
+            &target_order,
+        );
+        // Assert correct returns
+        assert!(fill_size == size_filled_all_limited, 0);
+        assert!(complete_target_fill == complete_target_fill_all_limited, 0);
+        // Unpack target order
+        Order{size: _, user: _, general_custodian_id: _} = target_order;
     }
 
     #[test(

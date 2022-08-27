@@ -543,7 +543,7 @@ module econia::user {
     /// * `side`: `ASK` or `BID`
     /// * `order_id`: Order ID for given order
     /// * `complete_fill`: If `true`, the order is completely filled
-    /// * `size_filled`: Number of lots filled
+    /// * `fill_size`: Number of lots filled
     /// * `optional_base_coins_ref_mut`: Mutable reference to optional
     ///   base coins passing through the matching engine
     /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
@@ -561,7 +561,7 @@ module econia::user {
         side: bool,
         order_id: u128,
         complete_fill: bool,
-        size_filled: u64,
+        fill_size: u64,
         optional_base_coins_ref_mut:
             &mut option::Option<coin::Coin<BaseType>>,
         optional_quote_coins_ref_mut:
@@ -574,8 +574,7 @@ module econia::user {
     {
         // Update user's market account
         fill_order_update_market_account(user, market_account_id, side,
-            order_id, complete_fill, size_filled, base_to_route,
-            quote_to_route);
+            order_id, complete_fill, fill_size, base_to_route, quote_to_route);
         // Route collateral accordingly, as needed
         fill_order_route_collateral<BaseType, QuoteType>(user,
             market_account_id, side, optional_base_coins_ref_mut,
@@ -1019,7 +1018,7 @@ module econia::user {
     /// * `side`: `ASK` or `BID`
     /// * `order_id`: Order ID for given order
     /// * `complete_fill`: If `true`, the order is completely filled
-    /// * `size_filled`: Number of lots filled
+    /// * `fill_size`: Number of lots filled
     /// * `base_to_route`: If `side` is `ASK`, number of base asset
     ///   units routed from `user`, else to `user`
     /// * `quote_to_route`: If `side` is `ASK`, number of quote asset
@@ -1035,7 +1034,7 @@ module econia::user {
         side: bool,
         order_id: u128,
         complete_fill: bool,
-        size_filled: u64,
+        fill_size: u64,
         base_to_route: u64,
         quote_to_route: u64,
     ) acquires MarketAccounts {
@@ -1077,7 +1076,7 @@ module econia::user {
             let order_size_ref_mut =
                 critbit::borrow_mut(tree_ref_mut, order_id);
             // Decrement amount still unfilled
-            *order_size_ref_mut = *order_size_ref_mut - size_filled;
+            *order_size_ref_mut = *order_size_ref_mut - fill_size;
         };
         // Increment asset in total amount by asset in amount
         *asset_in_total_ref_mut = *asset_in_total_ref_mut + asset_in;
@@ -1756,14 +1755,14 @@ module econia::user {
         let counter = 0;
         let order_id = order_id::order_id(price, counter, side);
         // Declare fill values
-        let size_filled_1 = 5; // Partial fill
-        let size_filled_2 = size - size_filled_1; // Complete fill
+        let fill_size_1 = 5; // Partial fill
+        let fill_size_2 = size - fill_size_1; // Complete fill
         let base_start = size * lot_size;
         let quote_filled_total = size * price * tick_size;
-        let base_to_route_1 = size_filled_1 * lot_size;
-        let base_to_route_2 = size_filled_2 * lot_size;
-        let quote_to_route_1 = size_filled_1 * price * tick_size;
-        let quote_to_route_2 = size_filled_2 * price * tick_size;
+        let base_to_route_1 = fill_size_1 * lot_size;
+        let base_to_route_2 = fill_size_2 * lot_size;
+        let quote_to_route_1 = fill_size_1 * price * tick_size;
+        let quote_to_route_2 = fill_size_2 * price * tick_size;
         let optional_base_coins = option::some<Coin<BC>>(coin::zero<BC>());
         let optional_quote_coins = option::none<Coin<QG>>();
         // Set generic asset transfer cusotdian ID as valid
@@ -1804,7 +1803,7 @@ module econia::user {
             == size, 0);
         // Execute partial fill
         fill_order_internal<BC, QG>(@user, market_account_id, side, order_id,
-            false, size_filled_1, &mut optional_base_coins,
+            false, fill_size_1, &mut optional_base_coins,
             &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_base_coins)) ==
@@ -1825,10 +1824,10 @@ module econia::user {
         assert!(quote_ceiling   ==           quote_filled_total, 0);
         // Assert order size update
         assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size - size_filled_1, 0);
+            == size - fill_size_1, 0);
         // Execute complete fill
         fill_order_internal<BC, QG>(@user, market_account_id, side, order_id,
-            true, size_filled_2, &mut optional_base_coins,
+            true, fill_size_2, &mut optional_base_coins,
             &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_base_coins)) ==
@@ -1888,14 +1887,14 @@ module econia::user {
         let counter = 0;
         let order_id = order_id::order_id(price, counter, side);
         // Declare fill values
-        let size_filled_1 = 5; // Partial fill
-        let size_filled_2 = size - size_filled_1; // Complete fill
+        let fill_size_1 = 5; // Partial fill
+        let fill_size_2 = size - fill_size_1; // Complete fill
         let base_start = size * lot_size;
         let quote_filled_total = size * price * tick_size;
-        let base_to_route_1 = size_filled_1 * lot_size;
-        let base_to_route_2 = size_filled_2 * lot_size;
-        let quote_to_route_1 = size_filled_1 * price * tick_size;
-        let quote_to_route_2 = size_filled_2 * price * tick_size;
+        let base_to_route_1 = fill_size_1 * lot_size;
+        let base_to_route_2 = fill_size_2 * lot_size;
+        let quote_to_route_1 = fill_size_1 * price * tick_size;
+        let quote_to_route_2 = fill_size_2 * price * tick_size;
         let optional_base_coins = option::none<Coin<BG>>();
         let optional_quote_coins = option::some<Coin<QC>>(
             assets::mint<QC>(econia, quote_filled_total));
@@ -1936,7 +1935,7 @@ module econia::user {
             == size, 0);
         // Execute partial fill
         fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            false, size_filled_1, &mut optional_base_coins,
+            false, fill_size_1, &mut optional_base_coins,
             &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_quote_coins)) ==
@@ -1957,10 +1956,10 @@ module econia::user {
         assert!(quote_ceiling   ==           quote_filled_total, 0);
         // Assert order size update
         assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size - size_filled_1, 0);
+            == size - fill_size_1, 0);
         // Execute complete fill
         fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            true, size_filled_2, &mut optional_base_coins,
+            true, fill_size_2, &mut optional_base_coins,
             &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_quote_coins)) == 0, 0);
@@ -2020,14 +2019,14 @@ module econia::user {
         let counter = 0;
         let order_id = order_id::order_id(price, counter, side);
         // Declare fill values
-        let size_filled_1 = 5; // Partial fill
-        let size_filled_2 = size - size_filled_1; // Complete fill
+        let fill_size_1 = 5; // Partial fill
+        let fill_size_2 = size - fill_size_1; // Complete fill
         let quote_start = size * price * tick_size;
         let base_filled_total = size * lot_size;
-        let base_to_route_1 = size_filled_1 * lot_size;
-        let base_to_route_2 = size_filled_2 * lot_size;
-        let quote_to_route_1 = size_filled_1 * price * tick_size;
-        let quote_to_route_2 = size_filled_2 * price * tick_size;
+        let base_to_route_1 = fill_size_1 * lot_size;
+        let base_to_route_2 = fill_size_2 * lot_size;
+        let quote_to_route_1 = fill_size_1 * price * tick_size;
+        let quote_to_route_2 = fill_size_2 * price * tick_size;
         let optional_base_coins = option::none<Coin<BG>>();
         let optional_quote_coins = option::some<Coin<QC>>(coin::zero<QC>());
         // Set generic asset transfer cusotdian ID as valid
@@ -2068,7 +2067,7 @@ module econia::user {
             == size, 0);
         // Execute partial fill
         fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            false, size_filled_1, &mut optional_base_coins,
+            false, fill_size_1, &mut optional_base_coins,
             &mut optional_quote_coins, base_to_route_1, quote_to_route_1);
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_quote_coins)) ==
@@ -2089,10 +2088,10 @@ module econia::user {
         assert!(quote_ceiling   == quote_start - quote_to_route_1, 0);
         // Assert order size update
         assert!(get_order_size_test(@user, market_account_id, side, order_id)
-            == size - size_filled_1, 0);
+            == size - fill_size_1, 0);
         // Execute complete fill
         fill_order_internal<BG, QC>(@user, market_account_id, side, order_id,
-            true, size_filled_2, &mut optional_base_coins,
+            true, fill_size_2, &mut optional_base_coins,
             &mut optional_quote_coins, base_to_route_2, quote_to_route_2);
         // Assert optional coin count
         assert!(coin::value(option::borrow(&optional_quote_coins)) ==

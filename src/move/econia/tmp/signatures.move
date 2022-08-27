@@ -49,7 +49,6 @@ module econia::signatures {
         // Could just return max_lots - lots-filled at end
     }
 
-
     fun place_limit_order<
         BaseType,
         QuoteType

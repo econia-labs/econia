@@ -37,12 +37,8 @@ module econia::market {
 
     /// Market buy flag
     const BUY: bool = true;
-    /// `u64` bitmask with all bits set
-    const HI_64: u64 = 0xffffffffffffffff;
     /// Left direction, denoting predecessor traversal
     const LEFT: bool = true;
-    /// Custodian ID flag for no delegated custodian
-    const NO_CUSTODIAN: u64 = 0;
     /// Right direction, denoting successor traversal
     const RIGHT: bool = false;
     /// Market sell flag

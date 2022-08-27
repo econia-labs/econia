@@ -28,18 +28,21 @@ open two wallets and trade them against each other.
     -  [Parameters](#@Parameters_3)
     -  [Abort conditions](#@Abort_conditions_4)
 -  [Function `get_counter`](#0xc0deb00c_market_get_counter)
--  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+-  [Function `match_loop_order_fill_size`](#0xc0deb00c_market_match_loop_order_fill_size)
     -  [Parameters](#@Parameters_5)
-    -  [Abort conditions](#@Abort_conditions_6)
-    -  [Assumes](#@Assumes_7)
+    -  [Returns](#@Returns_6)
+-  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+    -  [Parameters](#@Parameters_7)
+    -  [Abort conditions](#@Abort_conditions_8)
+    -  [Assumes](#@Assumes_9)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_8)
-    -  [Parameters](#@Parameters_9)
--  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
     -  [Type parameters](#@Type_parameters_10)
     -  [Parameters](#@Parameters_11)
+-  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+    -  [Type parameters](#@Type_parameters_12)
+    -  [Parameters](#@Parameters_13)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_12)
+    -  [Abort conditions](#@Abort_conditions_14)
 
 
 <pre><code><b>use</b> <a href="">0x1::signer</a>;
@@ -213,6 +216,16 @@ Order book map for all of a user's <code><a href="market.md#0xc0deb00c_market_Or
 <a name="@Constants_0"></a>
 
 ## Constants
+
+
+<a name="0xc0deb00c_market_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
 
 
 <a name="0xc0deb00c_market_E_INVALID_CUSTODIAN"></a>
@@ -877,6 +890,85 @@ returning the original value.
 
 </details>
 
+<a name="0xc0deb00c_market_match_loop_order_fill_size"></a>
+
+## Function `match_loop_order_fill_size`
+
+Calculate fill size and whether an order on the book is
+completely filled during a match. The "incoming user" fills
+against the "target order" on the book.
+
+
+<a name="@Parameters_5"></a>
+
+### Parameters
+
+* <code>lots_until_max_ref</code>: Immutable reference to counter for
+number of lots that can be filled before max allowed
+* <code>ticks_until_max_ref</code>: Immutable reference to counter for
+number of ticks that can be filled before max allowed
+* <code>target_order_price_ref</code>: Immutable reference to target order
+price
+* <code>target_order_ref</code>: Immutable reference to target order
+
+
+<a name="@Returns_6"></a>
+
+### Returns
+
+* <code>u64</code>: Fill size, in lots
+* <code>u64</code>: <code><b>true</b></code> if target order is completely filled
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(lots_until_max_ref: &u64, ticks_until_max_ref: &u64, target_order_price_ref: &u64, target_order_ref: &<a href="market.md#0xc0deb00c_market_Order">market::Order</a>): (u64, bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_loop_order_fill_size">match_loop_order_fill_size</a>(
+    lots_until_max_ref: &u64,
+    ticks_until_max_ref: &u64,
+    target_order_price_ref: &u64,
+    target_order_ref: &<a href="market.md#0xc0deb00c_market_Order">Order</a>
+):(
+    u64,
+    bool
+) {
+    // Calculate max number of lots that could be filled without
+    // exceeding the maximum number of filled ticks: number of lots
+    // that incoming <a href="user.md#0xc0deb00c_user">user</a> can afford <b>to</b> buy at target price in the
+    // case of a buy, <b>else</b> number of lots that <a href="user.md#0xc0deb00c_user">user</a> could sell at
+    // target order price without receiving too many ticks
+    <b>let</b> fill_size_tick_limited =
+        *ticks_until_max_ref / *target_order_price_ref;
+    // Max-limited fill size is the lesser of tick-limited fill size
+    // and lot-limited fill size
+    <b>let</b> fill_size_max_limited =
+        <b>if</b> (fill_size_tick_limited &lt; *lots_until_max_ref)
+            fill_size_tick_limited <b>else</b> *lots_until_max_ref;
+    // Get fill size and <b>if</b> target order is completely filled
+    <b>let</b> (fill_size, complete_target_fill) =
+        // If max-limited fill size is less than target order size
+        <b>if</b> (fill_size_max_limited &lt; target_order_ref.size)
+            // Fill size is max-limited fill size, target order is
+            // not completely filled
+            (fill_size_max_limited, <b>false</b>) <b>else</b>
+            // Otherwise fill size is target order size, and target
+            // order is completely filled
+            (target_order_ref.size, <b>true</b>);
+    // Return fill size and <b>if</b> target order is completely filled
+    (fill_size, complete_target_fill)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_place_limit_order"></a>
 
 ## Function `place_limit_order`
@@ -889,7 +981,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_5"></a>
+<a name="@Parameters_7"></a>
 
 ### Parameters
 
@@ -905,14 +997,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_6"></a>
+<a name="@Abort_conditions_8"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_7"></a>
+<a name="@Assumes_9"></a>
 
 ### Assumes
 
@@ -1007,7 +1099,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_8"></a>
+<a name="@Type_parameters_10"></a>
 
 ### Type parameters
 
@@ -1015,7 +1107,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_9"></a>
+<a name="@Parameters_11"></a>
 
 ### Parameters
 
@@ -1068,7 +1160,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_10"></a>
+<a name="@Type_parameters_12"></a>
 
 ### Type parameters
 
@@ -1076,7 +1168,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_11"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1140,7 +1232,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_12"></a>
+<a name="@Abort_conditions_14"></a>
 
 ### Abort conditions
 

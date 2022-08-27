@@ -1196,7 +1196,7 @@ to fill it. Hence no error checking.
 * <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
 * <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
 * <code>complete_fill</code>: If <code><b>true</b></code>, the order is completely filled
-* <code>size_filled</code>: Number of lots filled
+* <code>fill_size</code>: Number of lots filled
 * <code>optional_base_coins_ref_mut</code>: Mutable reference to optional
 base coins passing through the matching engine
 * <code>optional_quote_coins_ref_mut</code>: Mutable reference to optional
@@ -1207,7 +1207,7 @@ units routed from <code><a href="user.md#0xc0deb00c_user">user</a></code>, else 
 units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, size_filled: u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, base_to_route: u64, quote_to_route: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, fill_size: u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, base_to_route: u64, quote_to_route: u64)
 </code></pre>
 
 
@@ -1225,7 +1225,7 @@ units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else fr
     side: bool,
     <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
     complete_fill: bool,
-    size_filled: u64,
+    fill_size: u64,
     optional_base_coins_ref_mut:
         &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;,
     optional_quote_coins_ref_mut:
@@ -1238,8 +1238,7 @@ units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else fr
 {
     // Update <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, side,
-        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, complete_fill, size_filled, base_to_route,
-        quote_to_route);
+        <a href="order_id.md#0xc0deb00c_order_id">order_id</a>, complete_fill, fill_size, base_to_route, quote_to_route);
     // Route collateral accordingly, <b>as</b> needed
     <a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
         market_account_id, side, optional_base_coins_ref_mut,
@@ -1932,7 +1931,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">f
 * <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>
 * <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
 * <code>complete_fill</code>: If <code><b>true</b></code>, the order is completely filled
-* <code>size_filled</code>: Number of lots filled
+* <code>fill_size</code>: Number of lots filled
 * <code>base_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of base asset
 units routed from <code><a href="user.md#0xc0deb00c_user">user</a></code>, else to <code><a href="user.md#0xc0deb00c_user">user</a></code>
 * <code>quote_to_route</code>: If <code>side</code> is <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code>, number of quote asset
@@ -1948,7 +1947,7 @@ after a user has successfully placed an order in the first
 place.
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, size_filled: u64, base_to_route: u64, quote_to_route: u64)
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_update_market_account">fill_order_update_market_account</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, side: bool, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128, complete_fill: bool, fill_size: u64, base_to_route: u64, quote_to_route: u64)
 </code></pre>
 
 
@@ -1963,7 +1962,7 @@ place.
     side: bool,
     <a href="order_id.md#0xc0deb00c_order_id">order_id</a>: u128,
     complete_fill: bool,
-    size_filled: u64,
+    fill_size: u64,
     base_to_route: u64,
     quote_to_route: u64,
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
@@ -2005,7 +2004,7 @@ place.
         <b>let</b> order_size_ref_mut =
             <a href="critbit.md#0xc0deb00c_critbit_borrow_mut">critbit::borrow_mut</a>(tree_ref_mut, <a href="order_id.md#0xc0deb00c_order_id">order_id</a>);
         // Decrement amount still unfilled
-        *order_size_ref_mut = *order_size_ref_mut - size_filled;
+        *order_size_ref_mut = *order_size_ref_mut - fill_size;
     };
     // Increment asset in total amount by asset in amount
     *asset_in_total_ref_mut = *asset_in_total_ref_mut + asset_in;

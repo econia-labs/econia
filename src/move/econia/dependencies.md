@@ -71,7 +71,7 @@ flowchart TD
     match_loop_break[match_loop_break <br/> fill_market_order_break_cleanup]
     swap_coins[swap_coins]
     swap_generic[swap_generic]
-
+    match_verify_fills[match_verify_fills]
 
 %% Class definitions
 
@@ -79,6 +79,7 @@ flowchart TD
     classDef implemented fill:#32cd32 %% Lime Green
     classDef unimplemented fill:#708090 %% Slate Gray
 
+    class match_verify_fills unimplemented;
     class swap_coins unimplemented;
     class swap_generic unimplemented
     class match unimplemented;
@@ -99,6 +100,7 @@ flowchart TD
 
 %% Node relationships
 
+    match --> match_verify_fills
     swap_generic --> swap
     swap_coins --> swap
     place_limit_order_user --> place_limit_order

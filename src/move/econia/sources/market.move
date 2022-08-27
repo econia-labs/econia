@@ -450,12 +450,18 @@ module econia::market {
     /// * `ticks_until_max_ref`: Immutable reference to counter for
     ///   number of ticks that can be filled before exceeding max
     ///   allowed for incoming user
+    /// * `limit_price`: Max price to match against if `side_ref`
+    ///   indicates `ASK`, and min price to match against if `side_ref`
+    ///   indicates `BID`
     /// * `target_order_id_ref`: Immutable reference to target order ID
     /// * `target_order_ref_mut`: Mutable reference to target order
     /// * `optional_base_coins_ref_mut`: Mutable reference to optional
     ///   base coins passing through the matching engine
     /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
     ///   quote coins passing through the matching engine
+    ///
+    /// # Returns
+    /// * `bool`: `true` if target order completely filled, else `false`
     fun match_loop_order<
         BaseType,
         QuoteType
@@ -466,6 +472,7 @@ module econia::market {
         tick_size_ref: &u64,
         lots_until_max_ref_mut: &mut u64,
         ticks_until_max_ref_mut: &mut u64,
+        limit_price_ref: &u64,
         target_order_id_ref: &u128,
         target_order_ref_mut: &mut Order,
         optional_base_coins_ref_mut:
@@ -475,14 +482,19 @@ module econia::market {
     ): bool {
         // Calculate target order price
         let target_order_price = order_id::price(*target_order_id_ref);
+        // If ask price is higher than limit price
+        if ((*side_ref == ASK && target_order_price > *limit_price_ref) ||
+            // Or if bid price is lower than limit price
+            (*side_ref == BID && target_order_price < *limit_price_ref))
+                // Do not fill, return flag for incomplete fill
+                return false;
         // Calculate size filled and determine if a complete fill
         // against target order
         let (fill_size, complete_target_fill) = match_loop_order_fill_size(
             lots_until_max_ref_mut, ticks_until_max_ref_mut,
             &target_order_price, target_order_ref_mut);
-        // If nothing filled, return flag for if target order
-        // completely filled
-        if (fill_size == 0) return complete_target_fill;
+        // If nothing filled, return flag for incomplete fill
+        if (fill_size == 0) return false;
         // Calculate number of ticks filled
         let ticks_filled = fill_size * target_order_price;
         // Decrement counter for lots until max

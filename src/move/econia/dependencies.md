@@ -73,7 +73,7 @@ flowchart TD
     swap_generic[swap_generic]
     match_verify_fills[match_verify_fills]
     match_loop_init[match_loop_init]
-    match_range_check_max_fills[match_range_check_max_fills]
+    match_range_check_inputs[match_range_check_inputs]
 
 %% Class definitions
 
@@ -84,7 +84,7 @@ flowchart TD
     class match_verify_fills implemented;
     class swap_coins unimplemented;
     class swap_generic unimplemented
-    class match partially_implemented;
+    class match implemented;
     class match_from_market_account unimplemented;
     class match_init implemented;
     class swap unimplemented;
@@ -100,11 +100,11 @@ flowchart TD
     class match_loop_order_follow_up implemented;
     class match_loop_break implemented;
     class match_loop_init implemented;
-    class match_range_check_max_fills unimplemented;
+    class match_range_check_inputs implemented;
 
 %% Node relationships
 
-    match --> match_range_check_max_fills
+    match --> match_range_check_inputs
     match --> match_verify_fills
     swap_generic --> swap
     swap_coins --> swap

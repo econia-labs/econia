@@ -100,6 +100,20 @@ module econia::market {
     const E_INVALID_CUSTODIAN: u64 = 7;
     /// When a post-or-abort limit order crosses the spread
     const E_POST_OR_ABORT_CROSSED_SPREAD: u64 = 8;
+    /// When maximum indicated lots to match is 0
+    const E_MAX_LOTS_0: u64 = 9;
+    /// When maximum indicated ticks to match is 0
+    const E_MAX_TICKS_0: u64 = 10;
+    /// When minimum indicated lots to match exceeds maximum
+    const E_MIN_LOTS_EXCEEDS_MAX: u64 = 11;
+    /// When minimum indicated ticks to match exceeds maximum
+    const E_MIN_TICKS_EXCEEDS_MAX: u64 = 12;
+    /// When indicated limit price is 0
+    const E_LIMIT_PRICE_0: u64 = 13;
+    /// When filling max lots overflows base asset units
+    const E_BASE_MAX_OVERFLOW: u64 = 14;
+    /// When filling max ticks overflows quote asset units
+    const E_QUOTE_MAX_OVERFLOW: u64 = 15;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -457,11 +471,13 @@ module econia::market {
         count // Return original count
     }
 
-    /// Match an incoming order against indicated order book.
+    /// Match an incoming order against the order book.
     ///
-    /// Initialize local variables, verify that loopwise matching can
-    /// proceed, then verify fill amounts afterwards. Institutes
-    /// pass-by-reference for enhanced efficiency.
+    /// Range check arguments, initialize local variables, verify that
+    /// loopwise matching can proceed, then match against the orders
+    /// tree in a loopwise traversal. Verify fill amounts afterwards.
+    ///
+    /// Institutes pass-by-reference for enhanced efficiency.
     ///
     /// # Type parameters
     /// * `BaseType`: Base type for market
@@ -499,6 +515,10 @@ module econia::market {
     /// * `ticks_until_max_final_ref`: Mutable reference to counter for
     ///   number of ticks that can be filled before exceeding maximum
     ///   maximum, after matching engine executes
+    ///
+    /// # Assumes
+    /// * That if optional coins are passed, they contain sufficient
+    ///   amounts for matching in accordance with other specifed values
     fun match<
         BaseType,
         QuoteType
@@ -520,13 +540,16 @@ module econia::market {
         lots_until_max_final_ref_mut: &mut u64,
         ticks_until_max_final_ref_mut: &mut u64
     ) {
+        // Range check inputs
+        match_range_check_inputs(lot_size_ref, tick_size_ref, min_lots_ref,
+            max_lots_ref, min_ticks_ref, max_ticks_ref, limit_price_ref);
         // Initialize max counters and side-wise matching variables
         let (lots_until_max, ticks_until_max, side, tree_ref_mut,
              spread_maker_ref_mut, n_orders, traversal_direction) =
                 match_init(order_book_ref_mut, direction_ref, max_lots_ref,
                     max_ticks_ref);
         if (n_orders != 0) { // If orders tree has orders to match
-            // Match them in an iterated loop traversal
+            // Match them via loopwise iterated traversal
             match_loop<BaseType, QuoteType>(market_id_ref, tree_ref_mut,
                 &side, lot_size_ref, tick_size_ref, &mut lots_until_max,
                 &mut ticks_until_max, limit_price_ref, &mut n_orders,
@@ -1084,6 +1107,45 @@ module econia::market {
             }; // If not complete target order fill, use default flags
         };
         (target_order_id, target_order_ref_mut, should_break)
+    }
+
+    /// Range check inputs for `match()`.
+    ///
+    /// # Abort conditions
+    /// * If maximum lots to match is indicated as 0
+    /// * If maximum ticks to match is indicated as 0
+    /// * If minimum lots to match is indicated as greater than max
+    /// * If minimum ticks to match is indicated as greater than max
+    /// * If limit price is 0
+    /// * If filling max lots overflows base asset units
+    /// * If filling max ticks overflows quote asset units
+    fun match_range_check_inputs(
+        lot_size_ref: &u64,
+        tick_size_ref: &u64,
+        min_lots_ref: &u64,
+        max_lots_ref: &u64,
+        min_ticks_ref: &u64,
+        max_ticks_ref: &u64,
+        limit_price_ref: &u64
+    ) {
+        // Assert maximum lot allowance is not 0
+        assert!(*max_lots_ref != 0, E_MAX_LOTS_0);
+        // Assert maximum tick allowance is not 0
+        assert!(*max_ticks_ref != 0, E_MAX_TICKS_0);
+        // Assert minimum lot allowance does not exceed maximum
+        assert!(!(*min_lots_ref > *max_lots_ref), E_MIN_LOTS_EXCEEDS_MAX);
+        // Assert minimum tick allowance does not exceed maximum
+        assert!(!(*min_ticks_ref > *max_ticks_ref), E_MIN_TICKS_EXCEEDS_MAX);
+        // Assert limit price is not 0
+        assert!(*limit_price_ref != 0, E_LIMIT_PRICE_0);
+        // Calculate max base units filled
+        let max_fill_base = (*max_lots_ref as u128) * (*lot_size_ref as u128);
+        // Assert max base fill does not overflow a u64
+        assert!(!(max_fill_base > (HI_64 as u128)), E_BASE_MAX_OVERFLOW);
+        let max_fill_quote = // Calculate max quote units filled
+            (*max_ticks_ref as u128) * (*tick_size_ref as u128);
+        // Assert max quote fill does not overflow a u64
+        assert!(!(max_fill_quote > (HI_64 as u128)), E_QUOTE_MAX_OVERFLOW);
     }
 
     /// Calculate number of lots and ticks filled, verify minimum
@@ -1769,6 +1831,125 @@ module econia::market {
     }
 
     #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for limit price of 0
+    fun test_match_range_check_inputs_limit_price_0() {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let limit_price = 0;
+        // Trip indicated error
+        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
+            &min_ticks, &max_ticks, &limit_price);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for max lots 0
+    fun test_match_range_check_inputs_max_lots_0() {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 0;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let limit_price = 1;
+        // Trip indicated error
+        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
+            &min_ticks, &max_ticks, &limit_price);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for max ticks 0
+    fun test_match_range_check_inputs_max_ticks_0() {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 0;
+        let limit_price = 1;
+        // Trip indicated error
+        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
+            &min_ticks, &max_ticks, &limit_price);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for min lots exceeds max
+    fun test_match_range_check_inputs_min_lots_exceeds_max() {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 2;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let limit_price = 1;
+        // Trip indicated error
+        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
+            &min_ticks, &max_ticks, &limit_price);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for min ticks exceeds max
+    fun test_match_range_check_inputs_min_ticks_exceeds_max() {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 2;
+        let max_ticks   = 1;
+        let limit_price = 1;
+        // Trip indicated error
+        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
+            &min_ticks, &max_ticks, &limit_price);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for max lot fill overflows base units
+    fun test_match_range_check_inputs_overflow_base() {
+        // Assign inputs
+        let lot_size    = HI_64;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 2;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let limit_price = 1;
+        // Trip indicated error
+        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
+            &min_ticks, &max_ticks, &limit_price);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for max tick fill overflows quote units
+    fun test_match_range_check_inputs_overflow_quote() {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = HI_64;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 2;
+        let limit_price = 1;
+        // Trip indicated error
+        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
+            &min_ticks, &max_ticks, &limit_price);
+    }
+
+    #[test]
     /// Verify successful reassignment
     fun test_match_verify_fills() {
         // Declare fill values
@@ -1825,8 +2006,8 @@ module econia::market {
         match_verify_fills(&min_lots, &max_lots, &min_ticks, &max_ticks,
             &lots_until_max, &ticks_until_max, &mut lots_until_max_final,
             &mut ticks_until_max_final);
-
     }
+
     #[test(
         econia = @econia,
         user = @user
@@ -2409,6 +2590,18 @@ module econia::market {
     }
 
     #[test(user = @user)]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for attempted re-registration
+    fun test_register_order_book_order_book_exists(
+        user: &signer
+    ) acquires OrderBooks {
+        // Register order book
+        register_order_book<BC, QC>(user, 1, 2, 3);
+        // Attempt invalid re-registration
+        register_order_book<BC, QC>(user, 1, 2, 3);
+    }
+
+    #[test(user = @user)]
     /// Verify successful registration of multiple books
     fun test_register_order_books(
         user: &signer
@@ -2460,15 +2653,14 @@ module econia::market {
     }
 
     #[test(user = @user)]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for attempted re-registration
-    fun test_register_order_book_order_book_exists(
+    /// Verify run to completion without error
+    fun test_verify_order_book_exists(
         user: &signer
     ) acquires OrderBooks {
-        // Register order book
-        register_order_book<BC, QC>(user, 1, 2, 3);
-        // Attempt invalid re-registration
-        register_order_book<BC, QC>(user, 1, 2, 3);
+        // Register an order book
+        register_order_book<BG, QG>(user, 0, 1, 2);
+        // Verify it was registered
+        verify_order_book_exists(@user, 0);
     }
 
     #[test(user = @user)]
@@ -2489,17 +2681,6 @@ module econia::market {
     fun test_verify_order_book_exists_no_order_books()
     acquires OrderBooks {
         // Attempt invalid invocation
-        verify_order_book_exists(@user, 0);
-    }
-
-    #[test(user = @user)]
-    /// Verify run to completion without error
-    fun test_verify_order_book_exists(
-        user: &signer
-    ) acquires OrderBooks {
-        // Register an order book
-        register_order_book<BG, QG>(user, 0, 1, 2);
-        // Verify it was registered
         verify_order_book_exists(@user, 0);
     }
 

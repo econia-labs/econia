@@ -1,26 +1,6 @@
 // Matching engine function signature planning
 module econia::signatures {
 
-    fun swap<
-        BaseType,
-        QuoteType
-    >(
-        host: address,
-        market_id: u64,
-        direction: bool, // BUY or SELL
-        min_lots: u64, // Abort if unable to fill
-        max_lots: u64, // Return before exceeding
-        min_ticks: u64, // Abort if unable to fill
-        max_ticks: u64, // Return before exceeding
-        limit_price: u64, // Can rail to 0 or HI_64
-        optional_base_coins_ref_mut:
-            &mut option::Option<coin::Coin<BaseType>>,
-        optional_quote_coins_ref_mut:
-            &mut option::Option<coin::Coin<QuoteType>>
-    ) {
-        // Input coins over to match()
-    }
-
     fun place_limit_order<
         BaseType,
         QuoteType

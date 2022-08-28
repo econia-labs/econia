@@ -114,6 +114,16 @@ module econia::market {
     const E_BASE_MAX_OVERFLOW: u64 = 14;
     /// When filling max ticks overflows quote asset units
     const E_QUOTE_MAX_OVERFLOW: u64 = 15;
+    /// When not enough base assets for operation
+    const E_NOT_ENOUGH_BASE_COINS: u64 = 16;
+    /// When not enough quote assets for operation
+    const E_NOT_ENOUGH_QUOTE_COINS: u64 = 17;
+    /// When indicated operation overflows base coins on hand if max
+    /// base is filled
+    const E_BASE_COIN_MAX_OVERFLOW: u64 = 18;
+    /// When indicated operation overflows quote coins on hand if max
+    /// quote is filled
+    const E_QUOTE_COIN_MAX_OVERFLOW: u64 = 19;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -212,6 +222,116 @@ module econia::market {
             price,
             post_or_abort
         );
+    }
+
+    /// Swap between coins of `BaseCoinType` and `QuoteCoinType`.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `host`: Market host
+    /// * `market_id`: Market ID
+    /// * `direction`: `BUY` or `SELL`
+    /// * `min_base`: Minimum number of base coins to fill
+    /// * `max_base`: Maximum number of base coins to fill
+    /// * `min_quote`: Minimum number of quote coins to fill
+    /// * `max_quote`: Maximum number of quote coins to fill
+    /// * `limit_price`: Maximum price to match against if `direction`
+    ///   is `BUY`, and minimum price to match against if `direction` is
+    ///   `SELL`. If passed as `HI_64` in the case of a `BUY` or `0` in
+    ///   the case of a `SELL`, will match at any price. Price for a
+    ///   given market is the number of ticks per lot.
+    /// * `base_coins_ref_mut`: Mutable reference to base coins on hand
+    ///   before swap. Incremented if a `BUY`, and decremented if a
+    ///   `SELL`.
+    /// * `quote_coins_ref_mut`: Mutable reference to quote coins on
+    ///   hand before swap. Incremented if a `SELL`, and decremented if
+    ///   a `BUY`.
+    ///
+    /// # Returns
+    /// * `u64`: Base coins filled
+    /// * `u64`: Quote coins filled
+    ///
+    /// # Abort conditions
+    ///
+    /// ## If a `BUY`
+    /// * If quote coins on hand is less than `max_quote`
+    /// * If filling `max_base` would overflow base coins on hand
+    ///
+    /// ## If a `SELL`
+    /// * If base coins on hand is less than `max_base`
+    /// * If filling `max_quote` would overflow quote coins on hand
+    public fun swap_coins<
+        BaseCoinType,
+        QuoteCoinType
+    >(
+        host: address,
+        market_id: u64,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+        base_coins_ref_mut: &mut coin::Coin<BaseCoinType>,
+        quote_coins_ref_mut: &mut coin::Coin<QuoteCoinType>
+    ): (
+        u64,
+        u64
+    ) acquires OrderBooks {
+        // Get value of base coins on hand
+        let base_value = coin::value(base_coins_ref_mut);
+        // Get value of quote coins on hand
+        let quote_value = coin::value(quote_coins_ref_mut);
+        let (optional_base_coins, optional_quote_coins);
+        if (direction == BUY) { // If buying base with quote
+            // Assert have enough quote coins on hand for max fill
+            assert!(!(quote_value < max_quote), E_NOT_ENOUGH_QUOTE_COINS);
+            // Calculate max possible base coins on hand post-swap
+            let max_base_final = (base_value as u128) + (max_base as u128);
+            // Assert max possible base coins does not userflow a u64
+            assert!(!(max_base_final > (HI_64 as u128)),
+                E_BASE_COIN_MAX_OVERFLOW);
+            // Wrap max possible quote coins needed in an option to pass
+            // through matching engine
+            optional_quote_coins =
+                option::some(coin::extract(quote_coins_ref_mut, max_quote));
+            // Wrap zero base coins in an option to pass through
+            // matching engine
+            optional_base_coins = option::some(coin::zero<BaseCoinType>());
+        } else { // If selling base for quote
+            // Assert have enough base coins on hand for max fill
+            assert!(!(base_value < max_base), E_NOT_ENOUGH_BASE_COINS);
+            // Calculate max possible quote coins on hand post-swap
+            let max_quote_final = (quote_value as u128) + (max_quote as u128);
+            // Assert max possible quote coins does not userflow a u64
+            assert!(!(max_quote_final > (HI_64 as u128)),
+                E_QUOTE_COIN_MAX_OVERFLOW);
+            // Wrap max possible base coins needed in an option to pass
+            // through matching engine
+            optional_base_coins =
+                option::some(coin::extract(base_coins_ref_mut, max_base));
+            // Wrap zero quote coins in an option to pass through
+            // matching engine
+            optional_quote_coins = option::some(coin::zero<QuoteCoinType>());
+        };
+        // Declare variables to track base and quote coins filled
+        let (base_filled, quote_filled) = (0, 0);
+        // Swap against matching engine
+        swap<BaseCoinType, QuoteCoinType>(&host, &market_id, &direction,
+            &min_base, &max_base, &min_quote, &max_quote, &limit_price,
+            &mut optional_base_coins, &mut optional_quote_coins,
+            &mut base_filled, &mut quote_filled);
+        // Merge base coins from matching engine back into coins on hand
+        coin::merge(
+            base_coins_ref_mut, option::destroy_some(optional_base_coins));
+        // Merge post-match quote coins back into coins on hand
+        coin::merge(
+            quote_coins_ref_mut, option::destroy_some(optional_quote_coins));
+        // Return count for base coins and quote coins filled
+        (base_filled, quote_filled)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1361,6 +1481,88 @@ module econia::market {
             max_bid: MAX_BID_DEFAULT,
             counter: 0
         });
+    }
+
+    /// Swap against book, via wrapped call to `match()`.
+    ///
+    /// Institutes pass-by-reference for enhanced efficiency.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `host_ref`: Immutable reference to market host
+    /// * `market_id_ref`: Immutable reference to market ID
+    /// * `direction_ref`: `&BUY` or `&SELL`
+    /// * `min_base_ref`: Immutable reference to minimum number of base
+    ///   units to fill
+    /// * `max_base_ref`: Immutable reference to maximum number of base
+    ///   units to fill
+    /// * `min_quote_ref`: Immutable reference to minimum number of
+    ///   quote units to fill
+    /// * `max_quote_ref`: Immutable reference to maximum number of
+    ///   quote units to fill
+    /// * `limit_price_ref`: Immutable reference to maximum price to
+    ///   match against if `direction_ref` is `&BUY`, and minimum price
+    ///   to match against if `direction_ref` is `&SELL`. If passed as
+    ///   `HI_64` in the case of a `BUY` or `0` in the case of a `SELL`,
+    ///   will match at any price. Price for a given market is the
+    ///   number of ticks per lot.
+    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
+    ///   base coins passing through the matching engine, gradually
+    ///   incremented in the case of `BUY`, and gradually decremented
+    ///   in the case of `SELL`
+    /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
+    ///   quote coins passing through the matching engine, gradually
+    ///   decremented in the case of `BUY`, and gradually incremented
+    ///   in the case of `SELL`
+    /// * `base_filled_ref_mut`: Mutable reference to counter for number
+    ///   of base units filled by matching engine
+    /// * `quote_filled_ref_mut`: Mutable reference to counter for
+    ///   number of quote units filled by matching engine
+    fun swap<
+        BaseType,
+        QuoteType
+    >(
+        host_ref: &address,
+        market_id_ref: &u64,
+        direction_ref: &bool,
+        min_base_ref: &u64,
+        max_base_ref: &u64,
+        min_quote_ref: &u64,
+        max_quote_ref: &u64,
+        limit_price_ref: &u64,
+        optional_base_coins_ref_mut:
+            &mut option::Option<coin::Coin<BaseType>>,
+        optional_quote_coins_ref_mut:
+            &mut option::Option<coin::Coin<QuoteType>>,
+        base_filled_ref_mut: &mut u64,
+        quote_filled_ref_mut: &mut u64
+    ) acquires OrderBooks {
+        // Verify order book exists
+        verify_order_book_exists(*host_ref, *market_id_ref);
+        // Borrow mutable reference to order books map
+        let order_books_map_ref_mut =
+            &mut borrow_global_mut<OrderBooks>(*host_ref).map;
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            open_table::borrow_mut(order_books_map_ref_mut, *market_id_ref);
+        let lot_size = order_book_ref_mut.lot_size; // Get lot size
+        let tick_size = order_book_ref_mut.tick_size; // Get tick size
+        // Declare variables to track lots and ticks filled
+        let (lots_filled, ticks_filled) = (0, 0);
+        // Match against the book
+        match<BaseType, QuoteType>(market_id_ref, order_book_ref_mut,
+            &lot_size, &tick_size, direction_ref,
+            &(*min_base_ref * lot_size), &(*max_base_ref * lot_size),
+            &(*min_quote_ref * tick_size), &(*max_quote_ref * tick_size),
+            limit_price_ref, optional_base_coins_ref_mut,
+            optional_quote_coins_ref_mut, &mut lots_filled, &mut ticks_filled);
+        // Calculate base units filled
+        *base_filled_ref_mut = lots_filled * lot_size;
+        // Calculate quote units filled
+        *quote_filled_ref_mut = ticks_filled * tick_size;
     }
 
     /// Verify `host` has an `OrderBook` with `market_id`

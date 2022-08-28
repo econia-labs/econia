@@ -74,6 +74,7 @@ flowchart TD
     match_verify_fills[match_verify_fills]
     match_loop_init[match_loop_init]
     match_range_check_inputs[match_range_check_inputs]
+    swap_from_coinstore[swap_from_coinstore]
 
 %% Class definitions
 
@@ -81,13 +82,14 @@ flowchart TD
     classDef implemented fill:#32cd32 %% Lime Green
     classDef unimplemented fill:#708090 %% Slate Gray
 
+    class swap_from_coinstore unimplemented;
     class match_verify_fills implemented;
-    class swap_coins unimplemented;
+    class swap_coins implemented;
     class swap_generic unimplemented
     class match implemented;
     class match_from_market_account unimplemented;
     class match_init implemented;
-    class swap unimplemented;
+    class swap implemented;
     class place_market_order unimplemented;
     class place_market_order_custodian unimplemented;
     class place_market_order_user unimplemented;
@@ -104,6 +106,7 @@ flowchart TD
 
 %% Node relationships
 
+    swap_from_coinstore --> swap_coins
     match --> match_range_check_inputs
     match --> match_verify_fills
     swap_generic --> swap

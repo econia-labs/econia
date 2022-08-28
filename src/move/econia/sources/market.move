@@ -447,6 +447,49 @@ module econia::market {
         );
     }
 
+    #[cmd]
+    /// Swap between a `user`'s `aptos_framework::coin::CoinStore`s.
+    ///
+    /// Initialize a `CoinStore` is a user does not already have one.
+    ///
+    /// See wrapped call `swap_coins()`.
+    public entry fun swap_between_coinstores<
+        BaseCoinType,
+        QuoteCoinType
+    >(
+        user: &signer,
+        host: address,
+        market_id: u64,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64
+    ) acquires OrderBooks {
+        let user_address = address_of(user); // Get user address
+        // Register base coin store if user does not have one
+        if (!coin::is_account_registered<BaseCoinType>(user_address))
+            coin::register<BaseCoinType>(user);
+        // Register quote coin store if user does not have one
+        if (!coin::is_account_registered<QuoteCoinType>(user_address))
+            coin::register<QuoteCoinType>(user);
+        // Withdraw base coins from user's account
+        let base_coins = coin::withdraw<BaseCoinType>(user,
+            coin::balance<BaseCoinType>(user_address));
+        // Withdraw quote coins from user's account
+        let quote_coins = coin::withdraw<QuoteCoinType>(user,
+            coin::balance<QuoteCoinType>(user_address));
+        // Swap coins against order book
+        swap_coins<BaseCoinType, QuoteCoinType>(host, market_id, direction,
+            min_base, max_base, min_quote, max_quote, limit_price,
+            &mut base_coins, &mut quote_coins);
+        // Deposit base coins back to user's coin store
+        coin::deposit(user_address, base_coins);
+        // Deposit quote coins back to user's coin store
+        coin::deposit(user_address, quote_coins);
+    }
+
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

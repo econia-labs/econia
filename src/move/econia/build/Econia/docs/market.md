@@ -28,6 +28,7 @@ open two wallets and trade them against each other.
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
 -  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
+-  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
 -  [Function `cancel_all_limit_orders`](#0xc0deb00c_market_cancel_all_limit_orders)
     -  [Parameters](#@Parameters_7)
     -  [Assumes](#@Assumes_8)
@@ -1050,6 +1051,68 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market"
         tick_size,
         <a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a>
     );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_swap_between_coinstores"></a>
+
+## Function `swap_between_coinstores`
+
+Swap between a <code><a href="user.md#0xc0deb00c_user">user</a></code>'s <code>aptos_framework::coin::CoinStore</code>s.
+
+Initialize a <code>CoinStore</code> is a user does not already have one.
+
+See wrapped call <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseCoinType, QuoteCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;
+    BaseCoinType,
+    QuoteCoinType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    market_id: u64,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>
+    // Register base <a href="">coin</a> store <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> does not have one
+    <b>if</b> (!<a href="_is_account_registered">coin::is_account_registered</a>&lt;BaseCoinType&gt;(user_address))
+        <a href="_register">coin::register</a>&lt;BaseCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>);
+    // Register quote <a href="">coin</a> store <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> does not have one
+    <b>if</b> (!<a href="_is_account_registered">coin::is_account_registered</a>&lt;QuoteCoinType&gt;(user_address))
+        <a href="_register">coin::register</a>&lt;QuoteCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>);
+    // Withdraw base coins from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">account</a>
+    <b>let</b> base_coins = <a href="_withdraw">coin::withdraw</a>&lt;BaseCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
+        <a href="_balance">coin::balance</a>&lt;BaseCoinType&gt;(user_address));
+    // Withdraw quote coins from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">account</a>
+    <b>let</b> quote_coins = <a href="_withdraw">coin::withdraw</a>&lt;QuoteCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
+        <a href="_balance">coin::balance</a>&lt;QuoteCoinType&gt;(user_address));
+    // Swap coins against order book
+    <a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>&lt;BaseCoinType, QuoteCoinType&gt;(host, market_id, direction,
+        min_base, max_base, min_quote, max_quote, limit_price,
+        &<b>mut</b> base_coins, &<b>mut</b> quote_coins);
+    // Deposit base coins back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store
+    <a href="_deposit">coin::deposit</a>(user_address, base_coins);
+    // Deposit quote coins back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store
+    <a href="_deposit">coin::deposit</a>(user_address, quote_coins);
 }
 </code></pre>
 

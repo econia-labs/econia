@@ -21,36 +21,6 @@ module econia::signatures {
         // Input coins over to match()
     }
 
-    fun match<
-        BaseType,
-        QuoteType
-    >(
-        order_book_ref_mut: &mut OrderBook,
-        lot_size: u64,
-        tick_size: bool,
-        direction: bool, // BUY or SELL
-        min_lots: u64, // Abort if unable to fill
-        max_lots: u64, // Return before exceeding
-        min_ticks: u64, // Abort if unable to fill
-        max_ticks: u64, // Return before exceeding
-        limit_price: u64, // Can rail to 0 or HI_64
-        optional_base_coins_ref_mut:
-            &mut option::Option<coin::Coin<BaseType>>,
-        optional_quote_coins_ref_mut:
-            &mut option::Option<coin::Coin<QuoteType>>,
-    ): (
-        u64, // Lots unfilled
-        u64 // Ticks unfilled
-    ) {
-        // At end, this could be a wrap-up function match_verify_fills()
-        let (lots_filled, ticks_filled) =
-            ((max_lots - lots_until_max) - (max_ticks - ticks_until_max))
-        assert!(!(lots_filled < min_lots), E_MIN_LOTS_NOT_FILLED);
-        assert!(!(ticks_filled < min_ticks), E_MIN_TICKS_NOT_FILLED);
-        (lots_until_max, ticks_until_max)
-
-    }
-
     fun place_limit_order<
         BaseType,
         QuoteType

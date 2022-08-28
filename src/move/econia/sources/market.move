@@ -668,6 +668,8 @@ module econia::market {
     /// # Assumes
     /// * That if optional coins are passed, they contain sufficient
     ///   amounts for matching in accordance with other specifed values
+    /// * That `lot_size_ref` and `tick_size_ref` indicate the same
+    ///   lot and tick size as `order_book_ref_mut`
     fun match<
         BaseType,
         QuoteType
@@ -844,7 +846,7 @@ module econia::market {
             tree_ref_mut,
             spread_maker_ref_mut,
             n_orders,
-            traversal_direction,
+            traversal_direction
         )
     }
 

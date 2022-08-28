@@ -1403,6 +1403,8 @@ number of ticks filled by matching engine
 
 * That if optional coins are passed, they contain sufficient
 amounts for matching in accordance with other specifed values
+* That <code>lot_size_ref</code> and <code>tick_size_ref</code> indicate the same
+lot and tick size as <code>order_book_ref_mut</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id_ref: &u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, lot_size_ref: &u64, tick_size_ref: &u64, direction_ref: &bool, min_lots_ref: &u64, max_lots_ref: &u64, min_ticks_ref: &u64, max_ticks_ref: &u64, limit_price_ref: &u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, lots_filled_ref_mut: &<b>mut</b> u64, ticks_filled_ref_mut: &<b>mut</b> u64)
@@ -1646,7 +1648,7 @@ to <code>direction_ref</code>
         tree_ref_mut,
         spread_maker_ref_mut,
         n_orders,
-        traversal_direction,
+        traversal_direction
     )
 }
 </code></pre>

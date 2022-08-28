@@ -754,9 +754,9 @@ module econia::market {
     /// * `u128`: Order ID of first target order to process
     /// * `&mut Order`: Mutable reference to first target order
     /// * `u64`: Parent index loop variable for iterated traversal along
-    ///    outer nodes of a `CritBitTree`
+    ///    outer nodes of a `CritBitTree<Order>`
     /// * `u64`: Child index loop variable for iterated traversal along
-    ///    outer nodes of a `CritBitTree`
+    ///    outer nodes of a `CritBitTree<Order>`
     /// * `Order`: A quasi-null order used for mutable reference
     ///   reassignment as described in `match_loop_order_follow_up()`
     /// * `bool`: Flag for if target order is completely filled
@@ -983,10 +983,10 @@ module econia::market {
     ///   quasi-null `Order`.
     /// * `target_parent_index_ref_mut`: Mutable reference to parent
     ///   loop variable for iterated traversal along outer nodes of a
-    ///   `CritBitTree`
+    ///   `CritBitTree<Order>`
     /// * `target_child_index_ref_mut`: Mutable reference to child loop
     ///   variable for iterated traversal along outer nodes of a
-    ///   `CritBitTree`
+    ///   `CritBitTree<Order>`
     /// * `new_spread_maker_ref_mut`: Mutable reference to the value
     ///   that should be assigned to the spread maker field for the
     ///   side indicated by `side_ref`, if one should be set

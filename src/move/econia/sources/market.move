@@ -1014,28 +1014,27 @@ module econia::market {
     ///   by value as described above
     ///
     /// # Target order reference rationale
+    ///
     /// In the case where there are still orders left on the book and
     /// the target order is completely filled, the calling function
     /// `match_loop()` requires a mutable reference to the next target
     /// order to fill against, which is operated on during the next
     /// loopwise iteration. Ideally, `match_loop()` would pass in a
-    /// mutable reference to an `Order`, and the underlying value would
-    /// be updated to the next target order to fill against, only in the
-    /// case where there are still orders on the book and the order
-    /// just processed in `match_loop_order()` was completely filled.
+    /// mutable reference to an `Order`, which would be reassigned to
+    /// the next target order to fill against, only in the case where
+    /// there are still orders on the book and the order just processed
+    /// in `match_loop_order()` was completely filled.
     ///
     /// But this would be invalid, because a reassignment to a mutable
-    /// reference within a function does not persist outside of the
-    /// function scope, meaning that the underlying value for the
-    /// mutable reference defined in `match_loop()` would be the same
-    /// before and after the call to `match_loop_order_follow_up()`.
-    ///
-    /// Hence a mutable reference to the next target order must be
-    /// optionally returned in the case where traversal proceeds, and
-    /// ideally this would entail returning an
-    /// `option::Option<&mut Order>`. But mutable references can not be
-    /// stored in structs, at least as of the time of this writing,
-    /// including ones that have the `drop` ability.
+    /// reference requires that the underlying value have the `drop`
+    /// capability, which `Order` does not.  Hence a mutable reference
+    /// to the next target order must be optionally returned in the case
+    /// where traversal proceeds, and ideally this would entail
+    /// returning an `option::Option<&mut Order>`. But mutable
+    /// references can not be stored in structs, at least as of the time
+    /// of this writing, including structs that have the `drop` ability,
+    /// which an `option::Option<&mut Order>` would have, since mutable
+    /// references have the `drop` ability.
     ///
     /// Thus a `&mut Order` must be returned in all cases, even though
     /// `match_loop()` only meaningfully operates on this return in the

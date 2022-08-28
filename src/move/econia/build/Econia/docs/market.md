@@ -1541,7 +1541,7 @@ pass-by-reference are effectively initialized to null values
     <b>let</b> (target_order_id, target_order_ref_mut, target_parent_index,
          target_child_index) = <a href="critbit.md#0xc0deb00c_critbit_traverse_init_mut">critbit::traverse_init_mut</a>(
             tree_ref_mut, *traversal_direction_ref);
-    // Return initialized traversal variables, and flags/trackers
+    // Return initialized traversal variables, and flags/tracker
     // that are reassigned later
     (target_order_id, target_order_ref_mut, target_parent_index,
      target_child_index, <b>false</b>, <b>false</b>, 0)
@@ -1635,7 +1635,7 @@ quote coins passing through the matching engine
             *complete_target_fill_ref_mut = <b>false</b>;
             <b>return</b> // Do not attempt <b>to</b> fill
         };
-    // Declare null fill size for pass-by-reference
+    // Declare null fill size for pass-by-reference reassignment
     <b>let</b> fill_size = 0;
     // Calculate size filled and determine <b>if</b> a complete fill
     // against target order
@@ -1830,27 +1830,27 @@ by value as described above
 
 ### Target order reference rationale
 
+
 In the case where there are still orders left on the book and
 the target order is completely filled, the calling function
 <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code> requires a mutable reference to the next target
 order to fill against, which is operated on during the next
 loopwise iteration. Ideally, <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code> would pass in a
-mutable reference to an <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>, and the underlying value would
-be updated to the next target order to fill against, only in the
-case where there are still orders on the book and the order
-just processed in <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code> was completely filled.
+mutable reference to an <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>, which would be reassigned to
+the next target order to fill against, only in the case where
+there are still orders on the book and the order just processed
+in <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code> was completely filled.
 
 But this would be invalid, because a reassignment to a mutable
-reference within a function does not persist outside of the
-function scope, meaning that the underlying value for the
-mutable reference defined in <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code> would be the same
-before and after the call to <code><a href="market.md#0xc0deb00c_market_match_loop_order_follow_up">match_loop_order_follow_up</a>()</code>.
-Hence a mutable reference to the next target order must be
-optionally returned in the case where traversal proceeds, and
-ideally this would entail returning an
-<code><a href="_Option">option::Option</a>&lt;&<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code>. But mutable references can not be
-stored in structs, at least as of the time of this writing,
-including ones that have the <code>drop</code> ability.
+reference requires that the underlying value have the <code>drop</code>
+capability, which <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code> does not.  Hence a mutable reference
+to the next target order must be optionally returned in the case
+where traversal proceeds, and ideally this would entail
+returning an <code><a href="_Option">option::Option</a>&lt;&<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code>. But mutable
+references can not be stored in structs, at least as of the time
+of this writing, including structs that have the <code>drop</code> ability,
+which an <code><a href="_Option">option::Option</a>&lt;&<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code> would have, since mutable
+references have the <code>drop</code> ability.
 
 Thus a <code>&<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a></code> must be returned in all cases, even though
 <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code> only meaningfully operates on this return in the

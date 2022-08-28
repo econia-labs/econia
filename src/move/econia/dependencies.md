@@ -72,6 +72,7 @@ flowchart TD
     swap_coins[swap_coins]
     swap_generic[swap_generic]
     match_verify_fills[match_verify_fills]
+    match_loop_init[match_loop_init]
 
 %% Class definitions
 
@@ -92,11 +93,12 @@ flowchart TD
     class place_limit_order partially_implemented;
     class place_limit_order_custodian partially_implemented;
     class place_limit_order_user partially_implemented;
-    class match_loop partially_implemented;
+    class match_loop implemented;
     class match_loop_order implemented;
     class match_loop_order_fill_size implemented;
     class match_loop_order_follow_up implemented;
     class match_loop_break implemented;
+    class match_loop_init implemented
 
 %% Node relationships
 
@@ -114,6 +116,7 @@ flowchart TD
     match --> match_loop
     match_from_market_account --> match
     match_loop_order --> match_loop_order_fill_size
+    match_loop --> match_loop_init
     match_loop --> match_loop_order
     match_loop --> match_loop_order_follow_up
     match_loop --> match_loop_break

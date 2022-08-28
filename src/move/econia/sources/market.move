@@ -105,8 +105,12 @@ module econia::market {
     const ASK: bool = true;
     /// Bid flag
     const BID: bool = false;
+    /// Buy direction flag
+    const BUY: bool = true;
     /// `u64` bitmask with all bits set
     const HI_64: u64 = 0xffffffffffffffff;
+    /// Left traversal direction, denoting predecessor traversal
+    const LEFT: bool = true;
     /// Default value for maximum bid order ID
     const MAX_BID_DEFAULT: u128 = 0;
     /// Default value for minimum ask order ID
@@ -125,8 +129,16 @@ module econia::market {
     /// reassigned via pass-by-reference, since declaration without
     /// assignment before use is invalid
     const NULL_U64: u64 = 0;
+    /// Quasi-null `u128` value assigned to a variable when it will be
+    /// reassigned via pass-by-reference, since declaration without
+    /// assignment before use is invalid
+    const NULL_U128: u128 = 0;
     /// When both base and quote assets are coins
     const PURE_COIN_PAIR: u64 = 0;
+    /// Right traversal direction, denoting successor traversal
+    const RIGHT: bool = false;
+    /// Sell direction flag
+    const SELL: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -441,6 +453,42 @@ module econia::market {
         count // Return original count
     }
 
+    /// Match an order against the book via loopwise tree traversal.
+    ///
+    /// Inner function for `match()`.
+    ///
+    /// During interated traversal, the "incoming user" matches against
+    /// a "target order" on the book at each iteration.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `market_id_ref`: Immutable reference to market ID
+    /// * `tree_ref_mut`: Mutable reference to orders tree
+    /// * `side_ref`: `&ASK` or `&BID`
+    /// * `lot_size_ref`: Immutable reference to lot size for market
+    /// * `tick_size_ref`: Immutable reference to tick size for market
+    /// * `lots_until_max_ref_mut`: Mutable reference to counter for
+    ///   number of lots that can be filled before exceeding max
+    ///   allowed for incoming user
+    /// * `ticks_until_max_ref_mut`: Mutable reference to counter
+    ///   for number of ticks that can be filled before exceeding max
+    ///   allowed for incoming user
+    /// * `limit_price_ref`: Immutable reference to max price to match
+    ///   against if `side_ref` indicates `ASK`, and min price to match
+    ///   against if `side_ref` indicates `BID`
+    /// * `n_orders_ref_mut`: Mutable reference to counter for number of
+    ///   orders in tree
+    /// * `spread_maker_ref_mut`: Mutable reference to the spread maker
+    ///   field for corresponding side
+    /// * `traversal_direction_ref`: `&LEFT`, or `&RIGHT`
+    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
+    ///   base coins passing through the matching engine
+    /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
+    ///   quote coins passing through the matching engine
+    ///
     /// # Passing considerations
     /// * Pass-by-reference instituted for improved efficiency
     /// * See `match_loop_order_follow_up()` for a discussion on its
@@ -450,32 +498,26 @@ module econia::market {
         QuoteType
     >(
         market_id_ref: &u64,
+        tree_ref_mut: &mut CritBitTree<Order>,
         side_ref: &bool,
         lot_size_ref: &u64,
         tick_size_ref: &u64,
-        tree_ref_mut: &mut CritBitTree<Order>,
+        lots_until_max_ref_mut: &mut u64,
+        ticks_until_max_ref_mut: &mut u64,
         limit_price_ref: &u64,
-        traversal_direction_ref: &bool,
         n_orders_ref_mut: &mut u64,
         spread_maker_ref_mut: &mut u128,
+        traversal_direction_ref: &bool,
         optional_base_coins_ref_mut:
             &mut option::Option<coin::Coin<BaseType>>,
         optional_quote_coins_ref_mut:
             &mut option::Option<coin::Coin<QuoteType>>
     ) {
-        // Initialize iterated traversal, storing order ID of target
-        // order, mutable reference to target order, the parent field
-        // of the target node, and child field index of target node
+        // Initialize local variables
         let (target_order_id, target_order_ref_mut, target_parent_index,
-             target_child_index) = critbit::traverse_init_mut(
-                tree_ref_mut, *traversal_direction_ref);
-        // Declare a null order for generating default mutable reference
-        let null_order = Order{size: NULL_U64, user: NULL_ADDRESS,
-            general_custodian_id: NULL_U64};
-        let (should_pop_last, new_spread_maker) = (false, MAX_BID_DEFAULT);
-        let complete_target_fill = false;
-        let lots_until_max = 0;
-        let ticks_until_max = 0;
+             target_child_index, null_order, complete_target_fill,
+             should_pop_last, new_spread_maker) = match_loop_init(
+                tree_ref_mut, traversal_direction_ref);
         // Declare locally-scoped return variable for below loop, which
         // can not be declared without a value in the above function,
         // and which raises a warning if it is assigned a value within
@@ -489,52 +531,24 @@ module econia::market {
         loop { // Begin loopwise matching
             // Process the order for current iteration, storing flag for
             // if the target order was completely filled
-            match_loop_order<
-                BaseType,
-                QuoteType
-            >(
-                market_id_ref,
-                side_ref,
-                lot_size_ref,
-                tick_size_ref,
-                &mut lots_until_max,
-                &mut ticks_until_max,
-                limit_price_ref,
-                &target_order_id,
-                target_order_ref_mut,
-                &mut complete_target_fill,
-                optional_base_coins_ref_mut,
-                optional_quote_coins_ref_mut
-            );
+            match_loop_order<BaseType, QuoteType>(market_id_ref, side_ref,
+                lot_size_ref, tick_size_ref, lots_until_max_ref_mut,
+                ticks_until_max_ref_mut, limit_price_ref, &target_order_id,
+                target_order_ref_mut, &mut complete_target_fill,
+                optional_base_coins_ref_mut, optional_quote_coins_ref_mut);
             // Follow up on order processing, assigning variable returns
             // that cannot be reassigned via pass-by-reference
-            (
-                target_order_id,
-                target_order_ref_mut,
-                should_break
-            ) = match_loop_order_follow_up(
-                tree_ref_mut,
-                side_ref,
-                traversal_direction_ref,
-                n_orders_ref_mut,
-                &complete_target_fill,
-                &mut should_pop_last,
-                target_order_id,
-                &mut null_order,
-                &mut target_parent_index,
-                &mut target_child_index,
-                &mut new_spread_maker
-            );
+            (target_order_id, target_order_ref_mut, should_break) =
+                match_loop_order_follow_up(tree_ref_mut, side_ref,
+                traversal_direction_ref, n_orders_ref_mut,
+                &complete_target_fill, &mut should_pop_last, target_order_id,
+                &mut null_order, &mut target_parent_index,
+                &mut target_child_index, &mut new_spread_maker);
             if (should_break) { // If should break out of loop
                 // Clean up as needed before breaking out of loop
-                match_loop_break(
-                    null_order,
-                    spread_maker_ref_mut,
-                    &new_spread_maker,
-                    &should_pop_last,
-                    tree_ref_mut,
-                    &target_order_id
-                );
+                match_loop_break(null_order, spread_maker_ref_mut,
+                    &new_spread_maker, &should_pop_last, tree_ref_mut,
+                    &target_order_id);
                 break // Break out of loop
             }
         }
@@ -574,6 +588,66 @@ module econia::market {
         if (*should_pop_last_ref)
             Order{size: _, user: _, general_custodian_id: _} =
                 critbit::pop(tree_ref_mut, *final_order_id_ref);
+    }
+
+    /// Initialize variables for loopwise matching.
+    ///
+    /// Inner function for `match_loop()`.
+    ///
+    /// # Parameters
+    /// * `tree_ref_mut`: Mutable reference to orders tree to start
+    ///   match against
+    /// * `traversal_direction_ref`: `&LEFT`, or `&RIGHT`
+    ///
+    /// # Returns
+    /// * `u128`: Order ID of first target order to process
+    /// * `&mut Order`: Mutable reference to first target order
+    /// * `u64`: Parent index loop variable for iterated traversal along
+    ///    outer nodes of a `CritBitTree`
+    /// * `u64`: Child index loop variable for iterated traversal along
+    ///    outer nodes of a `CritBitTree`
+    /// * `Order`: A quasi-null order used for mutable reference
+    ///   reassignment as described in `match_loop_order_follow_up()`
+    /// * `bool`: Flag for if target order is completely filled
+    /// * `bool`: Flag for if loopwise matching ends on a complete fill
+    ///   against the last order on the book, which should be popped
+    /// * `u128`: Tracker for new spread maker value to assign
+    ///
+    /// # Passing considerations
+    /// * Initialized variables are passed by reference within
+    ///   `match_loop()`, and as such must be assigned before use
+    /// * Variables that are only assigned meaningful values after
+    ///   pass-by-reference are effectively initialized to null values
+    fun match_loop_init(
+        tree_ref_mut: &mut CritBitTree<Order>,
+        traversal_direction_ref: &bool,
+    ): (
+        u128,
+        &mut Order,
+        u64,
+        u64,
+        Order,
+        bool,
+        bool,
+        u128
+    ) {
+        // Initialize iterated traversal, storing order ID of target
+        // order, mutable reference to target order, the parent field
+        // of the target node, and child field index of target node
+        let (target_order_id, target_order_ref_mut, target_parent_index,
+             target_child_index) = critbit::traverse_init_mut(
+                tree_ref_mut, *traversal_direction_ref);
+        ( // Return initialized variables
+            target_order_id,
+            target_order_ref_mut,
+            target_parent_index,
+            target_child_index,
+            Order{size: NULL_U64,
+                user: NULL_ADDRESS, general_custodian_id: NULL_U64},
+            NULL_BOOL,
+            NULL_BOOL,
+            NULL_U128,
+        )
     }
 
     /// Fill order from "incoming user" against "target order" on the
@@ -736,7 +810,7 @@ module econia::market {
     /// following up on an "incoming user" filling against a "target
     /// order" on the book.
     ///
-    /// Inner function for `fill_market_order_traverse_loop()`.
+    /// Inner function for `match_loop()`.
     ///
     /// # Parameters
     /// * `tree_ref_mut`: Mutable reference to orders tree
@@ -752,13 +826,14 @@ module econia::market {
     ///   which should be popped
     /// * `target_order_id`: Order ID of target order just processed
     /// * `target_order_ref_mut`: Mutable reference to an `Order`.
-    ///   Reassigned only when traversal should proceed to the next
-    ///   order on the book, otherwise left unmodified. Intended to
-    ///   accept as an input a mutable reference to a null `Order`.
-    /// * `target_parent_index_ref_mut`: Mutable reference to loop
-    ///   variable for iterated traversal along outer nodes of a
+    ///   Effectively reassigned only when traversal should proceed to
+    ///   the next order on the book, otherwise left unmodified.
+    ///   Intended to accept as an input a mutable reference to a
+    ///   quasi-null `Order`.
+    /// * `target_parent_index_ref_mut`: Mutable reference to parent
+    ///   loop variable for iterated traversal along outer nodes of a
     ///   `CritBitTree`
-    /// * `target_child_index_ref_mut`: Mutable reference to loop
+    /// * `target_child_index_ref_mut`: Mutable reference to child loop
     ///   variable for iterated traversal along outer nodes of a
     ///   `CritBitTree`
     /// * `new_spread_maker_ref_mut`: Mutable reference to the value

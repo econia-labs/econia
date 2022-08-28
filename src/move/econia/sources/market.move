@@ -124,6 +124,10 @@ module econia::market {
     /// When indicated operation overflows quote coins on hand if max
     /// quote is filled
     const E_QUOTE_COIN_MAX_OVERFLOW: u64 = 19;
+    /// When invalid base type indicated
+    const E_INVALID_BASE: u64 = 20;
+    /// When invalid quote type indicated
+    const E_INVALID_QUOTE: u64 = 21;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -685,9 +689,9 @@ module econia::market {
         lots_filled_ref_mut: &mut u64,
         ticks_filled_ref_mut: &mut u64
     ) {
-        // Range check inputs
-        match_range_check_inputs(lot_size_ref, tick_size_ref, min_lots_ref,
-            max_lots_ref, min_ticks_ref, max_ticks_ref, limit_price_ref);
+        // Check input values
+        match_check_inputs<BaseType, QuoteType>(order_book_ref_mut,
+            min_lots_ref, max_lots_ref, min_ticks_ref, max_ticks_ref);
         // Initialize max counters and side-wise matching variables
         let (lots_until_max, ticks_until_max, side, tree_ref_mut,
              spread_maker_ref_mut, n_orders, traversal_direction) =
@@ -707,9 +711,66 @@ module econia::market {
             lots_filled_ref_mut, ticks_filled_ref_mut);
     }
 
-    /// Initialize variables required for matching.
+    /// Check inputs for `match()`.
     ///
-    /// Inner function for `match()`.
+    /// Does not enforce that limit price is nonzero, as a limit price
+    /// of zero is effectively a flag to sell at any price.
+    ///
+    /// # Parameters
+    /// * `order_book_ref`: Immutable reference to an `OrderBook`
+    /// * `min_lots_ref`: Immutable reference to minimum number of lots
+    ///   to fill
+    /// * `max_lots_ref`: Immutable reference to maximum number of lots
+    ///   to fill
+    /// * `min_ticks_ref`: Immutable reference to minimum number of
+    ///   ticks to fill
+    /// * `max_ticks_ref`: Immutable reference to maximum number of
+    ///   ticks to fill
+    ///
+    /// # Abort conditions
+    /// * If `BaseType`, is not base type for order book
+    /// * If `QuoteType` is not quote type for order book
+    /// * If maximum lots to match is indicated as 0
+    /// * If maximum ticks to match is indicated as 0
+    /// * If minimum lots to match is indicated as greater than max
+    /// * If minimum ticks to match is indicated as greater than max
+    /// * If filling max lots overflows base asset units
+    /// * If filling max ticks overflows quote asset units
+    fun match_check_inputs<
+        BaseType,
+        QuoteType
+    >(
+        order_book_ref: &OrderBook,
+        min_lots_ref: &u64,
+        max_lots_ref: &u64,
+        min_ticks_ref: &u64,
+        max_ticks_ref: &u64,
+    ) {
+        // Assert base type corresponds to that of market
+        assert!(type_info::type_of<BaseType>() ==
+            order_book_ref.base_type_info, E_INVALID_BASE);
+        // Assert quote type corresponds to that of market
+        assert!(type_info::type_of<QuoteType>() ==
+            order_book_ref.quote_type_info, E_INVALID_QUOTE);
+        // Assert maximum lot allowance is not 0
+        assert!(*max_lots_ref != 0, E_MAX_LOTS_0);
+        // Assert maximum tick allowance is not 0
+        assert!(*max_ticks_ref != 0, E_MAX_TICKS_0);
+        // Assert minimum lot allowance does not exceed maximum
+        assert!(!(*min_lots_ref > *max_lots_ref), E_MIN_LOTS_EXCEEDS_MAX);
+        // Assert minimum tick allowance does not exceed maximum
+        assert!(!(*min_ticks_ref > *max_ticks_ref), E_MIN_TICKS_EXCEEDS_MAX);
+        let max_fill_base = // Calculate max base units filled
+            (*max_lots_ref as u128) * (order_book_ref.lot_size as u128);
+        // Assert max base fill does not overflow a u64
+        assert!(!(max_fill_base > (HI_64 as u128)), E_BASE_MAX_OVERFLOW);
+        let max_fill_quote = // Calculate max quote units filled
+            (*max_ticks_ref as u128) * (order_book_ref.tick_size as u128);
+        // Assert max quote fill does not overflow a u64
+        assert!(!(max_fill_quote > (HI_64 as u128)), E_QUOTE_MAX_OVERFLOW);
+    }
+
+    /// Initialize local variables for `match()`.
     ///
     /// Must determine orders tree based on a conditional check on
     /// `direction_ref` in order for `match()` to check that there are
@@ -1264,45 +1325,6 @@ module econia::market {
             }; // If not complete target order fill, use defaults
         };
         (target_order_id, target_order_ref_mut, should_break)
-    }
-
-    /// Range check inputs for `match()`.
-    ///
-    /// # Abort conditions
-    /// * If maximum lots to match is indicated as 0
-    /// * If maximum ticks to match is indicated as 0
-    /// * If minimum lots to match is indicated as greater than max
-    /// * If minimum ticks to match is indicated as greater than max
-    /// * If limit price is 0
-    /// * If filling max lots overflows base asset units
-    /// * If filling max ticks overflows quote asset units
-    fun match_range_check_inputs(
-        lot_size_ref: &u64,
-        tick_size_ref: &u64,
-        min_lots_ref: &u64,
-        max_lots_ref: &u64,
-        min_ticks_ref: &u64,
-        max_ticks_ref: &u64,
-        limit_price_ref: &u64
-    ) {
-        // Assert maximum lot allowance is not 0
-        assert!(*max_lots_ref != 0, E_MAX_LOTS_0);
-        // Assert maximum tick allowance is not 0
-        assert!(*max_ticks_ref != 0, E_MAX_TICKS_0);
-        // Assert minimum lot allowance does not exceed maximum
-        assert!(!(*min_lots_ref > *max_lots_ref), E_MIN_LOTS_EXCEEDS_MAX);
-        // Assert minimum tick allowance does not exceed maximum
-        assert!(!(*min_ticks_ref > *max_ticks_ref), E_MIN_TICKS_EXCEEDS_MAX);
-        // Assert limit price is not 0
-        assert!(*limit_price_ref != 0, E_LIMIT_PRICE_0);
-        // Calculate max base units filled
-        let max_fill_base = (*max_lots_ref as u128) * (*lot_size_ref as u128);
-        // Assert max base fill does not overflow a u64
-        assert!(!(max_fill_base > (HI_64 as u128)), E_BASE_MAX_OVERFLOW);
-        let max_fill_quote = // Calculate max quote units filled
-            (*max_ticks_ref as u128) * (*tick_size_ref as u128);
-        // Assert max quote fill does not overflow a u64
-        assert!(!(max_fill_quote > (HI_64 as u128)), E_QUOTE_MAX_OVERFLOW);
     }
 
     /// Calculate number of lots and ticks filled, verify minimum
@@ -1982,6 +2004,238 @@ module econia::market {
     }
 
     #[test]
+    #[expected_failure(abort_code = 20)]
+    /// Verify failure for invalid base
+    fun test_match_check_inputs_invalid_base():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BC, QG>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+        order_book
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 21)]
+    /// Verify failure for invalid quote
+    fun test_match_check_inputs_invalid_quote():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BG, QC>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+        order_book
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for max lots 0
+    fun test_match_check_inputs_max_lots_0():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 0;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+        order_book
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for max ticks 0
+    fun test_match_check_inputs_max_ticks_0():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 0;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+        order_book
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for min lots exceeds max
+    fun test_match_check_inputs_min_lots_exceeds_max():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 2;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+    order_book
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for min ticks exceeds max
+    fun test_match_check_inputs_min_ticks_exceeds_max():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 2;
+        let max_ticks   = 1;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+    order_book
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for max lot fill overflows base units
+    fun test_match_check_inputs_overflow_base():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = HI_64;
+        let tick_size   = 1;
+        let min_lots    = 1;
+        let max_lots    = 2;
+        let min_ticks   = 1;
+        let max_ticks   = 1;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+    order_book
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for max tick fill overflows quote units
+    fun test_match_check_inputs_overflow_quote():
+    OrderBook {
+        // Assign inputs
+        let lot_size    = 1;
+        let tick_size   = HI_64;
+        let min_lots    = 1;
+        let max_lots    = 1;
+        let min_ticks   = 1;
+        let max_ticks   = 2;
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BG>(),
+            quote_type_info: type_info::type_of<QG>(),
+            lot_size,
+            tick_size,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        };
+        // Trip indicated error
+        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
+            &min_ticks, &max_ticks);
+    order_book
+    }
+
+    #[test]
     /// Verify successful returns
     fun test_match_loop_order_fill_size() {
         // Declare target order parameters
@@ -2061,125 +2315,6 @@ module econia::market {
         assert!(complete_target_fill == complete_target_fill_no_limited, 0);
         // Unpack target order
         Order{size: _, user: _, general_custodian_id: _} = target_order;
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 13)]
-    /// Verify failure for limit price of 0
-    fun test_match_range_check_inputs_limit_price_0() {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let limit_price = 0;
-        // Trip indicated error
-        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
-            &min_ticks, &max_ticks, &limit_price);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 9)]
-    /// Verify failure for max lots 0
-    fun test_match_range_check_inputs_max_lots_0() {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 0;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let limit_price = 1;
-        // Trip indicated error
-        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
-            &min_ticks, &max_ticks, &limit_price);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 10)]
-    /// Verify failure for max ticks 0
-    fun test_match_range_check_inputs_max_ticks_0() {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 0;
-        let limit_price = 1;
-        // Trip indicated error
-        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
-            &min_ticks, &max_ticks, &limit_price);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 11)]
-    /// Verify failure for min lots exceeds max
-    fun test_match_range_check_inputs_min_lots_exceeds_max() {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 2;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let limit_price = 1;
-        // Trip indicated error
-        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
-            &min_ticks, &max_ticks, &limit_price);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 12)]
-    /// Verify failure for min ticks exceeds max
-    fun test_match_range_check_inputs_min_ticks_exceeds_max() {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 2;
-        let max_ticks   = 1;
-        let limit_price = 1;
-        // Trip indicated error
-        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
-            &min_ticks, &max_ticks, &limit_price);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 14)]
-    /// Verify failure for max lot fill overflows base units
-    fun test_match_range_check_inputs_overflow_base() {
-        // Assign inputs
-        let lot_size    = HI_64;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 2;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let limit_price = 1;
-        // Trip indicated error
-        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
-            &min_ticks, &max_ticks, &limit_price);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 15)]
-    /// Verify failure for max tick fill overflows quote units
-    fun test_match_range_check_inputs_overflow_quote() {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = HI_64;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 2;
-        let limit_price = 1;
-        // Trip indicated error
-        match_range_check_inputs(&lot_size, &tick_size, &min_lots, &max_lots,
-            &min_ticks, &max_ticks, &limit_price);
     }
 
     #[test]

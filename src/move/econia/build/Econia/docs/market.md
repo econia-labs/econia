@@ -1396,10 +1396,10 @@ return schema
         // that cannot be reassigned via pass-by-reference
         (target_order_id, target_order_ref_mut, should_break) =
             <a href="market.md#0xc0deb00c_market_match_loop_order_follow_up">match_loop_order_follow_up</a>(tree_ref_mut, side_ref,
-            traversal_direction_ref, n_orders_ref_mut,
-            &complete_target_fill, &<b>mut</b> should_pop_last, target_order_id,
-            &<b>mut</b> target_parent_index, &<b>mut</b> target_child_index,
-            &<b>mut</b> new_spread_maker);
+                traversal_direction_ref, n_orders_ref_mut,
+                &complete_target_fill, &<b>mut</b> should_pop_last,
+                target_order_id, &<b>mut</b> target_parent_index,
+                &<b>mut</b> target_child_index, &<b>mut</b> new_spread_maker);
         <b>if</b> (should_break) { // If should <b>break</b> out of <b>loop</b>
             // Clean up <b>as</b> needed before breaking out of <b>loop</b>
             <a href="market.md#0xc0deb00c_market_match_loop_break">match_loop_break</a>(spread_maker_ref_mut, &new_spread_maker,

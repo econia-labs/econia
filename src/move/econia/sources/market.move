@@ -713,10 +713,10 @@ module econia::market {
             // that cannot be reassigned via pass-by-reference
             (target_order_id, target_order_ref_mut, should_break) =
                 match_loop_order_follow_up(tree_ref_mut, side_ref,
-                traversal_direction_ref, n_orders_ref_mut,
-                &complete_target_fill, &mut should_pop_last, target_order_id,
-                &mut target_parent_index, &mut target_child_index,
-                &mut new_spread_maker);
+                    traversal_direction_ref, n_orders_ref_mut,
+                    &complete_target_fill, &mut should_pop_last,
+                    target_order_id, &mut target_parent_index,
+                    &mut target_child_index, &mut new_spread_maker);
             if (should_break) { // If should break out of loop
                 // Clean up as needed before breaking out of loop
                 match_loop_break(spread_maker_ref_mut, &new_spread_maker,

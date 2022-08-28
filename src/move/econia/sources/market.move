@@ -88,6 +88,10 @@ module econia::market {
     const E_NO_ORDER_BOOKS: u64 = 1;
     /// When indicated `OrderBook` does not exist
     const E_NO_ORDER_BOOK: u64 = 2;
+    /// When minimum number of lots are not filled by matching engine
+    const E_MIN_LOTS_NOT_FILLED: u64 = 3;
+    /// When minimum number of ticks are not filled by matching engine
+    const E_MIN_TICKS_NOT_FILLED: u64 = 4;
    /// When order not found in book
     const E_NO_ORDER: u64 = 5;
     /// When invalid user attempts to manage an order
@@ -1072,6 +1076,59 @@ module econia::market {
         (target_order_id, target_order_ref_mut, should_break)
     }
 
+    /// Calculate number of lots and ticks filled, verify minimum
+    /// thresholds met.
+    ///
+    /// Inner function for `match()`.
+    ///
+    /// Called by matching engine after `match_loop()` executes, which
+    /// will not match in excess of values indicated by `max_lots_ref`
+    /// and `max_ticks_ref`, but which may terminate before filling at
+    /// least the corresponding minimum value thresholds.
+    ///
+    /// # Parameters
+    /// * `min_lots_ref`: Immutable reference to minimum number of lots
+    ///   to be have been filled by matching engine
+    /// * `max_lots_ref`: Immutable reference to maximum number of lots
+    ///   to be have been filled by matching engine
+    /// * `min_ticks_ref`: Immutable reference to minimum number of
+    ///   ticks to be have been filled by matching engine
+    /// * `max_ticks_ref`: Immutable reference to maximum number of
+    ///   ticks to be have been filled by matching engine
+    /// * `lots_until_max_ref_mut`: Immutable reference to counter for
+    ///   number of lots that matching engine could have filled before
+    ///   exceeding maximum threshold
+    /// * `ticks_until_max_ref_mut`: Immutable reference to counter for
+    ///   number of ticks that matching engine could have filled before
+    ///   exceeding maximum threshold
+    /// * `lots_filled_ref_mut`: Reassigned to the number of lots filled
+    ///   by the matching engine
+    /// * `ticks_filled_ref_mut`: Reassigned to the number of ticks
+    ///   filled by the matching engine
+    ///
+    /// # Abort conditions
+    /// * If minimum lot fill threshold not met
+    /// * If minimum tick fill threshold not met
+    fun match_verify_fills(
+        min_lots_ref: &u64,
+        max_lots_ref: &u64,
+        min_ticks_ref: &u64,
+        max_ticks_ref: &u64,
+        lots_until_max_ref: &u64,
+        ticks_until_max_ref: &u64,
+        lots_filled_ref_mut: &mut u64,
+        ticks_filled_ref_mut: &mut u64
+    ) {
+        // Calculate number of lots filled
+        *lots_filled_ref_mut = *max_lots_ref - *lots_until_max_ref;
+        // Calculate number of ticks filled
+        *ticks_filled_ref_mut = *max_ticks_ref - *ticks_until_max_ref;
+        assert!( // Assert minimum lots fill requirement met
+            !(*lots_filled_ref_mut < *min_lots_ref), E_MIN_LOTS_NOT_FILLED);
+        assert!( // Assert minimum ticks fill requirement met
+            !(*ticks_filled_ref_mut < *min_ticks_ref), E_MIN_TICKS_NOT_FILLED);
+    }
+
     /// Place limit order against book and optionally register in user's
     /// market account.
     ///
@@ -1695,6 +1752,66 @@ module econia::market {
         Order{size: _, user: _, general_custodian_id: _} = target_order;
     }
 
+    #[test]
+    /// Verify successful reassignment
+    fun test_match_verify_fills() {
+        // Declare fill values
+        let min_lots = 100;
+        let max_lots = 200;
+        let min_ticks = 50;
+        let max_ticks = 300;
+        let lots_until_max = 80;
+        let ticks_until_max = 250;
+        let lots_filled = NULL_U64;
+        let ticks_filled = NULL_U64;
+        let lots_filled_expected = max_lots - lots_until_max;
+        let ticks_filled_expected = max_ticks - ticks_until_max;
+        // Verify fill values
+        match_verify_fills(&min_lots, &max_lots, &min_ticks, &max_ticks,
+            &lots_until_max, &ticks_until_max, &mut lots_filled,
+            &mut ticks_filled);
+        // Assert reassignments
+        assert!(lots_filled == lots_filled_expected, 0);
+        assert!(ticks_filled == ticks_filled_expected, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for minimum lots not filled
+    fun test_match_verify_fills_min_lots_not_filled() {
+        // Declare fill values
+        let min_lots = HI_64;
+        let max_lots = HI_64;
+        let min_ticks = 0;
+        let max_ticks = HI_64;
+        let lots_until_max = 1;
+        let ticks_until_max = HI_64;
+        let lots_filled = NULL_U64;
+        let ticks_filled = NULL_U64;
+        // Verify fill values, raising min lots violation
+        match_verify_fills(&min_lots, &max_lots, &min_ticks, &max_ticks,
+            &lots_until_max, &ticks_until_max, &mut lots_filled,
+            &mut ticks_filled);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for minimum ticks not filled
+    fun test_match_verify_fills_min_ticks_not_filled() {
+        // Declare fill values
+        let min_lots = 0;
+        let max_lots = HI_64;
+        let min_ticks = HI_64;
+        let max_ticks = HI_64;
+        let lots_until_max = HI_64;
+        let ticks_until_max = 1;
+        let lots_filled = NULL_U64;
+        let ticks_filled = NULL_U64;
+        // Verify fill values, raising min ticks violation
+        match_verify_fills(&min_lots, &max_lots, &min_ticks, &max_ticks,
+            &lots_until_max, &ticks_until_max, &mut lots_filled,
+            &mut ticks_filled);
+    }
     #[test(
         econia = @econia,
         user = @user

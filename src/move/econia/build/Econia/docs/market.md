@@ -53,18 +53,21 @@ open two wallets and trade them against each other.
     -  [Parameters](#@Parameters_19)
     -  [Returns](#@Returns_20)
     -  [Passing considerations](#@Passing_considerations_21)
--  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+-  [Function `match_verify_fills`](#0xc0deb00c_market_match_verify_fills)
     -  [Parameters](#@Parameters_22)
     -  [Abort conditions](#@Abort_conditions_23)
-    -  [Assumes](#@Assumes_24)
+-  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+    -  [Parameters](#@Parameters_24)
+    -  [Abort conditions](#@Abort_conditions_25)
+    -  [Assumes](#@Assumes_26)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_25)
-    -  [Parameters](#@Parameters_26)
--  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
     -  [Type parameters](#@Type_parameters_27)
     -  [Parameters](#@Parameters_28)
+-  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+    -  [Type parameters](#@Type_parameters_29)
+    -  [Parameters](#@Parameters_30)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_29)
+    -  [Abort conditions](#@Abort_conditions_31)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -338,6 +341,26 @@ When invalid user attempts to manage an order
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>: u64 = 6;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_MIN_LOTS_NOT_FILLED"></a>
+
+When minimum number of lots are not filled by matching engine
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MIN_LOTS_NOT_FILLED">E_MIN_LOTS_NOT_FILLED</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_MIN_TICKS_NOT_FILLED"></a>
+
+When minimum number of ticks are not filled by matching engine
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MIN_TICKS_NOT_FILLED">E_MIN_TICKS_NOT_FILLED</a>: u64 = 4;
 </code></pre>
 
 
@@ -1110,16 +1133,16 @@ Initialize variables required for matching.
 Inner function for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 Must determine orders tree based on a conditional check on
-<code>direction_ref</code> in order to check that there are even orders to
-fill against, hence evaluates other side-associated variables in
-ternary operator (even though some of these could be evaluated
-later on in <code><a href="market.md#0xc0deb00c_market_match_loop_init">match_loop_init</a>()</code>) in order to only perform the
-side-wise conditional init just check once during matching.
+<code>direction_ref</code> in order for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code> to check that there are
+even orders to fill against, hence evaluates other side-wise
+variables in ternary operator (even though some of these could
+be evaluated later on in <code><a href="market.md#0xc0deb00c_market_match_loop_init">match_loop_init</a>()</code>) such that matching
+initialization only requires one side-wise conditional check.
 
 Additionally, lots and ticks until max counters are additionally
 initialized here rather than in <code><a href="market.md#0xc0deb00c_market_match_loop_init">match_loop_init</a>()</code> so they can
 be passed by reference and then verified within the local scope
-of <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, via <code>match_verify_fills()</code>.
+of <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, via <code><a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>()</code>.
 
 
 <a name="@Parameters_7"></a>
@@ -1141,15 +1164,16 @@ to fill
 
 * <code>u64</code>: Counter for remaining lots that can be filled before
 exceeding maximum allowed
-* <code>u64</code>: Counter for ticks that can be filled before exceeding
-maximum allowed
-* <code>bool</code>: Either <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, implied by <code>direction_ref</code>
-* <code>&<b>mut</b> CritBitTree</code>: Mutable reference to orders tree to fill
-against
+* <code>u64</code>: Counter for remaining ticks that can be filled before
+exceeding maximum allowed
+* <code>bool</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code> corresponding to <code>direction_ref</code>
+* <code>&<b>mut</b> CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code>: Mutable reference to orders tree to
+fill against
 * <code>&<b>mut</b> u128</code>: Mutable reference to spread maker field for given
 side
 * <code>u64</code>: Number of orders in corresponding tree
-* <code>bool</code>: <code><a href="market.md#0xc0deb00c_market_LEFT">LEFT</a></code> or <code><a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a></code> (traversal direction)
+* <code>bool</code>: <code><a href="market.md#0xc0deb00c_market_LEFT">LEFT</a></code> or <code><a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a></code> (traversal direction) corresponding
+to <code>direction_ref</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_init">match_init</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, direction_ref: &bool, max_lots_ref: &u64, max_ticks_ref: &u64): (u64, u64, bool, &<b>mut</b> <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;, &<b>mut</b> u128, u64, bool)
@@ -1426,9 +1450,9 @@ match against
 * <code>u128</code>: Order ID of first target order to process
 * <code>&<b>mut</b> <a href="market.md#0xc0deb00c_market_Order">Order</a></code>: Mutable reference to first target order
 * <code>u64</code>: Parent index loop variable for iterated traversal along
-outer nodes of a <code>CritBitTree</code>
+outer nodes of a <code>CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code>
 * <code>u64</code>: Child index loop variable for iterated traversal along
-outer nodes of a <code>CritBitTree</code>
+outer nodes of a <code>CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code>
 * <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>: A quasi-null order used for mutable reference
 reassignment as described in <code><a href="market.md#0xc0deb00c_market_match_loop_order_follow_up">match_loop_order_follow_up</a>()</code>
 * <code>bool</code>: Flag for if target order is completely filled
@@ -1735,10 +1759,10 @@ Intended to accept as an input a mutable reference to a
 quasi-null <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>.
 * <code>target_parent_index_ref_mut</code>: Mutable reference to parent
 loop variable for iterated traversal along outer nodes of a
-<code>CritBitTree</code>
+<code>CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code>
 * <code>target_child_index_ref_mut</code>: Mutable reference to child loop
 variable for iterated traversal along outer nodes of a
-<code>CritBitTree</code>
+<code>CritBitTree&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;</code>
 * <code>new_spread_maker_ref_mut</code>: Mutable reference to the value
 that should be assigned to the spread maker field for the
 side indicated by <code>side_ref</code>, if one should be set
@@ -1848,6 +1872,87 @@ by value as described above
 
 </details>
 
+<a name="0xc0deb00c_market_match_verify_fills"></a>
+
+## Function `match_verify_fills`
+
+Calculate number of lots and ticks filled, verify minimum
+thresholds met.
+
+Inner function for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+Called by matching engine after <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code> executes, which
+will not match in excess of values indicated by <code>max_lots_ref</code>
+and <code>max_ticks_ref</code>, but which may terminate before filling at
+least the corresponding minimum value thresholds.
+
+
+<a name="@Parameters_22"></a>
+
+### Parameters
+
+* <code>min_lots_ref</code>: Immutable reference to minimum number of lots
+to be have been filled by matching engine
+* <code>max_lots_ref</code>: Immutable reference to maximum number of lots
+to be have been filled by matching engine
+* <code>min_ticks_ref</code>: Immutable reference to minimum number of
+ticks to be have been filled by matching engine
+* <code>max_ticks_ref</code>: Immutable reference to maximum number of
+ticks to be have been filled by matching engine
+* <code>lots_until_max_ref_mut</code>: Immutable reference to counter for
+number of lots that matching engine could have filled before
+exceeding maximum threshold
+* <code>ticks_until_max_ref_mut</code>: Immutable reference to counter for
+number of ticks that matching engine could have filled before
+exceeding maximum threshold
+* <code>lots_filled_ref_mut</code>: Reassigned to the number of lots filled
+by the matching engine
+* <code>ticks_filled_ref_mut</code>: Reassigned to the number of ticks
+filled by the matching engine
+
+
+<a name="@Abort_conditions_23"></a>
+
+### Abort conditions
+
+* If minimum lot fill threshold not met
+* If minimum tick fill threshold not met
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>(min_lots_ref: &u64, max_lots_ref: &u64, min_ticks_ref: &u64, max_ticks_ref: &u64, lots_until_max_ref: &u64, ticks_until_max_ref: &u64, lots_filled_ref_mut: &<b>mut</b> u64, ticks_filled_ref_mut: &<b>mut</b> u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>(
+    min_lots_ref: &u64,
+    max_lots_ref: &u64,
+    min_ticks_ref: &u64,
+    max_ticks_ref: &u64,
+    lots_until_max_ref: &u64,
+    ticks_until_max_ref: &u64,
+    lots_filled_ref_mut: &<b>mut</b> u64,
+    ticks_filled_ref_mut: &<b>mut</b> u64
+) {
+    // Calculate number of lots filled
+    *lots_filled_ref_mut = *max_lots_ref - *lots_until_max_ref;
+    // Calculate number of ticks filled
+    *ticks_filled_ref_mut = *max_ticks_ref - *ticks_until_max_ref;
+    <b>assert</b>!( // Assert minimum lots fill requirement met
+        !(*lots_filled_ref_mut &lt; *min_lots_ref), <a href="market.md#0xc0deb00c_market_E_MIN_LOTS_NOT_FILLED">E_MIN_LOTS_NOT_FILLED</a>);
+    <b>assert</b>!( // Assert minimum ticks fill requirement met
+        !(*ticks_filled_ref_mut &lt; *min_ticks_ref), <a href="market.md#0xc0deb00c_market_E_MIN_TICKS_NOT_FILLED">E_MIN_TICKS_NOT_FILLED</a>);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_place_limit_order"></a>
 
 ## Function `place_limit_order`
@@ -1860,7 +1965,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_22"></a>
+<a name="@Parameters_24"></a>
 
 ### Parameters
 
@@ -1876,14 +1981,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_23"></a>
+<a name="@Abort_conditions_25"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_24"></a>
+<a name="@Assumes_26"></a>
 
 ### Assumes
 
@@ -1978,7 +2083,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_25"></a>
+<a name="@Type_parameters_27"></a>
 
 ### Type parameters
 
@@ -1986,7 +2091,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_26"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -2039,7 +2144,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_27"></a>
+<a name="@Type_parameters_29"></a>
 
 ### Type parameters
 
@@ -2047,7 +2152,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_28"></a>
+<a name="@Parameters_30"></a>
 
 ### Parameters
 
@@ -2111,7 +2216,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_29"></a>
+<a name="@Abort_conditions_31"></a>
 
 ### Abort conditions
 

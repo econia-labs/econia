@@ -42,9 +42,6 @@ module econia::signatures {
         u64, // Lots unfilled
         u64 // Ticks unfilled
     ) {
-        // Init to max amounts in the init func
-        let (lots_until_max, ticks_until_max) = (max_lots, max_ticks);
-
         // At end, this could be a wrap-up function match_verify_fills()
         let (lots_filled, ticks_filled) =
             ((max_lots - lots_until_max) - (max_ticks - ticks_until_max))

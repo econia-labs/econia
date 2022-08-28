@@ -33,19 +33,6 @@ module econia::market {
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Market buy flag
-    const BUY: bool = true;
-    /// Left direction, denoting predecessor traversal
-    const LEFT: bool = true;
-    /// Right direction, denoting successor traversal
-    const RIGHT: bool = false;
-    /// Market sell flag
-    const SELL: bool = false;
-
-    // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Fill a market order on behalf of a user. Invoked by a custodian,

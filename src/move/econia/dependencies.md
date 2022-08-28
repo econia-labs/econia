@@ -83,9 +83,9 @@ flowchart TD
     class match_verify_fills unimplemented;
     class swap_coins unimplemented;
     class swap_generic unimplemented
-    class match unimplemented;
+    class match partially_implemented;
     class match_from_market_account unimplemented;
-    class match_init unimplemented;
+    class match_init implemented;
     class swap unimplemented;
     class place_market_order unimplemented;
     class place_market_order_custodian unimplemented;

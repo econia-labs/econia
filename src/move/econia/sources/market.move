@@ -453,6 +453,157 @@ module econia::market {
         count // Return original count
     }
 
+    /// Match an incoming order against indicated order book.
+    ///
+    /// Initialize local variables, verify that loopwise matching can
+    /// proceed, then verify fill amounts afterwards. Institutes
+    /// pass-by-reference for enhanced efficiency.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `market_id_ref`: Immutable reference to market ID
+    /// * `order_book_ref_mut`: Mutable reference to corresponding
+    ///   `OrderBook`
+    /// * `lot_size_ref`: Immutable reference to lot size for market
+    /// * `tick_size_ref`: Immutable reference to tick size for market
+    /// * `direction_ref`: `&BUY` or `&SELL`
+    /// * `min_lots_ref`: Immutable reference to minimum number of lots
+    ///   to fill
+    /// * `max_lots_ref`: Immutable reference to maximum number of lots
+    ///   to fill
+    /// * `min_ticks_ref`: Immutable reference to minimum number of
+    ///   ticks to fill
+    /// * `max_ticks_ref`: Immutable reference to maximum number of
+    ///   ticks to fill
+    /// * `limit_price_ref`: Immutable reference to maximum price to
+    ///   match against if `direction_ref` is `&BUY`, and minimum price
+    ///   to match against if `direction_ref` is `&SELL`
+    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
+    ///   base coins passing through the matching engine, gradually
+    ///   incremented in the case of `BUY`, and gradually decremented
+    ///   in the case of `SELL`
+    /// * `optional_quote_coins_ref_mut`: Mutable reference to optional
+    ///   quote coins passing through the matching engine, gradually
+    ///   decremented in the case of `BUY`, and gradually incremented
+    ///   in the case of `SELL`
+    fun match<
+        BaseType,
+        QuoteType
+    >(
+        market_id_ref: &u64,
+        order_book_ref_mut: &mut OrderBook,
+        lot_size_ref: &u64,
+        tick_size_ref: &u64,
+        direction_ref: &bool,
+        min_lots_ref: &u64,
+        max_lots_ref: &u64,
+        min_ticks_ref: &u64,
+        max_ticks_ref: &u64,
+        limit_price_ref: &u64,
+        optional_base_coins_ref_mut:
+            &mut option::Option<coin::Coin<BaseType>>,
+        optional_quote_coins_ref_mut:
+            &mut option::Option<coin::Coin<QuoteType>>
+    ) {
+        // Initialize max counters and side-wise matching variables
+        let (lots_until_max, ticks_until_max, side, tree_ref_mut,
+             spread_maker_ref_mut, n_orders, traversal_direction) =
+                match_init(order_book_ref_mut, direction_ref, max_lots_ref,
+                    max_ticks_ref);
+        if (n_orders != 0) { // If orders tree has orders to match
+            // Match them in an iterated loop traversal
+            match_loop<BaseType, QuoteType>(market_id_ref, tree_ref_mut,
+                &side, lot_size_ref, tick_size_ref, &mut lots_until_max,
+                &mut ticks_until_max, limit_price_ref, &mut n_orders,
+                spread_maker_ref_mut, &traversal_direction,
+                optional_base_coins_ref_mut, optional_quote_coins_ref_mut);
+        };
+        min_lots_ref; min_ticks_ref;
+    }
+
+    /// Initialize variables required for matching.
+    ///
+    /// Inner function for `match()`.
+    ///
+    /// Must determine orders tree based on a conditional check on
+    /// `direction_ref` in order for `match()` to check that there are
+    /// even orders to fill against, hence evaluates other side-wise
+    /// variables in ternary operator (even though some of these could
+    /// be evaluated later on in `match_loop_init()`) such that matching
+    /// initialization only requires one side-wise conditional check.
+    ///
+    /// Additionally, lots and ticks until max counters are additionally
+    /// initialized here rather than in `match_loop_init()` so they can
+    /// be passed by reference and then verified within the local scope
+    /// of `match()`, via `match_verify_fills()`.
+    ///
+    /// # Parameters
+    /// * `order_book_ref_mut`: Mutable reference to corresponding
+    ///   `OrderBook`
+    /// * `direction_ref`: `&BUY` or `&SELL`
+    /// * `max_lots_ref`: Immutable reference to maximum number of lots
+    ///   to fill
+    /// * `min_lots_ref`: Immutable reference to maximum number of ticks
+    ///   to fill
+    ///
+    /// # Returns
+    /// * `u64`: Counter for remaining lots that can be filled before
+    ///   exceeding maximum allowed
+    /// * `u64`: Counter for remaining ticks that can be filled before
+    ///   exceeding maximum allowed
+    /// * `bool`: `ASK` or `BID` corresponding to `direction_ref`
+    /// * `&mut CritBitTree<Order>`: Mutable reference to orders tree to
+    ///   fill against
+    /// * `&mut u128`: Mutable reference to spread maker field for given
+    ///   side
+    /// * `u64`: Number of orders in corresponding tree
+    /// * `bool`: `LEFT` or `RIGHT` (traversal direction) corresponding
+    ///   to `direction_ref`
+    fun match_init(
+        order_book_ref_mut: &mut OrderBook,
+        direction_ref: &bool,
+        max_lots_ref: &u64,
+        max_ticks_ref: &u64,
+    ): (
+        u64,
+        u64,
+        bool,
+        &mut CritBitTree<Order>,
+        &mut u128,
+        u64,
+        bool,
+    ) {
+        // Get side that order fills against, mutable reference to
+        // orders tree to fill against, mutable reference to the spread
+        // maker for given side, and traversal direction
+        let (side, tree_ref_mut, spread_maker_ref_mut, traversal_direction) =
+            if (*direction_ref == BUY) (
+            ASK, // If a buy, fills against asks
+            &mut order_book_ref_mut.asks, // Fill against asks tree
+            &mut order_book_ref_mut.min_ask, // Asks spread maker
+            RIGHT // Successor iteration
+        ) else ( // If a sell
+            BID, // Fills against bids, requires base coins
+            &mut order_book_ref_mut.bids, // Fill against bids tree
+            &mut order_book_ref_mut.max_bid, // Bids spread maker
+            LEFT // Predecessor iteration
+        );
+        // Get number of orders in corresponding tree
+        let n_orders = critbit::length(tree_ref_mut);
+        (
+            *max_lots_ref,
+            *max_ticks_ref,
+            side,
+            tree_ref_mut,
+            spread_maker_ref_mut,
+            n_orders,
+            traversal_direction,
+        )
+    }
+
     /// Match an order against the book via loopwise tree traversal.
     ///
     /// Inner function for `match()`.

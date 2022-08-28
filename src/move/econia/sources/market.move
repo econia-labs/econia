@@ -493,12 +493,10 @@ module econia::market {
     ///   quote coins passing through the matching engine, gradually
     ///   decremented in the case of `BUY`, and gradually incremented
     ///   in the case of `SELL`
-    /// * `lots_until_max_final_ref_mut`: Mutable reference to counter
-    ///   for number of lots that can be filled before exceeding maximum
-    ///   threshold, after matching engine executes
-    /// * `ticks_until_max_final_ref`: Mutable reference to counter for
-    ///   number of ticks that can be filled before exceeding maximum
-    ///   maximum, after matching engine executes
+    /// * `lots_filled_ref_mut`: Mutable reference to counter for number
+    ///   of lots filled by matching engine
+    /// * `ticks_filled_ref_mut`: Mutable reference to counter for
+    ///   number of ticks filled by matching engine
     ///
     /// # Assumes
     /// * That if optional coins are passed, they contain sufficient
@@ -521,8 +519,8 @@ module econia::market {
             &mut option::Option<coin::Coin<BaseType>>,
         optional_quote_coins_ref_mut:
             &mut option::Option<coin::Coin<QuoteType>>,
-        lots_until_max_final_ref_mut: &mut u64,
-        ticks_until_max_final_ref_mut: &mut u64
+        lots_filled_ref_mut: &mut u64,
+        ticks_filled_ref_mut: &mut u64
     ) {
         // Range check inputs
         match_range_check_inputs(lot_size_ref, tick_size_ref, min_lots_ref,
@@ -543,7 +541,7 @@ module econia::market {
         // Verify fill amounts, compute final threshold allowance counts
         match_verify_fills(min_lots_ref, max_lots_ref, min_ticks_ref,
             max_ticks_ref, &lots_until_max, &ticks_until_max,
-            lots_until_max_final_ref_mut, ticks_until_max_final_ref_mut);
+            lots_filled_ref_mut, ticks_filled_ref_mut);
     }
 
     /// Initialize variables required for matching.
@@ -1169,12 +1167,10 @@ module econia::market {
     /// * `ticks_until_max_ref`: Immutable reference to counter for
     ///   number of ticks that matching engine could have filled before
     ///   exceeding maximum threshold
-    /// * `lots_until_max_final_ref_mut`: Mutable reference to counter
-    ///   for number of lots that can be filled before exceeding maximum
-    ///   threshold, after matching engine executes
-    /// * `ticks_until_max_final_ref`: Mutable reference to counter for
-    ///   number of ticks that can be filled before exceeding maximum
-    ///   threshold, after matching engine executes
+    /// * `lots_filled_ref_mut`: Mutable reference to counter for number
+    ///   of lots filled by matching engine
+    /// * `ticks_filled_ref_mut`: Mutable reference to counter for
+    ///   number of ticks filled by matching engine
     ///
     /// # Abort conditions
     /// * If minimum lot fill threshold not met
@@ -1186,21 +1182,17 @@ module econia::market {
         max_ticks_ref: &u64,
         lots_until_max_ref: &u64,
         ticks_until_max_ref: &u64,
-        lots_until_max_final_ref_mut: &mut u64,
-        ticks_until_max_final_ref_mut: &mut u64
+        lots_filled_ref_mut: &mut u64,
+        ticks_filled_ref_mut: &mut u64
     ) {
         // Calculate number of lots filled
-        let lots_filled = *max_lots_ref - *lots_until_max_ref;
+        *lots_filled_ref_mut = *max_lots_ref - *lots_until_max_ref;
         // Calculate number of ticks filled
-        let ticks_filled = *max_ticks_ref - *ticks_until_max_ref;
-        // Assert minimum lots fill requirement met
-        assert!(!(lots_filled < *min_lots_ref), E_MIN_LOTS_NOT_FILLED);
-        // Assert minimum ticks fill requirement met
-        assert!(!(ticks_filled < *min_ticks_ref), E_MIN_TICKS_NOT_FILLED);
-        // Store final count for lots until max threshold
-        *lots_until_max_final_ref_mut = *lots_until_max_ref;
-        // Store final count for ticks until max threshold
-        *ticks_until_max_final_ref_mut = *ticks_until_max_ref;
+        *ticks_filled_ref_mut = *max_ticks_ref - *ticks_until_max_ref;
+        assert!( // Assert minimum lots filled requirement met
+            !(*lots_filled_ref_mut < *min_lots_ref), E_MIN_LOTS_NOT_FILLED);
+        assert!( // Assert minimum ticks filled requirement met
+            !(*ticks_filled_ref_mut < *min_ticks_ref), E_MIN_TICKS_NOT_FILLED);
     }
 
     /// Place limit order against book and optionally register in user's
@@ -1955,15 +1947,17 @@ module econia::market {
         let max_ticks = 300;
         let lots_until_max = 80;
         let ticks_until_max = 250;
-        let lots_until_max_final = 0;
-        let ticks_until_max_final = 0;
+        let lots_filled = 0;
+        let ticks_filled = 0;
+        let lots_filled_expected = max_lots - lots_until_max;
+        let ticks_filled_expected = max_ticks - ticks_until_max;
         // Verify fill values does not raise error
         match_verify_fills(&min_lots, &max_lots, &min_ticks, &max_ticks,
-            &lots_until_max, &ticks_until_max, &mut lots_until_max_final,
-            &mut ticks_until_max_final);
+            &lots_until_max, &ticks_until_max, &mut lots_filled,
+            &mut ticks_filled);
         // Assert reassigned final counts
-        assert!(lots_until_max_final == lots_until_max, 0);
-        assert!(ticks_until_max_final == ticks_until_max, 0);
+        assert!(lots_filled == lots_filled_expected, 0);
+        assert!(ticks_filled == ticks_filled_expected, 0);
     }
 
     #[test]
@@ -1977,12 +1971,12 @@ module econia::market {
         let max_ticks = HI_64;
         let lots_until_max = 1;
         let ticks_until_max = HI_64;
-        let lots_until_max_final = 0;
-        let ticks_until_max_final = 0;
-        // Verify fill values, raising min lots violation
+        let lots_filled = 0;
+        let ticks_filled = 0;
+        // Verify fill values does not raise error
         match_verify_fills(&min_lots, &max_lots, &min_ticks, &max_ticks,
-            &lots_until_max, &ticks_until_max, &mut lots_until_max_final,
-            &mut ticks_until_max_final);
+            &lots_until_max, &ticks_until_max, &mut lots_filled,
+            &mut ticks_filled);
     }
 
     #[test]
@@ -1996,12 +1990,12 @@ module econia::market {
         let max_ticks = HI_64;
         let lots_until_max = HI_64;
         let ticks_until_max = 1;
-        let lots_until_max_final = 0;
-        let ticks_until_max_final = 0;
-        // Verify fill values, raising min ticks violation
+        let lots_filled = 0;
+        let ticks_filled = 0;
+        // Verify fill values does not raise error
         match_verify_fills(&min_lots, &max_lots, &min_ticks, &max_ticks,
-            &lots_until_max, &ticks_until_max, &mut lots_until_max_final,
-            &mut ticks_until_max_final);
+            &lots_until_max, &ticks_until_max, &mut lots_filled,
+            &mut ticks_filled);
     }
 
     #[test(

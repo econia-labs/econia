@@ -1101,12 +1101,10 @@ in the case of <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
 quote coins passing through the matching engine, gradually
 decremented in the case of <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, and gradually incremented
 in the case of <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
-* <code>lots_until_max_final_ref_mut</code>: Mutable reference to counter
-for number of lots that can be filled before exceeding maximum
-threshold, after matching engine executes
-* <code>ticks_until_max_final_ref</code>: Mutable reference to counter for
-number of ticks that can be filled before exceeding maximum
-maximum, after matching engine executes
+* <code>lots_filled_ref_mut</code>: Mutable reference to counter for number
+of lots filled by matching engine
+* <code>ticks_filled_ref_mut</code>: Mutable reference to counter for
+number of ticks filled by matching engine
 
 
 <a name="@Assumes_7"></a>
@@ -1117,7 +1115,7 @@ maximum, after matching engine executes
 amounts for matching in accordance with other specifed values
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id_ref: &u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, lot_size_ref: &u64, tick_size_ref: &u64, direction_ref: &bool, min_lots_ref: &u64, max_lots_ref: &u64, min_ticks_ref: &u64, max_ticks_ref: &u64, limit_price_ref: &u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, lots_until_max_final_ref_mut: &<b>mut</b> u64, ticks_until_max_final_ref_mut: &<b>mut</b> u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id_ref: &u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, lot_size_ref: &u64, tick_size_ref: &u64, direction_ref: &bool, min_lots_ref: &u64, max_lots_ref: &u64, min_ticks_ref: &u64, max_ticks_ref: &u64, limit_price_ref: &u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, lots_filled_ref_mut: &<b>mut</b> u64, ticks_filled_ref_mut: &<b>mut</b> u64)
 </code></pre>
 
 
@@ -1144,8 +1142,8 @@ amounts for matching in accordance with other specifed values
         &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;,
     optional_quote_coins_ref_mut:
         &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;,
-    lots_until_max_final_ref_mut: &<b>mut</b> u64,
-    ticks_until_max_final_ref_mut: &<b>mut</b> u64
+    lots_filled_ref_mut: &<b>mut</b> u64,
+    ticks_filled_ref_mut: &<b>mut</b> u64
 ) {
     // Range check inputs
     <a href="market.md#0xc0deb00c_market_match_range_check_inputs">match_range_check_inputs</a>(lot_size_ref, tick_size_ref, min_lots_ref,
@@ -1166,7 +1164,7 @@ amounts for matching in accordance with other specifed values
     // Verify fill amounts, compute final threshold allowance counts
     <a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>(min_lots_ref, max_lots_ref, min_ticks_ref,
         max_ticks_ref, &lots_until_max, &ticks_until_max,
-        lots_until_max_final_ref_mut, ticks_until_max_final_ref_mut);
+        lots_filled_ref_mut, ticks_filled_ref_mut);
 }
 </code></pre>
 
@@ -2033,12 +2031,10 @@ exceeding maximum threshold
 * <code>ticks_until_max_ref</code>: Immutable reference to counter for
 number of ticks that matching engine could have filled before
 exceeding maximum threshold
-* <code>lots_until_max_final_ref_mut</code>: Mutable reference to counter
-for number of lots that can be filled before exceeding maximum
-threshold, after matching engine executes
-* <code>ticks_until_max_final_ref</code>: Mutable reference to counter for
-number of ticks that can be filled before exceeding maximum
-threshold, after matching engine executes
+* <code>lots_filled_ref_mut</code>: Mutable reference to counter for number
+of lots filled by matching engine
+* <code>ticks_filled_ref_mut</code>: Mutable reference to counter for
+number of ticks filled by matching engine
 
 
 <a name="@Abort_conditions_26"></a>
@@ -2049,7 +2045,7 @@ threshold, after matching engine executes
 * If minimum tick fill threshold not met
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>(min_lots_ref: &u64, max_lots_ref: &u64, min_ticks_ref: &u64, max_ticks_ref: &u64, lots_until_max_ref: &u64, ticks_until_max_ref: &u64, lots_until_max_final_ref_mut: &<b>mut</b> u64, ticks_until_max_final_ref_mut: &<b>mut</b> u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>(min_lots_ref: &u64, max_lots_ref: &u64, min_ticks_ref: &u64, max_ticks_ref: &u64, lots_until_max_ref: &u64, ticks_until_max_ref: &u64, lots_filled_ref_mut: &<b>mut</b> u64, ticks_filled_ref_mut: &<b>mut</b> u64)
 </code></pre>
 
 
@@ -2065,21 +2061,17 @@ threshold, after matching engine executes
     max_ticks_ref: &u64,
     lots_until_max_ref: &u64,
     ticks_until_max_ref: &u64,
-    lots_until_max_final_ref_mut: &<b>mut</b> u64,
-    ticks_until_max_final_ref_mut: &<b>mut</b> u64
+    lots_filled_ref_mut: &<b>mut</b> u64,
+    ticks_filled_ref_mut: &<b>mut</b> u64
 ) {
     // Calculate number of lots filled
-    <b>let</b> lots_filled = *max_lots_ref - *lots_until_max_ref;
+    *lots_filled_ref_mut = *max_lots_ref - *lots_until_max_ref;
     // Calculate number of ticks filled
-    <b>let</b> ticks_filled = *max_ticks_ref - *ticks_until_max_ref;
-    // Assert minimum lots fill requirement met
-    <b>assert</b>!(!(lots_filled &lt; *min_lots_ref), <a href="market.md#0xc0deb00c_market_E_MIN_LOTS_NOT_FILLED">E_MIN_LOTS_NOT_FILLED</a>);
-    // Assert minimum ticks fill requirement met
-    <b>assert</b>!(!(ticks_filled &lt; *min_ticks_ref), <a href="market.md#0xc0deb00c_market_E_MIN_TICKS_NOT_FILLED">E_MIN_TICKS_NOT_FILLED</a>);
-    // Store final count for lots until max threshold
-    *lots_until_max_final_ref_mut = *lots_until_max_ref;
-    // Store final count for ticks until max threshold
-    *ticks_until_max_final_ref_mut = *ticks_until_max_ref;
+    *ticks_filled_ref_mut = *max_ticks_ref - *ticks_until_max_ref;
+    <b>assert</b>!( // Assert minimum lots filled requirement met
+        !(*lots_filled_ref_mut &lt; *min_lots_ref), <a href="market.md#0xc0deb00c_market_E_MIN_LOTS_NOT_FILLED">E_MIN_LOTS_NOT_FILLED</a>);
+    <b>assert</b>!( // Assert minimum ticks filled requirement met
+        !(*ticks_filled_ref_mut &lt; *min_ticks_ref), <a href="market.md#0xc0deb00c_market_E_MIN_TICKS_NOT_FILLED">E_MIN_TICKS_NOT_FILLED</a>);
 }
 </code></pre>
 

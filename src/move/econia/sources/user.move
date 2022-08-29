@@ -115,13 +115,13 @@ module econia::user {
         /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
         /// a non-coin asset indicated by the market host.
         quote_type_info: type_info::TypeInfo,
-        /// ID of custodian capability required to verify deposits and
-        /// withdrawals of assets that are not coins. A "market-wide
-        /// asset transfer custodian ID" that only applies to markets
-        /// having at least one non-coin asset. For a market having
-        /// one coin asset and one generic asset, only applies to the
-        /// generic asset. Marked `PURE_COIN_PAIR` when base and quote
-        /// types are both coins.
+        /// ID of custodian capability required to verify deposits,
+        /// swaps, and withdrawals of assets that are not coins. A
+        /// "market-wide asset transfer custodian ID" that only applies
+        /// to markets having at least one non-coin asset. For a market
+        /// having one coin asset and one generic asset, only applies to
+        /// the generic asset. Marked `PURE_COIN_PAIR` when base and
+        /// quote types are both coins.
         generic_asset_transfer_custodian_id: u64,
         /// Map from order ID to size of outstanding order, measured in
         /// lots lefts to fill

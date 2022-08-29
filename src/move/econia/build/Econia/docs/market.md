@@ -201,6 +201,17 @@ An order book for a given market
  Number of quote units exchanged per tick
 </dd>
 <dt>
+<code>generic_asset_transfer_custodian_id: u64</code>
+</dt>
+<dd>
+ ID of custodian capability required to verify generic swaps
+ of assets that are not coins. A "market-wide asset transfer
+ custodian ID" that only applies to markets having at least
+ one non-coin asset. For a market having one coin asset and
+ one generic asset, only applies to the generic asset. Marked
+ <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote types are both coins.
+</dd>
+<dt>
 <code>asks: <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
 </dt>
 <dd>
@@ -2717,8 +2728,8 @@ Register new market under signing host.
 * <code>lot_size</code>: Number of base units exchanged per lot
 * <code>tick_size</code>: Number of quote units exchanged per tick
 * <code>generic_asset_transfer_custodian_id</code>: ID of custodian
-capability required to approve deposits and withdrawals of
-non-coin assets
+capability required to approve deposits, swaps, and
+withdrawals of non-coin assets
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id: u64)
@@ -2745,8 +2756,8 @@ non-coin assets
             address_of(host), lot_size, tick_size,
             generic_asset_transfer_custodian_id);
     // Register an under book under host's <a href="">account</a>
-    <a href="market.md#0xc0deb00c_market_register_order_book">register_order_book</a>&lt;BaseType, QuoteType&gt;(
-        host, market_id, lot_size, tick_size);
+    <a href="market.md#0xc0deb00c_market_register_order_book">register_order_book</a>&lt;BaseType, QuoteType&gt;(host, market_id,
+        lot_size, tick_size, generic_asset_transfer_custodian_id);
 }
 </code></pre>
 
@@ -2778,9 +2789,12 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>market_id</code>: Market ID
 * <code>lot_size</code>: Number of base units exchanged per lot
 * <code>tick_size</code>: Number of quote units exchanged per tick
+* <code>generic_asset_transfer_custodian_id</code>: ID of custodian
+capability required to approve deposits, swaps, and
+withdrawals of non-coin assets
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_order_book">register_order_book</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, market_id: u64, lot_size: u64, tick_size: u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_order_book">register_order_book</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, market_id: u64, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id: u64)
 </code></pre>
 
 
@@ -2797,6 +2811,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
     market_id: u64,
     lot_size: u64,
     tick_size: u64,
+    generic_asset_transfer_custodian_id: u64
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <b>let</b> host_address = address_of(host); // Get host <b>address</b>
     // If host does not have an order books map
@@ -2814,6 +2829,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
         quote_type_info: <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;(),
         lot_size,
         tick_size,
+        generic_asset_transfer_custodian_id,
         asks: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
         bids: <a href="critbit.md#0xc0deb00c_critbit_empty">critbit::empty</a>(),
         min_ask: <a href="market.md#0xc0deb00c_market_MIN_ASK_DEFAULT">MIN_ASK_DEFAULT</a>,

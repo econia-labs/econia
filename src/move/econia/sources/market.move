@@ -56,6 +56,14 @@ module econia::market {
         lot_size: u64,
         /// Number of quote units exchanged per tick
         tick_size: u64,
+        /// ID of custodian capability required to verify deposits,
+        /// swaps, and withdrawals of assets that are not coins. A
+        /// "market-wide asset transfer custodian ID" that only applies
+        /// to markets having at least one non-coin asset. For a market
+        /// having one coin asset and one generic asset, only applies to
+        /// the generic asset. Marked `PURE_COIN_PAIR` when base and
+        /// quote types are both coins.
+        generic_asset_transfer_custodian_id: u64,
         /// Asks tree
         asks: CritBitTree<Order>,
         /// Bids tree
@@ -1619,8 +1627,8 @@ module econia::market {
     /// * `lot_size`: Number of base units exchanged per lot
     /// * `tick_size`: Number of quote units exchanged per tick
     /// * `generic_asset_transfer_custodian_id`: ID of custodian
-    ///    capability required to approve deposits and withdrawals of
-    ///    non-coin assets
+    ///    capability required to approve deposits, swaps, and
+    ///    withdrawals of non-coin assets
     fun register_market<
         BaseType,
         QuoteType
@@ -1636,8 +1644,8 @@ module econia::market {
                 address_of(host), lot_size, tick_size,
                 generic_asset_transfer_custodian_id);
         // Register an under book under host's account
-        register_order_book<BaseType, QuoteType>(
-            host, market_id, lot_size, tick_size);
+        register_order_book<BaseType, QuoteType>(host, market_id,
+            lot_size, tick_size, generic_asset_transfer_custodian_id);
     }
 
     /// Register host with an `OrderBook`, initializing their
@@ -1652,6 +1660,9 @@ module econia::market {
     /// * `market_id`: Market ID
     /// * `lot_size`: Number of base units exchanged per lot
     /// * `tick_size`: Number of quote units exchanged per tick
+    /// * `generic_asset_transfer_custodian_id`: ID of custodian
+    ///    capability required to approve deposits, swaps, and
+    ///    withdrawals of non-coin assets
     fun register_order_book<
         BaseType,
         QuoteType
@@ -1660,6 +1671,7 @@ module econia::market {
         market_id: u64,
         lot_size: u64,
         tick_size: u64,
+        generic_asset_transfer_custodian_id: u64
     ) acquires OrderBooks {
         let host_address = address_of(host); // Get host address
         // If host does not have an order books map
@@ -1677,6 +1689,7 @@ module econia::market {
             quote_type_info: type_info::type_of<QuoteType>(),
             lot_size,
             tick_size,
+            generic_asset_transfer_custodian_id,
             asks: critbit::empty(),
             bids: critbit::empty(),
             min_ask: MIN_ASK_DEFAULT,
@@ -2119,7 +2132,8 @@ module econia::market {
         econia: &signer
     ) acquires OrderBooks {
         // Register order book
-        register_order_book<BG, QG>(econia, MARKET_ID, LOT_SIZE, TICK_SIZE);
+        register_order_book<BG, QG>(econia, MARKET_ID, LOT_SIZE, TICK_SIZE,
+            GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
         // Attempt invalid invocation
         cancel_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, ASK, 0);
     }
@@ -2131,7 +2145,8 @@ module econia::market {
         // Declare order book parameters
         let (market_id, tick_size, lot_size) = (0, 1, 2);
         // Register an order book
-        register_order_book<BG, QG>(user, market_id, lot_size, tick_size);
+        register_order_book<BG, QG>(user, market_id, lot_size, tick_size,
+            GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
         // Borrow mutable reference to order books map
         let order_books_map_ref_mut =
             &mut borrow_global_mut<OrderBooks>(@user).map;
@@ -2875,9 +2890,11 @@ module econia::market {
         user: &signer
     ) acquires OrderBooks {
         // Register order book
-        register_order_book<BC, QC>(user, 1, 2, 3);
+        register_order_book<BC, QC>(user, 1, 2, 3,
+            GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
         // Attempt invalid re-registration
-        register_order_book<BC, QC>(user, 1, 2, 3);
+        register_order_book<BC, QC>(user, 1, 2, 3,
+            GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
     }
 
     #[test(user = @user)]
@@ -2887,20 +2904,22 @@ module econia::market {
     ) acquires OrderBooks {
         // Declare order book values
         let market_id_1 = 123;
-        let lot_size_1 = 456;
-        let tick_size_1 = 789;
         let base_type_info_1 = type_info::type_of<BC>();
         let quote_type_info_1 = type_info::type_of<QC>();
+        let lot_size_1 = 456;
+        let tick_size_1 = 789;
+        let generic_asset_transfer_custodian_id_1 = 3;
         let market_id_2 = 321;
-        let lot_size_2 = 654;
-        let tick_size_2 = 987;
         let base_type_info_2 = type_info::type_of<BG>();
         let quote_type_info_2 = type_info::type_of<QG>();
+        let lot_size_2 = 654;
+        let tick_size_2 = 987;
+        let generic_asset_transfer_custodian_id_2 = 5;
         // Register order books
-        register_order_book<BC, QC>(
-            user, market_id_1, lot_size_1, tick_size_1);
-        register_order_book<BG, QG>(
-            user, market_id_2, lot_size_2, tick_size_2);
+        register_order_book<BC, QC>(user, market_id_1, lot_size_1,
+            tick_size_1, generic_asset_transfer_custodian_id_1);
+        register_order_book<BG, QG>(user, market_id_2, lot_size_2,
+            tick_size_2, generic_asset_transfer_custodian_id_2);
         // Borrow immutable reference to order books map
         let order_books_map_ref = &borrow_global<OrderBooks>(@user).map;
         // Borrow immutable reference to first order book
@@ -2911,6 +2930,8 @@ module econia::market {
         assert!(order_book_ref_1.quote_type_info == quote_type_info_1, 0);
         assert!(order_book_ref_1.lot_size == lot_size_1, 0);
         assert!(order_book_ref_1.tick_size == tick_size_1, 0);
+        assert!(order_book_ref_1.generic_asset_transfer_custodian_id ==
+            generic_asset_transfer_custodian_id_1, 0);
         assert!(critbit::is_empty(&order_book_ref_1.asks), 0);
         assert!(critbit::is_empty(&order_book_ref_1.bids), 0);
         assert!(order_book_ref_1.max_bid == MAX_BID_DEFAULT, 0);
@@ -2924,6 +2945,8 @@ module econia::market {
         assert!(order_book_ref_2.quote_type_info == quote_type_info_2, 0);
         assert!(order_book_ref_2.lot_size == lot_size_2, 0);
         assert!(order_book_ref_2.tick_size == tick_size_2, 0);
+        assert!(order_book_ref_1.generic_asset_transfer_custodian_id ==
+            generic_asset_transfer_custodian_id_1, 0);
         assert!(critbit::is_empty(&order_book_ref_2.asks), 0);
         assert!(critbit::is_empty(&order_book_ref_2.bids), 0);
         assert!(order_book_ref_2.max_bid == MAX_BID_DEFAULT, 0);
@@ -2937,7 +2960,8 @@ module econia::market {
         user: &signer
     ) acquires OrderBooks {
         // Register an order book
-        register_order_book<BG, QG>(user, 0, 1, 2);
+        register_order_book<BG, QG>(user, 0, 1, 2,
+            GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
         // Verify it was registered
         verify_order_book_exists(@user, 0);
     }
@@ -2949,7 +2973,8 @@ module econia::market {
         user: &signer
     ) acquires OrderBooks {
         // Register an order book
-        register_order_book<BG, QG>(user, 0, 1, 2);
+        register_order_book<BG, QG>(user, 0, 1, 2,
+            GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
         // Attempt invalid invocation
         verify_order_book_exists(@user, 1);
     }

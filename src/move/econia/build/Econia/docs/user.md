@@ -231,13 +231,13 @@ market account ID
 <code>generic_asset_transfer_custodian_id: u64</code>
 </dt>
 <dd>
- ID of custodian capability required to verify deposits and
- withdrawals of assets that are not coins. A "market-wide
- asset transfer custodian ID" that only applies to markets
- having at least one non-coin asset. For a market having
- one coin asset and one generic asset, only applies to the
- generic asset. Marked <code><a href="user.md#0xc0deb00c_user_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote
- types are both coins.
+ ID of custodian capability required to verify deposits,
+ swaps, and withdrawals of assets that are not coins. A
+ "market-wide asset transfer custodian ID" that only applies
+ to markets having at least one non-coin asset. For a market
+ having one coin asset and one generic asset, only applies to
+ the generic asset. Marked <code><a href="user.md#0xc0deb00c_user_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and
+ quote types are both coins.
 </dd>
 <dt>
 <code>asks: <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;u64&gt;</code>

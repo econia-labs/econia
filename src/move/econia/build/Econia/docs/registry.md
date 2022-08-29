@@ -231,13 +231,13 @@ Information about a trading pair
 <code>generic_asset_transfer_custodian_id: u64</code>
 </dt>
 <dd>
- ID of custodian capability required to verify deposits and
- withdrawals of assets that are not coins. A "market-wide
- asset transfer custodian ID" that only applies to markets
- having at least one non-coin asset. For a market having
- one coin asset and one generic asset, only applies to the
- generic asset. Marked <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote
- types are both coins.
+ ID of custodian capability required to verify deposits,
+ swaps, and withdrawals of assets that are not coins. A
+ "market-wide asset transfer custodian ID" that only applies
+ to markets having at least one non-coin asset. For a market
+ having one coin asset and one generic asset, only applies to
+ the generic asset. Marked <code><a href="registry.md#0xc0deb00c_registry_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and
+ quote types are both coins.
 </dd>
 <dt>
 <code>agnostic_disambiguator: u64</code>

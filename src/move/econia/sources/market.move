@@ -100,34 +100,21 @@ module econia::market {
     const E_INVALID_CUSTODIAN: u64 = 7;
     /// When a post-or-abort limit order crosses the spread
     const E_POST_OR_ABORT_CROSSED_SPREAD: u64 = 8;
-    /// When maximum indicated lots to match is 0
-    const E_MAX_LOTS_0: u64 = 9;
-    /// When maximum indicated ticks to match is 0
-    const E_MAX_TICKS_0: u64 = 10;
-    /// When minimum indicated lots to match exceeds maximum
-    const E_MIN_LOTS_EXCEEDS_MAX: u64 = 11;
-    /// When minimum indicated ticks to match exceeds maximum
-    const E_MIN_TICKS_EXCEEDS_MAX: u64 = 12;
+    /// When matching overflows the asset received from trading
+    const E_INBOUND_ASSET_OVERFLOW: u64 = 9;
+    /// When not enough asset to trade away for indicated match values
+    const E_NOT_ENOUGH_OUTBOUND_ASSET: u64 = 10;
+    /// When minimum indicated base units to match exceeds maximum
+    const E_MIN_BASE_EXCEEDS_MAX: u64 = 11;
+    /// When minimum indicated quote units to match exceeds maximum
+    const E_MIN_QUOTE_EXCEEDS_MAX: u64 = 12;
     /// When indicated limit price is 0
     const E_LIMIT_PRICE_0: u64 = 13;
-    /// When filling max lots overflows base asset units
-    const E_BASE_MAX_OVERFLOW: u64 = 14;
-    /// When filling max ticks overflows quote asset units
-    const E_QUOTE_MAX_OVERFLOW: u64 = 15;
-    /// When not enough base assets for operation
-    const E_NOT_ENOUGH_BASE_COINS: u64 = 16;
-    /// When not enough quote assets for operation
-    const E_NOT_ENOUGH_QUOTE_COINS: u64 = 17;
-    /// When indicated operation overflows base coins on hand if max
-    /// base is filled
-    const E_BASE_COIN_MAX_OVERFLOW: u64 = 18;
-    /// When indicated operation overflows quote coins on hand if max
-    /// quote is filled
-    const E_QUOTE_COIN_MAX_OVERFLOW: u64 = 19;
     /// When invalid base type indicated
-    const E_INVALID_BASE: u64 = 20;
+    const E_INVALID_BASE: u64 = 14;
     /// When invalid quote type indicated
-    const E_INVALID_QUOTE: u64 = 21;
+    const E_INVALID_QUOTE: u64 = 15;
+
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -289,50 +276,32 @@ module econia::market {
         let base_value = coin::value(base_coins_ref_mut);
         // Get value of quote coins on hand
         let quote_value = coin::value(quote_coins_ref_mut);
-        let (optional_base_coins, optional_quote_coins);
-        if (direction == BUY) { // If buying base with quote
-            // Assert have enough quote coins on hand for max fill
-            assert!(!(quote_value < max_quote), E_NOT_ENOUGH_QUOTE_COINS);
-            // Calculate max possible base coins on hand post-swap
-            let max_base_final = (base_value as u128) + (max_base as u128);
-            // Assert max possible base coins does not userflow a u64
-            assert!(!(max_base_final > (HI_64 as u128)),
-                E_BASE_COIN_MAX_OVERFLOW);
-            // Wrap max possible quote coins needed in an option to pass
-            // through matching engine
-            optional_quote_coins =
-                option::some(coin::extract(quote_coins_ref_mut, max_quote));
-            // Wrap zero base coins in an option to pass through
-            // matching engine
-            optional_base_coins = option::some(coin::zero<BaseCoinType>());
-        } else { // If selling base for quote
-            // Assert have enough base coins on hand for max fill
-            assert!(!(base_value < max_base), E_NOT_ENOUGH_BASE_COINS);
-            // Calculate max possible quote coins on hand post-swap
-            let max_quote_final = (quote_value as u128) + (max_quote as u128);
-            // Assert max possible quote coins does not userflow a u64
-            assert!(!(max_quote_final > (HI_64 as u128)),
-                E_QUOTE_COIN_MAX_OVERFLOW);
-            // Wrap max possible base coins needed in an option to pass
-            // through matching engine
-            optional_base_coins =
-                option::some(coin::extract(base_coins_ref_mut, max_base));
-            // Wrap zero quote coins in an option to pass through
-            // matching engine
-            optional_quote_coins = option::some(coin::zero<QuoteCoinType>());
-        };
-        // Declare variables to track base and quote coins filled
+        // Range check fill amounts
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_value, &base_value, &quote_value, &quote_value);
+        // Get option-wrapped base and quote coins for matching engine
+        let (optional_base_coins, optional_quote_coins) =
+            if (direction == BUY) ( // If buying base with quote
+                // Start with 0 base coins
+                option::some(coin::zero<BaseCoinType>()),
+                // Start with max quote coins needed for trade
+                option::some(coin::extract(quote_coins_ref_mut, max_quote))
+            ) else ( // If selling base for quote
+                // Start with max base coins needed for trade
+                option::some(coin::extract(base_coins_ref_mut, max_base)),
+                // Start with 0 quote coins
+                option::some(coin::zero<QuoteCoinType>())
+            );
+        // Declare tracker variables for amount of base and quote filled
         let (base_filled, quote_filled) = (0, 0);
-        // Swap against matching engine
+        // Swap against order book
         swap<BaseCoinType, QuoteCoinType>(&host, &market_id, &direction,
             &min_base, &max_base, &min_quote, &max_quote, &limit_price,
             &mut optional_base_coins, &mut optional_quote_coins,
             &mut base_filled, &mut quote_filled);
-        // Merge base coins from matching engine back into coins on hand
-        coin::merge(
+        coin::merge( // Merge post-match base coins into coins on hand
             base_coins_ref_mut, option::destroy_some(optional_base_coins));
-        // Merge post-match quote coins back into coins on hand
-        coin::merge(
+        coin::merge( // Merge post-match quote coins into coins on hand
             quote_coins_ref_mut, option::destroy_some(optional_quote_coins));
         // Return count for base coins and quote coins filled
         (base_filled, quote_filled)
@@ -455,8 +424,6 @@ module econia::market {
     /// Swap between a `user`'s `aptos_framework::coin::CoinStore`s.
     ///
     /// Initialize a `CoinStore` is a user does not already have one.
-    ///
-    /// See wrapped call `swap_coins()`.
     public entry fun swap_between_coinstores<
         BaseCoinType,
         QuoteCoinType
@@ -478,20 +445,38 @@ module econia::market {
         // Register quote coin store if user does not have one
         if (!coin::is_account_registered<QuoteCoinType>(user_address))
             coin::register<QuoteCoinType>(user);
-        // Withdraw base coins from user's account
-        let base_coins = coin::withdraw<BaseCoinType>(user,
-            coin::balance<BaseCoinType>(user_address));
-        // Withdraw quote coins from user's account
-        let quote_coins = coin::withdraw<QuoteCoinType>(user,
-            coin::balance<QuoteCoinType>(user_address));
-        // Swap coins against order book
-        swap_coins<BaseCoinType, QuoteCoinType>(host, market_id, direction,
-            min_base, max_base, min_quote, max_quote, limit_price,
-            &mut base_coins, &mut quote_coins);
-        // Deposit base coins back to user's coin store
-        coin::deposit(user_address, base_coins);
-        // Deposit quote coins back to user's coin store
-        coin::deposit(user_address, quote_coins);
+        // Get value of base coins on hand
+        let base_value = coin::balance<BaseCoinType>(user_address);
+        // Get value of quote coins on hand
+        let quote_value = coin::balance<QuoteCoinType>(user_address);
+        // Range check fill amounts
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_value, &base_value, &quote_value, &quote_value);
+        // Get option-wrapped base and quote coins for matching engine
+        let (optional_base_coins, optional_quote_coins) =
+            if (direction == BUY) ( // If buying base with quote
+                // Start with 0 base coins
+                option::some(coin::zero<BaseCoinType>()),
+                // Start with max quote coins needed for trade
+                option::some(coin::withdraw<QuoteCoinType>(user, max_quote))
+            ) else ( // If selling base for quote
+                // Start with max base coins needed for trade
+                option::some(coin::withdraw<BaseCoinType>(user, max_quote)),
+                // Start with 0 quote coins
+                option::some(coin::zero<QuoteCoinType>())
+            );
+        // Declare tracker variables for amount of base and quote
+        // filled, needed for function call but dropped later
+        let (base_filled_drop, quote_filled_drop) = (0, 0);
+        // Swap against order book
+        swap<BaseCoinType, QuoteCoinType>(&host, &market_id, &direction,
+            &min_base, &max_base, &min_quote, &max_quote, &limit_price,
+            &mut optional_base_coins, &mut optional_quote_coins,
+            &mut base_filled_drop, &mut quote_filled_drop);
+        coin::deposit( // Deposit base coins back to user's coin store
+            user_address, option::destroy_some(optional_base_coins));
+        coin::deposit( // Deposit quote coins back to user's coin store
+            user_address, option::destroy_some(optional_quote_coins));
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -670,6 +655,14 @@ module econia::market {
     ///   amounts for matching in accordance with other specifed values
     /// * That `lot_size_ref` and `tick_size_ref` indicate the same
     ///   lot and tick size as `order_book_ref_mut`
+    /// * That min/max fill amounts have been checked via
+    ///   `match_range_check_fills()`
+    ///
+    /// # Checks not performed
+    /// * Does not enforce that limit price is nonzero, as a limit price
+    ///   of zero is effectively a flag to sell at any price.
+    /// * Does not enforce that max fill amounts are nonzero, as the
+    ///   matching engine simply returns silently before overfilling
     fun match<
         BaseType,
         QuoteType
@@ -691,14 +684,11 @@ module econia::market {
         lots_filled_ref_mut: &mut u64,
         ticks_filled_ref_mut: &mut u64
     ) {
-        // Check input values
-        match_check_inputs<BaseType, QuoteType>(order_book_ref_mut,
-            min_lots_ref, max_lots_ref, min_ticks_ref, max_ticks_ref);
-        // Initialize max counters and side-wise matching variables
+        // Initialize variables, check types
         let (lots_until_max, ticks_until_max, side, tree_ref_mut,
              spread_maker_ref_mut, n_orders, traversal_direction) =
-                match_init(order_book_ref_mut, direction_ref, max_lots_ref,
-                    max_ticks_ref);
+                match_init<BaseType, QuoteType>(order_book_ref_mut,
+                    direction_ref, max_lots_ref, max_ticks_ref);
         if (n_orders != 0) { // If orders tree has orders to match
             // Match them via loopwise iterated traversal
             match_loop<BaseType, QuoteType>(market_id_ref, tree_ref_mut,
@@ -713,66 +703,7 @@ module econia::market {
             lots_filled_ref_mut, ticks_filled_ref_mut);
     }
 
-    /// Check inputs for `match()`.
-    ///
-    /// Does not enforce that limit price is nonzero, as a limit price
-    /// of zero is effectively a flag to sell at any price.
-    ///
-    /// # Parameters
-    /// * `order_book_ref`: Immutable reference to an `OrderBook`
-    /// * `min_lots_ref`: Immutable reference to minimum number of lots
-    ///   to fill
-    /// * `max_lots_ref`: Immutable reference to maximum number of lots
-    ///   to fill
-    /// * `min_ticks_ref`: Immutable reference to minimum number of
-    ///   ticks to fill
-    /// * `max_ticks_ref`: Immutable reference to maximum number of
-    ///   ticks to fill
-    ///
-    /// # Abort conditions
-    /// * If `BaseType`, is not base type for order book
-    /// * If `QuoteType` is not quote type for order book
-    /// * If maximum lots to match is indicated as 0
-    /// * If maximum ticks to match is indicated as 0
-    /// * If minimum lots to match is indicated as greater than max
-    /// * If minimum ticks to match is indicated as greater than max
-    /// * If filling max lots overflows base asset units
-    /// * If filling max ticks overflows quote asset units
-    fun match_check_inputs<
-        BaseType,
-        QuoteType
-    >(
-        order_book_ref: &OrderBook,
-        min_lots_ref: &u64,
-        max_lots_ref: &u64,
-        min_ticks_ref: &u64,
-        max_ticks_ref: &u64,
-    ) {
-        // Assert base type corresponds to that of market
-        assert!(type_info::type_of<BaseType>() ==
-            order_book_ref.base_type_info, E_INVALID_BASE);
-        // Assert quote type corresponds to that of market
-        assert!(type_info::type_of<QuoteType>() ==
-            order_book_ref.quote_type_info, E_INVALID_QUOTE);
-        // Assert maximum lot allowance is not 0
-        assert!(*max_lots_ref != 0, E_MAX_LOTS_0);
-        // Assert maximum tick allowance is not 0
-        assert!(*max_ticks_ref != 0, E_MAX_TICKS_0);
-        // Assert minimum lot allowance does not exceed maximum
-        assert!(!(*min_lots_ref > *max_lots_ref), E_MIN_LOTS_EXCEEDS_MAX);
-        // Assert minimum tick allowance does not exceed maximum
-        assert!(!(*min_ticks_ref > *max_ticks_ref), E_MIN_TICKS_EXCEEDS_MAX);
-        let max_fill_base = // Calculate max base units filled
-            (*max_lots_ref as u128) * (order_book_ref.lot_size as u128);
-        // Assert max base fill does not overflow a u64
-        assert!(!(max_fill_base > (HI_64 as u128)), E_BASE_MAX_OVERFLOW);
-        let max_fill_quote = // Calculate max quote units filled
-            (*max_ticks_ref as u128) * (order_book_ref.tick_size as u128);
-        // Assert max quote fill does not overflow a u64
-        assert!(!(max_fill_quote > (HI_64 as u128)), E_QUOTE_MAX_OVERFLOW);
-    }
-
-    /// Initialize local variables for `match()`.
+    /// Initialize local variables for `match()`, verify types.
     ///
     /// Must determine orders tree based on a conditional check on
     /// `direction_ref` in order for `match()` to check that there are
@@ -785,6 +716,10 @@ module econia::market {
     /// initialized here rather than in `match_loop_init()` so they can
     /// be passed by reference and then verified within the local scope
     /// of `match()`, via `match_verify_fills()`.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
     ///
     /// # Parameters
     /// * `order_book_ref_mut`: Mutable reference to corresponding
@@ -808,7 +743,14 @@ module econia::market {
     /// * `u64`: Number of orders in corresponding tree
     /// * `bool`: `LEFT` or `RIGHT` (traversal direction) corresponding
     ///   to `direction_ref`
-    fun match_init(
+    ///
+    /// # Abort conditions
+    /// * If `BaseType`, is not base type for market
+    /// * If `QuoteType` is not quote type for market
+    fun match_init<
+        BaseType,
+        QuoteType
+    >(
         order_book_ref_mut: &mut OrderBook,
         direction_ref: &bool,
         max_lots_ref: &u64,
@@ -822,6 +764,12 @@ module econia::market {
         u64,
         bool,
     ) {
+        // Assert base type corresponds to that of market
+        assert!(type_info::type_of<BaseType>() ==
+            order_book_ref_mut.base_type_info, E_INVALID_BASE);
+        // Assert quote type corresponds to that of market
+        assert!(type_info::type_of<QuoteType>() ==
+            order_book_ref_mut.quote_type_info, E_INVALID_QUOTE);
         // Get side that order fills against, mutable reference to
         // orders tree to fill against, mutable reference to the spread
         // maker for given side, and traversal direction
@@ -1329,6 +1277,92 @@ module econia::market {
         (target_order_id, target_order_ref_mut, should_break)
     }
 
+    /// Range check asset fill amounts to prepare for `match()`.
+    ///
+    /// # Terminology
+    /// * "Inbound asset" is asset received by user: `BaseType` for
+    ///   `BUY`, and `QuoteType` for `SELL`
+    /// * "Outbound asset" is asset traded away by user: `BaseType` for
+    ///   `SELL`, and `QuoteType` for `BUY`
+    /// * "Available asset" is the amount one has on hand already
+    /// * "Asset ceiling" is the value that an available asset count
+    ///   could increase to beyond its indicated value even without
+    ///   executing the current match operation, if the available asset
+    ///   count is taken from a user's market account, where outstanding
+    ///   limit orders can fill into. If the available asset count is
+    ///   not derived from a market account, and is instead derived
+    ///   from standalone coins or from a coin store, the corresponding
+    ///   asset ceiling should just be passed as the same value as the
+    ///   available amount.
+    ///
+    /// # Parameters
+    /// * `order_book_ref`: Immutable reference to market `OrderBook`
+    /// * `direction_ref`: `&BUY` or `&SELL`
+    /// * `min_base_ref`: Immutable reference to minimum number of base
+    ///   units to fill
+    /// * `max_base_ref`: Immutable reference to maximum number of base
+    ///   units to fill
+    /// * `min_quote_ref`: Immutable reference to minimum number of
+    ///   quote units to fill
+    /// * `max_quote_ref`: Immutable reference to maximum number of
+    ///   quote units to fill
+    /// * `base_available_ref`: Immutable reference to amount of
+    ///   available base asset, only checked for a `SELL`
+    /// * `base_ceiling_ref`: Immutable reference to base asset ceiling,
+    ///   only checked for a `BUY`
+    /// * `quote_available_ref`: Immutable reference to amount of
+    ///   available quote asset, only checked for a `BUY`
+    /// * `quote_ceiling_ref`: Immutable reference to quote asset
+    ///   ceiling, only checked for a `SELL`
+    ///
+    /// # Abort conditions
+    /// * If maximum base to match is indicated as 0
+    /// * If maximum quote to match is indicated as 0
+    /// * If minimum base to match is indicated as greater than max
+    /// * If minimum quote to match is indicated as greater than max
+    /// * If filling the inbound asset to the maximum indicated amount
+    ///   results in an inbound asset ceiling overflow
+    /// * If there is not enough available outbound asset to cover the
+    ///   corresponding max fill amount
+    ///
+    /// # Checks not performed
+    /// * Does not enforce that max fill amounts are nonzero, as the
+    ///   matching engine simply returns silently before overfilling
+    fun match_range_check_fills(
+        direction_ref: &bool,
+        min_base_ref: &u64,
+        max_base_ref: &u64,
+        min_quote_ref: &u64,
+        max_quote_ref: &u64,
+        base_available_ref: &u64,
+        base_ceiling_ref: &u64,
+        quote_available_ref: &u64,
+        quote_ceiling_ref: &u64
+    ) {
+        // Assert minimum base allowance does not exceed maximum
+        assert!(!(*min_base_ref > *max_base_ref), E_MIN_BASE_EXCEEDS_MAX);
+        // Assert minimum quote allowance does not exceed maximum
+        assert!(!(*min_quote_ref > *max_quote_ref), E_MIN_QUOTE_EXCEEDS_MAX);
+        // Get ceiling for inbound asset type, max inbound asset fill
+        // amount, available outbound asset type, and max outbound asset
+        // fill amount, based on side
+        let (in_ceiling, max_in, out_available, max_out) =
+            // If a buy, get base and trade away quote
+            if (*direction_ref == BUY) (
+                *base_ceiling_ref,    *max_base_ref,
+                *quote_available_ref, *max_quote_ref,
+            ) else ( // If a sell, get quote, give base
+                *quote_ceiling_ref,   *max_quote_ref,
+                *base_available_ref,  *max_base_ref,
+            );
+        // Calculate maximum ceiling for inbound asset type, post-match
+        let in_ceiling_max = (in_ceiling as u128) + (max_in as u128);
+        // Assert max inbound asset ceiling does not overflow a u64
+        assert!(!(in_ceiling_max > (HI_64 as u128)), E_INBOUND_ASSET_OVERFLOW);
+        // Assert enough outbound asset to cover max fill amount
+        assert!(!(out_available < max_out), E_NOT_ENOUGH_OUTBOUND_ASSET);
+    }
+
     /// Calculate number of lots and ticks filled, verify minimum
     /// thresholds met.
     ///
@@ -1588,6 +1622,10 @@ module econia::market {
     ///   of base units filled by matching engine
     /// * `quote_filled_ref_mut`: Mutable reference to counter for
     ///   number of quote units filled by matching engine
+    ///
+    /// # Assumes
+    /// * That min/max fill amounts have been checked via
+    ///   `match_range_check_fills()`
     fun swap<
         BaseType,
         QuoteType
@@ -1622,8 +1660,8 @@ module econia::market {
         // Match against the book
         match<BaseType, QuoteType>(market_id_ref, order_book_ref_mut,
             &lot_size, &tick_size, direction_ref,
-            &(*min_base_ref * lot_size), &(*max_base_ref * lot_size),
-            &(*min_quote_ref * tick_size), &(*max_quote_ref * tick_size),
+            &(*min_base_ref / lot_size), &(*max_base_ref / lot_size),
+            &(*min_quote_ref / tick_size), &(*max_quote_ref / tick_size),
             limit_price_ref, optional_base_coins_ref_mut,
             optional_quote_coins_ref_mut, &mut lots_filled, &mut ticks_filled);
         // Calculate base units filled
@@ -2003,238 +2041,6 @@ module econia::market {
         assert!(get_counter(order_book_ref_mut) == 0, 0);
         assert!(get_counter(order_book_ref_mut) == 1, 0);
         assert!(get_counter(order_book_ref_mut) == 2, 0);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 20)]
-    /// Verify failure for invalid base
-    fun test_match_check_inputs_invalid_base():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BC, QG>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-        order_book
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 21)]
-    /// Verify failure for invalid quote
-    fun test_match_check_inputs_invalid_quote():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BG, QC>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-        order_book
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 9)]
-    /// Verify failure for max lots 0
-    fun test_match_check_inputs_max_lots_0():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 0;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-        order_book
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 10)]
-    /// Verify failure for max ticks 0
-    fun test_match_check_inputs_max_ticks_0():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 0;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-        order_book
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 11)]
-    /// Verify failure for min lots exceeds max
-    fun test_match_check_inputs_min_lots_exceeds_max():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 2;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-    order_book
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 12)]
-    /// Verify failure for min ticks exceeds max
-    fun test_match_check_inputs_min_ticks_exceeds_max():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 2;
-        let max_ticks   = 1;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-    order_book
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 14)]
-    /// Verify failure for max lot fill overflows base units
-    fun test_match_check_inputs_overflow_base():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = HI_64;
-        let tick_size   = 1;
-        let min_lots    = 1;
-        let max_lots    = 2;
-        let min_ticks   = 1;
-        let max_ticks   = 1;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-    order_book
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 15)]
-    /// Verify failure for max tick fill overflows quote units
-    fun test_match_check_inputs_overflow_quote():
-    OrderBook {
-        // Assign inputs
-        let lot_size    = 1;
-        let tick_size   = HI_64;
-        let min_lots    = 1;
-        let max_lots    = 1;
-        let min_ticks   = 1;
-        let max_ticks   = 2;
-        let order_book = OrderBook{
-            base_type_info: type_info::type_of<BG>(),
-            quote_type_info: type_info::type_of<QG>(),
-            lot_size,
-            tick_size,
-            asks: critbit::empty(),
-            bids: critbit::empty(),
-            min_ask: MIN_ASK_DEFAULT,
-            max_bid: MAX_BID_DEFAULT,
-            counter: 0
-        };
-        // Trip indicated error
-        match_check_inputs<BG, QG>(&order_book, &min_lots, &max_lots,
-            &min_ticks, &max_ticks);
-    order_book
     }
 
     #[test]

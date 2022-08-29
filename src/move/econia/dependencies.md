@@ -73,7 +73,7 @@ flowchart TD
     swap_generic[swap_generic]
     match_verify_fills[match_verify_fills]
     match_loop_init[match_loop_init]
-    match_range_check_inputs[match_range_check_inputs]
+    match_range_check_fills[match_range_check_fills]
     swap_between_coinstores[swap_between_coinstores]
 
 %% Class definitions
@@ -102,15 +102,16 @@ flowchart TD
     class match_loop_order_follow_up implemented;
     class match_loop_break implemented;
     class match_loop_init implemented;
-    class match_range_check_inputs implemented;
+    class match_range_check_fills implemented;
 
 %% Node relationships
 
-    swap_between_coinstores --> swap_coins
-    match --> match_range_check_inputs
+    swap_between_coinstores --> swap
+    swap_between_coinstores --> match_range_check_fills
     match --> match_verify_fills
     swap_generic --> swap
     swap_coins --> swap
+    swap_coins --> match_range_check_fills
     place_limit_order_user --> place_limit_order
     place_limit_order_custodian --> place_limit_order
     place_limit_order --> match_from_market_account

@@ -204,12 +204,13 @@ An order book for a given market
 <code>generic_asset_transfer_custodian_id: u64</code>
 </dt>
 <dd>
- ID of custodian capability required to verify generic swaps
- of assets that are not coins. A "market-wide asset transfer
- custodian ID" that only applies to markets having at least
- one non-coin asset. For a market having one coin asset and
- one generic asset, only applies to the generic asset. Marked
- <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and quote types are both coins.
+ ID of custodian capability required to verify deposits,
+ swaps, and withdrawals of assets that are not coins. A
+ "market-wide asset transfer custodian ID" that only applies
+ to markets having at least one non-coin asset. For a market
+ having one coin asset and one generic asset, only applies to
+ the generic asset. Marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when base and
+ quote types are both coins.
 </dd>
 <dt>
 <code>asks: <a href="critbit.md#0xc0deb00c_critbit_CritBitTree">critbit::CritBitTree</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
@@ -833,7 +834,7 @@ a <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>.
     <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseCoinType, QuoteCoinType&gt;(&host, &market_id, &direction,
         &min_base, &max_base, &min_quote, &max_quote, &limit_price,
         &<b>mut</b> optional_base_coins, &<b>mut</b> optional_quote_coins,
-        &<b>mut</b> base_filled, &<b>mut</b> quote_filled);
+        &<b>mut</b> base_filled, &<b>mut</b> quote_filled, &<a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a>);
     <a href="_merge">coin::merge</a>( // Merge <b>post</b>-match base coins into coins on hand
         base_coins_ref_mut, <a href="_destroy_some">option::destroy_some</a>(optional_base_coins));
     <a href="_merge">coin::merge</a>( // Merge <b>post</b>-match quote coins into coins on hand
@@ -906,7 +907,7 @@ base is not a coin type but base coin option is some
 quote is not a coin type but quote coin option is some
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;): (u64, u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64)
 </code></pre>
 
 
@@ -931,7 +932,7 @@ quote is not a coin type but quote coin option is some
         &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;,
     optional_quote_coins_ref_mut:
         &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;,
-    //&generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+    generic_asset_transfer_custodian_capability_ref: &CustodianCapability
 ): (
     u64,
     u64
@@ -965,11 +966,15 @@ quote is not a coin type but quote coin option is some
         &max_quote, &base_value, &base_value, &quote_value, &quote_value);
     // Declare tracker variables for amount of base and quote filled
     <b>let</b> (base_filled, quote_filled) = (0, 0);
+    // Get generic asset transfer custodian ID
+    <b>let</b> generic_asset_transfer_custodian_id = <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(
+        generic_asset_transfer_custodian_capability_ref);
     // Swap against order book
     <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(&host, &market_id, &direction, &min_base,
         &max_base, &min_quote, &max_quote, &limit_price,
         optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
-        &<b>mut</b> base_filled, &<b>mut</b> quote_filled);
+        &<b>mut</b> base_filled, &<b>mut</b> quote_filled,
+        &generic_asset_transfer_custodian_id);
     // Return count for base coins and quote coins filled
     (base_filled, quote_filled)
 }
@@ -1249,7 +1254,7 @@ Initialize a <code>CoinStore</code> is a user does not already have one.
     <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseCoinType, QuoteCoinType&gt;(&host, &market_id, &direction,
         &min_base, &max_base, &min_quote, &max_quote, &limit_price,
         &<b>mut</b> optional_base_coins, &<b>mut</b> optional_quote_coins,
-        &<b>mut</b> base_filled_drop, &<b>mut</b> quote_filled_drop);
+        &<b>mut</b> base_filled_drop, &<b>mut</b> quote_filled_drop, &<a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a>);
     <a href="_deposit">coin::deposit</a>( // Deposit base coins back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store
         user_address, <a href="_destroy_some">option::destroy_some</a>(optional_base_coins));
     <a href="_deposit">coin::deposit</a>( // Deposit quote coins back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="">coin</a> store
@@ -2893,6 +2898,9 @@ in the case of <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
 of base units filled by matching engine
 * <code>quote_filled_ref_mut</code>: Mutable reference to counter for
 number of quote units filled by matching engine
+* <code>generic_asset_transfer_custodian_id_ref</code>: Immutable reference
+to ID of generic asset transfer custodian attempting to place
+swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when no custodian placing swap
 
 
 <a name="@Assumes_52"></a>
@@ -2903,7 +2911,7 @@ number of quote units filled by matching engine
 <code><a href="market.md#0xc0deb00c_market_match_range_check_fills">match_range_check_fills</a>()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(host_ref: &<b>address</b>, market_id_ref: &u64, direction_ref: &bool, min_base_ref: &u64, max_base_ref: &u64, min_quote_ref: &u64, max_quote_ref: &u64, limit_price_ref: &u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, base_filled_ref_mut: &<b>mut</b> u64, quote_filled_ref_mut: &<b>mut</b> u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(host_ref: &<b>address</b>, market_id_ref: &u64, direction_ref: &bool, min_base_ref: &u64, max_base_ref: &u64, min_quote_ref: &u64, max_quote_ref: &u64, limit_price_ref: &u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, base_filled_ref_mut: &<b>mut</b> u64, quote_filled_ref_mut: &<b>mut</b> u64, generic_asset_transfer_custodian_id_ref: &u64)
 </code></pre>
 
 
@@ -2929,7 +2937,8 @@ number of quote units filled by matching engine
     optional_quote_coins_ref_mut:
         &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;,
     base_filled_ref_mut: &<b>mut</b> u64,
-    quote_filled_ref_mut: &<b>mut</b> u64
+    quote_filled_ref_mut: &<b>mut</b> u64,
+    generic_asset_transfer_custodian_id_ref: &u64
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     // Verify order book <b>exists</b>
     <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(*host_ref, *market_id_ref);
@@ -2939,6 +2948,9 @@ number of quote units filled by matching engine
     // Borrow mutable reference <b>to</b> order book
     <b>let</b> order_book_ref_mut =
         <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(order_books_map_ref_mut, *market_id_ref);
+    // Assert correct generic asset transfer custodian ID for <a href="market.md#0xc0deb00c_market">market</a>
+    <b>assert</b>!(*generic_asset_transfer_custodian_id_ref == order_book_ref_mut.
+        generic_asset_transfer_custodian_id, <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
     <b>let</b> lot_size = order_book_ref_mut.lot_size; // Get lot size
     <b>let</b> tick_size = order_book_ref_mut.tick_size; // Get tick size
     // Declare variables <b>to</b> track lots and ticks filled

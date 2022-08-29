@@ -311,7 +311,7 @@ module econia::market {
         swap<BaseCoinType, QuoteCoinType>(&host, &market_id, &direction,
             &min_base, &max_base, &min_quote, &max_quote, &limit_price,
             &mut optional_base_coins, &mut optional_quote_coins,
-            &mut base_filled, &mut quote_filled);
+            &mut base_filled, &mut quote_filled, &PURE_COIN_PAIR);
         coin::merge( // Merge post-match base coins into coins on hand
             base_coins_ref_mut, option::destroy_some(optional_base_coins));
         coin::merge( // Merge post-match quote coins into coins on hand
@@ -373,7 +373,7 @@ module econia::market {
             &mut option::Option<coin::Coin<BaseType>>,
         optional_quote_coins_ref_mut:
             &mut option::Option<coin::Coin<QuoteType>>,
-        //&generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+        generic_asset_transfer_custodian_capability_ref: &CustodianCapability
     ): (
         u64,
         u64
@@ -407,11 +407,15 @@ module econia::market {
             &max_quote, &base_value, &base_value, &quote_value, &quote_value);
         // Declare tracker variables for amount of base and quote filled
         let (base_filled, quote_filled) = (0, 0);
+        // Get generic asset transfer custodian ID
+        let generic_asset_transfer_custodian_id = registry::custodian_id(
+            generic_asset_transfer_custodian_capability_ref);
         // Swap against order book
         swap<BaseType, QuoteType>(&host, &market_id, &direction, &min_base,
             &max_base, &min_quote, &max_quote, &limit_price,
             optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
-            &mut base_filled, &mut quote_filled);
+            &mut base_filled, &mut quote_filled,
+            &generic_asset_transfer_custodian_id);
         // Return count for base coins and quote coins filled
         (base_filled, quote_filled)
     }
@@ -581,7 +585,7 @@ module econia::market {
         swap<BaseCoinType, QuoteCoinType>(&host, &market_id, &direction,
             &min_base, &max_base, &min_quote, &max_quote, &limit_price,
             &mut optional_base_coins, &mut optional_quote_coins,
-            &mut base_filled_drop, &mut quote_filled_drop);
+            &mut base_filled_drop, &mut quote_filled_drop, &PURE_COIN_PAIR);
         coin::deposit( // Deposit base coins back to user's coin store
             user_address, option::destroy_some(optional_base_coins));
         coin::deposit( // Deposit quote coins back to user's coin store
@@ -1736,6 +1740,9 @@ module econia::market {
     ///   of base units filled by matching engine
     /// * `quote_filled_ref_mut`: Mutable reference to counter for
     ///   number of quote units filled by matching engine
+    /// * `generic_asset_transfer_custodian_id_ref`: Immutable reference
+    ///   to ID of generic asset transfer custodian attempting to place
+    ///   swap, marked `PURE_COIN_PAIR` when no custodian placing swap
     ///
     /// # Assumes
     /// * That min/max fill amounts have been checked via
@@ -1757,7 +1764,8 @@ module econia::market {
         optional_quote_coins_ref_mut:
             &mut option::Option<coin::Coin<QuoteType>>,
         base_filled_ref_mut: &mut u64,
-        quote_filled_ref_mut: &mut u64
+        quote_filled_ref_mut: &mut u64,
+        generic_asset_transfer_custodian_id_ref: &u64
     ) acquires OrderBooks {
         // Verify order book exists
         verify_order_book_exists(*host_ref, *market_id_ref);
@@ -1767,6 +1775,9 @@ module econia::market {
         // Borrow mutable reference to order book
         let order_book_ref_mut =
             open_table::borrow_mut(order_books_map_ref_mut, *market_id_ref);
+        // Assert correct generic asset transfer custodian ID for market
+        assert!(*generic_asset_transfer_custodian_id_ref == order_book_ref_mut.
+            generic_asset_transfer_custodian_id, E_INVALID_CUSTODIAN);
         let lot_size = order_book_ref_mut.lot_size; // Get lot size
         let tick_size = order_book_ref_mut.tick_size; // Get tick size
         // Declare variables to track lots and ticks filled

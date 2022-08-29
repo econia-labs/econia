@@ -85,7 +85,7 @@ flowchart TD
     class swap_between_coinstores implemented;
     class match_verify_fills implemented;
     class swap_coins implemented;
-    class swap_generic unimplemented
+    class swap_generic implemented
     class match implemented;
     class match_from_market_account unimplemented;
     class match_init implemented;
@@ -109,6 +109,7 @@ flowchart TD
     swap_between_coinstores --> swap
     swap_between_coinstores --> match_range_check_fills
     match --> match_verify_fills
+    swap_generic --> match_range_check_fills
     swap_generic --> swap
     swap_coins --> swap
     swap_coins --> match_range_check_fills

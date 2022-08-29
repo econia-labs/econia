@@ -372,9 +372,9 @@ module econia::user {
 
     /// Withdraw `amount` of coins of `CoinType` from `user`'s market
     /// account having `market_id` and no general custodian,returning
-    /// coins
+    /// coins.
     ///
-    /// See wrapped function `withdraw_coins()`
+    /// See wrapped function `withdraw_coins()`.
     public fun withdraw_coins_user<CoinType>(
         user: &signer,
         market_id: u64,
@@ -395,9 +395,9 @@ module econia::user {
     /// Withdraw `amount` of non-coin assets of `AssetType` from
     /// `user`'s market account having `market_id` and
     /// `general_custodian_id`, under authority of custodian indicated
-    /// by `generic_asset_transfer_custodian_capability_ref`
+    /// by `generic_asset_transfer_custodian_capability_ref`.
     ///
-    /// See wrapped function `withdraw_asset()`
+    /// See wrapped function `withdraw_asset()`.
     ///
     /// # Abort conditions
     /// * If `AssetType` corresponds to the `CoinType` of an initialized
@@ -782,9 +782,32 @@ module econia::user {
             ceiling_decrement_amount;
     }
 
+    /// Withdraw `amount` of assets of `AssetType` from `user`'s market
+    /// account indicated by `market_account_id` having
+    /// `generic_asset_transfer_custodian_id`, returning coins
+    /// in an `option::Option` if `AssetType` is a coin type.
+    ///
+    /// See wrapped function `withdraw_asset()`.
+    public(friend) fun withdraw_asset_as_option_internal<AssetType>(
+        user: address,
+        market_account_id: u128,
+        amount: u64,
+        generic_asset_transfer_custodian_id: u64
+    ): option::Option<Coin<AssetType>>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        withdraw_asset<AssetType>(user, market_account_id, amount,
+            coin::is_coin_initialized<AssetType>(),
+            generic_asset_transfer_custodian_id)
+    }
+
     /// Withdraw `amount` of coins of `CoinType` from `user`'s market
     /// account indicated by `market_account_id`, returning them
     /// wrapped in an option
+    ///
+    /// See wrapped function `withdraw_asset()`.
     public(friend) fun withdraw_coins_as_option_internal<CoinType>(
         user: address,
         market_account_id: u128,
@@ -2888,6 +2911,84 @@ module econia::user {
             econia, user, NO_CUSTODIAN, NO_CUSTODIAN);
         // Attempt invalid existence verification
         verify_market_account_exists(@user, market_account_id + 1);
+    }
+
+    #[test(
+        econia = @econia,
+        user = @user
+    )]
+    /// Verify state for withdrawing generic and coin assets
+    fun test_withdraw_asset_as_option_internal_mixed(
+        econia: &signer,
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Declare asset count deposit parameters
+        let coin_deposit_amount = 700;
+        let generic_deposit_amount = 500;
+        let coin_withdrawal_amount = 600;
+        let generic_withdrawal_amount = generic_deposit_amount;
+        let coin_end_amount = coin_deposit_amount - coin_withdrawal_amount;
+        let generic_end_amount = 0;
+        // Declare user-level general custodian ID
+        let general_custodian_id = NO_CUSTODIAN;
+        assets::init_coin_types(econia); // Initialize coin types
+        registry::init_registry(econia); // Initalize registry
+        // Register a custodian capability
+        let custodian_capability = registry::register_custodian_capability();
+        // Get ID of custodian capability
+        let generic_asset_transfer_custodian_id = registry::custodian_id(
+            &custodian_capability);
+        // Register market with generic base asset and coin quote asset
+        registry::register_market_internal<BG, QC>(@econia, 1, 2,
+            generic_asset_transfer_custodian_id);
+        let market_id = 0; // Declare market ID
+        let market_account_id =  // Declare market account ID
+            get_market_account_id(market_id, general_custodian_id);
+        // Register user to trade on the account
+        register_market_account<BG, QC>(user, market_id, general_custodian_id);
+        account::create_account_for_test(@user); // Create account
+        coin::register<QC>(user); // Register coin store
+        coin::deposit(@user, assets::mint<QC>(econia, coin_deposit_amount));
+        // Deposit coin asset
+        deposit_from_coinstore<QC>(user, market_id, general_custodian_id,
+            coin_deposit_amount);
+        // Deposit generic asset
+        deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
+            generic_deposit_amount, &custodian_capability);
+        // Withdraw coin asset as option
+        let coin_as_option = withdraw_asset_as_option_internal<QC>(
+            @user, market_account_id, coin_withdrawal_amount,
+            generic_asset_transfer_custodian_id);
+        // Withdraw generic asset as option
+        let generic_as_option = withdraw_asset_as_option_internal<BG>(
+            @user, market_account_id, generic_withdrawal_amount,
+            generic_asset_transfer_custodian_id);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(custodian_capability);
+        // Assert market account asset counts
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_test(@user, market_account_id);
+        assert!(base_total      == generic_end_amount, 0);
+        assert!(base_available  == generic_end_amount, 0);
+        assert!(base_ceiling    == generic_end_amount, 0);
+        assert!(quote_total     == coin_end_amount,    0);
+        assert!(quote_available == coin_end_amount,    0);
+        assert!(quote_ceiling   == coin_end_amount,    0);
+        assert!(get_collateral_value_test<QC>(@user, market_account_id) ==
+            coin_end_amount, 0);
+        // Assert generic asset option is none
+        assert!(option::is_none(&generic_as_option), 0);
+        // Destroy generic asset option
+        option::destroy_none(generic_as_option);
+        // Get option-wrapped coins
+        let coins = option::destroy_some(coin_as_option);
+        // Assert coin value is as expected
+        assert!(coin::value(&coins) == coin_withdrawal_amount, 0);
+        assets::burn(coins); // Burn coins
     }
 
     #[test(

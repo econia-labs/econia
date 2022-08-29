@@ -113,6 +113,7 @@ general custodian ID of <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_
 -  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
     -  [Parameters](#@Parameters_17)
     -  [Assumes](#@Assumes_18)
+-  [Function `withdraw_asset_as_option_internal`](#0xc0deb00c_user_withdraw_asset_as_option_internal)
 -  [Function `withdraw_coins_as_option_internal`](#0xc0deb00c_user_withdraw_coins_as_option_internal)
 -  [Function `borrow_transfer_fields_mixed`](#0xc0deb00c_user_borrow_transfer_fields_mixed)
     -  [Returns](#@Returns_19)
@@ -914,9 +915,9 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
 
 Withdraw <code>amount</code> of coins of <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
 account having <code>market_id</code> and no general custodian,returning
-coins
+coins.
 
-See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>()</code>
+See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
@@ -957,9 +958,9 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins">with
 Withdraw <code>amount</code> of non-coin assets of <code>AssetType</code> from
 <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market account having <code>market_id</code> and
 <code>general_custodian_id</code>, under authority of custodian indicated
-by <code>generic_asset_transfer_custodian_capability_ref</code>
+by <code>generic_asset_transfer_custodian_capability_ref</code>.
 
-See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code>
+See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code>.
 
 
 <a name="@Abort_conditions_6"></a>
@@ -1581,6 +1582,47 @@ corresponding user successfully placed it to begin with.
 
 </details>
 
+<a name="0xc0deb00c_user_withdraw_asset_as_option_internal"></a>
+
+## Function `withdraw_asset_as_option_internal`
+
+Withdraw <code>amount</code> of assets of <code>AssetType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
+account indicated by <code>market_account_id</code> having
+<code>generic_asset_transfer_custodian_id</code>, returning coins
+in an <code><a href="_Option">option::Option</a></code> if <code>AssetType</code> is a coin type.
+
+See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code>.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_asset_as_option_internal">withdraw_asset_as_option_internal</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, amount: u64, generic_asset_transfer_custodian_id: u64): <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_asset_as_option_internal">withdraw_asset_as_option_internal</a>&lt;AssetType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128,
+    amount: u64,
+    generic_asset_transfer_custodian_id: u64
+): <a href="_Option">option::Option</a>&lt;Coin&lt;AssetType&gt;&gt;
+<b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, amount,
+        <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;AssetType&gt;(),
+        generic_asset_transfer_custodian_id)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_withdraw_coins_as_option_internal"></a>
 
 ## Function `withdraw_coins_as_option_internal`
@@ -1588,6 +1630,8 @@ corresponding user successfully placed it to begin with.
 Withdraw <code>amount</code> of coins of <code>CoinType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
 account indicated by <code>market_account_id</code>, returning them
 wrapped in an option
+
+See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code>.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_coins_as_option_internal">withdraw_coins_as_option_internal</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, amount: u64): <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;CoinType&gt;&gt;

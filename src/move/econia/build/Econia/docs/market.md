@@ -46,6 +46,7 @@ open two wallets and trade them against each other.
     -  [Parameters](#@Parameters_16)
     -  [Assumes](#@Assumes_17)
     -  [Checks not performed](#@Checks_not_performed_18)
+-  [Function `match_from_market_account`](#0xc0deb00c_market_match_from_market_account)
 -  [Function `match_init`](#0xc0deb00c_market_match_init)
     -  [Type parameters](#@Type_parameters_19)
     -  [Parameters](#@Parameters_20)
@@ -1591,6 +1592,104 @@ matching engine simply returns silently before overfilling
     <a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>(min_lots_ref, max_lots_ref, min_ticks_ref,
         max_ticks_ref, &lots_until_max, &ticks_until_max,
         lots_filled_ref_mut, ticks_filled_ref_mut);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_match_from_market_account"></a>
+
+## Function `match_from_market_account`
+
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;BaseType, QuoteType&gt;(user_ref: &<b>address</b>, host_ref: &<b>address</b>, market_id_ref: &u64, market_account_id_ref: &u128, direction_ref: &bool, min_base_ref: &u64, max_base_ref: &u64, min_quote_ref: &u64, max_quote_ref: &u64, limit_price_ref: &u64): (u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    user_ref: &<b>address</b>,
+    host_ref: &<b>address</b>,
+    market_id_ref: &u64,
+    market_account_id_ref: &u128,
+    direction_ref: &bool,
+    min_base_ref: &u64,
+    max_base_ref: &u64,
+    min_quote_ref: &u64,
+    max_quote_ref: &u64,
+    limit_price_ref: &u64,
+): (
+    u64, // Lots filled
+    u64 // Ticks filled
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Verify order book <b>exists</b>
+    <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(*host_ref, *market_id_ref);
+    // Borrow mutable reference <b>to</b> order books map
+    <b>let</b> order_books_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(*host_ref).map;
+    // Borrow mutable reference <b>to</b> order book
+    <b>let</b> order_book_ref_mut =
+        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(order_books_map_ref_mut, *market_id_ref);
+    <b>let</b> lot_size = order_book_ref_mut.lot_size; // Get lot size
+    <b>let</b> tick_size = order_book_ref_mut.tick_size; // Get tick size
+    // Get <a href="user.md#0xc0deb00c_user">user</a>'s available and ceiling asset counts
+    <b>let</b> (base_available, _, base_ceiling, quote_available, _,
+         quote_ceiling) = <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">user::get_asset_counts_internal</a>(*user_ref,
+            *market_account_id_ref);
+    // Range check fill amounts
+    <a href="market.md#0xc0deb00c_market_match_range_check_fills">match_range_check_fills</a>(direction_ref, min_base_ref, max_base_ref,
+        min_quote_ref, max_quote_ref, &base_available, &base_ceiling,
+        &quote_available, &quote_ceiling);
+    // Calculate base and quote <b>to</b> withdraw from <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <b>let</b> (base_to_withdraw, quote_to_withdraw) = <b>if</b> (*direction_ref == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+        // If a buy, buy base <b>with</b> quote, so need max quote on hand
+        // If a sell, sell base for quote, so need max base on hand
+        (0, *max_quote_ref) <b>else</b> (*max_base_ref, 0);
+    // Withdraw base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    // <b>as</b> optional coins
+    <b>let</b> (optional_base_coins, optional_quote_coins) = (
+        <a href="user.md#0xc0deb00c_user_withdraw_asset_as_option_internal">user::withdraw_asset_as_option_internal</a>&lt;BaseType&gt;(
+            *user_ref, *market_account_id_ref, base_to_withdraw,
+            order_book_ref_mut.generic_asset_transfer_custodian_id),
+        <a href="user.md#0xc0deb00c_user_withdraw_asset_as_option_internal">user::withdraw_asset_as_option_internal</a>&lt;QuoteType&gt;(
+            *user_ref, *market_account_id_ref, quote_to_withdraw,
+            order_book_ref_mut.generic_asset_transfer_custodian_id));
+    // Declare variables <b>to</b> track lots and ticks filled
+    <b>let</b> (lots_filled, ticks_filled) = (0, 0);
+    // Match against order book
+    <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id_ref, order_book_ref_mut,
+        &lot_size, &tick_size, direction_ref,
+        &(*min_base_ref / lot_size), &(*max_base_ref / lot_size),
+        &(*min_quote_ref / tick_size), &(*max_quote_ref / tick_size),
+        limit_price_ref, &<b>mut</b> optional_base_coins,
+        &<b>mut</b> optional_quote_coins, &<b>mut</b> lots_filled, &<b>mut</b> ticks_filled);
+    // Calculate base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> now on hand
+    <b>let</b> (base_on_hand, quote_on_hand) = <b>if</b> (*direction_ref == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) (
+        lots_filled * lot_size, // If a buy, lots received
+        *max_quote_ref - (ticks_filled * tick_size) // Ticks given
+    ) <b>else</b> ( // If a sell
+        *max_base_ref - (lots_filled * lot_size), // Lots given
+        ticks_filled * tick_size // Ticks received
+    );
+    // Deposit base asset <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_deposit_asset_internal">user::deposit_asset_internal</a>&lt;BaseType&gt;(*user_ref,
+        *market_account_id_ref, base_on_hand, optional_base_coins,
+        order_book_ref_mut.generic_asset_transfer_custodian_id);
+    // Deposit quote asset <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_deposit_asset_internal">user::deposit_asset_internal</a>&lt;QuoteType&gt;(*user_ref,
+        *market_account_id_ref, quote_on_hand, optional_quote_coins,
+        order_book_ref_mut.generic_asset_transfer_custodian_id);
+    (lots_filled, ticks_filled) // Return lots and ticks filled
 }
 </code></pre>
 

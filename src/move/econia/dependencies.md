@@ -87,7 +87,7 @@ flowchart TD
     class swap_coins implemented;
     class swap_generic implemented
     class match implemented;
-    class match_from_market_account unimplemented;
+    class match_from_market_account partially_implemented;
     class match_init implemented;
     class swap implemented;
     class place_market_order unimplemented;
@@ -123,6 +123,7 @@ flowchart TD
     match --> match_init
     match --> match_loop
     match_from_market_account --> match
+    match_from_market_account --> match_range_check_fills
     match_loop_order --> match_loop_order_fill_size
     match_loop --> match_loop_init
     match_loop --> match_loop_order

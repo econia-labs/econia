@@ -114,7 +114,12 @@ module econia::market {
     const E_INVALID_BASE: u64 = 14;
     /// When invalid quote type indicated
     const E_INVALID_QUOTE: u64 = 15;
-
+    /// When a base asset is improperly option-wrapped for generic swap
+    const E_INVALID_OPTION_BASE: u64 = 16;
+    /// When a quote asset is improperly option-wrapped for generic swap
+    const E_INVALID_OPTION_QUOTE: u64 = 17;
+    /// When both assets generic but at least one should be coin type
+    const E_BOTH_GENERIC: u64 = 18;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -303,6 +308,102 @@ module econia::market {
             base_coins_ref_mut, option::destroy_some(optional_base_coins));
         coin::merge( // Merge post-match quote coins into coins on hand
             quote_coins_ref_mut, option::destroy_some(optional_quote_coins));
+        // Return count for base coins and quote coins filled
+        (base_filled, quote_filled)
+    }
+
+    /// Swap between assets where at least one is not a coin type.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `host`: Market host
+    /// * `market_id`: Market ID
+    /// * `direction`: `BUY` or `SELL`
+    /// * `min_base`: Minimum number of base coins to fill
+    /// * `max_base`: Maximum number of base coins to fill
+    /// * `min_quote`: Minimum number of quote coins to fill
+    /// * `max_quote`: Maximum number of quote coins to fill
+    /// * `limit_price`: Maximum price to match against if `direction`
+    ///   is `BUY`, and minimum price to match against if `direction` is
+    ///   `SELL`. If passed as `HI_64` in the case of a `BUY` or `0` in
+    ///   the case of a `SELL`, will match at any price. Price for a
+    ///   given market is the number of ticks per lot.
+    /// * `optional_base_coins_ref_mut`: If base is a coin type, coins
+    ///   wrapped in an option, else an empty option
+    /// * `optional_quote_coins_ref_mut`: If quote is a coin type, coins
+    ///   wrapped in an option, else an empty option
+    /// * `generic_asset_transfer_custodian_capability_ref`: Immutable
+    ///   reference to generic asset transfer `CustodianCapability` for
+    ///   given market
+    ///
+    /// # Returns
+    /// * `u64`: Base assets filled
+    /// * `u64`: Quote assets filled
+    ///
+    /// # Abort conditions
+    /// * If base and quote assets are both coin types
+    /// * If base is a coin type but base coin option is none, or if
+    ///   base is not a coin type but base coin option is some
+    /// * If quote is a coin type but quote coin option is none, or if
+    ///   quote is not a coin type but quote coin option is some
+    public fun swap_generic<
+        BaseType,
+        QuoteType
+    >(
+        host: address,
+        market_id: u64,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+        optional_base_coins_ref_mut:
+            &mut option::Option<coin::Coin<BaseType>>,
+        optional_quote_coins_ref_mut:
+            &mut option::Option<coin::Coin<QuoteType>>,
+        //&generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+    ): (
+        u64,
+        u64
+    ) acquires OrderBooks {
+        // Determine if base is coin type
+        let base_is_coin = coin::is_coin_initialized<BaseType>();
+        // Determine if quote is coin type
+        let quote_is_coin = coin::is_coin_initialized<QuoteType>();
+        // Assert that base and quote assets are not both generic
+        assert!(!(base_is_coin && quote_is_coin), E_BOTH_GENERIC);
+        // Assert that if base is coin then option is some, and that if
+        // base is not coin then option is none
+        assert!(base_is_coin == option::is_some(optional_base_coins_ref_mut),
+            E_INVALID_OPTION_BASE);
+        // Assert that if quote is coin then option is some, and that if
+        // quote is not coin then option is none
+        assert!(quote_is_coin == option::is_some(optional_quote_coins_ref_mut),
+            E_INVALID_OPTION_QUOTE);
+        let base_value = if (base_is_coin) // If base is a coin
+            // Base value is the value of option-wrapped coins
+            coin::value(option::borrow(optional_base_coins_ref_mut)) else
+            // Else base value is 0 for a buy and max amount for sell
+            if (direction == BUY) 0 else max_base;
+        let quote_value = if (quote_is_coin) // If quote is a coin
+            // Quote value is the value of option-wrapped coins
+            coin::value(option::borrow(optional_quote_coins_ref_mut)) else
+            // Else quote value is max for a buy and 0 for sell
+            if (direction == BUY) max_quote else 0;
+        // Range check fill amounts
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_value, &base_value, &quote_value, &quote_value);
+        // Declare tracker variables for amount of base and quote filled
+        let (base_filled, quote_filled) = (0, 0);
+        // Swap against order book
+        swap<BaseType, QuoteType>(&host, &market_id, &direction, &min_base,
+            &max_base, &min_quote, &max_quote, &limit_price,
+            optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
+            &mut base_filled, &mut quote_filled);
         // Return count for base coins and quote coins filled
         (base_filled, quote_filled)
     }

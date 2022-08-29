@@ -23,6 +23,11 @@ open two wallets and trade them against each other.
     -  [Abort conditions](#@Abort_conditions_4)
         -  [If a <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>](#@If_a_<code><a_href="market.md#0xc0deb00c_market_BUY">BUY</a></code>_5)
         -  [If a <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>](#@If_a_<code><a_href="market.md#0xc0deb00c_market_SELL">SELL</a></code>_6)
+-  [Function `swap_generic`](#0xc0deb00c_market_swap_generic)
+    -  [Type parameters](#@Type_parameters_7)
+    -  [Parameters](#@Parameters_8)
+    -  [Returns](#@Returns_9)
+    -  [Abort conditions](#@Abort_conditions_10)
 -  [Function `cancel_all_limit_orders_user`](#0xc0deb00c_market_cancel_all_limit_orders_user)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
@@ -30,66 +35,66 @@ open two wallets and trade them against each other.
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
 -  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
 -  [Function `cancel_all_limit_orders`](#0xc0deb00c_market_cancel_all_limit_orders)
-    -  [Parameters](#@Parameters_7)
-    -  [Assumes](#@Assumes_8)
+    -  [Parameters](#@Parameters_11)
+    -  [Assumes](#@Assumes_12)
 -  [Function `cancel_limit_order`](#0xc0deb00c_market_cancel_limit_order)
-    -  [Parameters](#@Parameters_9)
-    -  [Abort conditions](#@Abort_conditions_10)
+    -  [Parameters](#@Parameters_13)
+    -  [Abort conditions](#@Abort_conditions_14)
 -  [Function `get_counter`](#0xc0deb00c_market_get_counter)
 -  [Function `match`](#0xc0deb00c_market_match)
-    -  [Type parameters](#@Type_parameters_11)
-    -  [Parameters](#@Parameters_12)
-    -  [Assumes](#@Assumes_13)
-    -  [Checks not performed](#@Checks_not_performed_14)
--  [Function `match_init`](#0xc0deb00c_market_match_init)
     -  [Type parameters](#@Type_parameters_15)
     -  [Parameters](#@Parameters_16)
-    -  [Returns](#@Returns_17)
-    -  [Abort conditions](#@Abort_conditions_18)
--  [Function `match_loop`](#0xc0deb00c_market_match_loop)
+    -  [Assumes](#@Assumes_17)
+    -  [Checks not performed](#@Checks_not_performed_18)
+-  [Function `match_init`](#0xc0deb00c_market_match_init)
     -  [Type parameters](#@Type_parameters_19)
     -  [Parameters](#@Parameters_20)
-    -  [Passing considerations](#@Passing_considerations_21)
--  [Function `match_loop_break`](#0xc0deb00c_market_match_loop_break)
-    -  [Parameters](#@Parameters_22)
--  [Function `match_loop_init`](#0xc0deb00c_market_match_loop_init)
-    -  [Parameters](#@Parameters_23)
-    -  [Returns](#@Returns_24)
+    -  [Returns](#@Returns_21)
+    -  [Abort conditions](#@Abort_conditions_22)
+-  [Function `match_loop`](#0xc0deb00c_market_match_loop)
+    -  [Type parameters](#@Type_parameters_23)
+    -  [Parameters](#@Parameters_24)
     -  [Passing considerations](#@Passing_considerations_25)
--  [Function `match_loop_order`](#0xc0deb00c_market_match_loop_order)
-    -  [Type parameters](#@Type_parameters_26)
+-  [Function `match_loop_break`](#0xc0deb00c_market_match_loop_break)
+    -  [Parameters](#@Parameters_26)
+-  [Function `match_loop_init`](#0xc0deb00c_market_match_loop_init)
     -  [Parameters](#@Parameters_27)
+    -  [Returns](#@Returns_28)
+    -  [Passing considerations](#@Passing_considerations_29)
+-  [Function `match_loop_order`](#0xc0deb00c_market_match_loop_order)
+    -  [Type parameters](#@Type_parameters_30)
+    -  [Parameters](#@Parameters_31)
 -  [Function `match_loop_order_fill_size`](#0xc0deb00c_market_match_loop_order_fill_size)
-    -  [Parameters](#@Parameters_28)
+    -  [Parameters](#@Parameters_32)
 -  [Function `match_loop_order_follow_up`](#0xc0deb00c_market_match_loop_order_follow_up)
-    -  [Parameters](#@Parameters_29)
-    -  [Returns](#@Returns_30)
-    -  [Passing considerations](#@Passing_considerations_31)
-    -  [Target order reference rationale](#@Target_order_reference_rationale_32)
+    -  [Parameters](#@Parameters_33)
+    -  [Returns](#@Returns_34)
+    -  [Passing considerations](#@Passing_considerations_35)
+    -  [Target order reference rationale](#@Target_order_reference_rationale_36)
 -  [Function `match_range_check_fills`](#0xc0deb00c_market_match_range_check_fills)
-    -  [Terminology](#@Terminology_33)
-    -  [Parameters](#@Parameters_34)
-    -  [Abort conditions](#@Abort_conditions_35)
-    -  [Checks not performed](#@Checks_not_performed_36)
+    -  [Terminology](#@Terminology_37)
+    -  [Parameters](#@Parameters_38)
+    -  [Abort conditions](#@Abort_conditions_39)
+    -  [Checks not performed](#@Checks_not_performed_40)
 -  [Function `match_verify_fills`](#0xc0deb00c_market_match_verify_fills)
-    -  [Parameters](#@Parameters_37)
-    -  [Abort conditions](#@Abort_conditions_38)
+    -  [Parameters](#@Parameters_41)
+    -  [Abort conditions](#@Abort_conditions_42)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Parameters](#@Parameters_39)
-    -  [Abort conditions](#@Abort_conditions_40)
-    -  [Assumes](#@Assumes_41)
--  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_42)
     -  [Parameters](#@Parameters_43)
--  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
-    -  [Type parameters](#@Type_parameters_44)
-    -  [Parameters](#@Parameters_45)
--  [Function `swap`](#0xc0deb00c_market_swap)
+    -  [Abort conditions](#@Abort_conditions_44)
+    -  [Assumes](#@Assumes_45)
+-  [Function `register_market`](#0xc0deb00c_market_register_market)
     -  [Type parameters](#@Type_parameters_46)
     -  [Parameters](#@Parameters_47)
-    -  [Assumes](#@Assumes_48)
+-  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
+    -  [Type parameters](#@Type_parameters_48)
+    -  [Parameters](#@Parameters_49)
+-  [Function `swap`](#0xc0deb00c_market_swap)
+    -  [Type parameters](#@Type_parameters_50)
+    -  [Parameters](#@Parameters_51)
+    -  [Assumes](#@Assumes_52)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_49)
+    -  [Abort conditions](#@Abort_conditions_53)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -357,6 +362,16 @@ Buy direction flag
 
 
 
+<a name="0xc0deb00c_market_E_BOTH_GENERIC"></a>
+
+When both assets generic but at least one should be coin type
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_BOTH_GENERIC">E_BOTH_GENERIC</a>: u64 = 18;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_INBOUND_ASSET_OVERFLOW"></a>
 
 When matching overflows the asset received from trading
@@ -373,6 +388,26 @@ When invalid base type indicated
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a>: u64 = 14;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_INVALID_OPTION_BASE"></a>
+
+When a base asset is improperly option-wrapped for generic swap
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_OPTION_BASE">E_INVALID_OPTION_BASE</a>: u64 = 16;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_INVALID_OPTION_QUOTE"></a>
+
+When a quote asset is improperly option-wrapped for generic swap
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_OPTION_QUOTE">E_INVALID_OPTION_QUOTE</a>: u64 = 17;
 </code></pre>
 
 
@@ -801,6 +836,138 @@ a <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>.
 
 </details>
 
+<a name="0xc0deb00c_market_swap_generic"></a>
+
+## Function `swap_generic`
+
+Swap between assets where at least one is not a coin type.
+
+
+<a name="@Type_parameters_7"></a>
+
+### Type parameters
+
+* <code>BaseType</code>: Base type for market
+* <code>QuoteType</code>: Quote type for market
+
+
+<a name="@Parameters_8"></a>
+
+### Parameters
+
+* <code>host</code>: Market host
+* <code>market_id</code>: Market ID
+* <code>direction</code>: <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
+* <code>min_base</code>: Minimum number of base coins to fill
+* <code>max_base</code>: Maximum number of base coins to fill
+* <code>min_quote</code>: Minimum number of quote coins to fill
+* <code>max_quote</code>: Maximum number of quote coins to fill
+* <code>limit_price</code>: Maximum price to match against if <code>direction</code>
+is <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, and minimum price to match against if <code>direction</code> is
+<code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>. If passed as <code><a href="market.md#0xc0deb00c_market_HI_64">HI_64</a></code> in the case of a <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code>0</code> in
+the case of a <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>, will match at any price. Price for a
+given market is the number of ticks per lot.
+* <code>optional_base_coins_ref_mut</code>: If base is a coin type, coins
+wrapped in an option, else an empty option
+* <code>optional_quote_coins_ref_mut</code>: If quote is a coin type, coins
+wrapped in an option, else an empty option
+* <code>generic_asset_transfer_custodian_capability_ref</code>: Immutable
+reference to generic asset transfer <code>CustodianCapability</code> for
+given market
+
+
+<a name="@Returns_9"></a>
+
+### Returns
+
+* <code>u64</code>: Base assets filled
+* <code>u64</code>: Quote assets filled
+
+
+<a name="@Abort_conditions_10"></a>
+
+### Abort conditions
+
+* If base and quote assets are both coin types
+* If base is a coin type but base coin option is none, or if
+base is not a coin type but base coin option is some
+* If quote is a coin type but quote coin option is none, or if
+quote is not a coin type but quote coin option is some
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;): (u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    host: <b>address</b>,
+    market_id: u64,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64,
+    optional_base_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;,
+    optional_quote_coins_ref_mut:
+        &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;,
+    //&generic_asset_transfer_custodian_capability_ref: &CustodianCapability
+): (
+    u64,
+    u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Determine <b>if</b> base is <a href="">coin</a> type
+    <b>let</b> base_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;();
+    // Determine <b>if</b> quote is <a href="">coin</a> type
+    <b>let</b> quote_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;QuoteType&gt;();
+    // Assert that base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> are not both generic
+    <b>assert</b>!(!(base_is_coin && quote_is_coin), <a href="market.md#0xc0deb00c_market_E_BOTH_GENERIC">E_BOTH_GENERIC</a>);
+    // Assert that <b>if</b> base is <a href="">coin</a> then <a href="">option</a> is some, and that <b>if</b>
+    // base is not <a href="">coin</a> then <a href="">option</a> is none
+    <b>assert</b>!(base_is_coin == <a href="_is_some">option::is_some</a>(optional_base_coins_ref_mut),
+        <a href="market.md#0xc0deb00c_market_E_INVALID_OPTION_BASE">E_INVALID_OPTION_BASE</a>);
+    // Assert that <b>if</b> quote is <a href="">coin</a> then <a href="">option</a> is some, and that <b>if</b>
+    // quote is not <a href="">coin</a> then <a href="">option</a> is none
+    <b>assert</b>!(quote_is_coin == <a href="_is_some">option::is_some</a>(optional_quote_coins_ref_mut),
+        <a href="market.md#0xc0deb00c_market_E_INVALID_OPTION_QUOTE">E_INVALID_OPTION_QUOTE</a>);
+    <b>let</b> base_value = <b>if</b> (base_is_coin) // If base is a <a href="">coin</a>
+        // Base value is the value of <a href="">option</a>-wrapped coins
+        <a href="_value">coin::value</a>(<a href="_borrow">option::borrow</a>(optional_base_coins_ref_mut)) <b>else</b>
+        // Else base value is 0 for a buy and max amount for sell
+        <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) 0 <b>else</b> max_base;
+    <b>let</b> quote_value = <b>if</b> (quote_is_coin) // If quote is a <a href="">coin</a>
+        // Quote value is the value of <a href="">option</a>-wrapped coins
+        <a href="_value">coin::value</a>(<a href="_borrow">option::borrow</a>(optional_quote_coins_ref_mut)) <b>else</b>
+        // Else quote value is max for a buy and 0 for sell
+        <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) max_quote <b>else</b> 0;
+    // Range check fill amounts
+    <a href="market.md#0xc0deb00c_market_match_range_check_fills">match_range_check_fills</a>(&direction, &min_base, &max_base, &min_quote,
+        &max_quote, &base_value, &base_value, &quote_value, &quote_value);
+    // Declare tracker variables for amount of base and quote filled
+    <b>let</b> (base_filled, quote_filled) = (0, 0);
+    // Swap against order book
+    <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(&host, &market_id, &direction, &min_base,
+        &max_base, &min_quote, &max_quote, &limit_price,
+        optional_base_coins_ref_mut, optional_quote_coins_ref_mut,
+        &<b>mut</b> base_filled, &<b>mut</b> quote_filled);
+    // Return count for base coins and quote coins filled
+    (base_filled, quote_filled)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_cancel_all_limit_orders_user"></a>
 
 ## Function `cancel_all_limit_orders_user`
@@ -1094,7 +1261,7 @@ orders.
 See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_order">cancel_limit_order</a>()</code>.
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_11"></a>
 
 ### Parameters
 
@@ -1106,7 +1273,7 @@ market account
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
 
 
-<a name="@Assumes_8"></a>
+<a name="@Assumes_12"></a>
 
 ### Assumes
 
@@ -1158,7 +1325,7 @@ orders tree available to cancel from
 Cancel limit order on book, remove from user's market account.
 
 
-<a name="@Parameters_9"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1170,7 +1337,7 @@ market account
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>
 
 
-<a name="@Abort_conditions_10"></a>
+<a name="@Abort_conditions_14"></a>
 
 ### Abort conditions
 
@@ -1296,7 +1463,7 @@ tree in a loopwise traversal. Verify fill amounts afterwards.
 Institutes pass-by-reference for enhanced efficiency.
 
 
-<a name="@Type_parameters_11"></a>
+<a name="@Type_parameters_15"></a>
 
 ### Type parameters
 
@@ -1304,7 +1471,7 @@ Institutes pass-by-reference for enhanced efficiency.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_16"></a>
 
 ### Parameters
 
@@ -1339,7 +1506,7 @@ of lots filled by matching engine
 number of ticks filled by matching engine
 
 
-<a name="@Assumes_13"></a>
+<a name="@Assumes_17"></a>
 
 ### Assumes
 
@@ -1351,7 +1518,7 @@ lot and tick size as <code>order_book_ref_mut</code>
 <code><a href="market.md#0xc0deb00c_market_match_range_check_fills">match_range_check_fills</a>()</code>
 
 
-<a name="@Checks_not_performed_14"></a>
+<a name="@Checks_not_performed_18"></a>
 
 ### Checks not performed
 
@@ -1434,7 +1601,7 @@ be passed by reference and then verified within the local scope
 of <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, via <code><a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>()</code>.
 
 
-<a name="@Type_parameters_15"></a>
+<a name="@Type_parameters_19"></a>
 
 ### Type parameters
 
@@ -1442,7 +1609,7 @@ of <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, via <co
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_20"></a>
 
 ### Parameters
 
@@ -1455,7 +1622,7 @@ to fill
 to fill
 
 
-<a name="@Returns_17"></a>
+<a name="@Returns_21"></a>
 
 ### Returns
 
@@ -1473,7 +1640,7 @@ side
 to <code>direction_ref</code>
 
 
-<a name="@Abort_conditions_18"></a>
+<a name="@Abort_conditions_22"></a>
 
 ### Abort conditions
 
@@ -1558,7 +1725,7 @@ During interated traversal, the "incoming user" matches against
 a "target order" on the book at each iteration.
 
 
-<a name="@Type_parameters_19"></a>
+<a name="@Type_parameters_23"></a>
 
 ### Type parameters
 
@@ -1566,7 +1733,7 @@ a "target order" on the book at each iteration.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_24"></a>
 
 ### Parameters
 
@@ -1595,7 +1762,7 @@ base coins passing through the matching engine
 quote coins passing through the matching engine
 
 
-<a name="@Passing_considerations_21"></a>
+<a name="@Passing_considerations_25"></a>
 
 ### Passing considerations
 
@@ -1687,7 +1854,7 @@ Execute break cleanup after loopwise matching.
 Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code>.
 
 
-<a name="@Parameters_22"></a>
+<a name="@Parameters_26"></a>
 
 ### Parameters
 
@@ -1743,7 +1910,7 @@ Initialize variables for loopwise matching.
 Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code>.
 
 
-<a name="@Parameters_23"></a>
+<a name="@Parameters_27"></a>
 
 ### Parameters
 
@@ -1752,7 +1919,7 @@ match against
 * <code>traversal_direction_ref</code>: <code>&<a href="market.md#0xc0deb00c_market_LEFT">LEFT</a></code>, or <code>&<a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a></code>
 
 
-<a name="@Returns_24"></a>
+<a name="@Returns_28"></a>
 
 ### Returns
 
@@ -1768,7 +1935,7 @@ against the last order on the book, which should be popped
 * <code>u128</code>: Tracker for new spread maker value to assign
 
 
-<a name="@Passing_considerations_25"></a>
+<a name="@Passing_considerations_29"></a>
 
 ### Passing considerations
 
@@ -1826,7 +1993,7 @@ book.
 Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code>.
 
 
-<a name="@Type_parameters_26"></a>
+<a name="@Type_parameters_30"></a>
 
 ### Type parameters
 
@@ -1834,7 +2001,7 @@ Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop">match_
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_27"></a>
+<a name="@Parameters_31"></a>
 
 ### Parameters
 
@@ -1953,7 +2120,7 @@ against the "target order" on the book.
 Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code>.
 
 
-<a name="@Parameters_28"></a>
+<a name="@Parameters_32"></a>
 
 ### Parameters
 
@@ -2035,7 +2202,7 @@ order" on the book.
 Inner function for <code><a href="market.md#0xc0deb00c_market_match_loop">match_loop</a>()</code>.
 
 
-<a name="@Parameters_29"></a>
+<a name="@Parameters_33"></a>
 
 ### Parameters
 
@@ -2062,7 +2229,7 @@ that should be assigned to the spread maker field for the
 side indicated by <code>side_ref</code>, if one should be set
 
 
-<a name="@Returns_30"></a>
+<a name="@Returns_34"></a>
 
 ### Returns
 
@@ -2073,7 +2240,7 @@ process, only reassigned when iterated traversal proceeds
 * <code>bool</code>: <code><b>true</b></code> if should break out of loop after follow up
 
 
-<a name="@Passing_considerations_31"></a>
+<a name="@Passing_considerations_35"></a>
 
 ### Passing considerations
 
@@ -2090,7 +2257,7 @@ be copied into a local variable anyways in order to return
 by value as described above
 
 
-<a name="@Target_order_reference_rationale_32"></a>
+<a name="@Target_order_reference_rationale_36"></a>
 
 ### Target order reference rationale
 
@@ -2208,7 +2375,7 @@ future iterations where it is operated on.
 Range check asset fill amounts to prepare for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_33"></a>
+<a name="@Terminology_37"></a>
 
 ### Terminology
 
@@ -2228,7 +2395,7 @@ asset ceiling should just be passed as the same value as the
 available amount.
 
 
-<a name="@Parameters_34"></a>
+<a name="@Parameters_38"></a>
 
 ### Parameters
 
@@ -2252,7 +2419,7 @@ available quote asset, only checked for a <code><a href="market.md#0xc0deb00c_ma
 ceiling, only checked for a <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
 
 
-<a name="@Abort_conditions_35"></a>
+<a name="@Abort_conditions_39"></a>
 
 ### Abort conditions
 
@@ -2266,7 +2433,7 @@ results in an inbound asset ceiling overflow
 corresponding max fill amount
 
 
-<a name="@Checks_not_performed_36"></a>
+<a name="@Checks_not_performed_40"></a>
 
 ### Checks not performed
 
@@ -2338,7 +2505,7 @@ and <code>max_ticks_ref</code>, but which may terminate before filling at
 least the corresponding minimum value thresholds.
 
 
-<a name="@Parameters_37"></a>
+<a name="@Parameters_41"></a>
 
 ### Parameters
 
@@ -2362,7 +2529,7 @@ of lots filled by matching engine
 number of ticks filled by matching engine
 
 
-<a name="@Abort_conditions_38"></a>
+<a name="@Abort_conditions_42"></a>
 
 ### Abort conditions
 
@@ -2416,7 +2583,7 @@ will match as a taker order against all orders it crosses, then
 the remaining <code>size</code> will be placed as a maker order.
 
 
-<a name="@Parameters_39"></a>
+<a name="@Parameters_43"></a>
 
 ### Parameters
 
@@ -2432,14 +2599,14 @@ market account
 spread, otherwise fill across the spread when applicable
 
 
-<a name="@Abort_conditions_40"></a>
+<a name="@Abort_conditions_44"></a>
 
 ### Abort conditions
 
 * If <code>post_or_abort</code> is <code><b>true</b></code> and order crosses the spread
 
 
-<a name="@Assumes_41"></a>
+<a name="@Assumes_45"></a>
 
 ### Assumes
 
@@ -2534,7 +2701,7 @@ simply return silently
 Register new market under signing host.
 
 
-<a name="@Type_parameters_42"></a>
+<a name="@Type_parameters_46"></a>
 
 ### Type parameters
 
@@ -2542,7 +2709,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_43"></a>
+<a name="@Parameters_47"></a>
 
 ### Parameters
 
@@ -2595,7 +2762,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_44"></a>
+<a name="@Type_parameters_48"></a>
 
 ### Type parameters
 
@@ -2603,7 +2770,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_45"></a>
+<a name="@Parameters_49"></a>
 
 ### Parameters
 
@@ -2669,7 +2836,7 @@ Swap against book, via wrapped call to <code><a href="market.md#0xc0deb00c_marke
 Institutes pass-by-reference for enhanced efficiency.
 
 
-<a name="@Type_parameters_46"></a>
+<a name="@Type_parameters_50"></a>
 
 ### Type parameters
 
@@ -2677,7 +2844,7 @@ Institutes pass-by-reference for enhanced efficiency.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_47"></a>
+<a name="@Parameters_51"></a>
 
 ### Parameters
 
@@ -2712,7 +2879,7 @@ of base units filled by matching engine
 number of quote units filled by matching engine
 
 
-<a name="@Assumes_48"></a>
+<a name="@Assumes_52"></a>
 
 ### Assumes
 
@@ -2785,7 +2952,7 @@ number of quote units filled by matching engine
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_49"></a>
+<a name="@Abort_conditions_53"></a>
 
 ### Abort conditions
 

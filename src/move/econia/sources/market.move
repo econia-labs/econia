@@ -1782,7 +1782,7 @@ module econia::market {
         let tick_size = order_book_ref_mut.tick_size; // Get tick size
         // Declare variables to track lots and ticks filled
         let (lots_filled, ticks_filled) = (0, 0);
-        // Match against the book
+        // Match against order book
         match<BaseType, QuoteType>(market_id_ref, order_book_ref_mut,
             &lot_size, &tick_size, direction_ref,
             &(*min_base_ref / lot_size), &(*max_base_ref / lot_size),

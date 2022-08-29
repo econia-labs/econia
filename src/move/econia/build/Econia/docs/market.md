@@ -2955,7 +2955,7 @@ swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COI
     <b>let</b> tick_size = order_book_ref_mut.tick_size; // Get tick size
     // Declare variables <b>to</b> track lots and ticks filled
     <b>let</b> (lots_filled, ticks_filled) = (0, 0);
-    // Match against the book
+    // Match against order book
     <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id_ref, order_book_ref_mut,
         &lot_size, &tick_size, direction_ref,
         &(*min_base_ref / lot_size), &(*max_base_ref / lot_size),

@@ -98,6 +98,7 @@ general custodian ID of <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_
     -  [Parameters](#@Parameters_8)
     -  [Abort conditions](#@Abort_conditions_9)
 -  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
+-  [Function `deposit_asset_internal`](#0xc0deb00c_user_deposit_asset_internal)
 -  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
     -  [Type parameters](#@Type_parameters_10)
     -  [Parameters](#@Parameters_11)
@@ -1169,6 +1170,46 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user"
 
 </details>
 
+<a name="0xc0deb00c_user_deposit_asset_internal"></a>
+
+## Function `deposit_asset_internal`
+
+Deposit <code>amount</code> of assets of <code>AssetType</code> to <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
+account indicated by <code>market_account_id</code> and having
+<code>generic_asset_transfer_custodian_id</code>, returning coins
+in an <code><a href="_Option">option::Option</a></code> if <code>AssetType</code> is a coin type.
+
+See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code>.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset_internal">deposit_asset_internal</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, amount: u64, optional_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;, generic_asset_transfer_custodian_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset_internal">deposit_asset_internal</a>&lt;AssetType&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128,
+    amount: u64,
+    optional_coins: <a href="_Option">option::Option</a>&lt;Coin&lt;AssetType&gt;&gt;,
+    generic_asset_transfer_custodian_id: u64
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id, amount,
+        optional_coins, generic_asset_transfer_custodian_id)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_fill_order_internal"></a>
 
 ## Function `fill_order_internal`
@@ -1587,7 +1628,7 @@ corresponding user successfully placed it to begin with.
 ## Function `withdraw_asset_as_option_internal`
 
 Withdraw <code>amount</code> of assets of <code>AssetType</code> from <code><a href="user.md#0xc0deb00c_user">user</a></code>'s market
-account indicated by <code>market_account_id</code> having
+account indicated by <code>market_account_id</code> and having
 <code>generic_asset_transfer_custodian_id</code>, returning coins
 in an <code><a href="_Option">option::Option</a></code> if <code>AssetType</code> is a coin type.
 

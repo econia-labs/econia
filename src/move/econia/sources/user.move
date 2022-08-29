@@ -581,6 +581,28 @@ module econia::user {
             optional_quote_coins_ref_mut, base_to_route, quote_to_route);
     }
 
+    /// Return `MarketAccount` asset count fields for given `user` and
+    /// `market_account_id` .
+    ///
+    /// See wrapped call `get_asset_counts()`.
+    ///
+    /// # Restrictions
+    /// * Restricted to friend modules to prevent excessive public
+    ///   queries and thus transaction collisions
+    public(friend) fun get_asset_counts_internal(
+        user: address,
+        market_account_id: u128
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_asset_counts(user, market_account_id)
+    }
+
     /// Return number of open orders for given `user`,
     /// `market_account_id`, and `side`
     ///
@@ -2124,7 +2146,7 @@ module econia::user {
         user = @user
     )]
     /// Verify expected returns
-    fun get_asset_counts_custodian_user(
+    fun test_get_asset_counts_custodian_user_internal(
         econia: &signer,
         user: &signer
     ) acquires
@@ -2199,6 +2221,17 @@ module econia::user {
              quote_total, quote_available, quote_ceiling) =
             get_asset_counts_custodian(@user, market_id_pure_coin,
                 &general_custodian_capability_pure_coin);
+        // Assert fields
+        assert!(base_total      == base_total_pure_coin, 0);
+        assert!(base_available  == base_available_pure_coin, 0);
+        assert!(base_ceiling    == base_ceiling_pure_coin, 0);
+        assert!(quote_total     == quote_total_pure_coin, 0);
+        assert!(quote_available == quote_available_pure_coin, 0);
+        assert!(quote_ceiling   == quote_ceiling_pure_coin, 0);
+        // Get pure coin market account values via internal function
+        let (base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(@user, market_account_id_pure_coin);
         // Assert fields
         assert!(base_total      == base_total_pure_coin, 0);
         assert!(base_available  == base_available_pure_coin, 0);

@@ -1243,7 +1243,7 @@ Initialize a <code>CoinStore</code> is a user does not already have one.
             <a href="_some">option::some</a>(<a href="_withdraw">coin::withdraw</a>&lt;QuoteCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, max_quote))
         ) <b>else</b> ( // If selling base for quote
             // Start <b>with</b> max base coins needed for trade
-            <a href="_some">option::some</a>(<a href="_withdraw">coin::withdraw</a>&lt;BaseCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, max_quote)),
+            <a href="_some">option::some</a>(<a href="_withdraw">coin::withdraw</a>&lt;BaseCoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, max_base)),
             // Start <b>with</b> 0 quote coins
             <a href="_some">option::some</a>(<a href="_zero">coin::zero</a>&lt;QuoteCoinType&gt;())
         );

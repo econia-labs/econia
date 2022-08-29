@@ -101,50 +101,52 @@ general custodian ID of <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_
 -  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
     -  [Type parameters](#@Type_parameters_10)
     -  [Parameters](#@Parameters_11)
--  [Function `get_n_orders_internal`](#0xc0deb00c_user_get_n_orders_internal)
+-  [Function `get_asset_counts_internal`](#0xc0deb00c_user_get_asset_counts_internal)
     -  [Restrictions](#@Restrictions_12)
--  [Function `get_order_id_nearest_spread_internal`](#0xc0deb00c_user_get_order_id_nearest_spread_internal)
+-  [Function `get_n_orders_internal`](#0xc0deb00c_user_get_n_orders_internal)
     -  [Restrictions](#@Restrictions_13)
+-  [Function `get_order_id_nearest_spread_internal`](#0xc0deb00c_user_get_order_id_nearest_spread_internal)
+    -  [Restrictions](#@Restrictions_14)
 -  [Function `register_order_internal`](#0xc0deb00c_user_register_order_internal)
-    -  [Parameters](#@Parameters_14)
-    -  [Assumes](#@Assumes_15)
+    -  [Parameters](#@Parameters_15)
+    -  [Assumes](#@Assumes_16)
 -  [Function `remove_order_internal`](#0xc0deb00c_user_remove_order_internal)
-    -  [Parameters](#@Parameters_16)
-    -  [Assumes](#@Assumes_17)
+    -  [Parameters](#@Parameters_17)
+    -  [Assumes](#@Assumes_18)
 -  [Function `withdraw_coins_as_option_internal`](#0xc0deb00c_user_withdraw_coins_as_option_internal)
 -  [Function `borrow_transfer_fields_mixed`](#0xc0deb00c_user_borrow_transfer_fields_mixed)
-    -  [Returns](#@Returns_18)
-    -  [Assumes](#@Assumes_19)
-    -  [Abort conditions](#@Abort_conditions_20)
+    -  [Returns](#@Returns_19)
+    -  [Assumes](#@Assumes_20)
+    -  [Abort conditions](#@Abort_conditions_21)
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Assumes](#@Assumes_21)
-    -  [Abort conditions](#@Abort_conditions_22)
+    -  [Assumes](#@Assumes_22)
+    -  [Abort conditions](#@Abort_conditions_23)
 -  [Function `fill_order_route_collateral`](#0xc0deb00c_user_fill_order_route_collateral)
-    -  [Type parameters](#@Type_parameters_23)
-    -  [Parameters](#@Parameters_24)
--  [Function `fill_order_route_collateral_single`](#0xc0deb00c_user_fill_order_route_collateral_single)
+    -  [Type parameters](#@Type_parameters_24)
     -  [Parameters](#@Parameters_25)
-    -  [Assumes](#@Assumes_26)
+-  [Function `fill_order_route_collateral_single`](#0xc0deb00c_user_fill_order_route_collateral_single)
+    -  [Parameters](#@Parameters_26)
+    -  [Assumes](#@Assumes_27)
 -  [Function `fill_order_update_market_account`](#0xc0deb00c_user_fill_order_update_market_account)
-    -  [Parameters](#@Parameters_27)
-    -  [Assumes](#@Assumes_28)
+    -  [Parameters](#@Parameters_28)
+    -  [Assumes](#@Assumes_29)
 -  [Function `get_asset_counts`](#0xc0deb00c_user_get_asset_counts)
-    -  [Returns](#@Returns_29)
-    -  [Restrictions](#@Restrictions_30)
+    -  [Returns](#@Returns_30)
+    -  [Restrictions](#@Restrictions_31)
 -  [Function `range_check_new_order`](#0xc0deb00c_user_range_check_new_order)
-    -  [Parameters](#@Parameters_31)
-    -  [Returns](#@Returns_32)
-    -  [Abort conditions](#@Abort_conditions_33)
--  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
+    -  [Parameters](#@Parameters_32)
+    -  [Returns](#@Returns_33)
     -  [Abort conditions](#@Abort_conditions_34)
--  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
+-  [Function `register_collateral_entry`](#0xc0deb00c_user_register_collateral_entry)
     -  [Abort conditions](#@Abort_conditions_35)
--  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
+-  [Function `register_market_accounts_entry`](#0xc0deb00c_user_register_market_accounts_entry)
     -  [Abort conditions](#@Abort_conditions_36)
--  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+-  [Function `verify_market_account_exists`](#0xc0deb00c_user_verify_market_account_exists)
     -  [Abort conditions](#@Abort_conditions_37)
--  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+-  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
     -  [Abort conditions](#@Abort_conditions_38)
+-  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Abort conditions](#@Abort_conditions_39)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -1250,6 +1252,52 @@ units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else fr
 
 </details>
 
+<a name="0xc0deb00c_user_get_asset_counts_internal"></a>
+
+## Function `get_asset_counts_internal`
+
+Return <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> asset count fields for given <code><a href="user.md#0xc0deb00c_user">user</a></code> and
+<code>market_account_id</code> .
+
+See wrapped call <code><a href="user.md#0xc0deb00c_user_get_asset_counts">get_asset_counts</a>()</code>.
+
+
+<a name="@Restrictions_12"></a>
+
+### Restrictions
+
+* Restricted to friend modules to prevent excessive public
+queries and thus transaction collisions
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">get_asset_counts_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128): (u64, u64, u64, u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">get_asset_counts_internal</a>(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    market_account_id: u128
+): (
+    u64,
+    u64,
+    u64,
+    u64,
+    u64,
+    u64
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <a href="user.md#0xc0deb00c_user_get_asset_counts">get_asset_counts</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_account_id)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_get_n_orders_internal"></a>
 
 ## Function `get_n_orders_internal`
@@ -1258,7 +1306,7 @@ Return number of open orders for given <code><a href="user.md#0xc0deb00c_user">u
 <code>market_account_id</code>, and <code>side</code>
 
 
-<a name="@Restrictions_12"></a>
+<a name="@Restrictions_13"></a>
 
 ### Restrictions
 
@@ -1307,7 +1355,7 @@ Return order ID of order nearest the spread, for given <code><a href="user.md#0x
 <code>market_account_id</code>, and <code>side</code>
 
 
-<a name="@Restrictions_13"></a>
+<a name="@Restrictions_14"></a>
 
 ### Restrictions
 
@@ -1358,7 +1406,7 @@ thus transaction collisions
 Register a new order under a user's market account
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
@@ -1372,7 +1420,7 @@ Register a new order under a user's market account
 * <code>tick_size</code>: Quote asset units per tick
 
 
-<a name="@Assumes_15"></a>
+<a name="@Assumes_16"></a>
 
 ### Assumes
 
@@ -1450,7 +1498,7 @@ the matching engine
 Remove an order from a user's market account
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1462,7 +1510,7 @@ Remove an order from a user's market account
 * <code><a href="order_id.md#0xc0deb00c_order_id">order_id</a></code>: Order ID for given order
 
 
-<a name="@Assumes_17"></a>
+<a name="@Assumes_18"></a>
 
 ### Assumes
 
@@ -1585,7 +1633,7 @@ ceiling, and an immutable reference to the generic asset
 transfer custodian ID for the given market
 
 
-<a name="@Returns_18"></a>
+<a name="@Returns_19"></a>
 
 ### Returns
 
@@ -1602,14 +1650,14 @@ else mutable reference to <code><a href="user.md#0xc0deb00c_user_MarketAccount">
 ID
 
 
-<a name="@Assumes_19"></a>
+<a name="@Assumes_20"></a>
 
 ### Assumes
 
 * <code>market_accounts_map</code> has an entry with <code>market_account_id</code>
 
 
-<a name="@Abort_conditions_20"></a>
+<a name="@Abort_conditions_21"></a>
 
 ### Abort conditions
 
@@ -1678,7 +1726,7 @@ having <code>market_account_id</code>, optionally verifying
 a generic asset (ignored if depositing coin type)
 
 
-<a name="@Assumes_21"></a>
+<a name="@Assumes_22"></a>
 
 ### Assumes
 
@@ -1688,7 +1736,7 @@ a generic asset (ignored if depositing coin type)
 exists, then a corresponding collateral container does too
 
 
-<a name="@Abort_conditions_22"></a>
+<a name="@Abort_conditions_23"></a>
 
 ### Abort conditions
 
@@ -1771,7 +1819,7 @@ Route collateral when filling an order, for coin assets.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
-<a name="@Type_parameters_23"></a>
+<a name="@Type_parameters_24"></a>
 
 ### Type parameters
 
@@ -1779,7 +1827,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">f
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_24"></a>
+<a name="@Parameters_25"></a>
 
 ### Parameters
 
@@ -1854,7 +1902,7 @@ from or to, respectively, coins at <code>external_coins_ref_mut</code>.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_route_collateral">fill_order_route_collateral</a>()</code>.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_26"></a>
 
 ### Parameters
 
@@ -1865,7 +1913,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_route_colla
 * <code>direction</code>: <code><a href="user.md#0xc0deb00c_user_IN">IN</a></code> or <code><a href="user.md#0xc0deb00c_user_OUT">OUT</a></code>
 
 
-<a name="@Assumes_26"></a>
+<a name="@Assumes_27"></a>
 
 ### Assumes
 
@@ -1922,7 +1970,7 @@ Update a user's market account when filling an order.
 Inner function for <code><a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>()</code>.
 
 
-<a name="@Parameters_27"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -1938,7 +1986,7 @@ units routed from <code><a href="user.md#0xc0deb00c_user">user</a></code>, else 
 units routed to <code><a href="user.md#0xc0deb00c_user">user</a></code>, else from <code><a href="user.md#0xc0deb00c_user">user</a></code>
 
 
-<a name="@Assumes_28"></a>
+<a name="@Assumes_29"></a>
 
 ### Assumes
 
@@ -2029,7 +2077,7 @@ Return <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></
 <code>market_account_id</code>.
 
 
-<a name="@Returns_29"></a>
+<a name="@Returns_30"></a>
 
 ### Returns
 
@@ -2041,7 +2089,7 @@ Return <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></
 * <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Restrictions_30"></a>
+<a name="@Restrictions_31"></a>
 
 ### Restrictions
 
@@ -2098,7 +2146,7 @@ queries and thus transaction collisions
 Range check proposed order
 
 
-<a name="@Parameters_31"></a>
+<a name="@Parameters_32"></a>
 
 ### Parameters
 
@@ -2115,7 +2163,7 @@ Range check proposed order
 is <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code> (available withdraw amount for asset traded away)
 
 
-<a name="@Returns_32"></a>
+<a name="@Returns_33"></a>
 
 ### Returns
 
@@ -2125,7 +2173,7 @@ order, else base asset units (inbound asset fill)
 order, else quote asset units (outbound asset fill)
 
 
-<a name="@Abort_conditions_33"></a>
+<a name="@Abort_conditions_34"></a>
 
 ### Abort conditions
 
@@ -2199,7 +2247,7 @@ and <code>market_account_id</code>, initializing <code><a href="user.md#0xc0deb0
 not already exist.
 
 
-<a name="@Abort_conditions_34"></a>
+<a name="@Abort_conditions_35"></a>
 
 ### Abort conditions
 
@@ -2254,7 +2302,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <code><a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a></code> if it does not already exist
 
 
-<a name="@Abort_conditions_35"></a>
+<a name="@Abort_conditions_36"></a>
 
 ### Abort conditions
 
@@ -2324,7 +2372,7 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 Verify <code><a href="user.md#0xc0deb00c_user">user</a></code> has a <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> with <code>market_account_id</code>
 
 
-<a name="@Abort_conditions_36"></a>
+<a name="@Abort_conditions_37"></a>
 
 ### Abort conditions
 
@@ -2371,7 +2419,7 @@ indicated by <code>market_account_id</code>, optionally returning coins if
 a generic asset (ignored for withdrawing coin type)
 
 
-<a name="@Abort_conditions_37"></a>
+<a name="@Abort_conditions_38"></a>
 
 ### Abort conditions
 
@@ -2456,7 +2504,7 @@ account having <code>market_id</code> and <code>general_custodian_id</code>,
 returning coins
 
 
-<a name="@Abort_conditions_38"></a>
+<a name="@Abort_conditions_39"></a>
 
 ### Abort conditions
 

@@ -574,7 +574,7 @@ module econia::market {
                 option::some(coin::withdraw<QuoteCoinType>(user, max_quote))
             ) else ( // If selling base for quote
                 // Start with max base coins needed for trade
-                option::some(coin::withdraw<BaseCoinType>(user, max_quote)),
+                option::some(coin::withdraw<BaseCoinType>(user, max_base)),
                 // Start with 0 quote coins
                 option::some(coin::zero<QuoteCoinType>())
             );

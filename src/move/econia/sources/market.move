@@ -816,6 +816,44 @@ module econia::market {
             lots_filled_ref_mut, ticks_filled_ref_mut);
     }
 
+    /// Match against the book from a user's market account.
+    ///
+    /// Verify user has sufficient assets in their market account,
+    /// withdraw enough to meet range-checked min/max fill requirements,
+    /// match against the book, then deposit back to user's market
+    /// account.
+    ///
+    /// Institutes pass-by-reference for enhanced efficiency.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `user_ref`: Immutable reference to user's address
+    /// * `host_ref`: Immutable reference to market host
+    /// * `market_id_ref`: Immutable reference to market ID
+    /// * `market_account_id_ref`: Immutable reference to user's
+    ///   corresponding market account ID
+    /// * `direction_ref`: `&BUY` or `&SELL`
+    /// * `min_base_ref`: Immutable reference to minimum number of base
+    ///   units to fill
+    /// * `max_base_ref`: Immutable reference to maximum number of base
+    ///   units to fill
+    /// * `min_quote_ref`: Immutable reference to minimum number of
+    ///   quote units to fill
+    /// * `max_quote_ref`: Immutable reference to maximum number of
+    ///   quote units to fill
+    /// * `limit_price_ref`: Immutable reference to maximum price to
+    ///   match against if `direction_ref` is `&BUY`, and minimum price
+    ///   to match against if `direction_ref` is `&SELL`. If passed as
+    ///   `HI_64` in the case of a `BUY` or `0` in the case of a `SELL`,
+    ///   will match at any price. Price for a given market is the
+    ///   number of ticks per lot.
+    ///
+    /// # Returns
+    /// * `u64`: Lots filled by matching engine
+    /// * `u64`: Ticks filled by matching engine
     fun match_from_market_account<
         BaseType,
         QuoteType
@@ -831,8 +869,8 @@ module econia::market {
         max_quote_ref: &u64,
         limit_price_ref: &u64,
     ): (
-        u64, // Lots filled
-        u64 // Ticks filled
+        u64,
+        u64
     ) acquires OrderBooks {
         // Verify order book exists
         verify_order_book_exists(*host_ref, *market_id_ref);

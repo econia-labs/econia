@@ -531,7 +531,7 @@ module econia::user {
     /// in an `option::Option` if `AssetType` is a coin type.
     ///
     /// See wrapped function `deposit_asset()`.
-    public(friend) fun deposit_asset_internal<AssetType>(
+    public(friend) fun deposit_asset_as_option_internal<AssetType>(
         user: address,
         market_account_id: u128,
         amount: u64,
@@ -543,6 +543,39 @@ module econia::user {
     {
         deposit_asset<AssetType>(user, market_account_id, amount,
             optional_coins, generic_asset_transfer_custodian_id)
+    }
+
+    /// Withdraw `base_amount` of `BaseType` and `quote_amount` of
+    /// Deposit `base_amount` of `BaseType` and `quote_amount` of
+    /// `QuoteType` from `user`'s market account indicated by
+    /// `market_account_id` and having
+    /// `generic_asset_transfer_custodian_id`, returning coins
+    /// in an `option::Option` as needed for each type.
+    ///
+    /// See wrapped function `deposit_asset_as_option_internal()`.
+    public(friend) fun deposit_assets_as_option_internal<
+        BaseType,
+        QuoteType
+    >(
+        user: address,
+        market_account_id: u128,
+        base_amount: u64,
+        quote_amount: u64,
+        optional_base_coins: option::Option<Coin<BaseType>>,
+        optional_quote_coins: option::Option<Coin<QuoteType>>,
+        generic_asset_transfer_custodian_id: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Deposit base
+        deposit_asset_as_option_internal<BaseType>(user, market_account_id,
+            base_amount, optional_base_coins,
+            generic_asset_transfer_custodian_id);
+        // Deposit quote
+        deposit_asset_as_option_internal<QuoteType>(user, market_account_id,
+            quote_amount, optional_quote_coins,
+            generic_asset_transfer_custodian_id);
     }
 
     /// Fill a user's order, routing coin collateral as needed.
@@ -821,6 +854,39 @@ module econia::user {
         withdraw_asset<AssetType>(user, market_account_id, amount,
             coin::is_coin_initialized<AssetType>(),
             generic_asset_transfer_custodian_id)
+    }
+
+    /// Withdraw `base_amount` of `BaseType` and `quote_amount` of
+    /// `QuoteType` assets from `user`'s market account indicated by
+    /// `market_account_id` and having
+    /// `generic_asset_transfer_custodian_id`, returning coins in an
+    /// `option::Option` as needed for each type.
+    ///
+    /// See wrapped function `withdraw_asset_as_option_internal()`.
+    public(friend) fun withdraw_assets_as_option_internal<
+        BaseType,
+        QuoteType,
+    >(
+        user: address,
+        market_account_id: u128,
+        base_amount: u64,
+        quote_amount: u64,
+        generic_asset_transfer_custodian_id: u64
+    ): (
+        option::Option<Coin<BaseType>>,
+        option::Option<Coin<QuoteType>>
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        ( // Withdraw and return base/quote types in an option
+            withdraw_asset<BaseType>(user, market_account_id, base_amount,
+                coin::is_coin_initialized<BaseType>(),
+                generic_asset_transfer_custodian_id),
+            withdraw_asset<QuoteType>(user, market_account_id, quote_amount,
+                coin::is_coin_initialized<QuoteType>(),
+                generic_asset_transfer_custodian_id)
+        )
     }
 
     /// Withdraw `amount` of coins of `CoinType` from `user`'s market
@@ -3174,14 +3240,11 @@ module econia::user {
         // Deposit generic asset
         deposit_generic_asset<BG>(@user, market_id, general_custodian_id,
             generic_deposit_amount, &custodian_capability);
-        // Withdraw coin asset as option
-        let coin_as_option = withdraw_asset_as_option_internal<QC>(
-            @user, market_account_id, coin_withdrawal_amount,
-            generic_asset_transfer_custodian_id);
-        // Withdraw generic asset as option
-        let generic_as_option = withdraw_asset_as_option_internal<BG>(
-            @user, market_account_id, generic_withdrawal_amount,
-            generic_asset_transfer_custodian_id);
+        // Withdraw base/coin assets as option
+        let (generic_as_option, coin_as_option) =
+            withdraw_assets_as_option_internal<BG, QC>(
+                @user, market_account_id, generic_withdrawal_amount,
+                coin_withdrawal_amount, generic_asset_transfer_custodian_id);
         // Destroy custodian capability
         registry::destroy_custodian_capability_test(custodian_capability);
         // Assert market account asset counts
@@ -3201,12 +3264,10 @@ module econia::user {
         // Assert coin value is as expected
         assert!(coin::value(option::borrow(&coin_as_option)) ==
             coin_withdrawal_amount, 0);
-        // Deposit both assets back to user's market account
-        deposit_asset_internal<BG>(@user, market_account_id,
-            generic_withdrawal_amount, generic_as_option,
-            generic_asset_transfer_custodian_id);
-        deposit_asset_internal<QC>(@user, market_account_id,
-            coin_withdrawal_amount, coin_as_option,
+        // Deposit both withdrawn assets back to user's market account
+        deposit_assets_as_option_internal<BG, QC>(@user, market_account_id,
+            generic_withdrawal_amount, coin_withdrawal_amount,
+            generic_as_option, coin_as_option,
             generic_asset_transfer_custodian_id);
         // Assert market account asset counts
         let ( base_total,  base_available,  base_ceiling,

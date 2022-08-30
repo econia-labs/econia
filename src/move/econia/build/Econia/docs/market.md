@@ -1657,13 +1657,11 @@ matching engine simply returns silently before overfilling
         (0, *max_quote_ref) <b>else</b> (*max_base_ref, 0);
     // Withdraw base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
     // <b>as</b> optional coins
-    <b>let</b> (optional_base_coins, optional_quote_coins) = (
-        <a href="user.md#0xc0deb00c_user_withdraw_asset_as_option_internal">user::withdraw_asset_as_option_internal</a>&lt;BaseType&gt;(
+    <b>let</b> (optional_base_coins, optional_quote_coins) =
+        <a href="user.md#0xc0deb00c_user_withdraw_assets_as_option_internal">user::withdraw_assets_as_option_internal</a>&lt;BaseType, QuoteType&gt;(
             *user_ref, *market_account_id_ref, base_to_withdraw,
-            order_book_ref_mut.generic_asset_transfer_custodian_id),
-        <a href="user.md#0xc0deb00c_user_withdraw_asset_as_option_internal">user::withdraw_asset_as_option_internal</a>&lt;QuoteType&gt;(
-            *user_ref, *market_account_id_ref, quote_to_withdraw,
-            order_book_ref_mut.generic_asset_transfer_custodian_id));
+            quote_to_withdraw, order_book_ref_mut.
+            generic_asset_transfer_custodian_id);
     // Declare variables <b>to</b> track lots and ticks filled
     <b>let</b> (lots_filled, ticks_filled) = (0, 0);
     // Match against order book
@@ -1673,7 +1671,7 @@ matching engine simply returns silently before overfilling
         &(*min_quote_ref / tick_size), &(*max_quote_ref / tick_size),
         limit_price_ref, &<b>mut</b> optional_base_coins,
         &<b>mut</b> optional_quote_coins, &<b>mut</b> lots_filled, &<b>mut</b> ticks_filled);
-    // Calculate base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> now on hand
+    // Calculate <b>post</b>-match base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> on hand
     <b>let</b> (base_on_hand, quote_on_hand) = <b>if</b> (*direction_ref == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) (
         lots_filled * lot_size, // If a buy, lots received
         *max_quote_ref - (ticks_filled * tick_size) // Ticks given
@@ -1681,14 +1679,11 @@ matching engine simply returns silently before overfilling
         *max_base_ref - (lots_filled * lot_size), // Lots given
         ticks_filled * tick_size // Ticks received
     );
-    // Deposit base asset <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
-    <a href="user.md#0xc0deb00c_user_deposit_asset_internal">user::deposit_asset_internal</a>&lt;BaseType&gt;(*user_ref,
-        *market_account_id_ref, base_on_hand, optional_base_coins,
-        order_book_ref_mut.generic_asset_transfer_custodian_id);
-    // Deposit quote asset <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
-    <a href="user.md#0xc0deb00c_user_deposit_asset_internal">user::deposit_asset_internal</a>&lt;QuoteType&gt;(*user_ref,
-        *market_account_id_ref, quote_on_hand, optional_quote_coins,
-        order_book_ref_mut.generic_asset_transfer_custodian_id);
+    // Deposit <a href="assets.md#0xc0deb00c_assets">assets</a> on hand back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="user.md#0xc0deb00c_user_deposit_assets_as_option_internal">user::deposit_assets_as_option_internal</a>&lt;BaseType, QuoteType&gt;(
+        *user_ref, *market_account_id_ref, base_on_hand, quote_on_hand,
+        optional_base_coins, optional_quote_coins, order_book_ref_mut.
+        generic_asset_transfer_custodian_id);
     (lots_filled, ticks_filled) // Return lots and ticks filled
 }
 </code></pre>

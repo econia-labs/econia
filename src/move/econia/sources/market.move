@@ -859,13 +859,11 @@ module econia::market {
             (0, *max_quote_ref) else (*max_base_ref, 0);
         // Withdraw base and quote assets from user's market account
         // as optional coins
-        let (optional_base_coins, optional_quote_coins) = (
-            user::withdraw_asset_as_option_internal<BaseType>(
+        let (optional_base_coins, optional_quote_coins) =
+            user::withdraw_assets_as_option_internal<BaseType, QuoteType>(
                 *user_ref, *market_account_id_ref, base_to_withdraw,
-                order_book_ref_mut.generic_asset_transfer_custodian_id),
-            user::withdraw_asset_as_option_internal<QuoteType>(
-                *user_ref, *market_account_id_ref, quote_to_withdraw,
-                order_book_ref_mut.generic_asset_transfer_custodian_id));
+                quote_to_withdraw, order_book_ref_mut.
+                generic_asset_transfer_custodian_id);
         // Declare variables to track lots and ticks filled
         let (lots_filled, ticks_filled) = (0, 0);
         // Match against order book
@@ -875,7 +873,7 @@ module econia::market {
             &(*min_quote_ref / tick_size), &(*max_quote_ref / tick_size),
             limit_price_ref, &mut optional_base_coins,
             &mut optional_quote_coins, &mut lots_filled, &mut ticks_filled);
-        // Calculate base and quote assets now on hand
+        // Calculate post-match base and quote assets on hand
         let (base_on_hand, quote_on_hand) = if (*direction_ref == BUY) (
             lots_filled * lot_size, // If a buy, lots received
             *max_quote_ref - (ticks_filled * tick_size) // Ticks given
@@ -883,14 +881,11 @@ module econia::market {
             *max_base_ref - (lots_filled * lot_size), // Lots given
             ticks_filled * tick_size // Ticks received
         );
-        // Deposit base asset to user's market account
-        user::deposit_asset_internal<BaseType>(*user_ref,
-            *market_account_id_ref, base_on_hand, optional_base_coins,
-            order_book_ref_mut.generic_asset_transfer_custodian_id);
-        // Deposit quote asset to user's market account
-        user::deposit_asset_internal<QuoteType>(*user_ref,
-            *market_account_id_ref, quote_on_hand, optional_quote_coins,
-            order_book_ref_mut.generic_asset_transfer_custodian_id);
+        // Deposit assets on hand back to user's market account
+        user::deposit_assets_as_option_internal<BaseType, QuoteType>(
+            *user_ref, *market_account_id_ref, base_on_hand, quote_on_hand,
+            optional_base_coins, optional_quote_coins, order_book_ref_mut.
+            generic_asset_transfer_custodian_id);
         (lots_filled, ticks_filled) // Return lots and ticks filled
     }
 

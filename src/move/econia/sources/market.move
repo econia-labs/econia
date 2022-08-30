@@ -831,10 +831,11 @@ module econia::market {
     ///
     /// # Parameters
     /// * `user_ref`: Immutable reference to user's address
-    /// * `host_ref`: Immutable reference to market host
-    /// * `market_id_ref`: Immutable reference to market ID
     /// * `market_account_id_ref`: Immutable reference to user's
     ///   corresponding market account ID
+    /// * `market_id_ref`: Immutable reference to market ID
+    /// * `order_book_ref_mut`: Mutable reference to corresponding
+    ///   `OrderBook`
     /// * `direction_ref`: `&BUY` or `&SELL`
     /// * `min_base_ref`: Immutable reference to minimum number of base
     ///   units to fill
@@ -859,9 +860,9 @@ module econia::market {
         QuoteType
     >(
         user_ref: &address,
-        host_ref: &address,
-        market_id_ref: &u64,
         market_account_id_ref: &u128,
+        market_id_ref: &u64,
+        order_book_ref_mut: &mut OrderBook,
         direction_ref: &bool,
         min_base_ref: &u64,
         max_base_ref: &u64,
@@ -871,15 +872,7 @@ module econia::market {
     ): (
         u64,
         u64
-    ) acquires OrderBooks {
-        // Verify order book exists
-        verify_order_book_exists(*host_ref, *market_id_ref);
-        // Borrow mutable reference to order books map
-        let order_books_map_ref_mut =
-            &mut borrow_global_mut<OrderBooks>(*host_ref).map;
-        // Borrow mutable reference to order book
-        let order_book_ref_mut =
-            open_table::borrow_mut(order_books_map_ref_mut, *market_id_ref);
+    ) {
         let lot_size = order_book_ref_mut.lot_size; // Get lot size
         let tick_size = order_book_ref_mut.tick_size; // Get tick size
         // Get user's available and ceiling asset counts

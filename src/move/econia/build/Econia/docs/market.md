@@ -1629,10 +1629,11 @@ Institutes pass-by-reference for enhanced efficiency.
 ### Parameters
 
 * <code>user_ref</code>: Immutable reference to user's address
-* <code>host_ref</code>: Immutable reference to market host
-* <code>market_id_ref</code>: Immutable reference to market ID
 * <code>market_account_id_ref</code>: Immutable reference to user's
 corresponding market account ID
+* <code>market_id_ref</code>: Immutable reference to market ID
+* <code>order_book_ref_mut</code>: Mutable reference to corresponding
+<code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
 * <code>direction_ref</code>: <code>&<a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code>&<a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
 * <code>min_base_ref</code>: Immutable reference to minimum number of base
 units to fill
@@ -1658,7 +1659,7 @@ number of ticks per lot.
 * <code>u64</code>: Ticks filled by matching engine
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;BaseType, QuoteType&gt;(user_ref: &<b>address</b>, host_ref: &<b>address</b>, market_id_ref: &u64, market_account_id_ref: &u128, direction_ref: &bool, min_base_ref: &u64, max_base_ref: &u64, min_quote_ref: &u64, max_quote_ref: &u64, limit_price_ref: &u64): (u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;BaseType, QuoteType&gt;(user_ref: &<b>address</b>, market_account_id_ref: &u128, market_id_ref: &u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, direction_ref: &bool, min_base_ref: &u64, max_base_ref: &u64, min_quote_ref: &u64, max_quote_ref: &u64, limit_price_ref: &u64): (u64, u64)
 </code></pre>
 
 
@@ -1672,9 +1673,9 @@ number of ticks per lot.
     QuoteType
 &gt;(
     user_ref: &<b>address</b>,
-    host_ref: &<b>address</b>,
-    market_id_ref: &u64,
     market_account_id_ref: &u128,
+    market_id_ref: &u64,
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
     direction_ref: &bool,
     min_base_ref: &u64,
     max_base_ref: &u64,
@@ -1684,15 +1685,7 @@ number of ticks per lot.
 ): (
     u64,
     u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    // Verify order book <b>exists</b>
-    <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(*host_ref, *market_id_ref);
-    // Borrow mutable reference <b>to</b> order books map
-    <b>let</b> order_books_map_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(*host_ref).map;
-    // Borrow mutable reference <b>to</b> order book
-    <b>let</b> order_book_ref_mut =
-        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(order_books_map_ref_mut, *market_id_ref);
+) {
     <b>let</b> lot_size = order_book_ref_mut.lot_size; // Get lot size
     <b>let</b> tick_size = order_book_ref_mut.tick_size; // Get tick size
     // Get <a href="user.md#0xc0deb00c_user">user</a>'s available and ceiling asset counts

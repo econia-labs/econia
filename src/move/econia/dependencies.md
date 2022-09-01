@@ -81,7 +81,7 @@ flowchart TD
 %% Class definitions
 
     classDef partially_implemented fill:#a020f0 %% Purple
-    classDef implemented fill:#32cd32 %% Lime Green
+    %% classDef implemented fill:#32cd32 %% Lime Green
     classDef unimplemented fill:#708090 %% Slate Gray
 
     class place_limit_order_pre_match implemented;

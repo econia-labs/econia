@@ -3311,8 +3311,8 @@ evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">matc
 
 Place a market order from a user's market account.
 
-See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>, which accepts the
-same parameters except for the below exceptions.
+See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>, which has the same
+parameters except for the below exceptions.
 
 
 <a name="@Extra_parameters_53"></a>

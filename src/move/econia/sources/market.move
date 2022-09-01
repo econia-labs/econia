@@ -210,6 +210,42 @@ module econia::market {
         );
     }
 
+    /// Place a limit order on behalf of user, via
+    /// `general_custodian_capability_ref`.
+    ///
+    /// See wrapped function `place_limit_order()`.
+    public fun place_limit_order_custodian<
+        BaseType,
+        QuoteType
+    >(
+        user: address,
+        host: address,
+        market_id: u64,
+        side: bool,
+        size: u64,
+        price: u64,
+        post_or_abort: bool,
+        fill_or_abort: bool,
+        immediate_or_cancel: bool,
+        general_custodian_capability_ref: &CustodianCapability
+    ) acquires OrderBooks {
+        place_limit_order<
+            BaseType,
+            QuoteType
+        >(
+            &user,
+            &host,
+            &market_id,
+            &registry::custodian_id(general_custodian_capability_ref),
+            &side,
+            &size,
+            &price,
+            &post_or_abort,
+            &fill_or_abort,
+            &immediate_or_cancel
+        );
+    }
+
     /// Swap between coins of `BaseCoinType` and `QuoteCoinType`.
     ///
     /// # Type parameters
@@ -443,6 +479,41 @@ module econia::market {
             NO_CUSTODIAN,
             side,
             order_id
+        );
+    }
+
+    #[cmd]
+    /// Place a limit order as a signing user.
+    ///
+    /// See wrapped function `place_limit_order()`.
+    public entry fun place_limit_order_user<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        host: address,
+        market_id: u64,
+        side: bool,
+        size: u64,
+        price: u64,
+        post_or_abort: bool,
+        fill_or_abort: bool,
+        immediate_or_cancel: bool
+    ) acquires OrderBooks {
+        place_limit_order<
+            BaseType,
+            QuoteType
+        >(
+            &address_of(user),
+            &host,
+            &market_id,
+            &NO_CUSTODIAN,
+            &side,
+            &size,
+            &price,
+            &post_or_abort,
+            &fill_or_abort,
+            &immediate_or_cancel
         );
     }
 

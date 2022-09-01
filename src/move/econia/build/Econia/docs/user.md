@@ -2619,6 +2619,8 @@ a generic asset (ignored for withdrawing coin type)
 * If <code><a href="user.md#0xc0deb00c_user">user</a></code> has insufficient assets available for withdrawal
 * If unauthorized <code>generic_asset_transfer_custodian_id</code> in the
 case of depositing a generic asset
+* If <code>AssetType</code> is not in the corresponding market pair, per
+<code><a href="user.md#0xc0deb00c_user_borrow_transfer_fields_mixed">borrow_transfer_fields_mixed</a>()</code>
 
 
 <pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;AssetType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128, amount: u64, asset_is_coin: bool, generic_asset_transfer_custodian_id: u64): <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;

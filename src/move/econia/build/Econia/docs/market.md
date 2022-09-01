@@ -15,6 +15,7 @@ open two wallets and trade them against each other.
 -  [Constants](#@Constants_0)
 -  [Function `cancel_all_limit_orders_custodian`](#0xc0deb00c_market_cancel_all_limit_orders_custodian)
 -  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
+-  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
 -  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
@@ -29,6 +30,7 @@ open two wallets and trade them against each other.
     -  [Abort conditions](#@Abort_conditions_10)
 -  [Function `cancel_all_limit_orders_user`](#0xc0deb00c_market_cancel_all_limit_orders_user)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
+-  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
 -  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
 -  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
@@ -714,6 +716,62 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_ord
 
 </details>
 
+<a name="0xc0deb00c_market_place_limit_order_custodian"></a>
+
+## Function `place_limit_order_custodian`
+
+Place a limit order on behalf of user, via
+<code>general_custodian_capability_ref</code>.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, side: bool, size: u64, price: u64, post_or_abort: bool, fill_or_abort: bool, immediate_or_cancel: bool, general_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+    size: u64,
+    price: u64,
+    post_or_abort: bool,
+    fill_or_abort: bool,
+    immediate_or_cancel: bool,
+    general_custodian_capability_ref: &CustodianCapability
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
+        BaseType,
+        QuoteType
+    &gt;(
+        &<a href="user.md#0xc0deb00c_user">user</a>,
+        &host,
+        &market_id,
+        &<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref),
+        &side,
+        &size,
+        &price,
+        &post_or_abort,
+        &fill_or_abort,
+        &immediate_or_cancel
+    );
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_swap_coins"></a>
 
 ## Function `swap_coins`
@@ -1056,6 +1114,60 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_cancel_limit_ord
         <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         side,
         <a href="order_id.md#0xc0deb00c_order_id">order_id</a>
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order_user"></a>
+
+## Function `place_limit_order_user`
+
+Place a limit order as a signing user.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, market_id: u64, side: bool, size: u64, price: u64, post_or_abort: bool, fill_or_abort: bool, immediate_or_cancel: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    market_id: u64,
+    side: bool,
+    size: u64,
+    price: u64,
+    post_or_abort: bool,
+    fill_or_abort: bool,
+    immediate_or_cancel: bool
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
+        BaseType,
+        QuoteType
+    &gt;(
+        &address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        &host,
+        &market_id,
+        &<a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        &side,
+        &size,
+        &price,
+        &post_or_abort,
+        &fill_or_abort,
+        &immediate_or_cancel
     );
 }
 </code></pre>
@@ -2842,7 +2954,7 @@ market account.
 
 Inner function for <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
 
-Silently returns if no size left to fill as a maker
+Silently returns if no size left to fill as a maker.
 
 
 <a name="@Parameters_49"></a>

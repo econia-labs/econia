@@ -19,57 +19,6 @@ module econia::signatures {
 
     }
 
-    #[cmd]
-    /// Place a limit order as a signing user.
-    ///
-    /// See wrapped function `place_limit_order()`.
-    public entry fun place_limit_order_user(
-        user: &signer,
-        host: address,
-        market_id: u64,
-        side: bool,
-        size: u64,
-        price: u64,
-        post_or_abort: bool
-    ) acquires OrderBooks {
-        place_limit_order(
-            address_of(user),
-            host,
-            market_id,
-            NO_CUSTODIAN,
-            side,
-            size,
-            price,
-            post_or_abort
-        );
-    }
-
-    /// Place a limit order on behalf of user, via
-    /// `general_custodian_capability_ref`.
-    ///
-    /// See wrapped function `place_limit_order()`.
-    public fun place_limit_order_custodian(
-        user: address,
-        host: address,
-        market_id: u64,
-        side: bool,
-        size: u64,
-        price: u64,
-        post_or_abort: bool,
-        general_custodian_capability_ref: &CustodianCapability
-    ) acquires OrderBooks {
-        place_limit_order(
-            user,
-            host,
-            market_id,
-            registry::custodian_id(general_custodian_capability_ref),
-            side,
-            size,
-            price,
-            post_or_abort
-        );
-    }
-
     #[test(
         econia = @econia,
         user = @user

@@ -95,8 +95,8 @@ flowchart TD
     class match_init implemented;
     class swap implemented;
     class place_limit_order implemented;
-    class place_limit_order_custodian partially_implemented;
-    class place_limit_order_user partially_implemented;
+    class place_limit_order_custodian implemented;
+    class place_limit_order_user implemented;
     class place_market_order unimplemented;
     class place_market_order_custodian unimplemented;
     class place_market_order_user unimplemented;

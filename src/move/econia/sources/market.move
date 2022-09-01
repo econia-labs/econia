@@ -246,6 +246,41 @@ module econia::market {
         );
     }
 
+    /// Place a market order from a market account, on behalf of a user,
+    /// via `general_custodian_capability_ref`.
+    ///
+    /// See wrapped function `place_market_order_order()`.
+    public fun place_market_order_custodian<
+        BaseType,
+        QuoteType
+    >(
+        user: address,
+        host: address,
+        market_id: u64,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+        general_custodian_capability_ref: &CustodianCapability
+    ) acquires OrderBooks {
+        place_market_order<
+            BaseType,
+            QuoteType
+        >(
+            &user,
+            &host,
+            &market_id,
+            &registry::custodian_id(general_custodian_capability_ref),
+            &direction,
+            &min_base,
+            &max_base,
+            &min_quote,
+            &max_quote,
+            &limit_price
+        );
+    }
     /// Swap between coins of `BaseCoinType` and `QuoteCoinType`.
     ///
     /// # Type parameters
@@ -514,6 +549,41 @@ module econia::market {
             &post_or_abort,
             &fill_or_abort,
             &immediate_or_cancel
+        );
+    }
+
+    #[cmd]
+    /// Place a market order from a market account, as a signing user.
+    ///
+    /// See wrapped function `place_market_order_order()`.
+    public entry fun place_market_order_user<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        host: address,
+        market_id: u64,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+    ) acquires OrderBooks {
+        place_market_order<
+            BaseType,
+            QuoteType
+        >(
+            &address_of(user),
+            &host,
+            &market_id,
+            &NO_CUSTODIAN,
+            &direction,
+            &min_base,
+            &max_base,
+            &min_quote,
+            &max_quote,
+            &limit_price
         );
     }
 
@@ -1969,6 +2039,51 @@ module econia::market {
         *max_base_ref_mut = (base as u64);
         // Max quote to match is size-correspondent amount
         *max_quote_ref_mut = (quote as u64);
+    }
+
+    /// Place a market order from a user's market account.
+    ///
+    /// See wrapped function `place_limit_order()`, which has the same
+    /// parameters except for the below exceptions.
+    ///
+    /// # Extra parameters
+    /// * `host_ref`: Immutable reference to market host
+    /// * `general_custodian_id_ref`: Immutable reference to general
+    ///   custodian ID for user's market account
+    fun place_market_order<
+        BaseType,
+        QuoteType
+    >(
+        user_ref: &address,
+        host_ref: &address,
+        market_id_ref: &u64,
+        general_custodian_id_ref: &u64,
+        direction_ref: &bool,
+        min_base_ref: &u64,
+        max_base_ref: &u64,
+        min_quote_ref: &u64,
+        max_quote_ref: &u64,
+        limit_price_ref: &u64,
+    ) acquires OrderBooks {
+        // Verify order book exists
+        verify_order_book_exists(*host_ref, *market_id_ref);
+        // Borrow mutable reference to order books map
+        let order_books_map_ref_mut =
+            &mut borrow_global_mut<OrderBooks>(*host_ref).map;
+        // Borrow mutable reference to order book
+        let order_book_ref_mut =
+            open_table::borrow_mut(order_books_map_ref_mut, *market_id_ref);
+        // Get user's market account ID
+        let market_account_id = user::get_market_account_id(*market_id_ref,
+            *general_custodian_id_ref);
+        // Declare tracker for lots filled, which is not used but which
+        // is necessary for the general matching function signature
+        let lots_filled = 0;
+        // Match against the order book, from user's market account
+        match_from_market_account<BaseType, QuoteType>(user_ref,
+            &market_account_id, market_id_ref, order_book_ref_mut,
+            direction_ref, min_base_ref, max_base_ref, min_quote_ref,
+            max_quote_ref, limit_price_ref, &mut lots_filled);
     }
 
     /// Register new market under signing host.

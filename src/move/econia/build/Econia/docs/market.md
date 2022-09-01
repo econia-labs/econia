@@ -16,6 +16,7 @@ open two wallets and trade them against each other.
 -  [Function `cancel_all_limit_orders_custodian`](#0xc0deb00c_market_cancel_all_limit_orders_custodian)
 -  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
+-  [Function `place_market_order_custodian`](#0xc0deb00c_market_place_market_order_custodian)
 -  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
@@ -31,6 +32,7 @@ open two wallets and trade them against each other.
 -  [Function `cancel_all_limit_orders_user`](#0xc0deb00c_market_cancel_all_limit_orders_user)
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
+-  [Function `place_market_order_user`](#0xc0deb00c_market_place_market_order_user)
 -  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
 -  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
@@ -93,18 +95,20 @@ open two wallets and trade them against each other.
 -  [Function `place_limit_order_pre_match`](#0xc0deb00c_market_place_limit_order_pre_match)
     -  [Parameters](#@Parameters_51)
     -  [Abort conditions](#@Abort_conditions_52)
+-  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
+    -  [Extra parameters](#@Extra_parameters_53)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_53)
-    -  [Parameters](#@Parameters_54)
+    -  [Type parameters](#@Type_parameters_54)
+    -  [Parameters](#@Parameters_55)
 -  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
-    -  [Type parameters](#@Type_parameters_55)
-    -  [Parameters](#@Parameters_56)
+    -  [Type parameters](#@Type_parameters_56)
+    -  [Parameters](#@Parameters_57)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type parameters](#@Type_parameters_57)
-    -  [Parameters](#@Parameters_58)
-    -  [Assumes](#@Assumes_59)
+    -  [Type parameters](#@Type_parameters_58)
+    -  [Parameters](#@Parameters_59)
+    -  [Assumes](#@Assumes_60)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_60)
+    -  [Abort conditions](#@Abort_conditions_61)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -772,6 +776,62 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_orde
 
 </details>
 
+<a name="0xc0deb00c_market_place_market_order_custodian"></a>
+
+## Function `place_market_order_custodian`
+
+Place a market order from a market account, on behalf of a user,
+via <code>general_custodian_capability_ref</code>.
+
+See wrapped function <code>place_market_order_order()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, general_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
+    host: <b>address</b>,
+    market_id: u64,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64,
+    general_custodian_capability_ref: &CustodianCapability
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;
+        BaseType,
+        QuoteType
+    &gt;(
+        &<a href="user.md#0xc0deb00c_user">user</a>,
+        &host,
+        &market_id,
+        &<a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(general_custodian_capability_ref),
+        &direction,
+        &min_base,
+        &max_base,
+        &min_quote,
+        &max_quote,
+        &limit_price
+    );
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_swap_coins"></a>
 
 ## Function `swap_coins`
@@ -1168,6 +1228,60 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_orde
         &post_or_abort,
         &fill_or_abort,
         &immediate_or_cancel
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_market_order_user"></a>
+
+## Function `place_market_order_user`
+
+Place a market order from a market account, as a signing user.
+
+See wrapped function <code>place_market_order_order()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    host: <b>address</b>,
+    market_id: u64,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;
+        BaseType,
+        QuoteType
+    &gt;(
+        &address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        &host,
+        &market_id,
+        &<a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        &direction,
+        &min_base,
+        &max_base,
+        &min_quote,
+        &max_quote,
+        &limit_price
     );
 }
 </code></pre>
@@ -3191,6 +3305,75 @@ evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">matc
 
 </details>
 
+<a name="0xc0deb00c_market_place_market_order"></a>
+
+## Function `place_market_order`
+
+Place a market order from a user's market account.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>, which accepts the
+same parameters except for the below exceptions.
+
+
+<a name="@Extra_parameters_53"></a>
+
+### Extra parameters
+
+* <code>host_ref</code>: Immutable reference to market host
+* <code>general_custodian_id_ref</code>: Immutable reference to general
+custodian ID for user's market account
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_ref: &<b>address</b>, host_ref: &<b>address</b>, market_id_ref: &u64, general_custodian_id_ref: &u64, direction_ref: &bool, min_base_ref: &u64, max_base_ref: &u64, min_quote_ref: &u64, max_quote_ref: &u64, limit_price_ref: &u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    user_ref: &<b>address</b>,
+    host_ref: &<b>address</b>,
+    market_id_ref: &u64,
+    general_custodian_id_ref: &u64,
+    direction_ref: &bool,
+    min_base_ref: &u64,
+    max_base_ref: &u64,
+    min_quote_ref: &u64,
+    max_quote_ref: &u64,
+    limit_price_ref: &u64,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Verify order book <b>exists</b>
+    <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(*host_ref, *market_id_ref);
+    // Borrow mutable reference <b>to</b> order books map
+    <b>let</b> order_books_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(*host_ref).map;
+    // Borrow mutable reference <b>to</b> order book
+    <b>let</b> order_book_ref_mut =
+        <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(order_books_map_ref_mut, *market_id_ref);
+    // Get <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
+    <b>let</b> market_account_id = <a href="user.md#0xc0deb00c_user_get_market_account_id">user::get_market_account_id</a>(*market_id_ref,
+        *general_custodian_id_ref);
+    // Declare tracker for lots filled, which is not used but which
+    // is necessary for the general matching function signature
+    <b>let</b> lots_filled = 0;
+    // Match against the order book, from <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+    <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;BaseType, QuoteType&gt;(user_ref,
+        &market_account_id, market_id_ref, order_book_ref_mut,
+        direction_ref, min_base_ref, max_base_ref, min_quote_ref,
+        max_quote_ref, limit_price_ref, &<b>mut</b> lots_filled);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_register_market"></a>
 
 ## Function `register_market`
@@ -3198,7 +3381,7 @@ evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">matc
 Register new market under signing host.
 
 
-<a name="@Type_parameters_53"></a>
+<a name="@Type_parameters_54"></a>
 
 ### Type parameters
 
@@ -3206,7 +3389,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_54"></a>
+<a name="@Parameters_55"></a>
 
 ### Parameters
 
@@ -3259,7 +3442,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_55"></a>
+<a name="@Type_parameters_56"></a>
 
 ### Type parameters
 
@@ -3267,7 +3450,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_56"></a>
+<a name="@Parameters_57"></a>
 
 ### Parameters
 
@@ -3338,7 +3521,7 @@ Swap against book, via wrapped call to <code><a href="market.md#0xc0deb00c_marke
 Institutes pass-by-reference for enhanced efficiency.
 
 
-<a name="@Type_parameters_57"></a>
+<a name="@Type_parameters_58"></a>
 
 ### Type parameters
 
@@ -3346,7 +3529,7 @@ Institutes pass-by-reference for enhanced efficiency.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_58"></a>
+<a name="@Parameters_59"></a>
 
 ### Parameters
 
@@ -3384,7 +3567,7 @@ to ID of generic asset transfer custodian attempting to place
 swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when no custodian placing swap
 
 
-<a name="@Assumes_59"></a>
+<a name="@Assumes_60"></a>
 
 ### Assumes
 
@@ -3461,7 +3644,7 @@ swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COI
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_60"></a>
+<a name="@Abort_conditions_61"></a>
 
 ### Abort conditions
 

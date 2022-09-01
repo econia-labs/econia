@@ -97,9 +97,9 @@ flowchart TD
     class place_limit_order implemented;
     class place_limit_order_custodian implemented;
     class place_limit_order_user implemented;
-    class place_market_order unimplemented;
-    class place_market_order_custodian unimplemented;
-    class place_market_order_user unimplemented;
+    class place_market_order implemented;
+    class place_market_order_custodian implemented;
+    class place_market_order_user implemented;
     class match_loop implemented;
     class match_loop_order implemented;
     class match_loop_order_fill_size implemented;

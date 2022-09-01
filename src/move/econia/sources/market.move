@@ -1616,6 +1616,10 @@ module econia::market {
     /// `immediate_or_cancel_ref` may be marked `&true` for a given
     /// order.
     ///
+    /// Call to `match_from_market_account()` is necessary to check
+    /// fill amounts relative to user's asset counts, even in the case
+    /// that cross-spread matching does not take place.
+    ///
     /// # Type parameters
     /// * `BaseType`: Base type for market
     /// * `QuoteType`: Quote type for market
@@ -1639,13 +1643,18 @@ module econia::market {
     ///   not completely filled as a taker order across the spread
     /// * `immediate_or_cancel_ref`: If `&true`, fill as much as
     ///   possible across the spread, then silently return
-
+    ///
     /// # Abort conditions
-    /// * If `post_or_abort_ref` is `&true` and order crosses the spread
-    /// * If `fill_or_abort_ref` is `&true` and the order does not
-    ///   completely fill across the spread
     /// * If more than one of `post_or_abort_ref&`, `fill_or_abort_ref`,
-    ///   or `immediate_or_cancel_ref` is marked `&true`.
+    ///   or `immediate_or_cancel_ref` is marked `&true` per
+    ///   `place_limit_order_pre_match()`
+    /// * If `post_or_abort_ref` is `&true` and order crosses the spread
+    ///   per `place_limit_order_pre_match()`
+    /// * If `fill_or_abort_ref` is `&true` and the order does not
+    ///   completely fill across the spread: minimum base and quote
+    ///   match amounts are assigned via `place_limit_order_pre_match()`
+    ///   such that the abort condition is evaluated in
+    ///   `match_verify_fills()`
     ///
     /// # Assumes
     /// * That user-side order registration will abort for invalid
@@ -1667,11 +1676,7 @@ module econia::market {
         fill_or_abort_ref: &bool,
         immediate_or_cancel_ref: &bool
     ) acquires OrderBooks {
-        if (*size_ref == 0) return; // Silently return if size is 0
-        // Assert that no more than one order type is flagged
-        assert!(if (*post_or_abort_ref)
-            !(*fill_or_abort_ref || *immediate_or_cancel_ref) else
-            !(*fill_or_abort_ref && *immediate_or_cancel_ref), E_TOO_MANY_ORDER_FLAGS);
+        if (*size_ref == 0) return; // Silently return if no order size
         // Verify order book exists
         verify_order_book_exists(*host_ref, *market_id_ref);
         // Borrow mutable reference to order books map
@@ -1680,37 +1685,16 @@ module econia::market {
         // Borrow mutable reference to order book
         let order_book_ref_mut =
             open_table::borrow_mut(order_books_map_ref_mut, *market_id_ref);
-        // Determine if spread crossed
-        let crossed_spread = if (*side_ref == ASK)
-            (*price_ref <= order_id::price(order_book_ref_mut.max_bid)) else
-            (*price_ref >= order_id::price(order_book_ref_mut.min_ask));
-        // Assert no cross-spread fills if a post-or-abort order
-        assert!(!(*post_or_abort_ref && crossed_spread),
-            E_POST_OR_ABORT_CROSSED_SPREAD);
-        let (lot_size, tick_size) = (order_book_ref_mut.lot_size,
-            order_book_ref_mut.tick_size); // Get lot, tick size
-        // Calculate size-correspondent base amount
-        let base = (*size_ref as u128) * (lot_size as u128);
-        // Assert size-correspondent base amount fits in a u64
-        assert!(!(base > (HI_64 as u128)), E_SIZE_BASE_OVERFLOW);
-        // Calculate size-correspondent tick amount
-        let ticks = (*size_ref as u128) * (*price_ref as u128);
-        // Assert size-correspondent ticks amount fits in a u64
-        assert!(!(ticks > (HI_64 as u128)), E_SIZE_TICKS_OVERFLOW);
-        // Calculate size-correspondent quote amount
-        let quote = ticks * (tick_size as u128);
-        // Assert size-corresondent quote amount fits in a u64
-        assert!(!(quote > (HI_64 as u128)), E_SIZE_QUOTE_OVERFLOW);
-        // If fill-or-abort, min base and quote are size-correspondent
-        let (min_base, min_quote) = if (*fill_or_abort_ref)
-            // Otherwise no minimum full amounts
-            ((base as u64), (quote as u64)) else (0, 0);
-        // Max base and quote are size-correspondent amounts
-        let (max_base, max_quote) = ((base as u64), (quote as u64));
-        // Calculate direction of matching for crossed spread
-        let direction = if (*side_ref == ASK) SELL else BUY;
-        let market_account_id = user::get_market_account_id(*market_id_ref,
-            *general_custodian_id_ref); // Get user's market account ID
+        // Declare variables to reassign via pass-by-reference
+        let (market_account_id, lot_size, tick_size, direction, min_base,
+            max_base, min_quote, max_quote) = (0, 0, 0, false, 0, 0, 0, 0);
+        // Prepare to match
+        place_limit_order_pre_match(order_book_ref_mut, market_id_ref,
+            general_custodian_id_ref, side_ref, size_ref, price_ref,
+            post_or_abort_ref, fill_or_abort_ref, immediate_or_cancel_ref,
+            &mut market_account_id, &mut lot_size, &mut tick_size,
+            &mut direction, &mut min_base, &mut max_base, &mut min_quote,
+            &mut max_quote);
         // Match against order book, storing count of lots filled
         let (lots_filled, _) = match_from_market_account<BaseType, QuoteType>(
             user_ref, &market_account_id, market_id_ref, order_book_ref_mut,
@@ -1746,6 +1730,117 @@ module econia::market {
                 Order{size: size_to_fill, user: *user_ref,
                     general_custodian_id: *general_custodian_id_ref});
         }
+    }
+
+    /// Prepare for matching a limit order across the spread.
+    ///
+    /// Verify valid inputs, initialize variables local to
+    /// `place_limit_order()`, evaluate post-or-abort condition, and
+    /// range check fill amounts.
+    ///
+    /// # Parameters
+    /// * `order_book_ref`: Immutable reference to market `OrderBook`
+    /// * `market_id_ref`: Immutable reference to market ID
+    /// * `general_custodian_id_ref`: Immutable reference to general
+    ///   custodian ID for user's market account
+    /// * `side_ref`: `&ASK` or `&BID`
+    /// * `size_ref`: Immutable reference to number of lots the order is
+    ///    for
+    /// * `price_ref`: Immutable reference to order price, in ticks per
+    ///   lot
+    /// * `post_or_abort_ref`: If `&true`, abort for orders that cross
+    ///   the spread, else fill across the spread when applicable
+    /// * `fill_or_abort_ref`: If `&true`, abort if the limit order is
+    ///   not completely filled as a taker order across the spread
+    /// * `immediate_or_cancel_ref`: If `&true`, fill as much as
+    ///   possible across the spread, then silently return
+    /// * `lot_size_ref_mut`: Mutable reference to lot size for market
+    /// * `tick_size_ref_mut`: Mutable reference to tick size for market
+    /// * `direction_ref_mut`: Mutable reference to direction for
+    ///   matching across the spread, `&BUY` or `&SELL`
+    /// * `min_base_ref_mut`: Mutable reference to minimum number of
+    ///   base units to match across the spread
+    /// * `max_base_ref_mut`: Mutable reference to maximum number of
+    ///   base units to match in general case
+    /// * `min_quote_ref_mut`: Mutable reference to minimum number of
+    ///   quote units to match across the spread
+    /// * `max_quote_ref_mut`: Mutable reference to maximum number of
+    ///   quote units to match in general case
+    ///
+    /// # Abort conditions
+    /// * If more than one of `post_or_abort_ref&`, `fill_or_abort_ref`,
+    ///   or `immediate_or_cancel_ref` is marked `&true`
+    /// * If `post_or_abort_ref` is `&true` and order crosses the spread
+    ///   per `place_limit_order_pre_match()`
+    /// * If `fill_or_abort_ref` is `&true` and the order does not
+    ///   completely fill across the spread: minimum base and quote
+    ///   match amounts are assigned such that the abort condition is
+    ///   evaluated in `match_verify_fills()`
+    /// * If size-correspondent base amount overflows a `u64`
+    /// * If size-corresondent tick amount overflows a `u64`
+    /// * If size-correspondent quote amount overflows a `u64`
+    fun place_limit_order_pre_match(
+        order_book_ref: &OrderBook,
+        market_id_ref: &u64,
+        general_custodian_id_ref: &u64,
+        side_ref: &bool,
+        size_ref: &u64,
+        price_ref: &u64,
+        post_or_abort_ref: &bool,
+        fill_or_abort_ref: &bool,
+        immediate_or_cancel_ref: &bool,
+        market_account_id_ref_mut: &mut u128,
+        lot_size_ref_mut: &mut u64,
+        tick_size_ref_mut: &mut u64,
+        direction_ref_mut: &mut bool,
+        min_base_ref_mut: &mut u64,
+        max_base_ref_mut: &mut u64,
+        min_quote_ref_mut: &mut u64,
+        max_quote_ref_mut: &mut u64
+    ) {
+        // Assert that no more than one order type is flagged
+        assert!(if (*post_or_abort_ref)
+            !(*fill_or_abort_ref || *immediate_or_cancel_ref) else
+            !(*fill_or_abort_ref && *immediate_or_cancel_ref), E_TOO_MANY_ORDER_FLAGS);
+        // Determine if spread crossed
+        let crossed_spread = if (*side_ref == ASK)
+            (*price_ref <= order_id::price(order_book_ref.max_bid)) else
+            (*price_ref >= order_id::price(order_book_ref.min_ask));
+        // Assert no cross-spread fills if a post-or-abort order
+        assert!(!(*post_or_abort_ref && crossed_spread),
+            E_POST_OR_ABORT_CROSSED_SPREAD);
+        // Get user's market account ID
+        *market_account_id_ref_mut = user::
+            get_market_account_id(*market_id_ref, *general_custodian_id_ref);
+        // Calculate direction of matching for crossed spread
+        *direction_ref_mut = if (*side_ref == ASK) SELL else BUY;
+        *lot_size_ref_mut = order_book_ref.lot_size; // Get lot size
+        *tick_size_ref_mut = order_book_ref.tick_size; // Get tick size
+        // Calculate size-correspondent base amount
+        let base = (*size_ref as u128) * (*lot_size_ref_mut as u128);
+        // Assert size-correspondent base amount fits in a u64
+        assert!(!(base > (HI_64 as u128)), E_SIZE_BASE_OVERFLOW);
+        // Calculate size-correspondent tick amount
+        let ticks = (*size_ref as u128) * (*price_ref as u128);
+        // Assert size-correspondent ticks amount fits in a u64
+        assert!(!(ticks > (HI_64 as u128)), E_SIZE_TICKS_OVERFLOW);
+        // Calculate size-correspondent quote amount
+        let quote = ticks * (*tick_size_ref_mut as u128);
+        // Assert size-correspondent quote amount fits in a u64
+        assert!(!(quote > (HI_64 as u128)), E_SIZE_QUOTE_OVERFLOW);
+        if (*fill_or_abort_ref) { // If a fill-or-abort order
+            // Min base to match is size-correspondent base amount
+            *min_base_ref_mut = (base as u64);
+            // Min quote to match is size-correspondent base amount
+            *min_quote_ref_mut = (quote as u64);
+        } else { // If not a fill-or-abort order
+            *min_base_ref_mut = 0; // No min base match amount
+            *min_quote_ref_mut = 0; // No min quote match quote
+        };
+        // Max base to match is size-correspondent amount
+        *max_base_ref_mut = (base as u64);
+        // Max quote to match is size-correspondent amount
+        *max_quote_ref_mut = (quote as u64);
     }
 
     /// Register new market under signing host.

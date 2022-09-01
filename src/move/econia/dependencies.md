@@ -75,6 +75,8 @@ flowchart TD
     match_loop_init[match_loop_init]
     match_range_check_fills[match_range_check_fills]
     swap_between_coinstores[swap_between_coinstores]
+    place_limit_order_pre_match[place_limit_order_pre_match]
+    place_limit_order_post_match[place_limit_order_post_match]
 
 %% Class definitions
 
@@ -82,6 +84,8 @@ flowchart TD
     classDef implemented fill:#32cd32 %% Lime Green
     classDef unimplemented fill:#708090 %% Slate Gray
 
+    class place_limit_order_pre_match partially_implemented;
+    class place_limit_order_post_match partially_implemented;
     class swap_between_coinstores implemented;
     class match_verify_fills implemented;
     class swap_coins implemented;
@@ -116,6 +120,8 @@ flowchart TD
     place_limit_order_user --> place_limit_order
     place_limit_order_custodian --> place_limit_order
     place_limit_order --> match_from_market_account
+    place_limit_order --> place_limit_order_pre_match
+    place_limit_order --> place_limit_order_post_match
     place_market_order --> match_from_market_account
     place_market_order_custodian --> place_market_order
     swap --> match

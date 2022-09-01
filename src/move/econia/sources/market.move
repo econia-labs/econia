@@ -810,10 +810,8 @@ module econia::market {
     ///   `HI_64` in the case of a `BUY` or `0` in the case of a `SELL`,
     ///   will match at any price. Price for a given market is the
     ///   number of ticks per lot.
-    ///
-    /// # Returns
-    /// * `u64`: Lots filled by matching engine
-    /// * `u64`: Ticks filled by matching engine
+    /// * `lots_filled_ref_mut`: Mutable reference to number of lots
+    ///   matched against book
     fun match_from_market_account<
         BaseType,
         QuoteType
@@ -828,9 +826,7 @@ module econia::market {
         min_quote_ref: &u64,
         max_quote_ref: &u64,
         limit_price_ref: &u64,
-    ): (
-        u64,
-        u64
+        lots_filled_ref_mut: &mut u64
     ) {
         let lot_size = order_book_ref_mut.lot_size; // Get lot size
         let tick_size = order_book_ref_mut.tick_size; // Get tick size
@@ -854,21 +850,22 @@ module econia::market {
                 *user_ref, *market_account_id_ref, base_to_withdraw,
                 quote_to_withdraw, order_book_ref_mut.
                 generic_asset_transfer_custodian_id);
-        // Declare variables to track lots and ticks filled
-        let (lots_filled, ticks_filled) = (0, 0);
+        let ticks_filled = 0; // Declare tracker for ticks filled
         // Match against order book
         match<BaseType, QuoteType>(market_id_ref, order_book_ref_mut,
             &lot_size, &tick_size, direction_ref,
             &(*min_base_ref / lot_size), &(*max_base_ref / lot_size),
             &(*min_quote_ref / tick_size), &(*max_quote_ref / tick_size),
             limit_price_ref, &mut optional_base_coins,
-            &mut optional_quote_coins, &mut lots_filled, &mut ticks_filled);
+            &mut optional_quote_coins, lots_filled_ref_mut, &mut ticks_filled);
         // Calculate post-match base and quote assets on hand
         let (base_on_hand, quote_on_hand) = if (*direction_ref == BUY) (
-            lots_filled * lot_size, // If a buy, lots received
-            *max_quote_ref - (ticks_filled * tick_size) // Ticks given
+            *lots_filled_ref_mut * lot_size, // If a buy, lots received
+            // Ticks traded away
+            *max_quote_ref - (ticks_filled * tick_size)
         ) else ( // If a sell
-            *max_base_ref - (lots_filled * lot_size), // Lots given
+            // Lots traded away
+            *max_base_ref - (*lots_filled_ref_mut * lot_size),
             ticks_filled * tick_size // Ticks received
         );
         // Deposit assets on hand back to user's market account
@@ -876,7 +873,6 @@ module econia::market {
             *user_ref, *market_account_id_ref, base_on_hand, quote_on_hand,
             optional_base_coins, optional_quote_coins, order_book_ref_mut.
             generic_asset_transfer_custodian_id);
-        (lots_filled, ticks_filled) // Return lots and ticks filled
     }
 
     /// Initialize local variables for `match()`, verify types.
@@ -1687,7 +1683,8 @@ module econia::market {
             open_table::borrow_mut(order_books_map_ref_mut, *market_id_ref);
         // Declare variables to reassign via pass-by-reference
         let (market_account_id, lot_size, tick_size, direction, min_base,
-            max_base, min_quote, max_quote) = (0, 0, 0, false, 0, 0, 0, 0);
+            max_base, min_quote, max_quote, lots_filled) =
+            (0, 0, 0, false, 0, 0, 0, 0, 0);
         // Prepare to match
         place_limit_order_pre_match(order_book_ref_mut, market_id_ref,
             general_custodian_id_ref, side_ref, size_ref, price_ref,
@@ -1695,11 +1692,11 @@ module econia::market {
             &mut market_account_id, &mut lot_size, &mut tick_size,
             &mut direction, &mut min_base, &mut max_base, &mut min_quote,
             &mut max_quote);
-        // Match against order book, storing count of lots filled
-        let (lots_filled, _) = match_from_market_account<BaseType, QuoteType>(
-            user_ref, &market_account_id, market_id_ref, order_book_ref_mut,
+        // Match against order book
+        match_from_market_account<BaseType, QuoteType>(user_ref,
+            &market_account_id, market_id_ref, order_book_ref_mut,
             &direction, &min_base, &max_base, &min_quote, &max_quote,
-            price_ref);
+            price_ref, &mut lots_filled);
         if (lots_filled < *size_ref) { // If still size left to fill
             // Calculate size left to fill
             let size_to_fill = *size_ref - lots_filled;

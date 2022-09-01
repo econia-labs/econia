@@ -1436,6 +1436,8 @@ module econia::user {
     /// * If `user` has insufficient assets available for withdrawal
     /// * If unauthorized `generic_asset_transfer_custodian_id` in the
     ///   case of depositing a generic asset
+    /// * If `AssetType` is not in the corresponding market pair, per
+    ///   `borrow_transfer_fields_mixed()`
     fun withdraw_asset<AssetType>(
         user: address,
         market_account_id: u128,

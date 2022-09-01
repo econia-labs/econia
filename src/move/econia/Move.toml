@@ -1,6 +1,7 @@
 [package]
 name = 'Econia'
 version = '3.0.0' # Per SemVer
+upgrade_policy = 'immutable'
 
 [addresses]
 econia = '0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7'

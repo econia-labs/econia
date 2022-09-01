@@ -1429,8 +1429,7 @@ Range check arguments, initialize local variables, verify that
 loopwise matching can proceed, then match against the orders
 tree in a loopwise traversal. Verify fill amounts afterwards.
 
-Silently returns if no fills possible based based on side and
-corresponding max size amounts.
+Silently returns if no fills possible.
 
 Institutes pass-by-reference for enhanced efficiency.
 
@@ -1530,9 +1529,6 @@ matching engine simply returns silently before overfilling
     lots_filled_ref_mut: &<b>mut</b> u64,
     ticks_filled_ref_mut: &<b>mut</b> u64
 ) {
-    // Silently <b>if</b> no fills possible for size and relevant max size
-    <b>if</b> ((*direction_ref == <a href="market.md#0xc0deb00c_market_BUY">BUY</a> && *max_ticks_ref == 0) ||
-        (*direction_ref == <a href="market.md#0xc0deb00c_market_SELL">SELL</a> && *max_lots_ref == 0)) <b>return</b>;
     // Initialize variables, check types
     <b>let</b> (lots_until_max, ticks_until_max, side, tree_ref_mut,
          spread_maker_ref_mut, n_orders, traversal_direction) =

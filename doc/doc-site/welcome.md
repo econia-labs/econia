@@ -9,7 +9,7 @@ Welcome to the developer documentation site for Econia, a hyper-parallelized on-
 ## What is Econia?
 
 Econia is a protocol that lets anyone in the world trade a digital asset with anyone else in the world, at whatever price they want.
-More specifically, Econia is an order book, a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is open-source and decentralized.
+More specifically, Econia is an order book, a fundamental financial tool utilized by financial institutions like stock markets, except unlike the New York Stock Exchange or the NASDAQ, Econia is decentralized, open-source, and permissionless.
 
 ## Econia is in development
 

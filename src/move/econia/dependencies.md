@@ -46,6 +46,8 @@ flowchart TD
 ```
 # New matching engine
 
+If a node has two lines, the second line is the function signature from the old matching engine
+
 ```mermaid
 
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%

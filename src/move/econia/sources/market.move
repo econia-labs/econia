@@ -1626,8 +1626,8 @@ module econia::market {
     /// * `host_ref`: Immutable reference to market host
     /// * `market_id_ref`: Immutable reference to market ID
     /// * `direction_ref`: `&BUY` or `&SELL`
-    /// * `general_custodian_id`: Immutable reference to general
-    ///   custodian ID user's market account
+    /// * `general_custodian_id_ref`: Immutable reference to general
+    ///   custodian ID for user's market account
     /// * `side_ref`: `&ASK` or `&BID`
     /// * `size_ref`: Immutable reference to number of lots the order is
     ///    for
@@ -1653,10 +1653,15 @@ module econia::market {
     ///   `match_verify_fills()`
     ///
     /// # Assumes
-    /// * That user-side order registration will abort for invalid
-    ///   arguments
+    /// * That user-side maker order registration will abort for invalid
+    ///   arguments: if order fills across the spread, asset ceiling
+    ///   is range checked again when registering an order user-side
+    ///   per `place_limit_order_post_match()`, since filling a
+    ///   limit order as a taker may result in a better price than as a
+    ///   maker.
     /// * That matching against the book will abort for invalid
-    ///   arguments
+    ///   arguments, per `match_from_market_account()` and inner
+    ///   functions
     fun place_limit_order<
         BaseType,
         QuoteType
@@ -1685,51 +1690,106 @@ module econia::market {
         let (market_account_id, lot_size, tick_size, direction, min_base,
             max_base, min_quote, max_quote, lots_filled) =
             (0, 0, 0, false, 0, 0, 0, 0, 0);
-        // Prepare to match
+        // Prepare to match against the book
         place_limit_order_pre_match(order_book_ref_mut, market_id_ref,
             general_custodian_id_ref, side_ref, size_ref, price_ref,
             post_or_abort_ref, fill_or_abort_ref, immediate_or_cancel_ref,
             &mut market_account_id, &mut lot_size, &mut tick_size,
             &mut direction, &mut min_base, &mut max_base, &mut min_quote,
             &mut max_quote);
-        // Match against order book
+        // Optionally match against order book as a taker
         match_from_market_account<BaseType, QuoteType>(user_ref,
             &market_account_id, market_id_ref, order_book_ref_mut,
             &direction, &min_base, &max_base, &min_quote, &max_quote,
             price_ref, &mut lots_filled);
-        if (lots_filled < *size_ref) { // If still size left to fill
-            // Calculate size left to fill
-            let size_to_fill = *size_ref - lots_filled;
-            // Get new order ID based on book counter/side
-            let order_id = order_id::order_id(
-                *price_ref, get_counter(order_book_ref_mut), *side_ref);
-            // Add order to user's market account
-            user::register_order_internal(*user_ref, market_account_id,
-                *side_ref, order_id, size_to_fill, *price_ref, lot_size,
-                tick_size);
-            // Get mutable reference to orders tree for given side,
-            // determine if order is new spread maker, and get mutable
-            // reference to spread maker for given side
-            let (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) =
-                if (*side_ref == ASK) (
-                    &mut order_book_ref_mut.asks,
-                    (order_id < order_book_ref_mut.min_ask),
-                    &mut order_book_ref_mut.min_ask
-                ) else ( // If order is a bid
-                    &mut order_book_ref_mut.bids,
-                    (order_id > order_book_ref_mut.max_bid),
-                    &mut order_book_ref_mut.max_bid
-                );
-            // If a new spread maker, mark as such on book
-            if (new_spread_maker) *spread_maker_ref_mut = order_id;
-            // Insert order to corresponding tree
-            critbit::insert(tree_ref_mut, order_id,
-                Order{size: size_to_fill, user: *user_ref,
-                    general_custodian_id: *general_custodian_id_ref});
-        }
+        // Optionally place maker order on the book and in user's market
+        // account
+        place_limit_order_post_match(user_ref, order_book_ref_mut,
+            &market_account_id, general_custodian_id_ref, &lot_size,
+            &tick_size, side_ref, size_ref, price_ref, &lots_filled,
+            immediate_or_cancel_ref);
+    }
+
+    /// Optionally place a maker order on the book and in a user's
+    /// market account.
+    ///
+    /// Inner function for `place_limit_order()`.
+    ///
+    /// Silently returns if no size left to fill as a maker.
+    ///
+    /// # Parameters
+    /// * `user_ref`: Immutable reference to address of user submitting
+    ///   order
+    /// * `order_book_ref_mut`: Mutable reference to market `OrderBook`
+    /// * `market_account_id_ref`: Immutable reference to user's
+    ///   corresponding market account ID
+    /// * `general_custodian_id_ref`: Immutable reference to general
+    ///   custodian ID for user's market account
+    /// * `lot_size_ref`: Immutable reference to lot size for market
+    /// * `tick_size_ref`: Immutable reference to tick size for market
+    /// * `side_ref`: `&ASK` or `&BID`
+    /// * `size_ref`: Immutable reference to number of lots the order is
+    ///    for
+    /// * `price_ref`: Immutable reference to order price, in ticks per
+    ///   lot
+    /// * `lots_filled_ref`: Immutable reference to number of lots
+    ///   filled against the book as a taker order, if any
+    /// * `immediate_or_cancel_ref`: If `&true`, silently return
+    ///
+    /// # Assumes
+    /// * That user-side maker order registration will abort for invalid
+    ///   arguments: if order fills across the spread, asset ceiling
+    ///   is range checked again when registering an order user-side,
+    ///   since filling a limit order as a taker may result in a better
+    ///   price than as a maker.
+    fun place_limit_order_post_match(
+        user_ref: &address,
+        order_book_ref_mut: &mut OrderBook,
+        market_account_id_ref: &u128,
+        general_custodian_id_ref: &u64,
+        lot_size_ref: &u64,
+        tick_size_ref: &u64,
+        side_ref: &bool,
+        size_ref: &u64,
+        price_ref: &u64,
+        lots_filled_ref: &u64,
+        immediate_or_cancel_ref: &bool
+    ) {
+        // Silently return if no size left to fill as maker
+        if (*immediate_or_cancel_ref || *lots_filled_ref == *size_ref) return;
+        // Calculate size left to fill
+        let size_to_fill = *size_ref - *lots_filled_ref;
+        // Get new order ID based on book counter/side
+        let order_id = order_id::order_id(
+            *price_ref, get_counter(order_book_ref_mut), *side_ref);
+        // Add order to user's market account
+        user::register_order_internal(*user_ref, *market_account_id_ref,
+            *side_ref, order_id, size_to_fill, *price_ref, *lot_size_ref,
+            *tick_size_ref);
+        // Get mutable reference to orders tree for given side,
+        // determine if order is new spread maker, and get mutable
+        // reference to spread maker for given side
+        let (tree_ref_mut, new_spread_maker, spread_maker_ref_mut) =
+            if (*side_ref == ASK) (
+                &mut order_book_ref_mut.asks,
+                (order_id < order_book_ref_mut.min_ask),
+                &mut order_book_ref_mut.min_ask
+            ) else ( // If order is a bid
+                &mut order_book_ref_mut.bids,
+                (order_id > order_book_ref_mut.max_bid),
+                &mut order_book_ref_mut.max_bid
+            );
+        // If a new spread maker, mark as such on book
+        if (new_spread_maker) *spread_maker_ref_mut = order_id;
+        // Insert order to corresponding tree
+        critbit::insert(tree_ref_mut, order_id,
+            Order{size: size_to_fill, user: *user_ref,
+                general_custodian_id: *general_custodian_id_ref});
     }
 
     /// Prepare for matching a limit order across the spread.
+    ///
+    /// Inner function for `place_limit_order()`.
     ///
     /// Verify valid inputs, initialize variables local to
     /// `place_limit_order()`, evaluate post-or-abort condition, and

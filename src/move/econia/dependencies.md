@@ -84,8 +84,8 @@ flowchart TD
     classDef implemented fill:#32cd32 %% Lime Green
     classDef unimplemented fill:#708090 %% Slate Gray
 
-    class place_limit_order_pre_match partially_implemented;
-    class place_limit_order_post_match partially_implemented;
+    class place_limit_order_pre_match implemented;
+    class place_limit_order_post_match implemented;
     class swap_between_coinstores implemented;
     class match_verify_fills implemented;
     class swap_coins implemented;
@@ -94,12 +94,12 @@ flowchart TD
     class match_from_market_account implemented;
     class match_init implemented;
     class swap implemented;
+    class place_limit_order implemented;
+    class place_limit_order_custodian partially_implemented;
+    class place_limit_order_user partially_implemented;
     class place_market_order unimplemented;
     class place_market_order_custodian unimplemented;
     class place_market_order_user unimplemented;
-    class place_limit_order partially_implemented;
-    class place_limit_order_custodian partially_implemented;
-    class place_limit_order_user partially_implemented;
     class match_loop implemented;
     class match_loop_order implemented;
     class match_loop_order_fill_size implemented;

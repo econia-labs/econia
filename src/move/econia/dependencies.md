@@ -48,12 +48,14 @@ flowchart TD
 
 If a node has two lines, the second line is the function signature from the old matching engine.
 
-|  Color |       Meaning       |
-|:------:|:-------------------:|
-|   Gray | To review           |
-|   Blue | End-to-end tested   |
-|  Green | Individually tested |
-|   Gold | To test end-to-end  |
+| Color        | Meaning                |
+|--------------|------------------------|
+| Gray         | To review              |
+| Green        | Individually tested    |
+| Spring green | Tested via invocation  |
+| Blue         | End-to-end tested      |
+| Orange       | To test via invocation |
+| Gold         | To test end-to-end     |
 
 ```mermaid
 
@@ -89,10 +91,12 @@ flowchart TD
 
 %% Class definitions
 
-    classDef tested_integrated fill:#87cefa %% Light sky blue
+    classDef tested_integrated fill:#87cefa %% Light Sky Blue
     classDef to_test_integrated fill:#ffd700 %% Gold
     classDef individually_tested fill:#32cd32 %% Lime Green
     classDef to_review fill:#708090 %% Slate Gray
+    classDef to_test_via_invocation fill:#ffa500 %% Orange
+    classDef tested_via_invocation fill:#00ff7f %% Spring Green
 
     class place_limit_order_pre_match to_test_integrated;
     class place_limit_order_post_match to_test_integrated;
@@ -105,11 +109,11 @@ flowchart TD
     class match_init to_test_integrated;
     class swap to_test_integrated;
     class place_limit_order to_test_integrated;
-    class place_limit_order_custodian to_test_integrated;
-    class place_limit_order_user to_test_integrated;
+    class place_limit_order_custodian to_test_via_invocation;
+    class place_limit_order_user to_test_via_invocation;
     class place_market_order to_test_integrated;
-    class place_market_order_custodian to_test_integrated;
-    class place_market_order_user to_test_integrated;
+    class place_market_order_custodian to_test_via_invocation;
+    class place_market_order_user to_test_via_invocation;
     class match_loop to_test_integrated;
     class match_loop_order to_test_integrated;
     class match_loop_order_fill_size individually_tested;

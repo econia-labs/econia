@@ -2319,11 +2319,13 @@ module econia::market {
 
     // End-to-end testing user parameters
     #[test_only]
-    const USER_1_CUSTODIAN_ID: u64 = 1;
+    const USER_0_GENERAL_CUSTODIAN_ID: u64 = 2;
     #[test_only]
-    const USER_2_CUSTODIAN_ID: u64 = 2;
+    const USER_1_GENERAL_CUSTODIAN_ID: u64 = 3;
     #[test_only]
-    const USER_3_CUSTODIAN_ID: u64 = 3;
+    const USER_2_GENERAL_CUSTODIAN_ID: u64 = 4;
+    #[test_only]
+    const USER_3_GENERAL_CUSTODIAN_ID: u64 = 5;
     #[test_only]
     const USER_0_START_BASE: u64 =  1000000000000;
     #[test_only]
@@ -2471,6 +2473,210 @@ module econia::market {
             &order_book_ref.bids;
         // Return if orders tree has given order ID
         critbit::has_key(tree_ref, order_id)
+    }
+
+    #[test_only]
+    /// Deposit specified amount of asset to user's market account
+    ///
+    /// Inner function for `register_end_to_end_market_account_test()`.
+    ///
+    /// # Type parameters
+    /// * `AssetType`: Asset type to deposit
+    ///
+    /// # Parameters
+    /// * `econia`: Immutable reference to signature from Econia
+    /// * `user`: Immutable reference to signature from user
+    /// * `general_custodian_id`: General custodian ID for user's market
+    ///   account
+    /// * `amount`: Amount to deposit
+    fun register_end_to_end_market_account_deposit_test<
+        AssetType
+    >(
+        econia: &signer,
+        user: &signer,
+        general_custodian_id: u64,
+        amount: u64
+    ) {
+        if (coin::is_coin_initialized<AssetType>()) { // If a coin type
+            // Mint specified amount of coins
+            let coins = assets::mint<AssetType>(econia, amount);
+            user::deposit_coins(address_of(user), MARKET_ID,
+                general_custodian_id, coins); // Deposit coins
+        } else { // If a generic asset
+            // Get a generic asset transfer custodian capability
+            let generic_asset_transfer_custodian_capability =
+                registry::get_custodian_capability_test(
+                    GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
+            // Deposit specified amount of generic asset
+            user::deposit_generic_asset<AssetType>(address_of(user), MARKET_ID,
+                general_custodian_id, amount,
+                &generic_asset_transfer_custodian_capability);
+            // Destroy custodian capability
+            registry::destroy_custodian_capability_test(
+                generic_asset_transfer_custodian_capability);
+        }
+    }
+
+    #[test_only]
+    /// Initialize a user with a funded market account.
+    ///
+    /// Inner function for `register_end_to_end_market_accounts_test()`.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `econia`: Immutable reference to signature from Econia
+    /// * `user`: Immutable reference to signature from user
+    /// * `general_custodian_id`: User's general custodian ID, marked
+    ///   `NO_CUSTODIAN`: if user does not have general custodian
+    /// * `start_base`: Amount of base asset user starts with in market
+    ///    account
+    /// * `start_quote`: Amount of quote asset user starts with in
+    ///   market account
+    fun register_end_to_end_market_account_test<
+        BaseType,
+        QuoteType
+    >(
+        econia: &signer,
+        user: &signer,
+        general_custodian_id: u64,
+        start_base: u64,
+        start_quote: u64
+    ) {
+        user::register_market_account<BaseType, QuoteType>(user, MARKET_ID,
+            general_custodian_id); // Register market account
+        register_end_to_end_market_account_deposit_test<BaseType>(econia,
+            user, general_custodian_id, start_base); // Deposit base
+        register_end_to_end_market_account_deposit_test<QuoteType>(econia,
+            user, general_custodian_id, start_quote); // Deposit quote
+    }
+
+    #[test_only]
+    /// Register users with funded market accounts.
+    ///
+    /// Inner function for `register_end_to_end_users_test()`.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `econia`: Immutable reference to signature from Econia
+    /// * `user_0`: Immutable reference to signature from `USER_0`
+    /// * `user_1`: Immutable reference to signature from `USER_1`
+    /// * `user_2`: Immutable reference to signature from `USER_2`
+    /// * `user_3`: Immutable reference to signature from `USER_3`
+    /// * `user_0_general_custodian_id`: General custodian ID for
+    ///   `USER_0`
+    fun register_end_to_end_market_accounts_test<
+        BaseType,
+        QuoteType
+    >(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer,
+        user_0_general_custodian_id: u64
+    ) {
+        register_end_to_end_market_account_test<BaseType, QuoteType>(econia,
+            user_0, user_0_general_custodian_id, USER_0_START_BASE,
+            USER_0_START_QUOTE); // Register user 0's market account
+        register_end_to_end_market_account_test<BaseType, QuoteType>(econia,
+            user_1, USER_1_GENERAL_CUSTODIAN_ID, USER_1_START_BASE,
+            USER_1_START_QUOTE); // Register user 1's market account
+        register_end_to_end_market_account_test<BaseType, QuoteType>(econia,
+            user_2, USER_2_GENERAL_CUSTODIAN_ID, USER_2_START_BASE,
+            USER_2_START_QUOTE); // Register user 2's market account
+        register_end_to_end_market_account_test<BaseType, QuoteType>(econia,
+            user_3, USER_3_GENERAL_CUSTODIAN_ID, USER_3_START_BASE,
+            USER_3_START_QUOTE); // Register user 3's market account
+    }
+
+    #[test_only]
+    /// Register users 1, 2, and 3, with orders for given `side`.
+    fun register_end_to_end_orders_test<
+        BaseType,
+        QuoteType
+    >(
+        side: bool,
+    ) acquires OrderBooks {
+        // Get order size and price based on side
+        let (size_1, price_1, size_2, price_2, size_3, price_3) =
+            if (side == ASK) (
+                USER_1_ASK_SIZE, USER_1_ASK_PRICE, USER_2_ASK_SIZE,
+                USER_2_ASK_PRICE, USER_3_ASK_SIZE, USER_3_ASK_PRICE
+            ) else (
+                USER_1_BID_SIZE, USER_1_BID_PRICE, USER_2_BID_SIZE,
+                USER_2_BID_PRICE, USER_3_BID_SIZE, USER_3_BID_PRICE
+            );
+        // Place limit orders for each user
+        place_limit_order<BaseType, QuoteType>(&@user_1, &@econia, &MARKET_ID,
+            &USER_1_GENERAL_CUSTODIAN_ID, &side, &size_1, &price_1, &false,
+            &false, &false);
+        place_limit_order<BaseType, QuoteType>(&@user_2, &@econia, &MARKET_ID,
+            &USER_2_GENERAL_CUSTODIAN_ID, &side, &size_2, &price_2, &false,
+            &false, &false);
+        place_limit_order<BaseType, QuoteType>(&@user_3, &@econia, &MARKET_ID,
+            &USER_3_GENERAL_CUSTODIAN_ID, &side, &size_3, &price_3, &false,
+            &false, &false);
+    }
+
+    #[test_only]
+    /// Initialize a test market hosted by Econia, then initialize users
+    /// with end-to-end testing values.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `econia`: Immutable reference to signature from Econia
+    /// * `user_0`: Immutable reference to signature from `USER_0`
+    /// * `user_1`: Immutable reference to signature from `USER_1`
+    /// * `user_2`: Immutable reference to signature from `USER_2`
+    /// * `user_3`: Immutable reference to signature from `USER_3`
+    /// * `side`: `ASK` or `BID`
+    /// * `user_0_has_general_custodian`: `true` if `USER_0` has a
+    ///   general custodian with id `USER_0_GENERAL_CUSTODIAN_ID`,
+    ///   `false` if `USER_0` does not
+    fun register_end_to_end_users_test<
+        BaseType,
+        QuoteType
+    >(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer,
+        side: bool,
+        user_0_has_general_custodian: bool
+    ) acquires OrderBooks {
+        assets::init_coin_types(econia); // Initialize coin types
+        registry::init_registry(econia); // Initialize registry
+        // Set all potential custodian IDs as valid
+        registry::set_registered_custodian_test(HI_64);
+        // Determine if base is a coin type
+        let base_is_coin = coin::is_coin_initialized<BaseType>();
+        // Determine if quote is a coin type
+        let quote_is_coin = coin::is_coin_initialized<QuoteType>();
+        // Get generic asset transfer custodian ID for market
+        let generic_asset_transfer_custodian_id =
+            if (base_is_coin && quote_is_coin) PURE_COIN_PAIR else
+                GENERIC_ASSET_TRANSFER_CUSTODIAN_ID;
+        // Register market accordingly
+        register_market<BaseType, QuoteType>(econia, LOT_SIZE, TICK_SIZE,
+            generic_asset_transfer_custodian_id);
+        // Get user 0's custodian ID
+        let user_0_general_custodian_id = if (user_0_has_general_custodian)
+            USER_0_GENERAL_CUSTODIAN_ID else NO_CUSTODIAN;
+        // Register funded market accounts for each user
+        register_end_to_end_market_accounts_test<BaseType, QuoteType>(econia,
+            user_0, user_1, user_2, user_3, user_0_general_custodian_id);
+        // Place limit orders for users 1, 2, and 3
+        register_end_to_end_orders_test<BaseType, QuoteType>(side);
     }
 
     #[test_only]

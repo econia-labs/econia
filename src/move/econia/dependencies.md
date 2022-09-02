@@ -151,3 +151,16 @@ flowchart TD
     match_loop --> match_loop_break
 
 ```
+
+# Matching engine end-to-end test functions
+
+```mermaid
+
+flowchart TD
+
+    register_end_to_end_users_test --> register_end_to_end_market_accounts_test
+    register_end_to_end_users_test --> register_end_to_end_orders_test
+    register_end_to_end_market_accounts_test --> register_end_to_end_market_account_test
+    register_end_to_end_market_account_test --> register_end_to_end_market_account_deposit_test
+
+```

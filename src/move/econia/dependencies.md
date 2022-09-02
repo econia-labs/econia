@@ -46,7 +46,14 @@ flowchart TD
 ```
 # New matching engine
 
-If a node has two lines, the second line is the function signature from the old matching engine
+If a node has two lines, the second line is the function signature from the old matching engine.
+
+|  Color |       Meaning       |
+|:------:|:-------------------:|
+|   Gray | To review           |
+| Purple | End-to-end tested   |
+|  Green | Individually tested |
+|   Gold | To test end-to-end  |
 
 ```mermaid
 
@@ -82,33 +89,34 @@ flowchart TD
 
 %% Class definitions
 
-    classDef partially_implemented fill:#a020f0 %% Purple
-    %% classDef implemented fill:#32cd32 %% Lime Green
-    classDef unimplemented fill:#708090 %% Slate Gray
+    %%classDef tested_end_to_end fill:#a020f0; %% Purple
+    %%classDef to_test_end_to_end fill:#ffd700; %% Gold
+    classDef individually_tested fill:#32cd32; %% Lime Green
+    classDef to_review fill:#708090; %% Slate Gray
 
-    class place_limit_order_pre_match implemented;
-    class place_limit_order_post_match implemented;
-    class swap_between_coinstores implemented;
-    class match_verify_fills implemented;
-    class swap_coins implemented;
-    class swap_generic implemented
-    class match implemented;
-    class match_from_market_account implemented;
-    class match_init implemented;
-    class swap implemented;
-    class place_limit_order implemented;
-    class place_limit_order_custodian implemented;
-    class place_limit_order_user implemented;
-    class place_market_order implemented;
-    class place_market_order_custodian implemented;
-    class place_market_order_user implemented;
-    class match_loop implemented;
-    class match_loop_order implemented;
-    class match_loop_order_fill_size implemented;
-    class match_loop_order_follow_up implemented;
-    class match_loop_break implemented;
-    class match_loop_init implemented;
-    class match_range_check_fills implemented;
+    class place_limit_order_pre_match to_review;
+    class place_limit_order_post_match to_review;
+    class swap_between_coinstores to_review;
+    class match_verify_fills to_review;
+    class swap_coins to_review;
+    class swap_generic to_review;
+    class match to_review;
+    class match_from_market_account to_review;
+    class match_init to_review;
+    class swap to_review;
+    class place_limit_order to_review;
+    class place_limit_order_custodian to_review;
+    class place_limit_order_user to_review;
+    class place_market_order to_review;
+    class place_market_order_custodian to_review;
+    class place_market_order_user to_review;
+    class match_loop to_review;
+    class match_loop_order to_review;
+    class match_loop_order_fill_size individually_tested;
+    class match_loop_order_follow_up to_review;
+    class match_loop_break to_review;
+    class match_loop_init to_review;
+    class match_range_check_fills to_review;
 
 %% Node relationships
 

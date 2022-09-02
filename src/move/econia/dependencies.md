@@ -51,7 +51,7 @@ If a node has two lines, the second line is the function signature from the old 
 |  Color |       Meaning       |
 |:------:|:-------------------:|
 |   Gray | To review           |
-| Purple | End-to-end tested   |
+|   Blue | End-to-end tested   |
 |  Green | Individually tested |
 |   Gold | To test end-to-end  |
 
@@ -89,34 +89,34 @@ flowchart TD
 
 %% Class definitions
 
-    %%classDef tested_end_to_end fill:#a020f0; %% Purple
-    %%classDef to_test_end_to_end fill:#ffd700; %% Gold
-    classDef individually_tested fill:#32cd32; %% Lime Green
-    classDef to_review fill:#708090; %% Slate Gray
+    classDef tested_integrated fill:#87cefa %% Light sky blue
+    classDef to_test_integrated fill:#ffd700 %% Gold
+    classDef individually_tested fill:#32cd32 %% Lime Green
+    classDef to_review fill:#708090 %% Slate Gray
 
-    class place_limit_order_pre_match to_review;
-    class place_limit_order_post_match to_review;
-    class swap_between_coinstores to_review;
-    class match_verify_fills to_review;
-    class swap_coins to_review;
-    class swap_generic to_review;
-    class match to_review;
-    class match_from_market_account to_review;
-    class match_init to_review;
-    class swap to_review;
-    class place_limit_order to_review;
-    class place_limit_order_custodian to_review;
-    class place_limit_order_user to_review;
-    class place_market_order to_review;
-    class place_market_order_custodian to_review;
-    class place_market_order_user to_review;
-    class match_loop to_review;
-    class match_loop_order to_review;
+    class place_limit_order_pre_match to_test_integrated;
+    class place_limit_order_post_match to_test_integrated;
+    class swap_between_coinstores to_test_integrated;
+    class match_verify_fills individually_tested;
+    class swap_coins to_test_integrated;
+    class swap_generic to_test_integrated;
+    class match to_test_integrated;
+    class match_from_market_account to_test_integrated;
+    class match_init to_test_integrated;
+    class swap to_test_integrated;
+    class place_limit_order to_test_integrated;
+    class place_limit_order_custodian to_test_integrated;
+    class place_limit_order_user to_test_integrated;
+    class place_market_order to_test_integrated;
+    class place_market_order_custodian to_test_integrated;
+    class place_market_order_user to_test_integrated;
+    class match_loop to_test_integrated;
+    class match_loop_order to_test_integrated;
     class match_loop_order_fill_size individually_tested;
-    class match_loop_order_follow_up to_review;
-    class match_loop_break to_review;
-    class match_loop_init to_review;
-    class match_range_check_fills to_review;
+    class match_loop_order_follow_up to_test_integrated;
+    class match_loop_break to_test_integrated;
+    class match_loop_init to_test_integrated;
+    class match_range_check_fills individually_tested;
 
 %% Node relationships
 

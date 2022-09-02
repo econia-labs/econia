@@ -2,6 +2,14 @@
 /// Allows for self-matched trades since preventing them is practically
 /// impossible in a permissionless market: all a user has to do is
 /// open two wallets and trade them against each other.
+///
+/// See test-only constants and functions for assorted test frameworks.
+/// For matching engine end-to-end testing, `USER_1` has the closest
+/// order to the spread, while `USER_3` has the order furthest from the
+/// spread. `USER_0` then matches places a limit order, market order, or
+/// swap, optionally matching against the book.
+///
+/// ---
 module econia::market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2309,6 +2317,60 @@ module econia::market {
     /// General custodian ID for test market user
     const GENERAL_CUSTODIAN_ID: u64 = 2;
 
+    // End-to-end testing user parameters
+    #[test_only]
+    const USER_1_CUSTODIAN_ID: u64 = 1;
+    #[test_only]
+    const USER_2_CUSTODIAN_ID: u64 = 2;
+    #[test_only]
+    const USER_3_CUSTODIAN_ID: u64 = 3;
+    #[test_only]
+    const USER_0_START_BASE: u64 =  1000000000000;
+    #[test_only]
+    const USER_1_START_BASE: u64 =  2000000000000;
+    #[test_only]
+    const USER_2_START_BASE: u64 =  3000000000000;
+    #[test_only]
+    const USER_3_START_BASE: u64 =  4000000000000;
+    #[test_only]
+    const USER_0_START_QUOTE: u64 = 1500000000000;
+    #[test_only]
+    const USER_1_START_QUOTE: u64 = 2500000000000;
+    #[test_only]
+    const USER_2_START_QUOTE: u64 = 3500000000000;
+    #[test_only]
+    const USER_3_START_QUOTE: u64 = 4500000000000;
+    #[test_only]
+    const USER_1_ASK_PRICE: u64 = 10;
+    #[test_only]
+    const USER_2_ASK_PRICE: u64 = 11;
+    #[test_only]
+    const USER_3_ASK_PRICE: u64 = 12;
+    #[test_only]
+    const USER_1_BID_PRICE: u64 =  5;
+    #[test_only]
+    const USER_2_BID_PRICE: u64 =  4;
+    #[test_only]
+    const USER_3_BID_PRICE: u64 =  3;
+    #[test_only]
+    const USER_1_ASK_SIZE: u64 = 9;
+    #[test_only]
+    const USER_2_ASK_SIZE: u64 = 8;
+    #[test_only]
+    const USER_3_ASK_SIZE: u64 = 7;
+    #[test_only]
+    const USER_1_BID_SIZE: u64 = 3;
+    #[test_only]
+    const USER_2_BID_SIZE: u64 = 4;
+    #[test_only]
+    const USER_3_BID_SIZE: u64 = 5;
+    #[test_only]
+    const USER_1_COUNTER: u64 = 0;
+    #[test_only]
+    const USER_2_COUNTER: u64 = 1;
+    #[test_only]
+    const USER_3_COUNTER: u64 = 2;
+
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2614,6 +2676,7 @@ module econia::market {
     }
 
     #[test(user = @user)]
+    // Verify successful return and update
     fun test_get_counter(
         user: &signer
     ) acquires OrderBooks {
@@ -2632,6 +2695,126 @@ module econia::market {
         assert!(get_counter(order_book_ref_mut) == 0, 0);
         assert!(get_counter(order_book_ref_mut) == 1, 0);
         assert!(get_counter(order_book_ref_mut) == 2, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for minimum base exceeds max
+    fun test_match_range_check_fills_min_base_exceeds_max() {
+        // Assign inputs
+        let direction = BUY;
+        let min_base = 1;
+        let max_base = 0;
+        let min_quote = 0;
+        let max_quote = 0;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Verify indicated abort
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_available, &base_ceiling, &quote_available,
+            &quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for minimum quote exceeds max
+    fun test_match_range_check_fills_min_quote_exceeds_max() {
+        // Assign inputs
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 1;
+        let max_quote = 0;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Verify indicated abort
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_available, &base_ceiling, &quote_available,
+            &quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for inbound asset overflow, when buying
+    fun test_match_range_check_fills_overflow_inbound_buy() {
+        // Assign inputs
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = HI_64;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Verify indicated abort
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_available, &base_ceiling, &quote_available,
+            &quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for inbound asset overflow, when selling
+    fun test_match_range_check_fills_overflow_inbound_sell() {
+        // Assign inputs
+        let direction = SELL;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = HI_64;
+        // Verify indicated abort
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_available, &base_ceiling, &quote_available,
+            &quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for outbound asset underflow, when buying
+    fun test_match_range_check_fills_underflow_outbound_buy() {
+        // Assign inputs
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Verify indicated abort
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_available, &base_ceiling, &quote_available,
+            &quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for outbound asset underflow, when selling
+    fun test_match_range_check_fills_underflow_outbound_sell() {
+        // Assign inputs
+        let direction = SELL;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Verify indicated abort
+        match_range_check_fills(&direction, &min_base, &max_base, &min_quote,
+            &max_quote, &base_available, &base_ceiling, &quote_available,
+            &quote_ceiling);
     }
 
     #[test]

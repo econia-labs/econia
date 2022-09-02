@@ -8,6 +8,14 @@ Allows for self-matched trades since preventing them is practically
 impossible in a permissionless market: all a user has to do is
 open two wallets and trade them against each other.
 
+See test-only constants and functions for assorted test frameworks.
+For matching engine end-to-end testing, <code>USER_1</code> has the closest
+order to the spread, while <code>USER_3</code> has the order furthest from the
+spread. <code>USER_0</code> then matches places a limit order, market order, or
+swap, optionally matching against the book.
+
+---
+
 
 -  [Struct `Order`](#0xc0deb00c_market_Order)
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)

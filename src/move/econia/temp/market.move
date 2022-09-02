@@ -866,58 +866,6 @@ module econia::market {
     // Below constants for end-to-end market order fill testing
     #[test_only]
     const USER_0_CUSTODIAN_ID: u64 = 0; // No custodian flag
-    #[test_only]
-    const USER_1_CUSTODIAN_ID: u64 = 1;
-    #[test_only]
-    const USER_2_CUSTODIAN_ID: u64 = 2;
-    #[test_only]
-    const USER_3_CUSTODIAN_ID: u64 = 3;
-    #[test_only]
-    const USER_0_START_BASE: u64 = 1000;
-    #[test_only]
-    const USER_1_START_BASE: u64 = 2000;
-    #[test_only]
-    const USER_2_START_BASE: u64 = 3000;
-    #[test_only]
-    const USER_3_START_BASE: u64 = 4000;
-    #[test_only]
-    const USER_0_START_QUOTE: u64 = 1500;
-    #[test_only]
-    const USER_1_START_QUOTE: u64 = 2500;
-    #[test_only]
-    const USER_2_START_QUOTE: u64 = 3500;
-    #[test_only]
-    const USER_3_START_QUOTE: u64 = 4500;
-    #[test_only]
-    const USER_1_ASK_PRICE: u64 = 10;
-    #[test_only]
-    const USER_2_ASK_PRICE: u64 = 11;
-    #[test_only]
-    const USER_3_ASK_PRICE: u64 = 12;
-    #[test_only]
-    const USER_1_ASK_SIZE: u64 = 9;
-    #[test_only]
-    const USER_2_ASK_SIZE: u64 = 8;
-    #[test_only]
-    const USER_3_ASK_SIZE: u64 = 7;
-    #[test_only]
-    const USER_1_BID_SIZE: u64 = 3;
-    #[test_only]
-    const USER_2_BID_SIZE: u64 = 4;
-    #[test_only]
-    const USER_3_BID_SIZE: u64 = 5;
-    #[test_only]
-    const USER_1_BID_PRICE: u64 = 5;
-    #[test_only]
-    const USER_2_BID_PRICE: u64 = 4;
-    #[test_only]
-    const USER_3_BID_PRICE: u64 = 3;
-    #[test_only]
-    const USER_1_SERIAL_ID: u64 = 0;
-    #[test_only]
-    const USER_2_SERIAL_ID: u64 = 1;
-    #[test_only]
-    const USER_3_SERIAL_ID: u64 = 2;
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

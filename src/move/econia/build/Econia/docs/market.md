@@ -399,12 +399,12 @@ Buy direction flag
 
 
 
-<a name="0xc0deb00c_market_E_BOTH_GENERIC"></a>
+<a name="0xc0deb00c_market_E_BOTH_COINS"></a>
 
-When both assets generic but at least one should be coin type
+When both assets are coins but at least one should be generic
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_BOTH_GENERIC">E_BOTH_GENERIC</a>: u64 = 18;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_BOTH_COINS">E_BOTH_COINS</a>: u64 = 18;
 </code></pre>
 
 
@@ -1072,8 +1072,8 @@ quote is not a coin type but quote coin option is some
     <b>let</b> base_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;();
     // Determine <b>if</b> quote is <a href="">coin</a> type
     <b>let</b> quote_is_coin = <a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;QuoteType&gt;();
-    // Assert that base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> are not both generic
-    <b>assert</b>!(!(base_is_coin && quote_is_coin), <a href="market.md#0xc0deb00c_market_E_BOTH_GENERIC">E_BOTH_GENERIC</a>);
+    // Assert that base and quote <a href="assets.md#0xc0deb00c_assets">assets</a> are not both coins
+    <b>assert</b>!(!(base_is_coin && quote_is_coin), <a href="market.md#0xc0deb00c_market_E_BOTH_COINS">E_BOTH_COINS</a>);
     // Assert that <b>if</b> base is <a href="">coin</a> then <a href="">option</a> is some, and that <b>if</b>
     // base is not <a href="">coin</a> then <a href="">option</a> is none
     <b>assert</b>!(base_is_coin == <a href="_is_some">option::is_some</a>(optional_base_coins_ref_mut),

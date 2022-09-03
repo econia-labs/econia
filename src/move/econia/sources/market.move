@@ -140,8 +140,8 @@ module econia::market {
     const E_INVALID_OPTION_BASE: u64 = 16;
     /// When a quote asset is improperly option-wrapped for generic swap
     const E_INVALID_OPTION_QUOTE: u64 = 17;
-    /// When both assets generic but at least one should be coin type
-    const E_BOTH_GENERIC: u64 = 18;
+    /// When both assets are coins but at least one should be generic
+    const E_BOTH_COINS: u64 = 18;
     /// When a limit order has too many flags
     const E_TOO_MANY_ORDER_FLAGS: u64 = 19;
     /// When limit order size max base fill overflows a `u64`
@@ -449,8 +449,8 @@ module econia::market {
         let base_is_coin = coin::is_coin_initialized<BaseType>();
         // Determine if quote is coin type
         let quote_is_coin = coin::is_coin_initialized<QuoteType>();
-        // Assert that base and quote assets are not both generic
-        assert!(!(base_is_coin && quote_is_coin), E_BOTH_GENERIC);
+        // Assert that base and quote assets are not both coins
+        assert!(!(base_is_coin && quote_is_coin), E_BOTH_COINS);
         // Assert that if base is coin then option is some, and that if
         // base is not coin then option is none
         assert!(base_is_coin == option::is_some(optional_base_coins_ref_mut),
@@ -5586,6 +5586,83 @@ module econia::market {
         assert!(order_book_ref_2.max_bid == MAX_BID_DEFAULT, 0);
         assert!(order_book_ref_2.min_ask == MIN_ASK_DEFAULT, 0);
         assert!(order_book_ref_2.counter == 0, 0);
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 18)]
+    /// Verify failure for both assets coins
+    fun test_swap_generic_both_coins(
+        econia: &signer
+    ) acquires OrderBooks {
+        assets::init_coin_types(econia); // Init coin types
+        registry::init_registry(econia); // Init registry
+        let generic_asset_transfer_custodian_capability =
+            registry::register_custodian_capability();
+        // Create option-wrapped coins
+        let (option_base_coins, option_quote_coins) = (
+            option::some(coin::zero<BC>()), option::some(coin::zero<QC>()));
+        // Attempt invalid invocation
+        swap_generic<BC, QC>(@econia, MARKET_ID, BUY, 0, 0, 0, 0, 0,
+            &mut option_base_coins, &mut option_quote_coins,
+            &generic_asset_transfer_custodian_capability);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        // Unpack and destroy empty coins
+        coin::destroy_zero(option::destroy_some(option_base_coins));
+        coin::destroy_zero(option::destroy_some(option_quote_coins));
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 16)]
+    /// Verify failure for invalid base option
+    fun test_swap_generic_invalid_option_base(
+        econia: &signer
+    ) acquires OrderBooks {
+        assets::init_coin_types(econia); // Init coin types
+        registry::init_registry(econia); // Init registry
+        let generic_asset_transfer_custodian_capability =
+            registry::register_custodian_capability();
+        // Create empty option-wrapped base coins
+        let option_base_coins = option::none<coin::Coin<BC>>();
+        // Create empty option for generic quote asset
+        let option_quote_coins = option::none<coin::Coin<QG>>();
+        // Attempt invalid invocation
+        swap_generic<BC, QG>(@econia, MARKET_ID, BUY, 0, 0, 0, 0, 0,
+            &mut option_base_coins, &mut option_quote_coins,
+            &generic_asset_transfer_custodian_capability);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        // Destroy empty options
+        option::destroy_none(option_base_coins);
+        option::destroy_none(option_quote_coins);
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 17)]
+    /// Verify failure for invalid quote option
+    fun test_swap_generic_invalid_option_quote(
+        econia: &signer
+    ) acquires OrderBooks {
+        assets::init_coin_types(econia); // Init coin types
+        registry::init_registry(econia); // Init registry
+        let generic_asset_transfer_custodian_capability =
+            registry::register_custodian_capability();
+        // Create empty option for generic base asset
+        let option_base_coins = option::none<coin::Coin<BG>>();
+        // Create empty option-wrapped quote coins
+        let option_quote_coins = option::none<coin::Coin<QC>>();
+        // Attempt invalid invocation
+        swap_generic<BG, QC>(@econia, MARKET_ID, BUY, 0, 0, 0, 0, 0,
+            &mut option_base_coins, &mut option_quote_coins,
+            &generic_asset_transfer_custodian_capability);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        // Destroy empty options
+        option::destroy_none(option_base_coins);
+        option::destroy_none(option_quote_coins);
     }
 
     #[test(

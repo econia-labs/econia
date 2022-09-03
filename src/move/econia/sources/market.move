@@ -3,11 +3,13 @@
 /// impossible in a permissionless market: all a user has to do is
 /// open two wallets and trade them against each other.
 ///
-/// See test-only constants and functions for assorted test frameworks.
-/// For matching engine end-to-end testing, `USER_1` has the closest
-/// order to the spread, while `USER_3` has the order furthest from the
-/// spread. `USER_0` then matches places a limit order, market order, or
-/// swap, optionally matching against the book.
+/// End-to-end matching engine testing begins with a call to
+/// `register_end_to_end_users_test()`, which places a limit order order
+/// on the book for `USER_1` (`@user_1`) `USER_2`, and `USER_3`, with
+/// `USER_1`'s order nearest the spread and `USER_3`'s order furthest
+/// away. Then a call to the matching engine is invoked, and post-match
+/// state is verified via `verify_end_to_end_state_test()`. See tests
+/// of form `test_end_to_end....()`.
 ///
 /// ---
 module econia::market {
@@ -3333,6 +3335,103 @@ module econia::market {
         cancel_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, ASK, 0);
     }
 
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place simple buy order that partially exhausts user 1's order,
+    /// having user 0 sign
+    fun test_end_to_end_market_buy_simple_user(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign size filled
+        let size = USER_2_BID_SIZE - 1;
+        // Assign order values
+        let direction   = BUY;
+        let min_base    = 0;
+        let max_base    = LOT_SIZE * size;
+        let min_quote   = 0;
+        let max_quote   = USER_0_START_QUOTE;
+        let limit_price = HI_64;
+        // Assign test setup values
+        let side = if (direction == BUY) ASK else BID;
+        let user_0_has_general_custodian = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QG>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Place market order
+        place_market_order_user<BC, QG>(user_0, @econia, MARKET_ID, direction,
+            min_base, max_base, min_quote, max_quote, limit_price);
+        // Verify state
+        verify_end_to_end_state_test<BC, QG>(side, size, from_market_account,
+            user_0_has_general_custodian, base_final_swap, quote_final_swap);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place sell order that clears out user 1 and 2's orders, leaving
+    /// only part of user 3's order unfilled, via delegated custodian.
+    fun test_end_to_end_market_sell_custodian(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign size variables
+        let fill_size_3 = 1;
+        let size = USER_1_BID_SIZE + USER_2_BID_SIZE + fill_size_3;
+        let quote_filled = TICK_SIZE * (USER_1_BID_SIZE * USER_1_BID_PRICE +
+            USER_2_BID_SIZE * USER_2_BID_PRICE +
+            fill_size_3 * USER_3_BID_PRICE);
+        // Assign order values
+        let direction   = SELL;
+        let min_base    = 0;
+        let max_base    = USER_0_START_BASE;
+        let min_quote   = quote_filled;
+        let max_quote   = quote_filled;
+        let limit_price = USER_3_BID_PRICE;
+        // Assign test setup values
+        let side = if (direction == BUY) ASK else BID;
+        let user_0_has_general_custodian = true;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        // Get general custodian capability
+        let general_custodian_capability = registry::
+            get_custodian_capability_test(USER_0_GENERAL_CUSTODIAN_ID);
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QG>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Place market order
+        place_market_order_custodian<BC, QG>(@user_0, @econia, MARKET_ID,
+            direction, min_base, max_base, min_quote, max_quote, limit_price,
+            &general_custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(
+            general_custodian_capability);
+        // Verify state
+        verify_end_to_end_state_test<BC, QG>(side, size, from_market_account,
+            user_0_has_general_custodian, base_final_swap, quote_final_swap);
+    }
+
     #[test(user = @user)]
     // Verify successful return and update
     fun test_get_counter(
@@ -4217,6 +4316,37 @@ module econia::market {
         assert!(order_book_ref_2.max_bid == MAX_BID_DEFAULT, 0);
         assert!(order_book_ref_2.min_ask == MIN_ASK_DEFAULT, 0);
         assert!(order_book_ref_2.counter == 0, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Verify no invalid assertions when matching engine not invoked
+    fun test_verify_end_to_end_state_test(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign state verification values
+        let size = 0;
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Verify state
+        verify_end_to_end_state_test<BG, QC>(side, size, from_market_account,
+            user_0_has_general_custodian, base_final_swap, quote_final_swap);
     }
 
     #[test(user = @user)]

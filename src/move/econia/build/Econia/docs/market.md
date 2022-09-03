@@ -8,11 +8,13 @@ Allows for self-matched trades since preventing them is practically
 impossible in a permissionless market: all a user has to do is
 open two wallets and trade them against each other.
 
-See test-only constants and functions for assorted test frameworks.
-For matching engine end-to-end testing, <code>USER_1</code> has the closest
-order to the spread, while <code>USER_3</code> has the order furthest from the
-spread. <code>USER_0</code> then matches places a limit order, market order, or
-swap, optionally matching against the book.
+End-to-end matching engine testing begins with a call to
+<code>register_end_to_end_users_test()</code>, which places a limit order order
+on the book for <code>USER_1</code> (<code>@user_1</code>) <code>USER_2</code>, and <code>USER_3</code>, with
+<code>USER_1</code>'s order nearest the spread and <code>USER_3</code>'s order furthest
+away. Then a call to the matching engine is invoked, and post-match
+state is verified via <code>verify_end_to_end_state_test()</code>. See tests
+of form <code>test_end_to_end....()</code>.
 
 ---
 

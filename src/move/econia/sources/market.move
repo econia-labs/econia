@@ -3116,8 +3116,9 @@ module econia::market {
     /// Inner function for `verify_end_to_end_state_test()`.
     ///
     /// # Parameters
-    /// * `side`: `ASK` or `BID`, the side on which orders were placed
-    ///   during test setup
+    /// * `book_side`: `ASK` or `BID`, the side passed to
+    ///   `register_end_to_end_users_test()`, on which orders are placed
+    ///   for test setup
     /// * `size_1`: Order size for `USER_1`
     /// * `size_filled_1`: Size filled against user 1's order
     /// * `price_1`: Limit price of user 1's order
@@ -3134,7 +3135,7 @@ module econia::market {
     /// * `maker_price`: Ignored if `maker_size` is 0, else the price
     ///   of the maker portion of the order
     fun verify_end_to_end_state_spread_makers(
-        side: bool,
+        book_side: bool,
         size_1: u64,
         size_filled_1: u64,
         price_1: u64,
@@ -3149,49 +3150,55 @@ module econia::market {
         maker_price: u64
     ) acquires OrderBooks {
         // Get order IDs for all orders
-        let order_id_1 = order_id::order_id(price_1, USER_1_COUNTER, side);
-        let order_id_2 = order_id::order_id(price_2, USER_2_COUNTER, side);
-        let order_id_3 = order_id::order_id(price_3, USER_3_COUNTER, side);
-        // Get default spread maker for given side
-        let default_spread_maker = if (side == ASK) MIN_ASK_DEFAULT else
-            MAX_BID_DEFAULT;
+        let order_id_1 =
+            order_id::order_id(price_1, USER_1_COUNTER, book_side);
+        let order_id_2 =
+            order_id::order_id(price_2, USER_2_COUNTER, book_side);
+        let order_id_3 =
+            order_id::order_id(price_3, USER_3_COUNTER, book_side);
+        // Get default spread maker for book side
+        let default_spread_maker_book_side = if (book_side == ASK)
+            MIN_ASK_DEFAULT else MAX_BID_DEFAULT;
         // Get expected spread maker, based on fills propagating outward
         // from the order closest to the spread, following a matched
         // taker order
-        let expected_spread_maker =
+        let spread_maker_book_side =
             if (size_filled_1 < size_1) order_id_1 else
                 if (size_filled_2 < size_2) order_id_2 else
                     if (size_filled_3 < size_3) order_id_3 else
-                        default_spread_maker;
-        let opposite_spread_maker = if (side == ASK) MAX_BID_DEFAULT else
-            MIN_ASK_DEFAULT; // Get spread maker for opposite side
+                        default_spread_maker_book_side;
+        let spread_maker_opposite_side = if (book_side == ASK) MAX_BID_DEFAULT
+            else MIN_ASK_DEFAULT; // Get spread maker for opposite side
         if (maker_size != 0) { // If maker order placed after matching
             let order_id_0 = order_id::order_id(maker_price, USER_0_COUNTER,
                 maker_side); // Get maker order ID
             // If was placed on same side as test setup orders
-            if (maker_side == side) {
+            if (maker_side == book_side) {
                 // Reassign expected spread maker for side on which
                 // orders were placed during test setup if maker order
                 // is closer to the spread
-                expected_spread_maker = if (
-                    (side == ASK && order_id_0 < expected_spread_maker) ||
-                    (side == BID && order_id_0 > expected_spread_maker)
-                ) order_id_0 else expected_spread_maker;
+                spread_maker_book_side = if (
+                    ((book_side == ASK) &&
+                     (order_id_0 < spread_maker_book_side)) ||
+                    ((book_side == BID) &&
+                     (order_id_0 > spread_maker_book_side))
+                ) order_id_0 else spread_maker_book_side;
             } else { // If was placed on opposite side as setup orders
                 // Reassign spread maker for side opposite that on which
                 // orders were placed if maker order is closer to spread
-                opposite_spread_maker = if (
-                    (maker_side == ASK && order_id_0 < opposite_spread_maker)
-                        ||
-                    (maker_side == BID && order_id_0 > expected_spread_maker)
-                ) order_id_0 else opposite_spread_maker;
+                spread_maker_opposite_side = if (
+                    ((maker_side == ASK) &&
+                     (order_id_0 < spread_maker_opposite_side)) ||
+                    ((maker_side == BID) &&
+                     (order_id_0 > spread_maker_opposite_side))
+                ) order_id_0 else spread_maker_opposite_side;
             };
         };
         // Assert spread makers as expected
-        assert!(get_spread_maker_test(@econia, MARKET_ID, side) ==
-            expected_spread_maker, 0);
-        assert!(get_spread_maker_test(@econia, MARKET_ID, !side) ==
-            opposite_spread_maker, 0);
+        assert!(get_spread_maker_test(@econia, MARKET_ID, book_side) ==
+            spread_maker_book_side, 0);
+        assert!(get_spread_maker_test(@econia, MARKET_ID, !book_side) ==
+            spread_maker_opposite_side, 0);
     }
 
     #[test_only]
@@ -3838,7 +3845,6 @@ module econia::market {
         let book_side = BID;
         let user_0_has_general_custodian = false;
         // Assign limit order values
-        // book, not as spread maker
         let order_side = ASK;
         let maker_size = 700;
         let taker_size = 0;
@@ -3979,6 +3985,186 @@ module econia::market {
         let taker_size = 0;
         let order_size = maker_size + taker_size;
         let price = USER_1_ASK_PRICE - 1;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Place a limit order
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, order_side,
+            order_size, price, post_or_abort, fill_or_abort,
+            immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian, base_final_swap,
+            quote_final_swap, maker_size, order_side, price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place limit order on opposite side from orders placed during
+    /// test setup, which does not become spread maker
+    fun test_end_to_end_limit_order_post_match_insert_bid_cross(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = BID;
+        let maker_size = 700;
+        let taker_size = 0;
+        let order_size = maker_size + taker_size;
+        let price = USER_1_BID_PRICE - 1;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Place a limit order
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, order_side,
+            order_size, price, post_or_abort, fill_or_abort,
+            immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian, base_final_swap,
+            quote_final_swap, maker_size, order_side, price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place limit order on same side as orders placed during test
+    /// setup, which does not become spread maker
+    fun test_end_to_end_limit_order_post_match_insert_bid_same(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = BID;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = BID;
+        let maker_size = 700;
+        let taker_size = 0;
+        let order_size = maker_size + taker_size;
+        let price = USER_1_BID_PRICE - 1;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Place a limit order
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, order_side,
+            order_size, price, post_or_abort, fill_or_abort,
+            immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian, base_final_swap,
+            quote_final_swap, maker_size, order_side, price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place a limit order that partially fills as a taker, then
+    /// becomes the new spread maker for its given side
+    fun test_end_to_end_limit_order_post_match_insert_bid_spread_maker_cross(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = BID;
+        let maker_size = 5;
+        let taker_size = USER_1_ASK_SIZE;
+        let order_size = maker_size + taker_size;
+        let price = USER_1_ASK_PRICE;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Place a limit order
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, order_side,
+            order_size, price, post_or_abort, fill_or_abort,
+            immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian, base_final_swap,
+            quote_final_swap, maker_size, order_side, price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place limit order that becomes new spread maker on its side,
+    /// which is same side as orders placed during test setup
+    fun test_end_to_end_limit_order_post_match_insert_bid_spread_maker_same(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = BID;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = BID;
+        let maker_size = 5;
+        let taker_size = 0;
+        let order_size = maker_size + taker_size;
+        let price = USER_1_BID_PRICE + 1;
         let post_or_abort = false;
         let fill_or_abort = false;
         let immediate_or_cancel = false;

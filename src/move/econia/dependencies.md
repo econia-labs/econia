@@ -99,7 +99,7 @@ flowchart TD
     classDef tested_via_invocation fill:#00ff7f %% Spring Green
 
     class place_limit_order_pre_match tested_integrated;
-    class place_limit_order_post_match to_test_integrated;
+    class place_limit_order_post_match tested_integrated;
     class swap_between_coinstores to_test_integrated;
     class match_verify_fills individually_tested;
     class swap_coins to_test_integrated;

@@ -103,22 +103,23 @@ of form <code>test_end_to_end....()</code>.
     -  [Parameters](#@Parameters_49)
     -  [Assumes](#@Assumes_50)
 -  [Function `place_limit_order_pre_match`](#0xc0deb00c_market_place_limit_order_pre_match)
-    -  [Parameters](#@Parameters_51)
-    -  [Abort conditions](#@Abort_conditions_52)
+    -  [Match fill amounts](#@Match_fill_amounts_51)
+    -  [Parameters](#@Parameters_52)
+    -  [Abort conditions](#@Abort_conditions_53)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Extra parameters](#@Extra_parameters_53)
+    -  [Extra parameters](#@Extra_parameters_54)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_54)
-    -  [Parameters](#@Parameters_55)
+    -  [Type parameters](#@Type_parameters_55)
+    -  [Parameters](#@Parameters_56)
 -  [Function `register_order_book`](#0xc0deb00c_market_register_order_book)
-    -  [Type parameters](#@Type_parameters_56)
-    -  [Parameters](#@Parameters_57)
+    -  [Type parameters](#@Type_parameters_57)
+    -  [Parameters](#@Parameters_58)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type parameters](#@Type_parameters_58)
-    -  [Parameters](#@Parameters_59)
-    -  [Assumes](#@Assumes_60)
+    -  [Type parameters](#@Type_parameters_59)
+    -  [Parameters](#@Parameters_60)
+    -  [Assumes](#@Assumes_61)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
-    -  [Abort conditions](#@Abort_conditions_61)
+    -  [Abort conditions](#@Abort_conditions_62)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -2941,7 +2942,9 @@ order.
 
 Call to <code><a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>()</code> is necessary to check
 fill amounts relative to user's asset counts, even in the case
-that cross-spread matching does not take place.
+that cross-spread matching does not take place. See
+<code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code> for discussion on calculating minimum and
+maximum fill values for both base and quote.
 
 
 <a name="@Type_parameters_45"></a>
@@ -3042,20 +3045,20 @@ functions
         <a href="open_table.md#0xc0deb00c_open_table_borrow_mut">open_table::borrow_mut</a>(order_books_map_ref_mut, *market_id_ref);
     // Declare variables <b>to</b> reassign via pass-by-reference
     <b>let</b> (market_account_id, lot_size, tick_size, direction, min_base,
-        max_base, min_quote, max_quote, lots_filled) =
-        (0, 0, 0, <b>false</b>, 0, 0, 0, 0, 0);
+        max_base, max_quote, lots_filled) =
+        (0, 0, 0, <b>false</b>, 0, 0, 0, 0);
     // Prepare <b>to</b> match against the book
-    <a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>(order_book_ref_mut, market_id_ref,
-        general_custodian_id_ref, side_ref, size_ref, price_ref,
-        post_or_abort_ref, fill_or_abort_ref, immediate_or_cancel_ref,
-        &<b>mut</b> market_account_id, &<b>mut</b> lot_size, &<b>mut</b> tick_size,
-        &<b>mut</b> direction, &<b>mut</b> min_base, &<b>mut</b> max_base, &<b>mut</b> min_quote,
+    <a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>(user_ref, order_book_ref_mut,
+        market_id_ref, general_custodian_id_ref, side_ref, size_ref,
+        price_ref, post_or_abort_ref, fill_or_abort_ref,
+        immediate_or_cancel_ref, &<b>mut</b> market_account_id, &<b>mut</b> lot_size,
+        &<b>mut</b> tick_size, &<b>mut</b> direction, &<b>mut</b> min_base, &<b>mut</b> max_base,
         &<b>mut</b> max_quote);
     // Optionally match against order book <b>as</b> a taker
     <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;BaseType, QuoteType&gt;(user_ref,
         &market_account_id, market_id_ref, order_book_ref_mut,
-        &direction, &min_base, &max_base, &min_quote, &max_quote,
-        price_ref, &<b>mut</b> lots_filled);
+        &direction, &min_base, &max_base, &0, &max_quote, price_ref,
+        &<b>mut</b> lots_filled);
     // Optionally place maker order on the book and in <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a>
     // <a href="">account</a>
     <a href="market.md#0xc0deb00c_market_place_limit_order_post_match">place_limit_order_post_match</a>(user_ref, order_book_ref_mut,
@@ -3187,10 +3190,71 @@ Verify valid inputs, initialize variables local to
 range check fill amounts.
 
 
-<a name="@Parameters_51"></a>
+<a name="@Match_fill_amounts_51"></a>
+
+### Match fill amounts
+
+
+While limit orders specify a size to fill, the matching engine
+evaluates fills based on minimum and maximum fill amounts for
+both base and quote. Thus it is necessary to calculate
+"size-correspondent" amounts for these values based on the limit
+price and lot/tick size, with such amounts then passed to the
+matching engine for optional cross-spread matching. Here,
+cross-spread matching refers to a limit order ask that crosses
+the spread and fills as a taker buy (filling against bids on
+the book), or a limit order bid that crosses the spread and
+fills as a taker sell (filling against asks on the book).
+
+Assuming an order is not post-or-abort, the maximum base to fill
+is thus the size-correspondent amount.
+
+In the case of a fill-or-abort order, where only cross-spread
+matching is to take place, the minimum base to fill is also the
+size-correspondent amount. Else the minimum base to fill is set
+to 0, since cross-spread matching is only optional in the
+general case.
+
+With the minimum base match amount specified as such, it is thus
+unnecessary to specify a minimum quote match amount in the case
+of a fill-or-abort order, since the matching engine already
+verifies that the minimum limit order size will be filled, by
+checking the minimum base fill amount at the end of matching.
+Thus the minimum quote variable is simply passed as 0 to
+<code><a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>()</code> in <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>.
+
+As for the maximum quote amount, however, if a limit ask crosses
+the spread it fills as a taker sell against bids on the book,
+and here it is impossible to calculate a priori a maximum quote
+amount because all fills will execute at a price higher than
+that indicated in the ask. This provides the limit ask placer
+with more quote than the size-correspondent amount calculated
+initially, and in the limit, the limit ask placer receives the
+maximum quote that their market account can take in before
+overflowing its quote ceiling. Hence for cross-spread sells, the
+maximum quote amount is calculated as max amount the user could
+gain without overflowing their quote ceiling.
+
+If a cross-spread buy, matching at a better price means simply
+paying less than the size-correspondent quote amount, so here
+it is appropriate to set the maximum quote match value to the
+size-correspondent amount, since that the matching engine will
+already return once the maximum base amount has been matched. As
+for an order with no cross-spread matching whatsoever, the
+maximum quote amount is also specified as the size-correspondent
+quote amount, to ensure valid inputs for range checking
+performed in <code><a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>()</code>. Note that this does
+not constitute an evasion of error-checking, as asset count
+range checks are still performed for the maker order per
+<code><a href="market.md#0xc0deb00c_market_place_limit_order_post_match">place_limit_order_post_match</a>()</code>.
+
+
+<a name="@Parameters_52"></a>
 
 ### Parameters
 
+* <code>user_ref</code>: Immutable reference to address of user submitting
+order
 * <code>order_book_ref</code>: Immutable reference to market <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>
 * <code>market_id_ref</code>: Immutable reference to market ID
 * <code>general_custodian_id_ref</code>: Immutable reference to general
@@ -3211,33 +3275,31 @@ possible across the spread, then silently return
 * <code>direction_ref_mut</code>: Mutable reference to direction for
 matching across the spread, <code>&<a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code>&<a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>
 * <code>min_base_ref_mut</code>: Mutable reference to minimum number of
-base units to match across the spread
+base units to match across the spread for a post-or-abort
+order
 * <code>max_base_ref_mut</code>: Mutable reference to maximum number of
-base units to match in general case
-* <code>min_quote_ref_mut</code>: Mutable reference to minimum number of
-quote units to match across the spread
+base units to match across the spread in general case
 * <code>max_quote_ref_mut</code>: Mutable reference to maximum number of
-quote units to match in general case
+quote units to match per above
 
 
-<a name="@Abort_conditions_52"></a>
+<a name="@Abort_conditions_53"></a>
 
 ### Abort conditions
 
-* If more than one of <code>post_or_abort_ref&</code>, <code>fill_or_abort_ref</code>,
+* If more than one of <code>post_or_abort_ref</code>, <code>fill_or_abort_ref</code>,
 or <code>immediate_or_cancel_ref</code> is marked <code>&<b>true</b></code>
 * If <code>post_or_abort_ref</code> is <code>&<b>true</b></code> and order crosses the spread
-per <code><a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>()</code>
 * If size-correspondent base amount overflows a <code>u64</code>
 * If size-corresondent tick amount overflows a <code>u64</code>
 * If size-correspondent quote amount overflows a <code>u64</code>
 * If <code>fill_or_abort_ref</code> is <code>&<b>true</b></code> and the order does not
-completely fill across the spread: minimum base and quote
-match amounts are assigned such that the abort condition is
+completely fill across the spread: minimum base match amount
+is assigned per above such that the abort condition is
 evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>(order_book_ref: &<a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, market_id_ref: &u64, general_custodian_id_ref: &u64, side_ref: &bool, size_ref: &u64, price_ref: &u64, post_or_abort_ref: &bool, fill_or_abort_ref: &bool, immediate_or_cancel_ref: &bool, market_account_id_ref_mut: &<b>mut</b> u128, lot_size_ref_mut: &<b>mut</b> u64, tick_size_ref_mut: &<b>mut</b> u64, direction_ref_mut: &<b>mut</b> bool, min_base_ref_mut: &<b>mut</b> u64, max_base_ref_mut: &<b>mut</b> u64, min_quote_ref_mut: &<b>mut</b> u64, max_quote_ref_mut: &<b>mut</b> u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>(user_ref: &<b>address</b>, order_book_ref: &<a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, market_id_ref: &u64, general_custodian_id_ref: &u64, side_ref: &bool, size_ref: &u64, price_ref: &u64, post_or_abort_ref: &bool, fill_or_abort_ref: &bool, immediate_or_cancel_ref: &bool, market_account_id_ref_mut: &<b>mut</b> u128, lot_size_ref_mut: &<b>mut</b> u64, tick_size_ref_mut: &<b>mut</b> u64, direction_ref_mut: &<b>mut</b> bool, min_base_ref_mut: &<b>mut</b> u64, max_base_ref_mut: &<b>mut</b> u64, max_quote_ref_mut: &<b>mut</b> u64)
 </code></pre>
 
 
@@ -3247,6 +3309,7 @@ evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">matc
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>(
+    user_ref: &<b>address</b>,
     order_book_ref: &<a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
     market_id_ref: &u64,
     general_custodian_id_ref: &u64,
@@ -3262,7 +3325,6 @@ evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">matc
     direction_ref_mut: &<b>mut</b> bool,
     min_base_ref_mut: &<b>mut</b> u64,
     max_base_ref_mut: &<b>mut</b> u64,
-    min_quote_ref_mut: &<b>mut</b> u64,
     max_quote_ref_mut: &<b>mut</b> u64
 ) {
     // Assert that no more than one order type is flagged
@@ -3295,19 +3357,24 @@ evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">matc
     <b>let</b> quote = ticks * (*tick_size_ref_mut <b>as</b> u128);
     // Assert size-correspondent quote amount fits in a u64
     <b>assert</b>!(!(quote &gt; (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)), <a href="market.md#0xc0deb00c_market_E_SIZE_QUOTE_OVERFLOW">E_SIZE_QUOTE_OVERFLOW</a>);
-    <b>if</b> (*fill_or_abort_ref) { // If a fill-or-<b>abort</b> order
-        // Min base <b>to</b> match is size-correspondent base amount
-        *min_base_ref_mut = (base <b>as</b> u64);
-        // Min quote <b>to</b> match is size-correspondent base amount
-        *min_quote_ref_mut = (quote <b>as</b> u64);
-    } <b>else</b> { // If not a fill-or-<b>abort</b> order
-        *min_base_ref_mut = 0; // No <b>min</b> base match amount
-        *min_quote_ref_mut = 0; // No <b>min</b> quote match quote
-    };
     // Max base <b>to</b> match is size-correspondent amount
     *max_base_ref_mut = (base <b>as</b> u64);
-    // Max quote <b>to</b> match is size-correspondent amount
-    *max_quote_ref_mut = (quote <b>as</b> u64);
+    // If a fill-or-<b>abort</b> order, minimum base <b>to</b> fill is
+    // size-correspondent amount, otherwise there is no minimum
+    *min_base_ref_mut = <b>if</b> (*fill_or_abort_ref) (base <b>as</b> u64) <b>else</b> 0;
+    // If limit ask crosses the spread and fills <b>as</b> a taker sell
+    <b>if</b> (crossed_spread && *side_ref == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) {
+        // Get <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> quote ceiling
+        <b>let</b> (_, _, _, _, _, quote_ceiling) =
+            <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">user::get_asset_counts_internal</a>(
+                *user_ref, *market_account_id_ref_mut);
+        // Max quote <b>to</b> match is max that can fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>
+        *max_quote_ref_mut = <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling;
+    // Else <b>if</b> a cross-spread buy or no cross-spread matching at all
+    } <b>else</b> {
+        // Max quote <b>to</b> match is size-correspondent amount
+        *max_quote_ref_mut = (quote <b>as</b> u64);
+    };
 }
 </code></pre>
 
@@ -3325,7 +3392,7 @@ See wrapped function <code><a href="market.md#0xc0deb00c_market_place_limit_orde
 parameters except for the below exceptions.
 
 
-<a name="@Extra_parameters_53"></a>
+<a name="@Extra_parameters_54"></a>
 
 ### Extra parameters
 
@@ -3391,7 +3458,7 @@ custodian ID for user's market account
 Register new market under signing host.
 
 
-<a name="@Type_parameters_54"></a>
+<a name="@Type_parameters_55"></a>
 
 ### Type parameters
 
@@ -3399,7 +3466,7 @@ Register new market under signing host.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_55"></a>
+<a name="@Parameters_56"></a>
 
 ### Parameters
 
@@ -3452,7 +3519,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 <code><a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a></code> if they do not already have one
 
 
-<a name="@Type_parameters_56"></a>
+<a name="@Type_parameters_57"></a>
 
 ### Type parameters
 
@@ -3460,7 +3527,7 @@ Register host with an <code><a href="market.md#0xc0deb00c_market_OrderBook">Orde
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_57"></a>
+<a name="@Parameters_58"></a>
 
 ### Parameters
 
@@ -3531,7 +3598,7 @@ Swap against book, via wrapped call to <code><a href="market.md#0xc0deb00c_marke
 Institutes pass-by-reference for enhanced efficiency.
 
 
-<a name="@Type_parameters_58"></a>
+<a name="@Type_parameters_59"></a>
 
 ### Type parameters
 
@@ -3539,7 +3606,7 @@ Institutes pass-by-reference for enhanced efficiency.
 * <code>QuoteType</code>: Quote type for market
 
 
-<a name="@Parameters_59"></a>
+<a name="@Parameters_60"></a>
 
 ### Parameters
 
@@ -3577,7 +3644,7 @@ to ID of generic asset transfer custodian attempting to place
 swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COIN_PAIR</a></code> when no custodian placing swap
 
 
-<a name="@Assumes_60"></a>
+<a name="@Assumes_61"></a>
 
 ### Assumes
 
@@ -3654,7 +3721,7 @@ swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COI
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_61"></a>
+<a name="@Abort_conditions_62"></a>
 
 ### Abort conditions
 

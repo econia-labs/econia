@@ -32,8 +32,6 @@ module econia::market {
 
     #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
-    #[test_only]
-    use aptos_std::debug::{print};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1767,7 +1765,9 @@ module econia::market {
     ///
     /// Call to `match_from_market_account()` is necessary to check
     /// fill amounts relative to user's asset counts, even in the case
-    /// that cross-spread matching does not take place.
+    /// that cross-spread matching does not take place. See
+    /// `place_limit_order()` for discussion on calculating minimum and
+    /// maximum fill values for both base and quote.
     ///
     /// # Type parameters
     /// * `BaseType`: Base type for market
@@ -1841,20 +1841,20 @@ module econia::market {
             open_table::borrow_mut(order_books_map_ref_mut, *market_id_ref);
         // Declare variables to reassign via pass-by-reference
         let (market_account_id, lot_size, tick_size, direction, min_base,
-            max_base, min_quote, max_quote, lots_filled) =
-            (0, 0, 0, false, 0, 0, 0, 0, 0);
+            max_base, max_quote, lots_filled) =
+            (0, 0, 0, false, 0, 0, 0, 0);
         // Prepare to match against the book
-        place_limit_order_pre_match(order_book_ref_mut, market_id_ref,
-            general_custodian_id_ref, side_ref, size_ref, price_ref,
-            post_or_abort_ref, fill_or_abort_ref, immediate_or_cancel_ref,
-            &mut market_account_id, &mut lot_size, &mut tick_size,
-            &mut direction, &mut min_base, &mut max_base, &mut min_quote,
+        place_limit_order_pre_match(user_ref, order_book_ref_mut,
+            market_id_ref, general_custodian_id_ref, side_ref, size_ref,
+            price_ref, post_or_abort_ref, fill_or_abort_ref,
+            immediate_or_cancel_ref, &mut market_account_id, &mut lot_size,
+            &mut tick_size, &mut direction, &mut min_base, &mut max_base,
             &mut max_quote);
         // Optionally match against order book as a taker
         match_from_market_account<BaseType, QuoteType>(user_ref,
             &market_account_id, market_id_ref, order_book_ref_mut,
-            &direction, &min_base, &max_base, &min_quote, &max_quote,
-            price_ref, &mut lots_filled);
+            &direction, &min_base, &max_base, &0, &max_quote, price_ref,
+            &mut lots_filled);
         // Optionally place maker order on the book and in user's market
         // account
         place_limit_order_post_match(user_ref, order_book_ref_mut,
@@ -1948,7 +1948,64 @@ module econia::market {
     /// `place_limit_order()`, evaluate post-or-abort condition, and
     /// range check fill amounts.
     ///
+    /// # Match fill amounts
+    ///
+    /// While limit orders specify a size to fill, the matching engine
+    /// evaluates fills based on minimum and maximum fill amounts for
+    /// both base and quote. Thus it is necessary to calculate
+    /// "size-correspondent" amounts for these values based on the limit
+    /// price and lot/tick size, with such amounts then passed to the
+    /// matching engine for optional cross-spread matching. Here,
+    /// cross-spread matching refers to a limit order ask that crosses
+    /// the spread and fills as a taker buy (filling against bids on
+    /// the book), or a limit order bid that crosses the spread and
+    /// fills as a taker sell (filling against asks on the book).
+    ///
+    /// Assuming an order is not post-or-abort, the maximum base to fill
+    /// is thus the size-correspondent amount.
+    ///
+    /// In the case of a fill-or-abort order, where only cross-spread
+    /// matching is to take place, the minimum base to fill is also the
+    /// size-correspondent amount. Else the minimum base to fill is set
+    /// to 0, since cross-spread matching is only optional in the
+    /// general case.
+    ///
+    /// With the minimum base match amount specified as such, it is thus
+    /// unnecessary to specify a minimum quote match amount in the case
+    /// of a fill-or-abort order, since the matching engine already
+    /// verifies that the minimum limit order size will be filled, by
+    /// checking the minimum base fill amount at the end of matching.
+    /// Thus the minimum quote variable is simply passed as 0 to
+    /// `match_from_market_account()` in `place_limit_order()`.
+    ///
+    /// As for the maximum quote amount, however, if a limit ask crosses
+    /// the spread it fills as a taker sell against bids on the book,
+    /// and here it is impossible to calculate a priori a maximum quote
+    /// amount because all fills will execute at a price higher than
+    /// that indicated in the ask. This provides the limit ask placer
+    /// with more quote than the size-correspondent amount calculated
+    /// initially, and in the limit, the limit ask placer receives the
+    /// maximum quote that their market account can take in before
+    /// overflowing its quote ceiling. Hence for cross-spread sells, the
+    /// maximum quote amount is calculated as max amount the user could
+    /// gain without overflowing their quote ceiling.
+    ///
+    /// If a cross-spread buy, matching at a better price means simply
+    /// paying less than the size-correspondent quote amount, so here
+    /// it is appropriate to set the maximum quote match value to the
+    /// size-correspondent amount, since that the matching engine will
+    /// already return once the maximum base amount has been matched. As
+    /// for an order with no cross-spread matching whatsoever, the
+    /// maximum quote amount is also specified as the size-correspondent
+    /// quote amount, to ensure valid inputs for range checking
+    /// performed in `match_from_market_account()`. Note that this does
+    /// not constitute an evasion of error-checking, as asset count
+    /// range checks are still performed for the maker order per
+    /// `place_limit_order_post_match()`.
+    ///
     /// # Parameters
+    /// * `user_ref`: Immutable reference to address of user submitting
+    ///   order
     /// * `order_book_ref`: Immutable reference to market `OrderBook`
     /// * `market_id_ref`: Immutable reference to market ID
     /// * `general_custodian_id_ref`: Immutable reference to general
@@ -1969,27 +2026,26 @@ module econia::market {
     /// * `direction_ref_mut`: Mutable reference to direction for
     ///   matching across the spread, `&BUY` or `&SELL`
     /// * `min_base_ref_mut`: Mutable reference to minimum number of
-    ///   base units to match across the spread
+    ///   base units to match across the spread for a post-or-abort
+    ///   order
     /// * `max_base_ref_mut`: Mutable reference to maximum number of
-    ///   base units to match in general case
-    /// * `min_quote_ref_mut`: Mutable reference to minimum number of
-    ///   quote units to match across the spread
+    ///   base units to match across the spread in general case
     /// * `max_quote_ref_mut`: Mutable reference to maximum number of
-    ///   quote units to match in general case
+    ///   quote units to match per above
     ///
     /// # Abort conditions
-    /// * If more than one of `post_or_abort_ref&`, `fill_or_abort_ref`,
+    /// * If more than one of `post_or_abort_ref`, `fill_or_abort_ref`,
     ///   or `immediate_or_cancel_ref` is marked `&true`
     /// * If `post_or_abort_ref` is `&true` and order crosses the spread
-    ///   per `place_limit_order_pre_match()`
     /// * If size-correspondent base amount overflows a `u64`
     /// * If size-corresondent tick amount overflows a `u64`
     /// * If size-correspondent quote amount overflows a `u64`
     /// * If `fill_or_abort_ref` is `&true` and the order does not
-    ///   completely fill across the spread: minimum base and quote
-    ///   match amounts are assigned such that the abort condition is
+    ///   completely fill across the spread: minimum base match amount
+    ///   is assigned per above such that the abort condition is
     ///   evaluated in `match_verify_fills()`
     fun place_limit_order_pre_match(
+        user_ref: &address,
         order_book_ref: &OrderBook,
         market_id_ref: &u64,
         general_custodian_id_ref: &u64,
@@ -2005,7 +2061,6 @@ module econia::market {
         direction_ref_mut: &mut bool,
         min_base_ref_mut: &mut u64,
         max_base_ref_mut: &mut u64,
-        min_quote_ref_mut: &mut u64,
         max_quote_ref_mut: &mut u64
     ) {
         // Assert that no more than one order type is flagged
@@ -2038,19 +2093,24 @@ module econia::market {
         let quote = ticks * (*tick_size_ref_mut as u128);
         // Assert size-correspondent quote amount fits in a u64
         assert!(!(quote > (HI_64 as u128)), E_SIZE_QUOTE_OVERFLOW);
-        if (*fill_or_abort_ref) { // If a fill-or-abort order
-            // Min base to match is size-correspondent base amount
-            *min_base_ref_mut = (base as u64);
-            // Min quote to match is size-correspondent base amount
-            *min_quote_ref_mut = (quote as u64);
-        } else { // If not a fill-or-abort order
-            *min_base_ref_mut = 0; // No min base match amount
-            *min_quote_ref_mut = 0; // No min quote match quote
-        };
         // Max base to match is size-correspondent amount
         *max_base_ref_mut = (base as u64);
-        // Max quote to match is size-correspondent amount
-        *max_quote_ref_mut = (quote as u64);
+        // If a fill-or-abort order, minimum base to fill is
+        // size-correspondent amount, otherwise there is no minimum
+        *min_base_ref_mut = if (*fill_or_abort_ref) (base as u64) else 0;
+        // If limit ask crosses the spread and fills as a taker sell
+        if (crossed_spread && *side_ref == ASK) {
+            // Get user's market account quote ceiling
+            let (_, _, _, _, _, quote_ceiling) =
+                user::get_asset_counts_internal(
+                    *user_ref, *market_account_id_ref_mut);
+            // Max quote to match is max that can fit in market account
+            *max_quote_ref_mut = HI_64 - quote_ceiling;
+        // Else if a cross-spread buy or no cross-spread matching at all
+        } else {
+            // Max quote to match is size-correspondent amount
+            *max_quote_ref_mut = (quote as u64);
+        };
     }
 
     /// Place a market order from a user's market account.
@@ -3014,8 +3074,6 @@ module econia::market {
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
              user::get_asset_counts_test(user, market_account_id);
-        print(&base_total);
-        print(&base_total_expected);
         // Assert asset counts are as expected
         assert!(base_total      == base_total_expected     , error_code);
         assert!(base_available  == base_available_expected , error_code);
@@ -3814,8 +3872,8 @@ module econia::market {
         user_3 = @user_3,
     )]
     /// Place a limit order that silently returns for no size left
-    /// during post-matching evaluation
-    fun test_end_to_end_limit_order_post_match_no_size(
+    /// during post-matching evaluation, when placed as an ask
+    fun test_end_to_end_limit_order_post_match_no_size_ask(
         econia: &signer,
         user_0: &signer,
         user_1: &signer,
@@ -3825,10 +3883,57 @@ module econia::market {
         // Assign test setup values
         let side = BID;
         let user_0_has_general_custodian = false;
-        // Assign limit order values for clearing out user 1's order
+        // Assign limit order values for clearing out user 1's order,
+        // user 2's order, then partially filling against user 3
         let order_side = ASK;
-        let size = USER_1_BID_SIZE;
-        let price = USER_1_BID_PRICE - 1;
+        let size = USER_1_BID_SIZE + USER_2_BID_SIZE + 1;
+        let price = USER_3_BID_PRICE;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, side, user_0_has_general_custodian);
+        // Place a limit order
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, order_side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(side, size, from_market_account,
+            user_0_has_general_custodian, base_final_swap, quote_final_swap,
+            maker_size, maker_side, maker_price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place a limit order that silently returns for no size left
+    /// during post-matching evaluation, when placed as a bid
+    fun test_end_to_end_limit_order_post_match_no_size_bid(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values for clearing out user 1's order,
+        // user 2's order, then partially filling against user 3
+        let order_side = BID;
+        let size = USER_1_ASK_SIZE + USER_2_ASK_SIZE + 1;
+        let price = USER_3_ASK_PRICE;
         let post_or_abort = false;
         let fill_or_abort = false;
         let immediate_or_cancel = false;

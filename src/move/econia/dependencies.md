@@ -108,7 +108,7 @@ flowchart TD
     class match_from_market_account tested_integrated;
     class match_init to_test_integrated;
     class swap to_test_integrated;
-    class place_limit_order to_test_integrated;
+    class place_limit_order tested_integrated;
     class place_limit_order_custodian tested_via_invocation;
     class place_limit_order_user tested_via_invocation;
     class place_market_order tested_via_invocation;

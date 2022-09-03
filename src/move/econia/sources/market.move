@@ -32,6 +32,8 @@ module econia::market {
 
     #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
+    #[test_only]
+    use aptos_std::debug::{print};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3012,6 +3014,8 @@ module econia::market {
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
              user::get_asset_counts_test(user, market_account_id);
+        print(&base_total);
+        print(&base_total_expected);
         // Assert asset counts are as expected
         assert!(base_total      == base_total_expected     , error_code);
         assert!(base_available  == base_available_expected , error_code);
@@ -3753,6 +3757,142 @@ module econia::market {
         // Attempt invalid invocation
         place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, side,
             size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place a limit order that silently returns for
+    /// immediate-or-cancel during post-matching evaluation
+    fun test_end_to_end_limit_order_post_match_immediate_or_cancel(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values, where would fill past user 1 if
+        // limit price was lower
+        let order_side = BID;
+        let size = USER_1_ASK_SIZE + 1;
+        let price = USER_1_ASK_PRICE;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = true;
+        // Assign state verification values
+        let filled_size = USER_1_ASK_SIZE;
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QG>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Place limit order
+        place_limit_order_user<BC, QG>(user_0, @econia, MARKET_ID, order_side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QG>(side, filled_size,
+            from_market_account, user_0_has_general_custodian, base_final_swap,
+            quote_final_swap, maker_size, maker_side, maker_price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place a limit order that silently returns for no size left
+    /// during post-matching evaluation
+    fun test_end_to_end_limit_order_post_match_no_size(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = BID;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values for clearing out user 1's order
+        let order_side = ASK;
+        let size = USER_1_BID_SIZE;
+        let price = USER_1_BID_PRICE - 1;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, side, user_0_has_general_custodian);
+        // Place a limit order
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, order_side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(side, size, from_market_account,
+            user_0_has_general_custodian, base_final_swap, quote_final_swap,
+            maker_size, maker_side, maker_price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Place a limit order that silently returns for size 0
+    fun test_end_to_end_limit_order_size_0(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = ASK;
+        let size = 0;
+        let price = 0;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Assign state verification values
+        let from_market_account = true;
+        let base_final_swap = HI_64;
+        let quote_final_swap = HI_64;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QG>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Place limit order
+        place_limit_order_user<BC, QG>(user_0, @econia, MARKET_ID, order_side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+        // Verify state
+        verify_end_to_end_state_test<BC, QG>(side, size, from_market_account,
+            user_0_has_general_custodian, base_final_swap, quote_final_swap,
+            maker_size, maker_side, maker_price);
     }
 
     #[test(

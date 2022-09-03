@@ -4636,7 +4636,7 @@ module econia::market {
         coin::register<QC>(user_0);
         // Deposit outbound start coins to coinstore
         coin::deposit(@user_0, assets::mint<QC>(econia, USER_0_START_QUOTE));
-        // Swap coins, storing base and quote coins filled
+        // Swap coins
         swap_between_coinstores<BC, QC>(user_0, @econia, MARKET_ID, direction,
             min_base, max_base, min_quote, max_quote, limit_price);
         // Deposit inbound start coins to coinstore (so state
@@ -4689,7 +4689,7 @@ module econia::market {
         coin::register<BC>(user_0);
         // Deposit outbound start coins to coinstore
         coin::deposit(@user_0, assets::mint<BC>(econia, USER_0_START_BASE));
-        // Swap coins, storing base and quote coins filled
+        // Swap coins
         swap_between_coinstores<BC, QC>(user_0, @econia, MARKET_ID, direction,
             min_base, max_base, min_quote, max_quote, limit_price);
         // Deposit inbound start coins to coinstore (so state
@@ -4700,6 +4700,293 @@ module econia::market {
             from_market_account, user_0_has_general_custodian,
             coin::balance<BC>(@user_0), coin::balance<QC>(@user_0), maker_size,
             maker_side, maker_price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Swap buy when base is coin and quote is generic
+    fun test_end_to_end_swap_generic_coin_generic_buy(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let size_filled_3 = 1;
+        let size_filled = USER_1_ASK_SIZE + USER_2_ASK_SIZE + size_filled_3;
+        let base_filled = LOT_SIZE * size_filled;
+        let quote_filled = TICK_SIZE * (USER_1_ASK_SIZE * USER_1_ASK_PRICE +
+            USER_2_ASK_SIZE * USER_2_ASK_PRICE + size_filled_3 *
+            USER_3_ASK_PRICE);
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = base_filled + 1;
+        let min_quote = 0;
+        let max_quote = HI_64 - USER_0_START_QUOTE;
+        let limit_price = HI_64;
+        // Assign state verification values
+        let from_market_account = false;
+        let taker_size = size_filled;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QG>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Get generic asset transfer custodian capability
+        let generic_asset_transfer_custodian_capability =
+            registry::get_custodian_capability_test(
+                GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
+        let option_base = option::some( // Get option-wrapped base coins
+            assets::mint<BC>(econia, USER_0_START_BASE));
+        // Get empty quote option
+        let option_quote = option::none<coin::Coin<QG>>();
+        // Swap assets, storing base and quote filled
+        let (base_filled_swap, quote_filled_swap) = swap_generic<BC, QG>(
+            @econia, MARKET_ID, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, &mut option_base, &mut option_quote,
+            &generic_asset_transfer_custodian_capability);
+        // Assert returns
+        assert!(base_filled_swap == base_filled, 0);
+        assert!(quote_filled_swap == quote_filled, 0);
+        // Destroy empty quote option
+        option::destroy_none(option_quote);
+        // Calculate final quote generic assets held
+        let quote_final = USER_0_START_QUOTE - quote_filled_swap;
+        // Destroy base option, storing coins within
+        let base_coins = option::destroy_some(option_base);
+        // Verify state
+        verify_end_to_end_state_test<BC, QG>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian,
+            coin::value(&base_coins), quote_final, maker_size, maker_side,
+            maker_price);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        assets::burn(base_coins); // Burn coins
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Swap sell when base is coin and quote is generic
+    fun test_end_to_end_swap_generic_coin_generic_sell(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = BID;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let size_filled = USER_1_BID_SIZE;
+        let base_filled = LOT_SIZE * size_filled;
+        let quote_filled = TICK_SIZE * (USER_1_BID_SIZE * USER_1_BID_PRICE);
+        let direction = SELL;
+        let min_base = 0;
+        let max_base = 10000000;
+        let min_quote = 0;
+        let max_quote = HI_64 - USER_0_START_QUOTE;
+        let limit_price = USER_1_BID_PRICE;
+        // Assign state verification values
+        let from_market_account = false;
+        let taker_size = size_filled;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QG>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Get generic asset transfer custodian capability
+        let generic_asset_transfer_custodian_capability =
+            registry::get_custodian_capability_test(
+                GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
+        let option_base = option::some( // Get option-wrapped base coins
+            assets::mint<BC>(econia, USER_0_START_BASE));
+        // Get empty quote option
+        let option_quote = option::none<coin::Coin<QG>>();
+        // Swap assets, storing base and quote filled
+        let (base_filled_swap, quote_filled_swap) = swap_generic<BC, QG>(
+            @econia, MARKET_ID, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, &mut option_base, &mut option_quote,
+            &generic_asset_transfer_custodian_capability);
+        // Assert returns
+        assert!(base_filled_swap == base_filled, 0);
+        assert!(quote_filled_swap == quote_filled, 0);
+        // Destroy empty quote option
+        option::destroy_none(option_quote);
+        // Calculate final quote generic assets held
+        let quote_final = USER_0_START_QUOTE + quote_filled_swap;
+        // Destroy base option, storing coins within
+        let base_coins = option::destroy_some(option_base);
+        // Verify state
+        verify_end_to_end_state_test<BC, QG>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian,
+            coin::value(&base_coins), quote_final, maker_size, maker_side,
+            maker_price);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        assets::burn(base_coins); // Burn coins
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Swap buy when base is generic and quote is coin
+    fun test_end_to_end_swap_generic_generic_coin_buy(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let size_filled_1 = 1;
+        let size_filled = size_filled_1;
+        let base_filled = LOT_SIZE * size_filled;
+        let quote_filled = TICK_SIZE * (size_filled_1 * USER_1_ASK_PRICE);
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = 1234567;
+        let min_quote = 0;
+        let max_quote = quote_filled + 1;
+        let limit_price = HI_64;
+        // Assign state verification values
+        let from_market_account = false;
+        let taker_size = size_filled;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Get generic asset transfer custodian capability
+        let generic_asset_transfer_custodian_capability =
+            registry::get_custodian_capability_test(
+                GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
+        // Get empty base option
+        let option_base = option::none<coin::Coin<BG>>();
+        // Get option-wrapped quote coins
+        let option_quote = option::some(
+            assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Swap assets, storing base and quote filled
+        let (base_filled_swap, quote_filled_swap) = swap_generic<BG, QC>(
+            @econia, MARKET_ID, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, &mut option_base, &mut option_quote,
+            &generic_asset_transfer_custodian_capability);
+        // Assert returns
+        assert!(base_filled_swap == base_filled, 0);
+        assert!(quote_filled_swap == quote_filled, 0);
+        // Destroy empty base option
+        option::destroy_none(option_base);
+        // Calculate final base generic assets held
+        let base_final = USER_0_START_BASE + base_filled_swap;
+        // Destroy quote option, storing coins within
+        let quote_coins = option::destroy_some(option_quote);
+        // Verify state
+        verify_end_to_end_state_test<BG, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian,
+            base_final, coin::value(&quote_coins), maker_size, maker_side,
+            maker_price);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        assets::burn(quote_coins); // Burn coins
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Swap sell when base is generic and quote is coin
+    fun test_end_to_end_swap_generic_generic_coin_sell(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = BID;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let size_filled = USER_1_BID_SIZE + USER_2_BID_SIZE;
+        let base_filled = LOT_SIZE * size_filled;
+        let quote_filled = TICK_SIZE * (USER_1_BID_SIZE * USER_1_BID_PRICE
+            + USER_2_BID_SIZE * USER_2_BID_PRICE);
+        let direction = SELL;
+        let min_base = 0;
+        let max_base = base_filled + 1;
+        let min_quote = 0;
+        let max_quote = quote_filled + 1;
+        let limit_price = 1;
+        // Assign state verification values
+        let from_market_account = false;
+        let taker_size = size_filled;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Get generic asset transfer custodian capability
+        let generic_asset_transfer_custodian_capability =
+            registry::get_custodian_capability_test(
+                GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
+        // Get empty base option
+        let option_base = option::none<coin::Coin<BG>>();
+        // Get option-wrapped quote coins
+        let option_quote = option::some(
+            assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Swap assets, storing base and quote filled
+        let (base_filled_swap, quote_filled_swap) = swap_generic<BG, QC>(
+            @econia, MARKET_ID, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, &mut option_base, &mut option_quote,
+            &generic_asset_transfer_custodian_capability);
+        // Assert returns
+        assert!(base_filled_swap == base_filled, 0);
+        assert!(quote_filled_swap == quote_filled, 0);
+        // Destroy empty base option
+        option::destroy_none(option_base);
+        // Calculate final base generic assets held
+        let base_final = USER_0_START_BASE - base_filled_swap;
+        // Destroy quote option, storing coins within
+        let quote_coins = option::destroy_some(option_quote);
+        // Verify state
+        verify_end_to_end_state_test<BG, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian,
+            base_final, coin::value(&quote_coins), maker_size, maker_side,
+            maker_price);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        assets::burn(quote_coins); // Burn coins
     }
 
     #[test(user = @user)]

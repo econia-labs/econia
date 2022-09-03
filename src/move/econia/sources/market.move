@@ -2290,6 +2290,23 @@ module econia::market {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// When invalid state for `USER_0` during end-to-end testing
+    const E_USER_0_INVALID_STATE: u64 = 0;
+    #[test_only]
+    /// When invalid state for `USER_1` during end-to-end testing
+    const E_USER_1_INVALID_STATE: u64 = 1;
+    #[test_only]
+    /// When invalid state for `USER_2` during end-to-end testing
+    const E_USER_2_INVALID_STATE: u64 = 2;
+    #[test_only]
+    /// When invalid state for `USER_3` during end-to-end testing
+    const E_USER_3_INVALID_STATE: u64 = 3;
+
+    // Test-only error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     // Market parameters
@@ -2306,7 +2323,7 @@ module econia::market {
     /// Generic asset transfer custodian ID for test market
     const GENERIC_ASSET_TRANSFER_CUSTODIAN_ID: u64 = 1;
 
-    // User parameters
+    // User parameters for when not conducting end-to-end testing
     #[test_only]
     /// Base asset amount `@user` starts with
     const USER_START_BASE: u64  = 100000000000;
@@ -2376,6 +2393,89 @@ module econia::market {
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return size and price for end-to-end orders on given `side`.
+    fun get_end_to_end_orders_size_price_test(
+        side: bool
+    ) : (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) {
+        if (side == ASK) (
+            USER_1_ASK_SIZE, USER_1_ASK_PRICE, USER_2_ASK_SIZE,
+            USER_2_ASK_PRICE, USER_3_ASK_SIZE, USER_3_ASK_PRICE
+        ) else (
+            USER_1_BID_SIZE, USER_1_BID_PRICE, USER_2_BID_SIZE,
+            USER_2_BID_PRICE, USER_3_BID_SIZE, USER_3_BID_PRICE
+        )
+    }
+
+    #[test_only]
+    /// Calculate size filled against `order_size` for `size_left` to
+    /// fill.
+    ///
+    /// Inner function for `get_fill_sizes_test()`.
+    ///
+    /// # Returns
+    /// * `u64`: Size filled against order
+    /// * `u64`: Size left to fill after order
+    fun get_fill_remaining_test(
+        order_size: u64,
+        size_left: u64
+    ): (
+        u64,
+        u64
+    ) {
+        // If size left to fill is 0, size filled is 0
+        let size_filled = if (size_left == 0) 0 else
+            // if size left to fill is less than order size, size filled
+            // is size left to fill, otherwise is order size
+            if (size_left < order_size) size_left else order_size;
+        // Return size filled, and size left to fill
+        (size_filled, size_left - size_filled)
+    }
+
+    #[test_only]
+    /// Calculate size filled against users during end-to-end testing.
+    ///
+    /// Inner function for `verify_end_to_end_state_test()`
+    ///
+    /// # Parameters
+    /// * `size`: Size filled against book, in lots
+    /// * `size_1`: Order size for `USER_1`
+    /// * `size_2`: Order size for `USER_2`
+    /// * `size_3`: Order size for `USER_3`
+    ///
+    /// # Returns
+    /// * `u64`: Size filled against `USER_1`
+    /// * `u64`: Size filled against `USER_2`
+    /// * `u64`: Size filled against `USER_3`
+    fun get_fill_sizes_test(
+        size: u64,
+        size_1: u64,
+        size_2: u64,
+        size_3: u64
+    ): (
+        u64,
+        u64,
+        u64
+    ) {
+        // Get size filled against user 1 and size left after
+        let (size_filled_1, size_left) =
+            get_fill_remaining_test(size_1, size);
+        // Get size filled against user 2 and size left after
+        let (size_filled_2, size_left) =
+            get_fill_remaining_test(size_2, size_left);
+        // Get size filled against user 3
+        let (size_filled_3, _) = get_fill_remaining_test(size_3, size_left);
+        // Return sizes filled against each user
+        (size_filled_1, size_filled_2, size_filled_3)
+    }
 
     #[test_only]
     /// Return fields of `Order` for given `host`, `market_id`,
@@ -2605,13 +2705,7 @@ module econia::market {
     ) acquires OrderBooks {
         // Get order size and price based on side
         let (size_1, price_1, size_2, price_2, size_3, price_3) =
-            if (side == ASK) (
-                USER_1_ASK_SIZE, USER_1_ASK_PRICE, USER_2_ASK_SIZE,
-                USER_2_ASK_PRICE, USER_3_ASK_SIZE, USER_3_ASK_PRICE
-            ) else (
-                USER_1_BID_SIZE, USER_1_BID_PRICE, USER_2_BID_SIZE,
-                USER_2_BID_PRICE, USER_3_BID_SIZE, USER_3_BID_PRICE
-            );
+            get_end_to_end_orders_size_price_test(side);
         // Place limit orders for each user
         place_limit_order<BaseType, QuoteType>(&@user_1, &@econia, &MARKET_ID,
             &USER_1_GENERAL_CUSTODIAN_ID, &side, &size_1, &price_1, &false,
@@ -2669,7 +2763,7 @@ module econia::market {
         // Register market accordingly
         register_market<BaseType, QuoteType>(econia, LOT_SIZE, TICK_SIZE,
             generic_asset_transfer_custodian_id);
-        // Get user 0's custodian ID
+        // Get user 0's general custodian ID
         let user_0_general_custodian_id = if (user_0_has_general_custodian)
             USER_0_GENERAL_CUSTODIAN_ID else NO_CUSTODIAN;
         // Register funded market accounts for each user
@@ -2796,6 +2890,364 @@ module econia::market {
                     generic_asset_transfer_custodian_id, general_custodian_id);
             };
         };
+    }
+
+    #[test_only]
+    /// Verify collateral-associated state for given user
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `user`: User to check
+    /// * `market_account_id`: User's market account ID
+    /// * `expected_base`: Ignored if `BaseType` is not a coin type,
+    ///   else the expected amount of base coins helds as collateral
+    /// * `expected_quote`: Ignored if `QuoteType` is not a coin type,
+    ///   else the expected amount of quote coins helds as collateral
+    /// * `error_code`: Error code for failed state assert: by passing
+    ///   a different error code for each user, it is possible to tell
+    ///   from the unit testing command line which user failed an assert
+    ///   statement
+    fun verify_end_to_end_state_collateral_test<
+        BaseType,
+        QuoteType
+    >(
+        user: address,
+        market_account_id: u128,
+        expected_base: u64,
+        expected_quote: u64,
+        error_code: u64,
+    ) {
+        // If base asset is a coin type
+        if (coin::is_coin_initialized<BaseType>()) {
+            // Assert collateral amount is as expected
+            assert!(user::get_collateral_value_test<BaseType>(
+                user, market_account_id) == expected_base, error_code);
+        } else { // If base asset is a generic type
+            // Assert no collateral structure registered
+            assert!(!user::has_collateral_test<BaseType>(
+                user, market_account_id), error_code);
+        };
+        // If quote asset is a coin type
+        if (coin::is_coin_initialized<QuoteType>()) {
+            // Assert collateral amount is as expected
+            assert!(user::get_collateral_value_test<QuoteType>(
+                user, market_account_id) == expected_quote, error_code);
+        } else { // If base asset is a generic type
+            // Assert no collateral structure registered
+            assert!(!user::has_collateral_test<QuoteType>(
+                user, market_account_id), error_code);
+        };
+    }
+
+    #[test_only]
+    /// Verify state for user who placed an order before test setup,
+    /// after end-to-end matching execution.
+    ///
+    /// Inner function for `verify_end_to_end_state_test()`.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `side`: If user's order was an `ASK` or `BID`
+    /// * `user`: User who placed order
+    /// * `general_custodian_id`: User's general custodian ID
+    /// * `order_size`: Size the order was for
+    /// * `size_filled`: Size filled against the order
+    /// * `base_start`: Amount of base assets user started with
+    /// * `quote_start`: Amount of quote assets user started with
+    /// * `counter`: Book counter for user's order ID
+    /// * `error_code`: Error code for failed state assert: by passing
+    ///   a different error code for each user, it is possible to tell
+    ///   from the unit testing command line which user failed an assert
+    ///   statement
+    fun verify_end_to_end_state_order_user_test<
+        BaseType,
+        QuoteType
+    >(
+        side: bool,
+        user: address,
+        general_custodian_id: u64,
+        order_size: u64,
+        order_price: u64,
+        size_filled: u64,
+        base_start: u64,
+        quote_start: u64,
+        counter: u64,
+        error_code: u64
+    ) acquires OrderBooks {
+        let ( // Get expected asset counts
+            base_total_expected,
+            base_available_expected,
+            base_ceiling_expected,
+            quote_total_expected,
+            quote_available_expected,
+            quote_ceiling_expected
+        ) = if (side == ASK) ( // If order was an ask
+            base_start  - LOT_SIZE  * size_filled,
+            base_start  - LOT_SIZE  * order_size,
+            base_start  - LOT_SIZE  * size_filled,
+            quote_start + TICK_SIZE * order_price * size_filled,
+            quote_start + TICK_SIZE * order_price * size_filled,
+            quote_start + TICK_SIZE * order_price * order_size
+        ) else ( // If order was a bid
+            base_start  + LOT_SIZE  * size_filled,
+            base_start  + LOT_SIZE  * size_filled,
+            base_start  + LOT_SIZE  * order_size,
+            quote_start - TICK_SIZE * order_price * size_filled,
+            quote_start - TICK_SIZE * order_price * order_size,
+            quote_start - TICK_SIZE * order_price * size_filled
+        );
+        let market_account_id = // Get user's market account ID
+            user::get_market_account_id(MARKET_ID, general_custodian_id);
+        // Get asset counts from user's market account
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+             user::get_asset_counts_test(user, market_account_id);
+        // Assert asset counts are as expected
+        assert!(base_total      == base_total_expected     , error_code);
+        assert!(base_available  == base_available_expected , error_code);
+        assert!(base_ceiling    == base_ceiling_expected   , error_code);
+        assert!(quote_total     == quote_total_expected    , error_code);
+        assert!(quote_available == quote_available_expected, error_code);
+        assert!(quote_ceiling   == quote_ceiling_expected  , error_code);
+        verify_end_to_end_state_collateral_test<BaseType, QuoteType>(user,
+            market_account_id, base_total_expected, quote_total_expected,
+            error_code); // Verify collateral counts, if any
+        // Get order ID
+        let order_id = order_id::order_id(order_price, counter, side);
+        if (size_filled == order_size) { // If order completely filled
+            // Assert not on order book anymore
+            assert!(!has_order_test(@econia, MARKET_ID, side, order_id),
+                error_code);
+            // Assert not in user's market account anymore
+            assert!(!user::has_order_test(user, market_account_id, side,
+                order_id), error_code);
+        } else { // If order not completely filled
+            // Calculate remaining size of order
+            let size_remaining = order_size - size_filled;
+            // Get order fields on book
+            let (size_book, user_book, general_custodian_id_book) =
+                get_order_fields_test(@econia, MARKET_ID, order_id, side);
+            // Assert order fields as expected
+            assert!(size_book == size_remaining      , error_code);
+            assert!(user_book == user                , error_code);
+            assert!(general_custodian_id_book
+                              == general_custodian_id, error_code);
+            // Assert order size updated in user's market account
+            assert!(user::get_order_size_test(user, market_account_id, side,
+                order_id) == size_remaining, error_code);
+        }
+    }
+
+    #[test_only]
+    /// Verify spread maker after matching engine execution.
+    ///
+    /// Inner function for `verify_end_to_end_state_test()`.
+    ///
+    /// # Parameters
+    /// * `side`: `ASK` or `BID`, the side against which the placed
+    ///   order is matched
+    /// * `size_1`: Order size for `USER_1`
+    /// * `size_filled_1`: Size filled against user 1's order
+    /// * `price_1`: Limit price of user 1's order
+    /// * `size_2`: Order size for `USER_2`
+    /// * `size_filled_2`: Size filled against user 2's order
+    /// * `price_2`: Limit price of user 2's order
+    /// * `size_3`: Order size for `USER_3`
+    /// * `size_filled_3`: Size filled against user 3's order
+    /// * `price_3`: Limit price of user 3's order
+    fun verify_end_to_end_state_spread_maker(
+        side: bool,
+        size_1: u64,
+        size_filled_1: u64,
+        price_1: u64,
+        size_2: u64,
+        size_filled_2: u64,
+        price_2: u64,
+        size_3: u64,
+        size_filled_3: u64,
+        price_3: u64
+    ) acquires OrderBooks {
+        // Get order IDs for all orders
+        let order_id_1 = order_id::order_id(price_1, USER_1_COUNTER, side);
+        let order_id_2 = order_id::order_id(price_2, USER_2_COUNTER, side);
+        let order_id_3 = order_id::order_id(price_3, USER_3_COUNTER, side);
+        // Get default spread maker for given side
+        let default_spread_maker = if (side == ASK) MIN_ASK_DEFAULT else
+            MAX_BID_DEFAULT;
+        // Get expected spread maker, based on fills propagating outward
+        // from the order closest to the spread
+        let expected_spread_maker =
+            if (size_filled_1 < size_1) order_id_1 else
+                if (size_filled_2 < size_2) order_id_2 else
+                    if (size_filled_3 < size_3) order_id_3 else
+                        default_spread_maker;
+        // Assert spread maker is as expected
+        assert!(get_spread_maker_test(@econia, MARKET_ID, side) ==
+            expected_spread_maker, 0);
+    }
+
+    #[test_only]
+    /// Verify state after matching engine execution.
+    ///
+    /// Run after test setup via `register_end_to_end_users_test()`.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `side`: `ASK` or `BID`, the side passed to
+    ///   `register_end_to_end_users_test()`
+    /// * `size`: Size indicated to be filled against book, in lots, by
+    ///   user placing order (can be larger than size on book, but will
+    ///   not be filled)
+    /// * `from_market_account`: If `true`, `size` filled during an
+    ///   order placed by `USER_0` from their market account
+    /// * `user_0_has_general_custodian`: Ignored if
+    ///   `from_market_account` is `false`. Else `true` if `USER_0` has
+    ///   a general custodian with id `USER_0_GENERAL_CUSTODIAN_ID`,
+    ///   `false` if `USER_0` does not.
+    /// * `base_final_swap`: Ignored if `from_market_account` is `true`,
+    ///   else the amount of base held after a swap, assuming
+    ///   USER_0_START_BASE held pre-swap
+    /// * `quote_final_swap`: Ignored if `from_market_account` is
+    ///   `true`, else the amount of quote held after a swap, assuming
+    ///   USER_0_START_QUOTE held pre-swap
+    fun verify_end_to_end_state_test<
+        BaseType,
+        QuoteType
+    >(
+        side: bool,
+        size: u64,
+        from_market_account: bool,
+        user_0_has_general_custodian: bool,
+        base_final_swap: u64,
+        quote_final_swap: u64
+    ) acquires OrderBooks {
+        // Get order size and price based on side
+        let (size_1, price_1, size_2, price_2, size_3, price_3) =
+            get_end_to_end_orders_size_price_test(side);
+        // Get size filled against each user
+        let (size_filled_1, size_filled_2, size_filled_3) =
+            get_fill_sizes_test(size, size_1, size_2, size_2);
+        // Verify state for users who placed an order on the book
+        verify_end_to_end_state_order_user_test<BaseType, QuoteType>(side,
+            @user_1, USER_1_GENERAL_CUSTODIAN_ID, size_1, price_1,
+            size_filled_1, USER_1_START_BASE, USER_1_START_QUOTE,
+            USER_1_COUNTER, E_USER_1_INVALID_STATE);
+        verify_end_to_end_state_order_user_test<BaseType, QuoteType>(side,
+            @user_2, USER_2_GENERAL_CUSTODIAN_ID, size_2, price_2,
+            size_filled_2, USER_2_START_BASE, USER_2_START_QUOTE,
+            USER_2_COUNTER, E_USER_2_INVALID_STATE);
+        verify_end_to_end_state_order_user_test<BaseType, QuoteType>(side,
+            @user_3, USER_3_GENERAL_CUSTODIAN_ID, size_3, price_3,
+            size_filled_3, USER_3_START_BASE, USER_3_START_QUOTE,
+            USER_3_COUNTER, E_USER_3_INVALID_STATE);
+        // Verify spread maker
+        verify_end_to_end_state_spread_maker(side, size_1, size_filled_1,
+            price_1, size_2, size_filled_2, price_2, size_2, size_filled_3,
+            price_3);
+        // Verify state for user who placed matched order
+        verify_end_to_end_state_user_0_test<BaseType, QuoteType>(side,
+            from_market_account, user_0_has_general_custodian, size_filled_1,
+            price_1, size_filled_2, price_2, size_filled_3, price_3,
+            base_final_swap, quote_final_swap);
+    }
+
+    #[test_only]
+    /// Verify state for user who placed an order after test setup,
+    /// after end-to-end matching execution.
+    ///
+    /// Inner function for `verify_end_to_end_state_test()`.
+    ///
+    /// # Type parameters
+    /// * `BaseType`: Base type for market
+    /// * `QuoteType`: Quote type for market
+    ///
+    /// # Parameters
+    /// * `side`: `ASK` or `BID`, the side against which the placed
+    ///   order is matched
+    /// * `from_market_account`: If `true`, order filled from market
+    ///   account held by `USER_0`
+    /// * `user_0_has_general_custodian`: Ignored if
+    ///   `from_market_account` is `false`. Else `true` if `USER_0` has
+    ///   a general custodian with id `USER_0_GENERAL_CUSTODIAN_ID`,
+    ///   `false` if `USER_0` does not.
+    /// * `size_filled_1`: Size filled against user 1's order
+    /// * `price_1`: Limit price of user 1's order
+    /// * `size_filled_2`: Size filled against user 2's order
+    /// * `price_2`: Limit price of user 2's order
+    /// * `size_filled_3`: Size filled against user 3's order
+    /// * `price_3`: Limit price of user 3's order
+    /// * `base_final_swap`: Ignored if `from_market_account` is `true`,
+    ///   else the amount of base held after a swap, assuming
+    ///   USER_0_START_BASE held pre-swap
+    /// * `quote_final_swap`: Ignored if `from_market_account` is
+    ///   `true`, else the amount of quote held after a swap, assuming
+    ///   USER_0_START_QUOTE held pre-swap
+    fun verify_end_to_end_state_user_0_test<
+        BaseType,
+        QuoteType
+    >(
+        side: bool,
+        from_market_account: bool,
+        user_0_has_general_custodian: bool,
+        size_filled_1: u64,
+        price_1: u64,
+        size_filled_2: u64,
+        price_2: u64,
+        size_filled_3: u64,
+        price_3: u64,
+        base_final_swap: u64,
+        quote_final_swap: u64
+    ) {
+        let base_filled = LOT_SIZE * // Calculate base filled
+            (size_filled_1 + size_filled_2 + size_filled_3);
+        // Calculate quote filled
+        let quote_filled = TICK_SIZE * (size_filled_1 * price_1 +
+            size_filled_2 * price_2 + size_filled_3 * price_3);
+        // Get final base and final quote holdings
+        let (base_final, quote_final) = if (side == ASK) ( // If a buy
+            USER_0_START_BASE  + base_filled,
+            USER_0_START_QUOTE - quote_filled
+        ) else ( // If a sell
+            USER_0_START_BASE  - base_filled,
+            USER_0_START_QUOTE + quote_filled
+        );
+        // If matched from user 0's market account
+        if (from_market_account) {
+            // Get user 0's general custodian ID
+            let general_custodian_id = if (user_0_has_general_custodian)
+                USER_0_GENERAL_CUSTODIAN_ID else NO_CUSTODIAN;
+            let market_account_id = // Get user's market account ID
+                user::get_market_account_id(MARKET_ID, general_custodian_id);
+            // Get asset counts from user's market account
+            let (base_total , base_available , base_ceiling,
+                quote_total, quote_available, quote_ceiling) =
+                user::get_asset_counts_test(@user_0, market_account_id);
+            // Assert asset counts are as expected
+            assert!(base_total      == base_final , E_USER_0_INVALID_STATE);
+            assert!(base_available  == base_final , E_USER_0_INVALID_STATE);
+            assert!(base_ceiling    == base_final , E_USER_0_INVALID_STATE);
+            assert!(quote_total     == quote_final, E_USER_0_INVALID_STATE);
+            assert!(quote_available == quote_final, E_USER_0_INVALID_STATE);
+            assert!(quote_ceiling   == quote_final, E_USER_0_INVALID_STATE);
+            // Verify collateral counts, if any
+            verify_end_to_end_state_collateral_test<BaseType, QuoteType>(
+                @user_0, market_account_id, base_final, quote_final,
+                E_USER_0_INVALID_STATE);
+        } else { // If matched as a standalone swap
+            // Assert final base holdings
+            assert!(base_final_swap  == base_final , E_USER_0_INVALID_STATE);
+            // Assert final quote holdings
+            assert!(quote_final_swap == quote_final, E_USER_0_INVALID_STATE);
+        }
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

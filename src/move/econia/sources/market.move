@@ -2391,6 +2391,8 @@ module econia::market {
     const USER_2_COUNTER: u64 = 1;
     #[test_only]
     const USER_3_COUNTER: u64 = 2;
+    #[test_only]
+    const USER_0_COUNTER: u64 = 3; // Placed after all others
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -3052,8 +3054,8 @@ module econia::market {
     /// Inner function for `verify_end_to_end_state_test()`.
     ///
     /// # Parameters
-    /// * `side`: `ASK` or `BID`, the side against which the placed
-    ///   order is matched
+    /// * `side`: `ASK` or `BID`, the side on which orders were placed
+    ///   during test setup
     /// * `size_1`: Order size for `USER_1`
     /// * `size_filled_1`: Size filled against user 1's order
     /// * `price_1`: Limit price of user 1's order
@@ -3063,7 +3065,13 @@ module econia::market {
     /// * `size_3`: Order size for `USER_3`
     /// * `size_filled_3`: Size filled against user 3's order
     /// * `price_3`: Limit price of user 3's order
-    fun verify_end_to_end_state_spread_maker(
+    /// * `maker_size`: Size, in lots, of maker order placed on book
+    ///   after taker portion of order fills, if any at all
+    /// * `maker_side`: Ignored if `maker_size` is 0, else the side that
+    ///   the maker portion of the order is on (`ASK` or `BID`)
+    /// * `maker_price`: Ignored if `maker_size` is 0, else the price
+    ///   of the maker portion of the order
+    fun verify_end_to_end_state_spread_makers(
         side: bool,
         size_1: u64,
         size_filled_1: u64,
@@ -3073,7 +3081,10 @@ module econia::market {
         price_2: u64,
         size_3: u64,
         size_filled_3: u64,
-        price_3: u64
+        price_3: u64,
+        maker_size: u64,
+        maker_side: bool,
+        maker_price: u64
     ) acquires OrderBooks {
         // Get order IDs for all orders
         let order_id_1 = order_id::order_id(price_1, USER_1_COUNTER, side);
@@ -3083,15 +3094,42 @@ module econia::market {
         let default_spread_maker = if (side == ASK) MIN_ASK_DEFAULT else
             MAX_BID_DEFAULT;
         // Get expected spread maker, based on fills propagating outward
-        // from the order closest to the spread
+        // from the order closest to the spread, following a matched
+        // taker order
         let expected_spread_maker =
             if (size_filled_1 < size_1) order_id_1 else
                 if (size_filled_2 < size_2) order_id_2 else
                     if (size_filled_3 < size_3) order_id_3 else
                         default_spread_maker;
-        // Assert spread maker is as expected
+        let opposite_spread_maker = if (side == ASK) MAX_BID_DEFAULT else
+            MIN_ASK_DEFAULT; // Get spread maker for opposite side
+        if (maker_size != 0) { // If maker order placed after matching
+            let order_id_0 = order_id::order_id(maker_price, USER_0_COUNTER,
+                maker_side); // Get maker order ID
+            // If was placed on same side as test setup orders
+            if (maker_side == side) {
+                // Reassign expected spread maker for side on which
+                // orders were placed during test setup if maker order
+                // is closer to the spread
+                expected_spread_maker = if (
+                    (side == ASK && order_id_0 < expected_spread_maker) ||
+                    (side == BID && order_id_0 > expected_spread_maker)
+                ) order_id_0 else expected_spread_maker;
+            } else { // If was placed on opposite side as setup orders
+                // Reassign spread maker for side opposite that on which
+                // orders were placed if maker order is closer to spread
+                opposite_spread_maker = if (
+                    (maker_side == ASK && order_id_0 < opposite_spread_maker)
+                        ||
+                    (maker_side == BID && order_id_0 > expected_spread_maker)
+                ) order_id_0 else opposite_spread_maker;
+            };
+        };
+        // Assert spread makers as expected
         assert!(get_spread_maker_test(@econia, MARKET_ID, side) ==
             expected_spread_maker, 0);
+        assert!(get_spread_maker_test(@econia, MARKET_ID, !side) ==
+            opposite_spread_maker, 0);
     }
 
     #[test_only]
@@ -3106,9 +3144,9 @@ module econia::market {
     /// # Parameters
     /// * `side`: `ASK` or `BID`, the side passed to
     ///   `register_end_to_end_users_test()`
-    /// * `size`: Size indicated to be filled against book, in lots, by
-    ///   user placing order (can be larger than size on book, but will
-    ///   not be filled)
+    /// * `taker_size`: Size indicated to be filled against book, in
+    ///   lots, by user placing order (can be larger than size on book,
+    ///   but will not be filled)
     /// * `from_market_account`: If `true`, `size` filled during an
     ///   order placed by `USER_0` from their market account
     /// * `user_0_has_general_custodian`: Ignored if
@@ -3121,23 +3159,35 @@ module econia::market {
     /// * `quote_final_swap`: Ignored if `from_market_account` is
     ///   `true`, else the amount of quote held after a swap, assuming
     ///   USER_0_START_QUOTE held pre-swap
+    /// * `maker_size`: Size, in lots, of maker order placed on book
+    ///   after taker portion of order fills, if any at all (ignored if
+    ///   `from_market_account` is `false`)
+    /// * `maker_side`: Ignored if `maker_size` is 0 or
+    ///   `from_market_account` is `false`, else the side that
+    ///   the maker portion of the order is on (`ASK` or `BID`)
+    /// * `maker_price`: Ignored if `maker_size` is 0 or
+    ///   `from_market_account` is `false`, else the price
+    ///   of the maker portion of the order
     fun verify_end_to_end_state_test<
         BaseType,
         QuoteType
     >(
         side: bool,
-        size: u64,
+        taker_size: u64,
         from_market_account: bool,
         user_0_has_general_custodian: bool,
         base_final_swap: u64,
-        quote_final_swap: u64
+        quote_final_swap: u64,
+        maker_size: u64,
+        maker_side: bool,
+        maker_price: u64
     ) acquires OrderBooks {
         // Get order size and price based on side
         let (size_1, price_1, size_2, price_2, size_3, price_3) =
             get_end_to_end_orders_size_price_test(side);
         // Get size filled against each user
         let (size_filled_1, size_filled_2, size_filled_3) =
-            get_fill_sizes_test(size, size_1, size_2, size_2);
+            get_fill_sizes_test(taker_size, size_1, size_2, size_2);
         // Verify state for users who placed an order on the book
         verify_end_to_end_state_order_user_test<BaseType, QuoteType>(side,
             @user_1, USER_1_GENERAL_CUSTODIAN_ID, size_1, price_1,
@@ -3152,14 +3202,15 @@ module econia::market {
             size_filled_3, USER_3_START_BASE, USER_3_START_QUOTE,
             USER_3_COUNTER, E_USER_3_INVALID_STATE);
         // Verify spread maker
-        verify_end_to_end_state_spread_maker(side, size_1, size_filled_1,
+        verify_end_to_end_state_spread_makers(side, size_1, size_filled_1,
             price_1, size_2, size_filled_2, price_2, size_2, size_filled_3,
-            price_3);
+            price_3, maker_size, maker_side, maker_price);
         // Verify state for user who placed matched order
         verify_end_to_end_state_user_0_test<BaseType, QuoteType>(side,
             from_market_account, user_0_has_general_custodian, size_filled_1,
             price_1, size_filled_2, price_2, size_filled_3, price_3,
-            base_final_swap, quote_final_swap);
+            base_final_swap, quote_final_swap, maker_size, maker_side,
+            maker_price);
     }
 
     #[test_only]
@@ -3193,6 +3244,15 @@ module econia::market {
     /// * `quote_final_swap`: Ignored if `from_market_account` is
     ///   `true`, else the amount of quote held after a swap, assuming
     ///   USER_0_START_QUOTE held pre-swap
+    /// * `maker_size`: Size, in lots, of maker order placed on book
+    ///   after taker portion of order fills, if any at all (ignored if
+    ///   `from_market_account` is `false`)
+    /// * `maker_side`: Ignored if `maker_size` is 0 or
+    ///   `from_market_account` is `false`, else the side that
+    ///   the maker portion of the order is on (`ASK` or `BID`)
+    /// * `maker_price`: Ignored if `maker_size` is 0 or
+    ///   `from_market_account` is `false`, else the price
+    ///   of the maker portion of the order
     fun verify_end_to_end_state_user_0_test<
         BaseType,
         QuoteType
@@ -3207,14 +3267,17 @@ module econia::market {
         size_filled_3: u64,
         price_3: u64,
         base_final_swap: u64,
-        quote_final_swap: u64
-    ) {
+        quote_final_swap: u64,
+        maker_size: u64,
+        maker_side: bool,
+        maker_price: u64
+    ) acquires OrderBooks {
         let base_filled = LOT_SIZE * // Calculate base filled
             (size_filled_1 + size_filled_2 + size_filled_3);
         // Calculate quote filled
         let quote_filled = TICK_SIZE * (size_filled_1 * price_1 +
             size_filled_2 * price_2 + size_filled_3 * price_3);
-        // Get final base and final quote holdings
+        // Get final base and final quote holdings after taker match
         let (base_final, quote_final) = if (side == ASK) ( // If a buy
             USER_0_START_BASE  + base_filled,
             USER_0_START_QUOTE - quote_filled
@@ -3222,6 +3285,10 @@ module econia::market {
             USER_0_START_BASE  - base_filled,
             USER_0_START_QUOTE + quote_filled
         );
+        let (base_total_check , base_available_check , base_ceiling_check,
+             quote_total_check, quote_available_check, quote_ceiling_check) =
+             (base_final, base_final, base_final, quote_final, quote_final,
+              quote_final); // Get starting asset count check values
         // If matched from user 0's market account
         if (from_market_account) {
             // Get user 0's general custodian ID
@@ -3229,21 +3296,64 @@ module econia::market {
                 USER_0_GENERAL_CUSTODIAN_ID else NO_CUSTODIAN;
             let market_account_id = // Get user's market account ID
                 user::get_market_account_id(MARKET_ID, general_custodian_id);
+            let order_id = order_id::order_id(maker_price, USER_0_COUNTER,
+                maker_side); // Get potential maker order ID
+            if (maker_size != 0) { // If a maker order was placed too
+                let (size_book, user_book, general_custodian_id_book) =
+                    get_order_fields_test(@econia, MARKET_ID, order_id,
+                        maker_side); // Get order fields on book
+                // Assert order fields as expected
+                assert!(size_book == maker_size,  E_USER_0_INVALID_STATE);
+                assert!(user_book == @user_0    , E_USER_0_INVALID_STATE);
+                assert!(general_custodian_id_book == general_custodian_id,
+                                                  E_USER_0_INVALID_STATE);
+                // Assert order size updated in user's market account
+                assert!(user::get_order_size_test(@user_0, market_account_id,
+                    maker_side, order_id) == maker_size,
+                    E_USER_0_INVALID_STATE);
+                // Calculate base and quote fills for maker order
+                let base_fill = LOT_SIZE * maker_size;
+                let quote_fill = TICK_SIZE * maker_size * maker_price;
+                if (maker_side == ASK) { // If a maker ask
+                    // Base gets locked
+                    base_available_check  = base_available_check  - base_fill;
+                    // Quote ceiling increases
+                    quote_ceiling_check   = quote_ceiling_check   + quote_fill;
+                } else { // If a maker bid
+                    // Base ceiling increases
+                    base_ceiling_check    = base_ceiling_check    + base_fill;
+                    // Quote gets locked
+                    quote_available_check = quote_available_check - quote_fill;
+                };
+            } else { // If no maker order placed too
+                // Assert no such order on book
+                assert!(!has_order_test(@econia, MARKET_ID, side, order_id),
+                    E_USER_0_INVALID_STATE);
+                // Assert no such order in user's market account
+                assert!(!user::has_order_test(@user_0, market_account_id, side,
+                    order_id), E_USER_0_INVALID_STATE);
+            };
             // Get asset counts from user's market account
             let (base_total , base_available , base_ceiling,
                 quote_total, quote_available, quote_ceiling) =
                 user::get_asset_counts_test(@user_0, market_account_id);
             // Assert asset counts are as expected
-            assert!(base_total      == base_final , E_USER_0_INVALID_STATE);
-            assert!(base_available  == base_final , E_USER_0_INVALID_STATE);
-            assert!(base_ceiling    == base_final , E_USER_0_INVALID_STATE);
-            assert!(quote_total     == quote_final, E_USER_0_INVALID_STATE);
-            assert!(quote_available == quote_final, E_USER_0_INVALID_STATE);
-            assert!(quote_ceiling   == quote_final, E_USER_0_INVALID_STATE);
+            assert!(base_total      == base_total_check,
+                E_USER_0_INVALID_STATE);
+            assert!(base_available  == base_available_check,
+                E_USER_0_INVALID_STATE);
+            assert!(base_ceiling    == base_ceiling_check,
+                E_USER_0_INVALID_STATE);
+            assert!(quote_total     == quote_total_check,
+                E_USER_0_INVALID_STATE);
+            assert!(quote_available == quote_available_check,
+                E_USER_0_INVALID_STATE);
+            assert!(quote_ceiling   == quote_ceiling_check,
+                E_USER_0_INVALID_STATE);
             // Verify collateral counts, if any
             verify_end_to_end_state_collateral_test<BaseType, QuoteType>(
-                @user_0, market_account_id, base_final, quote_final,
-                E_USER_0_INVALID_STATE);
+                @user_0, market_account_id, base_total_check,
+                quote_total_check, E_USER_0_INVALID_STATE);
         } else { // If matched as a standalone swap
             // Assert final base holdings
             assert!(base_final_swap  == base_final , E_USER_0_INVALID_STATE);
@@ -3677,6 +3787,9 @@ module econia::market {
         let from_market_account = true;
         let base_final_swap = HI_64;
         let quote_final_swap = HI_64;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
         // Register users with orders on the book
         register_end_to_end_users_test<BC, QG>(econia, user_0, user_1, user_2,
             user_3, side, user_0_has_general_custodian);
@@ -3685,7 +3798,8 @@ module econia::market {
             min_base, max_base, min_quote, max_quote, limit_price);
         // Verify state
         verify_end_to_end_state_test<BC, QG>(side, size, from_market_account,
-            user_0_has_general_custodian, base_final_swap, quote_final_swap);
+            user_0_has_general_custodian, base_final_swap, quote_final_swap,
+            maker_size, maker_side, maker_price);
     }
 
     #[test(
@@ -3724,6 +3838,9 @@ module econia::market {
         let from_market_account = true;
         let base_final_swap = HI_64;
         let quote_final_swap = HI_64;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
         // Get general custodian capability
         let general_custodian_capability = registry::
             get_custodian_capability_test(USER_0_GENERAL_CUSTODIAN_ID);
@@ -3739,7 +3856,8 @@ module econia::market {
             general_custodian_capability);
         // Verify state
         verify_end_to_end_state_test<BC, QG>(side, size, from_market_account,
-            user_0_has_general_custodian, base_final_swap, quote_final_swap);
+            user_0_has_general_custodian, base_final_swap, quote_final_swap,
+            maker_size, maker_side, maker_price);
     }
 
     #[test(user = @user)]
@@ -4651,12 +4769,16 @@ module econia::market {
         let from_market_account = true;
         let base_final_swap = HI_64;
         let quote_final_swap = HI_64;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
         // Register users with orders on the book
         register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
             user_3, side, user_0_has_general_custodian);
         // Verify state
         verify_end_to_end_state_test<BG, QC>(side, size, from_market_account,
-            user_0_has_general_custodian, base_final_swap, quote_final_swap);
+            user_0_has_general_custodian, base_final_swap, quote_final_swap,
+            maker_size, maker_side, maker_price);
     }
 
     #[test(user = @user)]

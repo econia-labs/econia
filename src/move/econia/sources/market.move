@@ -31,6 +31,8 @@ module econia::market {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    use aptos_framework::account;
+    #[test_only]
     use aptos_std::debug::print;
     #[test_only]
     use econia::assets::{Self, BC, BG, QC, QG};
@@ -4591,6 +4593,113 @@ module econia::market {
         // Destroy coins
         assets::burn(base_coins);
         assets::burn(quote_coins);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Swap buy coins between coinstores
+    fun test_end_to_end_swap_coinstores_buy(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let filled_against_1 = USER_1_ASK_SIZE - 1;
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = LOT_SIZE * (filled_against_1);
+        let min_quote = 0;
+        let max_quote = 100000;
+        let limit_price = HI_64;
+        // Assign state verification values
+        let from_market_account = false;
+        let taker_size = filled_against_1;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Register user with account
+        account::create_account_for_test(@user_0);
+        // Register user with outbound coinstore
+        coin::register<QC>(user_0);
+        // Deposit outbound start coins to coinstore
+        coin::deposit(@user_0, assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Swap coins, storing base and quote coins filled
+        swap_between_coinstores<BC, QC>(user_0, @econia, MARKET_ID, direction,
+            min_base, max_base, min_quote, max_quote, limit_price);
+        // Deposit inbound start coins to coinstore (so state
+        // verification sees expected values)
+        coin::deposit(@user_0, assets::mint<BC>(econia, USER_0_START_BASE));
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian,
+            coin::balance<BC>(@user_0), coin::balance<QC>(@user_0), maker_size,
+            maker_side, maker_price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    /// Swap sell coins between coinstores
+    fun test_end_to_end_swap_coinstores_sell(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = BID;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let direction = SELL;
+        let min_base = 0;
+        let max_base = 1000000000000;
+        let min_quote = 0;
+        let max_quote = HI_64 - USER_0_START_QUOTE;
+        let limit_price = USER_2_BID_PRICE;
+        // Assign state verification values
+        let from_market_account = false;
+        let taker_size = USER_1_BID_SIZE + USER_2_BID_SIZE;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Register user with account
+        account::create_account_for_test(@user_0);
+        // Register user with outbound coinstore
+        coin::register<BC>(user_0);
+        // Deposit outbound start coins to coinstore
+        coin::deposit(@user_0, assets::mint<BC>(econia, USER_0_START_BASE));
+        // Swap coins, storing base and quote coins filled
+        swap_between_coinstores<BC, QC>(user_0, @econia, MARKET_ID, direction,
+            min_base, max_base, min_quote, max_quote, limit_price);
+        // Deposit inbound start coins to coinstore (so state
+        // verification sees expected values)
+        coin::deposit(@user_0, assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian,
+            coin::balance<BC>(@user_0), coin::balance<QC>(@user_0), maker_size,
+            maker_side, maker_price);
     }
 
     #[test(user = @user)]

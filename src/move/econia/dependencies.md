@@ -100,9 +100,9 @@ flowchart TD
 
     class place_limit_order_pre_match tested_integrated;
     class place_limit_order_post_match tested_integrated;
-    class swap_between_coinstores to_test_integrated;
+    class swap_between_coinstores tested_integrated;
     class match_verify_fills individually_tested;
-    class swap_coins to_test_integrated;
+    class swap_coins tested_integrated;
     class swap_generic to_test_integrated;
     class match to_test_integrated;
     class match_from_market_account tested_integrated;

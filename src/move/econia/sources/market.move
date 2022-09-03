@@ -145,7 +145,7 @@ module econia::market {
     /// When limit order size max ticks fill overflows a `u64`
     const E_SIZE_TICKS_OVERFLOW: u64 = 21;
     /// When limit order size max quote fill overflows a `u64`
-    const E_SIZE_QUOTE_OVERFLOW: u64 = 21;
+    const E_SIZE_QUOTE_OVERFLOW: u64 = 22;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1980,13 +1980,13 @@ module econia::market {
     ///   or `immediate_or_cancel_ref` is marked `&true`
     /// * If `post_or_abort_ref` is `&true` and order crosses the spread
     ///   per `place_limit_order_pre_match()`
+    /// * If size-correspondent base amount overflows a `u64`
+    /// * If size-corresondent tick amount overflows a `u64`
+    /// * If size-correspondent quote amount overflows a `u64`
     /// * If `fill_or_abort_ref` is `&true` and the order does not
     ///   completely fill across the spread: minimum base and quote
     ///   match amounts are assigned such that the abort condition is
     ///   evaluated in `match_verify_fills()`
-    /// * If size-correspondent base amount overflows a `u64`
-    /// * If size-corresondent tick amount overflows a `u64`
-    /// * If size-correspondent quote amount overflows a `u64`
     fun place_limit_order_pre_match(
         order_book_ref: &OrderBook,
         market_id_ref: &u64,
@@ -3333,6 +3333,316 @@ module econia::market {
             GENERIC_ASSET_TRANSFER_CUSTODIAN_ID);
         // Attempt invalid invocation
         cancel_limit_order(@user, @econia, MARKET_ID, NO_CUSTODIAN, ASK, 0);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for post-or-abort crossed spread on an ask
+    fun test_end_to_end_limit_order_crossed_spread_ask(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = BID; // Ask that crosses spread fills against bids
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = ASK;
+        let size = HI_64;
+        let price = USER_1_BID_PRICE - 1;
+        let post_or_abort = true;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BG, QC>(user_0, @econia, MARKET_ID, order_side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for post-or-abort crossed spread on a bid
+    fun test_end_to_end_limit_order_crossed_spread_bid(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK; // Bid that crosses spread fills against asks
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = BID;
+        let size = HI_64;
+        let price = USER_1_ASK_PRICE + 1;
+        let post_or_abort = true;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BG, QC>(user_0, @econia, MARKET_ID, order_side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for fill abort order that is not able to fill
+    fun test_end_to_end_limit_order_fill_or_abort(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let order_side = BID; // Bid fills across spread against asks
+        let size = USER_1_ASK_SIZE + 1;
+        let price = USER_1_ASK_PRICE;
+        let post_or_abort = false;
+        let fill_or_abort = true;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BG, QC>(user_0, @econia, MARKET_ID, order_side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 19)]
+    /// Verify failure for too many limit order flags, when
+    /// post-or-abort is true and fill-or-abort is true
+    fun test_end_to_end_limit_order_flags_1(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = true;
+        // Assign limit order values
+        let size = HI_64;
+        let price = HI_64;
+        let post_or_abort = true;
+        let fill_or_abort = true;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Get general custodian capability
+        let general_custodian_capability = registry::
+            get_custodian_capability_test(USER_0_GENERAL_CUSTODIAN_ID);
+        // Attempt invalid invocation
+        place_limit_order_custodian<BG, QC>(@user_0, @econia, MARKET_ID, side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel,
+            &general_custodian_capability);
+        // Destroy custodian capability
+        registry::destroy_custodian_capability_test(
+            general_custodian_capability);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 19)]
+    /// Verify failure for too many limit order flags, when
+    /// post-or-abort is true and immediate-or-cancel is true
+    fun test_end_to_end_limit_order_flags_2(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let size = HI_64;
+        let price = HI_64;
+        let post_or_abort = true;
+        let fill_or_abort = false;
+        let immediate_or_cancel = true;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BG, QC>(user_0, @econia, MARKET_ID, side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 19)]
+    /// Verify failure for too many limit order flags, when
+    /// post-or-abort is false and both other flags are true
+    fun test_end_to_end_limit_order_flags_3(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let size = HI_64;
+        let price = HI_64;
+        let post_or_abort = false;
+        let fill_or_abort = true;
+        let immediate_or_cancel = true;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BG, QC>(user_0, @econia, MARKET_ID, side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 20)]
+    /// Verify failure for overflowing base asset
+    fun test_end_to_end_limit_order_overflow_base(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let size = (HI_64 / LOT_SIZE) + 1;
+        let price = 1;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BG, QC>(user_0, @econia, MARKET_ID, side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 22)]
+    /// Verify failure for overflowing quote
+    fun test_end_to_end_limit_order_overflow_quote(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = BUY;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let size = 1;
+        let price = HI_64;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 21)]
+    /// Verify failure for overflowing ticks
+    fun test_end_to_end_limit_order_overflow_ticks(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = BUY;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let size = 2;
+        let price = HI_64;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
     }
 
     #[test(

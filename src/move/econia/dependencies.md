@@ -98,7 +98,7 @@ flowchart TD
     classDef to_test_via_invocation fill:#ffa500 %% Orange
     classDef tested_via_invocation fill:#00ff7f %% Spring Green
 
-    class place_limit_order_pre_match to_test_integrated;
+    class place_limit_order_pre_match tested_integrated;
     class place_limit_order_post_match to_test_integrated;
     class swap_between_coinstores to_test_integrated;
     class match_verify_fills individually_tested;
@@ -109,8 +109,8 @@ flowchart TD
     class match_init to_test_integrated;
     class swap to_test_integrated;
     class place_limit_order to_test_integrated;
-    class place_limit_order_custodian to_test_via_invocation;
-    class place_limit_order_user to_test_via_invocation;
+    class place_limit_order_custodian tested_via_invocation;
+    class place_limit_order_user tested_via_invocation;
     class place_market_order tested_via_invocation;
     class place_market_order_custodian tested_via_invocation;
     class place_market_order_user tested_via_invocation;

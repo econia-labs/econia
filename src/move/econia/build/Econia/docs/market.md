@@ -593,7 +593,7 @@ When limit order size max base fill overflows a <code>u64</code>
 When limit order size max quote fill overflows a <code>u64</code>
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_QUOTE_OVERFLOW">E_SIZE_QUOTE_OVERFLOW</a>: u64 = 21;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_QUOTE_OVERFLOW">E_SIZE_QUOTE_OVERFLOW</a>: u64 = 22;
 </code></pre>
 
 
@@ -3228,13 +3228,13 @@ quote units to match in general case
 or <code>immediate_or_cancel_ref</code> is marked <code>&<b>true</b></code>
 * If <code>post_or_abort_ref</code> is <code>&<b>true</b></code> and order crosses the spread
 per <code><a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>()</code>
+* If size-correspondent base amount overflows a <code>u64</code>
+* If size-corresondent tick amount overflows a <code>u64</code>
+* If size-correspondent quote amount overflows a <code>u64</code>
 * If <code>fill_or_abort_ref</code> is <code>&<b>true</b></code> and the order does not
 completely fill across the spread: minimum base and quote
 match amounts are assigned such that the abort condition is
 evaluated in <code><a href="market.md#0xc0deb00c_market_match_verify_fills">match_verify_fills</a>()</code>
-* If size-correspondent base amount overflows a <code>u64</code>
-* If size-corresondent tick amount overflows a <code>u64</code>
-* If size-correspondent quote amount overflows a <code>u64</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>(order_book_ref: &<a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, market_id_ref: &u64, general_custodian_id_ref: &u64, side_ref: &bool, size_ref: &u64, price_ref: &u64, post_or_abort_ref: &bool, fill_or_abort_ref: &bool, immediate_or_cancel_ref: &bool, market_account_id_ref_mut: &<b>mut</b> u128, lot_size_ref_mut: &<b>mut</b> u64, tick_size_ref_mut: &<b>mut</b> u64, direction_ref_mut: &<b>mut</b> bool, min_base_ref_mut: &<b>mut</b> u64, max_base_ref_mut: &<b>mut</b> u64, min_quote_ref_mut: &<b>mut</b> u64, max_quote_ref_mut: &<b>mut</b> u64)

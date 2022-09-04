@@ -1,6 +1,7 @@
 # Dependencies
 
 The below dependency charts are generated declaratively via `mermaid.js`, and may present occasional rendering artifacts.
+Try switching browsers if the text renders in a way that is difficult to read.
 
 ## Modules
 

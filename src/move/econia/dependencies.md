@@ -1,4 +1,8 @@
-# Module dependencies
+# Dependencies
+
+The below dependency charts are generated declaratively via `mermaid.js`, and may present occasional rendering artifacts.
+
+## Modules
 
 Econia modules `use` each other as follows:
 
@@ -8,8 +12,8 @@ Econia modules `use` each other as follows:
 
 flowchart TD
 
-    user --> open_table
     user --> critbit
+    user --> open_table
     user --> order_id
     user --> |friend| registry
     user --> |test-only| assets
@@ -17,85 +21,102 @@ flowchart TD
     order_id --> |test-only| critbit
     market --> critbit
     market --> open_table
-    market --> |friend| registry
-    market --> |test-only| assets
-    market --> |friend| user
     market --> order_id
+    market --> |friend| registry
+    market --> |friend| user
+    market --> |test-only| assets
 
 ```
 
-# Old matching engine
+## Matching engine
+
+Econia's matching engine is implemented in [`market.move`](sources/market.move), with comprehensive end-to-end testing.
+
+### Functions
+
+The below dependency chart details the relevant matching engine functions, according to the following color schema:
+
+| Color  | Meaning                      |
+|--------|------------------------------|
+| Purple | Individually tested          |
+| Green  | Tested via direct invocation |
+| Blue   | End-to-end tested            |
+
+* Functions that simply check the size of inputs are individually tested
+* Functions that are wrappers for other functions are simply tested by invocation
+* Integrated functions that complexly modify state are tested via end-to-end testing
+
 
 ```mermaid
 
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1', 'tertiaryColor': '#808080', 'tertiaryTextColor': '#0d1013'}}}%%
 
-flowchart TD
+flowchart TB
 
-    fill_market_order_custodian --> fill_market_order_from_market_account
-    swap --> fill_market_order
-    fill_market_order_user --> fill_market_order_from_market_account
-    fill_market_order --> fill_market_order_init
-    fill_market_order --> fill_market_order_traverse_loop
-    fill_market_order_from_market_account --> fill_market_order
-    fill_market_order_process_loop_order --> fill_market_order_check_base_parcels_to_fill
-    fill_market_order_traverse_loop --> fill_market_order_process_loop_order
-    fill_market_order_traverse_loop --> fill_market_order_loop_order_follow_up
-    fill_market_order_traverse_loop --> fill_market_order_break_cleanup
+%% Node relationships
 
-```
-# New matching engine
+    subgraph From market account
 
-If a node has two lines, the second line is the function signature from the old matching engine.
+        subgraph Market orders
 
-| Color        | Meaning                      |
-|--------------|------------------------------|
-| Gray         | To review                    |
-| Green        | Individually tested          |
-| Spring green | Tested via direct invocation |
-| Blue         | End-to-end tested            |
-| Orange       | To test via invocation       |
-| Gold         | To test end-to-end           |
+        place_market_order_custodian --> place_market_order
+        place_market_order_user --> place_market_order
 
-```mermaid
+        end
 
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
+        subgraph Limit orders
 
-flowchart TD
+        place_limit_order_custodian --> place_limit_order
+        place_limit_order_user --> place_limit_order
+        place_limit_order --> place_limit_order_pre_match
+        place_limit_order --> place_limit_order_post_match
 
-%% Node definitions
+        end
 
-    match[match <br/> fill_market_order]
-    match_from_market_account[match_from_market_account <br/> fill_market_order_from_market_account]
-    match_init[match_init <br> fill_market_order_init]
-    swap[swap]
-    place_market_order[place_market_order]
-    place_market_order_custodian[place_market_order_custodian <br/> fill_market_order_custodian]
-    place_market_order_user[place_market_order_user <br/> fill_market_order_user]
-    place_limit_order[place_limit_order]
-    place_limit_order_custodian[place_limit_order_custodian]
-    place_limit_order_user[place_limit_order_user]
-    match_loop[match_loop <br/> fill_market_order_traverse_loop]
-    match_loop_order[match_loop_order <br/> fill_market_order_process_loop_order]
-    match_loop_order_fill_size[match_loop_order_fill_size <br/> fill_market_order_check_base_parcels_to_fill]
-    match_loop_order_follow_up[match_loop_order_follow_up <br/> fill_market_order_loop_order_follow_up]
-    match_loop_break[match_loop_break <br/> fill_market_order_break_cleanup]
-    swap_coins[swap_coins]
-    swap_generic[swap_generic]
-    match_verify_fills[match_verify_fills]
-    match_loop_init[match_loop_init]
-    match_range_check_fills[match_range_check_fills]
-    swap_between_coinstores[swap_between_coinstores]
-    place_limit_order_pre_match[place_limit_order_pre_match]
-    place_limit_order_post_match[place_limit_order_post_match]
+    place_limit_order --> match_from_market_account
+    place_market_order --> match_from_market_account
+
+    end
+
+    subgraph Swaps
+
+    swap_between_coinstores --> swap
+    swap_generic --> swap
+    swap_coins --> swap
+
+    end
+
+    match_from_market_account --> match
+    match_from_market_account --> match_range_check_fills
+
+    swap_coins --> match_range_check_fills
+    swap_between_coinstores --> match_range_check_fills
+    swap_generic --> match_range_check_fills
+    swap --> match
+
+    subgraph Matching
+
+    match --> match_init
+    match --> match_loop
+
+        subgraph Looping
+
+        match_loop --> match_loop_init
+        match_loop --> match_loop_order
+        match_loop --> match_loop_order_follow_up
+        match_loop --> match_loop_break
+        match_loop_order --> match_loop_order_fill_size
+
+        end
+
+    match --> match_verify_fills
+
+    end
 
 %% Class definitions
 
-    classDef tested_integrated fill:#87cefa %% Light Sky Blue
-    classDef to_test_integrated fill:#ffd700 %% Gold
-    classDef individually_tested fill:#32cd32 %% Lime Green
-    classDef to_review fill:#708090 %% Slate Gray
-    classDef to_test_via_invocation fill:#ffa500 %% Orange
+    classDef individually_tested fill:#ff00ff %% Fuchsia
+    classDef tested_integrated fill:#00ced1 %% Dark Turquoise
     classDef tested_via_invocation fill:#00ff7f %% Spring Green
 
     class place_limit_order_pre_match tested_integrated;
@@ -122,49 +143,32 @@ flowchart TD
     class match_loop_init tested_integrated;
     class match_range_check_fills individually_tested;
 
-%% Node relationships
-
-    swap_between_coinstores --> swap
-    swap_between_coinstores --> match_range_check_fills
-    match --> match_verify_fills
-    swap_generic --> match_range_check_fills
-    swap_generic --> swap
-    swap_coins --> swap
-    swap_coins --> match_range_check_fills
-    place_limit_order_user --> place_limit_order
-    place_limit_order_custodian --> place_limit_order
-    place_limit_order --> match_from_market_account
-    place_limit_order --> place_limit_order_pre_match
-    place_limit_order --> place_limit_order_post_match
-    place_market_order --> match_from_market_account
-    place_market_order_custodian --> place_market_order
-    swap --> match
-    place_market_order_user --> place_market_order
-    match --> match_init
-    match --> match_loop
-    match_from_market_account --> match
-    match_from_market_account --> match_range_check_fills
-    match_loop_order --> match_loop_order_fill_size
-    match_loop --> match_loop_init
-    match_loop --> match_loop_order
-    match_loop --> match_loop_order_follow_up
-    match_loop --> match_loop_break
-
 ```
 
-# Matching engine end-to-end test functions
+### Test functions
+
+The below test functions are used for end-to-end matching engine testing:
 
 ```mermaid
 
-flowchart TD
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1', 'tertiaryColor': '#808080', 'tertiaryTextColor': '#0d1013'}}}%%
+
+flowchart LR
+
+    subgraph Setup
 
     register_end_to_end_users_test --> register_end_to_end_market_accounts_test
     register_end_to_end_users_test --> register_end_to_end_orders_test
     register_end_to_end_market_accounts_test --> register_end_to_end_market_account_test
     register_end_to_end_market_account_test --> register_end_to_end_market_account_deposit_test
-    register_end_to_end_orders_test --> get_end_to_end_orders_size_price_test
 
+    end
+
+    register_end_to_end_orders_test --> get_end_to_end_orders_size_price_test
     verify_end_to_end_state_test --> get_end_to_end_orders_size_price_test
+
+    subgraph State verification
+
     verify_end_to_end_state_test --> get_fill_sizes_test
     get_fill_sizes_test --> get_fill_remaining_test
     verify_end_to_end_state_test --> verify_end_to_end_state_order_user_test
@@ -172,5 +176,7 @@ flowchart TD
     verify_end_to_end_state_order_user_test --> verify_end_to_end_state_collateral_test
     verify_end_to_end_state_user_0_test --> verify_end_to_end_state_collateral_test
     verify_end_to_end_state_test --> verify_end_to_end_state_spread_makers
+
+    end
 
 ```

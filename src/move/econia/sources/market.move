@@ -11,6 +11,10 @@
 /// state is verified via `verify_end_to_end_state_test()`. See tests
 /// of form `test_end_to_end....()`.
 ///
+/// Dependency charts for both matching engine functions and end-to-end
+/// testing functions are at
+/// [`dependencies.md`](../../../dependencies.md).
+///
 /// ---
 module econia::market {
 

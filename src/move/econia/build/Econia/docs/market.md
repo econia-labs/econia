@@ -2991,6 +2991,7 @@ possible across the spread, then silently return
 
 ### Abort conditions
 
+* If <code>price_ref</code> is <code>&0</code>
 * If more than one of <code>post_or_abort_ref&</code>, <code>fill_or_abort_ref</code>,
 or <code>immediate_or_cancel_ref</code> is marked <code>&<b>true</b></code> per
 <code><a href="market.md#0xc0deb00c_market_place_limit_order_pre_match">place_limit_order_pre_match</a>()</code>
@@ -3042,6 +3043,7 @@ functions
     fill_or_abort_ref: &bool,
     immediate_or_cancel_ref: &bool
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <b>assert</b>!(*price_ref != 0, <a href="market.md#0xc0deb00c_market_E_LIMIT_PRICE_0">E_LIMIT_PRICE_0</a>); // Assert price not 0
     <b>if</b> (*size_ref == 0) <b>return</b>; // Silently <b>return</b> <b>if</b> no order size
     // Verify order book <b>exists</b>
     <a href="market.md#0xc0deb00c_market_verify_order_book_exists">verify_order_book_exists</a>(*host_ref, *market_id_ref);

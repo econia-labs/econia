@@ -1805,6 +1805,7 @@ module econia::market {
     ///   possible across the spread, then silently return
     ///
     /// # Abort conditions
+    /// * If `price_ref` is `&0`
     /// * If more than one of `post_or_abort_ref&`, `fill_or_abort_ref`,
     ///   or `immediate_or_cancel_ref` is marked `&true` per
     ///   `place_limit_order_pre_match()`
@@ -1841,6 +1842,7 @@ module econia::market {
         fill_or_abort_ref: &bool,
         immediate_or_cancel_ref: &bool
     ) acquires OrderBooks {
+        assert!(*price_ref != 0, E_LIMIT_PRICE_0); // Assert price not 0
         if (*size_ref == 0) return; // Silently return if no order size
         // Verify order book exists
         verify_order_book_exists(*host_ref, *market_id_ref);
@@ -4351,6 +4353,39 @@ module econia::market {
         user_2 = @user_2,
         user_3 = @user_3,
     )]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for limit price of 0
+    fun test_end_to_end_limit_order_price_0(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = BUY;
+        let user_0_has_general_custodian = false;
+        // Assign limit order values
+        let size = 10;
+        let price = 0;
+        let post_or_abort = false;
+        let fill_or_abort = false;
+        let immediate_or_cancel = false;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Attempt invalid invocation
+        place_limit_order_user<BC, QC>(user_0, @econia, MARKET_ID, side,
+            size, price, post_or_abort, fill_or_abort, immediate_or_cancel);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
     /// Place a limit order that silently returns for size 0
     fun test_end_to_end_limit_order_size_0(
         econia: &signer,
@@ -4365,7 +4400,7 @@ module econia::market {
         // Assign limit order values
         let order_side = ASK;
         let size = 0;
-        let price = 0;
+        let price = 1;
         let post_or_abort = false;
         let fill_or_abort = false;
         let immediate_or_cancel = false;

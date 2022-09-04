@@ -104,7 +104,7 @@ flowchart TD
     class match_verify_fills individually_tested;
     class swap_coins tested_integrated;
     class swap_generic tested_integrated;
-    class match to_test_integrated;
+    class match tested_integrated;
     class match_from_market_account tested_integrated;
     class match_init to_test_integrated;
     class swap tested_integrated;

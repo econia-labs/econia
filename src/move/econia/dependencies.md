@@ -106,7 +106,7 @@ flowchart TD
     class swap_generic tested_integrated;
     class match tested_integrated;
     class match_from_market_account tested_integrated;
-    class match_init to_test_integrated;
+    class match_init tested_integrated;
     class swap tested_integrated;
     class place_limit_order tested_integrated;
     class place_limit_order_custodian tested_via_invocation;

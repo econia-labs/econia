@@ -4535,6 +4535,90 @@ module econia::market {
         user_2 = @user_2,
         user_3 = @user_3,
     )]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for invalid base
+    fun test_end_to_end_match_invalid_base(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign order values
+        let direction   = BUY;
+        let min_base    = 0;
+        let max_base    = 1;
+        let min_quote   = 0;
+        let max_quote   = 1;
+        let limit_price = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Register user with account
+        account::create_account_for_test(@user_0);
+        // Register user with coinstores
+        coin::register<BC>(user_0);
+        coin::register<QC>(user_0);
+        // Deposit coins to coinstores
+        coin::deposit(@user_0, assets::mint<BC>(econia, USER_0_START_BASE));
+        coin::deposit(@user_0, assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Attempt invalid invocation
+        swap_between_coinstores<QC, QC>(user_0, @econia, MARKET_ID, direction,
+            min_base, max_base, min_quote, max_quote, limit_price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for invalid quote
+    fun test_end_to_end_match_invalid_quote(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign order values
+        let direction   = BUY;
+        let min_base    = 0;
+        let max_base    = 1;
+        let min_quote   = 0;
+        let max_quote   = 1;
+        let limit_price = HI_64;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1, user_2,
+            user_3, side, user_0_has_general_custodian);
+        // Register user with account
+        account::create_account_for_test(@user_0);
+        // Register user with coinstores
+        coin::register<BC>(user_0);
+        coin::register<QC>(user_0);
+        // Deposit coins to coinstores
+        coin::deposit(@user_0, assets::mint<BC>(econia, USER_0_START_BASE));
+        coin::deposit(@user_0, assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Attempt invalid invocation
+        swap_between_coinstores<BC, BC>(user_0, @econia, MARKET_ID, direction,
+            min_base, max_base, min_quote, max_quote, limit_price);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
     /// Verify unmodified state when placing an order on an empty book
     fun test_end_to_end_match_no_orders(
         econia: &signer,

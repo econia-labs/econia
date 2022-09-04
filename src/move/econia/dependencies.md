@@ -48,14 +48,14 @@ flowchart TD
 
 If a node has two lines, the second line is the function signature from the old matching engine.
 
-| Color        | Meaning                |
-|--------------|------------------------|
-| Gray         | To review              |
-| Green        | Individually tested    |
-| Spring green | Tested via invocation  |
-| Blue         | End-to-end tested      |
-| Orange       | To test via invocation |
-| Gold         | To test end-to-end     |
+| Color        | Meaning                      |
+|--------------|------------------------------|
+| Gray         | To review                    |
+| Green        | Individually tested          |
+| Spring green | Tested via direct invocation |
+| Blue         | End-to-end tested            |
+| Orange       | To test via invocation       |
+| Gold         | To test end-to-end           |
 
 ```mermaid
 
@@ -114,12 +114,12 @@ flowchart TD
     class place_market_order tested_via_invocation;
     class place_market_order_custodian tested_via_invocation;
     class place_market_order_user tested_via_invocation;
-    class match_loop to_test_integrated;
-    class match_loop_order to_test_integrated;
+    class match_loop tested_integrated;
+    class match_loop_order tested_integrated;
     class match_loop_order_fill_size individually_tested;
-    class match_loop_order_follow_up to_test_integrated;
-    class match_loop_break to_test_integrated;
-    class match_loop_init to_test_integrated;
+    class match_loop_order_follow_up tested_integrated;
+    class match_loop_break tested_integrated;
+    class match_loop_init tested_integrated;
     class match_range_check_fills individually_tested;
 
 %% Node relationships

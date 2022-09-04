@@ -118,8 +118,9 @@ of form <code>test_end_to_end....()</code>.
     -  [Type parameters](#@Type_parameters_59)
     -  [Parameters](#@Parameters_60)
     -  [Assumes](#@Assumes_61)
--  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
     -  [Abort conditions](#@Abort_conditions_62)
+-  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
+    -  [Abort conditions](#@Abort_conditions_63)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -1033,9 +1034,16 @@ given market
 
 * If base and quote assets are both coin types
 * If base is a coin type but base coin option is none, or if
-base is not a coin type but base coin option is some
+base is not a coin type but base coin option is some (the
+second condition should be impossible, since a coin resource
+cannot be generated from a non-coin coin type)
 * If quote is a coin type but quote coin option is none, or if
-quote is not a coin type but quote coin option is some
+quote is not a coin type but quote coin option is some (the
+second condition should be impossible, since a coin resource
+cannot be generated from a non-coin coin type)
+* If <code>generic_asset_transfer_custodian_capability_ref</code> does not
+indicate generic asset transfer custodian for given market,
+per inner function <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;BaseType, QuoteType&gt;(host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, generic_asset_transfer_custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64)
@@ -3652,6 +3660,14 @@ swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COI
 <code><a href="market.md#0xc0deb00c_market_match_range_check_fills">match_range_check_fills</a>()</code>
 
 
+<a name="@Abort_conditions_62"></a>
+
+### Abort conditions
+
+* If <code>generic_asset_transfer_custodian_id_ref</code> does not indicate
+generic asset transfer custodian for given market
+
+
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(host_ref: &<b>address</b>, market_id_ref: &u64, direction_ref: &bool, min_base_ref: &u64, max_base_ref: &u64, min_quote_ref: &u64, max_quote_ref: &u64, limit_price_ref: &u64, optional_base_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, optional_quote_coins_ref_mut: &<b>mut</b> <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;&gt;, base_filled_ref_mut: &<b>mut</b> u64, quote_filled_ref_mut: &<b>mut</b> u64, generic_asset_transfer_custodian_id_ref: &u64)
 </code></pre>
 
@@ -3721,7 +3737,7 @@ swap, marked <code><a href="market.md#0xc0deb00c_market_PURE_COIN_PAIR">PURE_COI
 Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> with <code>market_id</code>
 
 
-<a name="@Abort_conditions_62"></a>
+<a name="@Abort_conditions_63"></a>
 
 ### Abort conditions
 

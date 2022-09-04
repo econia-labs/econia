@@ -421,9 +421,16 @@ module econia::market {
     /// # Abort conditions
     /// * If base and quote assets are both coin types
     /// * If base is a coin type but base coin option is none, or if
-    ///   base is not a coin type but base coin option is some
+    ///   base is not a coin type but base coin option is some (the
+    ///   second condition should be impossible, since a coin resource
+    ///   cannot be generated from a non-coin coin type)
     /// * If quote is a coin type but quote coin option is none, or if
-    ///   quote is not a coin type but quote coin option is some
+    ///   quote is not a coin type but quote coin option is some (the
+    ///   second condition should be impossible, since a coin resource
+    ///   cannot be generated from a non-coin coin type)
+    /// * If `generic_asset_transfer_custodian_capability_ref` does not
+    ///   indicate generic asset transfer custodian for given market,
+    ///   per inner function `swap()`
     public fun swap_generic<
         BaseType,
         QuoteType
@@ -2289,6 +2296,10 @@ module econia::market {
     /// # Assumes
     /// * That min/max fill amounts have been checked via
     ///   `match_range_check_fills()`
+    ///
+    /// # Abort conditions
+    /// * If `generic_asset_transfer_custodian_id_ref` does not indicate
+    ///   generic asset transfer custodian for given market
     fun swap<
         BaseType,
         QuoteType
@@ -4983,6 +4994,58 @@ module econia::market {
             from_market_account, user_0_has_general_custodian,
             base_final, coin::value(&quote_coins), maker_size, maker_side,
             maker_price);
+        // Destroy capability
+        registry::destroy_custodian_capability_test(
+            generic_asset_transfer_custodian_capability);
+        assets::burn(quote_coins); // Burn coins
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for invalid generic asset transfer custodian
+    fun test_end_to_end_swap_invalid_custodian(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = BID;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let direction = SELL;
+        let min_base = 0;
+        let max_base = 0;
+        let min_quote = 0;
+        let max_quote = 0;
+        let limit_price = USER_1_BID_SIZE + 1;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BG, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        // Get invalid generic asset transfer custodian capability
+        let generic_asset_transfer_custodian_capability =
+            registry::get_custodian_capability_test(
+                GENERIC_ASSET_TRANSFER_CUSTODIAN_ID + 1);
+        // Get empty base option
+        let option_base = option::none<coin::Coin<BG>>();
+        // Get option-wrapped quote coins
+        let option_quote = option::some(
+            assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Attempt invalid invocation
+        swap_generic<BG, QC>(@econia, MARKET_ID, direction, min_base, max_base,
+            min_quote, max_quote, limit_price, &mut option_base,
+            &mut option_quote, &generic_asset_transfer_custodian_capability);
+        // Destroy empty base option
+        option::destroy_none(option_base);
+        // Destroy quote option, storing coins within
+        let quote_coins = option::destroy_some(option_quote);
         // Destroy capability
         registry::destroy_custodian_capability_test(
             generic_asset_transfer_custodian_capability);

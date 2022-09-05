@@ -1738,7 +1738,7 @@ number of ticks filled by matching engine
 ### Assumes
 
 * That if optional coins are passed, they contain sufficient
-amounts for matching in accordance with other specifed values
+amounts for matching in accordance with other specified values
 * That <code>lot_size_ref</code> and <code>tick_size_ref</code> indicate the same
 lot and tick size as <code>order_book_ref_mut</code>
 * That min/max fill amounts have been checked via
@@ -2076,7 +2076,7 @@ Match an order against the book via loopwise tree traversal.
 
 Inner function for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
-During interated traversal, the "incoming user" matches against
+During iterated traversal, the "incoming user" matches against
 a "target order" on the book at each iteration.
 
 
@@ -2164,7 +2164,7 @@ return schema
     // can not be declared without a value in the above function,
     // and which raises a warning <b>if</b> it is assigned a value within
     // the present scope. It could be declared within the <b>loop</b>
-    // scope, but this would involve a redeclaration for each
+    // scope, but this would involve a re-declaration for each
     // iteration. Hence it is declared here, such that the statement
     // in which it is assigned does not locally re-bind the other
     // variables in the function <b>return</b> tuple, which would occur <b>if</b>
@@ -2603,7 +2603,7 @@ process, only reassigned when iterated traversal proceeds
 as values rather than reassigning to passed in references,
 because the calling function <code><a href="market.md#0xc0deb00c_market_match_loop_order">match_loop_order</a>()</code> accesses
 these variables elsewhere in a loop, such that passing
-references to them consitutes an invalid borrow within the
+references to them constitutes an invalid borrow within the
 loop context
 * Accepts <code>target_order_id</code> as pass-by-value even though
 pass-by-reference would be valid, because if it were to be
@@ -3307,7 +3307,7 @@ quote units to match per above
 or <code>immediate_or_cancel_ref</code> is marked <code>&<b>true</b></code>
 * If <code>post_or_abort_ref</code> is <code>&<b>true</b></code> and order crosses the spread
 * If size-correspondent base amount overflows a <code>u64</code>
-* If size-corresondent tick amount overflows a <code>u64</code>
+* If size-correspondent tick amount overflows a <code>u64</code>
 * If size-correspondent quote amount overflows a <code>u64</code>
 * If <code>fill_or_abort_ref</code> is <code>&<b>true</b></code> and the order does not
 completely fill across the spread: minimum base match amount

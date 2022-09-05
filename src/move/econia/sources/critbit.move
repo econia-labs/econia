@@ -764,7 +764,7 @@ module econia::critbit {
     /// * `parent_index`: Start node's parent field
     /// * `child_index`: Child index of start node
     /// * `n_outer_nodes`: Number of outer nodes in `tree`
-    /// * `drection`: Direction to traverse. If `LEFT`, predecessor
+    /// * `direction`: Direction to traverse. If `LEFT`, predecessor
     ///   traversal, else successor traversal
     ///
     /// # Returns
@@ -1532,7 +1532,7 @@ module econia::critbit {
         }
     }
 
-    /// Return `true` if `child_fied_index` indicates an outer node
+    /// Return `true` if `child_field_index` indicates an outer node
     fun is_outer_node(
         child_field_index: u64
     ): bool {

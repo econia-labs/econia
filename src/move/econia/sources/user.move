@@ -465,7 +465,7 @@ module econia::user {
     ///
     /// # Parameters
     /// * `user`: Signing user
-    /// * `market_id`: Serial ID of corresonding market
+    /// * `market_id`: Serial ID of corresponding market
     /// * `general_custodian_id`: Serial ID of custodian capability
     ///   required for general account authorization, set to
     ///   `NO_CUSTODIAN` if signing user required for authorization on
@@ -808,7 +808,7 @@ module econia::user {
         // Get mutable reference to corresponding tree, mutable
         // reference to corresponding assets available field, mutable
         // reference to corresponding asset ceiling fields, available
-        // size multiplier, and ceiling size multipler, based on side
+        // size multiplier, and ceiling size multiplier, based on side
         let (tree_ref_mut, asset_available_ref_mut, asset_ceiling_ref_mut,
              size_multiplier_available, size_multiplier_ceiling) =
             if (side == ASK) (

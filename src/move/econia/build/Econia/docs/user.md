@@ -1077,7 +1077,7 @@ Register user with a market account
 ### Parameters
 
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Signing user
-* <code>market_id</code>: Serial ID of corresonding market
+* <code>market_id</code>: Serial ID of corresponding market
 * <code>general_custodian_id</code>: Serial ID of custodian capability
 required for general account authorization, set to
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code> if signing user required for authorization on
@@ -1646,7 +1646,7 @@ corresponding user successfully placed it to begin with.
     // Get mutable reference <b>to</b> corresponding tree, mutable
     // reference <b>to</b> corresponding <a href="assets.md#0xc0deb00c_assets">assets</a> available field, mutable
     // reference <b>to</b> corresponding asset ceiling fields, available
-    // size multiplier, and ceiling size multipler, based on side
+    // size multiplier, and ceiling size multiplier, based on side
     <b>let</b> (tree_ref_mut, asset_available_ref_mut, asset_ceiling_ref_mut,
          size_multiplier_available, size_multiplier_ceiling) =
         <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (

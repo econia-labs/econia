@@ -158,7 +158,7 @@ Container for core registration information
 </dt>
 <dd>
  Map from trading pair to order book host address, used for
- duplicacy checks on pure-coin trading pairs
+ duplicate checks on pure-coin trading pairs
 </dd>
 <dt>
 <code>markets: <a href="">vector</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>&gt;</code>
@@ -450,7 +450,7 @@ registry is not initialized
 <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     // Assert the <a href="registry.md#0xc0deb00c_registry">registry</a> is already initialized
     <b>assert</b>!(<b>exists</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia), <a href="registry.md#0xc0deb00c_registry_E_NO_REGISTRY">E_NO_REGISTRY</a>);
-    // Borrow mutable reference <b>to</b> registy
+    // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>
     <b>let</b> registry_ref_mut = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
     // Set custodian serial ID <b>to</b> the new number of custodians
     <b>let</b> custodian_id = registry_ref_mut.n_custodians + 1;

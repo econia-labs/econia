@@ -890,7 +890,7 @@ module econia::market {
     ///
     /// # Assumes
     /// * That if optional coins are passed, they contain sufficient
-    ///   amounts for matching in accordance with other specifed values
+    ///   amounts for matching in accordance with other specified values
     /// * That `lot_size_ref` and `tick_size_ref` indicate the same
     ///   lot and tick size as `order_book_ref_mut`
     /// * That min/max fill amounts have been checked via
@@ -1140,7 +1140,7 @@ module econia::market {
     ///
     /// Inner function for `match()`.
     ///
-    /// During interated traversal, the "incoming user" matches against
+    /// During iterated traversal, the "incoming user" matches against
     /// a "target order" on the book at each iteration.
     ///
     /// # Type parameters
@@ -1205,7 +1205,7 @@ module econia::market {
         // can not be declared without a value in the above function,
         // and which raises a warning if it is assigned a value within
         // the present scope. It could be declared within the loop
-        // scope, but this would involve a redeclaration for each
+        // scope, but this would involve a re-declaration for each
         // iteration. Hence it is declared here, such that the statement
         // in which it is assigned does not locally re-bind the other
         // variables in the function return tuple, which would occur if
@@ -1515,7 +1515,7 @@ module econia::market {
     ///   as values rather than reassigning to passed in references,
     ///   because the calling function `match_loop_order()` accesses
     ///   these variables elsewhere in a loop, such that passing
-    ///   references to them consitutes an invalid borrow within the
+    ///   references to them constitutes an invalid borrow within the
     ///   loop context
     /// * Accepts `target_order_id` as pass-by-value even though
     ///   pass-by-reference would be valid, because if it were to be
@@ -2055,7 +2055,7 @@ module econia::market {
     ///   or `immediate_or_cancel_ref` is marked `&true`
     /// * If `post_or_abort_ref` is `&true` and order crosses the spread
     /// * If size-correspondent base amount overflows a `u64`
-    /// * If size-corresondent tick amount overflows a `u64`
+    /// * If size-correspondent tick amount overflows a `u64`
     /// * If size-correspondent quote amount overflows a `u64`
     /// * If `fill_or_abort_ref` is `&true` and the order does not
     ///   completely fill across the spread: minimum base match amount

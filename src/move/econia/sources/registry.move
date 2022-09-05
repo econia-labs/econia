@@ -51,7 +51,7 @@ module econia::registry {
     /// Container for core registration information
     struct Registry has key {
         /// Map from trading pair to order book host address, used for
-        /// duplicacy checks on pure-coin trading pairs
+        /// duplicate checks on pure-coin trading pairs
         hosts: table::Table<TradingPairInfo, address>,
         /// List of all available markets, with each market's serial ID
         /// defined as its vector index (0-indexed)
@@ -152,7 +152,7 @@ module econia::registry {
     acquires Registry {
         // Assert the registry is already initialized
         assert!(exists<Registry>(@econia), E_NO_REGISTRY);
-        // Borrow mutable reference to registy
+        // Borrow mutable reference to registry
         let registry_ref_mut = borrow_global_mut<Registry>(@econia);
         // Set custodian serial ID to the new number of custodians
         let custodian_id = registry_ref_mut.n_custodians + 1;

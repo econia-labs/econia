@@ -220,8 +220,9 @@ market account ID
  Base asset type info. When trading an
  <code>aptos_framework::coin::Coin</code>, corresponds to the phantom
  <code>CoinType</code>, for instance <code>MyCoin</code> rather than
- <code>Coin&lt;MyCoin&gt;</code>. Otherwise corresponds to <code>GenericAsset</code>, or
- a non-coin asset indicated by the market host.
+ <code>Coin&lt;MyCoin&gt;</code>. Otherwise corresponds to
+ <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code>, or a non-coin asset indicated by
+ the market host.
 </dd>
 <dt>
 <code>quote_type_info: <a href="_TypeInfo">type_info::TypeInfo</a></code>
@@ -230,8 +231,9 @@ market account ID
  Quote asset type info. When trading an
  <code>aptos_framework::coin::Coin</code>, corresponds to the phantom
  <code>CoinType</code>, for instance <code>MyCoin</code> rather than
- <code>Coin&lt;MyCoin&gt;</code>. Otherwise corresponds to <code>GenericAsset</code>, or
- a non-coin asset indicated by the market host.
+ <code>Coin&lt;MyCoin&gt;</code>. Otherwise corresponds to
+ <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code>, or a non-coin asset indicated by
+ the market host.
 </dd>
 <dt>
 <code>generic_asset_transfer_custodian_id: u64</code>

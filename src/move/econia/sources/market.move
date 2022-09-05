@@ -59,14 +59,16 @@ module econia::market {
         /// Base asset type info. When trading an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds to a non-coin asset
-        /// indicated by the market host.
+        /// `Coin<MyCoin>`. Otherwise corresponds to
+        /// `registry::GenericAsset`, or a non-coin asset indicated by
+        /// the market host.
         base_type_info: type_info::TypeInfo,
         /// Quote asset type info. When trading an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds a non-coin asset
-        /// indicated by the market host.
+        /// `Coin<MyCoin>`. Otherwise corresponds to
+        /// `registry::GenericAsset`, or a non-coin asset indicated by
+        /// the market host.
         quote_type_info: type_info::TypeInfo,
         /// Number of base units exchanged per lot
         lot_size: u64,

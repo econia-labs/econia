@@ -106,14 +106,16 @@ module econia::user {
         /// Base asset type info. When trading an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
-        /// a non-coin asset indicated by the market host.
+        /// `Coin<MyCoin>`. Otherwise corresponds to
+        /// `registry::GenericAsset`, or a non-coin asset indicated by
+        /// the market host.
         base_type_info: type_info::TypeInfo,
         /// Quote asset type info. When trading an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
-        /// a non-coin asset indicated by the market host.
+        /// `Coin<MyCoin>`. Otherwise corresponds to
+        /// `registry::GenericAsset`, or a non-coin asset indicated by
+        /// the market host.
         quote_type_info: type_info::TypeInfo,
         /// ID of custodian capability required to verify deposits,
         /// swaps, and withdrawals of assets that are not coins. A

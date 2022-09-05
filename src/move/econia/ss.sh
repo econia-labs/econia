@@ -80,12 +80,14 @@ publish_from_keyfile() {
     # Substitute named address in Move.toml
     substitute_econia_address $addr
     # Fund the account
-    aptos account fund-with-faucet --account $addr --amount 100000 > /dev/null
+    aptos account fund-with-faucet --account $addr > /dev/null
     # Publish the package
     aptos move publish \
         --private-key-file $keyfile \
         --override-size-check \
-        --max-gas 90000 > /dev/null
+        --included-artifacts none \
+        --max-gas 5000 \
+        > /dev/null
     init_econia # Run the initialization function
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr

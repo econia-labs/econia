@@ -98,9 +98,9 @@ flowchart TB
     subgraph Matching
 
     match --> match_init
-    match --> match_loop
+    match -- Looping --> match_loop
 
-        subgraph Looping
+        subgraph Loop [ ]
 
         match_loop --> match_loop_init
         match_loop --> match_loop_order

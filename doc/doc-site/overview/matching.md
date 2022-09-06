@@ -69,12 +69,10 @@ The latter requires a [generic asset transfer custodian capability](registry.md#
 Econia's matching engine is implemented in [`market.move`](../../../src/move/econia/build/Econia/docs/market.md), with extensive end-to-end testing.
 The below dependency chart details the relevant matching engine functions, according to the following color schema:
 
-| Color  | Meaning                      |
-|--------|------------------------------|
-| Purple | Individually tested          |
-| Green  | Tested via direct invocation |
-| Blue   | End-to-end tested            |
+| Color  | Meaning                      | Context                                                                            |
+|--------|------------------------------|------------------------------------------------------------------------------------|
+| Purple | Individually tested          | Functions that simply check inputs are individually tested                         |
+| Green  | Tested via direct invocation | Functions that are wrappers for other functions are simply tested by invocation    |
+| Blue   | End-to-end tested            | Integrated functions that complexly modify state are tested via end-to-end testing |
 
-* Functions that simply check the size of inputs are individually tested
-* Functions that are wrappers for other functions are simply tested by invocation
-* Integrated functions that complexly modify state are tested via end-to-end testing
+![](../diagrams/matching-engine.svg)

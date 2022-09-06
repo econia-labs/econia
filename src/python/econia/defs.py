@@ -37,8 +37,8 @@ econia_modules = SimpleNamespace(
     capability = SimpleNamespace(
         name = 'capability',
     ),
-    coins = SimpleNamespace(
-        name = 'coins',
+    assets = SimpleNamespace(
+        name = 'assets',
     ),
     critbit = SimpleNamespace(
         name = 'critbit'
@@ -72,12 +72,12 @@ econia_module_publish_order = [
         econia_modules.capability.name,
         econia_modules.critbit.name,
         econia_modules.order_id.name,
-        econia_modules.coins.name,
+        econia_modules.assets.name,
         econia_modules.open_table.name,
         econia_modules.registry.name,
-        econia_modules.user.name,
-        econia_modules.market.name,
-        econia_modules.init.name,
+        #econia_modules.user.name,
+        #econia_modules.market.name,
+        #econia_modules.init.name,
     ],
 ]
 """

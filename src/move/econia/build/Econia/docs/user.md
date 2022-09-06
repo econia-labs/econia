@@ -156,7 +156,7 @@ general custodian ID of <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
 <b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::signer</a>;
-<b>use</b> <a href="capability.md#0xc0deb00c_capability">0xc0deb00c::capability</a>;
+<b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
 <b>use</b> <a href="order_id.md#0xc0deb00c_order_id">0xc0deb00c::order_id</a>;
@@ -349,30 +349,30 @@ Market account map for all of a user's <code><a href="user.md#0xc0deb00c_user_Ma
 
 <a name="0xc0deb00c_user_E_NOT_IN_MARKET_PAIR"></a>
 
-<code>u64</code> bitmask with all bits set
+When indicated asset is not in the market pair
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_HI_64">HI_64</a>: u64 = 18446744073709551615;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_IN_MARKET_PAIR">E_NOT_IN_MARKET_PAIR</a>: u64 = 0;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_user_ASK"></a>
+<a name="0xc0deb00c_user_NO_CUSTODIAN"></a>
 
-Flag for asks side
+Custodian ID flag for no delegated custodian
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_user_BID"></a>
+<a name="0xc0deb00c_user_PURE_COIN_PAIR"></a>
 
-Flag for asks side
+When both base and quote assets are coins
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_PURE_COIN_PAIR">PURE_COIN_PAIR</a>: u64 = 0;
 </code></pre>
 
 
@@ -432,17 +432,7 @@ When depositing an asset would overflow total holdings ceiling
 When market account already exists for given market account ID
 
 
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_BASE_PARCELS_0">E_BASE_PARCELS_0</a>: u64 = 9;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_E_CUSTODIAN_OVERRIDE"></a>
-
-When user attempts invalid custodian override
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_CUSTODIAN_OVERRIDE">E_CUSTODIAN_OVERRIDE</a>: u64 = 6;
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>: u64 = 2;
 </code></pre>
 
 
@@ -1071,10 +1061,7 @@ See wrapped function <code><a href="user.md#0xc0deb00c_user_deposit_coins">depos
 
 ## Function `register_market_account`
 
-Register <code><a href="user.md#0xc0deb00c_user">user</a></code> with a <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a></code> and <code><a href="user.md#0xc0deb00c_user_Collateral">Collateral</a></code> entries
-for given market and <code>custodian_id</code>. If <code>custodian_id</code> is 0,
-register user with an account that only they can manage via a
-signature.
+Register user with a market account
 
 
 <a name="@Type_parameters_7"></a>
@@ -1113,7 +1100,10 @@ market account
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;B, Q, E&gt;(
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_id: u64,
     general_custodian_id: u64
@@ -2469,7 +2459,9 @@ not already exist.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_collateral_entry">register_collateral_entry</a>&lt;CoinType&gt;(
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_collateral_entry">register_collateral_entry</a>&lt;
+    CoinType
+&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_account_id: u128,
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a> {
@@ -2480,7 +2472,8 @@ not already exist.
         <b>move_to</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(<a href="user.md#0xc0deb00c_user">user</a>,
             <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>{map: <a href="open_table.md#0xc0deb00c_open_table_empty">open_table::empty</a>()})
     };
-    <b>let</b> map = // Borrow mutable reference <b>to</b> collateral map
+    // Borrow mutable reference <b>to</b> collateral map
+    <b>let</b> collateral_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(user_address).map;
     // Assert no entry <b>exists</b> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
     <b>assert</b>!(!<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(collateral_map_ref_mut,
@@ -2521,7 +2514,10 @@ Register user with a <code><a href="user.md#0xc0deb00c_user_MarketAccounts">Mark
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_accounts_entry">register_market_accounts_entry</a>(
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_accounts_entry">register_market_accounts_entry</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
     <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_account_id: u128,
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {

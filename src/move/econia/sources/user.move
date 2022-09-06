@@ -63,7 +63,7 @@ module econia::user {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::coin::{Self, Coin};
-    use econia::capability::EconiaCapability;
+    use aptos_std::type_info;
     use econia::critbit::{Self, CritBitTree};
     use econia::open_table;
     use econia::order_id;
@@ -72,6 +72,12 @@ module econia::user {
     use std::signer::address_of;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    friend econia::market;
+
+    // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -467,7 +473,10 @@ module econia::user {
     ///
     /// # Abort conditions
     /// * If invalid `custodian_id`
-    public entry fun register_market_account<B, Q, E>(
+    public entry fun register_market_account<
+        BaseType,
+        QuoteType
+    >(
         user: &signer,
         market_id: u64,
         general_custodian_id: u64
@@ -1341,7 +1350,8 @@ module econia::user {
             move_to<Collateral<CoinType>>(user,
                 Collateral{map: open_table::empty()})
         };
-        let map = // Borrow mutable reference to collateral map
+        // Borrow mutable reference to collateral map
+        let collateral_map_ref_mut =
             &mut borrow_global_mut<Collateral<CoinType>>(user_address).map;
         // Assert no entry exists for given market account ID
         assert!(!open_table::contains(collateral_map_ref_mut,
@@ -2618,18 +2628,18 @@ module econia::user {
         // Register another collateral entry
         register_collateral_entry<BC>(user, market_account_id_2);
         // Borrow immutable ref to collateral map
-        let collateral_map =
+        let collateral_map_ref =
             &borrow_global<Collateral<BC>>(address_of(user)).map;
         // Borrow immutable ref to collateral for first market account
         let collateral_ref_1 =
             open_table::borrow(collateral_map_ref, market_account_id_1);
         // Assert amount
-        assert!(coin::value(collateral_1) == 0, 0);
+        assert!(coin::value(collateral_ref_1) == 0, 0);
         // Borrow immutable ref to collateral for second market account
         let collateral_ref_2 =
             open_table::borrow(collateral_map_ref, market_account_id_2);
         // Assert amount
-        assert!(coin::value(collateral_2) == 0, 0);
+        assert!(coin::value(collateral_ref_2) == 0, 0);
     }
 
     #[test(user = @user)]
@@ -2651,7 +2661,7 @@ module econia::user {
         user = @user
     )]
     #[expected_failure(abort_code = 1)]
-    /// Verify failure for invalid custodian
+    /// Verify failure for invalid user-level custodian ID
     fun test_register_market_account_invalid_custodian_id(
         econia: &signer,
         user: &signer
@@ -2697,8 +2707,8 @@ module econia::user {
         let market_account_id_pure_coin = get_market_account_id(
             market_id_pure_coin, general_custodian_id_pure_coin);
         // Borrow immutable reference to market accounts map
-        let market_accounts_map =
-            &borrow_global<MarketAccounts>(address_of(user)).map;
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(@user).map;
         // Assert entries added to table
         assert!(open_table::contains(
             market_accounts_map_ref, market_account_id_agnostic), 0);

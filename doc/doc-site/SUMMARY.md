@@ -3,6 +3,7 @@
 * [Welcome](welcome.md)
 
 * [Design overview](overview/index.md)
+    * [The registry](overview/registry.md)
 <!---
     * [Markets](overview/markets.md)
     * [Orders](overview/orders.md)

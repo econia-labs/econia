@@ -17,6 +17,8 @@ Before a user can place a limit or a market order, they must have sufficient hol
 
 Holdings are routed directly between a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) and a counterparty's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) during a trade.
 
+A [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) is required to place a limit or a market order, but is not required for a swap, which executes directly against a market.
+
 ## Custodians
 
 A user can open more than one [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) for a given market, each with a different "general custodian ID", corresponding to the [`CustodianCapability`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_CustodianCapability) required to place orders and withdrawal coin assets on a user's behalf.

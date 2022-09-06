@@ -134,7 +134,6 @@ elif test $1 = ac; then
     git commit # Commit
     cd src/move/econia # Navigate back to Move package
     conda activate econia # Activate Econia conda environment
-    substitute_econia_address docgen # Substitute docgen address
     git_log_one_line # Show git log with one line
 
 # Clear the terminal

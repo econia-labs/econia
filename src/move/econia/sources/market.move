@@ -92,7 +92,7 @@ module econia::market {
         /// Order ID of maximum bid, per price-time priority. The bid
         /// side "spread maker".
         max_bid: u128,
-        /// Number of limit orders placed on book
+        /// Number of maker orders placed on book
         counter: u64
     }
 

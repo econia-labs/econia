@@ -274,7 +274,7 @@ An order book for a given market
 <code>counter: u64</code>
 </dt>
 <dd>
- Number of limit orders placed on book
+ Number of maker orders placed on book
 </dd>
 </dl>
 

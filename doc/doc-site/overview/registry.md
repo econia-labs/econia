@@ -21,10 +21,10 @@ When a host registers a market, a [`MarketInfo`](../../../src/move/econia/build/
 For example:
 
 | Market ID | Base asset | Quote asset | Lot size | Tick size |
-| - | - | - | - | - |
-| 100 | `wBTC` | `USDC` | 100 | 25 |
-| 101 | `wBTC` | `USDT` | 100 | 25 |
-| 102 | `wETH` | `USDC` | 1000 | 10 |
+|-----------|------------|-------------|----------|-----------|
+| 100       | `wBTC`     | `USDC`      | 100      | 25        |
+| 101       | `wBTC`     | `USDT`      | 100      | 25        |
+| 102       | `wETH`     | `USDC`      | 1000     | 10        |
 
 ## Custodians
 
@@ -54,11 +54,11 @@ For any given pure-coin trading pair, Econia only allows the registration of a s
 For trading pairs having a generic asset, however, there is no such restriction, because in practice generic asset types are a effectively placeholder that allows integrators to register markets for non-coin assets without having to define a new type each time.
 For example, a market host can register 4 markets using the provided [`GenericAsset`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_GenericAsset) type flag, all taking the form `GenericAsset/USDC lot size 1, tick size 25`, with each such market representing a different financial instrument:
 
-| Econia Market ID | Base Asset | Quote Asset |
-|-|-|-|
-| 500 | `wBTC put option` | `USDC` |
-| 501 | `wBTC call option` | `USDC` |
-| 502 | `wETH put option` | `USDC` |
-| 503 | `wETH call option` | `USDC` |
+| Econia Market ID | Base Asset         | Quote Asset |
+|------------------|--------------------|-------------|
+| 500              | `wBTC put option`  | `USDC`      |
+| 501              | `wBTC call option` | `USDC`      |
+| 502              | `wETH put option`  | `USDC`      |
+| 503              | `wETH call option` | `USDC`      |
 
 Here, a third party maintains their own separate registry to track market metadata, and assuming they are the generic asset transfer custodian for each market, they approve deposits, withdrawals, and swaps for generic assets across all four trading pairs.

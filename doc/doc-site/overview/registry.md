@@ -15,8 +15,16 @@ Once the Econia account initializes the registry, markets and custodian capabili
 ## Markets
 
 In Econia, markets are specified by a [`TradingPairInfo`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_TradingPairInfo), which designates a base asset, quote asset, lot size, and tick size.
+Lot size and tick size are denominated in terms of indivisible subunits of the underlying asset, for example `aptos_framework::coin::Coin.value`, which is an integer (`u64`).
 The corresponding [`OrderBook`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_OrderBook) for a given [`TradingPairInfo`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_TradingPairInfo) is hosted at the address of the signing account who registers the market, via [`register_market_pure_coin`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_pure_coin) or [`register_market_generic`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_generic).
 When a host registers a market, a [`MarketInfo`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_MarketInfo) is added to [`Registry.markets`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry), and a corresponding market ID is generated, with the market ID defined as the 0-indexed vector index in [`Registry.markets`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry).
+For example:
+
+| Market ID | Base asset | Quote asset | Lot size | Tick size |
+| - | - | - | - | - |
+| 100 | `wBTC` | `USDC` | 100 | 25 |
+| 101 | `wBTC` | `USDT` | 100 | 25 |
+| 102 | `wETH` | `USDC` | 1000 | 10 |
 
 ## Custodians
 

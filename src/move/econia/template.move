@@ -26,10 +26,6 @@ module econia::template {
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -59,41 +55,6 @@ module econia::template {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Description
-    ///
-    /// # Terminology
-    /// * Term 1
-    /// * Term 2
-    ///
-    /// # Parameters
-    /// * `arg1`: Description 1
-    /// * `arg2`: Description 2
-    /// * `arg3`: Description 3
-    ///
-    /// # Returns
-    /// * `type1`: Description 1
-    /// * `type2`: Description 2
-    ///
-    /// # Abort conditions
-    /// * Abort condition 1
-    /// * Abort condition 2
-    ///
-    /// # Assumptions
-    /// * Assumption 1
-    /// * Assumption 2
-    ///
-    /// # Considerations
-    fun function_name<A, B, C>(
-        arg1: bool,
-        arg2: u64,
-        arg3: bool
-    ): (
-        u64,
-        bool
-    ) acquires AB, CD {
-
-    }
-
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -106,6 +67,12 @@ module econia::template {
 
     // Test-only structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
@@ -113,18 +80,6 @@ module econia::template {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test(
-        econia = @econia,
-        user = @user
-    )]
-    #[expected_failure(abort_code = 0)]
-    fun test_fun_name(
-        econia: &signer,
-        user: &signer
-    ) {
-
-    }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

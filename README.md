@@ -98,7 +98,8 @@ See `ss.sh` within a given directory for its available options
 ### Using the Python package
 
 Econia comes with a Python package for assorted build scripting functionality.
-The Python package is not as actively maintained as the Move code, and is mostly used for publishing bytecode to the blockchain, simple on-chain tests, etc.
+The Python package is not as actively maintained as the Move code, and is mostly used for managing account addresses in `Move.toml` during package compilation (see [`src/move/econia/ss.sh`](src/move/econia/ss.sh)).
+While the Python package is no longer used for direct interactions with devnet via the v1 REST API, `rest.py` is preserved such that it can be integrated with the new Aptos Python SDK when applicable.
 It is not necessary to use the Python package to develop Econia, but not all of the shell scripts will work without it.
 To install the `econia` Python package:
 
@@ -152,7 +153,7 @@ If using VS Code, select `econia` as the default Python interpreter, and the int
 (econia) econia % conda deactivate
 ```
 
-With the `econia` conda environment active, you can then build the Python package documentation, explore the provided interactive Jupyter notebook archive, and run Move command line tools:
+With the `econia` conda environment active, you can then build the Python package documentation, explore the provided interactive Jupyter notebook archive, and run package management shell scripts:
 
 ```zsh
 # Autobuild Sphinx documentation with realtime updates
@@ -167,8 +168,9 @@ With the `econia` conda environment active, you can then build the Python packag
 
 ```zsh
 # Change directory to the Econia Move package
+(econia) % s mp
 # Move package has its own utility shell scripts
-(econia) % s p # Publish bytecode
+(econia) % s pt # Publish bytecode to temporary devnet address
 ```
 
 ### Using the TypeScript SDK

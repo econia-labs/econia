@@ -60,11 +60,14 @@ get_keyfile_info() {
     get_keyfile_address $keyfile
 }
 
+# Print git log in one line
+git_log_one_line() {git log --oneline --max-count=1}
+
 # Init Econia once published on chain, assuming `keyfile` and `addr` are
 # stored in global memory
 init_econia() {
     aptos move run \
-        --function-id 0x$addr::init::init_econia \
+        --function-id 0x$addr::registry::init_registry \
         --private-key-file $keyfile > /dev/null
 }
 
@@ -77,12 +80,14 @@ publish_from_keyfile() {
     # Substitute named address in Move.toml
     substitute_econia_address $addr
     # Fund the account
-    aptos account fund-with-faucet --account $addr --amount 100000 > /dev/null
+    aptos account fund-with-faucet --account $addr > /dev/null
     # Publish the package
     aptos move publish \
         --private-key-file $keyfile \
         --override-size-check \
-        --max-gas 10000 > /dev/null
+        --included-artifacts none \
+        --max-gas 5000 \
+        > /dev/null
     init_econia # Run the initialization function
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr
@@ -130,6 +135,7 @@ elif test $1 = ac; then
     cd src/move/econia # Navigate back to Move package
     conda activate econia # Activate Econia conda environment
     substitute_econia_address docgen # Substitute docgen address
+    git_log_one_line # Show git log with one line
 
 # Clear the terminal
 elif test $1 = c; then clear
@@ -154,9 +160,15 @@ elif test $1 = er; then cd $repo_root
 # Get address of keyfile with relative path
 elif test $1 = ga; then get_keyfile_address $2; echo $addr
 
+# Show git log with one line
+elif test $1 = gl; then git_log_one_line
+
 # Generate a temporary keyfile in secrets directory
 elif test $1 = gt; then
     generate_temporary_devnet_address
+
+# Git push then show the log in one line
+elif test $1 = gp; then git push; git_log_one_line
 
 # Verify that this script can be invoked
 elif test $1 = hello; then echo Hello, Econia developer
@@ -217,6 +229,14 @@ elif test $1 = wd; then
     # Substitute docgen address into Move.toml
     substitute_econia_address docgen
     ls sources/*.move | entr move build --doc
+
+# Watch source code and run a specific test if it changes
+# May require `brew install entr` beforehand
+elif test $1 = wt; then
+    conda activate econia # Activate Econia conda environment
+    # Substitute docgen address into Move.toml
+    substitute_econia_address docgen
+    ls sources/*.move | entr aptos move test --filter $2
 
 else echo Invalid option; fi
 

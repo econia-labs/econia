@@ -1479,7 +1479,7 @@ Likewise, if successor traversal, cannot be maximum key in
 * <code>parent_index</code>: Start node's parent field
 * <code>child_index</code>: Child index of start node
 * <code>n_outer_nodes</code>: Number of outer nodes in <code>tree</code>
-* <code>drection</code>: Direction to traverse. If <code><a href="critbit.md#0xc0deb00c_critbit_LEFT">LEFT</a></code>, predecessor
+* <code>direction</code>: Direction to traverse. If <code><a href="critbit.md#0xc0deb00c_critbit_LEFT">LEFT</a></code>, predecessor
 traversal, else successor traversal
 
 
@@ -2690,7 +2690,7 @@ minimum key in non-empty tree <code>tree</code>
 
 ## Function `is_outer_node`
 
-Return <code><b>true</b></code> if <code>child_fied_index</code> indicates an outer node
+Return <code><b>true</b></code> if <code>child_field_index</code> indicates an outer node
 
 
 <pre><code><b>fun</b> <a href="critbit.md#0xc0deb00c_critbit_is_outer_node">is_outer_node</a>(child_field_index: u64): bool

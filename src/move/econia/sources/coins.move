@@ -13,9 +13,9 @@ module econia::coins {
 
     /// Container for mock coin type capabilities
     struct CoinCapabilities<phantom CoinType> has key {
-        mint_capability: coin::MintCapability<CoinType>,
         burn_capability: coin::BurnCapability<CoinType>,
         freeze_capability: coin::FreezeCapability<CoinType>,
+        mint_capability: coin::MintCapability<CoinType>
     }
 
     /// Base coin type
@@ -123,19 +123,15 @@ module econia::coins {
         assert!(!exists<CoinCapabilities<CoinType>>(@econia),
             E_HAS_CAPABILITIES);
         // Initialize coin, storing capabilities
-        let (
-            burn_capability, 
-            freeze_capability, 
-            mint_capability
-        ) = coin::initialize<CoinType>(
+        let (burn_capability, freeze_capability, mint_capability) =
+        coin::initialize<CoinType>(
             account, utf8(coin_name), utf8(coin_symbol), decimals, false);
-        // Store capabilities under Econia account
         move_to<CoinCapabilities<CoinType>>(account,
             CoinCapabilities<CoinType>{
-                mint_capability, 
-                burn_capability, 
-                freeze_capability
-            });
+                burn_capability,
+                freeze_capability,
+                mint_capability
+        }); // Store capabilities under Econia account
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

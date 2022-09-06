@@ -6,12 +6,13 @@
 /// register multiple `MarketAccount`s, distinguished from one another
 /// by their corresponding "general custodian ID". The custodian
 /// capability having this ID is required to approve all market
-/// transactions within the market account with the exception of generic
-/// asset transfers, which are approved by a market-wide "generic
-/// asset transfer custodian" in the case of a market having at least
-/// one non-coin asset. When a general custodian ID is marked
-/// `NO_CUSTODIAN`, a signing user is required to approve general
-/// transactions rather than a custodian capability.
+/// transactions within the market account with the exception of coin
+/// deposits and generic asset transfers, with the latter approved by a
+/// market-wide "generic asset transfer custodian" in the case of
+/// a market having at least one non-coin asset. When a general
+/// custodian ID is marked `NO_CUSTODIAN`, a signing user is required to
+/// approve general transactions rather than a custodian capability.
+/// Again, no authority is required to deposit coin types.
 ///
 /// For example: market 5 has a generic (non-coin) base asset, a coin
 /// quote asset, and generic asset transfer custodian ID 6. A user
@@ -20,9 +21,9 @@
 /// When a user wishes to deposit base assets to the first market
 /// account, custodian 6 is required for authorization. Then when the
 /// user wishes to submit an ask, custodian 7 must approve it. As for
-/// the second account, a user can deposit and withdraw quote coins,
-/// and place or cancel trades via a signature, but custodian 6 is
-/// still required to verify base deposits and withdrawals.
+/// the second account, a user can withdraw quote coins and place or
+/// cancel trades via a signature, but custodian 6 is still required to
+/// verify base deposits and withdrawals.
 ///
 /// In other words, the market-wide generic asset transfer custodian ID
 /// overrides the user-specific general custodian ID only when
@@ -34,7 +35,7 @@
 /// transfer custodian ID 9, a user can still register a market account
 /// having general custodian ID 9, and then custodian 9 will be required
 /// to authorize all of a user's transactions for the given
-/// `MarketAccount`
+/// `MarketAccount`.
 ///
 /// # Market account ID
 ///

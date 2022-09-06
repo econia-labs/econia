@@ -35,7 +35,7 @@ The type info for both base and quote assets are generated from type arguments d
 
 A market having both base and quote assets as coin types (e.g. `wBTC/USDC`) is known as a pure coin market, and can be registered via [`register_market_pure_coin`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_pure_coin).
 Markets that have at least one generic asset must be registered via [`register_market_generic`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_register_market_generic), which requires a [`CustodianCapability`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_CustodianCapability).
-Here, a "generic asset transfer custodian" is required to verify deposits, swaps, and withdrawals for markets having a generic asset, since it is impossible to verify amounts of non-coin types in the general case.
+Here, a "generic asset transfer custodian" is required to verify deposits, swaps, and withdrawals of generic assets, since it is impossible to verify amounts of non-coin types in the general case.
 
 Presently, both the base and the quote asset for a market can be generic, though in the future, generic quote types will likely be prohibited due to [incentive model considerations](https://github.com/econia-labs/econia/issues/7#issuecomment-1227680515).
 
@@ -53,4 +53,4 @@ For example, a market host can register 4 markets using the provided [`GenericAs
 | 502 | `wETH put option` | `USDC` |
 | 503 | `wETH call option` | `USDC` |
 
-Here, a third party maintains their own separate registry to track market metadata, and assuming they are the generic asset transfer custodian for each market, they approve deposits, withdrawals, and swaps for all four trading pairs.
+Here, a third party maintains their own separate registry to track market metadata, and assuming they are the generic asset transfer custodian for each market, they approve deposits, withdrawals, and swaps for generic assets across all four trading pairs.

@@ -36,14 +36,15 @@ A general custodian ID overrides a generic asset transfer ID when placing orders
 | [`NO_CUSTODIAN`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_NO_CUSTODIAN) | 789 | Place market order | Signing user |
 | [`NO_CUSTODIAN`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_NO_CUSTODIAN) | 789 | Withdraw generic base asset | Custodian 789 |
 | [`NO_CUSTODIAN`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_NO_CUSTODIAN) | 789 | Deposit coin-type quote asset | None |
+| [`NO_CUSTODIAN`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_NO_CUSTODIAN) | 789 | Withdraw coin-type quote asset | Signing user |
 | [`NO_CUSTODIAN`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_NO_CUSTODIAN) | [`PURE_COIN_PAIR`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_PURE_COIN_PAIR) | Withdraw coin-type base asset | Signing user |
 
 ## Market account ID
 
 Internally, Econia uses a [market account ID](../../../src/move/econia/build/Econia/docs/user.md#@Market_account_ID_1) to uniquely specify a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) for a given {market ID, general custodian ID} tuple.
-This can be generated via [`get_market_account_id`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_get_market_account_id).
+This can be generated via [`get_market_account_id`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_get_market_account_id), and is used as an index in a user's [`MarketAccounts`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccounts)
 
 ## Collateral
 
 If a given [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) has a coin asset type, then a corresponding [`Collateral`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_Collateral) entry will be generated upon market account registration.
-This is where the actual `aptos_framework::coin::Coin` resources are held as collateral, with additional indexing values housed in the corresponding [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount).
+This is where the actual `aptos_framework::coin::Coin` resources are held as collateral, with additional indexing values maintained in the corresponding [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount).

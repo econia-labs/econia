@@ -4,6 +4,7 @@
 
 * [Design overview](overview/index.md)
     * [The registry](overview/registry.md)
+    * [Accounts](overview/accounts.md)
 <!---
     * [Markets](overview/markets.md)
     * [Orders](overview/orders.md)

@@ -16,8 +16,9 @@ More specifically, Econia is an order book, a fundamental financial tool utilize
 Econia is currently under development, and this is the third major iteration that has shipped to the [Aptos](https://aptos.dev) blockchain.
 As always, the code repository is open-source, but with so many recent renovations to the core protocol, there may be a brief delay until all docs are available.
 
+If you are a builder and you are interested in working with Econia, start by taking a look at the [design overview](../overview/index.md), as this provides a technical breakdown that will provide some context for the system design.
+
 <!---
-If you are a builder and you are interested in working with Econia, first take a look at the [design overview](https://econia.dev/design-overview), as this provides a technical breakdown that will provide some context for the system design.
 Then try out the Econia [APIs](apis.md), and let's see what we can build together!
 -->
 

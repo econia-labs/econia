@@ -1,5 +1,12 @@
 # The registry
 
+- [The registry](#the-registry)
+  - [General](#general)
+  - [Markets](#markets)
+  - [Custodians](#custodians)
+  - [Asset types](#asset-types)
+  - [Market uniqueness](#market-uniqueness)
+
 ## General
 
 Econia contains a global [`Registry`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry) that tracks information about [markets](#markets) and [custodians](#custodians).

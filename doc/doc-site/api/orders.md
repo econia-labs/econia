@@ -14,7 +14,8 @@
     - [As a signing user](#as-a-signing-user-3)
     - [As a general custodian](#as-a-general-custodian-3)
   - [Swaps](#swaps)
-    - [Pure coin](#pure-coin)
+    - [Standalone coins](#standalone-coins)
+    - [From one `CoinStore` to another](#from-one-coinstore-to-another)
     - [Generic asset](#generic-asset)
 
 ## Placing a limit order
@@ -59,9 +60,13 @@
 
 ## Swaps
 
-### Pure coin
+### Standalone coins
 
 [`swap_coins`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_swap_coins) swaps one coin for another, and does not require a user with a [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount).
+
+### From one `CoinStore` to another
+
+[`swap_between_coinstores`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_swap_between_coinstores) swaps one coin for another, between a user's `aptos_framework::coin::Coinstore` for each coin, and does not require a user to have a [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount).
 
 ### Generic asset
 

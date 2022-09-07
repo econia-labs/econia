@@ -10,6 +10,9 @@
     - [Standalone coins, signing user](#standalone-coins-signing-user)
     - [Standalone coins, custodian](#standalone-coins-custodian)
   - [Generic asset withdrawals](#generic-asset-withdrawals)
+  - [Getting asset counts](#getting-asset-counts)
+    - [As a signing user](#as-a-signing-user)
+    - [As a general custodian](#as-a-general-custodian)
 
 ## Coin deposits
 
@@ -37,7 +40,6 @@ Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/
 
 Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) and returned as standalone `aptos_framework::coin::Coin` instances (under the authority of a signing user via) [`withdraw_coins_user`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_coins_user).
 
-
 ### Standalone coins, custodian
 
 Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) and returned as standalone `aptos_framework::coin::Coin` instances (under the authority of a general custodian) via [`withdraw_coins_custodian`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_coins_custodian).
@@ -46,3 +48,13 @@ Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/
 
 Generic assets can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) via
 [`withdraw_generic_asset`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_generic_asset).
+
+## Getting asset counts
+
+### As a signing user
+
+[`get_asset_counts_user`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_get_asset_counts_user) returns the asset counts from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount), under the authority of a signing user.
+
+### As a general custodian
+
+[`get_asset_counts_custodian`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_get_asset_counts_custodian) returns the asset counts from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount), under the authority of a general custodian.

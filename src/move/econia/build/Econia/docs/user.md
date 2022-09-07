@@ -86,9 +86,9 @@ general custodian ID of <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_
     -  [Restrictions](#@Restrictions_4)
 -  [Function `get_asset_counts_user`](#0xc0deb00c_user_get_asset_counts_user)
     -  [Restrictions](#@Restrictions_5)
+-  [Function `get_general_custodian_id`](#0xc0deb00c_user_get_general_custodian_id)
 -  [Function `get_market_account_id`](#0xc0deb00c_user_get_market_account_id)
 -  [Function `get_market_id`](#0xc0deb00c_user_get_market_id)
--  [Function `get_general_custodian_id`](#0xc0deb00c_user_get_general_custodian_id)
 -  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
 -  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
 -  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
@@ -789,6 +789,33 @@ excessive public queries and thus transaction collisions
 
 </details>
 
+<a name="0xc0deb00c_user_get_general_custodian_id"></a>
+
+## Function `get_general_custodian_id`
+
+Get general custodian ID encoded in <code>market_account_id</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_general_custodian_id">get_general_custodian_id</a>(market_account_id: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_general_custodian_id">get_general_custodian_id</a>(
+    market_account_id: u128
+): u64 {
+    (market_account_id & (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_get_market_account_id"></a>
 
 ## Function `get_market_account_id`
@@ -838,33 +865,6 @@ Get market ID encoded in <code>market_account_id</code>
     market_account_id: u128
 ): u64 {
     (market_account_id &gt;&gt; <a href="user.md#0xc0deb00c_user_FIRST_64">FIRST_64</a> <b>as</b> u64)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_user_get_general_custodian_id"></a>
-
-## Function `get_general_custodian_id`
-
-Get general custodian ID encoded in <code>market_account_id</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_general_custodian_id">get_general_custodian_id</a>(market_account_id: u128): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_general_custodian_id">get_general_custodian_id</a>(
-    market_account_id: u128
-): u64 {
-    (market_account_id & (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128) <b>as</b> u64)
 }
 </code></pre>
 

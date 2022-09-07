@@ -327,6 +327,13 @@ module econia::user {
         )
     }
 
+    /// Get general custodian ID encoded in `market_account_id`
+    public fun get_general_custodian_id(
+        market_account_id: u128
+    ): u64 {
+        (market_account_id & (HI_64 as u128) as u64)
+    }
+
     /// Return market account ID for given `market_id` and
     /// `general_custodian_id`
     public fun get_market_account_id(
@@ -341,13 +348,6 @@ module econia::user {
         market_account_id: u128
     ): u64 {
         (market_account_id >> FIRST_64 as u64)
-    }
-
-    /// Get general custodian ID encoded in `market_account_id`
-    public fun get_general_custodian_id(
-        market_account_id: u128
-    ): u64 {
-        (market_account_id & (HI_64 as u128) as u64)
     }
 
     /// Withdraw `amount` of coins of `CoinType` from `user`'s market

@@ -63,4 +63,4 @@ For example, a market host can register 4 markets using the provided [`GenericAs
 
 Here, a third party maintains their own separate registry to track market metadata, and assuming they are the generic asset transfer custodian for each market, they approve deposits, withdrawals, and swaps for generic assets across all four trading pairs:
 
-![](../diagrams/generic-asset-transfer.svg)
+![](../diagrams/generic-asset-transfer.png)

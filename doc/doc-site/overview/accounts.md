@@ -58,4 +58,4 @@ A straightforward use case for Econia's general custodian paradigm is margin tra
 a third-party integrator acts as the general custodian for a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount), depositing assets borrowed from an external lending pool.
 Those assets can then be held as collateral for limit orders, and in the case of a liquidation event, the general custodian simply cancels a user's limit orders, withdraws the underlying collateral, and returns the proceeds to lenders, who enabled such leverage in the first place.
 
-![](../diagrams/margin-trading.svg)
+![](../diagrams/margin-trading.png)

@@ -16,7 +16,7 @@ Econia enables two major order types:
 
 Each maker order provides liquidity in the form of an [`Order`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_Order) on the [`OrderBook`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_OrderBook) for a given market.
 Taker orders match against maker orders, and come in a variety of forms.
-When a taker order matches against a taker order, the corresponding [`Order.size`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_Order) is decremented and assets are routed accordingly between counterparties.
+When a taker order matches against a maker order, the corresponding [`Order.size`](../../../src/move/econia/build/Econia/docs/market.md#0xc0deb00c_market_Order) is decremented and assets are routed accordingly between counterparties.
 
 ## Limit orders
 

@@ -16,7 +16,7 @@
 
 ### Construction
 
-[`get_market_account_id`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_get_market_account_id) returns the market account ID for a given market account ID and general custodian ID.
+[`get_market_account_id`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_get_market_account_id) returns the market account ID for a given market ID and general custodian ID.
 
 ### Encoded market ID
 

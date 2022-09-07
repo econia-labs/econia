@@ -8,11 +8,11 @@
     * [Orders](overview/orders.md)
     * [Matching](overview/matching.md)
 
-<!---
-
-* [APIs](apis.md)
-
--->
+* [APIs](api/index.md)
+    * [Registration](api/registration.md)
+    * [Asset management](api/registration.md)
+    * [Order management](api/orders.md)
+    * [Utility functions](api/utility.md)
 
 * [Move modules](modules.md)
 

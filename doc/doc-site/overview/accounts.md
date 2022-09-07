@@ -50,3 +50,7 @@ This can be generated via [`get_market_account_id`](../../../src/move/econia/bui
 
 If a given [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) has a coin asset, then a corresponding [`Collateral<CoinType>`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_Collateral) entry will be generated upon market account registration.
 This is where the actual `aptos_framework::coin::Coin` resources are held as collateral, with additional indexing values maintained in the corresponding [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount).
+
+## Margin trading
+
+![](../diagrams/margin-trading.svg)

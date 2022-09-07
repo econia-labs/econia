@@ -27,7 +27,7 @@ Pending the reconciliation of such breaking changes after devnet reset, Econia i
 The above listing is the most up-to-date listing for the official address, so if there is nothing published at it, then patches are likely underway for the most recent weekly reset's breaking changes.
 
 ## External resources
-* [Discord](https://discord.com/invite/Z7gXcMgX8A)
+* [Discord](discord.gg/econia)
 * [GitHub](https://github.com/econia-labs/econia)
 * [Medium](https://medium.com/econialabs)
 * [Twitter](https://twitter.com/econialabs)

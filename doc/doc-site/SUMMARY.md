@@ -10,7 +10,7 @@
 
 * [APIs](api/index.md)
     * [Registration](api/registration.md)
-    * [Asset management](api/registration.md)
+    * [Asset management](api/assets.md)
     * [Order management](api/orders.md)
     * [Utility functions](api/utility.md)
 

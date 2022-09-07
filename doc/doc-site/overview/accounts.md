@@ -5,6 +5,7 @@
   - [Custodians](#custodians)
   - [Market account ID](#market-account-id)
   - [Collateral](#collateral)
+  - [Margin trading](#margin-trading)
 
 ## General
 

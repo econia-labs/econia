@@ -9,7 +9,7 @@
 
 ## General
 
-Once a market has been [registered](registry.md), users can register a corresponding [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount), from which they can deposit and withdraw assets, and place limit or market orders.
+Once a market has been [registered](registry.md), users can register a corresponding [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount), from which they can deposit and withdraw assets, and manage limit or market orders.
 Similar to a brokerage account, a [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) tracks a user's outstanding bids and asks, as well as their total base and quote asset holdings.
 Before a user can place a limit or a market order, they must have sufficient holdings, which are marked unavailable for withdrawal until
 

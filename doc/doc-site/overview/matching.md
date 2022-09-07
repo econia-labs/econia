@@ -32,6 +32,8 @@ Limit orders may also be placed with one of the following three options:
 | Fill-or-abort       | Abort if any portion would fill as a maker      |
 | Immediate-or-cancel | Fill as a taker, then cancel all remaining size |
 
+Only one option may be selected at a time.
+
 ## Market orders
 
 Market orders can be placed by a signing user or a general custodian, respectively, via

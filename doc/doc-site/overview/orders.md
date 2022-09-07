@@ -34,7 +34,7 @@ Here, the order ID enables efficient traversal from [`Order`](../../../src/move/
 
 ## Crit-bit trees
 
-As described in the [`critbit.move`](../../../src/move/econia/build/Econia/docs/critbit.md), crit-bit trees do not require complex rebalancing algorithms like AVL or red-black binary search trees, and they support rapid predecessor/successor iteration because elements are automatically sorted upon insertion.
+As described in [`critbit.move`](../../../src/move/econia/build/Econia/docs/critbit.md), crit-bit trees do not require complex rebalancing algorithms like AVL or red-black binary search trees, and they support rapid predecessor/successor iteration because elements are automatically sorted upon insertion.
 Key-value pairs are stored in [`OuterNode`](../../../src/move/econia/build/Econia/docs/critbit.md#0xc0deb00c_critbit_OuterNode) instances, and [`InnerNode`](../../../src/move/econia/build/Econia/docs/critbit.md#0xc0deb00c_critbit_InnerNode) instances indicate the most-significant critical bit (crit-bit) of divergence between the node's two subtrees.
 In practice, this means that the key for each [`OuterNode`](../../../src/move/econia/build/Econia/docs/critbit.md#0xc0deb00c_critbit_OuterNode) to the left of a given [`InnerNode`](../../../src/move/econia/build/Econia/docs/critbit.md#0xc0deb00c_critbit_InnerNode) is unset at its critical bit, and the key for each [`OuterNode`](../../../src/move/econia/build/Econia/docs/critbit.md#0xc0deb00c_critbit_OuterNode) to the right of a given [`InnerNode`](../../../src/move/econia/build/Econia/docs/critbit.md#0xc0deb00c_critbit_InnerNode) is set at its critical bit:
 

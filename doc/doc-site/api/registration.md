@@ -31,4 +31,4 @@ Markets having at least one non-coin asset can be registered via [`register_mark
 
 ## Market accounts
 
-A market account can be registered via [`register_market_account`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_register_market_account).
+A [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) can be registered via [`register_market_account`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_register_market_account).

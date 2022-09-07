@@ -38,11 +38,11 @@ Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/
 
 ### Standalone coins, signing user
 
-Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) and returned as standalone `aptos_framework::coin::Coin` instances (under the authority of a signing user via) [`withdraw_coins_user`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_coins_user).
+Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) and returned as standalone coins (under the authority of a signing user) via [`withdraw_coins_user`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_coins_user).
 
 ### Standalone coins, custodian
 
-Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) and returned as standalone `aptos_framework::coin::Coin` instances (under the authority of a general custodian) via [`withdraw_coins_custodian`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_coins_custodian).
+Coins can be withdrawn from a user's [`MarketAccount`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_MarketAccount) and returned as standalone coins (under the authority of a general custodian) via [`withdraw_coins_custodian`](../../../src/move/econia/build/Econia/docs/user.md#0xc0deb00c_user_withdraw_coins_custodian).
 
 ## Generic asset withdrawals
 

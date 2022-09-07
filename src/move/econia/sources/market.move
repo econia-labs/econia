@@ -12,8 +12,8 @@
 /// of form `test_end_to_end....()`.
 ///
 /// Dependency charts for both matching engine functions and end-to-end
-/// testing functions are at
-/// [`dependencies.md`](../../../dependencies.md).
+/// testing functions are at [`doc/doc-site/overview/matching.md`](
+/// ../../../../../../doc/doc-site/overview/matching.md).
 ///
 /// ---
 module econia::market {

@@ -17,8 +17,8 @@ state is verified via <code>verify_end_to_end_state_test()</code>. See tests
 of form <code>test_end_to_end....()</code>.
 
 Dependency charts for both matching engine functions and end-to-end
-testing functions are at
-[<code>dependencies.md</code>](../../../dependencies.md).
+testing functions are at [<code>doc/doc-site/overview/matching.md</code>](
+../../../../../../doc/doc-site/overview/matching.md).
 
 ---
 

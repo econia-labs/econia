@@ -75,4 +75,10 @@ The below dependency chart details the relevant matching engine functions, accor
 | Green  | Tested via direct invocation | Functions that are wrappers for other functions are simply tested by invocation    |
 | Blue   | End-to-end tested            | Integrated functions that complexly modify state are tested via end-to-end testing |
 
+(If accessing the below diagram via GitBook, you may need to switch web browsers to view an enlarged version, which can be pulled up by clicking on the image.)
+
 ![](../diagrams/matching-engine.svg)
+
+The below test functions are used for end-to-end matching engine testing:
+
+![](../diagrams/matching-engine-test-functions.svg)

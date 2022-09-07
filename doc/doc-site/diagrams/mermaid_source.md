@@ -1,11 +1,25 @@
-# Dependencies
+# `mermaid.js` diagram source
 
-The below dependency charts are generated declaratively via `mermaid.js`, and may present occasional rendering artifacts.
-Try switching browsers if the text renders in a way that is difficult to read.
+- [`mermaid.js` diagram source](#mermaidjs-diagram-source)
+  - [General](#general)
+  - [Modules](#modules)
+  - [Matching engine](#matching-engine)
+  - [Matching engine test functions](#matching-engine-test-functions)
+
+## General
+
+* The below diagrams are generated declaratively via `mermaid.js`, and may present occasional rendering artifacts.
+
+* Most tutorials online present an `%%{init:}` directive on a single line, despite excessive line length.
+
+* The [modules](#modules) diagram theme is matched to GitHub's color schema.
+
+* Recommended disclaimer
+    * (If accessing the below diagram via GitBook, you may need to switch web browsers to view an enlarged version, which can be pulled up by clicking on the image.)
+
+* `SVG` diagrams can be generated via [mermaid.live](https://mermaid.live/)
 
 ## Modules
-
-Econia modules `use` each other as follows:
 
 ```mermaid
 
@@ -30,23 +44,6 @@ flowchart TD
 ```
 
 ## Matching engine
-
-Econia's matching engine is implemented in [`market.move`](sources/market.move), with comprehensive end-to-end testing.
-
-### Functions
-
-The below dependency chart details the relevant matching engine functions, according to the following color schema:
-
-| Color  | Meaning                      |
-|--------|------------------------------|
-| Purple | Individually tested          |
-| Green  | Tested via direct invocation |
-| Blue   | End-to-end tested            |
-
-* Functions that simply check the size of inputs are individually tested
-* Functions that are wrappers for other functions are simply tested by invocation
-* Integrated functions that complexly modify state are tested via end-to-end testing
-
 
 ```mermaid
 
@@ -146,9 +143,7 @@ flowchart TB
 
 ```
 
-### Test functions
-
-The below test functions are used for end-to-end matching engine testing:
+## Matching engine test functions
 
 ```mermaid
 

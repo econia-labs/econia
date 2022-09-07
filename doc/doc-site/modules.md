@@ -10,4 +10,8 @@
 | `registry`   |   [registry.move](../../src/move/econia/sources/registry.move)   |   [registry.md](../../src/move/econia/build/Econia/docs/registry.md)   |
 | `user`       |       [user.move](../../src/move/econia/sources/user.move)       |       [user.md](../../src/move/econia/build/Econia/docs/user.md)       |
 
-See also the assorted [dependencies charts](../../src/move/econia/dependencies.md), which do not render on GitBook.
+Econia modules `use` each other as follows:
+
+(If accessing the below diagram via GitBook, you may need to switch web browsers to view an enlarged version, which can be pulled up by clicking on the image.)
+
+![](./diagrams/module-dependencies.svg)

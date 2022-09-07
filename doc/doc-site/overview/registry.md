@@ -49,7 +49,8 @@ Presently, both the base and the quote asset for a market can be generic, though
 
 ## Market uniqueness
 
-For any given pure-coin trading pair, Econia only allows the registration of a single {Base, Quote, lot size, tick size} tuple: for example, `wBTC/USD lot size 10, tick size 25` may only be registered once.
+For any given pure-coin trading pair, Econia only allows the registration of a single {base, quote, lot size, tick size} tuple:
+for example, `wBTC/USD lot size 10, tick size 25` may only be registered once.
 
 For trading pairs having a generic asset, however, there is no such restriction, because in practice generic asset types are a effectively placeholder that allows integrators to register markets for non-coin assets without having to define a new type each time.
 For example, a market host can register 4 markets using the provided [`GenericAsset`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_GenericAsset) type flag, all taking the form `GenericAsset/USDC lot size 1, tick size 25`, with each such market representing a different financial instrument:

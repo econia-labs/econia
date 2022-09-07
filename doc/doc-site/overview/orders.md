@@ -3,7 +3,7 @@
 - [Orders](#orders)
   - [Order ID](#order-id)
     - [Example ask](#example-ask)
-    - [Example ask](#example-ask-1)
+    - [Example bid](#example-bid)
   - [Order book](#order-book)
   - [Crit-bit trees](#crit-bit-trees)
 
@@ -20,7 +20,7 @@ In the case of an ask, the final 64 bits are simply the counter, while in the ca
     * Last 64 bits: `0000000000000000000000000000000000000000000000000000000010101010`
 * Resultant order ID, base-10: `4703919738795935662250`
 
-### Example ask
+### Example bid
 * Price (ticks per lot) of `15` (`0b1111`)
     * First 64 bits: `0000000000000000000000000000000000000000000000000000000000001111`
 * Counter `63` (`0b111111`)

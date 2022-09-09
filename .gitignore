@@ -44,3 +44,4 @@ src/move/econia/target/*
 
 # Sphinx
 doc/sphinx/build/*
+.idea

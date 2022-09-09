@@ -50,7 +50,7 @@ module econia::market {
         /// Address of corresponding user
         user: address,
         /// For given user, the ID of the custodian required to approve
-        /// transactions other than generic asset transfers
+        /// orders and coin withdrawals
         general_custodian_id: u64
     }
 

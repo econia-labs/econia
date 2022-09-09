@@ -174,7 +174,7 @@ An order on the order book
 </dt>
 <dd>
  For given user, the ID of the custodian required to approve
- transactions other than generic asset transfers
+ orders and coin withdrawals
 </dd>
 </dl>
 

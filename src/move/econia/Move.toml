@@ -1,6 +1,6 @@
 [package]
 name = 'Econia'
-version = '3.0.0' # Per SemVer
+version = '4.0.0' # Per SemVer
 upgrade_policy = 'compatible'
 
 [addresses]

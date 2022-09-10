@@ -1,4 +1,4 @@
-![](.assets/cover-banner.png)
+![](.assets/new-blue-banner.png)
 
 [![Discord chat](https://img.shields.io/badge/docs-Econia-59f)](https://www.econia.dev)
 [![Econia move documentation (move)](https://img.shields.io/badge/docs-Move-59f)](src/move/econia/build/Econia/docs)

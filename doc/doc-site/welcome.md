@@ -1,6 +1,6 @@
 # Welcome
 
-![](../../.assets/cover-banner.png)
+![](../../.assets/new-blue-banner.png)
 
 **e·co·ni·a** | /ə'känēə/
 

@@ -754,7 +754,8 @@ Outer node with key <code>k</code> and value <code>v</code>
 <code>value: V</code>
 </dt>
 <dd>
- Value from node's key-value pair
+ Value from node's key-value pair, assumed to have a fixed
+ size in bytes
 </dd>
 <dt>
 <code>parent_index: u64</code>

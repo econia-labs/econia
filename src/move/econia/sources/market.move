@@ -2483,7 +2483,7 @@ module econia::market {
 
     #[test_only]
     /// Return size and price for end-to-end orders on given `side`.
-    fun get_end_to_end_orders_size_price_test(
+    public fun get_end_to_end_orders_size_price_test(
         side: bool
     ) : (
         u64,
@@ -2511,7 +2511,7 @@ module econia::market {
     /// # Returns
     /// * `u64`: Size filled against order
     /// * `u64`: Size left to fill after order
-    fun get_fill_remaining_test(
+    public fun get_fill_remaining_test(
         order_size: u64,
         size_left: u64
     ): (
@@ -2542,7 +2542,7 @@ module econia::market {
     /// * `u64`: Size filled against `USER_1`
     /// * `u64`: Size filled against `USER_2`
     /// * `u64`: Size filled against `USER_3`
-    fun get_fill_sizes_test(
+    public fun get_fill_sizes_test(
         size: u64,
         size_1: u64,
         size_2: u64,
@@ -2580,7 +2580,7 @@ module econia::market {
     /// # Restrictions
     /// * Restricted to private and test-only to prevent excessive
     ///   public queries and thus transaction collisions
-    fun get_order_fields_test(
+    public fun get_order_fields_test(
         host: address,
         market_id: u64,
         order_id: u128,
@@ -2618,7 +2618,7 @@ module econia::market {
     /// # Restrictions
     /// * Restricted to private and test-only to prevent excessive
     ///   public queries and thus transaction collisions
-    fun get_spread_maker_test(
+    public fun get_spread_maker_test(
         host: address,
         market_id: u64,
         side: bool
@@ -2643,7 +2643,7 @@ module econia::market {
     /// # Restrictions
     /// * Restricted to private and test-only to prevent excessive
     ///   public queries and thus transaction collisions
-    fun has_order_test(
+    public fun has_order_test(
         host: address,
         market_id: u64,
         side: bool,
@@ -2676,7 +2676,7 @@ module econia::market {
     /// * `general_custodian_id`: General custodian ID for user's market
     ///   account
     /// * `amount`: Amount to deposit
-    fun register_end_to_end_market_account_deposit_test<
+    public fun register_end_to_end_market_account_deposit_test<
         AssetType
     >(
         econia: &signer,
@@ -2722,7 +2722,7 @@ module econia::market {
     ///    account
     /// * `start_quote`: Amount of quote asset user starts with in
     ///   market account
-    fun register_end_to_end_market_account_test<
+    public fun register_end_to_end_market_account_test<
         BaseType,
         QuoteType
     >(
@@ -2757,7 +2757,7 @@ module econia::market {
     /// * `user_3`: Immutable reference to signature from `USER_3`
     /// * `user_0_general_custodian_id`: General custodian ID for
     ///   `USER_0`
-    fun register_end_to_end_market_accounts_test<
+    public fun register_end_to_end_market_accounts_test<
         BaseType,
         QuoteType
     >(
@@ -2784,7 +2784,7 @@ module econia::market {
 
     #[test_only]
     /// Register users 1, 2, and 3, with orders for given `side`.
-    fun register_end_to_end_orders_test<
+    public fun register_end_to_end_orders_test<
         BaseType,
         QuoteType
     >(
@@ -2823,7 +2823,7 @@ module econia::market {
     /// * `user_0_has_general_custodian`: `true` if `USER_0` has a
     ///   general custodian with id `USER_0_GENERAL_CUSTODIAN_ID`,
     ///   `false` if `USER_0` does not
-    fun register_end_to_end_users_test<
+    public fun register_end_to_end_users_test<
         BaseType,
         QuoteType
     >(
@@ -2865,7 +2865,7 @@ module econia::market {
     /// then fund `user`.
     ///
     /// Inner function for `register_market_funded_user_test()`
-    fun register_market_funded_user_inner_test<
+    public fun register_market_funded_user_inner_test<
         BaseType,
         QuoteType
     >(
@@ -2931,7 +2931,7 @@ module econia::market {
     /// * `quote_is_coin`: If `true` use `QC` for quote asset, else `QG`
     /// * `has_general_custodian`: If `true`, register user's market to
     ///   require a general custodian ID
-    fun register_market_funded_user_test(
+    public fun register_market_funded_user_test(
         econia: &signer,
         user: &signer,
         base_is_coin: bool,
@@ -2997,7 +2997,7 @@ module econia::market {
     ///   a different error code for each user, it is possible to tell
     ///   from the unit testing command line which user failed an assert
     ///   statement
-    fun verify_end_to_end_state_collateral_test<
+    public fun verify_end_to_end_state_collateral_test<
         BaseType,
         QuoteType
     >(
@@ -3052,7 +3052,7 @@ module econia::market {
     ///   a different error code for each user, it is possible to tell
     ///   from the unit testing command line which user failed an assert
     ///   statement
-    fun verify_end_to_end_state_order_user_test<
+    public fun verify_end_to_end_state_order_user_test<
         BaseType,
         QuoteType
     >(
@@ -3155,7 +3155,7 @@ module econia::market {
     ///   the maker portion of the order is on (`ASK` or `BID`)
     /// * `maker_price`: Ignored if `maker_size` is 0, else the price
     ///   of the maker portion of the order
-    fun verify_end_to_end_state_spread_makers(
+    public fun verify_end_to_end_state_spread_makers(
         book_side: bool,
         size_1: u64,
         size_filled_1: u64,
@@ -3259,7 +3259,7 @@ module econia::market {
     /// * `maker_price`: Ignored if `maker_size` is 0 or
     ///   `from_market_account` is `false`, else the price
     ///   of the maker portion of the order
-    fun verify_end_to_end_state_test<
+    public fun verify_end_to_end_state_test<
         BaseType,
         QuoteType
     >(
@@ -3344,7 +3344,7 @@ module econia::market {
     /// * `maker_price`: Ignored if `maker_size` is 0 or
     ///   `from_market_account` is `false`, else the price
     ///   of the maker portion of the order
-    fun verify_end_to_end_state_user_0_test<
+    public fun verify_end_to_end_state_user_0_test<
         BaseType,
         QuoteType
     >(

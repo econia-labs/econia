@@ -438,7 +438,7 @@ module econia::registry {
 
     #[test_only]
     /// Return a mock `MarketInfo`
-    fun get_market_info_test():
+    public fun get_market_info_test():
     MarketInfo {
         MarketInfo{
             host: @user,

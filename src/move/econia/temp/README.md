@@ -1,1 +1,0 @@
-Non-essential sample code from deprecated matching engine kept here for reference while SDK interface to `market.move` is updated

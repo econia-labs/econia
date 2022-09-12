@@ -26,6 +26,8 @@ testing functions are at [<code>doc/doc-site/overview/matching.md</code>](
 -  [Struct `Order`](#0xc0deb00c_market_Order)
 -  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
+-  [Struct `SimpleOrder`](#0xc0deb00c_market_SimpleOrder)
+-  [Struct `PriceLevel`](#0xc0deb00c_market_PriceLevel)
 -  [Constants](#@Constants_0)
 -  [Function `cancel_all_limit_orders_custodian`](#0xc0deb00c_market_cancel_all_limit_orders_custodian)
 -  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
@@ -125,12 +127,20 @@ testing functions are at [<code>doc/doc-site/overview/matching.md</code>](
     -  [Abort conditions](#@Abort_conditions_62)
 -  [Function `verify_order_book_exists`](#0xc0deb00c_market_verify_order_book_exists)
     -  [Abort conditions](#@Abort_conditions_63)
+-  [Function `orders_vectors`](#0xc0deb00c_market_orders_vectors)
+    -  [Returns](#@Returns_64)
+-  [Function `price_levels_vectors`](#0xc0deb00c_market_price_levels_vectors)
+    -  [Returns](#@Returns_65)
+-  [Function `orders_vector`](#0xc0deb00c_market_orders_vector)
+-  [Function `price_levels_vector`](#0xc0deb00c_market_price_levels_vector)
+-  [Function `swap_coins_simulate`](#0xc0deb00c_market_swap_coins_simulate)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
 <b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
+<b>use</b> <a href="">0x1::vector</a>;
 <b>use</b> <a href="critbit.md#0xc0deb00c_critbit">0xc0deb00c::critbit</a>;
 <b>use</b> <a href="open_table.md#0xc0deb00c_open_table">0xc0deb00c::open_table</a>;
 <b>use</b> <a href="order_id.md#0xc0deb00c_order_id">0xc0deb00c::order_id</a>;
@@ -305,6 +315,74 @@ Order book map for all of a user's <code><a href="market.md#0xc0deb00c_market_Or
  Map from market ID to <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>. Separated into different
  table entries to reduce transaction collisions across
  markets
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_market_SimpleOrder"></a>
+
+## Struct `SimpleOrder`
+
+Simple representation of an order, for SDK generation
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Price encoded in corresponding <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>'s order ID
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ Number of lots the order is for
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_market_PriceLevel"></a>
+
+## Struct `PriceLevel`
+
+Represents a price level formed by one or more <code><a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a></code>s
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a> <b>has</b> <b>copy</b>, drop
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>price: u64</code>
+</dt>
+<dd>
+ Price of all orders in the price level
+</dd>
+<dt>
+<code>size: u64</code>
+</dt>
+<dd>
+ Total lots across all <code>SimpleOrders</code>s in the level
 </dd>
 </dl>
 
@@ -861,8 +939,8 @@ Swap between coins of <code>BaseCoinType</code> and <code>QuoteCoinType</code>.
 
 ### Type parameters
 
-* <code>BaseType</code>: Base type for market
-* <code>QuoteType</code>: Quote type for market
+* <code>BaseCoinType</code>: Base type for market
+* <code>QuoteCoinType</code>: Quote type for market
 
 
 <a name="@Parameters_2"></a>
@@ -3774,6 +3852,279 @@ Verify <code>host</code> has an <code><a href="market.md#0xc0deb00c_market_Order
     // Assert host <b>has</b> an entry in map for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID
     <b>assert</b>!(<a href="open_table.md#0xc0deb00c_open_table_contains">open_table::contains</a>(order_books_map_ref, market_id),
         <a href="market.md#0xc0deb00c_market_E_NO_ORDER_BOOK">E_NO_ORDER_BOOK</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_orders_vectors"></a>
+
+## Function `orders_vectors`
+
+Index <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>s from <code>order_book_ref_mut</code> into vector of
+<code><a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a></code>s, sorted by price-time priority per
+<code>orders_vector</code>, for each side.
+
+Requires mutable reference to <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> because underlying
+<code>CritBitTree</code> traversal is not implemented immutably (at least
+as of the time of this writing). Only for SDK generation.
+
+
+<a name="@Returns_64"></a>
+
+### Returns
+
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;</code>: Price-time sorted asks
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;</code>: Price-time sorted bids
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_orders_vectors">orders_vectors</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>): (<a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;, <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_orders_vectors">orders_vectors</a>(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>
+): (
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;,
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;
+) {
+    (<a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_ASK">ASK</a>),
+     <a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_BID">BID</a>))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_price_levels_vectors"></a>
+
+## Function `price_levels_vectors`
+
+Index <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> from <code>order_book_ref_mut</code> into vector of
+<code>PriceLevels</code> for each side.
+
+Requires mutable reference to <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> because underlying
+<code>CritBitTree</code> traversal is not implemented immutably (at least
+as of the time of this writing). Only for SDK generation.
+
+
+<a name="@Returns_65"></a>
+
+### Returns
+
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;</code>: Ask price levels
+* <code><a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;</code>: Bid price levels
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_price_levels_vectors">price_levels_vectors</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>): (<a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;, <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_price_levels_vectors">price_levels_vectors</a>(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>
+): (
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;,
+    <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;
+) {
+    (<a href="market.md#0xc0deb00c_market_price_levels_vector">price_levels_vector</a>(<a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)),
+     <a href="market.md#0xc0deb00c_market_price_levels_vector">price_levels_vector</a>(<a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>(order_book_ref_mut, <a href="market.md#0xc0deb00c_market_BID">BID</a>)))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_orders_vector"></a>
+
+## Function `orders_vector`
+
+Index <code><a href="market.md#0xc0deb00c_market_Order">Order</a></code>s in <code>order_book_ref_mut</code> into a <code><a href="">vector</a></code> of
+<code>OrderSimple</code>s sorted by price-time priority, beginning with the
+spread maker: if <code>side</code> is <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>, first element in vector is the
+oldest ask at the minimum ask price, and if <code>side</code> is <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>,
+first element in vector is the oldest bid at the maximum bid
+price.
+
+Requires mutable reference to <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code> because
+<code>CritBitTree</code> traversal is not implemented immutably (at least
+as of the time of this writing). Only for SDK generation.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>(order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, side: bool): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>(
+    order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
+    side: bool
+): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt; {
+    // Initialize empty <a href="">vector</a>
+    <b>let</b> simple_orders = <a href="_empty">vector::empty</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;();
+    // Define orders tree and traversal direction base on side
+    <b>let</b> (tree_ref_mut, traversal_direction) = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+        // If asks, <b>use</b> asks tree <b>with</b> successor iteration
+        (&<b>mut</b> order_book_ref_mut.asks, <a href="market.md#0xc0deb00c_market_RIGHT">RIGHT</a>) <b>else</b>
+        // If bids, <b>use</b> bids tree <b>with</b> predecessor iteration
+        (&<b>mut</b> order_book_ref_mut.bids, <a href="market.md#0xc0deb00c_market_LEFT">LEFT</a>);
+    // If no positions in tree, <b>return</b> empty <a href="">vector</a>
+    <b>if</b> (<a href="critbit.md#0xc0deb00c_critbit_is_empty">critbit::is_empty</a>(tree_ref_mut)) <b>return</b> simple_orders;
+    // Calculate number of traversals possible
+    <b>let</b> remaining_traversals = <a href="critbit.md#0xc0deb00c_critbit_length">critbit::length</a>(tree_ref_mut) - 1;
+    // Initialize traversal: get target order ID, mutable reference
+    // <b>to</b> target order, and the index of the target node's parent
+    <b>let</b> (target_id, target_order_ref_mut, target_parent_index, _) =
+        <a href="critbit.md#0xc0deb00c_critbit_traverse_init_mut">critbit::traverse_init_mut</a>(tree_ref_mut, traversal_direction);
+    <b>loop</b> { // Loop over all orders in tree
+        <a href="_push_back">vector::push_back</a>(&<b>mut</b> simple_orders, <a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>{
+            price: <a href="order_id.md#0xc0deb00c_order_id_price">order_id::price</a>(target_id),
+            size: target_order_ref_mut.size
+        }); // Push back corresponding simple order onto <a href="">vector</a>
+        // Return simple orders <a href="">vector</a> <b>if</b> unable <b>to</b> traverse
+        <b>if</b> (remaining_traversals == 0) <b>return</b> simple_orders;
+        // Otherwise traverse <b>to</b> next order in the tree
+        (target_id, target_order_ref_mut, target_parent_index, _) =
+            <a href="critbit.md#0xc0deb00c_critbit_traverse_mut">critbit::traverse_mut</a>(tree_ref_mut, target_id,
+                target_parent_index, traversal_direction);
+        // Decrement number of remaining traversals
+        remaining_traversals = remaining_traversals - 1;
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_price_levels_vector"></a>
+
+## Function `price_levels_vector`
+
+Index output of <code><a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>()</code> into a vector of <code><a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a></code>.
+
+SDK-side, can be directly passed the output from
+<code><a href="market.md#0xc0deb00c_market_orders_vector">orders_vector</a>()</code>, or invoked as an inner function for
+<code><a href="market.md#0xc0deb00c_market_price_levels_vectors">price_levels_vectors</a>()</code>.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_price_levels_vector">price_levels_vector</a>(simple_orders: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">market::SimpleOrder</a>&gt;): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">market::PriceLevel</a>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_price_levels_vector">price_levels_vector</a>(
+    simple_orders: <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_SimpleOrder">SimpleOrder</a>&gt;
+): <a href="">vector</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt; {
+    // Initialize empty <a href="">vector</a> of price levels
+    <b>let</b> price_levels = <a href="_empty">vector::empty</a>&lt;<a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>&gt;();
+    // Return empty <a href="">vector</a> <b>if</b> no simple orders <b>to</b> index
+    <b>if</b> (<a href="_is_empty">vector::is_empty</a>(&simple_orders)) <b>return</b> price_levels;
+    // Get immutable reference <b>to</b> first simple order in <a href="">vector</a>
+    <b>let</b> simple_order_ref = <a href="_borrow">vector::borrow</a>(&simple_orders, 0);
+    // Set level price <b>to</b> that from first simple order
+    <b>let</b> level_price = simple_order_ref.price;
+    // Set level size counter <b>to</b> that of first simple order
+    <b>let</b> level_size = simple_order_ref.size;
+    // Get number of simple orders <b>to</b> index
+    <b>let</b> n_simple_orders = <a href="_length">vector::length</a>(&simple_orders);
+    <b>let</b> simple_order_index = 1; // Start <b>loop</b> at the next order
+    // While there are simple orders left <b>to</b> index
+    <b>while</b> (simple_order_index &lt; n_simple_orders) {
+        // Borrow immutable reference <b>to</b> order for current iteration
+        simple_order_ref =
+            <a href="_borrow">vector::borrow</a>(&simple_orders, simple_order_index);
+        // If on new level
+        <b>if</b> (simple_order_ref.price != level_price) {
+            // Store last price level in <a href="">vector</a>
+            <a href="_push_back">vector::push_back</a>(&<b>mut</b> price_levels, <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>{
+                price: level_price, size: level_size});
+            // Start tracking new price level <b>with</b> given order
+            (level_price, level_size) = (
+                simple_order_ref.price, simple_order_ref.size)
+        } <b>else</b> { // If same price <b>as</b> last checked
+            // Increment count of size for current level
+            level_size = level_size + simple_order_ref.size;
+        };
+        // Iterate again, on next simple order in <a href="">vector</a>
+        simple_order_index = simple_order_index + 1;
+    }; // No more simple orders left <b>to</b> index
+    // Store final price level in <a href="">vector</a>
+    <a href="_push_back">vector::push_back</a>(&<b>mut</b> price_levels, <a href="market.md#0xc0deb00c_market_PriceLevel">PriceLevel</a>{
+        price: level_price, size: level_size});
+    price_levels // Return sorted <a href="">vector</a> of price levels
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_swap_coins_simulate"></a>
+
+## Function `swap_coins_simulate`
+
+Simulate swap against an <code><a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a></code>.
+
+Requires mutable references to coins, which should essentially
+be counterfeit SDK-side to pass into the matching engine logic.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code> for parameters, returns, and
+abort conditions. Wrapped here to provide SDK-specific
+commentary and considerations.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap_coins_simulate">swap_coins_simulate</a>&lt;BaseCoinType, QuoteCoinType&gt;(host: <b>address</b>, market_id: u64, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;BaseCoinType&gt;, quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;): (u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap_coins_simulate">swap_coins_simulate</a>&lt;
+    BaseCoinType,
+    QuoteCoinType
+&gt;(
+    host: <b>address</b>,
+    market_id: u64,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64,
+    base_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;BaseCoinType&gt;,
+    quote_coins_ref_mut: &<b>mut</b> <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
+): (
+    u64,
+    u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>&lt;BaseCoinType, QuoteCoinType&gt;(host, market_id, direction,
+        min_base, max_base, min_quote, max_quote, limit_price,
+        base_coins_ref_mut, quote_coins_ref_mut)
 }
 </code></pre>
 

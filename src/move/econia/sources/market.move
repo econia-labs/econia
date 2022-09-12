@@ -29,6 +29,7 @@ module econia::market {
     use econia::user;
     use std::signer::address_of;
     use std::option;
+    use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -54,6 +55,11 @@ module econia::market {
         general_custodian_id: u64
     }
 
+    #[method(
+        orders_vector,
+        orders_vectors,
+        price_levels_vectors
+    )]
     /// An order book for a given market
     struct OrderBook has store {
         /// Base asset type info. When trading an
@@ -302,8 +308,8 @@ module econia::market {
     /// Swap between coins of `BaseCoinType` and `QuoteCoinType`.
     ///
     /// # Type parameters
-    /// * `BaseType`: Base type for market
-    /// * `QuoteType`: Quote type for market
+    /// * `BaseCoinType`: Base type for market
+    /// * `QuoteCoinType`: Quote type for market
     ///
     /// # Parameters
     /// * `host`: Market host
@@ -2374,6 +2380,193 @@ module econia::market {
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Simple representation of an order, for SDK generation
+    struct SimpleOrder has copy, drop {
+        /// Price encoded in corresponding `Order`'s order ID
+        price: u64,
+        /// Number of lots the order is for
+        size: u64
+    }
+
+    /// Represents a price level formed by one or more `SimpleOrder`s
+    struct PriceLevel has copy, drop {
+        /// Price of all orders in the price level
+        price: u64,
+        /// Total lots across all `SimpleOrders`s in the level
+        size: u64
+    }
+
+    /// Index `Order`s from `order_book_ref_mut` into vector of
+    /// `SimpleOrder`s, sorted by price-time priority per
+    /// `orders_vector`, for each side.
+    ///
+    /// Requires mutable reference to `OrderBook` because underlying
+    /// `CritBitTree` traversal is not implemented immutably (at least
+    /// as of the time of this writing). Only for SDK generation.
+    ///
+    /// # Returns
+    /// * `vector<SimpleOrder>`: Price-time sorted asks
+    /// * `vector<SimpleOrder>`: Price-time sorted bids
+    fun orders_vectors(
+        order_book_ref_mut: &mut OrderBook
+    ): (
+        vector<SimpleOrder>,
+        vector<SimpleOrder>
+    ) {
+        (orders_vector(order_book_ref_mut, ASK),
+         orders_vector(order_book_ref_mut, BID))
+    }
+
+    /// Index `OrderBook` from `order_book_ref_mut` into vector of
+    /// `PriceLevels` for each side.
+    ///
+    /// Requires mutable reference to `OrderBook` because underlying
+    /// `CritBitTree` traversal is not implemented immutably (at least
+    /// as of the time of this writing). Only for SDK generation.
+    ///
+    /// # Returns
+    /// * `vector<PriceLevel>`: Ask price levels
+    /// * `vector<PriceLevel>`: Bid price levels
+    fun price_levels_vectors(
+        order_book_ref_mut: &mut OrderBook
+    ): (
+        vector<PriceLevel>,
+        vector<PriceLevel>
+    ) {
+        (price_levels_vector(orders_vector(order_book_ref_mut, ASK)),
+         price_levels_vector(orders_vector(order_book_ref_mut, BID)))
+    }
+
+    /// Index `Order`s in `order_book_ref_mut` into a `vector` of
+    /// `OrderSimple`s sorted by price-time priority, beginning with the
+    /// spread maker: if `side` is `ASK`, first element in vector is the
+    /// oldest ask at the minimum ask price, and if `side` is `BID`,
+    /// first element in vector is the oldest bid at the maximum bid
+    /// price.
+    ///
+    /// Requires mutable reference to `OrderBook` because
+    /// `CritBitTree` traversal is not implemented immutably (at least
+    /// as of the time of this writing). Only for SDK generation.
+    fun orders_vector(
+        order_book_ref_mut: &mut OrderBook,
+        side: bool
+    ): vector<SimpleOrder> {
+        // Initialize empty vector
+        let simple_orders = vector::empty<SimpleOrder>();
+        // Define orders tree and traversal direction base on side
+        let (tree_ref_mut, traversal_direction) = if (side == ASK)
+            // If asks, use asks tree with successor iteration
+            (&mut order_book_ref_mut.asks, RIGHT) else
+            // If bids, use bids tree with predecessor iteration
+            (&mut order_book_ref_mut.bids, LEFT);
+        // If no positions in tree, return empty vector
+        if (critbit::is_empty(tree_ref_mut)) return simple_orders;
+        // Calculate number of traversals possible
+        let remaining_traversals = critbit::length(tree_ref_mut) - 1;
+        // Initialize traversal: get target order ID, mutable reference
+        // to target order, and the index of the target node's parent
+        let (target_id, target_order_ref_mut, target_parent_index, _) =
+            critbit::traverse_init_mut(tree_ref_mut, traversal_direction);
+        loop { // Loop over all orders in tree
+            vector::push_back(&mut simple_orders, SimpleOrder{
+                price: order_id::price(target_id),
+                size: target_order_ref_mut.size
+            }); // Push back corresponding simple order onto vector
+            // Return simple orders vector if unable to traverse
+            if (remaining_traversals == 0) return simple_orders;
+            // Otherwise traverse to next order in the tree
+            (target_id, target_order_ref_mut, target_parent_index, _) =
+                critbit::traverse_mut(tree_ref_mut, target_id,
+                    target_parent_index, traversal_direction);
+            // Decrement number of remaining traversals
+            remaining_traversals = remaining_traversals - 1;
+        }
+    }
+
+    #[query]
+    /// Index output of `orders_vector()` into a vector of `PriceLevel`.
+    ///
+    /// SDK-side, can be directly passed the output from
+    /// `orders_vector()`, or invoked as an inner function for
+    /// `price_levels_vectors()`.
+    fun price_levels_vector(
+        simple_orders: vector<SimpleOrder>
+    ): vector<PriceLevel> {
+        // Initialize empty vector of price levels
+        let price_levels = vector::empty<PriceLevel>();
+        // Return empty vector if no simple orders to index
+        if (vector::is_empty(&simple_orders)) return price_levels;
+        // Get immutable reference to first simple order in vector
+        let simple_order_ref = vector::borrow(&simple_orders, 0);
+        // Set level price to that from first simple order
+        let level_price = simple_order_ref.price;
+        // Set level size counter to that of first simple order
+        let level_size = simple_order_ref.size;
+        // Get number of simple orders to index
+        let n_simple_orders = vector::length(&simple_orders);
+        let simple_order_index = 1; // Start loop at the next order
+        // While there are simple orders left to index
+        while (simple_order_index < n_simple_orders) {
+            // Borrow immutable reference to order for current iteration
+            simple_order_ref =
+                vector::borrow(&simple_orders, simple_order_index);
+            // If on new level
+            if (simple_order_ref.price != level_price) {
+                // Store last price level in vector
+                vector::push_back(&mut price_levels, PriceLevel{
+                    price: level_price, size: level_size});
+                // Start tracking new price level with given order
+                (level_price, level_size) = (
+                    simple_order_ref.price, simple_order_ref.size)
+            } else { // If same price as last checked
+                // Increment count of size for current level
+                level_size = level_size + simple_order_ref.size;
+            };
+            // Iterate again, on next simple order in vector
+            simple_order_index = simple_order_index + 1;
+        }; // No more simple orders left to index
+        // Store final price level in vector
+        vector::push_back(&mut price_levels, PriceLevel{
+            price: level_price, size: level_size});
+        price_levels // Return sorted vector of price levels
+    }
+
+    #[query]
+    /// Simulate swap against an `OrderBook`.
+    ///
+    /// Requires mutable references to coins, which should essentially
+    /// be counterfeit SDK-side to pass into the matching engine logic.
+    ///
+    /// See wrapped function `swap_coins()` for parameters, returns, and
+    /// abort conditions. Wrapped here to provide SDK-specific
+    /// commentary and considerations.
+    fun swap_coins_simulate<
+        BaseCoinType,
+        QuoteCoinType
+    >(
+        host: address,
+        market_id: u64,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+        base_coins_ref_mut: &mut coin::Coin<BaseCoinType>,
+        quote_coins_ref_mut: &mut coin::Coin<QuoteCoinType>
+    ): (
+        u64,
+        u64
+    ) acquires OrderBooks {
+        swap_coins<BaseCoinType, QuoteCoinType>(host, market_id, direction,
+            min_base, max_base, min_quote, max_quote, limit_price,
+            base_coins_ref_mut, quote_coins_ref_mut)
+    }
+
+    // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -4730,6 +4923,61 @@ module econia::market {
         user_2 = @user_2,
         user_3 = @user_3,
     )]
+    /// Swap buy coins via SDK-generative function
+    fun test_end_to_end_swap_coins_buy_sdk(
+        econia: &signer,
+        user_0: &signer,
+        user_1: &signer,
+        user_2: &signer,
+        user_3: &signer
+    ) acquires OrderBooks {
+        // Assign test setup values
+        let book_side = ASK;
+        let user_0_has_general_custodian = false;
+        // Assign swap values
+        let direction = BUY;
+        let min_base = LOT_SIZE * (USER_1_ASK_SIZE + USER_2_ASK_SIZE);
+        let max_base = min_base + 1000000;
+        let min_quote = 0;
+        let max_quote = TICK_SIZE * (USER_1_ASK_SIZE * USER_1_ASK_PRICE +
+            USER_2_ASK_SIZE * USER_2_ASK_PRICE);
+        let limit_price = USER_3_ASK_PRICE;
+        // Assign state verification values
+        let from_market_account = false;
+        let taker_size = min_base / LOT_SIZE;
+        let maker_size = 0;
+        let maker_side = ASK;
+        let maker_price = 0;
+        // Register users with orders on the book
+        register_end_to_end_users_test<BC, QC>(econia, user_0, user_1,
+            user_2, user_3, book_side, user_0_has_general_custodian);
+        let (base_coins, quote_coins) = ( // Mint coins
+            assets::mint<BC>(econia, USER_0_START_BASE),
+            assets::mint<QC>(econia, USER_0_START_QUOTE));
+        // Swap coins, storing base and quote coins filled
+        let (base_filled, quote_filled) = swap_coins_simulate(@econia,
+            MARKET_ID, direction, min_base, max_base, min_quote, max_quote,
+            limit_price, &mut base_coins, &mut quote_coins);
+        // Assert coin swap return values
+        assert!(base_filled == min_base, 0);
+        assert!(quote_filled == max_quote, 0);
+        // Verify state
+        verify_end_to_end_state_test<BC, QC>(book_side, taker_size,
+            from_market_account, user_0_has_general_custodian,
+            coin::value(&base_coins), coin::value(&quote_coins), maker_size,
+            maker_side, maker_price);
+        // Destroy coins
+        assets::burn(base_coins);
+        assets::burn(quote_coins);
+    }
+
+    #[test(
+        econia = @econia,
+        user_0 = @user_0,
+        user_1 = @user_1,
+        user_2 = @user_2,
+        user_3 = @user_3,
+    )]
     /// Swap sell coins
     fun test_end_to_end_swap_coins_sell(
         econia: &signer,
@@ -6111,6 +6359,103 @@ module econia::market {
         assert!(order_book_ref_2.max_bid == MAX_BID_DEFAULT, 0);
         assert!(order_book_ref_2.min_ask == MIN_ASK_DEFAULT, 0);
         assert!(order_book_ref_2.counter == 0, 0);
+    }
+
+    #[test]
+    /// Verify indexing of book orders and price levels
+    fun test_sdk_book_indexers():
+    OrderBook {
+        let order_book = OrderBook{
+            base_type_info: type_info::type_of<BC>(),
+            quote_type_info: type_info::type_of<QC>(),
+            lot_size: LOT_SIZE,
+            tick_size: TICK_SIZE,
+            generic_asset_transfer_custodian_id:
+                GENERIC_ASSET_TRANSFER_CUSTODIAN_ID,
+            asks: critbit::empty(),
+            bids: critbit::empty(),
+            min_ask: MIN_ASK_DEFAULT,
+            max_bid: MAX_BID_DEFAULT,
+            counter: 0
+        }; // Define mock order book
+        // Get orders vectors from empty book
+        let (asks, bids) = orders_vectors(&mut order_book);
+        // Assert both vectors empty
+        assert!(vector::is_empty(&asks) && vector::is_empty(&bids), 0);
+        // Get price level vectors from empty book
+        let (ask_levels, bid_levels) = price_levels_vectors(&mut order_book);
+        assert!( // Assert both vectors empty
+            vector::is_empty(&ask_levels) && vector::is_empty(&bid_levels), 0);
+        // Define default order struct field values
+        let (user, general_custodian_id) = (@user, GENERAL_CUSTODIAN_ID);
+        // Define mock order parameters for a single ask, and two bids,
+        // where second bid is different price level from first
+        let ask_0_price = 12;
+        let ask_0_size = 123;
+        let ask_0_order_id = order_id::order_id(
+            ask_0_price, get_counter(&mut order_book), ASK);
+        let bid_0_price = 8;
+        let bid_0_size = 234;
+        let bid_0_order_id = order_id::order_id(
+            bid_0_price, get_counter(&mut order_book), BID);
+        let bid_1_price = 7;
+        let bid_1_size = 345;
+        let bid_1_order_id = order_id::order_id(
+            bid_1_price, get_counter(&mut order_book), BID);
+        // Insert all orders to tree
+        critbit::insert(&mut order_book.asks, ask_0_order_id, Order{
+            size: ask_0_size, user, general_custodian_id});
+        critbit::insert(&mut order_book.bids, bid_0_order_id, Order{
+            size: bid_0_size, user, general_custodian_id});
+        critbit::insert(&mut order_book.bids, bid_1_order_id, Order{
+            size: bid_1_size, user, general_custodian_id});
+        // Get orders
+        (asks, bids) = orders_vectors(&mut order_book);
+        // Assert all state
+        let     ask_0_ref = vector::borrow(&asks, 0);
+        assert!(ask_0_ref.price ==            ask_0_price, 0);
+        assert!(ask_0_ref.size  ==            ask_0_size , 0);
+        let     bid_0_ref = vector::borrow(&bids, 0);
+        assert!(bid_0_ref.price ==            bid_0_price, 0);
+        assert!(bid_0_ref.size  ==            bid_0_size , 0);
+        let     bid_1_ref = vector::borrow(&bids, 1);
+        assert!(bid_1_ref.price ==            bid_1_price, 0);
+        assert!(bid_1_ref.size  ==            bid_1_size , 0);
+        // Get price levels
+        (ask_levels, bid_levels) = price_levels_vectors(&mut order_book);
+        // Assert all state
+        let ask_level_0_ref = vector::borrow(&ask_levels, 0);
+        assert!(ask_level_0_ref.price == ask_0_price, 0);
+        assert!(ask_level_0_ref.size  == ask_0_size , 0);
+        let bid_level_0_ref = vector::borrow(&bid_levels, 0);
+        assert!(bid_level_0_ref.price == bid_0_price, 0);
+        assert!(bid_level_0_ref.size  == bid_0_size , 0);
+        let bid_level_1_ref = vector::borrow(&bid_levels, 1);
+        assert!(bid_level_1_ref.price == bid_1_price, 0);
+        assert!(bid_level_1_ref.size  == bid_1_size , 0);
+        // Insert to tree another ask in same price level as first
+        let ask_1_price = ask_0_price;
+        let ask_1_size = 789;
+        let ask_1_order_id = order_id::order_id(
+            ask_1_price, get_counter(&mut order_book), ASK);
+        critbit::insert(&mut order_book.asks, ask_1_order_id, Order{
+            size: ask_1_size, user, general_custodian_id});
+        // Get asks
+        asks = orders_vector(&mut order_book, ASK);
+        // Assert new ask state
+        let     ask_0_ref = vector::borrow(&asks, 0);
+        assert!(ask_0_ref.price ==            ask_0_price, 0);
+        assert!(ask_0_ref.size  ==            ask_0_size , 0);
+        let     ask_1_ref = vector::borrow(&asks, 1);
+        assert!(ask_1_ref.price ==            ask_1_price, 0);
+        assert!(ask_1_ref.size  ==            ask_1_size , 0);
+        // Get ask price levels
+        ask_levels = price_levels_vector(asks);
+        // Assert new ask state
+        let ask_level_0_ref = vector::borrow(&ask_levels, 0);
+        assert!(ask_level_0_ref.price == ask_0_price, 0);
+        assert!(ask_level_0_ref.size  == ask_0_size + ask_1_size, 0);
+        order_book // Return rather than unpack
     }
 
     #[test(econia = @econia)]

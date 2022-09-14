@@ -26,7 +26,13 @@ Incentive-associated parameters and data structures.
 -  [Function `set_incentive_parameters`](#0xc0deb00c_incentives_set_incentive_parameters)
     -  [Type Parameters](#@Type_Parameters_8)
     -  [Parameters](#@Parameters_9)
-    -  [Abort conditions](#@Abort_conditions_10)
+    -  [Assumptions](#@Assumptions_10)
+-  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
+    -  [Abort conditions](#@Abort_conditions_11)
+    -  [Assumes](#@Assumes_12)
+-  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
+    -  [Parameters](#@Parameters_13)
+    -  [Abort conditions](#@Abort_conditions_14)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -340,7 +346,17 @@ When caller is not Econia, but should be.
 When the indicated tier activation fee is too small.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL">E_ACTIVATION_FEE_TOO_SMALL</a>: u64 = 8;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL">E_ACTIVATION_FEE_TOO_SMALL</a>: u64 = 9;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN"></a>
+
+When custodian registration fee is less than the minimum.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN">E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 6;
 </code></pre>
 
 
@@ -350,7 +366,7 @@ When the indicated tier activation fee is too small.
 When a fee divisor is less than the minimum.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_DIVISOR_LESS_THAN_MIN">E_DIVISOR_LESS_THAN_MIN</a>: u64 = 6;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_DIVISOR_LESS_THAN_MIN">E_DIVISOR_LESS_THAN_MIN</a>: u64 = 7;
 </code></pre>
 
 
@@ -361,16 +377,6 @@ When passed fee store tiers vector is empty.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS">E_EMPTY_FEE_STORE_TIERS</a>: u64 = 2;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_incentives_E_FEE_LESS_THAN_MIN"></a>
-
-When a flat fee is less than the minimum.
-
-
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_FEE_LESS_THAN_MIN">E_FEE_LESS_THAN_MIN</a>: u64 = 5;
 </code></pre>
 
 
@@ -396,6 +402,16 @@ than the indicated taker fee divisor.
 
 
 
+<a name="0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN"></a>
+
+When market registration fee is less than the minimum.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN">E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 5;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_NOT_COIN"></a>
 
 When type does not correspond to an initialized coin.
@@ -411,7 +427,7 @@ When type does not correspond to an initialized coin.
 When the wrong number of fields are passed for a given tier.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TIER_FIELDS_WRONG_LENGTH">E_TIER_FIELDS_WRONG_LENGTH</a>: u64 = 7;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TIER_FIELDS_WRONG_LENGTH">E_TIER_FIELDS_WRONG_LENGTH</a>: u64 = 8;
 </code></pre>
 
 
@@ -421,7 +437,7 @@ When the wrong number of fields are passed for a given tier.
 When the indicated withdrawal fee is too big.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG">E_WITHDRAWAL_FEE_TOO_BIG</a>: u64 = 9;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG">E_WITHDRAWAL_FEE_TOO_BIG</a>: u64 = 10;
 </code></pre>
 
 
@@ -431,7 +447,7 @@ When the indicated withdrawal fee is too big.
 When the indicated withdrawal fee is too small.
 
 
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL">E_WITHDRAWAL_FEE_TOO_SMALL</a>: u64 = 10;
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL">E_WITHDRAWAL_FEE_TOO_SMALL</a>: u64 = 11;
 </code></pre>
 
 
@@ -631,6 +647,11 @@ exists for given <code>CoinType</code>.
 
 Set all fields for <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code> under Econia account.
 
+Rather than pass-by-value a
+<code><a href="">vector</a>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a>&gt;</code>, mutably reassigns
+the values of <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>.integrator_fee_store_tiers</code>
+via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>.
+
 
 <a name="@Type_Parameters_8"></a>
 
@@ -654,32 +675,22 @@ taker fee divisor to set.
 0-indexed vector of 3-element vectors, with each 3-element
 vector containing fields for a corresponding
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
+* <code>updating_ref</code>: <code>&<b>true</b></code> if updating incentive parameters that
+have already beeen set, <code>&<b>false</b></code> if setting parameters for the
+first time.
 
 
-<a name="@Abort_conditions_10"></a>
+<a name="@Assumptions_10"></a>
 
-### Abort conditions
+### Assumptions
 
-* If <code>econia</code> is not Econia account.
-* If <code>market_registration_fee_ref</code> indicates fee that does not
-meet minimum threshold.
-* If <code>custodian_registration_fee_ref</code> indicates fee that does
-not meet minimum threshold.
-* If <code>taker_fee_divisor_ref</code> indicates divisor that does not
-meet minimum threshold.
-* If <code>integrator_fee_store_tiers_ref</code> indicates an empty vector.
-* If a indicated inner vector from
-<code>integrator_fee_store_tiers_ref</code> is the wrong length.
-* If fee share divisor does not decrease with tier number.
-* If a fee share divisor is less than taker fee divisor.
-* If tier activation fee does not increase with tier number.
-* If there is no tier activation fee for the first tier.
-* If withdrawal fee does not decrease with tier number.
-* If the withdrawal fee for a given tier does not meet minimum
-threshold.
+* If <code>updating_ref</code> is <code>&<b>true</b></code>, an <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code>
+already exists at the Econia account.
+* If <code>updating_ref</code> is <code>&<b>false</b></code>, an <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code>
+does not exist at the Econia account.
 
 
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee_ref: &u64, custodian_registration_fee_ref: &u64, taker_fee_divisor_ref: &u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee_ref: &u64, custodian_registration_fee_ref: &u64, taker_fee_divisor_ref: &u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;, updating_ref: &bool)
 </code></pre>
 
 
@@ -693,24 +704,16 @@ threshold.
     market_registration_fee_ref: &u64,
     custodian_registration_fee_ref: &u64,
     taker_fee_divisor_ref: &u64,
-    integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
+    integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;,
+    updating_ref: &bool
 ) <b>acquires</b>
     <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
     <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
 {
-    // Assert <a href="">signer</a> is from Econia <a href="">account</a>.
-    <b>assert</b>!(address_of(econia) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Assert market registration fee meets minimum threshold.
-    <b>assert</b>!(*market_registration_fee_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>, <a href="incentives.md#0xc0deb00c_incentives_E_FEE_LESS_THAN_MIN">E_FEE_LESS_THAN_MIN</a>);
-    // Assert custodian registration fee meets minimum threshold.
-    <b>assert</b>!(*custodian_registration_fee_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>,
-        <a href="incentives.md#0xc0deb00c_incentives_E_FEE_LESS_THAN_MIN">E_FEE_LESS_THAN_MIN</a>);
-    // Assert taker fee divisor is meets minimum threshold.
-    <b>assert</b>!(*taker_fee_divisor_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_DIVISOR">MIN_DIVISOR</a>,
-        <a href="incentives.md#0xc0deb00c_incentives_E_DIVISOR_LESS_THAN_MIN">E_DIVISOR_LESS_THAN_MIN</a>);
-    // Assert integrator fee store parameters <a href="">vector</a> not empty.
-    <b>assert</b>!(!<a href="_is_empty">vector::is_empty</a>(integrator_fee_store_tiers_ref),
-        <a href="incentives.md#0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS">E_EMPTY_FEE_STORE_TIERS</a>);
+    // Range check inputs.
+    <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(econia,
+        market_registration_fee_ref, custodian_registration_fee_ref,
+        taker_fee_divisor_ref, integrator_fee_store_tiers_ref);
     // Get fee <a href="">account</a> <a href="">signer</a>: <b>if</b> capability store <b>exists</b>,
     <b>let</b> fee_account = <b>if</b> (<b>exists</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>&gt;(@econia))
         // Create a <a href="">signer</a> from the capability within.
@@ -719,13 +722,112 @@ threshold.
                 fee_account_signer_capability) <b>else</b>
         // Otherwise create a <a href="">signer</a> by initializing fee <a href="">account</a>.
         <a href="incentives.md#0xc0deb00c_incentives_init_fee_account">init_fee_account</a>(econia);
-    // Initialize a utility <a href="">coin</a> store under the fee acount.
+    // Initialize a utility <a href="">coin</a> store under the fee acount (aborts
+    // <b>if</b> not an initialized <a href="">coin</a> type).
     <a href="incentives.md#0xc0deb00c_incentives_init_utility_coin_store">init_utility_coin_store</a>&lt;UtilityCoinType&gt;(&fee_account);
-    // Initialize empty fee store tiers <a href="">vector</a>.
-    <b>let</b> integrator_fee_store_tiers =
-        <a href="_empty">vector::empty</a>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a>&gt;();
+    <b>if</b> (!*updating_ref) { // If not updating previously-set values:
+        // Initialize one <b>with</b> range-checked inputs and empty
+        // tiers <a href="">vector</a>.
+        <b>move_to</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(econia, <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>{
+            utility_coin_type_info: <a href="_type_of">type_info::type_of</a>&lt;UtilityCoinType&gt;(),
+            market_registration_fee: *market_registration_fee_ref,
+            custodian_registration_fee: *custodian_registration_fee_ref,
+            taker_fee_divisor: *taker_fee_divisor_ref,
+            integrator_fee_store_tiers: <a href="_empty">vector::empty</a>()
+        });
+    };
+    // Borrow a mutable reference <b>to</b> the incentive parameters
+    // resource at the Econia <a href="">account</a>.
+    <b>let</b> incentive_parameters_ref_mut =
+        <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia);
+    <b>if</b> (*updating_ref) { // If updating previously-set values
+        // Set utility <a href="">coin</a> type.
+        incentive_parameters_ref_mut.utility_coin_type_info =
+            <a href="_type_of">type_info::type_of</a>&lt;UtilityCoinType&gt;();
+        // Set market registration fee.
+        incentive_parameters_ref_mut.market_registration_fee =
+            *market_registration_fee_ref;
+        // Set custodian registration fee.
+        incentive_parameters_ref_mut.custodian_registration_fee =
+            *custodian_registration_fee_ref;
+        // Set taker fee divisor.
+        incentive_parameters_ref_mut.taker_fee_divisor =
+            *taker_fee_divisor_ref;
+        // Set integrator fee stores <b>to</b> empty <a href="">vector</a>.
+        incentive_parameters_ref_mut.integrator_fee_store_tiers =
+            <a href="_empty">vector::empty</a>();
+    };
+    // Parse in integrator fee store tiers (aborts for invalid
+    // values).
+    <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>(
+        taker_fee_divisor_ref, integrator_fee_store_tiers_ref,
+        &<b>mut</b> incentive_parameters_ref_mut.integrator_fee_store_tiers);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector"></a>
+
+## Function `set_incentive_parameters_parse_tiers_vector`
+
+Parse vectorized fee store tier parameters passed to
+<code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
+
+* <code>taker_fee_divisor_ref</code>: Immutable reference to
+taker fee divisor to compare against.
+* <code>integrator_fee_store_tiers_ref</code>: Immutable reference to
+0-indexed vector of 3-element vectors, with each 3-element
+vector containing fields for a corresponding
+<code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
+* <code>integrator_fee_store_tiers_target_ref_mut</code>: Mutable reference
+to the <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>.integrator_fee_store_tiers</code> field
+to parse into.
+
+
+<a name="@Abort_conditions_11"></a>
+
+### Abort conditions
+
+* If an indicated inner vector from
+<code>integrator_fee_store_tiers_ref</code> is the wrong length.
+* If fee share divisor does not decrease with tier number.
+* If a fee share divisor is less than taker fee divisor.
+* If tier activation fee does not increase with tier number.
+* If there is no tier activation fee for the first tier.
+* If withdrawal fee does not decrease with tier number.
+* If the withdrawal fee for a given tier does not meet minimum
+threshold.
+
+
+<a name="@Assumes_12"></a>
+
+### Assumes
+
+* An <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code> exists at the Econia account.
+* <code>itegrator_fee_store_tiers_target_ref_mut</code> indicates an empty
+vector.
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>(taker_fee_divisor_ref: &u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;, integrator_fee_store_tiers_target_ref_mut: &<b>mut</b> <a href="">vector</a>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">incentives::IntegratorFeeStoreTierParameters</a>&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>(
+    taker_fee_divisor_ref: &u64,
+    integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;,
+    integrator_fee_store_tiers_target_ref_mut:
+        &<b>mut</b> <a href="">vector</a>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a>&gt;
+) {
     // Initialize tracker variables for the fee store parameters of
-    // the last accessed tier. Flagged such that activation fee must
+    // the last parsed tier. Flagged such that activation fee must
     // be nonzero even for the first tier.
     <b>let</b> (divisor_last, activation_fee_last, withdrawal_fee_last) = (
                 <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>,                   0,               <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>);
@@ -764,8 +866,8 @@ threshold.
             <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG">E_WITHDRAWAL_FEE_TOO_BIG</a>);
         // Assert withdrawal fee is above minimum threshold.
         <b>assert</b>!(*withdrawal_fee_ref &gt; <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>, <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL">E_WITHDRAWAL_FEE_TOO_SMALL</a>);
-        // Mark indicated tier in ongoing <a href="">vector</a> of tiers.
-        <a href="_push_back">vector::push_back</a>(&<b>mut</b> integrator_fee_store_tiers,
+        // Mark indicated tier in target tiers <a href="">vector</a>.
+        <a href="_push_back">vector::push_back</a>(integrator_fee_store_tiers_target_ref_mut,
             <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a>{
                 fee_share_divisor: *fee_share_divisor_ref,
                 tier_activation_fee: *tier_activation_fee_ref,
@@ -778,32 +880,81 @@ threshold.
         withdrawal_fee_last = *withdrawal_fee_ref;
         i = i + 1; // Increment <b>loop</b> counter
     };
-    // If incentive parameters resource already at Econia <a href="">account</a>:
-    <b>if</b> (<b>exists</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia)) {
-        // Borrow a mutable reference <b>to</b> it.
-        <b>let</b> incentive_parameters =
-            <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia);
-        // Update its fields accordingly.
-        incentive_parameters.utility_coin_type_info =
-            <a href="_type_of">type_info::type_of</a>&lt;UtilityCoinType&gt;();
-        incentive_parameters.market_registration_fee =
-            *market_registration_fee_ref;
-        incentive_parameters.custodian_registration_fee =
-            *custodian_registration_fee_ref;
-        incentive_parameters.taker_fee_divisor =
-            *taker_fee_divisor_ref;
-        incentive_parameters.integrator_fee_store_tiers =
-            integrator_fee_store_tiers;
-    } <b>else</b> { // If resource not at Econia <a href="">account</a>:
-        // Move one <b>to</b> it <b>with</b> given values
-        <b>move_to</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(econia, <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>{
-            utility_coin_type_info: <a href="_type_of">type_info::type_of</a>&lt;UtilityCoinType&gt;(),
-            market_registration_fee: *market_registration_fee_ref,
-            custodian_registration_fee: *custodian_registration_fee_ref,
-            taker_fee_divisor: *taker_fee_divisor_ref,
-            integrator_fee_store_tiers
-        });
-    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs"></a>
+
+## Function `set_incentive_parameters_range_check_inputs`
+
+Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
+
+
+<a name="@Parameters_13"></a>
+
+### Parameters
+
+* <code>econia</code>: Econia account <code><a href="">signer</a></code>.
+* <code>market_registration_fee_ref</code>: Immutable reference to market
+registration fee to set.
+* <code>custodian_registration_fee_ref</code>: Immutable reference to
+custodian registration fee to set.
+* <code>taker_fee_divisor_ref</code>: Immutable reference to
+taker fee divisor to set.
+* <code>integrator_fee_store_tiers_ref</code>: Immutable reference to
+0-indexed vector of 3-element vectors, with each 3-element
+vector containing fields for a corresponding
+<code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
+
+
+<a name="@Abort_conditions_14"></a>
+
+### Abort conditions
+
+* If <code>econia</code> is not Econia account.
+* If <code>market_registration_fee_ref</code> indicates fee that does not
+meet minimum threshold.
+* If <code>custodian_registration_fee_ref</code> indicates fee that does
+not meet minimum threshold.
+* If <code>taker_fee_divisor_ref</code> indicates divisor that does not
+meet minimum threshold.
+* If <code>integrator_fee_store_tiers_ref</code> indicates an empty vector.
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(econia: &<a href="">signer</a>, market_registration_fee_ref: &u64, custodian_registration_fee_ref: &u64, taker_fee_divisor_ref: &u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(
+    econia: &<a href="">signer</a>,
+    market_registration_fee_ref: &u64,
+    custodian_registration_fee_ref: &u64,
+    taker_fee_divisor_ref: &u64,
+    integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
+) {
+    // Assert <a href="">signer</a> is from Econia <a href="">account</a>.
+    <b>assert</b>!(address_of(econia) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Assert market registration fee meets minimum threshold.
+    <b>assert</b>!(*market_registration_fee_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>,
+        <a href="incentives.md#0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN">E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN</a>);
+    // Assert custodian registration fee meets minimum threshold.
+    <b>assert</b>!(*custodian_registration_fee_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>,
+        <a href="incentives.md#0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN">E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN</a>);
+    // Assert taker fee divisor is meets minimum threshold.
+    <b>assert</b>!(*taker_fee_divisor_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_DIVISOR">MIN_DIVISOR</a>,
+        <a href="incentives.md#0xc0deb00c_incentives_E_DIVISOR_LESS_THAN_MIN">E_DIVISOR_LESS_THAN_MIN</a>);
+    // Assert integrator fee store parameters <a href="">vector</a> not empty.
+    <b>assert</b>!(!<a href="_is_empty">vector::is_empty</a>(integrator_fee_store_tiers_ref),
+        <a href="incentives.md#0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS">E_EMPTY_FEE_STORE_TIERS</a>);
 }
 </code></pre>
 

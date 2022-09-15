@@ -14,6 +14,13 @@ Incentive-associated parameters and data structures.
 -  [Struct `IntegratorFeeStoreTierParameters`](#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters)
 -  [Resource `UtilityCoinStore`](#0xc0deb00c_incentives_UtilityCoinStore)
 -  [Constants](#@Constants_0)
+-  [Function `get_taker_fee_divisor`](#0xc0deb00c_incentives_get_taker_fee_divisor)
+-  [Function `get_custodian_registration_fee`](#0xc0deb00c_incentives_get_custodian_registration_fee)
+-  [Function `get_market_registration_fee`](#0xc0deb00c_incentives_get_market_registration_fee)
+-  [Function `is_utility_coin_type`](#0xc0deb00c_incentives_is_utility_coin_type)
+-  [Function `verify_utility_coin_type`](#0xc0deb00c_incentives_verify_utility_coin_type)
+-  [Function `update_incentives`](#0xc0deb00c_incentives_update_incentives)
+-  [Function `init_incentives`](#0xc0deb00c_incentives_init_incentives)
 -  [Function `init_fee_account`](#0xc0deb00c_incentives_init_fee_account)
     -  [Parameters](#@Parameters_1)
     -  [Returns](#@Returns_2)
@@ -392,6 +399,16 @@ than the indicated taker fee divisor.
 
 
 
+<a name="0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE"></a>
+
+When type is not the utility coin type.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE">E_INVALID_UTILITY_COIN_TYPE</a>: u64 = 12;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN"></a>
 
 When market registration fee is less than the minimum.
@@ -515,6 +532,218 @@ Index of withdrawal fee in vectorized representation of an
 </code></pre>
 
 
+
+<a name="0xc0deb00c_incentives_get_taker_fee_divisor"></a>
+
+## Function `get_taker_fee_divisor`
+
+Return taker fee divisor.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">get_taker_fee_divisor</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">get_taker_fee_divisor</a>():
+u64
+<b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
+    <b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).taker_fee_divisor
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_get_custodian_registration_fee"></a>
+
+## Function `get_custodian_registration_fee`
+
+Return custodian registration fee.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_custodian_registration_fee">get_custodian_registration_fee</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_custodian_registration_fee">get_custodian_registration_fee</a>():
+u64
+<b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
+    <b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).custodian_registration_fee
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_get_market_registration_fee"></a>
+
+## Function `get_market_registration_fee`
+
+Return market registration fee.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">get_market_registration_fee</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">get_market_registration_fee</a>():
+u64
+<b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
+    <b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).market_registration_fee
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_is_utility_coin_type"></a>
+
+## Function `is_utility_coin_type`
+
+Return <code><b>true</b></code> if <code>T</code> is the utility coin type.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_is_utility_coin_type">is_utility_coin_type</a>&lt;T&gt;(): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_is_utility_coin_type">is_utility_coin_type</a>&lt;T&gt;():
+bool
+<b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
+    <a href="_type_of">type_info::type_of</a>&lt;T&gt;() ==
+        <b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).utility_coin_type_info
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_verify_utility_coin_type"></a>
+
+## Function `verify_utility_coin_type`
+
+Assert <code>T</code> is utility coin type.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_verify_utility_coin_type">verify_utility_coin_type</a>&lt;T&gt;()
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_verify_utility_coin_type">verify_utility_coin_type</a>&lt;T&gt;()
+<b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
+    <b>assert</b>!(<a href="incentives.md#0xc0deb00c_incentives_is_utility_coin_type">is_utility_coin_type</a>&lt;T&gt;(), <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE">E_INVALID_UTILITY_COIN_TYPE</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_update_incentives"></a>
+
+## Function `update_incentives`
+
+Wrapped call to <code>set_incentives()</code>, when calling after
+initialization.
+
+Accepts same arguments as <code>set_incentives()</code>, but pass-by-value
+instead of pass-by-reference.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_update_incentives">update_incentives</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers: <a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_update_incentives">update_incentives</a>&lt;UtilityCoinType&gt;(
+    econia: &<a href="">signer</a>,
+    market_registration_fee: u64,
+    custodian_registration_fee: u64,
+    taker_fee_divisor: u64,
+    integrator_fee_store_tiers: <a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
+) <b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
+{
+    <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia,
+        &market_registration_fee, &custodian_registration_fee,
+        &taker_fee_divisor, &integrator_fee_store_tiers, &<b>true</b>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_init_incentives"></a>
+
+## Function `init_incentives`
+
+Wrapped call to <code>set_incentives()</code>, when calling for the first
+time.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_incentives">init_incentives</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee_ref: &u64, custodian_registration_fee_ref: &u64, taker_fee_divisor_ref: &u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_incentives">init_incentives</a>&lt;UtilityCoinType&gt;(
+    econia: &<a href="">signer</a>,
+    market_registration_fee_ref: &u64,
+    custodian_registration_fee_ref: &u64,
+    taker_fee_divisor_ref: &u64,
+    integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
+) <b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
+{
+    <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia,
+        market_registration_fee_ref, custodian_registration_fee_ref,
+        taker_fee_divisor_ref, integrator_fee_store_tiers_ref, &<b>false</b>);
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_incentives_init_fee_account"></a>
 

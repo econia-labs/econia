@@ -140,6 +140,8 @@ module econia::incentives {
     const E_WITHDRAWAL_FEE_TOO_BIG: u64 = 10;
     /// When the indicated withdrawal fee is too small.
     const E_WITHDRAWAL_FEE_TOO_SMALL: u64 = 11;
+    /// When type is not the utility coin type.
+    const E_INVALID_UTILITY_COIN_TYPE: u64 = 12;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -165,6 +167,90 @@ module econia::incentives {
     const WITHDRAWAL_FEE_INDEX: u64 = 2;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return taker fee divisor.
+    public fun get_taker_fee_divisor():
+    u64
+    acquires IncentiveParameters {
+        borrow_global<IncentiveParameters>(@econia).taker_fee_divisor
+    }
+
+    /// Return custodian registration fee.
+    public fun get_custodian_registration_fee():
+    u64
+    acquires IncentiveParameters {
+        borrow_global<IncentiveParameters>(@econia).custodian_registration_fee
+    }
+
+    /// Return market registration fee.
+    public fun get_market_registration_fee():
+    u64
+    acquires IncentiveParameters {
+        borrow_global<IncentiveParameters>(@econia).market_registration_fee
+    }
+
+    /// Return `true` if `T` is the utility coin type.
+    public fun is_utility_coin_type<T>():
+    bool
+    acquires IncentiveParameters {
+        type_info::type_of<T>() ==
+            borrow_global<IncentiveParameters>(@econia).utility_coin_type_info
+    }
+
+    /// Assert `T` is utility coin type.
+    public fun verify_utility_coin_type<T>()
+    acquires IncentiveParameters {
+        assert!(is_utility_coin_type<T>(), E_INVALID_UTILITY_COIN_TYPE);
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Wrapped call to `set_incentives()`, when calling after
+    /// initialization.
+    ///
+    /// Accepts same arguments as `set_incentives()`, but pass-by-value
+    /// instead of pass-by-reference.
+    public entry fun update_incentives<UtilityCoinType>(
+        econia: &signer,
+        market_registration_fee: u64,
+        custodian_registration_fee: u64,
+        taker_fee_divisor: u64,
+        integrator_fee_store_tiers: vector<vector<u64>>
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters
+    {
+        set_incentive_parameters<UtilityCoinType>(econia,
+            &market_registration_fee, &custodian_registration_fee,
+            &taker_fee_divisor, &integrator_fee_store_tiers, &true);
+    }
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Wrapped call to `set_incentives()`, when calling for the first
+    /// time.
+    public(friend) fun init_incentives<UtilityCoinType>(
+        econia: &signer,
+        market_registration_fee_ref: &u64,
+        custodian_registration_fee_ref: &u64,
+        taker_fee_divisor_ref: &u64,
+        integrator_fee_store_tiers_ref: &vector<vector<u64>>
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters
+    {
+        set_incentive_parameters<UtilityCoinType>(econia,
+            market_registration_fee_ref, custodian_registration_fee_ref,
+            taker_fee_divisor_ref, integrator_fee_store_tiers_ref, &false);
+    }
+
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

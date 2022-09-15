@@ -130,8 +130,8 @@ module econia::incentives {
     const E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 5;
     /// When custodian registration fee is less than the minimum.
     const E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 6;
-    /// When a fee divisor is less than the minimum.
-    const E_DIVISOR_LESS_THAN_MIN: u64 = 7;
+    /// When taker fee divisor is less than the minimum.
+    const E_TAKER_DIVISOR_LESS_THAN_MIN: u64 = 7;
     /// When the wrong number of fields are passed for a given tier.
     const E_TIER_FIELDS_WRONG_LENGTH: u64 = 8;
     /// When the indicated tier activation fee is too small.
@@ -345,9 +345,13 @@ module econia::incentives {
     /// * If the withdrawal fee for a given tier does not meet minimum
     ///   threshold.
     ///
-    /// # Assumes
+    /// # Assumptions
+    /// * `taker_fee_divisor_ref` indicates a value that has already
+    ///   been range-checked.
     /// * An `IncentiveParameters` exists at the Econia account.
-    /// * `itegrator_fee_store_tiers_target_ref_mut` indicates an empty
+    /// * `integrator_fee_store_tiers_ref` does not indicate an empty
+    ///   vector.
+    /// * `integrator_fee_store_tiers_target_ref_mut` indicates an empty
     ///   vector.
     fun set_incentive_parameters_parse_tiers_vector(
         taker_fee_divisor_ref: &u64,
@@ -452,11 +456,13 @@ module econia::incentives {
             E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN);
         // Assert taker fee divisor is meets minimum threshold.
         assert!(*taker_fee_divisor_ref >= MIN_DIVISOR,
-            E_DIVISOR_LESS_THAN_MIN);
+            E_TAKER_DIVISOR_LESS_THAN_MIN);
         // Assert integrator fee store parameters vector not empty.
         assert!(!vector::is_empty(integrator_fee_store_tiers_ref),
             E_EMPTY_FEE_STORE_TIERS);
     }
+
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -467,16 +473,6 @@ module econia::incentives {
         account: &signer
     ) {
         init_fee_account(account); // Attempt invalid invocation.
-    }
-
-    #[test(account = @user)]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for attempting to initialize with non-coin type.
-    fun test_init_utility_coin_store_not_coin(
-        account: &signer
-    ) {
-        // Attempt invalid invocation.
-        init_utility_coin_store<IncentiveParameters>(account);
     }
 
     #[test(econia = @econia)]
@@ -492,6 +488,179 @@ module econia::incentives {
         init_utility_coin_store<QC>(&fee_account);
         // Assert a utility coin store exists under fee account.
         assert!(exists<UtilityCoinStore<QC>>(address_of(&fee_account)), 0);
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for attempting to initialize with non-coin type.
+    fun test_init_utility_coin_store_not_coin(
+        account: &signer
+    ) {
+        // Attempt invalid invocation.
+        init_utility_coin_store<IncentiveParameters>(account);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for activation fee too small on 0th tier.
+    fun test_sent_incentive_parameters_parse_tiers_vector_activation_0() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        // Divisor.
+        let tier_0 = vector::singleton(taker_fee_divisor + 1);
+        vector::push_back(&mut tier_0, 0); // Activation fee.
+        vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for activation fee too small on 1st tier.
+    fun test_sent_incentive_parameters_parse_tiers_vector_activation_1() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        // Divisor.
+        let tier_0 = vector::singleton(taker_fee_divisor + 2);
+        vector::push_back(&mut tier_0, 1); // Activation fee.
+        vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
+        // Divisor.
+        let tier_1 = vector::singleton(taker_fee_divisor + 1);
+        vector::push_back(&mut tier_1, 1); // Activation fee.
+        vector::push_back(&mut tier_1, HI_64 - 2); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for fee share divisor too big on 0th tier.
+    fun test_sent_incentive_parameters_parse_tiers_vector_divisor_big_0() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        let tier_0 = vector::singleton(HI_64); // Divisor.
+        vector::push_back(&mut tier_0, 0); // Activation fee.
+        vector::push_back(&mut tier_0, 0); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for fee share divisor too big on 1st tier.
+    fun test_sent_incentive_parameters_parse_tiers_vector_divisor_big_1() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        // Divisor.
+        let tier_0 = vector::singleton(taker_fee_divisor + 1);
+        vector::push_back(&mut tier_0, 1); // Activation fee.
+        vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
+        // Divisor.
+        let tier_1 = vector::singleton(taker_fee_divisor + 1);
+        vector::push_back(&mut tier_1, 2); // Activation fee.
+        vector::push_back(&mut tier_1, HI_64 - 2); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for fee share divisor too small.
+    fun test_sent_incentive_parameters_parse_tiers_vector_divisor_small() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        // Divisor.
+        let tier_0 = vector::singleton(taker_fee_divisor - 1);
+        vector::push_back(&mut tier_0, 0); // Activation fee.
+        vector::push_back(&mut tier_0, 0); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for withdrawal fee too big on 0th tier.
+    fun test_sent_incentive_parameters_parse_tiers_vector_withdraw_big_0() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        // Divisor.
+        let tier_0 = vector::singleton(taker_fee_divisor + 2);
+        vector::push_back(&mut tier_0, 1); // Activation fee.
+        vector::push_back(&mut tier_0, HI_64); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for withdrawal fee too big on 1st tier.
+    fun test_sent_incentive_parameters_parse_tiers_vector_withdraw_big_1() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        // Divisor.
+        let tier_0 = vector::singleton(taker_fee_divisor + 2);
+        vector::push_back(&mut tier_0, 1); // Activation fee.
+        vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
+        // Divisor.
+        let tier_1 = vector::singleton(taker_fee_divisor + 1);
+        vector::push_back(&mut tier_1, 2); // Activation fee.
+        vector::push_back(&mut tier_1, HI_64 - 1); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for withdrawal fee too small.
+    fun test_sent_incentive_parameters_parse_tiers_vector_withdraw_small() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        // Divisor.
+        let tier_0 = vector::singleton(taker_fee_divisor + 1);
+        vector::push_back(&mut tier_0, 1); // Activation fee.
+        vector::push_back(&mut tier_0, 0); // Withdrawal fee.
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for wrong length of inner vector.
+    fun test_sent_incentive_parameters_parse_tiers_vector_wrong_length() {
+        // Declare mock inputs.
+        let taker_fee_divisor = 2345;
+        let integrator_fee_store_tiers = vector::singleton(vector::empty());
+        let integrator_fee_store_tiers_target = vector::empty();
+        set_incentive_parameters_parse_tiers_vector(
+            &taker_fee_divisor, &integrator_fee_store_tiers,
+            &mut integrator_fee_store_tiers_target);
     }
 
     #[test(econia = @econia)]

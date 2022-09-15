@@ -29,7 +29,7 @@ Incentive-associated parameters and data structures.
     -  [Assumptions](#@Assumptions_10)
 -  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
     -  [Abort conditions](#@Abort_conditions_11)
-    -  [Assumes](#@Assumes_12)
+    -  [Assumptions](#@Assumptions_12)
 -  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
     -  [Parameters](#@Parameters_13)
     -  [Abort conditions](#@Abort_conditions_14)
@@ -361,16 +361,6 @@ When custodian registration fee is less than the minimum.
 
 
 
-<a name="0xc0deb00c_incentives_E_DIVISOR_LESS_THAN_MIN"></a>
-
-When a fee divisor is less than the minimum.
-
-
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_DIVISOR_LESS_THAN_MIN">E_DIVISOR_LESS_THAN_MIN</a>: u64 = 7;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS"></a>
 
 When passed fee store tiers vector is empty.
@@ -418,6 +408,16 @@ When type does not correspond to an initialized coin.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_NOT_COIN">E_NOT_COIN</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_E_TAKER_DIVISOR_LESS_THAN_MIN"></a>
+
+When taker fee divisor is less than the minimum.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TAKER_DIVISOR_LESS_THAN_MIN">E_TAKER_DIVISOR_LESS_THAN_MIN</a>: u64 = 7;
 </code></pre>
 
 
@@ -802,12 +802,16 @@ to parse into.
 threshold.
 
 
-<a name="@Assumes_12"></a>
+<a name="@Assumptions_12"></a>
 
-### Assumes
+### Assumptions
 
+* <code>taker_fee_divisor_ref</code> indicates a value that has already
+been range-checked.
 * An <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code> exists at the Econia account.
-* <code>itegrator_fee_store_tiers_target_ref_mut</code> indicates an empty
+* <code>integrator_fee_store_tiers_ref</code> does not indicate an empty
+vector.
+* <code>integrator_fee_store_tiers_target_ref_mut</code> indicates an empty
 vector.
 
 
@@ -951,7 +955,7 @@ meet minimum threshold.
         <a href="incentives.md#0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN">E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN</a>);
     // Assert taker fee divisor is meets minimum threshold.
     <b>assert</b>!(*taker_fee_divisor_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_DIVISOR">MIN_DIVISOR</a>,
-        <a href="incentives.md#0xc0deb00c_incentives_E_DIVISOR_LESS_THAN_MIN">E_DIVISOR_LESS_THAN_MIN</a>);
+        <a href="incentives.md#0xc0deb00c_incentives_E_TAKER_DIVISOR_LESS_THAN_MIN">E_TAKER_DIVISOR_LESS_THAN_MIN</a>);
     // Assert integrator fee store parameters <a href="">vector</a> not empty.
     <b>assert</b>!(!<a href="_is_empty">vector::is_empty</a>(integrator_fee_store_tiers_ref),
         <a href="incentives.md#0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS">E_EMPTY_FEE_STORE_TIERS</a>);

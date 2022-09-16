@@ -105,7 +105,7 @@ module econia::incentives {
         withdrawal_fee: u64
     }
 
-    /// Container for utility coin fees charged by Econia.
+    /// Container for utility coin fees collected by Econia.
     struct UtilityCoinStore<phantom CoinType> has key {
         /// Coins collected as utility fees.
         utility_coins: Coin<CoinType>
@@ -170,13 +170,6 @@ module econia::incentives {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return taker fee divisor.
-    public fun get_taker_fee_divisor():
-    u64
-    acquires IncentiveParameters {
-        borrow_global<IncentiveParameters>(@econia).taker_fee_divisor
-    }
-
     /// Return custodian registration fee.
     public fun get_custodian_registration_fee():
     u64
@@ -184,11 +177,52 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).custodian_registration_fee
     }
 
+    /// Return fee share divisor for tier indicated by `tier_ref`.
+    public fun get_fee_share_divisor(
+        tier_ref: &u64
+    ): u64
+    acquires IncentiveParameters {
+        vector::borrow(&borrow_global<IncentiveParameters>(@econia).
+            integrator_fee_store_tiers, *tier_ref).fee_share_divisor
+    }
+
     /// Return market registration fee.
     public fun get_market_registration_fee():
     u64
     acquires IncentiveParameters {
         borrow_global<IncentiveParameters>(@econia).market_registration_fee
+    }
+
+    /// Return number of fee store tiers.
+    public fun get_n_fee_store_tiers():
+    u64
+    acquires IncentiveParameters {
+        vector::length(&borrow_global<IncentiveParameters>(@econia).
+            integrator_fee_store_tiers)
+    }
+    /// Return taker fee divisor.
+    public fun get_taker_fee_divisor():
+    u64
+    acquires IncentiveParameters {
+        borrow_global<IncentiveParameters>(@econia).taker_fee_divisor
+    }
+
+    /// Return tier activation fee for tier indicated by `tier_ref`.
+    public fun get_tier_activation_fee(
+        tier_ref: &u64
+    ): u64
+    acquires IncentiveParameters {
+        vector::borrow(&borrow_global<IncentiveParameters>(@econia).
+            integrator_fee_store_tiers, *tier_ref).tier_activation_fee
+    }
+
+    /// Return withdrawal fee for tier indicated by `tier_ref`.
+    public fun get_withdrawal_fee(
+        tier_ref: &u64
+    ): u64
+    acquires IncentiveParameters {
+        vector::borrow(&borrow_global<IncentiveParameters>(@econia).
+            integrator_fee_store_tiers, *tier_ref).withdrawal_fee
     }
 
     /// Return `true` if `T` is the utility coin type.
@@ -338,10 +372,12 @@ module econia::incentives {
     ///   first time.
     ///
     /// # Assumptions
-    /// * If `updating_ref` is `&true`, an `IncentiveParameters`
-    ///   already exists at the Econia account.
-    /// * If `updating_ref` is `&false`, an `IncentiveParameters`
-    ///   does not exist at the Econia account.
+    /// * If `updating_ref` is `&true`, an `IncentiveParameters` and a
+    ///   `FeeAccountSignerCapabilityStore` already exist at the Econia
+    ///   account.
+    /// * If `updating_ref` is `&false`, neither an
+    ///   `IncentiveParameters` nor a `FeeAccountSignerCapabilityStore`
+    ///   exist at the Econia account.
     fun set_incentive_parameters<UtilityCoinType>(
         econia: &signer,
         market_registration_fee_ref: &u64,
@@ -357,14 +393,13 @@ module econia::incentives {
         set_incentive_parameters_range_check_inputs(econia,
             market_registration_fee_ref, custodian_registration_fee_ref,
             taker_fee_divisor_ref, integrator_fee_store_tiers_ref);
-        // Get fee account signer: if capability store exists,
-        let fee_account = if (exists<FeeAccountSignerCapabilityStore>(@econia))
-            // Create a signer from the capability within.
+        // Get fee account signer: if not updating previously-set
+        // values, initialize a fee account, storing generated signer.
+        let fee_account = if (!*updating_ref) init_fee_account(econia) else
+            // Otherwise get fee account signer from stored capability.
             account::create_signer_with_capability(
                 &borrow_global<FeeAccountSignerCapabilityStore>(@econia).
-                    fee_account_signer_capability) else
-            // Otherwise create a signer by initializing fee account.
-            init_fee_account(econia);
+                    fee_account_signer_capability);
         // Initialize a utility coin store under the fee acount (aborts
         // if not an initialized coin type).
         init_utility_coin_store<UtilityCoinType>(&fee_account);

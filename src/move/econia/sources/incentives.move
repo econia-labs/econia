@@ -15,7 +15,7 @@ module econia::incentives {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::assets::{Self, QC};
+    use econia::assets::{Self, BC, QC};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -584,6 +584,50 @@ module econia::incentives {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    const MARKET_REGISTRATION_FEE: u64 = 1000;
+    #[test_only]
+    const CUSTODIAN_REGISTRATION_FEE: u64 = 100;
+    #[test_only]
+    const TAKER_FEE_DIVISOR: u64 = 2000;
+    #[test_only]
+    const FEE_SHARE_DIVISOR_0: u64 = 4000;
+    #[test_only]
+    const TIER_ACTIVATION_FEE_0: u64 = 150;
+    #[test_only]
+    const WITHDRAWAL_FEE_0: u64 = 10;
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Initialize incentives using test-only constants.
+    fun init_incentives_test()
+    acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters
+    {
+        // Get signer for Econia account.
+        let econia = account::create_signer_with_capability(
+            &account::create_test_signer_cap(@econia));
+        // Initialize coin types.
+        assets::init_coin_types(&econia);
+        // Vectorize fee store tier parameters.
+        let tier_0 = vector::singleton(FEE_SHARE_DIVISOR_0);
+        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
+        vector::push_back(&mut tier_0, WITHDRAWAL_FEE_0);
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        // Initialize incentives.
+        init_incentives<QC>(&econia, &MARKET_REGISTRATION_FEE,
+            &CUSTODIAN_REGISTRATION_FEE, &TAKER_FEE_DIVISOR,
+            &integrator_fee_store_tiers);
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test(account = @user)]
@@ -593,6 +637,81 @@ module econia::incentives {
         account: &signer
     ) {
         init_fee_account(account); // Attempt invalid invocation.
+    }
+
+    #[test(econia = @econia)]
+    /// Verify initializing, updating, and getting incentive parameters.
+    fun test_init_update_get_incentives(
+        econia: &signer
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters
+    {
+        assets::init_coin_types(econia); // Init coin types.
+        // Declare incentive parameters.
+        let market_registration_fee = 123;
+        let custodian_registration_fee = 456;
+        let taker_fee_divisor = 789;
+        let fee_share_divisor_0 = 1234;
+        let tier_activation_fee_0 = 2345;
+        let withdrawal_fee_0 = 3456;
+        let fee_share_divisor_1 = fee_share_divisor_0 - 1;
+        let tier_activation_fee_1 = tier_activation_fee_0 + 1;
+        let withdrawal_fee_1 = tier_activation_fee_0 - 1;
+        // Vectorize fee store tier parameters.
+        let tier_0 = vector::singleton(fee_share_divisor_0);
+        vector::push_back(&mut tier_0, tier_activation_fee_0);
+        vector::push_back(&mut tier_0, withdrawal_fee_0);
+        let tier_1 = vector::singleton(fee_share_divisor_1);
+        vector::push_back(&mut tier_1, tier_activation_fee_1);
+        vector::push_back(&mut tier_1, withdrawal_fee_1);
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
+        // Initialize incentives.
+        init_incentives<QC>(econia, &market_registration_fee,
+            &custodian_registration_fee, &taker_fee_divisor,
+            &integrator_fee_store_tiers);
+        // Assert state.
+        verify_utility_coin_type<QC>();
+        assert!(!is_utility_coin_type<BC>(), 0);
+        assert!(get_market_registration_fee() == market_registration_fee, 0);
+        assert!(get_custodian_registration_fee() ==
+            custodian_registration_fee, 0);
+        assert!(get_taker_fee_divisor() == taker_fee_divisor, 0);
+        assert!(get_n_fee_store_tiers() == 2, 0);
+        assert!(get_fee_share_divisor(&0) == fee_share_divisor_0, 0);
+        assert!(get_tier_activation_fee(&0) == tier_activation_fee_0, 0);
+        assert!(get_withdrawal_fee(&0) == withdrawal_fee_0, 0);
+        assert!(get_fee_share_divisor(&1) == fee_share_divisor_1, 0);
+        assert!(get_tier_activation_fee(&1) == tier_activation_fee_1, 0);
+        assert!(get_withdrawal_fee(&1) == withdrawal_fee_1, 0);
+        // Update incentive parameters, now with just 1 tier.
+        market_registration_fee = market_registration_fee + 5;
+        custodian_registration_fee = custodian_registration_fee + 5;
+        taker_fee_divisor = taker_fee_divisor + 5;
+        fee_share_divisor_0 = fee_share_divisor_0 + 5;
+        tier_activation_fee_0 = tier_activation_fee_0 + 5;
+        withdrawal_fee_0 = tier_activation_fee_0 + 5;
+        // Vectorize fee store tier parameters.
+        tier_0 = vector::singleton(fee_share_divisor_0);
+        vector::push_back(&mut tier_0, tier_activation_fee_0);
+        vector::push_back(&mut tier_0, withdrawal_fee_0);
+        integrator_fee_store_tiers = vector::singleton(tier_0);
+        // Update incentives.
+        update_incentives<BC>(econia, market_registration_fee,
+            custodian_registration_fee, taker_fee_divisor,
+            integrator_fee_store_tiers);
+        // Assert state.
+        verify_utility_coin_type<BC>();
+        assert!(!is_utility_coin_type<QC>(), 0);
+        assert!(get_market_registration_fee() == market_registration_fee, 0);
+        assert!(get_custodian_registration_fee() ==
+            custodian_registration_fee, 0);
+        assert!(get_taker_fee_divisor() == taker_fee_divisor, 0);
+        assert!(get_n_fee_store_tiers() == 1, 0);
+        assert!(get_fee_share_divisor(&0) == fee_share_divisor_0, 0);
+        assert!(get_tier_activation_fee(&0) == tier_activation_fee_0, 0);
+        assert!(get_withdrawal_fee(&0) == withdrawal_fee_0, 0);
     }
 
     #[test(econia = @econia)]
@@ -836,6 +955,18 @@ module econia::incentives {
         // Attempt invalid invocation.
         set_incentive_parameters_range_check_inputs(account, &0, &0, &0,
             &vector::empty());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for wrong type.
+    fun test_verify_utility_coin_type()
+    acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters
+    {
+        init_incentives_test(); // Initialize incentives for testing.
+        verify_utility_coin_type<BC>(); // Attempt invalid invocation.
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

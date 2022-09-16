@@ -68,7 +68,18 @@ git_log_one_line() {git log --oneline --max-count=1}
 init_econia() {
     aptos move run \
         --function-id 0x$addr::registry::init_registry \
-        --private-key-file $keyfile > /dev/null
+        --private-key-file $keyfile
+}
+
+# Publish to either a temporary devnet address or an official devnet
+# address
+#
+# Should be run from inside Move package directory.
+publish() {
+    clear # Clear terminal for ease of printout review
+    # If publishing to temporary address, generate one first
+    if test $1 = temp; then generate_temporary_devnet_address; fi
+    publish_from_keyfile $1 # Publish from keyfile accordingly
 }
 
 # Publish bytecode to blockchain, via keyfile flag
@@ -80,14 +91,15 @@ publish_from_keyfile() {
     # Substitute named address in Move.toml
     substitute_econia_address $addr
     # Fund the account
-    aptos account fund-with-faucet --account $addr > /dev/null
+    aptos account fund-with-faucet \
+        --account $addr > /dev/null \
+        --amount 100000
     # Publish the package
     aptos move publish \
         --private-key-file $keyfile \
         --override-size-check \
         --included-artifacts none \
-        --max-gas 5000 \
-        > /dev/null
+        --max-gas 5000
     init_econia # Run the initialization function
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr
@@ -182,13 +194,10 @@ elif test $1 = pc; then
     substitute_econia_address official # Substitute official address
 
 # Publish bytecode using official devnet address
-elif test $1 = po; then publish_from_keyfile official
+elif test $1 = po; then publish official
 
 # Publish bytecode using a temporary devnet address
-elif test $1 = pt; then
-    generate_temporary_devnet_address # Generate a new temporary address
-    # Publish from temporary keyfile
-    publish_from_keyfile temp
+elif test $1 = pt; then publish temp
 
 # Update devnet revision hash in Move.toml
 elif test $1 = r; then

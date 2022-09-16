@@ -15,6 +15,7 @@ Incentive-associated parameters and data structures.
 -  [Resource `UtilityCoinStore`](#0xc0deb00c_incentives_UtilityCoinStore)
 -  [Constants](#@Constants_0)
 -  [Function `get_custodian_registration_fee`](#0xc0deb00c_incentives_get_custodian_registration_fee)
+-  [Function `get_fee_account_address`](#0xc0deb00c_incentives_get_fee_account_address)
 -  [Function `get_fee_share_divisor`](#0xc0deb00c_incentives_get_fee_share_divisor)
 -  [Function `get_market_registration_fee`](#0xc0deb00c_incentives_get_market_registration_fee)
 -  [Function `get_n_fee_store_tiers`](#0xc0deb00c_incentives_get_n_fee_store_tiers)
@@ -23,7 +24,10 @@ Incentive-associated parameters and data structures.
 -  [Function `get_withdrawal_fee`](#0xc0deb00c_incentives_get_withdrawal_fee)
 -  [Function `is_utility_coin_type`](#0xc0deb00c_incentives_is_utility_coin_type)
 -  [Function `verify_utility_coin_type`](#0xc0deb00c_incentives_verify_utility_coin_type)
+-  [Function `withdraw_utility_coins`](#0xc0deb00c_incentives_withdraw_utility_coins)
+-  [Function `withdraw_utility_coins_all`](#0xc0deb00c_incentives_withdraw_utility_coins_all)
 -  [Function `update_incentives`](#0xc0deb00c_incentives_update_incentives)
+-  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
 -  [Function `init_incentives`](#0xc0deb00c_incentives_init_incentives)
 -  [Function `init_fee_account`](#0xc0deb00c_incentives_init_fee_account)
     -  [Parameters](#@Parameters_1)
@@ -564,6 +568,35 @@ u64
 
 </details>
 
+<a name="0xc0deb00c_incentives_get_fee_account_address"></a>
+
+## Function `get_fee_account_address`
+
+Return fee account address.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>(): <b>address</b>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>():
+<b>address</b>
+<b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a> {
+    <a href="_get_signer_capability_address">account::get_signer_capability_address</a>(
+        &<b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>&gt;(@econia).
+            fee_account_signer_capability)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_incentives_get_fee_share_divisor"></a>
 
 ## Function `get_fee_share_divisor`
@@ -787,6 +820,79 @@ Assert <code>T</code> is utility coin type.
 
 </details>
 
+<a name="0xc0deb00c_incentives_withdraw_utility_coins"></a>
+
+## Function `withdraw_utility_coins`
+
+Withdraw <code>amount</code> of utility coins from the <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>,
+aborting if <code><a href="">account</a></code> is not Econia.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins">withdraw_utility_coins</a>&lt;UtilityCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins">withdraw_utility_coins</a>&lt;UtilityCoinType&gt;(
+    <a href="">account</a>: &<a href="">signer</a>,
+    amount: u64
+): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+<b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
+{
+    // Assert <a href="">account</a> is Econia.
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    <a href="_extract">coin::extract</a>( // Extract indicated amount of coins.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
+        <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).utility_coins, amount)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_withdraw_utility_coins_all"></a>
+
+## Function `withdraw_utility_coins_all`
+
+Withdraw all utility coins from the <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>, aborting
+if <code><a href="">account</a></code> is not Econia.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>&lt;UtilityCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>&lt;UtilityCoinType&gt;(
+    <a href="">account</a>: &<a href="">signer</a>
+): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+<b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
+{
+    // Assert <a href="">account</a> is Econia.
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    <a href="_extract_all">coin::extract_all</a>( // Extract all coins.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
+        <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).utility_coins)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_incentives_update_incentives"></a>
 
 ## Function `update_incentives`
@@ -820,6 +926,37 @@ instead of pass-by-reference.
     <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia,
         &market_registration_fee, &custodian_registration_fee,
         &taker_fee_divisor, &integrator_fee_store_tiers, &<b>true</b>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_deposit_utility_coins"></a>
+
+## Function `deposit_utility_coins`
+
+Deposit <code>coins</code> to a <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>&lt;UtilityCoinType&gt;(coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>&lt;UtilityCoinType&gt;(
+    coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+) <b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
+{
+    <a href="_merge">coin::merge</a>(&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
+        <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).utility_coins, coins);
 }
 </code></pre>
 

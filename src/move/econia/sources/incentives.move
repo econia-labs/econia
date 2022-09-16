@@ -176,6 +176,15 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).custodian_registration_fee
     }
 
+    /// Return fee account address.
+    public fun get_fee_account_address():
+    address
+    acquires FeeAccountSignerCapabilityStore {
+        account::get_signer_capability_address(
+            &borrow_global<FeeAccountSignerCapabilityStore>(@econia).
+                fee_account_signer_capability)
+    }
+
     /// Return fee share divisor for tier indicated by `tier_ref`.
     public fun get_fee_share_divisor(
         tier_ref: &u64
@@ -238,6 +247,39 @@ module econia::incentives {
         assert!(is_utility_coin_type<T>(), E_INVALID_UTILITY_COIN_TYPE);
     }
 
+    /// Withdraw `amount` of utility coins from the `UtilityCoinStore`,
+    /// aborting if `account` is not Econia.
+    public fun withdraw_utility_coins<UtilityCoinType>(
+        account: &signer,
+        amount: u64
+    ): coin::Coin<UtilityCoinType>
+    acquires
+        FeeAccountSignerCapabilityStore,
+        UtilityCoinStore
+    {
+        // Assert account is Econia.
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        coin::extract( // Extract indicated amount of coins.
+            &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
+            get_fee_account_address()).utility_coins, amount)
+    }
+
+    /// Withdraw all utility coins from the `UtilityCoinStore`, aborting
+    /// if `account` is not Econia.
+    public fun withdraw_utility_coins_all<UtilityCoinType>(
+        account: &signer
+    ): coin::Coin<UtilityCoinType>
+    acquires
+        FeeAccountSignerCapabilityStore,
+        UtilityCoinStore
+    {
+        // Assert account is Econia.
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        coin::extract_all( // Extract all coins.
+            &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
+            get_fee_account_address()).utility_coins)
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -265,6 +307,17 @@ module econia::incentives {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Deposit `coins` to a `UtilityCoinStore`.
+    public(friend) fun deposit_utility_coins<UtilityCoinType>(
+        coins: coin::Coin<UtilityCoinType>
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        UtilityCoinStore
+    {
+        coin::merge(&mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
+            get_fee_account_address()).utility_coins, coins);
+    }
 
     /// Wrapped call to `set_incentives()`, when calling for the first
     /// time.
@@ -629,6 +682,28 @@ module econia::incentives {
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test(econia = @econia)]
+    /// Verify deposit and withdrawal of utility coins.
+    fun test_deposit_withdraw_utility_coins(
+        econia: &signer
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        UtilityCoinStore
+    {
+        init_incentives_test(); // Initialize incentives.
+        // Deposit utility coins.
+        deposit_utility_coins(assets::mint_test<UC>(100));
+        // Withdraw some utility coins.
+        let coins = withdraw_utility_coins<UC>(econia, 40);
+        assert!(coin::value(&coins) == 40, 0); // Assert value.
+        assets::burn(coins); // Burn coins
+        // Withdraw all utility coins
+        coins = withdraw_utility_coins_all<UC>(econia);
+        assert!(coin::value(&coins) == 60, 0); // Assert value.
+        assets::burn(coins); // Burn coins
+    }
+
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for non-Econia caller.
@@ -684,6 +759,7 @@ module econia::incentives {
         assert!(get_fee_share_divisor(&1) == fee_share_divisor_1, 0);
         assert!(get_tier_activation_fee(&1) == tier_activation_fee_1, 0);
         assert!(get_withdrawal_fee(&1) == withdrawal_fee_1, 0);
+        assert!(exists<UtilityCoinStore<UC>>(get_fee_account_address()), 0);
         // Update incentive parameters, now with just 1 tier.
         market_registration_fee = market_registration_fee + 5;
         custodian_registration_fee = custodian_registration_fee + 5;
@@ -711,6 +787,7 @@ module econia::incentives {
         assert!(get_fee_share_divisor(&0) == fee_share_divisor_0, 0);
         assert!(get_tier_activation_fee(&0) == tier_activation_fee_0, 0);
         assert!(get_withdrawal_fee(&0) == withdrawal_fee_0, 0);
+        assert!(exists<UtilityCoinStore<QC>>(get_fee_account_address()), 0);
     }
 
     #[test(econia = @econia)]
@@ -954,6 +1031,34 @@ module econia::incentives {
         // Attempt invalid invocation.
         set_incentive_parameters_range_check_inputs(account, &0, &0, &0,
             &vector::empty());
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for account is not Econia.
+    fun test_withdraw_utility_coins_not_econia(
+        account: &signer
+    ): coin::Coin<UC>
+    acquires
+        FeeAccountSignerCapabilityStore,
+        UtilityCoinStore
+    {
+        // Attempt invalid invocation.
+        withdraw_utility_coins<UC>(account, 1234)
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for account is not Econia.
+    fun test_withdraw_utility_coins_all_not_econia(
+        account: &signer
+    ): coin::Coin<UC>
+    acquires
+        FeeAccountSignerCapabilityStore,
+        UtilityCoinStore
+    {
+        // Attempt invalid invocation.
+        withdraw_utility_coins_all<UC>(account)
     }
 
     #[test]

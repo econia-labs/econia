@@ -48,10 +48,10 @@ Incentive-associated parameters and data structures.
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
 <b>use</b> <a href="">0x1::coin</a>;
-<b>use</b> <a href="">0x1::iterable_table</a>;
 <b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="">0x1::vector</a>;
+<b>use</b> <a href="table_list.md#0xc0deb00c_table_list">0xc0deb00c::table_list</a>;
 </code></pre>
 
 
@@ -75,7 +75,7 @@ reserved for Econia.
 
 <dl>
 <dt>
-<code>map: <a href="_IterableTable">iterable_table::IterableTable</a>&lt;u64, <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;&gt;</code>
+<code>map: <a href="table_list.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;u64, <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;&gt;</code>
 </dt>
 <dd>
  Map from market ID to fees collected for given market,
@@ -229,7 +229,7 @@ All of an integrator's <code>IntregratorFeeStore</code>s for given
 
 <dl>
 <dt>
-<code>map: <a href="_IterableTable">iterable_table::IterableTable</a>&lt;u64, <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">incentives::IntegratorFeeStore</a>&lt;QuoteCoinType&gt;&gt;</code>
+<code>map: <a href="table_list.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;u64, <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">incentives::IntegratorFeeStore</a>&lt;QuoteCoinType&gt;&gt;</code>
 </dt>
 <dd>
  Map from market ID to <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code>, enabling

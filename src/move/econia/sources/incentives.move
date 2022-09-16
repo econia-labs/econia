@@ -5,8 +5,8 @@ module econia::incentives {
 
     use aptos_framework::account::{Self, SignerCapability};
     use aptos_framework::coin::{Self, Coin};
-    use aptos_std::iterable_table;
     use aptos_std::type_info;
+    use econia::table_list::{TableList};
     use std::signer::address_of;
     use std::vector;
 
@@ -26,7 +26,7 @@ module econia::incentives {
     struct EconiaFeeStore<phantom QuoteCoinType> has key {
         /// Map from market ID to fees collected for given market,
         /// enabling duplicate checks and interable indexing.
-        map: iterable_table::IterableTable<u64, Coin<QuoteCoinType>>
+        map: TableList<u64, Coin<QuoteCoinType>>
     }
 
     /// Stores a signing capability for the resource account where
@@ -72,8 +72,7 @@ module econia::incentives {
     struct IntegratorFeeStores<phantom QuoteCoinType> has key {
         /// Map from market ID to `IntegratorFeeStore`, enabling
         /// duplicate checks and iterable indexing.
-        map: iterable_table::
-            IterableTable<u64, IntegratorFeeStore<QuoteCoinType>>
+        map: TableList<u64, IntegratorFeeStore<QuoteCoinType>>
     }
 
     /// Integrator fee store tier parameters for a given tier.

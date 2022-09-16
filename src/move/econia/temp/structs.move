@@ -188,18 +188,25 @@ module econia::structs {
 
     // market.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Emitted when a maker order is added to or cancelled from an
-    /// `OrderBook`.
+    /// Emitted when a maker order is placed or cancelled.
     struct MakerEvent has drop, store {
         /// `CANCEL` or `PLACE`.
         type: bool,
         /// `ASK` or `BID`.
         side: bool,
-        /// Size, in lots, of the order at the time of cancellation or
-        /// placement.
+        /// Size, in lots, of the order at the time of placement or
+        /// cancellation.
         size: u64,
-        /// Price, in ticks per lot, of the order.
-        price: u64
+        /// Price of order, in ticks per lot.
+        price: u64,
+        /// `OrderBook.counter` for corresponding order, which
+        /// determines priority among orders with the same `price`.
+        counter: u64,
+        /// Address of corresponding user.
+        user: address,
+        /// For given `user`, ID of the custodian required to approve
+        /// order placement, order cancellation, and coin withdrawals.
+        general_custodian_id: u64
     }
 
     /// An order on the order book.
@@ -272,13 +279,20 @@ module econia::structs {
     /// order fills against multiple orders, an event is emitted for
     /// each one.
     struct TakerEvent has drop, store {
-        /// `ASK` or `BID`, the side of the maker order that was filled
-        /// against.
-        side: bool,
+        /// `BUY` or `SELL`, the direction of the taker order.
+        direction: bool,
         /// Fill size, in lots.
-        size: u64
-        /// Price, in ticks per lot, of the order filled against.
-        price: u64
+        size: u64,
+        /// Price of order filled against, in ticks per lot.
+        price: u64,
+        /// `OrderBook.counter` for corresponding order, which
+        /// determines priority among orders with the same `price`.
+        counter: u64
+        /// Address of user holding maker order just filled against.
+        user: address,
+        /// For given `user`, ID of the custodian required to approve
+        /// order placement, order cancellation, and coin withdrawals.
+        general_custodian_id: u64
     }
 
     // market.move <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

@@ -7,6 +7,8 @@
 ///
 /// Accepts key-value pairs having key type `K` and value type `V`.
 ///
+/// See `test_iterate()` for iteration syntax.
+///
 /// ---
 ///
 module econia::table_list {
@@ -178,10 +180,11 @@ module econia::table_list {
     >(
         table_list: TableList<K, V>
     ) {
-        // Assert table list is empty.
+        // Assert table list is empty before attempting to unpack.
         assert!(is_empty(&table_list), E_DESTROY_NOT_EMPTY);
         // Unpack, destroying head and tail fields.
         let TableList{inner_table, head: _, tail: _} = table_list;
+        // Destroy empty inner table.
         table_with_length::destroy_empty(inner_table);
     }
 
@@ -238,6 +241,150 @@ module econia::table_list {
         table_with_length::empty(&table_list_ref.inner_table)
     }
 
+    /// Return a new `TableList` containing given `key`-`value` pair.
+    public fun singleton<
+        K: copy + drop + store,
+        V: store
+    >(
+        key: K,
+        value: V
+    ): TableList<K, V> {
+        let table_list = new<K, V>(); // Declare empty table list.
+        add(&mut table_list, key, value); // Insert key-value pair.
+        table_list // Return table list.
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for non-empty table list destruction.
+    fun test_destroy_empty_not_empty() {destroy_empty(singleton(0, 0));}
+
+    #[test]
+    /// Verify iteration in the following sequence:
+    /// * Immutably, from head to tail.
+    /// * Mutably, from tail to head.
+    /// * Mutably, from head to tail.
+    /// * Immutably, from tail to head.
+    fun test_iterate(): TableList<u64, u64> {
+        let table_list = new(); // Declare new table list.
+        let i = 0; // Declare counter.
+        while (i < 100) { // For 100 iterations.
+            // Add key-value pair to table where key and value are both
+            // the value of the counter.
+            add(&mut table_list, i, i);
+            i = i + 1; // Increment counter.
+        };
+        assert!(length(&table_list) == 100, 0); // Assert proper length.
+        let key = get_head_key(&table_list); // Get head key.
+        i = 0; // Re-init counter.
+        // While keys left to iterate on, iterate from head to tail:
+        while (option::is_some(&key)) {
+            // Get value for key and next key in linked list.
+            let (value_ref, _, next) =
+                borrow_iterable(&table_list, *option::borrow(&key));
+            // Assert key-value pairs.
+            assert!(*option::borrow(&key) == i, 0);
+            assert!(*value_ref == i, 0);
+            key = next; // Review the next key.
+            i = i + 1; // Increment counter.
+        };
+        key = get_tail_key(&table_list); // Get tail key.
+        i = 0; // Re-init counter
+        // While keys left to iterate on, iterate from tail to head:
+        while (option::is_some(&key)) {
+            // Get value for key and previous key in linked list.
+            let (value_ref_mut, previous, _) =
+                borrow_iterable_mut(&mut table_list, *option::borrow(&key));
+            // Assert key-value pairs.
+            assert!(*option::borrow(&key) == (99 - i), 0);
+            assert!(*value_ref_mut == (99 - i), 0);
+            // Mutate the value by adding 1.
+            *value_ref_mut = *value_ref_mut + 1;
+            key = previous; // Review the previous key.
+            i = i + 1; // Increment counter.
+        };
+        let key = get_head_key(&table_list); // Get head key.
+        i = 0; // Re-init counter.
+        // While keys left to iterate on, iterate from head to tail:
+        while (option::is_some(&key)) {
+            // Get value for key and next key in linked list.
+            let (value_ref_mut, _, next) =
+                borrow_iterable_mut(&mut table_list, *option::borrow(&key));
+            // Assert key-value pairs.
+            assert!(*option::borrow(&key) == i, 0);
+            assert!(*value_ref_mut == i + 1, 0);
+            // Mutate the value by adding 1.
+            *value_ref_mut = *value_ref_mut + 1;
+            key = next; // Review the next key.
+            i = i + 1; // Increment counter.
+        };
+        key = get_tail_key(&table_list); // Get tail key.
+        i = 0; // Re-init counter
+        // While keys left to iterate on, iterate from tail to head:
+        while (option::is_some(&key)) {
+            // Get value for key and previous key in linked list.
+            let (value_ref, previous, _) =
+                borrow_iterable(&table_list, *option::borrow(&key));
+            // Assert key-value pairs.
+            assert!(*option::borrow(&key) == (99 - i), 0);
+            assert!(*value_ref == (99 - i) + 2, 0);
+            key = previous; // Review the previous key.
+            i = i + 1; // Increment counter.
+        };
+        table_list // Return table list.
+    }
+
+    #[test]
+    /// Verify assorted functionality, without iteration.
+    fun test_mixed(): TableList<u8, bool> {
+        // Declare key-value pairs.
+        let (key_0, value_0, key_1, value_1) = (1u8, true, 2u8, false);
+        // Declare empty table list.
+        let empty_table_list = new<u8, bool>();
+        // Assert state.
+        assert!(length(&empty_table_list) == 0, 0);
+        assert!(is_empty(&empty_table_list), 0);
+        assert!(option::is_none(&get_head_key(&empty_table_list)), 0);
+        assert!(option::is_none(&get_tail_key(&empty_table_list)), 0);
+        assert!(!contains(&empty_table_list, key_0), 0);
+        assert!(!contains(&empty_table_list, key_1), 0);
+        // Destroy empty table list.
+        destroy_empty(empty_table_list);
+        // Declare singleton.
+        let table_list = singleton(key_0, value_0);
+        // Assert state.
+        assert!(length(&table_list) == 1, 0);
+        assert!(!is_empty(&table_list), 0);
+        assert!(*option::borrow(&get_head_key(&table_list)) == key_0, 0);
+        assert!(*option::borrow(&get_tail_key(&table_list)) == key_0, 0);
+        assert!(contains(&table_list, key_0), 0);
+        assert!(!contains(&table_list, key_1), 0);
+        assert!(*borrow(&table_list, key_0) == value_0, 0);
+        // Mutate value.
+        *borrow_mut(&mut table_list, key_0) = !value_0;
+        // Assert mutation.
+        assert!(*borrow(&table_list, key_0) == !value_0, 0);
+        // Mutate value back.
+        *borrow_mut(&mut table_list, key_0) = value_0;
+        // Add another key-value pair.
+        add(&mut table_list, key_1, value_1);
+        // Assert state.
+        assert!(length(&table_list) == 2, 0);
+        assert!(!is_empty(&table_list), 0);
+        assert!(*option::borrow(&get_head_key(&table_list)) == key_0, 0);
+        assert!(*option::borrow(&get_tail_key(&table_list)) == key_1, 0);
+        assert!(contains(&table_list, key_0), 0);
+        assert!(contains(&table_list, key_1), 0);
+        assert!(*borrow(&table_list, key_0) == value_0, 0);
+        assert!(*borrow(&table_list, key_1) == value_1, 0);
+        // Return table list.
+        table_list
+    }
+
+    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

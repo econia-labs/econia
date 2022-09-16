@@ -12,6 +12,8 @@ writing.
 
 Accepts key-value pairs having key type <code>K</code> and value type <code>V</code>.
 
+See <code>test_iterate()</code> for iteration syntax.
+
 ---
 
 
@@ -30,6 +32,7 @@ Accepts key-value pairs having key type <code>K</code> and value type <code>V</c
 -  [Function `length`](#0xc0deb00c_table_list_length)
 -  [Function `new`](#0xc0deb00c_table_list_new)
 -  [Function `is_empty`](#0xc0deb00c_table_list_is_empty)
+-  [Function `singleton`](#0xc0deb00c_table_list_singleton)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -388,10 +391,11 @@ Destroy an empty <code><a href="table_list.md#0xc0deb00c_table_list_TableList">T
 &gt;(
     <a href="table_list.md#0xc0deb00c_table_list">table_list</a>: <a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a>&lt;K, V&gt;
 ) {
-    // Assert <a href="">table</a> list is empty.
+    // Assert <a href="">table</a> list is empty before attempting <b>to</b> unpack.
     <b>assert</b>!(<a href="table_list.md#0xc0deb00c_table_list_is_empty">is_empty</a>(&<a href="table_list.md#0xc0deb00c_table_list">table_list</a>), <a href="table_list.md#0xc0deb00c_table_list_E_DESTROY_NOT_EMPTY">E_DESTROY_NOT_EMPTY</a>);
     // Unpack, destroying head and tail fields.
     <b>let</b> <a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a>{inner_table, head: _, tail: _} = <a href="table_list.md#0xc0deb00c_table_list">table_list</a>;
+    // Destroy empty inner <a href="">table</a>.
     <a href="_destroy_empty">table_with_length::destroy_empty</a>(inner_table);
 }
 </code></pre>
@@ -546,6 +550,39 @@ Return <code><b>true</b></code> if <code><a href="table_list.md#0xc0deb00c_table
     table_list_ref: &<a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a>&lt;K, V&gt;
 ): bool {
     <a href="_empty">table_with_length::empty</a>(&table_list_ref.inner_table)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_table_list_singleton"></a>
+
+## Function `singleton`
+
+Return a new <code><a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a></code> containing given <code>key</code>-<code>value</code> pair.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_singleton">singleton</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(key: K, value: V): <a href="table_list.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;K, V&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_singleton">singleton</a>&lt;
+    K: <b>copy</b> + drop + store,
+    V: store
+&gt;(
+    key: K,
+    value: V
+): <a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a>&lt;K, V&gt; {
+    <b>let</b> <a href="table_list.md#0xc0deb00c_table_list">table_list</a> = <a href="table_list.md#0xc0deb00c_table_list_new">new</a>&lt;K, V&gt;(); // Declare empty <a href="">table</a> list.
+    <a href="table_list.md#0xc0deb00c_table_list_add">add</a>(&<b>mut</b> <a href="table_list.md#0xc0deb00c_table_list">table_list</a>, key, value); // Insert key-value pair.
+    <a href="table_list.md#0xc0deb00c_table_list">table_list</a> // Return <a href="">table</a> list.
 }
 </code></pre>
 

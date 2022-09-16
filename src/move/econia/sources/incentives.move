@@ -15,7 +15,7 @@ module econia::incentives {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::assets::{Self, BC, QC};
+    use econia::assets::{Self, QC, UC};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -610,18 +610,17 @@ module econia::incentives {
         FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
+        assets::init_coin_types_test(); // Initialize coin types.
         // Get signer for Econia account.
         let econia = account::create_signer_with_capability(
             &account::create_test_signer_cap(@econia));
-        // Initialize coin types.
-        assets::init_coin_types(&econia);
         // Vectorize fee store tier parameters.
         let tier_0 = vector::singleton(FEE_SHARE_DIVISOR_0);
         vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_0, WITHDRAWAL_FEE_0);
         let integrator_fee_store_tiers = vector::singleton(tier_0);
         // Initialize incentives.
-        init_incentives<QC>(&econia, &MARKET_REGISTRATION_FEE,
+        init_incentives<UC>(&econia, &MARKET_REGISTRATION_FEE,
             &CUSTODIAN_REGISTRATION_FEE, &TAKER_FEE_DIVISOR,
             &integrator_fee_store_tiers);
     }
@@ -647,7 +646,7 @@ module econia::incentives {
         FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
-        assets::init_coin_types(econia); // Init coin types.
+        assets::init_coin_types_test(); // Init coin types.
         // Declare incentive parameters.
         let market_registration_fee = 123;
         let custodian_registration_fee = 456;
@@ -668,12 +667,12 @@ module econia::incentives {
         let integrator_fee_store_tiers = vector::singleton(tier_0);
         vector::push_back(&mut integrator_fee_store_tiers, tier_1);
         // Initialize incentives.
-        init_incentives<QC>(econia, &market_registration_fee,
+        init_incentives<UC>(econia, &market_registration_fee,
             &custodian_registration_fee, &taker_fee_divisor,
             &integrator_fee_store_tiers);
         // Assert state.
-        verify_utility_coin_type<QC>();
-        assert!(!is_utility_coin_type<BC>(), 0);
+        verify_utility_coin_type<UC>();
+        assert!(!is_utility_coin_type<QC>(), 0);
         assert!(get_market_registration_fee() == market_registration_fee, 0);
         assert!(get_custodian_registration_fee() ==
             custodian_registration_fee, 0);
@@ -698,12 +697,12 @@ module econia::incentives {
         vector::push_back(&mut tier_0, withdrawal_fee_0);
         integrator_fee_store_tiers = vector::singleton(tier_0);
         // Update incentives.
-        update_incentives<BC>(econia, market_registration_fee,
+        update_incentives<QC>(econia, market_registration_fee,
             custodian_registration_fee, taker_fee_divisor,
             integrator_fee_store_tiers);
         // Assert state.
-        verify_utility_coin_type<BC>();
-        assert!(!is_utility_coin_type<QC>(), 0);
+        verify_utility_coin_type<QC>();
+        assert!(!is_utility_coin_type<UC>(), 0);
         assert!(get_market_registration_fee() == market_registration_fee, 0);
         assert!(get_custodian_registration_fee() ==
             custodian_registration_fee, 0);
@@ -719,7 +718,7 @@ module econia::incentives {
     fun test_init_utility_coin_store(
         econia: &signer
     ) {
-        assets::init_coin_types(econia); // Init coin types.
+        assets::init_coin_types_test(); // Init coin types.
         let fee_account = init_fee_account(econia); // Init fee account.
         // Init utility coin store under fee account.
         init_utility_coin_store<QC>(&fee_account);
@@ -966,7 +965,7 @@ module econia::incentives {
         IncentiveParameters
     {
         init_incentives_test(); // Initialize incentives for testing.
-        verify_utility_coin_type<BC>(); // Attempt invalid invocation.
+        verify_utility_coin_type<QC>(); // Attempt invalid invocation.
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

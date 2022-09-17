@@ -92,7 +92,7 @@ module econia::structs {
     struct Registry has key {
         /// Map from `MarketInfo` to corresponding market ID, enabling
         /// duplicate checks on pure-coin markets and iterated indexing.
-        markets: iterable_table::IterableTable<TradingPairInfo, u64>,
+        markets: TableList<TradingPairInfo, u64>,
         /// Event handle for market registration events.
         market_registration_events: EventHandle<MarketRegistrationEvent>,
         /// Number of registered custodians.
@@ -142,10 +142,10 @@ module econia::structs {
         generic_asset_transfer_custodian_id: u64,
         /// Map from order ID to size of outstanding order, measured in
         /// lots lefts to fill.
-        asks: CritBitTree<u64>,
+        asks: TableList<u128, u64>,
         /// Map from order ID to size of outstanding order, measured in
         /// lots lefts to fill.
-        bids: CritBitTree<u64>,
+        bids: TableList<u128, u64>,
         /// Total base asset units held as collateral (when base asset
         /// is a coin, corresponds to
         /// `aptos_framework::coin::Coin.value`).
@@ -250,17 +250,9 @@ module econia::structs {
         /// quote types are both coins.
         generic_asset_transfer_custodian_id: u64,
         /// Asks tree.
-        asks: CritBitTree<Order>,
+        asks: UniVerseTree<Order>,
         /// Bids tree.
-        bids: CritBitTree<Order>,
-        /// Order ID of minimum ask, per price-time priority. The ask
-        /// side "spread maker".
-        min_ask: u128,
-        /// Order ID of maximum bid, per price-time priority. The bid
-        /// side "spread maker".
-        max_bid: u128,
-        /// Number of maker orders placed on book.
-        counter: u64
+        bids: UniVerseTree<Order>,
         /// Event handle for maker events.
         maker_events: EventHandle<MakerEvent>,
         /// Event handle for taker events.

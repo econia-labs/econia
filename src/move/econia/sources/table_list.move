@@ -1,4 +1,4 @@
-/// An iterable table implementation based on a [doubly linked list](
+/// An table-based implementation of a [doubly linked list](
 /// https://en.wikipedia.org/wiki/Doubly_linked_list).
 ///
 /// Modeled off of what was previously `aptos_std::iterable_table.move`,
@@ -171,7 +171,6 @@ module econia::table_list {
     ): bool {
         table_with_length::contains(&table_list_ref.inner_table, key)
     }
-
 
     /// Destroy an empty `TableList`, aborting if not empty.
     public fun destroy_empty<

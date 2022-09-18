@@ -1,5 +1,4 @@
-/// An table-based implementation of a [doubly linked list](
-/// https://en.wikipedia.org/wiki/Doubly_linked_list).
+/// A hybrid between a table and a doubly linked list.
 ///
 /// Modeled off of what was previously `aptos_std::iterable_table.move`,
 /// which had been removed from `aptos_std` as of the time of this

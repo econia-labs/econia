@@ -192,16 +192,12 @@ module econia::structs {
     struct MakerEvent has drop, store {
         /// `CANCEL` or `PLACE`.
         type: bool,
-        /// `ASK` or `BID`.
-        side: bool,
+        /// Order ID, containing encoded price, side, and insertion
+        /// count for the given price level.
+        order_id: u128,
         /// Size, in lots, of the order at the time of placement or
         /// cancellation.
         size: u64,
-        /// Price of order, in ticks per lot.
-        price: u64,
-        /// `OrderBook.counter` for corresponding order, which
-        /// determines priority among orders with the same `price`.
-        counter: u64,
         /// Address of corresponding user.
         user: address,
         /// For given `user`, ID of the custodian required to approve
@@ -271,15 +267,12 @@ module econia::structs {
     /// order fills against multiple orders, an event is emitted for
     /// each one.
     struct TakerEvent has drop, store {
-        /// `BUY` or `SELL`, the direction of the taker order.
-        direction: bool,
+        /// Order ID of the maker order just filled against, containing
+        /// its encoded price, side, and insertion count for the given
+        /// price level.
+        order_id: u128,
         /// Fill size, in lots.
         size: u64,
-        /// Price of order filled against, in ticks per lot.
-        price: u64,
-        /// `OrderBook.counter` for corresponding order, which
-        /// determines priority among orders with the same `price`.
-        counter: u64
         /// Address of user holding maker order just filled against.
         user: address,
         /// For given `user`, ID of the custodian required to approve

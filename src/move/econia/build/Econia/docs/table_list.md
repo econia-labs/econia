@@ -3,8 +3,7 @@
 
 # Module `0xc0deb00c::table_list`
 
-An table-based implementation of a [doubly linked list](
-https://en.wikipedia.org/wiki/Doubly_linked_list).
+A hybrid between a table and a doubly linked list.
 
 Modeled off of what was previously <code>aptos_std::iterable_table.<b>move</b></code>,
 which had been removed from <code>aptos_std</code> as of the time of this

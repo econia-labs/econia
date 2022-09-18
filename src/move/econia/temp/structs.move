@@ -42,11 +42,11 @@ module econia::structs {
         /// that market registrants do not need to declare or identify a
         /// novel type prior to registering a market, and can instead
         /// simply indicate `GenericAsset`.
-        base_type_info: type_info::TypeInfo,
+        base_type_info: TypeInfo,
         /// Quote asset coin type info. Corresponds to a phantom
         /// `CoinType` (`address:module::MyCoin` rather than
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
-        quote_type_info: type_info::TypeInfo,
+        quote_type_info: TypeInfo,
         /// Number of base units exchanged per lot (when base asset is
         /// a coin, corresponds to `aptos_framework::coin::Coin.value`).
         lot_size: u64,
@@ -72,9 +72,9 @@ module econia::structs {
         /// Market ID of the market just registered.
         market_id: u64,
         /// Base asset type info.
-        base_type_info: type_info::TypeInfo,
+        base_type_info: TypeInfo,
         /// Quote asset type info.
-        quote_type_info: type_info::TypeInfo,
+        quote_type_info: TypeInfo,
         /// Number of base units exchanged per lot.
         lot_size: u64,
         /// Number of quote units exchanged per tick.
@@ -111,7 +111,7 @@ module econia::structs {
         /// given `MarketAccount`. Separated into different table
         /// entries to reduce transaction collisions across markets,
         /// with iterated indexing support.
-        map: iterable_table::IterableTable<u128, Coin<CoinType>>
+        map: TableList<u128, Coin<CoinType>>
     }
 
     /// Represents a user's open orders and available assets for a given
@@ -129,11 +129,11 @@ module econia::structs {
         /// indicated coin type), and
         /// `generic_asset_transfer_custodian_id` is not marked
         /// `PURE_COIN_PAIR`.
-        base_type_info: type_info::TypeInfo,
+        base_type_info: TypeInfo,
         /// Quote asset coin type info. Corresponds to a phantom
         /// `CoinType` (`address:module::MyCoin` rather than
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
-        quote_type_info: type_info::TypeInfo,
+        quote_type_info: TypeInfo,
         /// ID of custodian capability required to verify deposits,
         /// swaps, and withdrawals of assets that are not coins. A
         /// market-wide custodian ID that only applies to markets having
@@ -179,7 +179,7 @@ module econia::structs {
         /// Map from market account ID to `MarketAccount`. Separated
         /// into different table entries to reduce transaction
         /// collisions across markets, with iterated indexing support.
-        map: iterable_table::IterableTable<u128, MarketAccount>,
+        map: TableList<u128, MarketAccount>,
         /// Event handle for registration events.
         registration_events: EventHandle<MarketAccountRegistrationEvent>
     }
@@ -230,11 +230,11 @@ module econia::structs {
         /// indicated coin type), and
         /// `generic_asset_transfer_custodian_id` is not marked
         /// `PURE_COIN_PAIR`.
-        base_type_info: type_info::TypeInfo,
+        base_type_info: TypeInfo,
         /// Quote asset coin type info. Corresponds to a phantom
         /// `CoinType` (`address:module::MyCoin` rather than
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
-        quote_type_info: type_info::TypeInfo,
+        quote_type_info: TypeInfo,
         /// Number of base units exchanged per lot.
         lot_size: u64,
         /// Number of quote units exchanged per tick.
@@ -260,7 +260,7 @@ module econia::structs {
         /// Map from market ID to `OrderBook`. Separated into different
         /// table entries to reduce transaction collisions across
         /// markets, with iterated indexing support.
-        map: iterable_table::IterableTable<u64, OrderBook>
+        map: TableList<u64, OrderBook>
     }
 
     /// Emitted when a taker order fills against the book. If a taker

@@ -5,7 +5,7 @@ module econia::incentives {
 
     use aptos_framework::account::{Self, SignerCapability};
     use aptos_framework::coin::{Self, Coin};
-    use aptos_std::type_info;
+    use aptos_std::type_info::{Self, TypeInfo};
     use econia::table_list::{Self, TableList};
     use std::signer::address_of;
     use std::vector;
@@ -43,7 +43,7 @@ module econia::incentives {
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`) of
         /// the coin required for utility purposes. Set to `APT` at
         /// mainnet launch, later the Econia coin.
-        utility_coin_type_info: type_info::TypeInfo,
+        utility_coin_type_info: TypeInfo,
         /// `Coin.value` required to register a market.
         market_registration_fee: u64,
         /// `Coin.value` required to register as a custodian.

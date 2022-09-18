@@ -143,6 +143,8 @@ module econia::incentives {
     const E_INVALID_UTILITY_COIN_TYPE: u64 = 12;
     /// When not enough utility coins provided.
     const E_NOT_ENOUGH_UTILITY_COINS: u64 = 13;
+    /// When too many integrater fee store tiers indicated.
+    const E_TOO_MANY_TIERS: u64 = 14;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -153,6 +155,9 @@ module econia::incentives {
     const FEE_SHARE_DIVISOR_INDEX: u64 = 0;
     /// `u64` bitmask with all bits set
     const HI_64: u64 = 0xffffffffffffffff;
+    /// Maximum number of integrator fee store tiers is largest number
+    /// that can fit in a `u8`.
+    const MAX_INTEGRATOR_FEE_STORE_TIERS: u64 = 0xff;
     /// Minimum possible divisor for avoiding divide-by-zero error.
     const MIN_DIVISOR: u64 = 1;
     /// Minimum possible flat fee, required to disincentivize excessive
@@ -909,6 +914,8 @@ module econia::incentives {
     /// * `taker_fee_divisor_ref` indicates divisor that does not
     ///   meet minimum threshold.
     /// * `integrator_fee_store_tiers_ref` indicates an empty vector.
+    /// * `integrator_fee_store_tiers_ref` indicates a vector that is
+    ///   too long.
     fun set_incentive_parameters_range_check_inputs(
         econia: &signer,
         market_registration_fee_ref: &u64,
@@ -930,6 +937,9 @@ module econia::incentives {
         // Assert integrator fee store parameters vector not empty.
         assert!(!vector::is_empty(integrator_fee_store_tiers_ref),
             E_EMPTY_FEE_STORE_TIERS);
+        // Assert integrator fee store parameters vector not too long.
+        assert!(vector::length(integrator_fee_store_tiers_ref) <=
+            MAX_INTEGRATOR_FEE_STORE_TIERS, E_TOO_MANY_TIERS);
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1492,17 +1502,6 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for empty fee store tiers
-    fun test_set_incentive_parameters_range_check_inputs_empty_vector(
-        econia: &signer
-    ) {
-        // Attempt invalid invocation.
-        set_incentive_parameters_range_check_inputs(econia, &1, &1, &1,
-            &vector::empty());
-    }
-
-    #[test(econia = @econia)]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for market registration fee too low.
     fun test_set_incentive_parameters_range_check_inputs_market_fee(
@@ -1522,6 +1521,38 @@ module econia::incentives {
         // Attempt invalid invocation.
         set_incentive_parameters_range_check_inputs(account, &0, &0, &0,
             &vector::empty());
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for empty fee store tiers.
+    fun test_set_incentive_parameters_range_check_inputs_vector_empty(
+        econia: &signer
+    ) {
+        // Attempt invalid invocation.
+        set_incentive_parameters_range_check_inputs(econia, &1, &1, &1,
+            &vector::empty());
+    }
+
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for too many elements in fee store tiers vector.
+    fun test_set_incentive_parameters_range_check_inputs_vector_long(
+        econia: &signer
+    ) {
+        // Declare empty integrator fee store tiers vector.
+        let integrator_fee_store_tiers = vector::empty();
+        let i = 0; // Declare loop counter.
+        // For one iteration more than the number of max tiers:
+        while (i < MAX_INTEGRATOR_FEE_STORE_TIERS + 1) {
+            // Push back an empty vector onto fee store tiers vector.
+            vector::push_back(&mut integrator_fee_store_tiers,
+                vector::empty());
+            i = i + 1; // Increment loop counter.
+        };
+        // Attempt invalid invocation.
+        set_incentive_parameters_range_check_inputs(econia, &1, &1, &1,
+            &integrator_fee_store_tiers);
     }
 
     #[test]

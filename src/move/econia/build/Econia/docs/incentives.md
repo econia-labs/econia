@@ -488,6 +488,16 @@ When the wrong number of fields are passed for a given tier.
 
 
 
+<a name="0xc0deb00c_incentives_E_TOO_MANY_TIERS"></a>
+
+When too many integrater fee store tiers indicated.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TOO_MANY_TIERS">E_TOO_MANY_TIERS</a>: u64 = 14;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG"></a>
 
 When the indicated withdrawal fee is too big.
@@ -515,6 +525,17 @@ Index of fee share in vectorized representation of an
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_INDEX">FEE_SHARE_DIVISOR_INDEX</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_MAX_INTEGRATOR_FEE_STORE_TIERS"></a>
+
+Maximum number of integrator fee store tiers is largest number
+that can fit in a <code>u8</code>.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_MAX_INTEGRATOR_FEE_STORE_TIERS">MAX_INTEGRATOR_FEE_STORE_TIERS</a>: u64 = 255;
 </code></pre>
 
 
@@ -1951,6 +1972,8 @@ not meet minimum threshold.
 * <code>taker_fee_divisor_ref</code> indicates divisor that does not
 meet minimum threshold.
 * <code>integrator_fee_store_tiers_ref</code> indicates an empty vector.
+* <code>integrator_fee_store_tiers_ref</code> indicates a vector that is
+too long.
 
 
 <pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(econia: &<a href="">signer</a>, market_registration_fee_ref: &u64, custodian_registration_fee_ref: &u64, taker_fee_divisor_ref: &u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
@@ -1983,6 +2006,9 @@ meet minimum threshold.
     // Assert integrator fee store parameters <a href="">vector</a> not empty.
     <b>assert</b>!(!<a href="_is_empty">vector::is_empty</a>(integrator_fee_store_tiers_ref),
         <a href="incentives.md#0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS">E_EMPTY_FEE_STORE_TIERS</a>);
+    // Assert integrator fee store parameters <a href="">vector</a> not too long.
+    <b>assert</b>!(<a href="_length">vector::length</a>(integrator_fee_store_tiers_ref) &lt;=
+        <a href="incentives.md#0xc0deb00c_incentives_MAX_INTEGRATOR_FEE_STORE_TIERS">MAX_INTEGRATOR_FEE_STORE_TIERS</a>, <a href="incentives.md#0xc0deb00c_incentives_E_TOO_MANY_TIERS">E_TOO_MANY_TIERS</a>);
 }
 </code></pre>
 

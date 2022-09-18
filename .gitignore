@@ -44,3 +44,6 @@ src/move/econia/target/*
 
 # Sphinx
 doc/sphinx/build/*
+
+# Temporary markdown file for prototyping
+temp.md

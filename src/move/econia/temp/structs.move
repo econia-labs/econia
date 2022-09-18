@@ -245,17 +245,17 @@ module econia::structs {
         /// a generic base asset. Marked `PURE_COIN_PAIR` when base and
         /// quote types are both coins.
         generic_asset_transfer_custodian_id: u64,
-        /// Asks tree.
-        asks: UniVerseTree<Order>,
-        /// Bids tree.
-        bids: UniVerseTree<Order>,
+        /// Open asks.
+        asks: QueueCrit<Order>,
+        /// Open bids.
+        bids: QueueCrit<Order>,
         /// Event handle for maker events.
         maker_events: EventHandle<MakerEvent>,
         /// Event handle for taker events.
         taker_events: EventHandle<TakerEvent>
     }
 
-    /// Order book map for all `OrderBook`s
+    /// Order book map for all `OrderBook`s.
     struct OrderBooks has key {
         /// Map from market ID to `OrderBook`. Separated into different
         /// table entries to reduce transaction collisions across
@@ -274,7 +274,7 @@ module econia::structs {
         /// Fill size, in lots.
         size: u64,
         /// Address of user holding maker order just filled against.
-        user: address,
+        maker: address,
         /// For given `user`, ID of the custodian required to approve
         /// order placement, order cancellation, and coin withdrawals.
         general_custodian_id: u64

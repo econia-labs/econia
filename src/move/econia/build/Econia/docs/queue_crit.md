@@ -11,7 +11,7 @@ Hybrid data structure combining queue and crit-bit tree properties.
 ## Bit number convention
 
 
-Bit numbers 0-indexed from LSB:
+Bit numbers 0-indexed from least-significant bit (LSB):
 
 ```
 >    11101...1010010101

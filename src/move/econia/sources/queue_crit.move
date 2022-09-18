@@ -2,7 +2,7 @@
 ///
 /// # Bit number convention
 ///
-/// Bit numbers 0-indexed from LSB:
+/// Bit numbers 0-indexed from least-significant bit (LSB):
 ///
 /// ```
 /// >    11101...1010010101

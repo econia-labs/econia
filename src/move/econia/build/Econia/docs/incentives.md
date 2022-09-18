@@ -1758,9 +1758,13 @@ can be described with the following variables:
 
 #### Buy
 
+
 $$q_m = \Delta_t - f = \Delta_t - \frac{q_m}{d_t}$$
+
 $$\Delta_t = q_m + \frac{q_m}{d_t} = q_m(1 + \frac{1}{d_t})$$
+
 $$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
+
 $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
 
 
@@ -1768,9 +1772,13 @@ $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
 
 #### Sell
 
+
 $$q_m = \Delta_t + f = \Delta_t + \frac{q_m}{d_t}$$
+
 $$\Delta_t = q_m - \frac{q_m}{d_t} = q_m(1 - \frac{1}{d_t})$$
+
 $$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
+
 $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
 
 

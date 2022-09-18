@@ -342,7 +342,7 @@ Container for utility coin fees collected by Econia.
 
 <dl>
 <dt>
-<code>utility_coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;</code>
+<code>coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;</code>
 </dt>
 <dd>
  Coins collected as utility fees.
@@ -1084,7 +1084,7 @@ aborting if <code><a href="">account</a></code> is not Econia.
     <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <a href="_extract">coin::extract</a>( // Extract indicated amount of coins.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
-            <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).utility_coins, amount)
+            <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).coins, amount)
 }
 </code></pre>
 
@@ -1120,7 +1120,7 @@ if <code><a href="">account</a></code> is not Econia.
     <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <a href="_extract_all">coin::extract_all</a>( // Extract all coins.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
-            <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).utility_coins)
+            <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).coins)
 }
 </code></pre>
 
@@ -1292,7 +1292,7 @@ Deposit <code>coins</code> to a <code><a href="incentives.md#0xc0deb00c_incentiv
     <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
 {
     <a href="_merge">coin::merge</a>(&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
-        <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).utility_coins, coins);
+        <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).coins, coins);
 }
 </code></pre>
 
@@ -1658,7 +1658,7 @@ exists for given <code>CoinType</code>.
     <b>if</b>(!<b>exists</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;CoinType&gt;&gt;(address_of(fee_account)))
         // Initialize one and <b>move</b> it <b>to</b> the <a href="">account</a>.
         <b>move_to</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;CoinType&gt;&gt;(fee_account, <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>{
-            utility_coins: <a href="_zero">coin::zero</a>&lt;CoinType&gt;()});
+            coins: <a href="_zero">coin::zero</a>&lt;CoinType&gt;()});
 }
 </code></pre>
 

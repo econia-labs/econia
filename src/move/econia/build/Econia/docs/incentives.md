@@ -42,12 +42,14 @@ Incentive-associated parameters and data structures.
 -  [Function `assess_fees`](#0xc0deb00c_incentives_assess_fees)
     -  [Type parameters](#@Type_parameters_10)
     -  [Parameters](#@Parameters_11)
--  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
+-  [Function `deposit_custodian_registration_utility_coins`](#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins)
+-  [Function `deposit_market_registration_utility_coins`](#0xc0deb00c_incentives_deposit_market_registration_utility_coins)
 -  [Function `init_incentives`](#0xc0deb00c_incentives_init_incentives)
 -  [Function `register_econia_fee_store_entry`](#0xc0deb00c_incentives_register_econia_fee_store_entry)
 -  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
     -  [Type parameters](#@Type_parameters_12)
     -  [Parameters](#@Parameters_13)
+-  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
 -  [Function `deposit_utility_coins_verified`](#0xc0deb00c_incentives_deposit_utility_coins_verified)
 -  [Function `get_fee_account`](#0xc0deb00c_incentives_get_fee_account)
 -  [Function `init_fee_account`](#0xc0deb00c_incentives_init_fee_account)
@@ -1290,14 +1292,15 @@ service of diverting all fees to Econia.
 
 </details>
 
-<a name="0xc0deb00c_incentives_deposit_utility_coins"></a>
+<a name="0xc0deb00c_incentives_deposit_custodian_registration_utility_coins"></a>
 
-## Function `deposit_utility_coins`
+## Function `deposit_custodian_registration_utility_coins`
 
-Deposit <code>coins</code> to a <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>.
+Deposit <code>coins</code> of <code>UtilityCoinType</code>, verifying that the proper
+amount is supplied for custodian registration.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>&lt;UtilityCoinType&gt;(coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins">deposit_custodian_registration_utility_coins</a>&lt;UtilityCoinType&gt;(coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;)
 </code></pre>
 
 
@@ -1306,14 +1309,52 @@ Deposit <code>coins</code> to a <code><a href="incentives.md#0xc0deb00c_incentiv
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>&lt;UtilityCoinType&gt;(
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins">deposit_custodian_registration_utility_coins</a>&lt;
+    UtilityCoinType
+&gt;(
     coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
 ) <b>acquires</b>
     <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>,
     <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
 {
-    <a href="_merge">coin::merge</a>(&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
-        <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).coins, coins);
+    <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins_verified">deposit_utility_coins_verified</a>&lt;UtilityCoinType&gt;(coins,
+        &<a href="incentives.md#0xc0deb00c_incentives_get_custodian_registration_fee">get_custodian_registration_fee</a>());
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_deposit_market_registration_utility_coins"></a>
+
+## Function `deposit_market_registration_utility_coins`
+
+Deposit <code>coins</code> of <code>UtilityCoinType</code>, verifying that the proper
+amount is supplied for market registration.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_market_registration_utility_coins">deposit_market_registration_utility_coins</a>&lt;UtilityCoinType&gt;(coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_market_registration_utility_coins">deposit_market_registration_utility_coins</a>&lt;
+    UtilityCoinType
+&gt;(
+    coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+) <b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
+{
+    <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins_verified">deposit_utility_coins_verified</a>&lt;UtilityCoinType&gt;(coins,
+        &<a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">get_market_registration_fee</a>());
 }
 </code></pre>
 
@@ -1492,17 +1533,47 @@ activate to.
 
 </details>
 
+<a name="0xc0deb00c_incentives_deposit_utility_coins"></a>
+
+## Function `deposit_utility_coins`
+
+Deposit <code>coins</code> to a <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>.
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>&lt;UtilityCoinType&gt;(coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>&lt;UtilityCoinType&gt;(
+    coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+) <b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
+{
+    <a href="_merge">coin::merge</a>(&<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
+        <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>()).coins, coins);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_incentives_deposit_utility_coins_verified"></a>
 
 ## Function `deposit_utility_coins_verified`
 
 Verify that <code>UtilityCoinType</code> is the utility coin type and that
-<code>utility_coins</code> has at least the amount indicated by
-<code>min_amount_ref</code>, then deposit all utility coins to utility coin
-store.
+<code>coins</code> has at least the amount indicated by <code>min_amount_ref</code>,
+then deposit all utility coins to <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>.
 
 
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins_verified">deposit_utility_coins_verified</a>&lt;UtilityCoinType&gt;(utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;, min_amount_ref: &u64)
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins_verified">deposit_utility_coins_verified</a>&lt;UtilityCoinType&gt;(coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;, min_amount_ref: &u64)
 </code></pre>
 
 
@@ -1512,7 +1583,7 @@ store.
 
 
 <pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins_verified">deposit_utility_coins_verified</a>&lt;UtilityCoinType&gt;(
-    utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;,
+    coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;,
     min_amount_ref: &u64
 ) <b>acquires</b>
     <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
@@ -1522,10 +1593,10 @@ store.
     // Verify utility <a href="">coin</a> type.
     <a href="incentives.md#0xc0deb00c_incentives_verify_utility_coin_type">verify_utility_coin_type</a>&lt;UtilityCoinType&gt;();
     // Assert sufficient utility coins provided.
-    <b>assert</b>!(<a href="_value">coin::value</a>(&utility_coins) &gt;= *min_amount_ref,
+    <b>assert</b>!(<a href="_value">coin::value</a>(&coins) &gt;= *min_amount_ref,
         <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ENOUGH_UTILITY_COINS">E_NOT_ENOUGH_UTILITY_COINS</a>);
     // Deposit all utility coins <b>to</b> utility <a href="">coin</a> store.
-    <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>(utility_coins);
+    <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins">deposit_utility_coins</a>(coins);
 }
 </code></pre>
 

@@ -496,15 +496,34 @@ module econia::incentives {
         );
     }
 
-    /// Deposit `coins` to a `UtilityCoinStore`.
-    public(friend) fun deposit_utility_coins<UtilityCoinType>(
+    /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
+    /// amount is supplied for custodian registration.
+    public(friend) fun deposit_custodian_registration_utility_coins<
+        UtilityCoinType
+    >(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
         FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
         UtilityCoinStore
     {
-        coin::merge(&mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
-            get_fee_account_address()).coins, coins);
+        deposit_utility_coins_verified<UtilityCoinType>(coins,
+            &get_custodian_registration_fee());
+    }
+
+    /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
+    /// amount is supplied for market registration.
+    public(friend) fun deposit_market_registration_utility_coins<
+        UtilityCoinType
+    >(
+        coins: coin::Coin<UtilityCoinType>
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        UtilityCoinStore
+    {
+        deposit_utility_coins_verified<UtilityCoinType>(coins,
+            &get_market_registration_fee());
     }
 
     /// Wrapped call to `set_incentives()`, when calling for the first
@@ -614,12 +633,22 @@ module econia::incentives {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Deposit `coins` to a `UtilityCoinStore`.
+    fun deposit_utility_coins<UtilityCoinType>(
+        coins: coin::Coin<UtilityCoinType>
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        UtilityCoinStore
+    {
+        coin::merge(&mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
+            get_fee_account_address()).coins, coins);
+    }
+
     /// Verify that `UtilityCoinType` is the utility coin type and that
-    /// `utility_coins` has at least the amount indicated by
-    /// `min_amount_ref`, then deposit all utility coins to utility coin
-    /// store.
+    /// `coins` has at least the amount indicated by `min_amount_ref`,
+    /// then deposit all utility coins to `UtilityCoinStore`.
     fun deposit_utility_coins_verified<UtilityCoinType>(
-        utility_coins: coin::Coin<UtilityCoinType>,
+        coins: coin::Coin<UtilityCoinType>,
         min_amount_ref: &u64
     ) acquires
         FeeAccountSignerCapabilityStore,
@@ -629,10 +658,10 @@ module econia::incentives {
         // Verify utility coin type.
         verify_utility_coin_type<UtilityCoinType>();
         // Assert sufficient utility coins provided.
-        assert!(coin::value(&utility_coins) >= *min_amount_ref,
+        assert!(coin::value(&coins) >= *min_amount_ref,
             E_NOT_ENOUGH_UTILITY_COINS);
         // Deposit all utility coins to utility coin store.
-        deposit_utility_coins(utility_coins);
+        deposit_utility_coins(coins);
     }
 
     /// Return fee account signer generated from stored capability.
@@ -1053,6 +1082,28 @@ module econia::incentives {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify deposits for mixed registration fees.
+    fun test_deposit_registration_fees_mixed()
+    acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        UtilityCoinStore
+    {
+        init_incentives_test(); // Initialize incentives.
+        // Get registration fees.
+        let (custodian_registration_fee      , market_registration_fee      ) =
+            (get_custodian_registration_fee(), get_market_registration_fee());
+        // Deposit fees.
+        deposit_custodian_registration_utility_coins<UC>(assets::mint_test(
+            custodian_registration_fee));
+        deposit_market_registration_utility_coins<UC>(assets::mint_test(
+            market_registration_fee));
+        // Assert total amount.
+        assert!(get_utility_coin_store_balance_test<UC>() ==
+            custodian_registration_fee + market_registration_fee, 0);
+    }
 
     #[test(econia = @econia)]
     /// Verify deposit and withdrawal of utility coins.

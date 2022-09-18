@@ -53,29 +53,41 @@ Incentive-associated parameters and data structures.
 -  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
     -  [Type parameters](#@Type_parameters_15)
     -  [Parameters](#@Parameters_16)
+-  [Function `calculate_max_quote_match`](#0xc0deb00c_incentives_calculate_max_quote_match)
+    -  [User input](#@User_input_17)
+    -  [Matching](#@Matching_18)
+        -  [Example buy](#@Example_buy_19)
+        -  [Example sell](#@Example_sell_20)
+    -  [Variables](#@Variables_21)
+    -  [Equations](#@Equations_22)
+        -  [Buy](#@Buy_23)
+        -  [Sell](#@Sell_24)
+    -  [Parameters](#@Parameters_25)
+    -  [Assumptions](#@Assumptions_26)
+    -  [Aborts if](#@Aborts_if_27)
 -  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
 -  [Function `deposit_utility_coins_verified`](#0xc0deb00c_incentives_deposit_utility_coins_verified)
 -  [Function `get_fee_account`](#0xc0deb00c_incentives_get_fee_account)
 -  [Function `init_fee_account`](#0xc0deb00c_incentives_init_fee_account)
-    -  [Parameters](#@Parameters_17)
-    -  [Returns](#@Returns_18)
-    -  [Seed considerations](#@Seed_considerations_19)
-    -  [Aborts if](#@Aborts_if_20)
--  [Function `init_utility_coin_store`](#0xc0deb00c_incentives_init_utility_coin_store)
-    -  [Type Parameters](#@Type_Parameters_21)
-    -  [Parameters](#@Parameters_22)
-    -  [Aborts if](#@Aborts_if_23)
--  [Function `set_incentive_parameters`](#0xc0deb00c_incentives_set_incentive_parameters)
-    -  [Type Parameters](#@Type_Parameters_24)
-    -  [Parameters](#@Parameters_25)
-    -  [Assumptions](#@Assumptions_26)
-    -  [Aborts if](#@Aborts_if_27)
--  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
-    -  [Aborts if](#@Aborts_if_28)
-    -  [Assumptions](#@Assumptions_29)
--  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
-    -  [Parameters](#@Parameters_30)
+    -  [Parameters](#@Parameters_28)
+    -  [Returns](#@Returns_29)
+    -  [Seed considerations](#@Seed_considerations_30)
     -  [Aborts if](#@Aborts_if_31)
+-  [Function `init_utility_coin_store`](#0xc0deb00c_incentives_init_utility_coin_store)
+    -  [Type Parameters](#@Type_Parameters_32)
+    -  [Parameters](#@Parameters_33)
+    -  [Aborts if](#@Aborts_if_34)
+-  [Function `set_incentive_parameters`](#0xc0deb00c_incentives_set_incentive_parameters)
+    -  [Type Parameters](#@Type_Parameters_35)
+    -  [Parameters](#@Parameters_36)
+    -  [Assumptions](#@Assumptions_37)
+    -  [Aborts if](#@Aborts_if_38)
+-  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
+    -  [Aborts if](#@Aborts_if_39)
+    -  [Assumptions](#@Assumptions_40)
+-  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
+    -  [Parameters](#@Parameters_41)
+    -  [Aborts if](#@Aborts_if_42)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -384,6 +396,16 @@ When caller is not Econia, but should be.
 
 
 
+<a name="0xc0deb00c_incentives_BUY"></a>
+
+Buy direction flag.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL"></a>
 
 When the indicated tier activation fee is too small.
@@ -462,6 +484,16 @@ When market registration fee is less than the minimum.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN">E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 5;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_E_MAX_QUOTE_MATCH_OVERFLOW"></a>
+
+When maximum amount of quote coins to match overflows a <code>u64</code>.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_MAX_QUOTE_MATCH_OVERFLOW">E_MAX_QUOTE_MATCH_OVERFLOW</a>: u64 = 17;
 </code></pre>
 
 
@@ -595,6 +627,16 @@ Number of fields in an <code><a href="incentives.md#0xc0deb00c_incentives_Integr
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_N_TIER_FIELDS">N_TIER_FIELDS</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_SELL"></a>
+
+Sell direction flag.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -1641,6 +1683,162 @@ activate to.
 
 </details>
 
+<a name="0xc0deb00c_incentives_calculate_max_quote_match"></a>
+
+## Function `calculate_max_quote_match`
+
+Get max quote coin match amount, per user input and fee divisor.
+
+
+<a name="@User_input_17"></a>
+
+### User input
+
+Whether a taker buy or sell, users specify a maximum quote coin
+amount when initiating the transaction. This amount indicates
+the maximum amount of quote coins they are willing to spend in
+the case of a taker buy, and the maximum amount of quote coins
+they are willing to receive in the case of a taker sell.
+
+
+<a name="@Matching_18"></a>
+
+### Matching
+
+The user-specified amount is inclusive of fees, however, and the
+matching engine does not manage fees. Instead it accepts a
+maximum amount of quote coins to match (or more specifically,
+ticks), with fees assessed after matching concludes:
+
+
+<a name="@Example_buy_19"></a>
+
+#### Example buy
+
+* Taker is willing to spend 105 quote coins.
+* Fee is 5% (divisor of 20).
+* Max match is thus 100 quote coins.
+* Matching engine returns after 100 quote coins filled.
+* 5% fee then assessed, withdrawn from takers's quote coins.
+* Taker has spent 105 quote coins.
+
+
+<a name="@Example_sell_20"></a>
+
+#### Example sell
+
+* Taker is willing to receive 100 quote coins.
+* Fee is 4% (divisor of 25).
+* Max match is thus 104 quote coins.
+* Matching engine returns after 104 quote coins filled.
+* 4% fee then assessed, withdrawn from quote coins received.
+* Taker has received 100 quote coins.
+
+
+<a name="@Variables_21"></a>
+
+### Variables
+
+Hence, the relationship between user-indicated maxmum quote coin
+amount, taker fee divisor, and the amount of quote coins matched
+can be described with the following variables:
+* $\Delta_t$: Change in quote coins seen by taker.
+* $d_t$: Taker fee divisor.
+* $q_m$: Quote coins matched.
+* $f = \frac{q_m}{d_t}$: Fees assessed.
+
+
+<a name="@Equations_22"></a>
+
+### Equations
+
+
+
+<a name="@Buy_23"></a>
+
+#### Buy
+
+$$q_m = \Delta_t - f = \Delta_t - \frac{q_m}{d_t}$$
+$$\Delta_t = q_m + \frac{q_m}{d_t} = q_m(1 + \frac{1}{d_t})$$
+$$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
+$$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
+
+
+<a name="@Sell_24"></a>
+
+#### Sell
+
+$$q_m = \Delta_t + f = \Delta_t + \frac{q_m}{d_t}$$
+$$\Delta_t = q_m - \frac{q_m}{d_t} = q_m(1 - \frac{1}{d_t})$$
+$$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
+$$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
+
+
+<a name="@Parameters_25"></a>
+
+### Parameters
+
+* <code>direction_ref</code>: <code>&<a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> or <code>&<a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
+* <code>taker_fee_divisor_ref</code>: Immutable reference to taker fee
+divisor.
+* <code>max_quote_delta_user_ref</code>: Immutable reference to maximum
+change in quote coins seen by user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> and
+received if a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
+* <code>max_quote_to_match_ref_mut</code>: Mutable reference to maximum
+amount of quote coins to match.
+
+
+<a name="@Assumptions_26"></a>
+
+### Assumptions
+
+* Taker fee divisor is greater than 1.
+
+
+<a name="@Aborts_if_27"></a>
+
+### Aborts if
+
+* Maximum amount to match does not fit in a <code>u64</code>, which should
+only be possible in the case of a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">calculate_max_quote_match</a>(direction_bool: &bool, taker_fee_divisor_ref: &u64, max_quote_delta_user_ref: &u64, max_quote_match_ref_mut: &<b>mut</b> u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">calculate_max_quote_match</a>(
+    direction_bool: &bool,
+    taker_fee_divisor_ref: &u64,
+    max_quote_delta_user_ref: &u64,
+    max_quote_match_ref_mut: &<b>mut</b> u64
+) {
+    // Calculate numerator for both buy and sell equations.
+    <b>let</b> numerator = (*taker_fee_divisor_ref <b>as</b> u128) *
+        (*max_quote_delta_user_ref <b>as</b> u128);
+    // Calculate denominator based on direction.
+    <b>let</b> denominator = <b>if</b> (*direction_bool == <a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>)
+        (*taker_fee_divisor_ref + 1 <b>as</b> u128) <b>else</b>
+        (*taker_fee_divisor_ref - 1 <b>as</b> u128);
+    // Calculate maximum quote coins <b>to</b> match.
+    <b>let</b> max_quote_match = numerator / denominator;
+    // Assert maximum quote <b>to</b> match fits in a u64.
+    <b>assert</b>!(max_quote_match &lt;= (<a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a> <b>as</b> u128),
+        <a href="incentives.md#0xc0deb00c_incentives_E_MAX_QUOTE_MATCH_OVERFLOW">E_MAX_QUOTE_MATCH_OVERFLOW</a>);
+    // Cast and reassign maximum quote match value.
+    *max_quote_match_ref_mut = (max_quote_match <b>as</b> u64);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_incentives_deposit_utility_coins"></a>
 
 ## Function `deposit_utility_coins`
@@ -1749,21 +1947,21 @@ Initialize the resource account where fees, collected by Econia,
 are stored.
 
 
-<a name="@Parameters_17"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
 * <code>econia</code>: The Econia account <code><a href="">signer</a></code>.
 
 
-<a name="@Returns_18"></a>
+<a name="@Returns_29"></a>
 
 ### Returns
 
 * <code><a href="">signer</a></code>: The resource account <code><a href="">signer</a></code>.
 
 
-<a name="@Seed_considerations_19"></a>
+<a name="@Seed_considerations_30"></a>
 
 ### Seed considerations
 
@@ -1773,7 +1971,7 @@ accepted by version release, will be updated to accept a seed
 as a function argument.
 
 
-<a name="@Aborts_if_20"></a>
+<a name="@Aborts_if_31"></a>
 
 ### Aborts if
 
@@ -1818,21 +2016,21 @@ Returns without initializing if a <code><a href="incentives.md#0xc0deb00c_incent
 exists for given <code>CoinType</code>.
 
 
-<a name="@Type_Parameters_21"></a>
+<a name="@Type_Parameters_32"></a>
 
 ### Type Parameters
 
 * <code>CoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_22"></a>
+<a name="@Parameters_33"></a>
 
 ### Parameters
 
 * <code>fee_account</code>: Econia fee account <code><a href="">signer</a></code>.
 
 
-<a name="@Aborts_if_23"></a>
+<a name="@Aborts_if_34"></a>
 
 ### Aborts if
 
@@ -1878,14 +2076,14 @@ the values of <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParame
 via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>.
 
 
-<a name="@Type_Parameters_24"></a>
+<a name="@Type_Parameters_35"></a>
 
 ### Type Parameters
 
 * <code>UtilityCoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_36"></a>
 
 ### Parameters
 
@@ -1905,7 +2103,7 @@ have already beeen set, <code>&<b>false</b></code> if setting parameters for the
 first time.
 
 
-<a name="@Assumptions_26"></a>
+<a name="@Assumptions_37"></a>
 
 ### Assumptions
 
@@ -1917,7 +2115,7 @@ account.
 exist at the Econia account.
 
 
-<a name="@Aborts_if_27"></a>
+<a name="@Aborts_if_38"></a>
 
 ### Aborts if
 
@@ -2025,7 +2223,7 @@ to the <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">I
 to parse into.
 
 
-<a name="@Aborts_if_28"></a>
+<a name="@Aborts_if_39"></a>
 
 ### Aborts if
 
@@ -2040,7 +2238,7 @@ to parse into.
 threshold.
 
 
-<a name="@Assumptions_29"></a>
+<a name="@Assumptions_40"></a>
 
 ### Assumptions
 
@@ -2136,7 +2334,7 @@ vector.
 Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
-<a name="@Parameters_30"></a>
+<a name="@Parameters_41"></a>
 
 ### Parameters
 
@@ -2153,7 +2351,7 @@ vector containing fields for a corresponding
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
 
 
-<a name="@Aborts_if_31"></a>
+<a name="@Aborts_if_42"></a>
 
 ### Aborts if
 

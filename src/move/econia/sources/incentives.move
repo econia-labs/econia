@@ -150,11 +150,15 @@ module econia::incentives {
     /// When an update to the incentive parameters set indicates a
     /// reduction in fee store tiers.
     const E_FEWER_TIERS: u64 = 16;
+    /// When maximum amount of quote coins to match overflows a `u64`.
+    const E_MAX_QUOTE_MATCH_OVERFLOW: u64 = 17;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Buy direction flag.
+    const BUY: bool = true;
     /// Index of fee share in vectorized representation of an
     /// `IntegratorFeeStoreTierParameters`.
     const FEE_SHARE_DIVISOR_INDEX: u64 = 0;
@@ -170,6 +174,8 @@ module econia::incentives {
     const MIN_FEE: u64 = 1;
     /// Number of fields in an `IntegratorFeeStoreTierParameters`
     const N_TIER_FIELDS: u64 = 3;
+    /// Sell direction flag.
+    const SELL: bool = false;
     /// Index of tier activation fee in vectorized representation of an
     /// `IntegratorFeeStoreTierParameters`.
     const TIER_ACTIVATION_FEE_INDEX: u64 = 1;
@@ -690,6 +696,98 @@ module econia::incentives {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Get max quote coin match amount, per user input and fee divisor.
+    ///
+    /// # User input
+    /// Whether a taker buy or sell, users specify a maximum quote coin
+    /// amount when initiating the transaction. This amount indicates
+    /// the maximum amount of quote coins they are willing to spend in
+    /// the case of a taker buy, and the maximum amount of quote coins
+    /// they are willing to receive in the case of a taker sell.
+    ///
+    /// # Matching
+    /// The user-specified amount is inclusive of fees, however, and the
+    /// matching engine does not manage fees. Instead it accepts a
+    /// maximum amount of quote coins to match (or more specifically,
+    /// ticks), with fees assessed after matching concludes:
+    ///
+    /// ## Example buy
+    /// * Taker is willing to spend 105 quote coins.
+    /// * Fee is 5% (divisor of 20).
+    /// * Max match is thus 100 quote coins.
+    /// * Matching engine returns after 100 quote coins filled.
+    /// * 5% fee then assessed, withdrawn from takers's quote coins.
+    /// * Taker has spent 105 quote coins.
+    ///
+    /// ## Example sell
+    /// * Taker is willing to receive 100 quote coins.
+    /// * Fee is 4% (divisor of 25).
+    /// * Max match is thus 104 quote coins.
+    /// * Matching engine returns after 104 quote coins filled.
+    /// * 4% fee then assessed, withdrawn from quote coins received.
+    /// * Taker has received 100 quote coins.
+    ///
+    /// # Variables
+    /// Hence, the relationship between user-indicated maxmum quote coin
+    /// amount, taker fee divisor, and the amount of quote coins matched
+    /// can be described with the following variables:
+    /// * $\Delta_t$: Change in quote coins seen by taker.
+    /// * $d_t$: Taker fee divisor.
+    /// * $q_m$: Quote coins matched.
+    /// * $f = \frac{q_m}{d_t}$: Fees assessed.
+    ///
+    /// # Equations
+    ///
+    /// ## Buy
+    /// $$q_m = \Delta_t - f = \Delta_t - \frac{q_m}{d_t}$$
+    /// $$\Delta_t = q_m + \frac{q_m}{d_t} = q_m(1 + \frac{1}{d_t})$$
+    /// $$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
+    /// $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
+    ///
+    /// ## Sell
+    /// $$q_m = \Delta_t + f = \Delta_t + \frac{q_m}{d_t}$$
+    /// $$\Delta_t = q_m - \frac{q_m}{d_t} = q_m(1 - \frac{1}{d_t})$$
+    /// $$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
+    /// $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
+    ///
+    /// # Parameters
+    /// * `direction_ref`: `&BUY` or `&SELL`.
+    /// * `taker_fee_divisor_ref`: Immutable reference to taker fee
+    ///   divisor.
+    /// * `max_quote_delta_user_ref`: Immutable reference to maximum
+    ///   change in quote coins seen by user: spent if a `BUY` and
+    ///   received if a `SELL`.
+    /// * `max_quote_to_match_ref_mut`: Mutable reference to maximum
+    ///   amount of quote coins to match.
+    ///
+    /// # Assumptions
+    /// * Taker fee divisor is greater than 1.
+    ///
+    /// # Aborts if
+    /// * Maximum amount to match does not fit in a `u64`, which should
+    ///   only be possible in the case of a `SELL`.
+    fun calculate_max_quote_match(
+        direction_bool: &bool,
+        taker_fee_divisor_ref: &u64,
+        max_quote_delta_user_ref: &u64,
+        max_quote_match_ref_mut: &mut u64
+    ) {
+        // Calculate numerator for both buy and sell equations.
+        let numerator = (*taker_fee_divisor_ref as u128) *
+            (*max_quote_delta_user_ref as u128);
+        // Calculate denominator based on direction.
+        let denominator = if (*direction_bool == BUY)
+            (*taker_fee_divisor_ref + 1 as u128) else
+            (*taker_fee_divisor_ref - 1 as u128);
+        // Calculate maximum quote coins to match.
+        let max_quote_match = numerator / denominator;
+        // Assert maximum quote to match fits in a u64.
+        assert!(max_quote_match <= (HI_64 as u128),
+            E_MAX_QUOTE_MATCH_OVERFLOW);
+        // Cast and reassign maximum quote match value.
+        *max_quote_match_ref_mut = (max_quote_match as u64);
+    }
+
     /// Deposit `coins` to a `UtilityCoinStore`.
     fun deposit_utility_coins<UtilityCoinType>(
         coins: coin::Coin<UtilityCoinType>
@@ -1169,6 +1267,47 @@ module econia::incentives {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
+    /// Verify max quote match amounts.
+    fun test_calculate_max_quote_match() {
+        // Declare matching parameters.
+        let direction = BUY;
+        let taker_fee_divisor = 20;
+        let max_quote_delta_user = 105;
+        let max_quote_match = 0;
+        let max_quote_match_expected = 100;
+        // Reassign max quote match value.
+        calculate_max_quote_match(&direction, &taker_fee_divisor,
+            &max_quote_delta_user, &mut max_quote_match);
+        // Assert calculated amount.
+        assert!(max_quote_match == max_quote_match_expected, 0);
+        // Repeat for a sell.
+        direction = SELL;
+        taker_fee_divisor = 25;
+        max_quote_delta_user = 100;
+        max_quote_match = 0;
+        max_quote_match_expected = 104;
+        // Reassign max quote match value.
+        calculate_max_quote_match(&direction, &taker_fee_divisor,
+            &max_quote_delta_user, &mut max_quote_match);
+        // Assert calculated amount.
+        assert!(max_quote_match == max_quote_match_expected, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 17)]
+    /// Verify failure for overflowing quote match amount.
+    fun test_calculate_max_quote_match_overflow() {
+        // Declare matching parameters.
+        let direction = SELL;
+        let taker_fee_divisor = 20;
+        let max_quote_delta_user = HI_64;
+        let max_quote_match = 0;
+        // Attempt invalid invocation.
+        calculate_max_quote_match(&direction, &taker_fee_divisor,
+            &max_quote_delta_user, &mut max_quote_match);
+    }
+
+    #[test]
     /// Verify deposits for mixed registration fees.
     fun test_deposit_registration_fees_mixed()
     acquires
@@ -1188,6 +1327,20 @@ module econia::incentives {
         // Assert total amount.
         assert!(get_utility_coin_store_balance_test() ==
             custodian_registration_fee + market_registration_fee, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for not enough utility coins.
+    fun test_deposit_utility_coins_verified_not_enough()
+    acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        UtilityCoinStore
+    {
+        init_incentives_test(); // Init incentives.
+        // Attempt invalid invocation.
+        deposit_utility_coins_verified(coin::zero<UC>(), &1);
     }
 
     #[test(econia = @econia)]
@@ -1210,20 +1363,6 @@ module econia::incentives {
         coins = withdraw_utility_coins_all<UC>(econia);
         assert!(coin::value(&coins) == 60, 0); // Assert value.
         assets::burn(coins); // Burn coins
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 13)]
-    /// Verify failure for not enough utility coins.
-    fun test_deposit_utility_coins_verified_not_enough()
-    acquires
-        FeeAccountSignerCapabilityStore,
-        IncentiveParameters,
-        UtilityCoinStore
-    {
-        init_incentives_test(); // Init incentives.
-        // Attempt invalid invocation.
-        deposit_utility_coins_verified(coin::zero<UC>(), &1);
     }
 
     #[test(account = @user)]
@@ -1696,48 +1835,6 @@ module econia::incentives {
             &integrator_fee_store_tiers);
     }
 
-    #[test(econia = @econia)]
-    #[expected_failure(abort_code = 16)]
-    /// Verify failure for attempting to update incentive parameters
-    /// with fewer integrator fee store tiers than before.
-    fun update_incentives_fewer_tiers(
-        econia: &signer
-    ) acquires
-        FeeAccountSignerCapabilityStore,
-        IncentiveParameters
-    {
-        assets::init_coin_types_test(); // Init coin types.
-        // Declare incentive parameters.
-        let market_registration_fee = 123;
-        let custodian_registration_fee = 456;
-        let taker_fee_divisor = 789;
-        let fee_share_divisor_0 = 1234;
-        let tier_activation_fee_0 = 2345;
-        let withdrawal_fee_0 = 3456;
-        let fee_share_divisor_1 = fee_share_divisor_0 - 1;
-        let tier_activation_fee_1 = tier_activation_fee_0 + 1;
-        let withdrawal_fee_1 = tier_activation_fee_0 - 1;
-        // Vectorize fee store tier parameters.
-        let tier_0 = vector::singleton(fee_share_divisor_0);
-        vector::push_back(&mut tier_0, tier_activation_fee_0);
-        vector::push_back(&mut tier_0, withdrawal_fee_0);
-        let tier_1 = vector::singleton(fee_share_divisor_1);
-        vector::push_back(&mut tier_1, tier_activation_fee_1);
-        vector::push_back(&mut tier_1, withdrawal_fee_1);
-        let integrator_fee_store_tiers = vector::singleton(tier_0);
-        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
-        // Initialize incentives.
-        init_incentives<UC>(econia, &market_registration_fee,
-            &custodian_registration_fee, &taker_fee_divisor,
-            &integrator_fee_store_tiers);
-        // Update fee store tiers vector to smaller length.
-        integrator_fee_store_tiers = vector::singleton(tier_0);
-        // Attempt invalid update to incentive parameter set.
-        update_incentives<QC>(econia, market_registration_fee,
-            custodian_registration_fee, taker_fee_divisor,
-            integrator_fee_store_tiers);
-    }
-
     #[test(integrator = @user)]
     /// Verify upgrade deposits.
     fun test_upgrade_integrator_fee_store(
@@ -1807,6 +1904,20 @@ module econia::incentives {
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for account is not Econia.
+    fun test_withdraw_econia_fees_all_not_econia(
+        account: &signer
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        EconiaFeeStore
+    {
+        // Attempt invalid invocation.
+        let fees = withdraw_econia_fees_all<UC>(account, &0);
+        assets::burn(fees); // Burn fees.
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for account is not Econia.
     fun test_withdraw_econia_fees_not_econia(
         account: &signer
     ) acquires
@@ -1821,15 +1932,15 @@ module econia::incentives {
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for account is not Econia.
-    fun test_withdraw_econia_fees_all_not_econia(
+    fun test_withdraw_utility_coins_all_not_econia(
         account: &signer
-    ) acquires
+    ): coin::Coin<UC>
+    acquires
         FeeAccountSignerCapabilityStore,
-        EconiaFeeStore
+        UtilityCoinStore
     {
         // Attempt invalid invocation.
-        let fees = withdraw_econia_fees_all<UC>(account, &0);
-        assets::burn(fees); // Burn fees.
+        withdraw_utility_coins_all<UC>(account)
     }
 
     #[test(account = @user)]
@@ -1846,18 +1957,46 @@ module econia::incentives {
         withdraw_utility_coins<UC>(account, 1234)
     }
 
-    #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for account is not Econia.
-    fun test_withdraw_utility_coins_all_not_econia(
-        account: &signer
-    ): coin::Coin<UC>
-    acquires
+    #[test(econia = @econia)]
+    #[expected_failure(abort_code = 16)]
+    /// Verify failure for attempting to update incentive parameters
+    /// with fewer integrator fee store tiers than before.
+    fun update_incentives_fewer_tiers(
+        econia: &signer
+    ) acquires
         FeeAccountSignerCapabilityStore,
-        UtilityCoinStore
+        IncentiveParameters
     {
-        // Attempt invalid invocation.
-        withdraw_utility_coins_all<UC>(account)
+        assets::init_coin_types_test(); // Init coin types.
+        // Declare incentive parameters.
+        let market_registration_fee = 123;
+        let custodian_registration_fee = 456;
+        let taker_fee_divisor = 789;
+        let fee_share_divisor_0 = 1234;
+        let tier_activation_fee_0 = 2345;
+        let withdrawal_fee_0 = 3456;
+        let fee_share_divisor_1 = fee_share_divisor_0 - 1;
+        let tier_activation_fee_1 = tier_activation_fee_0 + 1;
+        let withdrawal_fee_1 = tier_activation_fee_0 - 1;
+        // Vectorize fee store tier parameters.
+        let tier_0 = vector::singleton(fee_share_divisor_0);
+        vector::push_back(&mut tier_0, tier_activation_fee_0);
+        vector::push_back(&mut tier_0, withdrawal_fee_0);
+        let tier_1 = vector::singleton(fee_share_divisor_1);
+        vector::push_back(&mut tier_1, tier_activation_fee_1);
+        vector::push_back(&mut tier_1, withdrawal_fee_1);
+        let integrator_fee_store_tiers = vector::singleton(tier_0);
+        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
+        // Initialize incentives.
+        init_incentives<UC>(econia, &market_registration_fee,
+            &custodian_registration_fee, &taker_fee_divisor,
+            &integrator_fee_store_tiers);
+        // Update fee store tiers vector to smaller length.
+        integrator_fee_store_tiers = vector::singleton(tier_0);
+        // Attempt invalid update to incentive parameter set.
+        update_incentives<QC>(econia, market_registration_fee,
+            custodian_registration_fee, taker_fee_divisor,
+            integrator_fee_store_tiers);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

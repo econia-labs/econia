@@ -39,38 +39,40 @@ Incentive-associated parameters and data structures.
 -  [Function `withdraw_utility_coins`](#0xc0deb00c_incentives_withdraw_utility_coins)
 -  [Function `withdraw_utility_coins_all`](#0xc0deb00c_incentives_withdraw_utility_coins_all)
 -  [Function `update_incentives`](#0xc0deb00c_incentives_update_incentives)
+-  [Function `upgrade_integrator_fee_store`](#0xc0deb00c_incentives_upgrade_integrator_fee_store)
+    -  [Aborts if](#@Aborts_if_10)
 -  [Function `assess_fees`](#0xc0deb00c_incentives_assess_fees)
-    -  [Type parameters](#@Type_parameters_10)
-    -  [Parameters](#@Parameters_11)
+    -  [Type parameters](#@Type_parameters_11)
+    -  [Parameters](#@Parameters_12)
 -  [Function `deposit_custodian_registration_utility_coins`](#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins)
 -  [Function `deposit_market_registration_utility_coins`](#0xc0deb00c_incentives_deposit_market_registration_utility_coins)
 -  [Function `init_incentives`](#0xc0deb00c_incentives_init_incentives)
 -  [Function `register_econia_fee_store_entry`](#0xc0deb00c_incentives_register_econia_fee_store_entry)
 -  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
-    -  [Type parameters](#@Type_parameters_12)
-    -  [Parameters](#@Parameters_13)
+    -  [Type parameters](#@Type_parameters_13)
+    -  [Parameters](#@Parameters_14)
 -  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
 -  [Function `deposit_utility_coins_verified`](#0xc0deb00c_incentives_deposit_utility_coins_verified)
 -  [Function `get_fee_account`](#0xc0deb00c_incentives_get_fee_account)
 -  [Function `init_fee_account`](#0xc0deb00c_incentives_init_fee_account)
-    -  [Parameters](#@Parameters_14)
-    -  [Returns](#@Returns_15)
-    -  [Seed considerations](#@Seed_considerations_16)
-    -  [Aborts if](#@Aborts_if_17)
+    -  [Parameters](#@Parameters_15)
+    -  [Returns](#@Returns_16)
+    -  [Seed considerations](#@Seed_considerations_17)
+    -  [Aborts if](#@Aborts_if_18)
 -  [Function `init_utility_coin_store`](#0xc0deb00c_incentives_init_utility_coin_store)
-    -  [Type Parameters](#@Type_Parameters_18)
-    -  [Parameters](#@Parameters_19)
-    -  [Aborts if](#@Aborts_if_20)
+    -  [Type Parameters](#@Type_Parameters_19)
+    -  [Parameters](#@Parameters_20)
+    -  [Aborts if](#@Aborts_if_21)
 -  [Function `set_incentive_parameters`](#0xc0deb00c_incentives_set_incentive_parameters)
-    -  [Type Parameters](#@Type_Parameters_21)
-    -  [Parameters](#@Parameters_22)
-    -  [Assumptions](#@Assumptions_23)
+    -  [Type Parameters](#@Type_Parameters_22)
+    -  [Parameters](#@Parameters_23)
+    -  [Assumptions](#@Assumptions_24)
 -  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
-    -  [Aborts if](#@Aborts_if_24)
-    -  [Assumptions](#@Assumptions_25)
+    -  [Aborts if](#@Aborts_if_25)
+    -  [Assumptions](#@Assumptions_26)
 -  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
-    -  [Parameters](#@Parameters_26)
-    -  [Aborts if](#@Aborts_if_27)
+    -  [Parameters](#@Parameters_27)
+    -  [Aborts if](#@Aborts_if_28)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -446,6 +448,16 @@ When market registration fee is less than the minimum.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN">E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 5;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_E_NOT_AN_UPGRADE"></a>
+
+When indicated tier is not higher than existing tier.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_NOT_AN_UPGRADE">E_NOT_AN_UPGRADE</a>: u64 = 15;
 </code></pre>
 
 
@@ -1191,6 +1203,64 @@ instead of pass-by-reference.
 
 </details>
 
+<a name="0xc0deb00c_incentives_upgrade_integrator_fee_store"></a>
+
+## Function `upgrade_integrator_fee_store`
+
+
+<a name="@Aborts_if_10"></a>
+
+### Aborts if
+
+* <code>new_tier</code> is not higher than existing tier.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store">upgrade_integrator_fee_store</a>&lt;QuoteCoinType, UtilityCoinType&gt;(integrator: &<a href="">signer</a>, market_id: u64, new_tier: u8, utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store">upgrade_integrator_fee_store</a>&lt;
+    QuoteCoinType,
+    UtilityCoinType
+&gt;(
+    integrator: &<a href="">signer</a>,
+    market_id: u64,
+    new_tier: u8,
+    utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+) <b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
+{
+    // Borrow mutable reference <b>to</b> integrator fee store for given
+    // quote <a href="">coin</a> type and market ID.
+    <b>let</b> integrator_fee_store_ref_mut = <a href="table_list.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(
+                address_of(integrator)).map, market_id);
+    // Get current tier number.
+    <b>let</b> current_tier = integrator_fee_store_ref_mut.tier;
+    // Assert actually attempting <b>to</b> upgrade <b>to</b> new tier.
+    <b>assert</b>!(new_tier &gt; current_tier, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_AN_UPGRADE">E_NOT_AN_UPGRADE</a>);
+    // Calculate difference in cumulative cost <b>to</b> upgrade.
+    <b>let</b> cost_to_upgrade = <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(&new_tier) -
+        <a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>(&current_tier);
+    // Deposit verified amount and type of utility coins.
+    <a href="incentives.md#0xc0deb00c_incentives_deposit_utility_coins_verified">deposit_utility_coins_verified</a>&lt;UtilityCoinType&gt;(utility_coins,
+        &cost_to_upgrade);
+    integrator_fee_store_ref_mut.tier = new_tier; // Set new tier.
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_incentives_assess_fees"></a>
 
 ## Function `assess_fees`
@@ -1206,14 +1276,14 @@ integrator's fee share is determined based on their tier for the
 given market.
 
 
-<a name="@Type_parameters_10"></a>
+<a name="@Type_parameters_11"></a>
 
 ### Type parameters
 
 * <code>QuoteCoinType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_11"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -1457,7 +1527,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">E
 Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> entry at <code><a href="">account</a></code>.
 
 
-<a name="@Type_parameters_12"></a>
+<a name="@Type_parameters_13"></a>
 
 ### Type parameters
 
@@ -1465,7 +1535,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_14"></a>
 
 ### Parameters
 
@@ -1641,21 +1711,21 @@ Initialize the resource account where fees, collected by Econia,
 are stored.
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
 * <code>econia</code>: The Econia account <code><a href="">signer</a></code>.
 
 
-<a name="@Returns_15"></a>
+<a name="@Returns_16"></a>
 
 ### Returns
 
 * <code><a href="">signer</a></code>: The resource account <code><a href="">signer</a></code>.
 
 
-<a name="@Seed_considerations_16"></a>
+<a name="@Seed_considerations_17"></a>
 
 ### Seed considerations
 
@@ -1665,7 +1735,7 @@ accepted by version release, will be updated to accept a seed
 as a function argument.
 
 
-<a name="@Aborts_if_17"></a>
+<a name="@Aborts_if_18"></a>
 
 ### Aborts if
 
@@ -1710,21 +1780,21 @@ Returns without initializing if a <code><a href="incentives.md#0xc0deb00c_incent
 exists for given <code>CoinType</code>.
 
 
-<a name="@Type_Parameters_18"></a>
+<a name="@Type_Parameters_19"></a>
 
 ### Type Parameters
 
 * <code>CoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_19"></a>
+<a name="@Parameters_20"></a>
 
 ### Parameters
 
 * <code>fee_account</code>: Econia fee account <code><a href="">signer</a></code>.
 
 
-<a name="@Aborts_if_20"></a>
+<a name="@Aborts_if_21"></a>
 
 ### Aborts if
 
@@ -1770,14 +1840,14 @@ the values of <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParame
 via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>.
 
 
-<a name="@Type_Parameters_21"></a>
+<a name="@Type_Parameters_22"></a>
 
 ### Type Parameters
 
 * <code>UtilityCoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_22"></a>
+<a name="@Parameters_23"></a>
 
 ### Parameters
 
@@ -1797,7 +1867,7 @@ have already beeen set, <code>&<b>false</b></code> if setting parameters for the
 first time.
 
 
-<a name="@Assumptions_23"></a>
+<a name="@Assumptions_24"></a>
 
 ### Assumptions
 
@@ -1903,7 +1973,7 @@ to the <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">I
 to parse into.
 
 
-<a name="@Aborts_if_24"></a>
+<a name="@Aborts_if_25"></a>
 
 ### Aborts if
 
@@ -1918,7 +1988,7 @@ to parse into.
 threshold.
 
 
-<a name="@Assumptions_25"></a>
+<a name="@Assumptions_26"></a>
 
 ### Assumptions
 
@@ -2014,7 +2084,7 @@ vector.
 Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
-<a name="@Parameters_26"></a>
+<a name="@Parameters_27"></a>
 
 ### Parameters
 
@@ -2031,7 +2101,7 @@ vector containing fields for a corresponding
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
 
 
-<a name="@Aborts_if_27"></a>
+<a name="@Aborts_if_28"></a>
 
 ### Aborts if
 

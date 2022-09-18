@@ -145,6 +145,8 @@ module econia::incentives {
     const E_NOT_ENOUGH_UTILITY_COINS: u64 = 13;
     /// When too many integrater fee store tiers indicated.
     const E_TOO_MANY_TIERS: u64 = 14;
+    /// When indicated tier is not higher than existing tier.
+    const E_NOT_AN_UPGRADE: u64 = 15;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -399,6 +401,7 @@ module econia::incentives {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[cmd]
     /// Wrapped call to `set_incentives()`, when calling after
     /// initialization.
     ///
@@ -417,6 +420,41 @@ module econia::incentives {
         set_incentive_parameters<UtilityCoinType>(econia,
             &market_registration_fee, &custodian_registration_fee,
             &taker_fee_divisor, &integrator_fee_store_tiers, &true);
+    }
+
+    #[cmd]
+    /// # Aborts if
+    /// * `new_tier` is not higher than existing tier.
+    public entry fun upgrade_integrator_fee_store<
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        integrator: &signer,
+        market_id: u64,
+        new_tier: u8,
+        utility_coins: coin::Coin<UtilityCoinType>
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        IntegratorFeeStores,
+        UtilityCoinStore
+    {
+        // Borrow mutable reference to integrator fee store for given
+        // quote coin type and market ID.
+        let integrator_fee_store_ref_mut = table_list::borrow_mut(
+                &mut borrow_global_mut<IntegratorFeeStores<QuoteCoinType>>(
+                    address_of(integrator)).map, market_id);
+        // Get current tier number.
+        let current_tier = integrator_fee_store_ref_mut.tier;
+        // Assert actually attempting to upgrade to new tier.
+        assert!(new_tier > current_tier, E_NOT_AN_UPGRADE);
+        // Calculate difference in cumulative cost to upgrade.
+        let cost_to_upgrade = get_tier_activation_fee(&new_tier) -
+            get_tier_activation_fee(&current_tier);
+        // Deposit verified amount and type of utility coins.
+        deposit_utility_coins_verified<UtilityCoinType>(utility_coins,
+            &cost_to_upgrade);
+        integrator_fee_store_ref_mut.tier = new_tier; // Set new tier.
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1037,19 +1075,37 @@ module econia::incentives {
     }
 
     #[test_only]
-    /// Return amount of utility coins in `UtilityCoinStore` for given
-    /// `UtilityCoinType`.
+    /// Return activation tier of `IntegratorFeeStore` for given
+    /// `QuoteCoinType` and `market_id`.
     ///
     /// # Restrictions
     /// * Restricted to test-only to prevent excessive public queries
     ///   and thus transaction collisions.
-    public fun get_utility_coin_store_balance_test<UtilityCoinType>():
+    public fun get_integrator_fee_store_tier_test<QuoteCoinType>(
+        integrator: address,
+        market_id: u64
+    ): u8
+    acquires
+        IntegratorFeeStores
+    {
+        table_list::borrow(&borrow_global<IntegratorFeeStores<QuoteCoinType>>(
+            integrator).map, market_id).tier
+    }
+
+    #[test_only]
+    /// Return amount of utility coins in `UtilityCoinStore` for utility
+    /// coin type `UC`.
+    ///
+    /// # Restrictions
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions.
+    public fun get_utility_coin_store_balance_test():
     u64
     acquires
         FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
-        coin::value(&borrow_global<UtilityCoinStore<UtilityCoinType>>(
+        coin::value(&borrow_global<UtilityCoinStore<UC>>(
                 get_fee_account_address()).coins)
     }
 
@@ -1101,7 +1157,7 @@ module econia::incentives {
         deposit_market_registration_utility_coins<UC>(assets::mint_test(
             market_registration_fee));
         // Assert total amount.
-        assert!(get_utility_coin_store_balance_test<UC>() ==
+        assert!(get_utility_coin_store_balance_test() ==
             custodian_registration_fee + market_registration_fee, 0);
     }
 
@@ -1306,8 +1362,13 @@ module econia::incentives {
             &tier_0, assets::mint_test(get_tier_activation_fee(&tier_0)));
         register_integrator_fee_store<QC, UC>(integrator, &market_id_1,
             &tier_1, assets::mint_test(get_tier_activation_fee(&tier_1)));
+        // Assert tiers.
+        assert!(get_integrator_fee_store_tier_test<QC>(@user, market_id_0) ==
+            tier_0, 0);
+        assert!(get_integrator_fee_store_tier_test<QC>(@user, market_id_1) ==
+            tier_1, 0);
         // Assert utility coins deposited.
-        assert!(get_utility_coin_store_balance_test<UC>() ==
+        assert!(get_utility_coin_store_balance_test() ==
             utility_coin_balance_0, 0);
         // Mint enough quote coins to cover taker fees for fill 0.
         let quote_coins = assets::mint_test(taker_fees_0);
@@ -1343,7 +1404,7 @@ module econia::incentives {
         assert!(coin::value(&quote_coins) == integrator_fees_0, 0);
         assets::burn(quote_coins); // Burn coins.
         // Assert utility coins deposited.
-        assert!(get_utility_coin_store_balance_test<UC>() ==
+        assert!(get_utility_coin_store_balance_test() ==
             utility_coin_balance_1, 0);
         // Have Econia withdraw 1 coin for market ID 0.
         quote_coins = withdraw_econia_fees<QC>(econia, &market_id_0, &1);
@@ -1604,6 +1665,60 @@ module econia::incentives {
         // Attempt invalid invocation.
         set_incentive_parameters_range_check_inputs(econia, &1, &1, &1,
             &integrator_fee_store_tiers);
+    }
+
+    #[test(integrator = @user)]
+    /// Verify upgrade deposits.
+    fun test_upgrade_integrator_fee_store(
+        integrator: &signer
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        IntegratorFeeStores,
+        UtilityCoinStore
+    {
+        init_incentives_test(); // Init incentives.
+        // Declare market ID, tier.
+        let (market_id, tier_start, tier_upgrade) = (0, 0, 1);
+        // Declare activation fee for start and upgrade tiers.
+        let (fee_start, fee_upgrade) = (get_tier_activation_fee(&tier_start),
+            get_tier_activation_fee(&tier_upgrade));
+        // Register to start tier.
+        register_integrator_fee_store<QC, UC>(integrator, &market_id,
+            &tier_start, assets::mint_test(fee_start));
+        // Assert start tier.
+        assert!(get_integrator_fee_store_tier_test<QC>(@user, market_id) ==
+            tier_start, 0);
+        // Upgrade to upgrade tier.
+        upgrade_integrator_fee_store<QC, UC>(integrator, market_id,
+            tier_upgrade, assets::mint_test(fee_upgrade - fee_start));
+        // Assert fees assessed for cumulative amount required to
+        // activate to upgrade tier.
+        assert!(get_utility_coin_store_balance_test() == fee_upgrade, 0);
+        // Assert upgrade tier.
+        assert!(get_integrator_fee_store_tier_test<QC>(@user, market_id) ==
+            tier_upgrade, 0);
+    }
+
+    #[test(integrator = @user)]
+    #[expected_failure(abort_code = 15)]
+    /// Verify expected failure for not an upgrade.
+    fun test_upgrade_integrator_fee_store_not_upgrade(
+        integrator: &signer
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        IntegratorFeeStores,
+        UtilityCoinStore
+    {
+        init_incentives_test(); // Init incentives.
+        let (market_id, tier) = (0, 0); // Declare market ID, tier.
+        // Register to given tier.
+        register_integrator_fee_store<QC, UC>(integrator, &market_id, &tier,
+            assets::mint_test(get_tier_activation_fee(&tier)));
+        // Attempt invalid upgrade.
+        upgrade_integrator_fee_store<QC, UC>(integrator, market_id, tier,
+            coin::zero());
     }
 
     #[test]

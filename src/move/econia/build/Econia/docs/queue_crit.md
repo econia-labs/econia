@@ -79,6 +79,7 @@ blocks through indentation by 4 spaces):
 >            /   \
 >          110   111
 ```
+
 Here, the <code><a href="queue_crit.md#0xc0deb00c_queue_crit_Parent">Parent</a></code> node marked <code>2nd</code> stores the critical bit <code>2</code>,
 the <code><a href="queue_crit.md#0xc0deb00c_queue_crit_Parent">Parent</a></code> node marked <code>1st</code> stores the critical bit <code>1</code>, and the
 <code><a href="queue_crit.md#0xc0deb00c_queue_crit_Parent">Parent</a></code> node marked <code>0th</code> stores the critical bit <code>0</code>. Hence, the

@@ -58,6 +58,7 @@
 /// >            /   \
 /// >          110   111
 /// ```
+///
 /// Here, the `Parent` node marked `2nd` stores the critical bit `2`,
 /// the `Parent` node marked `1st` stores the critical bit `1`, and the
 /// `Parent` node marked `0th` stores the critical bit `0`. Hence, the

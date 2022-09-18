@@ -4,7 +4,9 @@
 
 **e·co·ni·a** | /ə'känēə/
 
-Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the Aptos blockchain
+Welcome to the developer documentation site for Econia, a hyper-parallelized on-chain order book for the Aptos blockchain.
+
+If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos](https://github.com/econia-labs/teach-yourself-move) guide for some helpful background information!
 
 ## What is Econia?
 

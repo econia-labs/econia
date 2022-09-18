@@ -25,6 +25,8 @@
     - [Move](#move)
     - [Python](#python)
 
+If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos](https://github.com/econia-labs/teach-yourself-move) guide for some helpful background information!
+
 ## Developer setup
 
 ### Shell scripts

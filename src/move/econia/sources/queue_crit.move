@@ -115,9 +115,10 @@ module econia::queue_crit {
     /// count", which describes the number of key-value pairs, sharing
     /// the same insertion key, that were previously inserted.
     /// Continuing the above example, the first inserted instance of
-    /// $\{ 3, 5 \}$ ( $p_{3, 0}$ ) has insertion count `0`, $p_{3, 1} =
-    /// \{ 3, 8 \}$ has insertion count `1`, and the second instance of
-    /// $\{ 3, 5 \}$ ( $p_{3, 2}$ ) has insertion count `2`.
+    /// $\{ 3, 5 \}$ ( $p_{3, 0}$ ) has insertion count `0`, the only
+    /// inserted instance of $\{ 3, 8 \}$ ( $p_{3, 1}$ ) has insertion
+    /// count `1`, and the second instance of $\{ 3, 5 \}$
+    /// ( $p_{3, 2}$ ) has insertion count `2`.
     ///
     /// # Nested sorting
     ///

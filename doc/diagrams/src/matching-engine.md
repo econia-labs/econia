@@ -1,50 +1,3 @@
-# `mermaid.js` diagram source
-
-- [`mermaid.js` diagram source](#mermaidjs-diagram-source)
-  - [General](#general)
-  - [Modules](#modules)
-  - [Matching engine](#matching-engine)
-  - [Matching engine test functions](#matching-engine-test-functions)
-
-## General
-
-* The below diagrams are generated declaratively via `mermaid.js`, and may present occasional rendering artifacts.
-
-* Most tutorials online present an `%%{init:}` directive on a single line, despite excessive line length.
-
-* The [modules](#modules) diagram theme is matched to GitHub's color schema.
-
-* Recommended disclaimer
-    * (If accessing the below diagram via GitBook, you may need to switch web browsers to view an enlarged version, which can be pulled up by clicking on the image.)
-
-* `SVG` diagrams can be generated via [mermaid.live](https://mermaid.live/)
-
-## Modules
-
-```mermaid
-
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1'}}}%%
-
-flowchart TD
-
-    user --> critbit
-    user --> open_table
-    user --> order_id
-    user --> |friend| registry
-    user --> |test-only| assets
-    registry --> |test-only| assets
-    order_id --> |test-only| critbit
-    market --> critbit
-    market --> open_table
-    market --> order_id
-    market --> |friend| registry
-    market --> |friend| user
-    market --> |test-only| assets
-
-```
-
-## Matching engine
-
 ```mermaid
 
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1', 'tertiaryColor': '#808080', 'tertiaryTextColor': '#0d1013'}}}%%
@@ -140,39 +93,5 @@ flowchart TB
     class match_loop_break tested_integrated;
     class match_loop_init tested_integrated;
     class match_range_check_fills individually_tested;
-
-```
-
-## Matching engine test functions
-
-```mermaid
-
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#54a7fa', 'lineColor': '#c4dcf1', 'primaryTextColor': '#0d1013', 'secondaryColor': '#c4dcf1', 'tertiaryColor': '#808080', 'tertiaryTextColor': '#0d1013'}}}%%
-
-flowchart LR
-
-    subgraph Setup
-
-    register_end_to_end_users_test --> register_end_to_end_market_accounts_test
-    register_end_to_end_users_test --> register_end_to_end_orders_test
-    register_end_to_end_market_accounts_test --> register_end_to_end_market_account_test
-    register_end_to_end_market_account_test --> register_end_to_end_market_account_deposit_test
-
-    end
-
-    register_end_to_end_orders_test --> get_end_to_end_orders_size_price_test
-    verify_end_to_end_state_test --> get_end_to_end_orders_size_price_test
-
-    subgraph State verification
-
-    verify_end_to_end_state_test --> get_fill_sizes_test
-    get_fill_sizes_test --> get_fill_remaining_test
-    verify_end_to_end_state_test --> verify_end_to_end_state_order_user_test
-    verify_end_to_end_state_test --> verify_end_to_end_state_user_0_test
-    verify_end_to_end_state_order_user_test --> verify_end_to_end_state_collateral_test
-    verify_end_to_end_state_user_0_test --> verify_end_to_end_state_collateral_test
-    verify_end_to_end_state_test --> verify_end_to_end_state_spread_makers
-
-    end
 
 ```

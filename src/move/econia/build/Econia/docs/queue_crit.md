@@ -170,17 +170,17 @@ Accepts key-value pair insertions for multiple instances of
 the same "insertion key". For example, the following key-value
 pairs, each having an insertion key of <code>3</code>, can all be inserted:
 
-* $p_{3, 0} = \{3, 5\}$
-* $p_{3, 1} = \{3, 8\}$
-* $p_{3, 2} = \{3, 5\}$
+* $p_{3, 0} = \{ 3, 5 \}$
+* $p_{3, 1} = \{ 3, 8 \}$
+* $p_{3, 2} = \{ 3, 5 \}$
 
 Upon insertion, key-value pairs are assigned an "insertion
 count", which describes the number of key-value pairs, sharing
 the same insertion key, that were previously inserted.
 Continuing the above example, the first inserted instance of
-$\{3, 5\}$ ($p_{3, 0}$) has insertion count <code>0</code>, $p_{3, 1} =
-\{3, 8\}$ has insertion count <code>1</code>, and the second instance of
-$\{3, 5\}$ ($p_{3, 2}$) has insertion count <code>2</code>.
+$\{ 3, 5 \}$ ( $p_{3, 0}$ ) has insertion count <code>0</code>, $p_{3, 1} =
+\{ 3, 8 \}$ has insertion count <code>1</code>, and the second instance of
+$\{ 3, 5 \}$ ( $p_{3, 2}$ ) has insertion count <code>2</code>.
 
 
 <a name="@Nested_sorting_6"></a>

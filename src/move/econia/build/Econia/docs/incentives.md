@@ -20,6 +20,7 @@ Incentive-associated parameters and data structures.
 -  [Function `get_market_registration_fee`](#0xc0deb00c_incentives_get_market_registration_fee)
 -  [Function `get_n_fee_store_tiers`](#0xc0deb00c_incentives_get_n_fee_store_tiers)
 -  [Function `get_taker_fee_divisor`](#0xc0deb00c_incentives_get_taker_fee_divisor)
+-  [Function `get_taker_fee_divisor_ref`](#0xc0deb00c_incentives_get_taker_fee_divisor_ref)
 -  [Function `get_tier_activation_fee`](#0xc0deb00c_incentives_get_tier_activation_fee)
 -  [Function `get_withdrawal_fee`](#0xc0deb00c_incentives_get_withdrawal_fee)
 -  [Function `is_utility_coin_type`](#0xc0deb00c_incentives_is_utility_coin_type)
@@ -458,6 +459,16 @@ reduction in fee store tiers.
 
 
 
+<a name="0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO"></a>
+
+When the cost to activate to tier 0 is nonzero.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO">E_FIRST_TIER_ACTIVATION_FEE_NONZERO</a>: u64 = 18;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE"></a>
 
 When type is not the utility coin type.
@@ -823,6 +834,34 @@ Return taker fee divisor.
 u64
 <b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
     <b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).taker_fee_divisor
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_get_taker_fee_divisor_ref"></a>
+
+## Function `get_taker_fee_divisor_ref`
+
+Like <code><a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">get_taker_fee_divisor</a>()</code>, but pass-by-reference.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor_ref">get_taker_fee_divisor_ref</a>(taker_fee_divisor_ref_mut: &<b>mut</b> u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor_ref">get_taker_fee_divisor_ref</a>(
+    taker_fee_divisor_ref_mut: &<b>mut</b> u64
+) <b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
+    *taker_fee_divisor_ref_mut =
+        <b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).taker_fee_divisor;
 }
 </code></pre>
 
@@ -2239,6 +2278,7 @@ to parse into.
 <code>integrator_fee_store_tiers_ref</code> is the wrong length.
 * Fee share divisor does not decrease with tier number.
 * A fee share divisor is less than taker fee divisor.
+* Tier activation fee for first tier is nonzero.
 * Tier activation fee does not increase with tier number.
 * There is no tier activation fee for the first tier.
 * Withdrawal fee does not decrease with tier number.
@@ -2275,10 +2315,9 @@ vector.
         &<b>mut</b> <a href="">vector</a>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a>&gt;
 ) {
     // Initialize tracker variables for the fee store parameters of
-    // the last parsed tier. Flagged such that activation fee must
-    // be nonzero even for the first tier.
+    // the last parsed tier.
     <b>let</b> (divisor_last, activation_fee_last, withdrawal_fee_last) = (
-                <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>,                   0,               <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>);
+                <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>,               <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>,               <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>);
     // Get number of specified integrator fee store tiers.
     <b>let</b> n_tiers = <a href="_length">vector::length</a>(integrator_fee_store_tiers_ref);
     <b>let</b> i = 0; // Declare counter for <b>loop</b> variable.
@@ -2303,9 +2342,15 @@ vector.
         // Borrow immutable reference <b>to</b> tier activation fee.
         <b>let</b> tier_activation_fee_ref =
             <a href="_borrow">vector::borrow</a>(tier_fields_ref, <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_INDEX">TIER_ACTIVATION_FEE_INDEX</a>);
-        // Assert activation fee is greater than that of last tier.
-        <b>assert</b>!(*tier_activation_fee_ref &gt; activation_fee_last,
-            <a href="incentives.md#0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL">E_ACTIVATION_FEE_TOO_SMALL</a>);
+        <b>if</b> (i == 0) { // If parsing parameters for first tier:
+            // Assert activation fee is 0
+            <b>assert</b>!(*tier_activation_fee_ref == 0,
+                <a href="incentives.md#0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO">E_FIRST_TIER_ACTIVATION_FEE_NONZERO</a>);
+        } <b>else</b> { // If parameters for tier that is not first:
+            // Assert activation fee greater than that of last tier.
+            <b>assert</b>!(*tier_activation_fee_ref &gt; activation_fee_last,
+                <a href="incentives.md#0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL">E_ACTIVATION_FEE_TOO_SMALL</a>);
+        };
         // Borrow immutable reference <b>to</b> withdrawal fee.
         <b>let</b> withdrawal_fee_ref =
             <a href="_borrow">vector::borrow</a>(tier_fields_ref, <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_INDEX">WITHDRAWAL_FEE_INDEX</a>);

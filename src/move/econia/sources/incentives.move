@@ -152,6 +152,8 @@ module econia::incentives {
     const E_FEWER_TIERS: u64 = 16;
     /// When maximum amount of quote coins to match overflows a `u64`.
     const E_MAX_QUOTE_MATCH_OVERFLOW: u64 = 17;
+    /// When the cost to activate to tier 0 is nonzero.
+    const E_FIRST_TIER_ACTIVATION_FEE_NONZERO: u64 = 18;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -226,11 +228,20 @@ module econia::incentives {
         vector::length(&borrow_global<IncentiveParameters>(@econia).
             integrator_fee_store_tiers)
     }
+
     /// Return taker fee divisor.
     public fun get_taker_fee_divisor():
     u64
     acquires IncentiveParameters {
         borrow_global<IncentiveParameters>(@econia).taker_fee_divisor
+    }
+
+    /// Like `get_taker_fee_divisor()`, but pass-by-reference.
+    public fun get_taker_fee_divisor_ref(
+        taker_fee_divisor_ref_mut: &mut u64
+    ) acquires IncentiveParameters {
+        *taker_fee_divisor_ref_mut =
+            borrow_global<IncentiveParameters>(@econia).taker_fee_divisor;
     }
 
     /// Return tier activation fee for tier indicated by `tier_ref`.
@@ -1016,6 +1027,7 @@ module econia::incentives {
     ///   `integrator_fee_store_tiers_ref` is the wrong length.
     /// * Fee share divisor does not decrease with tier number.
     /// * A fee share divisor is less than taker fee divisor.
+    /// * Tier activation fee for first tier is nonzero.
     /// * Tier activation fee does not increase with tier number.
     /// * There is no tier activation fee for the first tier.
     /// * Withdrawal fee does not decrease with tier number.
@@ -1037,10 +1049,9 @@ module econia::incentives {
             &mut vector<IntegratorFeeStoreTierParameters>
     ) {
         // Initialize tracker variables for the fee store parameters of
-        // the last parsed tier. Flagged such that activation fee must
-        // be nonzero even for the first tier.
+        // the last parsed tier.
         let (divisor_last, activation_fee_last, withdrawal_fee_last) = (
-                    HI_64,                   0,               HI_64);
+                    HI_64,               HI_64,               HI_64);
         // Get number of specified integrator fee store tiers.
         let n_tiers = vector::length(integrator_fee_store_tiers_ref);
         let i = 0; // Declare counter for loop variable.
@@ -1065,9 +1076,15 @@ module econia::incentives {
             // Borrow immutable reference to tier activation fee.
             let tier_activation_fee_ref =
                 vector::borrow(tier_fields_ref, TIER_ACTIVATION_FEE_INDEX);
-            // Assert activation fee is greater than that of last tier.
-            assert!(*tier_activation_fee_ref > activation_fee_last,
-                E_ACTIVATION_FEE_TOO_SMALL);
+            if (i == 0) { // If parsing parameters for first tier:
+                // Assert activation fee is 0
+                assert!(*tier_activation_fee_ref == 0,
+                    E_FIRST_TIER_ACTIVATION_FEE_NONZERO);
+            } else { // If parameters for tier that is not first:
+                // Assert activation fee greater than that of last tier.
+                assert!(*tier_activation_fee_ref > activation_fee_last,
+                    E_ACTIVATION_FEE_TOO_SMALL);
+            };
             // Borrow immutable reference to withdrawal fee.
             let withdrawal_fee_ref =
                 vector::borrow(tier_fields_ref, WITHDRAWAL_FEE_INDEX);
@@ -1159,7 +1176,7 @@ module econia::incentives {
     #[test_only]
     const FEE_SHARE_DIVISOR_1: u64 = 3000;
     #[test_only]
-    const TIER_ACTIVATION_FEE_0: u64 = 150;
+    const TIER_ACTIVATION_FEE_0: u64 = 0;
     #[test_only]
     const TIER_ACTIVATION_FEE_1: u64 = 225;
     #[test_only]
@@ -1373,6 +1390,21 @@ module econia::incentives {
         assets::burn(coins); // Burn coins
     }
 
+    #[test]
+    /// Verify resassignment.
+    fun test_get_taker_fee_divisor_ref()
+    acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+    {
+        init_incentives_test(); // Init incentives.
+        let taker_fee_divisor = 0; // Declare taker fee divisor.
+        // Reassign taker fee divisor.
+        get_taker_fee_divisor_ref(&mut taker_fee_divisor);
+        // Assert reassignment.
+        assert!(taker_fee_divisor == TAKER_FEE_DIVISOR, 0);
+    }
+
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for non-Econia caller.
@@ -1396,7 +1428,7 @@ module econia::incentives {
         let custodian_registration_fee = 456;
         let taker_fee_divisor = 789;
         let fee_share_divisor_0 = 1234;
-        let tier_activation_fee_0 = 2345;
+        let tier_activation_fee_0 = TIER_ACTIVATION_FEE_0;
         let withdrawal_fee_0 = 3456;
         // Vectorize fee store tier parameters.
         let tier_0 = vector::singleton(fee_share_divisor_0);
@@ -1425,11 +1457,10 @@ module econia::incentives {
         custodian_registration_fee = custodian_registration_fee + 5;
         taker_fee_divisor = taker_fee_divisor + 5;
         fee_share_divisor_0 = fee_share_divisor_0 + 5;
-        tier_activation_fee_0 = tier_activation_fee_0 + 5;
-        withdrawal_fee_0 = tier_activation_fee_0 + 5;
+        withdrawal_fee_0 = withdrawal_fee_0 + 5;
         let fee_share_divisor_1 = fee_share_divisor_0 - 1;
         let tier_activation_fee_1 = tier_activation_fee_0 + 1;
-        let withdrawal_fee_1 = tier_activation_fee_0 - 1;
+        let withdrawal_fee_1 = withdrawal_fee_0 - 1;
         // Vectorize fee store tier parameters.
         tier_0 = vector::singleton(fee_share_divisor_0);
         vector::push_back(&mut tier_0, tier_activation_fee_0);
@@ -1605,14 +1636,14 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 9)]
-    /// Verify failure for activation fee too small on 0th tier.
+    #[expected_failure(abort_code = 18)]
+    /// Verify failure for nonzero activation fee on first tier.
     fun test_sent_incentive_parameters_parse_tiers_vector_activation_0() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
         let tier_0 = vector::singleton(taker_fee_divisor + 1);
-        vector::push_back(&mut tier_0, 0); // Activation fee.
+        vector::push_back(&mut tier_0, 1); // Activation fee.
         vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
         let integrator_fee_store_tiers = vector::singleton(tier_0);
         let integrator_fee_store_tiers_target = vector::empty();
@@ -1629,11 +1660,13 @@ module econia::incentives {
         let taker_fee_divisor = 2345;
         // Divisor.
         let tier_0 = vector::singleton(taker_fee_divisor + 2);
-        vector::push_back(&mut tier_0, 1); // Activation fee.
+        // Activation fee.
+        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
         // Divisor.
         let tier_1 = vector::singleton(taker_fee_divisor + 1);
-        vector::push_back(&mut tier_1, 1); // Activation fee.
+        // Activation fee.
+        vector::push_back(&mut tier_1, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_1, HI_64 - 2); // Withdrawal fee.
         let integrator_fee_store_tiers = vector::singleton(tier_0);
         vector::push_back(&mut integrator_fee_store_tiers, tier_1);
@@ -1667,7 +1700,8 @@ module econia::incentives {
         let taker_fee_divisor = 2345;
         // Divisor.
         let tier_0 = vector::singleton(taker_fee_divisor + 1);
-        vector::push_back(&mut tier_0, 1); // Activation fee.
+        // Activation fee.
+        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
         // Divisor.
         let tier_1 = vector::singleton(taker_fee_divisor + 1);
@@ -1689,7 +1723,8 @@ module econia::incentives {
         let taker_fee_divisor = 2345;
         // Divisor.
         let tier_0 = vector::singleton(taker_fee_divisor - 1);
-        vector::push_back(&mut tier_0, 0); // Activation fee.
+        // Activation fee.
+        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_0, 0); // Withdrawal fee.
         let integrator_fee_store_tiers = vector::singleton(tier_0);
         let integrator_fee_store_tiers_target = vector::empty();
@@ -1706,7 +1741,8 @@ module econia::incentives {
         let taker_fee_divisor = 2345;
         // Divisor.
         let tier_0 = vector::singleton(taker_fee_divisor + 2);
-        vector::push_back(&mut tier_0, 1); // Activation fee.
+        // Activation fee.
+        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_0, HI_64); // Withdrawal fee.
         let integrator_fee_store_tiers = vector::singleton(tier_0);
         let integrator_fee_store_tiers_target = vector::empty();
@@ -1723,7 +1759,8 @@ module econia::incentives {
         let taker_fee_divisor = 2345;
         // Divisor.
         let tier_0 = vector::singleton(taker_fee_divisor + 2);
-        vector::push_back(&mut tier_0, 1); // Activation fee.
+        // Activation fee.
+        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_0, HI_64 - 1); // Withdrawal fee.
         // Divisor.
         let tier_1 = vector::singleton(taker_fee_divisor + 1);
@@ -1745,7 +1782,8 @@ module econia::incentives {
         let taker_fee_divisor = 2345;
         // Divisor.
         let tier_0 = vector::singleton(taker_fee_divisor + 1);
-        vector::push_back(&mut tier_0, 1); // Activation fee.
+        // Activation fee.
+        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
         vector::push_back(&mut tier_0, 0); // Withdrawal fee.
         let integrator_fee_store_tiers = vector::singleton(tier_0);
         let integrator_fee_store_tiers_target = vector::empty();
@@ -1981,11 +2019,11 @@ module econia::incentives {
         let custodian_registration_fee = 456;
         let taker_fee_divisor = 789;
         let fee_share_divisor_0 = 1234;
-        let tier_activation_fee_0 = 2345;
+        let tier_activation_fee_0 = TIER_ACTIVATION_FEE_0;
         let withdrawal_fee_0 = 3456;
         let fee_share_divisor_1 = fee_share_divisor_0 - 1;
         let tier_activation_fee_1 = tier_activation_fee_0 + 1;
-        let withdrawal_fee_1 = tier_activation_fee_0 - 1;
+        let withdrawal_fee_1 = withdrawal_fee_0 - 1;
         // Vectorize fee store tier parameters.
         let tier_0 = vector::singleton(fee_share_divisor_0);
         vector::push_back(&mut tier_0, tier_activation_fee_0);

@@ -6,7 +6,8 @@
 ///
 /// Accepts key-value pairs having key type `K` and value type `V`.
 ///
-/// See `test_iterate()` for iteration syntax.
+/// See `test_iterate()` and `test_iterate_remove()` for iteration
+/// syntax.
 ///
 /// ---
 ///
@@ -106,6 +107,8 @@ module econia::table_list {
     /// * Immutable reference to corresponding value.
     /// * Optional key of previous `Node` in the `TableList`, if any.
     /// * Optional key of next `Node` in the `TableList`, if any.
+    ///
+    /// Aborts if there is no entry for `key`.
     public fun borrow_iterable<
         K: copy + drop + store,
         V: store
@@ -128,6 +131,8 @@ module econia::table_list {
     /// * Mutable reference to corresponding value.
     /// * Optional key of previous `Node` in the `TableList`, if any.
     /// * Optional key of next `Node` in the `TableList`, if any.
+    ///
+    /// Aborts if there is no entry for `key`.
     public fun borrow_iterable_mut<
         K: copy + drop + store,
         V: store
@@ -239,6 +244,67 @@ module econia::table_list {
         table_with_length::empty(&table_list_ref.inner_table)
     }
 
+    /// Remove `key` from `TableList` at `table_list_ref_mut`, returning
+    /// the value `key` mapped to.
+    ///
+    /// See wrapped function `remove_iterable()`.
+    ///
+    /// Aborts if there is no entry for `key`.
+    public fun remove<
+        K: copy + drop + store,
+        V: store
+    >(
+        table_list_ref_mut: &mut TableList<K, V>,
+        key: K
+    ): V {
+        // Get value iterable removal.
+        let (value, _, _) = remove_iterable(table_list_ref_mut, key);
+        value // Return value.
+    }
+
+    /// Remove `key` from `TableList` at `table_list_ref_mut`, returning
+    /// the value `key` mapped to, the previous key it mapped to (if
+    /// any), and the next key it mapped to (if any).
+    ///
+    /// Aborts if there is no entry for `key`.
+    public fun remove_iterable<
+        K: copy + drop + store,
+        V: store
+    >(
+        table_list_ref_mut: &mut TableList<K, V>,
+        key: K
+    ): (
+        V,
+        Option<K>,
+        Option<K>
+    ) {
+        // Unpack from inner table the node with the given key.
+        let Node{value, previous, next} = table_with_length::remove(
+            &mut table_list_ref_mut.inner_table, key);
+        // If the node was the head of the list:
+        if (option::is_none(&previous)) { // If no previous node:
+            // Set as the list head the node's next field.
+            table_list_ref_mut.head = next;
+        } else { // If node was not head of list:
+            // Update the node having the previous key to have as its
+            // next field the next field of the removed node.
+            table_with_length::borrow_mut(&mut table_list_ref_mut.inner_table,
+                *option::borrow(&previous)).next = next;
+        };
+        // If the node was the tail of the list:
+        if (option::is_none(&next)) { // If no next node:
+            // Set as the list tail the node's previous field.
+            table_list_ref_mut.tail = previous;
+        } else { // If node was not tail of list:
+            // Update the node having the next key to have as its
+            // previous field the previous field of the removed node.
+            table_with_length::borrow_mut(&mut table_list_ref_mut.inner_table,
+                *option::borrow(&next)).previous = previous;
+        };
+        // Return node value, previous field, and next field.
+        (value, previous, next)
+    }
+
     /// Return a new `TableList` containing given `key`-`value` pair.
     public fun singleton<
         K: copy + drop + store,
@@ -270,7 +336,7 @@ module econia::table_list {
     fun test_iterate(): TableList<u64, u64> {
         let table_list = new(); // Declare new table list.
         let i = 0; // Declare counter.
-        while (i < 100) { // For 100 iterations.
+        while (i < 100) { // For 100 iterations:
             // Add key-value pair to table where key and value are both
             // the value of the counter.
             add(&mut table_list, i, i);
@@ -284,7 +350,7 @@ module econia::table_list {
             // Get value for key and next key in linked list.
             let (value_ref, _, next) =
                 borrow_iterable(&table_list, *option::borrow(&key));
-            // Assert key-value pairs.
+            // Assert key-value pais.
             assert!(*option::borrow(&key) == i, 0);
             assert!(*value_ref == i, 0);
             key = next; // Review the next key.
@@ -297,7 +363,7 @@ module econia::table_list {
             // Get value for key and previous key in linked list.
             let (value_ref_mut, previous, _) =
                 borrow_iterable_mut(&mut table_list, *option::borrow(&key));
-            // Assert key-value pairs.
+            // Assert key-value pair.
             assert!(*option::borrow(&key) == (99 - i), 0);
             assert!(*value_ref_mut == (99 - i), 0);
             // Mutate the value by adding 1.
@@ -312,7 +378,7 @@ module econia::table_list {
             // Get value for key and next key in linked list.
             let (value_ref_mut, _, next) =
                 borrow_iterable_mut(&mut table_list, *option::borrow(&key));
-            // Assert key-value pairs.
+            // Assert key-value pair.
             assert!(*option::borrow(&key) == i, 0);
             assert!(*value_ref_mut == i + 1, 0);
             // Mutate the value by adding 1.
@@ -327,7 +393,7 @@ module econia::table_list {
             // Get value for key and previous key in linked list.
             let (value_ref, previous, _) =
                 borrow_iterable(&table_list, *option::borrow(&key));
-            // Assert key-value pairs.
+            // Assert key-value pair.
             assert!(*option::borrow(&key) == (99 - i), 0);
             assert!(*value_ref == (99 - i) + 2, 0);
             key = previous; // Review the previous key.
@@ -337,8 +403,56 @@ module econia::table_list {
     }
 
     #[test]
+    /// Verify iterated removal, first from head to tail, then from
+    /// tail to head.
+    fun test_iterate_remove() {
+        let table_list = new(); // Declare new table list.
+        let i = 0; // Declare counter.
+        while (i < 100) { // For 100 iterations:
+            // Add key-value pair to table where key and value are both
+            // the value of the counter.
+            add(&mut table_list, i, i);
+            i = i + 1; // Increment counter.
+        };
+        let key = get_head_key(&table_list); // Get head key.
+        i = 0; // Re-initialize counter.
+        // While keys left to iterate on:
+        while (option::is_some(&key)) {
+            // Get value for key and next key in linked list.
+            let (value, _, next) = remove_iterable(
+                &mut table_list, *option::borrow(&key));
+            // Assert key-value pair.
+            assert!(*option::borrow(&key) == i, 0);
+            assert!(value == i, 0);
+            key = next; // Review the next key.
+            i = i + 1; // Increment counter
+        };
+        i = 0; // Re-initialize counter.
+        while (i < 100) { // For 100 iterations:
+            // Add key-value pair to table where key and value are both
+            // the value of the counter.
+            add(&mut table_list, i, i);
+            i = i + 1; // Increment counter.
+        };
+        key = get_tail_key(&table_list); // Get tail key.
+        i = 0; // Re-initialize counter.
+        // While keys left to iterate on:
+        while (option::is_some(&key)) {
+            // Get value for key and previous key in linked list.
+            let (value, previous, _) = remove_iterable(
+                &mut table_list, *option::borrow(&key));
+            // Assert key-value pair.
+            assert!(*option::borrow(&key) == (99 - i), 0);
+            assert!(value == (99 - i), 0);
+            key = previous; // Review the previous key.
+            i = i + 1; // Increment counter
+        };
+        destroy_empty(table_list); // Destroy empty table list.
+    }
+
+    #[test]
     /// Verify assorted functionality, without iteration.
-    fun test_mixed(): TableList<u8, bool> {
+    fun test_mixed() {
         // Declare key-value pairs.
         let (key_0, value_0, key_1, value_1) = (1u8, true, 2u8, false);
         // Declare empty table list.
@@ -379,8 +493,10 @@ module econia::table_list {
         assert!(contains(&table_list, key_1), 0);
         assert!(*borrow(&table_list, key_0) == value_0, 0);
         assert!(*borrow(&table_list, key_1) == value_1, 0);
-        // Return table list.
-        table_list
+        // Remove both nodes, asserting values.
+        assert!(remove(&mut table_list, key_0) == value_0, 0);
+        assert!(remove(&mut table_list, key_1) == value_1, 0);
+        destroy_empty(table_list); // Destroy empty table list.
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

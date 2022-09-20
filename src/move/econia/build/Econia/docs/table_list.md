@@ -11,7 +11,8 @@ writing.
 
 Accepts key-value pairs having key type <code>K</code> and value type <code>V</code>.
 
-See <code>test_iterate()</code> for iteration syntax.
+See <code>test_iterate()</code> and <code>test_iterate_remove()</code> for iteration
+syntax.
 
 ---
 
@@ -31,6 +32,8 @@ See <code>test_iterate()</code> for iteration syntax.
 -  [Function `length`](#0xc0deb00c_table_list_length)
 -  [Function `new`](#0xc0deb00c_table_list_new)
 -  [Function `is_empty`](#0xc0deb00c_table_list_is_empty)
+-  [Function `remove`](#0xc0deb00c_table_list_remove)
+-  [Function `remove_iterable`](#0xc0deb00c_table_list_remove_iterable)
 -  [Function `singleton`](#0xc0deb00c_table_list_singleton)
 
 
@@ -228,6 +231,8 @@ Borrow the <code><a href="table_list.md#0xc0deb00c_table_list_Node">Node</a></co
 * Optional key of previous <code><a href="table_list.md#0xc0deb00c_table_list_Node">Node</a></code> in the <code><a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a></code>, if any.
 * Optional key of next <code><a href="table_list.md#0xc0deb00c_table_list_Node">Node</a></code> in the <code><a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a></code>, if any.
 
+Aborts if there is no entry for <code>key</code>.
+
 
 <pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_borrow_iterable">borrow_iterable</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(table_list_ref: &<a href="table_list.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;K, V&gt;, key: K): (&V, <a href="_Option">option::Option</a>&lt;K&gt;, <a href="_Option">option::Option</a>&lt;K&gt;)
 </code></pre>
@@ -269,6 +274,8 @@ having <code>key</code>, then return:
 * Mutable reference to corresponding value.
 * Optional key of previous <code><a href="table_list.md#0xc0deb00c_table_list_Node">Node</a></code> in the <code><a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a></code>, if any.
 * Optional key of next <code><a href="table_list.md#0xc0deb00c_table_list_Node">Node</a></code> in the <code><a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a></code>, if any.
+
+Aborts if there is no entry for <code>key</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_borrow_iterable_mut">borrow_iterable_mut</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(table_list_ref_mut: &<b>mut</b> <a href="table_list.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;K, V&gt;, key: K): (&<b>mut</b> V, <a href="_Option">option::Option</a>&lt;K&gt;, <a href="_Option">option::Option</a>&lt;K&gt;)
@@ -549,6 +556,107 @@ Return <code><b>true</b></code> if <code><a href="table_list.md#0xc0deb00c_table
     table_list_ref: &<a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a>&lt;K, V&gt;
 ): bool {
     <a href="_empty">table_with_length::empty</a>(&table_list_ref.inner_table)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_table_list_remove"></a>
+
+## Function `remove`
+
+Remove <code>key</code> from <code><a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a></code> at <code>table_list_ref_mut</code>, returning
+the value <code>key</code> mapped to.
+
+See wrapped function <code><a href="table_list.md#0xc0deb00c_table_list_remove_iterable">remove_iterable</a>()</code>.
+
+Aborts if there is no entry for <code>key</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_remove">remove</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(table_list_ref_mut: &<b>mut</b> <a href="table_list.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;K, V&gt;, key: K): V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_remove">remove</a>&lt;
+    K: <b>copy</b> + drop + store,
+    V: store
+&gt;(
+    table_list_ref_mut: &<b>mut</b> <a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a>&lt;K, V&gt;,
+    key: K
+): V {
+    // Get value iterable removal.
+    <b>let</b> (value, _, _) = <a href="table_list.md#0xc0deb00c_table_list_remove_iterable">remove_iterable</a>(table_list_ref_mut, key);
+    value // Return value.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_table_list_remove_iterable"></a>
+
+## Function `remove_iterable`
+
+Remove <code>key</code> from <code><a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a></code> at <code>table_list_ref_mut</code>, returning
+the value <code>key</code> mapped to, the previous key it mapped to (if
+any), and the next key it mapped to (if any).
+
+Aborts if there is no entry for <code>key</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_remove_iterable">remove_iterable</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(table_list_ref_mut: &<b>mut</b> <a href="table_list.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;K, V&gt;, key: K): (V, <a href="_Option">option::Option</a>&lt;K&gt;, <a href="_Option">option::Option</a>&lt;K&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="table_list.md#0xc0deb00c_table_list_remove_iterable">remove_iterable</a>&lt;
+    K: <b>copy</b> + drop + store,
+    V: store
+&gt;(
+    table_list_ref_mut: &<b>mut</b> <a href="table_list.md#0xc0deb00c_table_list_TableList">TableList</a>&lt;K, V&gt;,
+    key: K
+): (
+    V,
+    Option&lt;K&gt;,
+    Option&lt;K&gt;
+) {
+    // Unpack from inner <a href="">table</a> the node <b>with</b> the given key.
+    <b>let</b> <a href="table_list.md#0xc0deb00c_table_list_Node">Node</a>{value, previous, next} = <a href="_remove">table_with_length::remove</a>(
+        &<b>mut</b> table_list_ref_mut.inner_table, key);
+    // If the node was the head of the list:
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&previous)) { // If no previous node:
+        // Set <b>as</b> the list head the node's next field.
+        table_list_ref_mut.head = next;
+    } <b>else</b> { // If node was not head of list:
+        // Update the node having the previous key <b>to</b> have <b>as</b> its
+        // next field the next field of the removed node.
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(&<b>mut</b> table_list_ref_mut.inner_table,
+            *<a href="_borrow">option::borrow</a>(&previous)).next = next;
+    };
+    // If the node was the tail of the list:
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&next)) { // If no next node:
+        // Set <b>as</b> the list tail the node's previous field.
+        table_list_ref_mut.tail = previous;
+    } <b>else</b> { // If node was not tail of list:
+        // Update the node having the next key <b>to</b> have <b>as</b> its
+        // previous field the previous field of the removed node.
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(&<b>mut</b> table_list_ref_mut.inner_table,
+            *<a href="_borrow">option::borrow</a>(&next)).previous = previous;
+    };
+    // Return node value, previous field, and next field.
+    (value, previous, next)
 }
 </code></pre>
 

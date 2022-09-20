@@ -12,7 +12,7 @@
 
 ```mermaid
 
-flowchart TB
+flowchart LR
 
 EconiaFeeStore
 FeeAccountSignerCapabilityStore
@@ -38,7 +38,6 @@ get_integrator_withdrawal_fee --> get_tier_withdrawal_fee
 get_market_registration_fee
 get_n_fee_store_tiers
 get_taker_fee_divisor
-get_taker_fee_divisor_ref
 verify_utility_coin_type --> is_utility_coin_type
 
 ```

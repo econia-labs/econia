@@ -724,6 +724,108 @@ module econia::incentives {
         coin::merge(econia_fee_store_coins_ref_mut, econia_fees);
     }
 
+    /// Get max quote coin match amount, per user input and fee divisor.
+    ///
+    /// # User input
+    ///
+    /// Whether a taker buy or sell, users specify a maximum quote coin
+    /// amount when initiating the transaction. This amount indicates
+    /// the maximum amount of quote coins they are willing to spend in
+    /// the case of a taker buy, and the maximum amount of quote coins
+    /// they are willing to receive in the case of a taker sell.
+    ///
+    /// # Matching
+    ///
+    /// The user-specified amount is inclusive of fees, however, and the
+    /// matching engine does not manage fees. Instead it accepts a
+    /// maximum amount of quote coins to match (or more specifically,
+    /// ticks), with fees assessed after matching concludes:
+    ///
+    /// ## Example buy
+    ///
+    /// * Taker is willing to spend 105 quote coins.
+    /// * Fee is 5% (divisor of 20).
+    /// * Max match is thus 100 quote coins.
+    /// * Matching engine returns after 100 quote coins filled.
+    /// * 5% fee then assessed, withdrawn from takers's quote coins.
+    /// * Taker has spent 105 quote coins.
+    ///
+    /// ## Example sell
+    ///
+    /// * Taker is willing to receive 100 quote coins.
+    /// * Fee is 4% (divisor of 25).
+    /// * Max match is thus 104 quote coins.
+    /// * Matching engine returns after 104 quote coins filled.
+    /// * 4% fee then assessed, withdrawn from quote coins received.
+    /// * Taker has received 100 quote coins.
+    ///
+    /// # Variables
+    ///
+    /// Hence, the relationship between user-indicated maxmum quote coin
+    /// amount, taker fee divisor, and the amount of quote coins matched
+    /// can be described with the following variables:
+    /// * $\Delta_t$: Change in quote coins seen by taker.
+    /// * $d_t$: Taker fee divisor.
+    /// * $q_m$: Quote coins matched.
+    /// * $f = \frac{q_m}{d_t}$: Fees assessed.
+    ///
+    /// # Equations
+    ///
+    /// ## Buy
+    ///
+    /// $$q_m = \Delta_t - f = \Delta_t - \frac{q_m}{d_t}$$
+    ///
+    /// $$\Delta_t = q_m + \frac{q_m}{d_t} = q_m(1 + \frac{1}{d_t})$$
+    ///
+    /// $$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
+    ///
+    /// $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
+    ///
+    /// ## Sell
+    ///
+    /// $$q_m = \Delta_t + f = \Delta_t + \frac{q_m}{d_t}$$
+    ///
+    /// $$\Delta_t = q_m - \frac{q_m}{d_t} = q_m(1 - \frac{1}{d_t})$$
+    ///
+    /// $$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
+    ///
+    /// $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
+    ///
+    /// # Parameters
+    /// * `direction`: `BUY` or `SELL`.
+    /// * `taker_fee_divisor`: Taker fee divisor.
+    /// * `max_quote_delta_user`: Maximum change in quote coins seen by
+    ///   user: spent if a `BUY` and received if a `SELL`.
+    ///
+    /// # Returns
+    /// * `u64`: Maximum amount of quote coins to match.
+    ///
+    /// # Assumptions
+    /// * Taker fee divisor is greater than 1.
+    ///
+    /// # Aborts if
+    /// * Maximum amount to match does not fit in a `u64`, which should
+    ///   only be possible in the case of a `SELL`.
+    public(friend) fun calculate_max_quote_match(
+        direction: bool,
+        taker_fee_divisor: u64,
+        max_quote_delta_user: u64,
+    ): u64 {
+        // Calculate numerator for both buy and sell equations.
+        let numerator = (taker_fee_divisor as u128) *
+            (max_quote_delta_user as u128);
+        // Calculate denominator based on direction.
+        let denominator = if (direction == BUY)
+            (taker_fee_divisor + 1 as u128) else
+            (taker_fee_divisor - 1 as u128);
+        // Calculate maximum quote coins to match.
+        let max_quote_match = numerator / denominator;
+        // Assert maximum quote to match fits in a u64.
+        assert!(max_quote_match <= (HI_64 as u128),
+            E_MAX_QUOTE_MATCH_OVERFLOW);
+        (max_quote_match as u64) // Return maximum quote match value.
+    }
+
     /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
     /// amount is supplied for custodian registration.
     public(friend) fun deposit_custodian_registration_utility_coins<
@@ -854,108 +956,6 @@ module econia::incentives {
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Get max quote coin match amount, per user input and fee divisor.
-    ///
-    /// # User input
-    ///
-    /// Whether a taker buy or sell, users specify a maximum quote coin
-    /// amount when initiating the transaction. This amount indicates
-    /// the maximum amount of quote coins they are willing to spend in
-    /// the case of a taker buy, and the maximum amount of quote coins
-    /// they are willing to receive in the case of a taker sell.
-    ///
-    /// # Matching
-    ///
-    /// The user-specified amount is inclusive of fees, however, and the
-    /// matching engine does not manage fees. Instead it accepts a
-    /// maximum amount of quote coins to match (or more specifically,
-    /// ticks), with fees assessed after matching concludes:
-    ///
-    /// ## Example buy
-    ///
-    /// * Taker is willing to spend 105 quote coins.
-    /// * Fee is 5% (divisor of 20).
-    /// * Max match is thus 100 quote coins.
-    /// * Matching engine returns after 100 quote coins filled.
-    /// * 5% fee then assessed, withdrawn from takers's quote coins.
-    /// * Taker has spent 105 quote coins.
-    ///
-    /// ## Example sell
-    ///
-    /// * Taker is willing to receive 100 quote coins.
-    /// * Fee is 4% (divisor of 25).
-    /// * Max match is thus 104 quote coins.
-    /// * Matching engine returns after 104 quote coins filled.
-    /// * 4% fee then assessed, withdrawn from quote coins received.
-    /// * Taker has received 100 quote coins.
-    ///
-    /// # Variables
-    ///
-    /// Hence, the relationship between user-indicated maxmum quote coin
-    /// amount, taker fee divisor, and the amount of quote coins matched
-    /// can be described with the following variables:
-    /// * $\Delta_t$: Change in quote coins seen by taker.
-    /// * $d_t$: Taker fee divisor.
-    /// * $q_m$: Quote coins matched.
-    /// * $f = \frac{q_m}{d_t}$: Fees assessed.
-    ///
-    /// # Equations
-    ///
-    /// ## Buy
-    ///
-    /// $$q_m = \Delta_t - f = \Delta_t - \frac{q_m}{d_t}$$
-    ///
-    /// $$\Delta_t = q_m + \frac{q_m}{d_t} = q_m(1 + \frac{1}{d_t})$$
-    ///
-    /// $$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
-    ///
-    /// $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
-    ///
-    /// ## Sell
-    ///
-    /// $$q_m = \Delta_t + f = \Delta_t + \frac{q_m}{d_t}$$
-    ///
-    /// $$\Delta_t = q_m - \frac{q_m}{d_t} = q_m(1 - \frac{1}{d_t})$$
-    ///
-    /// $$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
-    ///
-    /// $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
-    ///
-    /// # Parameters
-    /// * `direction`: `BUY` or `SELL`.
-    /// * `taker_fee_divisor`: Taker fee divisor.
-    /// * `max_quote_delta_user`: Maximum change in quote coins seen by
-    ///   user: spent if a `BUY` and received if a `SELL`.
-    ///
-    /// # Returns
-    /// * `u64`: Maximum amount of quote coins to match.
-    ///
-    /// # Assumptions
-    /// * Taker fee divisor is greater than 1.
-    ///
-    /// # Aborts if
-    /// * Maximum amount to match does not fit in a `u64`, which should
-    ///   only be possible in the case of a `SELL`.
-    fun calculate_max_quote_match(
-        direction: bool,
-        taker_fee_divisor: u64,
-        max_quote_delta_user: u64,
-    ): u64 {
-        // Calculate numerator for both buy and sell equations.
-        let numerator = (taker_fee_divisor as u128) *
-            (max_quote_delta_user as u128);
-        // Calculate denominator based on direction.
-        let denominator = if (direction == BUY)
-            (taker_fee_divisor + 1 as u128) else
-            (taker_fee_divisor - 1 as u128);
-        // Calculate maximum quote coins to match.
-        let max_quote_match = numerator / denominator;
-        // Assert maximum quote to match fits in a u64.
-        assert!(max_quote_match <= (HI_64 as u128),
-            E_MAX_QUOTE_MATCH_OVERFLOW);
-        (max_quote_match as u64) // Return maximum quote match value.
-    }
 
     /// Deposit `coins` to the Econia `UtilityCoinStore`.
     fun deposit_utility_coins<UtilityCoinType>(

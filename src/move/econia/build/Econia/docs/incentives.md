@@ -51,26 +51,26 @@ Incentive-associated parameters and data structures.
 -  [Function `assess_taker_fees`](#0xc0deb00c_incentives_assess_taker_fees)
     -  [Type parameters](#@Type_parameters_14)
     -  [Parameters](#@Parameters_15)
+-  [Function `calculate_max_quote_match`](#0xc0deb00c_incentives_calculate_max_quote_match)
+    -  [User input](#@User_input_16)
+    -  [Matching](#@Matching_17)
+        -  [Example buy](#@Example_buy_18)
+        -  [Example sell](#@Example_sell_19)
+    -  [Variables](#@Variables_20)
+    -  [Equations](#@Equations_21)
+        -  [Buy](#@Buy_22)
+        -  [Sell](#@Sell_23)
+    -  [Parameters](#@Parameters_24)
+    -  [Returns](#@Returns_25)
+    -  [Assumptions](#@Assumptions_26)
+    -  [Aborts if](#@Aborts_if_27)
 -  [Function `deposit_custodian_registration_utility_coins`](#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins)
 -  [Function `deposit_market_registration_utility_coins`](#0xc0deb00c_incentives_deposit_market_registration_utility_coins)
 -  [Function `init_incentives`](#0xc0deb00c_incentives_init_incentives)
 -  [Function `register_econia_fee_store_entry`](#0xc0deb00c_incentives_register_econia_fee_store_entry)
 -  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
-    -  [Type parameters](#@Type_parameters_16)
-    -  [Parameters](#@Parameters_17)
--  [Function `calculate_max_quote_match`](#0xc0deb00c_incentives_calculate_max_quote_match)
-    -  [User input](#@User_input_18)
-    -  [Matching](#@Matching_19)
-        -  [Example buy](#@Example_buy_20)
-        -  [Example sell](#@Example_sell_21)
-    -  [Variables](#@Variables_22)
-    -  [Equations](#@Equations_23)
-        -  [Buy](#@Buy_24)
-        -  [Sell](#@Sell_25)
-    -  [Parameters](#@Parameters_26)
-    -  [Returns](#@Returns_27)
-    -  [Assumptions](#@Assumptions_28)
-    -  [Aborts if](#@Aborts_if_29)
+    -  [Type parameters](#@Type_parameters_28)
+    -  [Parameters](#@Parameters_29)
 -  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
 -  [Function `deposit_utility_coins_verified`](#0xc0deb00c_incentives_deposit_utility_coins_verified)
 -  [Function `get_fee_account`](#0xc0deb00c_incentives_get_fee_account)
@@ -1705,6 +1705,176 @@ all fees to Econia.
 
 </details>
 
+<a name="0xc0deb00c_incentives_calculate_max_quote_match"></a>
+
+## Function `calculate_max_quote_match`
+
+Get max quote coin match amount, per user input and fee divisor.
+
+
+<a name="@User_input_16"></a>
+
+### User input
+
+
+Whether a taker buy or sell, users specify a maximum quote coin
+amount when initiating the transaction. This amount indicates
+the maximum amount of quote coins they are willing to spend in
+the case of a taker buy, and the maximum amount of quote coins
+they are willing to receive in the case of a taker sell.
+
+
+<a name="@Matching_17"></a>
+
+### Matching
+
+
+The user-specified amount is inclusive of fees, however, and the
+matching engine does not manage fees. Instead it accepts a
+maximum amount of quote coins to match (or more specifically,
+ticks), with fees assessed after matching concludes:
+
+
+<a name="@Example_buy_18"></a>
+
+#### Example buy
+
+
+* Taker is willing to spend 105 quote coins.
+* Fee is 5% (divisor of 20).
+* Max match is thus 100 quote coins.
+* Matching engine returns after 100 quote coins filled.
+* 5% fee then assessed, withdrawn from takers's quote coins.
+* Taker has spent 105 quote coins.
+
+
+<a name="@Example_sell_19"></a>
+
+#### Example sell
+
+
+* Taker is willing to receive 100 quote coins.
+* Fee is 4% (divisor of 25).
+* Max match is thus 104 quote coins.
+* Matching engine returns after 104 quote coins filled.
+* 4% fee then assessed, withdrawn from quote coins received.
+* Taker has received 100 quote coins.
+
+
+<a name="@Variables_20"></a>
+
+### Variables
+
+
+Hence, the relationship between user-indicated maxmum quote coin
+amount, taker fee divisor, and the amount of quote coins matched
+can be described with the following variables:
+* $\Delta_t$: Change in quote coins seen by taker.
+* $d_t$: Taker fee divisor.
+* $q_m$: Quote coins matched.
+* $f = \frac{q_m}{d_t}$: Fees assessed.
+
+
+<a name="@Equations_21"></a>
+
+### Equations
+
+
+
+<a name="@Buy_22"></a>
+
+#### Buy
+
+
+$$q_m = \Delta_t - f = \Delta_t - \frac{q_m}{d_t}$$
+
+$$\Delta_t = q_m + \frac{q_m}{d_t} = q_m(1 + \frac{1}{d_t})$$
+
+$$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
+
+$$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
+
+
+<a name="@Sell_23"></a>
+
+#### Sell
+
+
+$$q_m = \Delta_t + f = \Delta_t + \frac{q_m}{d_t}$$
+
+$$\Delta_t = q_m - \frac{q_m}{d_t} = q_m(1 - \frac{1}{d_t})$$
+
+$$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
+
+$$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
+
+
+<a name="@Parameters_24"></a>
+
+### Parameters
+
+* <code>direction</code>: <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> or <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
+* <code>taker_fee_divisor</code>: Taker fee divisor.
+* <code>max_quote_delta_user</code>: Maximum change in quote coins seen by
+user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> and received if a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
+
+
+<a name="@Returns_25"></a>
+
+### Returns
+
+* <code>u64</code>: Maximum amount of quote coins to match.
+
+
+<a name="@Assumptions_26"></a>
+
+### Assumptions
+
+* Taker fee divisor is greater than 1.
+
+
+<a name="@Aborts_if_27"></a>
+
+### Aborts if
+
+* Maximum amount to match does not fit in a <code>u64</code>, which should
+only be possible in the case of a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">calculate_max_quote_match</a>(direction: bool, taker_fee_divisor: u64, max_quote_delta_user: u64): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">calculate_max_quote_match</a>(
+    direction: bool,
+    taker_fee_divisor: u64,
+    max_quote_delta_user: u64,
+): u64 {
+    // Calculate numerator for both buy and sell equations.
+    <b>let</b> numerator = (taker_fee_divisor <b>as</b> u128) *
+        (max_quote_delta_user <b>as</b> u128);
+    // Calculate denominator based on direction.
+    <b>let</b> denominator = <b>if</b> (direction == <a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>)
+        (taker_fee_divisor + 1 <b>as</b> u128) <b>else</b>
+        (taker_fee_divisor - 1 <b>as</b> u128);
+    // Calculate maximum quote coins <b>to</b> match.
+    <b>let</b> max_quote_match = numerator / denominator;
+    // Assert maximum quote <b>to</b> match fits in a u64.
+    <b>assert</b>!(max_quote_match &lt;= (<a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a> <b>as</b> u128),
+        <a href="incentives.md#0xc0deb00c_incentives_E_MAX_QUOTE_MATCH_OVERFLOW">E_MAX_QUOTE_MATCH_OVERFLOW</a>);
+    (max_quote_match <b>as</b> u64) // Return maximum quote match value.
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_incentives_deposit_custodian_registration_utility_coins"></a>
 
 ## Function `deposit_custodian_registration_utility_coins`
@@ -1867,7 +2037,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">E
 Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> entry for given <code>integrator</code>.
 
 
-<a name="@Type_parameters_16"></a>
+<a name="@Type_parameters_28"></a>
 
 ### Type parameters
 
@@ -1875,7 +2045,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_17"></a>
+<a name="@Parameters_29"></a>
 
 ### Parameters
 
@@ -1933,176 +2103,6 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
     // generated integrator fee store.
     <a href="table_list.md#0xc0deb00c_table_list_add">table_list::add</a>(integrator_fee_stores_map_ref_mut, market_id,
         integrator_fee_store);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_incentives_calculate_max_quote_match"></a>
-
-## Function `calculate_max_quote_match`
-
-Get max quote coin match amount, per user input and fee divisor.
-
-
-<a name="@User_input_18"></a>
-
-### User input
-
-
-Whether a taker buy or sell, users specify a maximum quote coin
-amount when initiating the transaction. This amount indicates
-the maximum amount of quote coins they are willing to spend in
-the case of a taker buy, and the maximum amount of quote coins
-they are willing to receive in the case of a taker sell.
-
-
-<a name="@Matching_19"></a>
-
-### Matching
-
-
-The user-specified amount is inclusive of fees, however, and the
-matching engine does not manage fees. Instead it accepts a
-maximum amount of quote coins to match (or more specifically,
-ticks), with fees assessed after matching concludes:
-
-
-<a name="@Example_buy_20"></a>
-
-#### Example buy
-
-
-* Taker is willing to spend 105 quote coins.
-* Fee is 5% (divisor of 20).
-* Max match is thus 100 quote coins.
-* Matching engine returns after 100 quote coins filled.
-* 5% fee then assessed, withdrawn from takers's quote coins.
-* Taker has spent 105 quote coins.
-
-
-<a name="@Example_sell_21"></a>
-
-#### Example sell
-
-
-* Taker is willing to receive 100 quote coins.
-* Fee is 4% (divisor of 25).
-* Max match is thus 104 quote coins.
-* Matching engine returns after 104 quote coins filled.
-* 4% fee then assessed, withdrawn from quote coins received.
-* Taker has received 100 quote coins.
-
-
-<a name="@Variables_22"></a>
-
-### Variables
-
-
-Hence, the relationship between user-indicated maxmum quote coin
-amount, taker fee divisor, and the amount of quote coins matched
-can be described with the following variables:
-* $\Delta_t$: Change in quote coins seen by taker.
-* $d_t$: Taker fee divisor.
-* $q_m$: Quote coins matched.
-* $f = \frac{q_m}{d_t}$: Fees assessed.
-
-
-<a name="@Equations_23"></a>
-
-### Equations
-
-
-
-<a name="@Buy_24"></a>
-
-#### Buy
-
-
-$$q_m = \Delta_t - f = \Delta_t - \frac{q_m}{d_t}$$
-
-$$\Delta_t = q_m + \frac{q_m}{d_t} = q_m(1 + \frac{1}{d_t})$$
-
-$$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
-
-$$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
-
-
-<a name="@Sell_25"></a>
-
-#### Sell
-
-
-$$q_m = \Delta_t + f = \Delta_t + \frac{q_m}{d_t}$$
-
-$$\Delta_t = q_m - \frac{q_m}{d_t} = q_m(1 - \frac{1}{d_t})$$
-
-$$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
-
-$$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
-
-
-<a name="@Parameters_26"></a>
-
-### Parameters
-
-* <code>direction</code>: <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> or <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
-* <code>taker_fee_divisor</code>: Taker fee divisor.
-* <code>max_quote_delta_user</code>: Maximum change in quote coins seen by
-user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> and received if a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
-
-
-<a name="@Returns_27"></a>
-
-### Returns
-
-* <code>u64</code>: Maximum amount of quote coins to match.
-
-
-<a name="@Assumptions_28"></a>
-
-### Assumptions
-
-* Taker fee divisor is greater than 1.
-
-
-<a name="@Aborts_if_29"></a>
-
-### Aborts if
-
-* Maximum amount to match does not fit in a <code>u64</code>, which should
-only be possible in the case of a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
-
-
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">calculate_max_quote_match</a>(direction: bool, taker_fee_divisor: u64, max_quote_delta_user: u64): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">calculate_max_quote_match</a>(
-    direction: bool,
-    taker_fee_divisor: u64,
-    max_quote_delta_user: u64,
-): u64 {
-    // Calculate numerator for both buy and sell equations.
-    <b>let</b> numerator = (taker_fee_divisor <b>as</b> u128) *
-        (max_quote_delta_user <b>as</b> u128);
-    // Calculate denominator based on direction.
-    <b>let</b> denominator = <b>if</b> (direction == <a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>)
-        (taker_fee_divisor + 1 <b>as</b> u128) <b>else</b>
-        (taker_fee_divisor - 1 <b>as</b> u128);
-    // Calculate maximum quote coins <b>to</b> match.
-    <b>let</b> max_quote_match = numerator / denominator;
-    // Assert maximum quote <b>to</b> match fits in a u64.
-    <b>assert</b>!(max_quote_match &lt;= (<a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a> <b>as</b> u128),
-        <a href="incentives.md#0xc0deb00c_incentives_E_MAX_QUOTE_MATCH_OVERFLOW">E_MAX_QUOTE_MATCH_OVERFLOW</a>);
-    (max_quote_match <b>as</b> u64) // Return maximum quote match value.
 }
 </code></pre>
 

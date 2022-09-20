@@ -64,10 +64,12 @@ set_incentive_parameters --> get_n_fee_store_tiers
 
 flowchart LR
 
-withdraw_econia_fees --> get_fee_account_address
-withdraw_econia_fees_all --> get_fee_account_address
-withdraw_utility_coins --> get_fee_account_address
-withdraw_utility_coins_all --> get_fee_account_address
+withdraw_econia_fees --> withdraw_econia_fees_internal
+withdraw_econia_fees_all --> withdraw_econia_fees_internal
+withdraw_econia_fees_internal --> get_fee_account_address
+withdraw_utility_coins --> withdraw_utility_coins_internal
+withdraw_utility_coins_all --> withdraw_utility_coins_internal
+withdraw_utility_coins_internal --> get_fee_account_address
 register_econia_fee_store_entry --> get_fee_account
 deposit_utility_coins --> get_fee_account_address
 deposit_utility_coins_verified --> verify_utility_coin_type

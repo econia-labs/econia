@@ -432,20 +432,13 @@ module econia::incentives {
         assert!(is_utility_coin_type<T>(), E_INVALID_UTILITY_COIN_TYPE);
     }
 
-    /// Withdraw specified amount of fees from an `EconiaFeeStore`.
+    /// Withdraw `amount` of fee coins from an `EconiaFeeStore` of given
+    /// `QuoteCoinType` and having `market_id`, under authority of
+    /// `econia`.
     ///
-    /// # Type parameters
-    /// * `QuoteCoinType`: Quote coin type for market.
-    ///
-    /// # Parameters
-    /// * `account`: The Econia account.
-    /// * `market_id`: Market ID for corresponding market.
-    /// * `amount`: Amount to withdraw.
-    ///
-    /// # Aborts if
-    /// * `account` is not Econia.
+    /// See inner function `withdraw_econia_fees_internal()`.
     public fun withdraw_econia_fees<QuoteCoinType>(
-        account: &signer,
+        econia: &signer,
         market_id: u64,
         amount: u64
     ): coin::Coin<QuoteCoinType>
@@ -453,55 +446,25 @@ module econia::incentives {
         FeeAccountSignerCapabilityStore,
         EconiaFeeStore
     {
-        // Assert account is Econia.
-        assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Get fee account address.
-        let fee_account_address = get_fee_account_address();
-        // Borrow mutable reference to Econia fee store map for given
-        // quote coin type.
-        let econia_fee_store_map_ref_mut =
-            &mut borrow_global_mut<EconiaFeeStore<QuoteCoinType>>(
-                fee_account_address).map;
-        // Borrow mutable reference to fees for given market ID.
-        let coins_ref_mut = table_list::borrow_mut(
-            econia_fee_store_map_ref_mut, market_id);
-        // Return extracted amount of coins.
-        coin::extract(coins_ref_mut, amount)
+        withdraw_econia_fees_internal<QuoteCoinType>(
+            econia, market_id, false, amount)
     }
 
-    /// Withdraw all fees from an `EconiaFeeStore`.
+    /// Withdraw all fee coins from an `EconiaFeeStore` of given
+    /// `QuoteCoinType` and having `market_id`, under authority of
+    /// `econia`.
     ///
-    /// # Type parameters
-    /// * `QuoteCoinType`: Quote coin type for market.
-    ///
-    /// # Parameters
-    /// * `account`: The Econia account.
-    /// * `market_id`: Market ID for corresponding market.
-    ///
-    /// # Aborts if
-    /// * `account` is not Econia.
+    /// See inner function `withdraw_econia_fees_internal()`.
     public fun withdraw_econia_fees_all<QuoteCoinType>(
-        account: &signer,
+        econia: &signer,
         market_id: u64,
     ): coin::Coin<QuoteCoinType>
     acquires
         FeeAccountSignerCapabilityStore,
         EconiaFeeStore
     {
-        // Assert account is Econia.
-        assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Get fee account address.
-        let fee_account_address = get_fee_account_address();
-        // Borrow mutable reference to Econia fee store map for given
-        // quote coin type.
-        let econia_fee_store_map_ref_mut =
-            &mut borrow_global_mut<EconiaFeeStore<QuoteCoinType>>(
-                fee_account_address).map;
-        // Borrow mutable reference to fees for given market ID.
-        let coins_ref_mut = table_list::borrow_mut(
-            econia_fee_store_map_ref_mut, market_id);
-        // Extracted all coins and return.
-        coin::extract_all(coins_ref_mut)
+        withdraw_econia_fees_internal<QuoteCoinType>(
+            econia, market_id, true, 0)
     }
 
     /// Withdraw all fees from an `IntegratorFeeStore`.
@@ -552,46 +515,32 @@ module econia::incentives {
     }
 
     /// Withdraw `amount` of utility coins from the `UtilityCoinStore`,
-    /// aborting if `account` is not Econia.
+    /// under authority of `econia`.
+    ///
+    /// See inner function `withdraw_utility_coins_internal()`.
     public fun withdraw_utility_coins<UtilityCoinType>(
-        account: &signer,
+        econia: &signer,
         amount: u64
     ): coin::Coin<UtilityCoinType>
     acquires
         FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
-        // Assert account is Econia.
-        assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Get fee account address.
-        let fee_account_address = get_fee_account_address();
-        // Borrow mutable reference to coins in utility coin store.
-        let utility_coins_ref_mut =
-            &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
-                fee_account_address).coins;
-        // Extract and return indicated amount of coins.
-        coin::extract(utility_coins_ref_mut, amount)
+        withdraw_utility_coins_internal<UtilityCoinType>(econia, false, amount)
     }
 
-    /// Withdraw all utility coins from the `UtilityCoinStore`, aborting
-    /// if `account` is not Econia.
+    /// Withdraw all utility coins from the `UtilityCoinStore`, under
+    /// authority of `econia`.
+    ///
+    /// See inner function `withdraw_utility_coins_internal()`.
     public fun withdraw_utility_coins_all<UtilityCoinType>(
-        account: &signer
+        econia: &signer
     ): coin::Coin<UtilityCoinType>
     acquires
         FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
-        // Assert account is Econia.
-        assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Get fee account address.
-        let fee_account_address = get_fee_account_address();
-        // Borrow mutable reference coins in utility coin store.
-        let utility_coins_ref_mut =
-            &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
-                fee_account_address).coins;
-        // Extract and return all utility coins.
-        coin::extract_all(utility_coins_ref_mut)
+        withdraw_utility_coins_internal<UtilityCoinType>(econia, true, 0)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1052,9 +1001,8 @@ module econia::incentives {
         let fee_account_signer_capability_ref =
             &borrow_global<FeeAccountSignerCapabilityStore>(@econia).
                 fee_account_signer_capability;
-        // Create and return a signer from it.
-        account::create_signer_with_capability(
-            fee_account_signer_capability_ref)
+        account:: // Create and return a signer from it.
+            create_signer_with_capability(fee_account_signer_capability_ref)
     }
 
     /// Initialize the resource account where fees, collected by Econia,
@@ -1358,6 +1306,64 @@ module econia::incentives {
         // Assert integrator fee store parameters vector not too long.
         assert!(vector::length(integrator_fee_store_tiers_ref) <=
             MAX_INTEGRATOR_FEE_STORE_TIERS, E_TOO_MANY_TIERS);
+    }
+
+    /// Withdraw all fee coins from an `EconiaFeeStore` for given
+    /// `QuoteCoinType` and `market_id` if `all` is `true`, otherwise
+    /// withdraw `amount` (which may corresond to all coins), aborting
+    /// if `account` is not Econia.
+    fun withdraw_econia_fees_internal<QuoteCoinType>(
+        account: &signer,
+        market_id: u64,
+        all: bool,
+        amount: u64
+    ): coin::Coin<QuoteCoinType>
+    acquires
+        FeeAccountSignerCapabilityStore,
+        EconiaFeeStore
+    {
+        // Assert account is Econia.
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Get fee account address.
+        let fee_account_address = get_fee_account_address();
+        // Borrow mutable reference to Econia fee store map for given
+        // quote coin type.
+        let econia_fee_store_map_ref_mut =
+            &mut borrow_global_mut<EconiaFeeStore<QuoteCoinType>>(
+                fee_account_address).map;
+        // Borrow mutable reference to fees for given market ID.
+        let fee_coins_ref_mut = table_list::borrow_mut(
+            econia_fee_store_map_ref_mut, market_id);
+        // If flagged to extract all, extract all and return.
+        if (all) coin::extract_all(fee_coins_ref_mut) else
+            // Else extract specified amount and return.
+            coin::extract(fee_coins_ref_mut, amount)
+    }
+
+    /// Withdraw all utility coins from the `UtilityCoinStore` if `all`
+    /// is `true`, otherwise withdraw `amount` (which may corresond to
+    /// all coins), aborting if `account` is not Econia.
+    fun withdraw_utility_coins_internal<UtilityCoinType>(
+        account: &signer,
+        all: bool,
+        amount: u64
+    ): coin::Coin<UtilityCoinType>
+    acquires
+        FeeAccountSignerCapabilityStore,
+        UtilityCoinStore
+    {
+        // Assert account is Econia.
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Get fee account address.
+        let fee_account_address = get_fee_account_address();
+        // Borrow mutable reference to coins in utility coin store.
+        let utility_coins_ref_mut =
+            &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
+                fee_account_address).coins;
+        // If flagged to extract all, extract all and return.
+        if (all) coin::extract_all(utility_coins_ref_mut) else
+            // Else extract specified amount and return.
+            coin::extract(utility_coins_ref_mut, amount)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

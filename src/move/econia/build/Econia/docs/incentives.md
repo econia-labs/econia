@@ -36,70 +36,66 @@ Incentive-associated parameters and data structures.
     -  [Parameters](#@Parameters_8)
 -  [Function `verify_utility_coin_type`](#0xc0deb00c_incentives_verify_utility_coin_type)
 -  [Function `withdraw_econia_fees`](#0xc0deb00c_incentives_withdraw_econia_fees)
+-  [Function `withdraw_econia_fees_all`](#0xc0deb00c_incentives_withdraw_econia_fees_all)
+-  [Function `withdraw_integrator_fees`](#0xc0deb00c_incentives_withdraw_integrator_fees)
     -  [Type parameters](#@Type_parameters_9)
     -  [Parameters](#@Parameters_10)
-    -  [Aborts if](#@Aborts_if_11)
--  [Function `withdraw_econia_fees_all`](#0xc0deb00c_incentives_withdraw_econia_fees_all)
-    -  [Type parameters](#@Type_parameters_12)
-    -  [Parameters](#@Parameters_13)
-    -  [Aborts if](#@Aborts_if_14)
--  [Function `withdraw_integrator_fees`](#0xc0deb00c_incentives_withdraw_integrator_fees)
-    -  [Type parameters](#@Type_parameters_15)
-    -  [Parameters](#@Parameters_16)
-    -  [Returns](#@Returns_17)
+    -  [Returns](#@Returns_11)
 -  [Function `withdraw_utility_coins`](#0xc0deb00c_incentives_withdraw_utility_coins)
 -  [Function `withdraw_utility_coins_all`](#0xc0deb00c_incentives_withdraw_utility_coins_all)
 -  [Function `update_incentives`](#0xc0deb00c_incentives_update_incentives)
 -  [Function `upgrade_integrator_fee_store_via_coinstore`](#0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore)
 -  [Function `withdraw_integrator_fees_via_coinstores`](#0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores)
-    -  [Type parameters](#@Type_parameters_18)
-    -  [Parameters](#@Parameters_19)
+    -  [Type parameters](#@Type_parameters_12)
+    -  [Parameters](#@Parameters_13)
 -  [Function `assess_taker_fees`](#0xc0deb00c_incentives_assess_taker_fees)
-    -  [Type parameters](#@Type_parameters_20)
-    -  [Parameters](#@Parameters_21)
+    -  [Type parameters](#@Type_parameters_14)
+    -  [Parameters](#@Parameters_15)
 -  [Function `deposit_custodian_registration_utility_coins`](#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins)
 -  [Function `deposit_market_registration_utility_coins`](#0xc0deb00c_incentives_deposit_market_registration_utility_coins)
 -  [Function `init_incentives`](#0xc0deb00c_incentives_init_incentives)
 -  [Function `register_econia_fee_store_entry`](#0xc0deb00c_incentives_register_econia_fee_store_entry)
 -  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
-    -  [Type parameters](#@Type_parameters_22)
-    -  [Parameters](#@Parameters_23)
+    -  [Type parameters](#@Type_parameters_16)
+    -  [Parameters](#@Parameters_17)
 -  [Function `calculate_max_quote_match`](#0xc0deb00c_incentives_calculate_max_quote_match)
-    -  [User input](#@User_input_24)
-    -  [Matching](#@Matching_25)
-        -  [Example buy](#@Example_buy_26)
-        -  [Example sell](#@Example_sell_27)
-    -  [Variables](#@Variables_28)
-    -  [Equations](#@Equations_29)
-        -  [Buy](#@Buy_30)
-        -  [Sell](#@Sell_31)
-    -  [Parameters](#@Parameters_32)
-    -  [Returns](#@Returns_33)
-    -  [Assumptions](#@Assumptions_34)
-    -  [Aborts if](#@Aborts_if_35)
+    -  [User input](#@User_input_18)
+    -  [Matching](#@Matching_19)
+        -  [Example buy](#@Example_buy_20)
+        -  [Example sell](#@Example_sell_21)
+    -  [Variables](#@Variables_22)
+    -  [Equations](#@Equations_23)
+        -  [Buy](#@Buy_24)
+        -  [Sell](#@Sell_25)
+    -  [Parameters](#@Parameters_26)
+    -  [Returns](#@Returns_27)
+    -  [Assumptions](#@Assumptions_28)
+    -  [Aborts if](#@Aborts_if_29)
 -  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
 -  [Function `deposit_utility_coins_verified`](#0xc0deb00c_incentives_deposit_utility_coins_verified)
 -  [Function `get_fee_account`](#0xc0deb00c_incentives_get_fee_account)
 -  [Function `init_fee_account`](#0xc0deb00c_incentives_init_fee_account)
-    -  [Parameters](#@Parameters_36)
-    -  [Returns](#@Returns_37)
-    -  [Seed considerations](#@Seed_considerations_38)
-    -  [Aborts if](#@Aborts_if_39)
+    -  [Parameters](#@Parameters_30)
+    -  [Returns](#@Returns_31)
+    -  [Seed considerations](#@Seed_considerations_32)
+    -  [Aborts if](#@Aborts_if_33)
 -  [Function `init_utility_coin_store`](#0xc0deb00c_incentives_init_utility_coin_store)
-    -  [Type Parameters](#@Type_Parameters_40)
-    -  [Parameters](#@Parameters_41)
-    -  [Aborts if](#@Aborts_if_42)
+    -  [Type Parameters](#@Type_Parameters_34)
+    -  [Parameters](#@Parameters_35)
+    -  [Aborts if](#@Aborts_if_36)
 -  [Function `set_incentive_parameters`](#0xc0deb00c_incentives_set_incentive_parameters)
-    -  [Type Parameters](#@Type_Parameters_43)
-    -  [Parameters](#@Parameters_44)
-    -  [Assumptions](#@Assumptions_45)
-    -  [Aborts if](#@Aborts_if_46)
+    -  [Type Parameters](#@Type_Parameters_37)
+    -  [Parameters](#@Parameters_38)
+    -  [Assumptions](#@Assumptions_39)
+    -  [Aborts if](#@Aborts_if_40)
 -  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
-    -  [Aborts if](#@Aborts_if_47)
-    -  [Assumptions](#@Assumptions_48)
+    -  [Aborts if](#@Aborts_if_41)
+    -  [Assumptions](#@Assumptions_42)
 -  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
-    -  [Parameters](#@Parameters_49)
-    -  [Aborts if](#@Aborts_if_50)
+    -  [Parameters](#@Parameters_43)
+    -  [Aborts if](#@Aborts_if_44)
+-  [Function `withdraw_econia_fees_internal`](#0xc0deb00c_incentives_withdraw_econia_fees_internal)
+-  [Function `withdraw_utility_coins_internal`](#0xc0deb00c_incentives_withdraw_utility_coins_internal)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1224,33 +1220,14 @@ Assert <code>T</code> is utility coin type.
 
 ## Function `withdraw_econia_fees`
 
-Withdraw specified amount of fees from an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a></code>.
+Withdraw <code>amount</code> of fee coins from an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a></code> of given
+<code>QuoteCoinType</code> and having <code>market_id</code>, under authority of
+<code>econia</code>.
+
+See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_internal">withdraw_econia_fees_internal</a>()</code>.
 
 
-<a name="@Type_parameters_9"></a>
-
-### Type parameters
-
-* <code>QuoteCoinType</code>: Quote coin type for market.
-
-
-<a name="@Parameters_10"></a>
-
-### Parameters
-
-* <code><a href="">account</a></code>: The Econia account.
-* <code>market_id</code>: Market ID for corresponding market.
-* <code>amount</code>: Amount to withdraw.
-
-
-<a name="@Aborts_if_11"></a>
-
-### Aborts if
-
-* <code><a href="">account</a></code> is not Econia.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees">withdraw_econia_fees</a>&lt;QuoteCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, market_id: u64, amount: u64): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees">withdraw_econia_fees</a>&lt;QuoteCoinType&gt;(econia: &<a href="">signer</a>, market_id: u64, amount: u64): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
 </code></pre>
 
 
@@ -1260,7 +1237,7 @@ Withdraw specified amount of fees from an <code><a href="incentives.md#0xc0deb00
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees">withdraw_econia_fees</a>&lt;QuoteCoinType&gt;(
-    <a href="">account</a>: &<a href="">signer</a>,
+    econia: &<a href="">signer</a>,
     market_id: u64,
     amount: u64
 ): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
@@ -1268,20 +1245,8 @@ Withdraw specified amount of fees from an <code><a href="incentives.md#0xc0deb00
     <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
     <a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>
 {
-    // Assert <a href="">account</a> is Econia.
-    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Get fee <a href="">account</a> <b>address</b>.
-    <b>let</b> fee_account_address = <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>();
-    // Borrow mutable reference <b>to</b> Econia fee store map for given
-    // quote <a href="">coin</a> type.
-    <b>let</b> econia_fee_store_map_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>&lt;QuoteCoinType&gt;&gt;(
-            fee_account_address).map;
-    // Borrow mutable reference <b>to</b> fees for given market ID.
-    <b>let</b> coins_ref_mut = <a href="table_list.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
-        econia_fee_store_map_ref_mut, market_id);
-    // Return extracted amount of coins.
-    <a href="_extract">coin::extract</a>(coins_ref_mut, amount)
+    <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_internal">withdraw_econia_fees_internal</a>&lt;QuoteCoinType&gt;(
+        econia, market_id, <b>false</b>, amount)
 }
 </code></pre>
 
@@ -1293,32 +1258,14 @@ Withdraw specified amount of fees from an <code><a href="incentives.md#0xc0deb00
 
 ## Function `withdraw_econia_fees_all`
 
-Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a></code>.
+Withdraw all fee coins from an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a></code> of given
+<code>QuoteCoinType</code> and having <code>market_id</code>, under authority of
+<code>econia</code>.
+
+See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_internal">withdraw_econia_fees_internal</a>()</code>.
 
 
-<a name="@Type_parameters_12"></a>
-
-### Type parameters
-
-* <code>QuoteCoinType</code>: Quote coin type for market.
-
-
-<a name="@Parameters_13"></a>
-
-### Parameters
-
-* <code><a href="">account</a></code>: The Econia account.
-* <code>market_id</code>: Market ID for corresponding market.
-
-
-<a name="@Aborts_if_14"></a>
-
-### Aborts if
-
-* <code><a href="">account</a></code> is not Econia.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_all">withdraw_econia_fees_all</a>&lt;QuoteCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, market_id: u64): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_all">withdraw_econia_fees_all</a>&lt;QuoteCoinType&gt;(econia: &<a href="">signer</a>, market_id: u64): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
 </code></pre>
 
 
@@ -1328,27 +1275,15 @@ Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_Eco
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_all">withdraw_econia_fees_all</a>&lt;QuoteCoinType&gt;(
-    <a href="">account</a>: &<a href="">signer</a>,
+    econia: &<a href="">signer</a>,
     market_id: u64,
 ): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
 <b>acquires</b>
     <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
     <a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>
 {
-    // Assert <a href="">account</a> is Econia.
-    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Get fee <a href="">account</a> <b>address</b>.
-    <b>let</b> fee_account_address = <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>();
-    // Borrow mutable reference <b>to</b> Econia fee store map for given
-    // quote <a href="">coin</a> type.
-    <b>let</b> econia_fee_store_map_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>&lt;QuoteCoinType&gt;&gt;(
-            fee_account_address).map;
-    // Borrow mutable reference <b>to</b> fees for given market ID.
-    <b>let</b> coins_ref_mut = <a href="table_list.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
-        econia_fee_store_map_ref_mut, market_id);
-    // Extracted all coins and <b>return</b>.
-    <a href="_extract_all">coin::extract_all</a>(coins_ref_mut)
+    <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_internal">withdraw_econia_fees_internal</a>&lt;QuoteCoinType&gt;(
+        econia, market_id, <b>true</b>, 0)
 }
 </code></pre>
 
@@ -1363,7 +1298,7 @@ Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_Eco
 Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code>.
 
 
-<a name="@Type_parameters_15"></a>
+<a name="@Type_parameters_9"></a>
 
 ### Type parameters
 
@@ -1371,7 +1306,7 @@ Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -1383,7 +1318,7 @@ withdrawals and thus transaction collisions with the matching
 engine.
 
 
-<a name="@Returns_17"></a>
+<a name="@Returns_11"></a>
 
 ### Returns
 
@@ -1440,10 +1375,12 @@ engine.
 ## Function `withdraw_utility_coins`
 
 Withdraw <code>amount</code> of utility coins from the <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>,
-aborting if <code><a href="">account</a></code> is not Econia.
+under authority of <code>econia</code>.
+
+See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>()</code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins">withdraw_utility_coins</a>&lt;UtilityCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins">withdraw_utility_coins</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
 </code></pre>
 
 
@@ -1453,23 +1390,14 @@ aborting if <code><a href="">account</a></code> is not Econia.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins">withdraw_utility_coins</a>&lt;UtilityCoinType&gt;(
-    <a href="">account</a>: &<a href="">signer</a>,
+    econia: &<a href="">signer</a>,
     amount: u64
 ): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
 <b>acquires</b>
     <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
     <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
 {
-    // Assert <a href="">account</a> is Econia.
-    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Get fee <a href="">account</a> <b>address</b>.
-    <b>let</b> fee_account_address = <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>();
-    // Borrow mutable reference <b>to</b> coins in utility <a href="">coin</a> store.
-    <b>let</b> utility_coins_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
-            fee_account_address).coins;
-    // Extract and <b>return</b> indicated amount of coins.
-    <a href="_extract">coin::extract</a>(utility_coins_ref_mut, amount)
+    <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>&lt;UtilityCoinType&gt;(econia, <b>false</b>, amount)
 }
 </code></pre>
 
@@ -1481,11 +1409,13 @@ aborting if <code><a href="">account</a></code> is not Econia.
 
 ## Function `withdraw_utility_coins_all`
 
-Withdraw all utility coins from the <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>, aborting
-if <code><a href="">account</a></code> is not Econia.
+Withdraw all utility coins from the <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>, under
+authority of <code>econia</code>.
+
+See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>()</code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>&lt;UtilityCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
 </code></pre>
 
 
@@ -1495,22 +1425,13 @@ if <code><a href="">account</a></code> is not Econia.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>&lt;UtilityCoinType&gt;(
-    <a href="">account</a>: &<a href="">signer</a>
+    econia: &<a href="">signer</a>
 ): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
 <b>acquires</b>
     <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
     <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
 {
-    // Assert <a href="">account</a> is Econia.
-    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Get fee <a href="">account</a> <b>address</b>.
-    <b>let</b> fee_account_address = <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>();
-    // Borrow mutable reference coins in utility <a href="">coin</a> store.
-    <b>let</b> utility_coins_ref_mut =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
-            fee_account_address).coins;
-    // Extract and <b>return</b> all utility coins.
-    <a href="_extract_all">coin::extract_all</a>(utility_coins_ref_mut)
+    <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>&lt;UtilityCoinType&gt;(econia, <b>true</b>, 0)
 }
 </code></pre>
 
@@ -1614,7 +1535,7 @@ depositing quote coins to one too.
 See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees">withdraw_integrator_fees</a>()</code>.
 
 
-<a name="@Type_parameters_18"></a>
+<a name="@Type_parameters_12"></a>
 
 ### Type parameters
 
@@ -1622,7 +1543,7 @@ See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_19"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1688,14 +1609,14 @@ passed on to Econia. Otherwise the integrator's fee share is
 determined based on their tier for the given market.
 
 
-<a name="@Type_parameters_20"></a>
+<a name="@Type_parameters_14"></a>
 
 ### Type parameters
 
 * <code>QuoteCoinType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_21"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
@@ -1946,7 +1867,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">E
 Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> entry for given <code>integrator</code>.
 
 
-<a name="@Type_parameters_22"></a>
+<a name="@Type_parameters_16"></a>
 
 ### Type parameters
 
@@ -1954,7 +1875,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_23"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -2026,7 +1947,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 Get max quote coin match amount, per user input and fee divisor.
 
 
-<a name="@User_input_24"></a>
+<a name="@User_input_18"></a>
 
 ### User input
 
@@ -2038,7 +1959,7 @@ the case of a taker buy, and the maximum amount of quote coins
 they are willing to receive in the case of a taker sell.
 
 
-<a name="@Matching_25"></a>
+<a name="@Matching_19"></a>
 
 ### Matching
 
@@ -2049,7 +1970,7 @@ maximum amount of quote coins to match (or more specifically,
 ticks), with fees assessed after matching concludes:
 
 
-<a name="@Example_buy_26"></a>
+<a name="@Example_buy_20"></a>
 
 #### Example buy
 
@@ -2062,7 +1983,7 @@ ticks), with fees assessed after matching concludes:
 * Taker has spent 105 quote coins.
 
 
-<a name="@Example_sell_27"></a>
+<a name="@Example_sell_21"></a>
 
 #### Example sell
 
@@ -2075,7 +1996,7 @@ ticks), with fees assessed after matching concludes:
 * Taker has received 100 quote coins.
 
 
-<a name="@Variables_28"></a>
+<a name="@Variables_22"></a>
 
 ### Variables
 
@@ -2089,13 +2010,13 @@ can be described with the following variables:
 * $f = \frac{q_m}{d_t}$: Fees assessed.
 
 
-<a name="@Equations_29"></a>
+<a name="@Equations_23"></a>
 
 ### Equations
 
 
 
-<a name="@Buy_30"></a>
+<a name="@Buy_24"></a>
 
 #### Buy
 
@@ -2109,7 +2030,7 @@ $$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
 $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
 
 
-<a name="@Sell_31"></a>
+<a name="@Sell_25"></a>
 
 #### Sell
 
@@ -2123,7 +2044,7 @@ $$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
 $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
 
 
-<a name="@Parameters_32"></a>
+<a name="@Parameters_26"></a>
 
 ### Parameters
 
@@ -2133,21 +2054,21 @@ $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
 user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> and received if a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
 
 
-<a name="@Returns_33"></a>
+<a name="@Returns_27"></a>
 
 ### Returns
 
 * <code>u64</code>: Maximum amount of quote coins to match.
 
 
-<a name="@Assumptions_34"></a>
+<a name="@Assumptions_28"></a>
 
 ### Assumptions
 
 * Taker fee divisor is greater than 1.
 
 
-<a name="@Aborts_if_35"></a>
+<a name="@Aborts_if_29"></a>
 
 ### Aborts if
 
@@ -2288,9 +2209,8 @@ Return fee account signer generated from stored capability.
     <b>let</b> fee_account_signer_capability_ref =
         &<b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>&gt;(@econia).
             fee_account_signer_capability;
-    // Create and <b>return</b> a <a href="">signer</a> from it.
-    <a href="_create_signer_with_capability">account::create_signer_with_capability</a>(
-        fee_account_signer_capability_ref)
+    <a href="">account</a>:: // Create and <b>return</b> a <a href="">signer</a> from it.
+        create_signer_with_capability(fee_account_signer_capability_ref)
 }
 </code></pre>
 
@@ -2306,21 +2226,21 @@ Initialize the resource account where fees, collected by Econia,
 are stored.
 
 
-<a name="@Parameters_36"></a>
+<a name="@Parameters_30"></a>
 
 ### Parameters
 
 * <code>econia</code>: The Econia account <code><a href="">signer</a></code>.
 
 
-<a name="@Returns_37"></a>
+<a name="@Returns_31"></a>
 
 ### Returns
 
 * <code><a href="">signer</a></code>: The resource account <code><a href="">signer</a></code>.
 
 
-<a name="@Seed_considerations_38"></a>
+<a name="@Seed_considerations_32"></a>
 
 ### Seed considerations
 
@@ -2330,7 +2250,7 @@ accepted by version release, will be updated to accept a seed
 as a function argument.
 
 
-<a name="@Aborts_if_39"></a>
+<a name="@Aborts_if_33"></a>
 
 ### Aborts if
 
@@ -2375,21 +2295,21 @@ Returns without initializing if a <code><a href="incentives.md#0xc0deb00c_incent
 exists for given <code>CoinType</code>.
 
 
-<a name="@Type_Parameters_40"></a>
+<a name="@Type_Parameters_34"></a>
 
 ### Type Parameters
 
 * <code>CoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_41"></a>
+<a name="@Parameters_35"></a>
 
 ### Parameters
 
 * <code>fee_account</code>: Econia fee account <code><a href="">signer</a></code>.
 
 
-<a name="@Aborts_if_42"></a>
+<a name="@Aborts_if_36"></a>
 
 ### Aborts if
 
@@ -2435,14 +2355,14 @@ the values of <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParame
 via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>.
 
 
-<a name="@Type_Parameters_43"></a>
+<a name="@Type_Parameters_37"></a>
 
 ### Type Parameters
 
 * <code>UtilityCoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_44"></a>
+<a name="@Parameters_38"></a>
 
 ### Parameters
 
@@ -2460,7 +2380,7 @@ already beeen set, <code><b>false</b></code> if setting parameters for the first
 time.
 
 
-<a name="@Assumptions_45"></a>
+<a name="@Assumptions_39"></a>
 
 ### Assumptions
 
@@ -2472,7 +2392,7 @@ account.
 exist at the Econia account.
 
 
-<a name="@Aborts_if_46"></a>
+<a name="@Aborts_if_40"></a>
 
 ### Aborts if
 
@@ -2576,7 +2496,7 @@ to the <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">I
 to parse into.
 
 
-<a name="@Aborts_if_47"></a>
+<a name="@Aborts_if_41"></a>
 
 ### Aborts if
 
@@ -2592,7 +2512,7 @@ to parse into.
 threshold.
 
 
-<a name="@Assumptions_48"></a>
+<a name="@Assumptions_42"></a>
 
 ### Assumptions
 
@@ -2693,7 +2613,7 @@ vector.
 Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
-<a name="@Parameters_49"></a>
+<a name="@Parameters_43"></a>
 
 ### Parameters
 
@@ -2708,7 +2628,7 @@ vector containing fields for a corresponding
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
 
 
-<a name="@Aborts_if_50"></a>
+<a name="@Aborts_if_44"></a>
 
 ### Aborts if
 
@@ -2754,6 +2674,104 @@ too long.
     // Assert integrator fee store parameters <a href="">vector</a> not too long.
     <b>assert</b>!(<a href="_length">vector::length</a>(integrator_fee_store_tiers_ref) &lt;=
         <a href="incentives.md#0xc0deb00c_incentives_MAX_INTEGRATOR_FEE_STORE_TIERS">MAX_INTEGRATOR_FEE_STORE_TIERS</a>, <a href="incentives.md#0xc0deb00c_incentives_E_TOO_MANY_TIERS">E_TOO_MANY_TIERS</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_withdraw_econia_fees_internal"></a>
+
+## Function `withdraw_econia_fees_internal`
+
+Withdraw all fee coins from an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a></code> for given
+<code>QuoteCoinType</code> and <code>market_id</code> if <code>all</code> is <code><b>true</b></code>, otherwise
+withdraw <code>amount</code> (which may corresond to all coins), aborting
+if <code><a href="">account</a></code> is not Econia.
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_internal">withdraw_econia_fees_internal</a>&lt;QuoteCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, market_id: u64, all: bool, amount: u64): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_internal">withdraw_econia_fees_internal</a>&lt;QuoteCoinType&gt;(
+    <a href="">account</a>: &<a href="">signer</a>,
+    market_id: u64,
+    all: bool,
+    amount: u64
+): <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;
+<b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>
+{
+    // Assert <a href="">account</a> is Econia.
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Get fee <a href="">account</a> <b>address</b>.
+    <b>let</b> fee_account_address = <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>();
+    // Borrow mutable reference <b>to</b> Econia fee store map for given
+    // quote <a href="">coin</a> type.
+    <b>let</b> econia_fee_store_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>&lt;QuoteCoinType&gt;&gt;(
+            fee_account_address).map;
+    // Borrow mutable reference <b>to</b> fees for given market ID.
+    <b>let</b> fee_coins_ref_mut = <a href="table_list.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+        econia_fee_store_map_ref_mut, market_id);
+    // If flagged <b>to</b> extract all, extract all and <b>return</b>.
+    <b>if</b> (all) <a href="_extract_all">coin::extract_all</a>(fee_coins_ref_mut) <b>else</b>
+        // Else extract specified amount and <b>return</b>.
+        <a href="_extract">coin::extract</a>(fee_coins_ref_mut, amount)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_withdraw_utility_coins_internal"></a>
+
+## Function `withdraw_utility_coins_internal`
+
+Withdraw all utility coins from the <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code> if <code>all</code>
+is <code><b>true</b></code>, otherwise withdraw <code>amount</code> (which may corresond to
+all coins), aborting if <code><a href="">account</a></code> is not Econia.
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>&lt;UtilityCoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, all: bool, amount: u64): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_internal">withdraw_utility_coins_internal</a>&lt;UtilityCoinType&gt;(
+    <a href="">account</a>: &<a href="">signer</a>,
+    all: bool,
+    amount: u64
+): <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;
+<b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>
+{
+    // Assert <a href="">account</a> is Econia.
+    <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    // Get fee <a href="">account</a> <b>address</b>.
+    <b>let</b> fee_account_address = <a href="incentives.md#0xc0deb00c_incentives_get_fee_account_address">get_fee_account_address</a>();
+    // Borrow mutable reference <b>to</b> coins in utility <a href="">coin</a> store.
+    <b>let</b> utility_coins_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a>&lt;UtilityCoinType&gt;&gt;(
+            fee_account_address).coins;
+    // If flagged <b>to</b> extract all, extract all and <b>return</b>.
+    <b>if</b> (all) <a href="_extract_all">coin::extract_all</a>(utility_coins_ref_mut) <b>else</b>
+        // Else extract specified amount and <b>return</b>.
+        <a href="_extract">coin::extract</a>(utility_coins_ref_mut, amount)
 }
 </code></pre>
 

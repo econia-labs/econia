@@ -1,9 +1,9 @@
 - [Incentives.move](#incentivesmove)
   - [Structs](#structs)
   - [Getters](#getters)
-  - [Econia admin operations](#econia-admin-operations)
-  - [Econia account operations](#econia-account-operations)
-  - [Integrator account operations](#integrator-account-operations)
+  - [Incentive parameter updates](#incentive-parameter-updates)
+  - [Econia fee account operations](#econia-fee-account-operations)
+  - [Integrator fee account operations](#integrator-fee-account-operations)
   - [Match operations](#match-operations)
 
 # Incentives.move
@@ -42,7 +42,7 @@ verify_utility_coin_type --> is_utility_coin_type
 
 ```
 
-## Econia admin operations
+## Incentive parameter updates
 
 ```mermaid
 
@@ -58,7 +58,7 @@ set_incentive_parameters --> get_n_fee_store_tiers
 
 ```
 
-## Econia account operations
+## Econia fee account operations
 
 ```mermaid
 
@@ -77,7 +77,7 @@ deposit_utility_coins_verified --> deposit_utility_coins
 
 ```
 
-## Integrator account operations
+## Integrator fee account operations
 
 ```mermaid
 

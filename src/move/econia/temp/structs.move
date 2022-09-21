@@ -170,9 +170,10 @@ module econia::structs {
         /// is a coin, corresponds to
         /// `aptos_framework::coin::Coin.value`).
         base_total: u64,
-        /// Base asset units available for withdraw (when base asset is
-        /// a coin, corresponds to `aptos_framework::coin::Coin.value`).
-        base_available: u64,
+        /// Base asset units locked up due to open orders (when base
+        /// asset is a coin, corresponds
+        /// to `aptos_framework::coin::Coin.value`).
+        base_locked: u64,
         /// Amount `base_total` will increase to if all open bids fill
         /// (when base asset is a coin, corresponds to
         /// `aptos_framework::coin::Coin.value`).
@@ -180,9 +181,9 @@ module econia::structs {
         /// Total quote asset units held as collateral (corresponds to
         /// `aptos_framework::coin::Coin.value`).
         quote_total: u64,
-        /// Quote asset units available for withdraw (corresponds to
-        /// `aptos_framework::coin::Coin.value`).
-        quote_available: u64,
+        /// Quote asset units locked up due to open orders (
+        /// corresponds to `aptos_framework::coin::Coin.value`).
+        quote_locked: u64,
         /// Amount `quote_total` will increase to if all open asks fill
         /// (corresponds to `aptos_framework::coin::Coin.value`).
         quote_ceiling: u64
@@ -237,7 +238,8 @@ module econia::structs {
         custodian_id: u64
     }
 
-    /// An order book for a given market.
+    /// An order book for a given market. Events are separated for asks
+    /// and bids, buys and sells, for parallelism across the two sides.
     struct OrderBook has store {
         /// Should match registry.
         base_type: TypeInfo,
@@ -256,10 +258,14 @@ module econia::structs {
         asks: CritQueue<Order>,
         /// Open bids.
         bids: CritQueue<Order>,
-        /// Event handle for maker events.
-        maker_events: EventHandle<MakerEvent>,
-        /// Event handle for taker events.
-        taker_events: EventHandle<TakerEvent>
+        /// Event handle for ask events.
+        ask_events: EventHandle<MakerEvent>,
+        /// Event handle for bid events.
+        bid_events: EventHandle<MakerEvent>,
+        /// Event handle for buy events.
+        buy_events: EventHandle<TakerEvent>,
+        /// Event handle for sell events.
+        sell_events: EventHandle<TakerEvent>
     }
 
     /// Order book map for all `OrderBook`s.

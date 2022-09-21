@@ -5,6 +5,10 @@
 
 Incentive-associated parameters and data structures.
 
+Contains hard-coded "genesis parameters" that are are set
+upon module publication per <code><a href="incentives.md#0xc0deb00c_incentives_init_module">init_module</a>()</code>, and can be updated
+later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
+
 
 -  [Resource `EconiaFeeStore`](#0xc0deb00c_incentives_EconiaFeeStore)
 -  [Resource `FeeAccountSignerCapabilityStore`](#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore)
@@ -69,7 +73,6 @@ Incentive-associated parameters and data structures.
 -  [Function `deposit_custodian_registration_utility_coins`](#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins)
 -  [Function `deposit_market_registration_utility_coins`](#0xc0deb00c_incentives_deposit_market_registration_utility_coins)
 -  [Function `deposit_underwriter_registration_utility_coins`](#0xc0deb00c_incentives_deposit_underwriter_registration_utility_coins)
--  [Function `init_incentives`](#0xc0deb00c_incentives_init_incentives)
 -  [Function `register_econia_fee_store_entry`](#0xc0deb00c_incentives_register_econia_fee_store_entry)
 -  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
     -  [Type parameters](#@Type_parameters_29)
@@ -83,6 +86,7 @@ Incentive-associated parameters and data structures.
     -  [Returns](#@Returns_33)
     -  [Seed considerations](#@Seed_considerations_34)
     -  [Aborts if](#@Aborts_if_35)
+-  [Function `init_module`](#0xc0deb00c_incentives_init_module)
 -  [Function `init_utility_coin_store`](#0xc0deb00c_incentives_init_utility_coin_store)
     -  [Type Parameters](#@Type_Parameters_36)
     -  [Parameters](#@Parameters_37)
@@ -104,6 +108,7 @@ Incentive-associated parameters and data structures.
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
+<b>use</b> <a href="">0x1::aptos_coin</a>;
 <b>use</b> <a href="">0x1::coin</a>;
 <b>use</b> <a href="">0x1::signer</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
@@ -415,6 +420,15 @@ Buy direction flag.
 
 
 
+<a name="0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 100;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL"></a>
 
 When the indicated tier activation fee is too small.
@@ -640,6 +654,24 @@ When the indicated withdrawal fee is too small.
 
 
 
+<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0">FEE_SHARE_DIVISOR_0</a>: u64 = 4000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1">FEE_SHARE_DIVISOR_1</a>: u64 = 3000;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_INDEX"></a>
 
 Index of fee share in vectorized representation of an
@@ -657,6 +689,15 @@ Index of fee share in vectorized representation of an
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_MARKET_REGISTRATION_FEE"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>: u64 = 1000;
 </code></pre>
 
 
@@ -713,6 +754,33 @@ Sell direction flag.
 
 
 
+<a name="0xc0deb00c_incentives_TAKER_FEE_DIVISOR"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TAKER_FEE_DIVISOR">TAKER_FEE_DIVISOR</a>: u64 = 2000;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0">TIER_ACTIVATION_FEE_0</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 225;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_INDEX"></a>
 
 Index of tier activation fee in vectorized representation of an
@@ -720,6 +788,33 @@ Index of tier activation fee in vectorized representation of an
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_INDEX">TIER_ACTIVATION_FEE_INDEX</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 500;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_0"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 10;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_1"></a>
+
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 5;
 </code></pre>
 
 
@@ -2085,45 +2180,6 @@ amount is supplied for underwriter registration.
 
 </details>
 
-<a name="0xc0deb00c_incentives_init_incentives"></a>
-
-## Function `init_incentives`
-
-Wrapped call to <code>set_incentives()</code>, when calling for the first
-time.
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_incentives">init_incentives</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, underwriter_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_incentives">init_incentives</a>&lt;UtilityCoinType&gt;(
-    econia: &<a href="">signer</a>,
-    market_registration_fee: u64,
-    underwriter_registration_fee: u64,
-    custodian_registration_fee: u64,
-    taker_fee_divisor: u64,
-    integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
-) <b>acquires</b>
-    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
-    <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
-{
-    <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia,
-        market_registration_fee, underwriter_registration_fee,
-        custodian_registration_fee, taker_fee_divisor,
-        integrator_fee_store_tiers_ref, <b>false</b>);
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_incentives_register_econia_fee_store_entry"></a>
 
 ## Function `register_econia_fee_store_entry`
@@ -2434,6 +2490,51 @@ as a function argument.
     <b>move_to</b>(econia, <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>{
         fee_account_signer_capability});
     fee_account // Return fee <a href="">account</a> <a href="">signer</a>.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_incentives_init_module"></a>
+
+## Function `init_module`
+
+Initialize incentives during first-time publication.
+
+Uses hard-coded genesis parameters that can be updated later.
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_module">init_module</a>(econia: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_module">init_module</a>(
+    econia: &<a href="">signer</a>
+) <b>acquires</b>
+    <a href="incentives.md#0xc0deb00c_incentives_FeeAccountSignerCapabilityStore">FeeAccountSignerCapabilityStore</a>,
+    <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
+{
+    // Vectorize fee store tier parameters.
+    <b>let</b> tier_0 = <a href="_singleton">vector::singleton</a>(<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0">FEE_SHARE_DIVISOR_0</a>);
+    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_0, <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0">TIER_ACTIVATION_FEE_0</a>);
+    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_0, <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>);
+    <b>let</b> tier_1 = <a href="_singleton">vector::singleton</a>(<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1">FEE_SHARE_DIVISOR_1</a>);
+    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_1, <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>);
+    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_1, <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>);
+    <b>let</b> integrator_fee_store_tiers = <a href="_singleton">vector::singleton</a>(tier_0);
+    <a href="_push_back">vector::push_back</a>(&<b>mut</b> integrator_fee_store_tiers, tier_1);
+    // Set incentive parameters for the first time.
+    <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;AptosCoin&gt;(econia,
+        <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>, <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>,
+        <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>, <a href="incentives.md#0xc0deb00c_incentives_TAKER_FEE_DIVISOR">TAKER_FEE_DIVISOR</a>,
+        &integrator_fee_store_tiers, <b>false</b>);
 }
 </code></pre>
 

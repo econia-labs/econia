@@ -51,7 +51,7 @@ verify_utility_coin_type --> is_utility_coin_type
 flowchart LR
 
 update_incentives --> set_incentive_parameters
-init_incentives --> set_incentive_parameters
+init_module --> set_incentive_parameters
 set_incentive_parameters --> set_incentive_parameters_parse_tiers_vector
 set_incentive_parameters --> init_fee_account
 set_incentive_parameters --> set_incentive_parameters_range_check_inputs

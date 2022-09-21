@@ -870,6 +870,21 @@ module econia::incentives {
             get_market_registration_fee());
     }
 
+    /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
+    /// amount is supplied for underwriter registration.
+    public(friend) fun deposit_underwriter_registration_utility_coins<
+        UtilityCoinType
+    >(
+        coins: coin::Coin<UtilityCoinType>
+    ) acquires
+        FeeAccountSignerCapabilityStore,
+        IncentiveParameters,
+        UtilityCoinStore
+    {
+        deposit_utility_coins_verified<UtilityCoinType>(coins,
+            get_underwriter_registration_fee());
+    }
+
     /// Wrapped call to `set_incentives()`, when calling for the first
     /// time.
     public(friend) fun init_incentives<UtilityCoinType>(
@@ -1574,16 +1589,20 @@ module econia::incentives {
     {
         init_incentives_test(); // Initialize incentives.
         // Get registration fees.
-        let (custodian_registration_fee      , market_registration_fee      ) =
-            (get_custodian_registration_fee(), get_market_registration_fee());
+        let market_registration_fee = get_market_registration_fee();
+        let underwriter_registration_fee = get_underwriter_registration_fee();
+        let custodian_registration_fee = get_custodian_registration_fee();
         // Deposit fees.
-        deposit_custodian_registration_utility_coins<UC>(assets::mint_test(
-            custodian_registration_fee));
         deposit_market_registration_utility_coins<UC>(assets::mint_test(
             market_registration_fee));
+        deposit_underwriter_registration_utility_coins<UC>(assets::mint_test(
+            underwriter_registration_fee));
+        deposit_custodian_registration_utility_coins<UC>(assets::mint_test(
+            custodian_registration_fee));
         // Assert total amount.
         assert!(get_utility_coin_store_balance_test() ==
-            custodian_registration_fee + market_registration_fee, 0);
+            MARKET_REGISTRATION_FEE + UNDERWRITER_REGISTRATION_FEE +
+            CUSTODIAN_REGISTRATION_FEE, 0);
     }
 
     #[test]

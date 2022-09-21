@@ -1,9 +1,10 @@
 - [Incentives.move](#incentivesmove)
   - [Structs](#structs)
   - [Getters](#getters)
-  - [Incentive parameter updates](#incentive-parameter-updates)
+  - [Incentive parameter setters](#incentive-parameter-setters)
   - [Econia fee account operations](#econia-fee-account-operations)
-  - [Integrator fee account operations](#integrator-fee-account-operations)
+  - [Registrant operations](#registrant-operations)
+  - [Integrator fee store operations](#integrator-fee-store-operations)
   - [Match operations](#match-operations)
 
 # Incentives.move
@@ -43,7 +44,7 @@ verify_utility_coin_type --> is_utility_coin_type
 
 ```
 
-## Incentive parameter updates
+## Incentive parameter setters
 
 ```mermaid
 
@@ -78,7 +79,22 @@ deposit_utility_coins_verified --> deposit_utility_coins
 
 ```
 
-## Integrator fee account operations
+## Registrant operations
+
+```mermaid
+
+flowchart LR
+
+deposit_custodian_registration_utility_coins --> deposit_utility_coins_verified
+deposit_custodian_registration_utility_coins --> get_custodian_registration_fee
+deposit_market_registration_utility_coins --> deposit_utility_coins_verified
+deposit_market_registration_utility_coins --> get_market_registration_fee
+deposit_underwriter_registration_utility_coins --> deposit_utility_coins_verified
+deposit_underwriter_registration_utility_coins --> get_underwriter_registration_fee
+
+```
+
+## Integrator fee store operations
 
 ```mermaid
 
@@ -90,10 +106,6 @@ withdraw_integrator_fees --> get_tier_withdrawal_fee
 upgrade_integrator_fee_store_via_coinstore --> upgrade_integrator_fee_store
 withdraw_integrator_fees_via_coinstores --> get_integrator_withdrawal_fee
 withdraw_integrator_fees_via_coinstores --> withdraw_integrator_fees
-deposit_custodian_registration_utility_coins --> deposit_utility_coins_verified
-deposit_custodian_registration_utility_coins --> get_custodian_registration_fee
-deposit_market_registration_utility_coins --> deposit_utility_coins_verified
-deposit_market_registration_utility_coins --> get_market_registration_fee
 register_integrator_fee_store --> deposit_utility_coins_verified
 register_integrator_fee_store --> get_tier_activation_fee
 

@@ -3,102 +3,136 @@ module econia::structs {
 
     // registry.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Custodian capability required to approve assorted operations,
-    /// administered to third-party registrants who may store it as they
-    /// wish.
+    /// Custodian capability required to approve order placement, order
+    /// cancellation, and coin withdrawals. Administered to third-party
+    /// registrants who may store it as they wish.
     struct CustodianCapability has store {
         /// Serial ID, 1-indexed, generated upon registration as a
         /// custodian.
         custodian_id: u64
     }
 
-    /// Emitted when a custodian is registered.
-    struct CustodianRegistrationEvent has drop, store {
-        /// ID of custodian just registered.
-        custodian_id: u64
+    /// Emitted when a capability is registered.
+    struct CapabilityRegistrationEvent has drop, store {
+        /// Either `CUSTODIAN` or `UNDERWRITER`, the capability type
+        /// just registered.
+        capability_type: bool,
+        /// ID of capability just registered.
+        capability_id: u64
     }
 
-    /// Type flag for generic asset, provided for ease of generic market
-    /// registration: market registrants do not need to declare or
-    /// identify a novel type prior to registering a market, and can
-    /// instead simply indicate `GenericAsset`.
+    /// Type flag for generic asset. Must be passed as base asset type
+    /// argument for generic market operations.
     struct GenericAsset{}
 
     /// Information about a market.
     struct MarketInfo has copy, drop, store {
-        /// Base asset type info. When base asset is an
+        /// Base asset type name. When base asset is an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType` (`address:module::MyCoin` rather than
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`), and
-        /// `generic_asset_transfer_custodian_id` is marked
-        /// `PURE_COIN_PAIR`. When base asset is a generic asset, can be
-        /// any type info, including that of an
-        /// `aptos_framework::coin::Coin` phantom `CoinType` (e.g. to
-        /// denote that the generic asset is a derivative of the
-        /// indicated coin type), and
-        /// `generic_asset_transfer_custodian_id` is not marked
-        /// `PURE_COIN_PAIR`. `GenericAsset` type flag provided above
-        /// for ease of generic asset market registration, such
-        /// that market registrants do not need to declare or identify a
-        /// novel type prior to registering a market, and can instead
-        /// simply indicate `GenericAsset`.
-        base_type_info: TypeInfo,
-        /// Quote asset coin type info. Corresponds to a phantom
+        /// `underwriter_id` is none. Otherwise can be any value, and
+        /// `underwriter` is some.
+        base_type: String,
+        /// Quote asset coin type name. Corresponds to a phantom
         /// `CoinType` (`address:module::MyCoin` rather than
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
-        quote_type_info: TypeInfo,
+        quote_type: String,
         /// Number of base units exchanged per lot (when base asset is
         /// a coin, corresponds to `aptos_framework::coin::Coin.value`).
         lot_size: u64,
         /// Number of quote coin units exchanged per tick (corresponds
         /// to `aptos_framework::coin::Coin.value`).
         tick_size: u64,
-        /// ID of custodian capability required to verify deposits,
-        /// swaps, and withdrawals of assets that are not coins. A
-        /// market-wide custodian ID that only applies to markets having
-        /// a generic base asset. Marked `PURE_COIN_PAIR` when base and
-        /// quote types are both coins.
-        generic_asset_transfer_custodian_id: u64,
-        /// `PURE_COIN_PAIR` when base and quote types are both coins,
-        /// otherwise the serial ID of the corresponding market. Used to
-        /// disambiguate between markets having identical values for all
-        /// of the above fields, without which such markets would
-        /// collide as key entries in `Registry.markets`.
-        agnostic_disambiguator: u64,
+        /// ID of underwriter capability to verify generic asset
+        /// amounts. A market-wide ID that only applies to markets
+        /// having a generic base asset. None when base and quote types
+        /// are both coins.
+        underwriter_id: Option<u64>
     }
 
     /// Emitted when a market is registered.
     struct MarketRegistrationEvent has drop, store {
         /// Market ID of the market just registered.
         market_id: u64,
-        /// Base asset type info.
-        base_type_info: TypeInfo,
-        /// Quote asset type info.
-        quote_type_info: TypeInfo,
+        /// Base asset type name.
+        base_type: String,
+        /// Quote asset type name.
+        quote_type: String,
         /// Number of base units exchanged per lot.
         lot_size: u64,
         /// Number of quote units exchanged per tick.
         tick_size: u64,
-        /// ID of custodian capability required to verify deposits,
-        /// swaps, and withdrawals of assets that are not coins.
-        /// `PURE_COIN_PAIR` when base and quote types are both coins.
-        generic_asset_transfer_custodian_id: u64,
-        /// `PURE_COIN_PAIR` when base and quote types are both coins,
-        /// otherwise the serial ID of the corresponding market.
-        agnostic_disambiguator: u64
+        /// ID of `UnderwriterCapability` required to verify generic
+        /// asset amounts. None when base and quote types are both
+        /// coins.
+        underwriter_id: Option<u64>,
+    }
+
+    /// Emitted when a recognized market is added, removed, or updated.
+    struct RecognizedMarketEvent has store {
+        /// The associated trading pair.
+        trading_pair: TradingPair,
+        /// The recognized market info for the given trading pair after
+        /// an addition or update. None if a removal.
+        recognized_market_info: Option<RecognizedMarketInfo>,
+    }
+
+    /// Recognized market info for a given trading pair.
+    struct RecognizedMarketInfo has store {
+        /// Market ID of recognized market.
+        market_id: u64,
+        /// Number of base units exchanged per lot.
+        lot_size: u64,
+        /// Number of quote units exchanged per tick.
+        tick_size: u64,
+        /// ID of underwriter capability required to verify generic
+        /// asset amounts. A market-wide ID that only applies to
+        /// markets having a generic base asset. None when base and
+        /// quote types are both coins.
+        underwriter_id: Option<u64>,
+    }
+
+    /// Recognized markets for specific trading pairs.
+    struct RecognizedMarkets has key {
+        /// Map from trading pair info to market information for the
+        /// recognized market, if any, for given trading pair.
+        map: TableList<TradingPair, RecognizedMarketInfo>,
+        /// Event handle for recognized market events.
+        recognized_market_event: EventHandle<RecognizedMarketEvent>
     }
 
     /// Global registration information.
     struct Registry has key {
         /// Map from `MarketInfo` to corresponding market ID, enabling
-        /// duplicate checks on pure-coin markets and iterated indexing.
-        markets: TableList<TradingPairInfo, u64>,
+        /// duplicate checks and iterated indexing.
+        markets: TableList<MarketInfo, u64>,
+        /// The number of registered custodians.
+        n_custodians: u64,
+        /// The number of registered underwriters.
+        n_underwriters: u64,
         /// Event handle for market registration events.
         market_registration_events: EventHandle<MarketRegistrationEvent>,
-        /// Number of registered custodians.
-        n_custodians: u64,
-        /// Event handle for custodian registration events.
-        custodian_registration_events: EventHandle<CustodianRegistrationEvent>
+        /// Event handle for capability registration events.
+        capability_registration_events:
+            EventHandle<CapabilityRegistrationEvent>
+    }
+
+    /// A combination of a base asset and a quote asset.
+    struct TradingPair has store {
+        /// Base type name.
+        base_type: String,
+        /// Quote type name.
+        quote_type: String
+    }
+
+    /// Underwriter capability required to verify generic asset
+    /// amounts. Administered to third-party registrants who may store
+    /// it as they wish.
+    struct UnderwriterCapability has store {
+        /// Serial ID, 1-indexed, generated upon registration as an
+        /// underwriter.
+        custodian_id: u64
     }
 
     // registry.move <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -117,29 +151,15 @@ module econia::structs {
     /// Represents a user's open orders and available assets for a given
     /// market account ID.
     struct MarketAccount has store {
-        /// Base asset type info. When base asset is an
-        /// `aptos_framework::coin::Coin`, corresponds to the phantom
-        /// `CoinType` (`address:module::MyCoin` rather than
-        /// `aptos_framework::coin::Coin<address:module::MyCoin>`), and
-        /// `generic_asset_transfer_custodian_id` is marked
-        /// `PURE_COIN_PAIR`. When base asset is a generic asset, can be
-        /// any type info, including that of an
-        /// `aptos_framework::coin::Coin` phantom `CoinType` (e.g. to
-        /// denote that the generic asset is a derivative of the
-        /// indicated coin type), and
-        /// `generic_asset_transfer_custodian_id` is not marked
-        /// `PURE_COIN_PAIR`.
-        base_type_info: TypeInfo,
-        /// Quote asset coin type info. Corresponds to a phantom
-        /// `CoinType` (`address:module::MyCoin` rather than
-        /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
-        quote_type_info: TypeInfo,
-        /// ID of custodian capability required to verify deposits,
-        /// swaps, and withdrawals of assets that are not coins. A
-        /// market-wide custodian ID that only applies to markets having
-        /// a generic base asset. Marked `PURE_COIN_PAIR` when base and
+        /// Should match registry.
+        base_type: String,
+        /// Should match registry.
+        quote_type: String,
+        /// ID of underwriter capability required to verify generic
+        /// asset amounts. A market-wide ID that only applies to
+        /// markets having a generic base asset. None when base and
         /// quote types are both coins.
-        generic_asset_transfer_custodian_id: u64,
+        underwriter_id: Option<u64>,
         /// Map from order ID to size of outstanding order, measured in
         /// lots lefts to fill.
         asks: TableList<u128, u64>,
@@ -188,9 +208,10 @@ module econia::structs {
 
     // market.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Emitted when a maker order is placed or cancelled.
+    /// Emitted when a maker order is added to or removed from the order
+    /// book.
     struct MakerEvent has drop, store {
-        /// `CANCEL` or `PLACE`.
+        /// `ADD` or `REMOVE`.
         type: bool,
         /// Order ID, containing encoded price, side, and insertion
         /// count for the given price level.
@@ -202,7 +223,7 @@ module econia::structs {
         user: address,
         /// For given `user`, ID of the custodian required to approve
         /// order placement, order cancellation, and coin withdrawals.
-        general_custodian_id: u64
+        custodian_id: u64
     }
 
     /// An order on the order book.
@@ -213,42 +234,28 @@ module econia::structs {
         user: address,
         /// For given user, the ID of the custodian required to approve
         /// orders, order cancellations, and coin withdrawals.
-        general_custodian_id: u64
+        custodian_id: u64
     }
 
     /// An order book for a given market.
     struct OrderBook has store {
-        /// Base asset type info. When base asset is an
-        /// `aptos_framework::coin::Coin`, corresponds to the phantom
-        /// `CoinType` (`address:module::MyCoin` rather than
-        /// `aptos_framework::coin::Coin<address:module::MyCoin>`), and
-        /// `generic_asset_transfer_custodian_id` is marked
-        /// `PURE_COIN_PAIR`. When base asset is a generic asset, can be
-        /// any type info, including that of an
-        /// `aptos_framework::coin::Coin` phantom `CoinType` (e.g. to
-        /// denote that the generic asset is a derivative of the
-        /// indicated coin type), and
-        /// `generic_asset_transfer_custodian_id` is not marked
-        /// `PURE_COIN_PAIR`.
-        base_type_info: TypeInfo,
-        /// Quote asset coin type info. Corresponds to a phantom
-        /// `CoinType` (`address:module::MyCoin` rather than
-        /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
-        quote_type_info: TypeInfo,
+        /// Should match registry.
+        base_type: TypeInfo,
+        /// Should match registry.
+        quote_type: TypeInfo,
         /// Number of base units exchanged per lot.
         lot_size: u64,
         /// Number of quote units exchanged per tick.
         tick_size: u64,
-        /// ID of custodian capability required to verify deposits,
-        /// swaps, and withdrawals of assets that are not coins. A
-        /// market-wide custodian ID that only applies to markets having
-        /// a generic base asset. Marked `PURE_COIN_PAIR` when base and
+        /// ID of underwriter capability required to verify generic
+        /// asset amounts. A market-wide ID that only applies to
+        /// markets having a generic base asset. None when base and
         /// quote types are both coins.
-        generic_asset_transfer_custodian_id: u64,
+        underwriter_id: Option<u64>,
         /// Open asks.
-        asks: QueueCrit<Order>,
+        asks: CritQueue<Order>,
         /// Open bids.
-        bids: QueueCrit<Order>,
+        bids: CritQueue<Order>,
         /// Event handle for maker events.
         maker_events: EventHandle<MakerEvent>,
         /// Event handle for taker events.
@@ -277,7 +284,7 @@ module econia::structs {
         maker: address,
         /// For given `user`, ID of the custodian required to approve
         /// order placement, order cancellation, and coin withdrawals.
-        general_custodian_id: u64
+        custodian_id: u64
     }
 
     // market.move <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

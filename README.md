@@ -3,8 +3,7 @@
 [![Discord chat](https://img.shields.io/badge/docs-Econia-59f)](https://www.econia.dev)
 [![Econia move documentation (move)](https://img.shields.io/badge/docs-Move-59f)](src/move/econia/build/Econia/docs)
 [![Discord chat](https://img.shields.io/discord/988942344776736830?style=flat)](https://discord.gg/Z7gXcMgX8A)
-[![License](https://img.shields.io/badge/license-Apache_2.0-white.svg)](LICENSE.md)
-
+[![License](https://img.shields.io/badge/license-Business_Source_License-white.svg)](LICENSE.md)
 
 # Econia
 
@@ -24,6 +23,8 @@
     - [Markdown](#markdown)
     - [Move](#move)
     - [Python](#python)
+
+If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos](https://github.com/econia-labs/teach-yourself-move) guide for some helpful background information!
 
 ## Developer setup
 

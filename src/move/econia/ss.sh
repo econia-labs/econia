@@ -68,7 +68,8 @@ git_log_one_line() {git log --oneline --max-count=1}
 init_econia() {
     aptos move run \
         --function-id 0x$addr::registry::init_registry \
-        --private-key-file $keyfile
+        --private-key-file $keyfile \
+        --assume-yes
 }
 
 # Publish to either a temporary devnet address or an official devnet
@@ -92,14 +93,14 @@ publish_from_keyfile() {
     substitute_econia_address $addr
     # Fund the account
     aptos account fund-with-faucet \
-        --account $addr > /dev/null \
-        --amount 100000
+        --account $addr \
+        --amount 1000000000
     # Publish the package
     aptos move publish \
         --private-key-file $keyfile \
         --override-size-check \
         --included-artifacts none \
-        --max-gas 5000
+        --assume-yes
     init_econia # Run the initialization function
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr

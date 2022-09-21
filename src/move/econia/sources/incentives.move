@@ -158,6 +158,15 @@ module econia::incentives {
     const E_FIRST_TIER_ACTIVATION_FEE_NONZERO: u64 = 18;
     /// When custodian registration fee is less than the minimum.
     const E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 19;
+    /// When depositing to an integrator fee store would result in an
+    /// overflow.
+    const E_INTEGRATOR_FEE_STORE_OVERFLOW: u64 = 20;
+    /// When depositing to an Econia fee store would result in an
+    /// overflow.
+    const E_ECONIA_FEE_STORE_OVERFLOW: u64 = 21;
+    /// When depositing to a utility coin store would result in an
+    /// overflow.
+    const E_UTILITY_COIN_STORE_OVERFLOW: u64 = 22;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -676,6 +685,15 @@ module econia::incentives {
     ///   all fees to Econia.
     /// * `quote_fill`: Amount of Quote coins filled during taker match.
     /// * `quote_coins_ref_mut`: Quote coins to withdraw fees from.
+    ///
+    /// # Aborts if
+    /// * Depositing to integrator fee store would result in an
+    ///   overflow. Rather than relying on the underlying coin operation
+    ///   to abort, this check is performed to provide additional
+    ///   feedback in the unlikely event that a coin with a supply far
+    ///   in excess of `HI_64` is the quote coin for a market.
+    /// * Depositing to Econia fee store would result in an overflow
+    ///   per above.
     public(friend) fun assess_taker_fees<QuoteCoinType>(
         market_id: u64,
         integrator_address: address,
@@ -710,6 +728,10 @@ module econia::incentives {
                     integrator_fee_store_ref_mut.tier);
                 // Calculate resultant integrator fee share.
                 integrator_fee_share = quote_fill / fee_share_divisor;
+                // Verify merge will not overflow integrator fee store.
+                range_check_coin_merge(
+                    integrator_fee_share, &integrator_fee_store_ref_mut.coins,
+                    E_INTEGRATOR_FEE_STORE_OVERFLOW);
                 // Extract resultant amount from supplied quote coins.
                 let integrator_fees = coin::extract(quote_coins_ref_mut,
                     integrator_fee_share);
@@ -734,6 +756,10 @@ module econia::incentives {
         // Borrow mutable reference to fees for given market ID.
         let econia_fee_store_coins_ref_mut = table_list::borrow_mut(
             econia_fee_store_map_ref_mut, market_id);
+        // Verify merge will not overflow Econia fee store.
+        range_check_coin_merge(
+            econia_fee_share, econia_fee_store_coins_ref_mut,
+            E_ECONIA_FEE_STORE_OVERFLOW);
         // Merge the Econia fees into the fee store.
         coin::merge(econia_fee_store_coins_ref_mut, econia_fees);
     }
@@ -989,6 +1015,13 @@ module econia::incentives {
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Deposit `coins` to the Econia `UtilityCoinStore`.
+    ///
+    /// # Aborts if
+    /// * Depositing to utility coin store would result in an overflow.
+    ///   Rather than relying on the underlying coin operation to abort,
+    ///   this check is performed to provide additional feedback in the
+    ///   unlikely event that a coin with a supply far in excess of
+    ///   `HI_64` is used as a utility coin.
     fun deposit_utility_coins<UtilityCoinType>(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
@@ -1001,6 +1034,9 @@ module econia::incentives {
         let utility_coins_ref_mut =
             &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
                 fee_account_address).coins;
+        // Verify merge will not overflow utility coin store.
+        range_check_coin_merge(coin::value(&coins),
+            utility_coins_ref_mut, E_UTILITY_COIN_STORE_OVERFLOW);
         // Merge in deposited coins.
         coin::merge(utility_coins_ref_mut, coins);
     }
@@ -1091,6 +1127,28 @@ module econia::incentives {
             // Move to the fee account an initialized one.
             move_to<UtilityCoinStore<CoinType>>(fee_account,
                 UtilityCoinStore{coins: coin::zero<CoinType>()});
+    }
+
+    /// Verify that attempting to merge `amount` into `target_coins`
+    /// does not overflow a `u64`, aborting with `error_code` if it
+    /// does.
+    ///
+    /// Since coins can be minted in excess of a `HI_64` supply, this
+    /// is an unlikely but potentially catastrophic event, especially
+    /// if the overflowed account blocks other transactions from
+    /// proceeding. Hence the extra feedback in this module, in the
+    /// form of a custom error code for the given operation, that allows
+    /// for diagnosis in extreme cases.
+    fun range_check_coin_merge<CoinType>(
+        amount: u64,
+        target_coins: &coin::Coin<CoinType>,
+        error_code: u64
+    ) {
+        // Get value of target coins.
+        let target_value = coin::value(target_coins);
+        // Assert merge does not overflow a u64.
+        assert!((amount as u128) + (target_value as u128) <= (HI_64 as u128),
+            error_code);
     }
 
     /// Set all fields for `IncentiveParameters` under Econia account.

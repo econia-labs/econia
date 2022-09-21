@@ -74,6 +74,7 @@ withdraw_utility_coins_all --> withdraw_utility_coins_internal
 withdraw_utility_coins_internal --> get_fee_account_address
 register_econia_fee_store_entry --> get_fee_account
 deposit_utility_coins --> get_fee_account_address
+deposit_utility_coins --> range_check_coin_merge
 deposit_utility_coins_verified --> verify_utility_coin_type
 deposit_utility_coins_verified --> deposit_utility_coins
 
@@ -120,6 +121,7 @@ flowchart LR
 assess_taker_fees --> get_fee_share_divisor
 assess_taker_fees --> get_taker_fee_divisor
 assess_taker_fees --> get_fee_account_address
+assess_taker_fees --> range_check_coin_merge
 calculate_max_quote_match
 
 ```

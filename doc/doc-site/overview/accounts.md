@@ -16,7 +16,7 @@ Before a user can place a limit or a market order, they must have sufficient hol
 1. The order is filled, or
 1. The order is cancelled
 
-For example, consider a user who opens a [`MarketAccount`] with base asset `APT`, quote asset `USDC`, lot size 1 and tick size 1.
+For example, consider a user who opens a [`MarketAccount`] with base asset `APT`, quote asset `USDC`, lot size 1, and tick size 1.
 They deposit 100 `USDC`, then submit a bid of size 1 and price 100, which locks up all of their `USDC`.
 If they cancel the trade they can withdraw all their `USDC`, or, if the trade is filled, they will then be able to withdraw 1 `APT`.
 

@@ -38,6 +38,7 @@ get_integrator_withdrawal_fee --> get_tier_withdrawal_fee
 get_market_registration_fee
 get_n_fee_store_tiers
 get_taker_fee_divisor
+get_underwriter_registration_fee
 verify_utility_coin_type --> is_utility_coin_type
 
 ```

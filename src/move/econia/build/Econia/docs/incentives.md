@@ -30,6 +30,7 @@ Incentive-associated parameters and data structures.
 -  [Function `get_taker_fee_divisor`](#0xc0deb00c_incentives_get_taker_fee_divisor)
 -  [Function `get_tier_activation_fee`](#0xc0deb00c_incentives_get_tier_activation_fee)
 -  [Function `get_tier_withdrawal_fee`](#0xc0deb00c_incentives_get_tier_withdrawal_fee)
+-  [Function `get_underwriter_registration_fee`](#0xc0deb00c_incentives_get_underwriter_registration_fee)
 -  [Function `is_utility_coin_type`](#0xc0deb00c_incentives_is_utility_coin_type)
 -  [Function `upgrade_integrator_fee_store`](#0xc0deb00c_incentives_upgrade_integrator_fee_store)
     -  [Type parameters](#@Type_parameters_7)
@@ -199,6 +200,12 @@ Incentive parameters for assorted operations.
 </dt>
 <dd>
  <code>Coin.value</code> required to register a market.
+</dd>
+<dt>
+<code>underwriter_registration_fee: u64</code>
+</dt>
+<dd>
+ <code>Coin.value</code> required to register as an underwriter.
 </dd>
 <dt>
 <code>custodian_registration_fee: u64</code>
@@ -562,6 +569,16 @@ When too many integrater fee store tiers indicated.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TOO_MANY_TIERS">E_TOO_MANY_TIERS</a>: u64 = 14;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN"></a>
+
+When custodian registration fee is less than the minimum.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN">E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 19;
 </code></pre>
 
 
@@ -1088,6 +1105,34 @@ given <code>tier</code>.
 
 </details>
 
+<a name="0xc0deb00c_incentives_get_underwriter_registration_fee"></a>
+
+## Function `get_underwriter_registration_fee`
+
+Return underwriter registration fee.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_underwriter_registration_fee">get_underwriter_registration_fee</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_underwriter_registration_fee">get_underwriter_registration_fee</a>():
+u64
+<b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
+    <b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).
+        underwriter_registration_fee
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_incentives_is_utility_coin_type"></a>
 
 ## Function `is_utility_coin_type`
@@ -1449,7 +1494,7 @@ initialization.
 Accepts same arguments as <code>set_incentives()</code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_update_incentives">update_incentives</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers: <a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_update_incentives">update_incentives</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, underwriter_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers: <a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
 </code></pre>
 
 
@@ -1461,6 +1506,7 @@ Accepts same arguments as <code>set_incentives()</code>.
 <pre><code><b>public</b> entry <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_update_incentives">update_incentives</a>&lt;UtilityCoinType&gt;(
     econia: &<a href="">signer</a>,
     market_registration_fee: u64,
+    underwriter_registration_fee: u64,
     custodian_registration_fee: u64,
     taker_fee_divisor: u64,
     integrator_fee_store_tiers: <a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
@@ -1469,8 +1515,9 @@ Accepts same arguments as <code>set_incentives()</code>.
     <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
 {
     <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia,
-        market_registration_fee, custodian_registration_fee,
-        taker_fee_divisor, &integrator_fee_store_tiers, <b>true</b>);
+        market_registration_fee, underwriter_registration_fee,
+        custodian_registration_fee, taker_fee_divisor,
+        &integrator_fee_store_tiers, <b>true</b>);
 }
 </code></pre>
 
@@ -1953,7 +2000,7 @@ Wrapped call to <code>set_incentives()</code>, when calling for the first
 time.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_incentives">init_incentives</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_incentives">init_incentives</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, underwriter_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
 </code></pre>
 
 
@@ -1965,6 +2012,7 @@ time.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_init_incentives">init_incentives</a>&lt;UtilityCoinType&gt;(
     econia: &<a href="">signer</a>,
     market_registration_fee: u64,
+    underwriter_registration_fee: u64,
     custodian_registration_fee: u64,
     taker_fee_divisor: u64,
     integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
@@ -1973,8 +2021,9 @@ time.
     <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
 {
     <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia,
-        market_registration_fee, custodian_registration_fee,
-        taker_fee_divisor, integrator_fee_store_tiers_ref, <b>false</b>);
+        market_registration_fee, underwriter_registration_fee,
+        custodian_registration_fee, taker_fee_divisor,
+        integrator_fee_store_tiers_ref, <b>false</b>);
 }
 </code></pre>
 
@@ -2368,6 +2417,8 @@ via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_
 
 * <code>econia</code>: Econia account <code><a href="">signer</a></code>.
 * <code>market_registration_fee</code>: Market registration fee to set.
+* <code>underwriter_registration_fee</code>: Underwriter registration fee
+to set.
 * <code>custodian_registration_fee</code>: Custodian registration fee to
 set.
 * <code>taker_fee_divisor</code>: Taker fee divisor to set.
@@ -2402,7 +2453,7 @@ would mean that integrators who had previously upgraded to the
 highest tier would become subject to undefined behavior.
 
 
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;, updating: bool)
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(econia: &<a href="">signer</a>, market_registration_fee: u64, underwriter_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;, updating: bool)
 </code></pre>
 
 
@@ -2414,6 +2465,7 @@ highest tier would become subject to undefined behavior.
 <pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;UtilityCoinType&gt;(
     econia: &<a href="">signer</a>,
     market_registration_fee: u64,
+    underwriter_registration_fee: u64,
     custodian_registration_fee: u64,
     taker_fee_divisor: u64,
     integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;,
@@ -2424,8 +2476,9 @@ highest tier would become subject to undefined behavior.
 {
     // Range check inputs.
     <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(econia,
-        market_registration_fee, custodian_registration_fee,
-        taker_fee_divisor, integrator_fee_store_tiers_ref);
+        market_registration_fee, underwriter_registration_fee,
+        custodian_registration_fee, taker_fee_divisor,
+        integrator_fee_store_tiers_ref);
     // Get fee <a href="">account</a> <a href="">signer</a>: <b>if</b> updating previously-set values,
     // get it from the stored capability.
     <b>let</b> fee_account = <b>if</b> (updating) <a href="incentives.md#0xc0deb00c_incentives_get_fee_account">get_fee_account</a>() <b>else</b>
@@ -2462,8 +2515,8 @@ highest tier would become subject to undefined behavior.
     // range-checked inputs and empty tiers <a href="">vector</a>.
     <b>move_to</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(econia, <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>{
         utility_coin_type_info, market_registration_fee,
-        custodian_registration_fee, taker_fee_divisor,
-        integrator_fee_store_tiers});
+        underwriter_registration_fee, custodian_registration_fee,
+        taker_fee_divisor, integrator_fee_store_tiers});
     // Borrow a mutable reference <b>to</b> the incentive parameters
     // resource at the Econia <a href="">account</a>.
     <b>let</b> incentive_parameters_ref_mut =
@@ -2619,6 +2672,8 @@ Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_in
 
 * <code>econia</code>: Econia account <code><a href="">signer</a></code>.
 * <code>market_registration_fee</code>: Market registration fee to set.
+* <code>underwriter_registration_fee</code>: Underwriter registration fee
+to set.
 * <code>custodian_registration_fee</code>: Custodian registration fee to
 set.
 * <code>taker_fee_divisor</code>: Taker fee divisor to set.
@@ -2634,6 +2689,8 @@ vector containing fields for a corresponding
 
 * <code>econia</code> is not Econia account.
 * <code>market_registration_fee</code> does not meet minimum threshold.
+* <code>underwriter_registration_fee</code> does not meet minimum
+threshold.
 * <code>custodian_registration_fee</code> does not meet minimum threshold.
 * <code>taker_fee_divisor</code> does not meet minimum threshold.
 * <code>integrator_fee_store_tiers_ref</code> indicates an empty vector.
@@ -2641,7 +2698,7 @@ vector containing fields for a corresponding
 too long.
 
 
-<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(econia: &<a href="">signer</a>, market_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
+<pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(econia: &<a href="">signer</a>, market_registration_fee: u64, underwriter_registration_fee: u64, custodian_registration_fee: u64, taker_fee_divisor: u64, integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;)
 </code></pre>
 
 
@@ -2653,6 +2710,7 @@ too long.
 <pre><code><b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>(
     econia: &<a href="">signer</a>,
     market_registration_fee: u64,
+    underwriter_registration_fee: u64,
     custodian_registration_fee: u64,
     taker_fee_divisor: u64,
     integrator_fee_store_tiers_ref: &<a href="">vector</a>&lt;<a href="">vector</a>&lt;u64&gt;&gt;
@@ -2662,6 +2720,9 @@ too long.
     // Assert market registration fee meets minimum threshold.
     <b>assert</b>!(market_registration_fee &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>,
         <a href="incentives.md#0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN">E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN</a>);
+    // Assert underwriter registration fee meets minimum threshold.
+    <b>assert</b>!(underwriter_registration_fee &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>,
+        <a href="incentives.md#0xc0deb00c_incentives_E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN">E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN</a>);
     // Assert custodian registration fee meets minimum threshold.
     <b>assert</b>!(custodian_registration_fee &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>,
         <a href="incentives.md#0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN">E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN</a>);

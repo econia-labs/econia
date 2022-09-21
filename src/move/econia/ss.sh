@@ -101,7 +101,7 @@ publish_from_keyfile() {
         --override-size-check \
         --included-artifacts none \
         --assume-yes
-    init_econia # Run the initialization function
+    submit_market_buy $1 # Submit a market buy.
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr
     # Substitute back docgen address
@@ -120,6 +120,31 @@ substitute_econia_address() {
     fi
     # Substitute address in memory in Move.toml
     python $build_py substitute $addr $repo_root
+}
+
+# Submit a market buy, after `econia::test::init_module` has been run.
+#
+# Should be run from inside Move package directory.
+submit_market_buy() {
+    # Get keyfile for given flag argument.
+    get_keyfile_info $1
+    # Submit a market buy.
+    aptos move run \
+        --function-id 0x$addr::market::place_market_order_user \
+        --private-key-file $keyfile \
+        --assume-yes \
+        --type-args \
+            0x$addr::assets::BC \
+            0x$addr::assets::QC \
+        --args \
+            address:$addr \
+            u64:0 \
+            bool:true \
+            u64:0 \
+            u64:100 \
+            u64:0 \
+            u64:10000000 \
+            u64:100000000000000000
 }
 
 # Update Git revision hash for dependency in Move.toml

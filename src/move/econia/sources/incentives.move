@@ -1839,6 +1839,16 @@ module econia::incentives {
         init_utility_coin_store<IncentiveParameters>(account);
     }
 
+    #[test]
+    #[expected_failure(abort_code = 12345)]
+    /// Verify failure for overflow.
+    fun test_range_check_coin_merge() {
+        let target_coins = assets::mint_test<QC>(HI_64); // Mint coins
+        // Attempt invalid invocation
+        range_check_coin_merge(1, &target_coins, 12345);
+        assets::burn(target_coins); // Burn target coins.
+    }
+
     #[test(
         econia = @econia,
         integrator = @user

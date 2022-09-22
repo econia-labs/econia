@@ -11,13 +11,39 @@ Bit numbers are 0-indexed from the least-significant bit (LSB):
 >      bit 5 = 0 -|    |- bit 0 = 1
 
 
-<a name="@Crit-bit_trees_0"></a>
+<a name="@Module-level_documentation_sections_0"></a>
+
+## Module-level documentation sections
+
+
+[Crit-bit trees](#crit-bit-trees):
+
+* [General](#general)
+* [Structure](#structure)
+* [References](#references)
+
+[Crit-queues](#crit-queues):
+
+* [Enqueue key multiplicity](#enqueue-key-multiplicity)
+* [Dequeue order](#dequeue-order)
+* [Leaf key structure](#leaf-key-structure)
+* [Parent keys](#parent-keys)
+* [Key tables](#key-tables)
+
+[Operations](#operations):
+
+* [Enqueues](#enqueues)
+* [Removals](#removals)
+* [Dequeues](#dequeues)
+
+
+<a name="@Crit-bit_trees_1"></a>
 
 ## Crit-bit trees
 
 
 
-<a name="@General_1"></a>
+<a name="@General_2"></a>
 
 ### General
 
@@ -25,20 +51,19 @@ Bit numbers are 0-indexed from the least-significant bit (LSB):
 A critical bit (crit-bit) tree is a compact binary prefix tree
 that stores a prefix-free set of bitstrings, like n-bit integers or
 variable-length 0-terminated byte strings. For a given set of keys
-there exists a unique crit-bit tree representing the set, and
-crit-bit trees do not require complex rebalancing algorithms like
-those of AVL or red-black binary search trees. Crit-bit trees
-support the following operations:
+there exists a unique crit-bit tree representing the set, to the
+effect that crit-bit trees do not require complex rebalancing
+algorithms like those of AVL or red-black binary search trees.
+Crit-bit trees support the following operations:
 
 * Membership testing
 * Insertion
 * Deletion
-* Predecessor
-* Successor
-* Iteration
+* Inorder predecessor iteration
+* Inorder successor iteration
 
 
-<a name="@Structure_2"></a>
+<a name="@Structure_3"></a>
 
 ### Structure
 
@@ -75,10 +100,8 @@ marked <code>2nd</code> are set at bit 2. And similarly for the <code><a href="c
 <code>0th</code>, the <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its left child is unset at bit 0, while the
 <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its right child is set at bit 0.
 
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys are automatically sorted upon insertion.
 
-
-<a name="@References_3"></a>
+<a name="@References_4"></a>
 
 ### References
 
@@ -98,13 +121,13 @@ https://github.com/agl/critbit
 https://wiki.tcl-lang.org/page/critbit
 
 
-<a name="@Crit-queues_4"></a>
+<a name="@Crit-queues_5"></a>
 
 ## Crit-queues
 
 
 
-<a name="@Enqueue_key_multiplicity_5"></a>
+<a name="@Enqueue_key_multiplicity_6"></a>
 
 ### Enqueue key multiplicity
 
@@ -126,7 +149,7 @@ of key-value pairs, having the same enqueue key, that were
 previously enqueued.
 
 
-<a name="@Dequeue_order_6"></a>
+<a name="@Dequeue_order_7"></a>
 
 ### Dequeue order
 
@@ -167,7 +190,7 @@ In a descending crit-queue, the dequeue sequence would instead be:
 5. $k_{0, 1}$
 
 
-<a name="@Leaf_key_structure_7"></a>
+<a name="@Leaf_key_structure_8"></a>
 
 ### Leaf key structure
 
@@ -207,11 +230,11 @@ leaf key:
 >                                     64th      k_{3, 0}
 >                            ________/    \________
 >                         0th                      0th
->     Dequeue            /   \                    /   \
->      first --> k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
+>      Queue             /   \                    /   \
+>       head --> k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
 
 For a descending crit-queue, elements are dequeued via
-inorder successor traversal starting from the maximum leaf key:
+inorder predecessor traversal starting from the maximum leaf key:
 
 | Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
 |-------------|----------------------|--------------------|
@@ -222,8 +245,8 @@ inorder successor traversal starting from the maximum leaf key:
 | $k_{0, 1}$  | <code>000...000</code>          | <code>011...110</code>        |
 
 >                               65th
->                              /    \            Dequeue
->                          64th      k_{3, 0} <-- first
+>                              /    \             Queue
+>                          64th      k_{3, 0} <-- head
 >                 ________/    \________
 >              0th                      0th
 >             /   \                    /   \
@@ -231,7 +254,7 @@ inorder successor traversal starting from the maximum leaf key:
 
 
 
-<a name="@Parent_keys_8"></a>
+<a name="@Parent_keys_9"></a>
 
 ### Parent keys
 
@@ -239,11 +262,12 @@ inorder successor traversal starting from the maximum leaf key:
 If the insertion of a crit-bit tree leaf is accompanied by the
 generation of a crit-bit tree parent node, the parent is assigned
 a "parent key" that is identical to the corresponding leaf key,
-except with bit 63 set. This schema allows for between leaf keys
-and parent keys based simply on bit 63.
+except with bit 63 set. This schema allows for
+discrimination between leaf keys and parent keys based simply on
+bit 63.
 
 
-<a name="@Key_tables_9"></a>
+<a name="@Key_tables_10"></a>
 
 ### Key tables
 
@@ -266,34 +290,109 @@ is updated to $n$. Since bits 62 and 63 in leaf keys are
 reserved for flag bits, the maximum enqueue count per enqueue key
 is thus $2^{62} - 1$.
 
+
+<a name="@Operations_11"></a>
+
+## Operations
+
+
+In the present implementation, key-value pairs are enqueued via
+<code><a href="critqueue.md#0xc0deb00c_critqueue_enqueue">enqueue</a>()</code>, which accepts a <code>u64</code> enqueue key and an enqueue value
+of type <code>V</code>. A corresponding <code>u128</code> leaf key is returned, which can
+be used for subsequent leaf key lookup via <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>,
+<code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, or <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
+
+
+<a name="@Enqueues_12"></a>
+
+### Enqueues
+
+
+Enqueues are, like a crit-bit tree, $O(k^{\dagger})$ in the worst
+case, where $k^{\dagger} = k - 2 = 126$ (the number of variable bits
+in a leaf key), but parallelizable in the general case where:
+
+1. Enqueues do not alter the head of the crit-queue.
+2. Enqueues do not write to overlapping tree edges.
+3. Enqueues do not share the same enqueue key.
+
+The third parallelism constraint is a result of enqueue count
+updates, and may potentially be eliminated in the case of a
+parallelized insertion count aggregator.
+
+
+<a name="@Removals_13"></a>
+
+### Removals
+
+
+With <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes stored in a <code>Table</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code> operations are
+thus $O(1)$, and are additionally parallelizable in the general case
+where:
+
+1. Removals do not write to overlapping tree edges.
+2. Removals do not alter the head of the crit-queue.
+
+Removals can take place from anywhere inside of the crit-queue, with
+the specified sorting order preserved among remaining elements. For
+example, consider the elements in an ascending crit-queue with the
+following dequeue sequence:
+
+1. $k_{0, 6}$
+2. $k_{2, 5}$
+3. $k_{2, 8}$
+4. $k_{4, 5}$
+5. $k_{5, 0}$
+
+Here, removing $k_{2, 5}$ simply updates the dequeue sequence to:
+
+1. $k_{0, 6}$
+2. $k_{2, 8}$
+3. $k_{4, 5}$
+4. $k_{5, 0}$
+
+
+<a name="@Dequeues_14"></a>
+
+### Dequeues
+
+
+Dequeues, as a form of removal, are $O(1)$, but since they alter
+the head of the queue, they are not parallelizable. Dequeues
+are initialized via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>()</code>, and iterated via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>.
+
 ---
 
 
--  [Crit-bit trees](#@Crit-bit_trees_0)
-    -  [General](#@General_1)
-    -  [Structure](#@Structure_2)
-    -  [References](#@References_3)
--  [Crit-queues](#@Crit-queues_4)
-    -  [Enqueue key multiplicity](#@Enqueue_key_multiplicity_5)
-    -  [Dequeue order](#@Dequeue_order_6)
-    -  [Leaf key structure](#@Leaf_key_structure_7)
-    -  [Parent keys](#@Parent_keys_8)
-    -  [Key tables](#@Key_tables_9)
+-  [Module-level documentation sections](#@Module-level_documentation_sections_0)
+-  [Crit-bit trees](#@Crit-bit_trees_1)
+    -  [General](#@General_2)
+    -  [Structure](#@Structure_3)
+    -  [References](#@References_4)
+-  [Crit-queues](#@Crit-queues_5)
+    -  [Enqueue key multiplicity](#@Enqueue_key_multiplicity_6)
+    -  [Dequeue order](#@Dequeue_order_7)
+    -  [Leaf key structure](#@Leaf_key_structure_8)
+    -  [Parent keys](#@Parent_keys_9)
+    -  [Key tables](#@Key_tables_10)
+-  [Operations](#@Operations_11)
+    -  [Enqueues](#@Enqueues_12)
+    -  [Removals](#@Removals_13)
+    -  [Dequeues](#@Dequeues_14)
 -  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
-    -  [Advantages](#@Advantages_10)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
 -  [Struct `Parent`](#0xc0deb00c_critqueue_Parent)
--  [Constants](#@Constants_11)
+-  [Constants](#@Constants_15)
 -  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
 -  [Function `dequeue`](#0xc0deb00c_critqueue_dequeue)
-    -  [Parameters](#@Parameters_12)
-    -  [Returns](#@Returns_13)
-    -  [Aborts if](#@Aborts_if_14)
+    -  [Parameters](#@Parameters_16)
+    -  [Returns](#@Returns_17)
+    -  [Aborts if](#@Aborts_if_18)
 -  [Function `dequeue_init`](#0xc0deb00c_critqueue_dequeue_init)
-    -  [Parameters](#@Parameters_15)
-    -  [Returns](#@Returns_16)
-    -  [Aborts if](#@Aborts_if_17)
+    -  [Parameters](#@Parameters_19)
+    -  [Returns](#@Returns_20)
+    -  [Aborts if](#@Aborts_if_21)
 -  [Function `enqueue`](#0xc0deb00c_critqueue_enqueue)
 -  [Function `get_head_leaf_key`](#0xc0deb00c_critqueue_get_head_leaf_key)
 -  [Function `new`](#0xc0deb00c_critqueue_new)
@@ -312,34 +411,7 @@ is thus $2^{62} - 1$.
 
 ## Struct `CritQueue`
 
-
-<a name="@Advantages_10"></a>
-
-### Advantages
-
-
-Key-value insertion to a <code>QueueCrit</code> accepts a <code>u64</code> insertion
-key and an insertion value of type <code>V</code>, and returns a <code>u128</code>
-leaf key. Subsequent leaf key lookup, including deletion, is
-thus $O(1)$ since each <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> is stored in a <code>Table</code>,
-and deletions behind the head of the queue are additionally
-parallelizable in the general case where:
-
-* Deletions do not have overlapping tree edges.
-
-Insertions are, like a crit-bit tree, $O(k^{\dagger})$ in the
-worst case, where $k^{\dagger} = k - 2 = 126$ (the number of
-variable bits in a leaf key), but parallelizable in the general
-case where:
-
-1. Insertions do not have overlapping tree edges.
-2. Insertions do not share the same insertion key.
-
-The second parallelism constraint is a result of insertion count
-updates, and may potentially be eliminated in the case of a
-parallelized insertion count aggregator.
-
----
+Hybrid between a crit-bit tree and a queue. See above.
 
 
 <pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt; <b>has</b> store
@@ -475,7 +547,7 @@ A crit-bit tree parent node.
 
 </details>
 
-<a name="@Constants_11"></a>
+<a name="@Constants_15"></a>
 
 ## Constants
 
@@ -603,14 +675,14 @@ iteration can proceed, or if a subsequent call to <code><a href="critqueue.md#0x
 indicates the same.
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_16"></a>
 
 ### Parameters
 
 * <code>crit_queue_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 
 
-<a name="@Returns_13"></a>
+<a name="@Returns_17"></a>
 
 ### Returns
 
@@ -620,7 +692,7 @@ indicates the same.
 thus if iteration can proceed.
 
 
-<a name="@Aborts_if_14"></a>
+<a name="@Aborts_if_18"></a>
 
 ### Aborts if
 
@@ -647,7 +719,7 @@ elements to proceed to after dequeueing.
 /*)*/ {
     // Can ensure that there is a queue head by attempting <b>to</b> borrow
     // the corresponding leaf key from the <a href="">option</a> field, which
-    //aborts <b>if</b> it is none.
+    // aborts <b>if</b> it is none.
 }
 </code></pre>
 
@@ -662,14 +734,14 @@ elements to proceed to after dequeueing.
 Mutably borrow the head of the queue before dequeueing.
 
 
-<a name="@Parameters_15"></a>
+<a name="@Parameters_19"></a>
 
 ### Parameters
 
 * <code>crit_queue_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 
 
-<a name="@Returns_16"></a>
+<a name="@Returns_20"></a>
 
 ### Returns
 
@@ -680,7 +752,7 @@ there is another element to iterate to. If <code><b>false</b></code>, can still
 remove the head via <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
 
 
-<a name="@Aborts_if_17"></a>
+<a name="@Aborts_if_21"></a>
 
 ### Aborts if
 
@@ -794,7 +866,7 @@ Return <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>
 
 ## Function `remove`
 
-Remove corresonding leaf, return enqueue value.
+Remove corresponding leaf, return enqueue value.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _leaf_key: u128)

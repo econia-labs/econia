@@ -5,6 +5,28 @@
 /// >     11101...1010010101
 /// >      bit 5 = 0 -|    |- bit 0 = 1
 ///
+/// # Module-level documentation sections
+///
+/// [Crit-bit trees](#crit-bit-trees):
+///
+/// * [General](#general)
+/// * [Structure](#structure)
+/// * [References](#references)
+///
+/// [Crit-queues](#crit-queues):
+///
+/// * [Enqueue key multiplicity](#enqueue-key-multiplicity)
+/// * [Dequeue order](#dequeue-order)
+/// * [Leaf key structure](#leaf-key-structure)
+/// * [Parent keys](#parent-keys)
+/// * [Key tables](#key-tables)
+///
+/// [Operations](#operations):
+///
+/// * [Enqueues](#enqueues)
+/// * [Removals](#removals)
+/// * [Dequeues](#dequeues)
+///
 /// # Crit-bit trees
 ///
 /// ## General
@@ -12,17 +34,16 @@
 /// A critical bit (crit-bit) tree is a compact binary prefix tree
 /// that stores a prefix-free set of bitstrings, like n-bit integers or
 /// variable-length 0-terminated byte strings. For a given set of keys
-/// there exists a unique crit-bit tree representing the set, and
-/// crit-bit trees do not require complex rebalancing algorithms like
-/// those of AVL or red-black binary search trees. Crit-bit trees
-/// support the following operations:
+/// there exists a unique crit-bit tree representing the set, to the
+/// effect that crit-bit trees do not require complex rebalancing
+/// algorithms like those of AVL or red-black binary search trees.
+/// Crit-bit trees support the following operations:
 ///
 /// * Membership testing
 /// * Insertion
 /// * Deletion
-/// * Predecessor
-/// * Successor
-/// * Iteration
+/// * Inorder predecessor iteration
+/// * Inorder successor iteration
 ///
 /// ## Structure
 ///
@@ -57,8 +78,6 @@
 /// marked `2nd` are set at bit 2. And similarly for the `Parent` marked
 /// `0th`, the `Leaf` key of its left child is unset at bit 0, while the
 /// `Leaf` key of its right child is set at bit 0.
-///
-/// `Leaf` keys are automatically sorted upon insertion.
 ///
 /// ## References
 ///
@@ -170,11 +189,11 @@
 /// >                                     64th      k_{3, 0}
 /// >                            ________/    \________
 /// >                         0th                      0th
-/// >     Dequeue            /   \                    /   \
-/// >      first --> k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
+/// >      Queue             /   \                    /   \
+/// >       head --> k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
 ///
 /// For a descending crit-queue, elements are dequeued via
-/// inorder successor traversal starting from the maximum leaf key:
+/// inorder predecessor traversal starting from the maximum leaf key:
 ///
 /// | Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
 /// |-------------|----------------------|--------------------|
@@ -185,8 +204,8 @@
 /// | $k_{0, 1}$  | `000...000`          | `011...110`        |
 ///
 /// >                               65th
-/// >                              /    \            Dequeue
-/// >                          64th      k_{3, 0} <-- first
+/// >                              /    \             Queue
+/// >                          64th      k_{3, 0} <-- head
 /// >                 ________/    \________
 /// >              0th                      0th
 /// >             /   \                    /   \
@@ -198,8 +217,9 @@
 /// If the insertion of a crit-bit tree leaf is accompanied by the
 /// generation of a crit-bit tree parent node, the parent is assigned
 /// a "parent key" that is identical to the corresponding leaf key,
-/// except with bit 63 set. This schema allows for between leaf keys
-/// and parent keys based simply on bit 63.
+/// except with bit 63 set. This schema allows for
+/// discrimination between leaf keys and parent keys based simply on
+/// bit 63.
 ///
 /// ## Key tables
 ///
@@ -221,6 +241,61 @@
 /// reserved for flag bits, the maximum enqueue count per enqueue key
 /// is thus $2^{62} - 1$.
 ///
+/// # Operations
+///
+/// In the present implementation, key-value pairs are enqueued via
+/// `enqueue()`, which accepts a `u64` enqueue key and an enqueue value
+/// of type `V`. A corresponding `u128` leaf key is returned, which can
+/// be used for subsequent leaf key lookup via `borrow()`,
+/// `borrow_mut()`, or `remove()`.
+///
+/// ## Enqueues
+///
+/// Enqueues are, like a crit-bit tree, $O(k^{\dagger})$ in the worst
+/// case, where $k^{\dagger} = k - 2 = 126$ (the number of variable bits
+/// in a leaf key), but parallelizable in the general case where:
+///
+/// 1. Enqueues do not alter the head of the crit-queue.
+/// 2. Enqueues do not write to overlapping tree edges.
+/// 3. Enqueues do not share the same enqueue key.
+///
+/// The third parallelism constraint is a result of enqueue count
+/// updates, and may potentially be eliminated in the case of a
+/// parallelized insertion count aggregator.
+///
+/// ## Removals
+///
+/// With `Leaf` nodes stored in a `Table`, `remove()` operations are
+/// thus $O(1)$, and are additionally parallelizable in the general case
+/// where:
+///
+/// 1. Removals do not write to overlapping tree edges.
+/// 2. Removals do not alter the head of the crit-queue.
+///
+/// Removals can take place from anywhere inside of the crit-queue, with
+/// the specified sorting order preserved among remaining elements. For
+/// example, consider the elements in an ascending crit-queue with the
+/// following dequeue sequence:
+///
+/// 1. $k_{0, 6}$
+/// 2. $k_{2, 5}$
+/// 3. $k_{2, 8}$
+/// 4. $k_{4, 5}$
+/// 5. $k_{5, 0}$
+///
+/// Here, removing $k_{2, 5}$ simply updates the dequeue sequence to:
+///
+/// 1. $k_{0, 6}$
+/// 2. $k_{2, 8}$
+/// 3. $k_{4, 5}$
+/// 4. $k_{5, 0}$
+///
+/// ## Dequeues
+///
+/// Dequeues, as a form of removal, are $O(1)$, but since they alter
+/// the head of the queue, they are not parallelizable. Dequeues
+/// are initialized via `dequeue_init()`, and iterated via `dequeue()`.
+///
 /// ---
 ///
 module econia::critqueue {
@@ -234,31 +309,7 @@ module econia::critqueue {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// # Advantages
-    ///
-    /// Key-value insertion to a `QueueCrit` accepts a `u64` insertion
-    /// key and an insertion value of type `V`, and returns a `u128`
-    /// leaf key. Subsequent leaf key lookup, including deletion, is
-    /// thus $O(1)$ since each `Leaf` is stored in a `Table`,
-    /// and deletions behind the head of the queue are additionally
-    /// parallelizable in the general case where:
-    ///
-    /// * Deletions do not have overlapping tree edges.
-    ///
-    /// Insertions are, like a crit-bit tree, $O(k^{\dagger})$ in the
-    /// worst case, where $k^{\dagger} = k - 2 = 126$ (the number of
-    /// variable bits in a leaf key), but parallelizable in the general
-    /// case where:
-    ///
-    /// 1. Insertions do not have overlapping tree edges.
-    /// 2. Insertions do not share the same insertion key.
-    ///
-    /// The second parallelism constraint is a result of insertion count
-    /// updates, and may potentially be eliminated in the case of a
-    /// parallelized insertion count aggregator.
-    ///
-    /// ---
-    ///
+    /// Hybrid between a crit-bit tree and a queue. See above.
     struct CritQueue<V> has store {
         /// Crit-queue sort direction, `ASCENDING` or `DESCENDING`.
         direction: bool,
@@ -316,7 +367,7 @@ module econia::critqueue {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // To implement >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Borrow enqueue value corresponding to given leaf key.
     public fun borrow<V>(
@@ -358,7 +409,7 @@ module econia::critqueue {
     /*)*/ {
         // Can ensure that there is a queue head by attempting to borrow
         // the corresponding leaf key from the option field, which
-        //aborts if it is none.
+        // aborts if it is none.
     }
 
     /// Mutably borrow the head of the queue before dequeueing.
@@ -404,7 +455,7 @@ module econia::critqueue {
         _direction: bool
     )/*: QueueCrit*/ {}
 
-    /// Remove corresonding leaf, return enqueue value.
+    /// Remove corresponding leaf, return enqueue value.
     public fun remove<V>(
         _crit_queue_ref_mut: &mut CritQueue<V>,
         _leaf_key: u128
@@ -434,6 +485,6 @@ module econia::critqueue {
         // enqueue key.
     }
 
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // To implement <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

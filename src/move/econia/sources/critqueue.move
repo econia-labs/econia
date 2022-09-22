@@ -1,25 +1,21 @@
-/// Hybrid data structure combining queue and crit-bit tree properties.
+/// Hybrid data structure combining crit-bit tree and queue properties.
 ///
-/// # Bit number convention
+/// Bit numbers are 0-indexed from the least-significant bit (LSB):
 ///
-/// Bit numbers 0-indexed from least-significant bit (LSB):
-///
-/// ```
-/// >    11101...1010010101
-/// >     bit 5 = 0 -|    |- bit 0 = 1
-/// ```
+/// >     11101...1010010101
+/// >      bit 5 = 0 -|    |- bit 0 = 1
 ///
 /// # Crit-bit trees
 ///
 /// ## General
 ///
-/// A critical bit (crit-bit) tree is a compact binary prefix tree,
-/// similar to a binary search tree, that stores a prefix-free set of
-/// bitstrings, like n-bit integers or variable-length 0-terminated byte
-/// strings. For a given set of keys there exists a unique crit-bit tree
-/// representing the set, hence crit-bit trees do not require complex
-/// rebalancing algorithms like those of AVL or red-black binary search
-/// trees. Crit-bit trees support the following operations:
+/// A critical bit (crit-bit) tree is a compact binary prefix tree
+/// that stores a prefix-free set of bitstrings, like n-bit integers or
+/// variable-length 0-terminated byte strings. For a given set of keys
+/// there exists a unique crit-bit tree representing the set, and
+/// crit-bit trees do not require complex rebalancing algorithms like
+/// those of AVL or red-black binary search trees. Crit-bit trees
+/// support the following operations:
 ///
 /// * Membership testing
 /// * Insertion
@@ -36,28 +32,22 @@
 /// and have a `u128` key. `Parent` nodes store a `u8` indicating the
 /// most-significant critical bit (crit-bit) of divergence between
 /// `Leaf` keys from the `Parent` node's two subtrees: `Leaf` keys in
-/// the `Parent` node's left subtree are unset at the critical bit,
-/// while `Leaf` keys in the node's right subtree are set at the
+/// a `Parent` node's left subtree are unset at the critical bit, while
+/// `Leaf` keys in a `Parent` node's right subtree are set at the
 /// critical bit.
 ///
 /// `Parent` nodes are arranged hierarchically, with the most
 /// significant critical bits at the top of the tree. For instance, the
 /// `Leaf` keys `001`, `101`, `110`, and `111` would be stored in a
-/// crit-bit tree as follows (right carets included at left of
-/// illustration per issue with documentation build engine, namely,
-/// the automatic stripping of leading whitespace in documentation
-/// comments, which prohibits the simple initiation of monospaced code
-/// blocks through indentation by 4 spaces):
+/// crit-bit tree as follows:
 ///
-/// ```
-/// >       2nd
-/// >      /   \
-/// >    001   1st
-/// >         /   \
-/// >       101   0th
-/// >            /   \
-/// >          110   111
-/// ```
+/// >        2nd
+/// >       /   \
+/// >     001   1st
+/// >          /   \
+/// >        101   0th
+/// >             /   \
+/// >           110   111
 ///
 /// Here, the `Parent` node marked `2nd` stores the critical bit `2`,
 /// the `Parent` node marked `1st` stores the critical bit `1`, and the
@@ -86,9 +76,97 @@
 /// [Tcler's Wiki 2021]:
 ///     https://wiki.tcl-lang.org/page/critbit
 ///
+/// # Crit-queues
+///
+/// ## Enqueue key multiplicity
+///
+/// Unlike a crit-bit tree, which only allows for a single insertion of
+/// a given key, crit-queues support multiple enqueues of a given key
+/// across key-value pairs. For example, the following key-value pairs,
+/// all having the same "enqueue key", `3`, may be stored inside of a
+/// single crit-queue:
+///
+/// * $p_{3, 0} = \langle 3, 5 \rangle$
+/// * $p_{3, 1} = \langle 3, 8 \rangle$
+/// * $p_{3, 2} = \langle 3, 2 \rangle$
+/// * $p_{3, 3} = \langle 3, 5 \rangle$
+///
+/// Here, key-value pair $p_{i, j}$ has enqueue key $i$ and "enqueue
+/// count" $j$, with the enqueue count describing the number
+/// of key-value pairs, having the same enqueue key, that were
+/// previously enqueued.
+///
+/// ## Dequeue order
+///
+/// After a key-value pair has been enqueued and assigned an enqueue
+/// count, a separate key is generated, which allows for sorted
+/// insertion into a crit-bit tree. Here, the corresponding "leaf key"
+/// is constructed such that key-value pairs are sorted within the
+/// crit-bit tree by:
+///
+/// 1. Either ascending or descending order of enqueue key, then by
+/// 2. Ascending order of enqueue count.
+///
+/// For example, consider the following enqueue sequence ($k_{i, j}$
+/// denotes enqueue key $i$ with enqueue count $j$):
+///
+/// 1. $k_{0, 0}$
+/// 2. $k_{1, 0}$
+/// 3. $k_{1, 1}$
+/// 4. $k_{0, 1}$
+/// 5. $k_{3, 0}$
+///
+/// In an ascending crit-queue, these elements would be dequeued as
+/// follows:
+///
+/// 1. $k_{0, 0}$
+/// 2. $k_{0, 1}$
+/// 3. $k_{1, 0}$
+/// 4. $k_{1, 1}$
+/// 5. $k_{3, 0}$
+///
+/// In a descending crit-queue, the dequeue sequence would instead be:
+///
+/// 1. $k_{3, 0}$
+/// 2. $k_{1, 0}$
+/// 3. $k_{1, 1}$
+/// 4. $k_{0, 0}$
+/// 5. $k_{0, 1}$
+///
+/// ## Leaf key structure
+///
+/// In the present implementation, crit-queue leaf keys have the
+/// following bit structure (`NOT` denotes bitwise complement):
+///
+/// | Bit(s) | Ascending crit-queue | Descending crit-queue |
+/// |--------|----------------------|-----------------------|
+/// | 0-61   | Enqueue count        | `NOT` enqueue count   |
+/// | 62     | 0                    | 1                     |
+/// | 63     | 0                    | 0                     |
+/// | 64-127 | Enqueue key          | Enqueue key           |
+///
+/// Continuing the above example, this yields the following leaf keys
+/// and crit-bit tree for an ascending crit-queue:
+///
+/// | Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
+/// |-------------|----------------------|--------------------|
+/// | $k_{0, 0}$  | `000...000`          | `000...000`        |
+/// | $k_{0, 1}$  | `000...000`          | `000...001`        |
+/// | $k_{1, 0}$  | `000...001`          | `000...000`        |
+/// | $k_{1, 1}$  | `000...001`          | `000...001`        |
+/// | $k_{3, 0}$  | `000...011`          | `000...000`        |
+///
+/// >                               65th
+/// >                              /    \
+/// >                          64th      k_{3, 0}
+/// >                 ________/    \________
+/// >              0th                      0th
+/// >             /   \                    /   \
+/// >     k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
+///
 /// ---
 ///
-module econia::queue_crit {
+module econia::critqueue {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -99,78 +177,6 @@ module econia::queue_crit {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// A hybrid between a queue and a crit-bit tree.
-    ///
-    /// # Insertion key multiplicity
-    ///
-    /// Accepts key-value pair insertions for multiple instances of
-    /// the same "insertion key". For example, the following key-value
-    /// pairs, each having an insertion key of `3`, can all be inserted:
-    ///
-    /// * $p_{3, 0} = \{ 3, 5 \}$
-    /// * $p_{3, 1} = \{ 3, 8 \}$
-    /// * $p_{3, 2} = \{ 3, 5 \}$
-    ///
-    /// Upon insertion, key-value pairs are assigned an "insertion
-    /// count", which describes the number of key-value pairs, sharing
-    /// the same insertion key, that were previously inserted.
-    /// Continuing the above example, the first inserted instance of
-    /// $\{ 3, 5 \}$ ( $p_{3, 0}$ ) has insertion count `0`, the only
-    /// inserted instance of $\{ 3, 8 \}$ ( $p_{3, 1}$ ) has insertion
-    /// count `1`, and the second instance of $\{ 3, 5 \}$
-    /// ( $p_{3, 2}$ ) has insertion count `2`.
-    ///
-    /// # Nested sorting
-    ///
-    /// After insertion count assignment, key-value pairs are then
-    /// automatically sorted upon insertion into a crit-bit tree,
-    /// such that they can be accessed via a queue which is sorted by:
-    ///
-    /// 1. Either ascending or descending order of insertion key, then
-    ///    by
-    /// 2. Ascending order of insertion count.
-    ///
-    /// For example, consider the following insertion sequence:
-    ///
-    /// 1. $k_{2, 0}$
-    /// 2. $k_{3, 0}$
-    /// 3. $k_{3, 1}$
-    /// 4. $k_{2, 1}$
-    /// 5. $k_{5, 0}$
-    ///
-    /// These elements would be accessed from an ascending queue in the
-    /// following sequence:
-    ///
-    /// 1. $k_{2, 0}$
-    /// 2. $k_{2, 1}$
-    /// 3. $k_{3, 0}$
-    /// 4. $k_{3, 1}$
-    /// 5. $k_{5, 0}$
-    ///
-    /// In the case of an descending queue, the access sequence would
-    /// instead be:
-    ///
-    /// 1. $k_{5, 0}$
-    /// 2. $k_{3, 0}$
-    /// 3. $k_{3, 1}$
-    /// 4. $k_{2, 0}$
-    /// 5. $k_{2, 1}$
-    ///
-    /// # Leaf keys
-    ///
-    /// After insertion count assignment, key-value pairs are assigned
-    /// a "leaf key" corresponding to a leaf in a crit-bit tree, which
-    /// has the the following bit structure (`NOT` denotes bitwise
-    /// complement):
-    ///
-    ///
-    /// | Bit(s) | If ascending queue | If descending queue   |
-    /// |--------|--------------------|-----------------------|
-    /// | 0-61   | Insertion count    | `NOT` insertion count |
-    /// | 62     | 0                  | 1                     |
-    /// | 63     | 0                  | 0                     |
-    /// | 64-127 | Insertion key      | Insertion key         |
-    ///
     /// With the insertion key contained in the most significant bits,
     /// elements are thus sorted in the crit-bit tree first by insertion
     /// key and then by:

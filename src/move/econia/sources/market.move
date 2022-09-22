@@ -2486,7 +2486,6 @@ module econia::market {
         }
     }
 
-    #[query]
     /// Index output of `orders_vector()` into a vector of `PriceLevel`.
     ///
     /// SDK-side, can be directly passed the output from

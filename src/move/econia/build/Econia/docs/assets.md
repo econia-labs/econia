@@ -12,10 +12,9 @@ Mock asset types for on- and off-chain testing.
 -  [Struct `UC`](#0xc0deb00c_assets_UC)
 -  [Constants](#@Constants_0)
 -  [Function `burn`](#0xc0deb00c_assets_burn)
-    -  [Assumptions](#@Assumptions_1)
--  [Function `init_coin_types`](#0xc0deb00c_assets_init_coin_types)
 -  [Function `mint`](#0xc0deb00c_assets_mint)
 -  [Function `init_coin_type`](#0xc0deb00c_assets_init_coin_type)
+-  [Function `init_module`](#0xc0deb00c_assets_init_module)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -268,15 +267,7 @@ Utility coin symbol.
 
 ## Function `burn`
 
-Burn <code>coins</code>.
-
-
-<a name="@Assumptions_1"></a>
-
-### Assumptions
-
-* Since <code>coins</code> exist in the first place, <code><a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a></code>
-must exist in the Econia account.
+Burn <code>coins</code> for which <code>CoinType</code> is defined at Econia account.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_burn">burn</a>&lt;CoinType&gt;(coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
@@ -291,42 +282,10 @@ must exist in the Econia account.
 <pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_burn">burn</a>&lt;CoinType&gt;(
     coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 ) <b>acquires</b> <a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a> {
-    // Borrow immutable reference <b>to</b> burn capability
+    // Borrow immutable reference <b>to</b> burn capability.
     <b>let</b> burn_capability = &<b>borrow_global</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
             @econia).burn_capability;
-    <a href="_burn">coin::burn</a>&lt;CoinType&gt;(coins, burn_capability); // Burn coins
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_assets_init_coin_types"></a>
-
-## Function `init_coin_types`
-
-Initialize mock base, quote, and utility coin types.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_init_coin_types">init_coin_types</a>(<a href="">account</a>: &<a href="">signer</a>)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="assets.md#0xc0deb00c_assets_init_coin_types">init_coin_types</a>(
-    <a href="">account</a>: &<a href="">signer</a>
-) {
-    <a href="assets.md#0xc0deb00c_assets_init_coin_type">init_coin_type</a>&lt;<a href="assets.md#0xc0deb00c_assets_BC">BC</a>&gt;(<a href="">account</a>, <a href="assets.md#0xc0deb00c_assets_BASE_COIN_NAME">BASE_COIN_NAME</a>, <a href="assets.md#0xc0deb00c_assets_BASE_COIN_SYMBOL">BASE_COIN_SYMBOL</a>,
-        <a href="assets.md#0xc0deb00c_assets_BASE_COIN_DECIMALS">BASE_COIN_DECIMALS</a>); // Initialize mock base <a href="">coin</a>.
-    <a href="assets.md#0xc0deb00c_assets_init_coin_type">init_coin_type</a>&lt;<a href="assets.md#0xc0deb00c_assets_QC">QC</a>&gt;(<a href="">account</a>, <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_NAME">QUOTE_COIN_NAME</a>, <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_SYMBOL">QUOTE_COIN_SYMBOL</a>,
-        <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_DECIMALS">QUOTE_COIN_DECIMALS</a>); // Initialize mock quote <a href="">coin</a>.
-    <a href="assets.md#0xc0deb00c_assets_init_coin_type">init_coin_type</a>&lt;<a href="assets.md#0xc0deb00c_assets_UC">UC</a>&gt;(<a href="">account</a>, <a href="assets.md#0xc0deb00c_assets_UTILITY_COIN_NAME">UTILITY_COIN_NAME</a>, <a href="assets.md#0xc0deb00c_assets_UTILITY_COIN_SYMBOL">UTILITY_COIN_SYMBOL</a>,
-        <a href="assets.md#0xc0deb00c_assets_UTILITY_COIN_DECIMALS">UTILITY_COIN_DECIMALS</a>); // Initialize mock utility <a href="">coin</a>.
+    <a href="_burn">coin::burn</a>&lt;CoinType&gt;(coins, burn_capability); // Burn coins.
 }
 </code></pre>
 
@@ -339,7 +298,7 @@ Initialize mock base, quote, and utility coin types.
 ## Function `mint`
 
 Mint new <code>amount</code> of <code>CoinType</code>, aborting if not called by
-Econia account or if <code><a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a></code> uninitialized.
+Econia account.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_mint">mint</a>&lt;CoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
@@ -351,18 +310,15 @@ Econia account or if <code><a href="assets.md#0xc0deb00c_assets_CoinCapabilities
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="assets.md#0xc0deb00c_assets_mint">mint</a>&lt;CoinType&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_mint">mint</a>&lt;CoinType&gt;(
     <a href="">account</a>: &<a href="">signer</a>,
     amount: u64
 ): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
 <b>acquires</b> <a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a> {
     // Get <a href="">account</a> <b>address</b>.
-    <b>let</b> account_address = address_of(<a href="">account</a>);
+    <b>let</b> account_address = address_of(<a href="">account</a>); // Get <a href="">account</a> <b>address</b>.
     // Assert caller is Econia.
     <b>assert</b>!(account_address == @econia, <a href="assets.md#0xc0deb00c_assets_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    // Initialize <a href="">coin</a> types <b>if</b> they have not been initialized yet.
-    <b>if</b> (!<b>exists</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(@econia))
-        <a href="assets.md#0xc0deb00c_assets_init_coin_types">init_coin_types</a>(<a href="">account</a>);
     // Borrow immutable reference <b>to</b> mint capability.
     <b>let</b> mint_capability = &<b>borrow_global</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
             account_address).mint_capability;
@@ -412,6 +368,39 @@ Initialize given coin type under Econia account.
             freeze_capability,
             mint_capability
     }); // Store capabilities under Econia <a href="">account</a>.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_assets_init_module"></a>
+
+## Function `init_module`
+
+Initialize mock base, quote, and utility coin types upon genesis
+publication.
+
+
+<pre><code><b>fun</b> <a href="assets.md#0xc0deb00c_assets_init_module">init_module</a>(<a href="">account</a>: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="assets.md#0xc0deb00c_assets_init_module">init_module</a>(
+    <a href="">account</a>: &<a href="">signer</a>
+) {
+    <a href="assets.md#0xc0deb00c_assets_init_coin_type">init_coin_type</a>&lt;<a href="assets.md#0xc0deb00c_assets_BC">BC</a>&gt;(<a href="">account</a>, <a href="assets.md#0xc0deb00c_assets_BASE_COIN_NAME">BASE_COIN_NAME</a>, <a href="assets.md#0xc0deb00c_assets_BASE_COIN_SYMBOL">BASE_COIN_SYMBOL</a>,
+        <a href="assets.md#0xc0deb00c_assets_BASE_COIN_DECIMALS">BASE_COIN_DECIMALS</a>); // Initialize mock base <a href="">coin</a>.
+    <a href="assets.md#0xc0deb00c_assets_init_coin_type">init_coin_type</a>&lt;<a href="assets.md#0xc0deb00c_assets_QC">QC</a>&gt;(<a href="">account</a>, <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_NAME">QUOTE_COIN_NAME</a>, <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_SYMBOL">QUOTE_COIN_SYMBOL</a>,
+        <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_DECIMALS">QUOTE_COIN_DECIMALS</a>); // Initialize mock quote <a href="">coin</a>.
+    <a href="assets.md#0xc0deb00c_assets_init_coin_type">init_coin_type</a>&lt;<a href="assets.md#0xc0deb00c_assets_UC">UC</a>&gt;(<a href="">account</a>, <a href="assets.md#0xc0deb00c_assets_UTILITY_COIN_NAME">UTILITY_COIN_NAME</a>, <a href="assets.md#0xc0deb00c_assets_UTILITY_COIN_SYMBOL">UTILITY_COIN_SYMBOL</a>,
+        <a href="assets.md#0xc0deb00c_assets_UTILITY_COIN_DECIMALS">UTILITY_COIN_DECIMALS</a>); // Initialize mock utility <a href="">coin</a>.
 }
 </code></pre>
 

@@ -9,7 +9,6 @@ Econia
    python/account
    python/build
    python/defs
-   python/rest
 
 Indices and tables
 ******************

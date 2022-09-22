@@ -8,7 +8,7 @@
     * [Orders](overview/orders.md)
     * [Matching](overview/matching.md)
 
-* [APIs](api/index.md)
+* [Move APIs](api/index.md)
     * [Registration](api/registration.md)
     * [Asset management](api/assets.md)
     * [Order management](api/orders.md)

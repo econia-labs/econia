@@ -209,16 +209,26 @@ module econia::structs {
 
     // market.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Emitted when a maker order is added to or removed from the order
-    /// book.
-    struct MakerEvent has drop, store {
-        /// `ADD` or `REMOVE`.
-        type: bool,
+    /// Emitted when a maker order is added to the order book.
+    struct MakerAddEvent has drop, store {
         /// Order ID, containing encoded price, side, and insertion
         /// count for the given price level.
         order_id: u128,
-        /// Size, in lots, of the order at the time of placement or
-        /// cancellation.
+        /// Size, in lots, of the order at the time of placement.
+        size: u64,
+        /// Address of corresponding user.
+        user: address,
+        /// For given `user`, ID of the custodian required to approve
+        /// order placement, order cancellation, and coin withdrawals.
+        custodian_id: u64
+    }
+
+    /// Emitted when a maker order is removed from the order book.
+    struct MakerRemoveEvent has drop, store {
+        /// Order ID, containing encoded price, side, and insertion
+        /// count for the given price level.
+        order_id: u128,
+        /// Size, in lots, of the order at the time it was removed.
         size: u64,
         /// Address of corresponding user.
         user: address,
@@ -240,6 +250,9 @@ module econia::structs {
 
     /// An order book for a given market. Events are separated for asks
     /// and bids, buys and sells, for parallelism across the two sides.
+    /// Moreover, since a `CritQueue` offers parallelism across enqueues
+    /// and removals, maker events are further parallelized into adds
+    /// and removals.
     struct OrderBook has store {
         /// Should match registry.
         base_type: TypeInfo,
@@ -258,10 +271,14 @@ module econia::structs {
         asks: CritQueue<Order>,
         /// Open bids.
         bids: CritQueue<Order>,
-        /// Event handle for ask events.
-        ask_events: EventHandle<MakerEvent>,
-        /// Event handle for bid events.
-        bid_events: EventHandle<MakerEvent>,
+        /// Event handle for ask add events.
+        ask_add_events: EventHandle<MakerAddEvent>,
+        /// Event handle for ask remove events.
+        ask_remove_events: EventHandle<MakerRemoveEvent>,
+        /// Event handle for bid add events.
+        bid_add_events: EventHandle<MakerAddEvent>,
+        /// Event handle for bid remove events.
+        bid_remove_events: EventHandle<MakerRemoveEvent>,
         /// Event handle for buy events.
         buy_events: EventHandle<TakerEvent>,
         /// Event handle for sell events.

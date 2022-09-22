@@ -1,4 +1,4 @@
-- [Incentives.move](#incentivesmove)
+- [incentives.move](#incentivesmove)
   - [Structs](#structs)
   - [Getters](#getters)
   - [Incentive parameter setters](#incentive-parameter-setters)
@@ -7,7 +7,7 @@
   - [Integrator fee store operations](#integrator-fee-store-operations)
   - [Match operations](#match-operations)
 
-# Incentives.move
+# incentives.move
 
 ## Structs
 

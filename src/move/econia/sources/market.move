@@ -2533,7 +2533,6 @@ module econia::market {
         price_levels // Return sorted vector of price levels
     }
 
-    #[query]
     /// Simulate swap against an `OrderBook`.
     ///
     /// Requires mutable references to coins, which should essentially

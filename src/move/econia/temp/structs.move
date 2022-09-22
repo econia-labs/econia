@@ -170,10 +170,9 @@ module econia::structs {
         /// is a coin, corresponds to
         /// `aptos_framework::coin::Coin.value`).
         base_total: u64,
-        /// Base asset units locked up due to open orders (when base
-        /// asset is a coin, corresponds
-        /// to `aptos_framework::coin::Coin.value`).
-        base_locked: u64,
+        /// Base asset units available to withdraw (when base asset is
+        /// a coin, corresponds to `aptos_framework::coin::Coin.value`).
+        base_available: u64,
         /// Amount `base_total` will increase to if all open bids fill
         /// (when base asset is a coin, corresponds to
         /// `aptos_framework::coin::Coin.value`).
@@ -181,9 +180,9 @@ module econia::structs {
         /// Total quote asset units held as collateral (corresponds to
         /// `aptos_framework::coin::Coin.value`).
         quote_total: u64,
-        /// Quote asset units locked up due to open orders (
-        /// corresponds to `aptos_framework::coin::Coin.value`).
-        quote_locked: u64,
+        /// Quote asset units available to withdraw (corresponds to
+        /// `aptos_framework::coin::Coin.value`).
+        quote_available: u64,
         /// Amount `quote_total` will increase to if all open asks fill
         /// (corresponds to `aptos_framework::coin::Coin.value`).
         quote_ceiling: u64

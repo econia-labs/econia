@@ -139,26 +139,17 @@ import shutil
 import sys
 
 from pathlib import Path
-from typing import Union
 from econia.account import Account, hex_leader
 from econia.defs import (
     build_command_fields,
-    e_msgs,
-    econia_module_publish_order as e_m_p_o,
-    econia_modules,
     econia_paths as ps,
     Econia,
     file_extensions,
     named_addrs,
-    networks,
     regex_trio_group_ids as r_i,
     seps,
-    toml_section_names,
-    tx_defaults,
-    tx_fields,
     util_paths
 )
-from econia.rest import EconiaClient, Client, move_trio
 
 def get_move_util_path(
     filename: str,
@@ -289,121 +280,6 @@ def normalized_hex(
     '1'
     """
     return addr_bytes.hex().lstrip('0')
-
-def get_bytecode_files(
-    econia_root: str = seps.dot
-) -> dict[str, str]:
-    """Return dict from module name to module bytecode string
-
-    Parameters
-    ----------
-    econia_root : str, optional
-        Relative path to econia repository root directory
-
-    Returns
-    -------
-    dict from str to str
-        Map from module name to bytecode hexstring
-    """
-    abs_path = os.path.join(
-        os.path.abspath(econia_root),
-        ps.move_package_root,
-        ps.bytecode_dir
-    ) # Get bytecode directory path
-    bcs = {} # Init dict of bytecode files
-    for path in Path(abs_path).iterdir(): # Loop over sub-paths
-        if path.is_file(): # If sub-path is a file
-            bcs[path.stem] = path.read_bytes().hex() # Add to dict
-    return bcs
-
-def print_bc_diagnostics(
-    client: Client,
-    signer: Account,
-    leader: str,
-    bc: Union[list[str], str],
-    serialized: bool
-) -> None:
-    """Print bytecode publication diagnostic message
-
-    Parameters
-    ----------
-    client : econia.rest.Client
-        An instantiated REST client
-    signer : econia.account.Account
-        Signing account
-    leader : str
-        First token to print
-    bc : list of str or str
-        List of bytecode modules to publish, or a single bytecode module
-    serialized : bool
-        If True, publish all modules in serial
-    """
-    tx_hash = None
-    if serialized:
-        try:
-            tx_hash = client.publish_module(signer, bc) # bc is str
-        except AssertionError as e:
-            print(e_msgs.tx_submission + seps.cln, e)
-    else:
-        try:
-            tx_hash = client.publish_modules(signer, bc) # bc is list of str
-        except AssertionError as e:
-            print(e_msgs.tx_submission + seps.cln, e)
-    if tx_hash is not None: # If tx actually published
-        status = tx_fields.success
-        if not client.tx_successful(tx_hash):
-            status = e_msgs.failed
-        print(
-            leader + seps.cln,
-            status,
-            seps.lp + client.tx_vn_url(tx_hash) + seps.rp
-        )
-
-def publish_bytecode(
-    s: Account,
-    econia_root: str = seps.dot,
-    serialized: bool = False
-) -> str:
-    """Publish bytecode modules with diagnostic printouts
-
-    Assumes devnet
-
-    Parameters
-    ----------
-    s : econia.account.Account
-        Signing account
-    econia_root : str, optional
-        Relative path to econia repository root directory
-    serialized : bool, optional
-        If True, publish all modules in separate transactions. If False,
-        batch as specified at :data:`~defs.econia_module_publish_order`
-
-    Returns
-    -------
-    str
-        Transaction hash of module upload transaction
-    """
-    c = Client(networks.devnet)
-    bc_map = get_bytecode_files(econia_root)
-    # Only load modules specified for publication
-    loadable_modules = [module for batch in e_m_p_o for module in batch]
-    if serialized: # Loop over modules
-        to_load = {module: bc_map[module] for module in loadable_modules}
-        for m in to_load.keys():
-            print_bc_diagnostics(c, s, m, to_load[m], serialized=True)
-    else: # Publish modules in batches
-        for batch in e_m_p_o:
-            first = True # First module in batch
-            leader = '' # Initialize diagnostic printout message
-            to_load = [] # List of bytecode hexstrings to load
-            for module in batch:
-                if first:
-                    leader = leader + module
-                    first = False
-                else:
-                    leader = leader + seps.cma + seps.sp + module
-                to_load.append(bc_map[module])
-            print_bc_diagnostics(c, s, leader, to_load, serialized=False)
 
 def sub_middle_group_file(
     abs_path: str,
@@ -593,32 +469,6 @@ def gen_new_econia_dev_account(
     # Save keyfile to disk
     account.save_seed_to_disk(get_key_path(address, econia_root))
 
-def init_econia(
-    account: Account,
-):
-    """Send the initialize Econia transaction via ``econia`` account
-
-    Parameters
-    ----------
-    econia: econia.account.Account
-        Signing account of Econia
-    """
-    client = EconiaClient(networks.devnet) # Initialize client
-    tx_hash = client.init_econia(account) # Send init trigger
-    # Get init script module name
-    module = econia_modules.init.name
-    # Get init function name
-    function = econia_modules.init.entry_functions.init_econia
-    status = e_msgs.failed # Assume tx failed
-    if client.tx_successful(tx_hash): # If successful init trigger
-        status = tx_fields.success # Set status to success
-    # Print diagnostic information on transaction
-    print(
-        move_trio(Econia, module, function) + seps.cln,
-        status,
-        seps.lp + client.tx_vn_url(tx_hash) + seps.rp
-    )
-
 def sub_rev_hash(
     new_hash = str,
     econia_root: str = seps.dot
@@ -645,9 +495,7 @@ if __name__ == '__main__':
     docgen = build_command_fields.docgen
     generate = build_command_fields.generate
     print_keyfile_address = build_command_fields.print_keyfile_address
-    publish = build_command_fields.publish
     rev = build_command_fields.rev
-    serial = build_command_fields.serial
     substitute = build_command_fields.substitute
     action = sys.argv[1]
 
@@ -657,29 +505,6 @@ if __name__ == '__main__':
             # Save it as relative path to Econia project root directory
             econia_root = sys.argv[2]
         gen_new_econia_dev_account(econia_root)
-    elif action == publish: # Publish compiled bytecode, init on-chain
-        # Relative keyfile path (to current directory) is first argument
-        # after action
-        keyfile = sys.argv[2]
-        econia_root = seps.dot # Assume in Econia project root
-        serialized = False # Assume not running with serial override
-        # If passed 2 or more arguments after action
-        if len(sys.argv) >= 4:
-            # 2nd argument after action is relative path to Econia
-            # project root directory
-            econia_root = sys.argv[3]
-            # Mark for serialized publication if 3 arguments after
-            # action and the 3rd one is serial flag
-            serialized = ((len(sys.argv) == 5) and (sys.argv[4] == serial))
-        account = Account(path=keyfile)
-        mint_val = tx_defaults.faucet_mint_val # Get mint value
-        try: # Try minting from faucet to account
-            Client(networks.devnet).mint_testcoin(account.address(), mint_val)
-        except Exception: # If minting fails
-            print(e_msgs.faucet) # Print error message
-        else: # If successful
-            publish_bytecode(account, econia_root) # Publish bytecode
-            init_econia(account) # Initialize Econia
     elif action == print_keyfile_address: # If want keyfile address
         # Print address derived from hex seed in keyfile at relative
         # path

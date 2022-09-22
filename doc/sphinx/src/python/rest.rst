@@ -1,4 +1,0 @@
-``rest``
-########
-
-.. automodule:: rest

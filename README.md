@@ -16,7 +16,6 @@
     - [Shell scripts](#shell-scripts)
     - [Command line setup](#command-line-setup)
     - [Using the Python package](#using-the-python-package)
-    - [Using the TypeScript SDK](#using-the-typescript-sdk)
     - [Freeing up disk space](#freeing-up-disk-space)
   - [Major filetypes](#major-filetypes)
     - [Jupyter](#jupyter)
@@ -24,7 +23,7 @@
     - [Move](#move)
     - [Python](#python)
 
-If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos](https://github.com/econia-labs/teach-yourself-move) guide for some helpful background information!
+If you haven't already, consider checking out Econia Labs' [Teach yourself Move on Aptos] guide for some helpful background information!
 
 ## Developer setup
 
@@ -50,17 +49,17 @@ See `ss.sh` within a given directory for its available options
 
 ### Command line setup
 
-1. First follow the [official Aptos developer setup guide](https://aptos.dev/guides/getting-started)
+1. First follow the [official Aptos developer setup guide]
 
-1. Then [install the `aptos` CLI](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli)
+1. Then [install the `aptos` CLI]
 
     ```zsh
     cargo install --git https://github.com/aptos-labs/aptos-core.git aptos --branch devnet
     aptos config set-global-config --config-type global
     aptos init
     ```
-    * Note that this will go faster if [adding a precompiled binary](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode) to `~/.cargo/bin` rather than installing via `cargo`
-    * If the precompiled binary has not been released yet, additionally consider [installing from Git](https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-from-git), a method that does not always require rebuilding intermediate artifacts
+    * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`
+    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions)
 
 
 1. Now you should be able to run all Move tests:
@@ -94,13 +93,12 @@ See `ss.sh` within a given directory for its available options
     BUILDING Econia
     ```
 
-1. Should [`aptos-core` #2142](https://github.com/aptos-labs/aptos-core/issues/2142) be accepted, installing the `move` CLI will no longer be necessary for this step, and the relevant script should be updated to run on the `aptos` CLI alone
+1. Should [`aptos-core` #2142] be accepted, installing the `move` CLI will no longer be necessary for this step, and the relevant script should be updated to run on the `aptos` CLI alone
 
 ### Using the Python package
 
 Econia comes with a Python package for assorted build scripting functionality.
-The Python package is not as actively maintained as the Move code, and is mostly used for managing account addresses in `Move.toml` during package compilation (see [`src/move/econia/ss.sh`](src/move/econia/ss.sh)).
-While the Python package is no longer used for direct interactions with devnet via the v1 REST API, `rest.py` is preserved such that it can be integrated with the new Aptos Python SDK when applicable.
+The Python package is not as actively maintained as the Move code, and is mostly used for managing account addresses in `Move.toml` during package compilation (see [`src/move/econia/ss.sh`]).
 It is not necessary to use the Python package to develop Econia, but not all of the shell scripts will work without it.
 To install the `econia` Python package:
 
@@ -120,13 +118,7 @@ To install the `econia` Python package:
 
     ```zsh
     conda env create -f env/conda.yml
-    ```
-
-    ```zsh
     conda activate econia
-    ```
-
-    ```zsh
     pip install -e src/python
     ```
 
@@ -134,13 +126,8 @@ To install the `econia` Python package:
 
     ```zsh
     if ! test -d .secrets; then mkdir .secrets; fi
-    ```
-
-    ```zsh
+    if ! test -d .secrets/devnet; then mkdir .secrets/old; fi
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
-    ```
-
-    ```zsh
     if ! test -d .secrets/vanity; then mkdir .secrets/devnet; fi
     ```
 
@@ -174,44 +161,58 @@ With the `econia` conda environment active, you can then build the Python packag
 (econia) % s pt # Publish bytecode to temporary devnet address
 ```
 
-### Using the TypeScript SDK
-
-Econia v1.1.0 contained an auto-generated TypeScript SDK, contributed and maintained by [Manahip](http://github.com/manahip).
-Econia's current branch does not yet have one, but it is on the way.
-
 ### Freeing up disk space
 
 Installing all of the dependencies necessary to develop Econia can quickly take up disk space.
 To clean up cache files and intermediate artifacts, consider the following tools:
 
-* [`kondo`](https://github.com/tbillington/kondo)
-* [`cargo cache`](https://github.com/matthiaskrgr/cargo-cache)
-* [`detox`](https://github.com/whitfin/detox)
+* [`kondo`]
+* [`cargo cache`]
+* [`detox`]
 
-In particular, if using a Mac [local Time Machine snapshots](https://discussions.apple.com/thread/7676695) of intermediate artifacts may lead to excessive "purgable" disk space should substantial time pass between backups.
+In particular, if using a Mac [local Time Machine snapshots] of intermediate artifacts may lead to excessive "purgable" disk space should substantial time pass between backups.
 It is possible to disable snapshots as mentioned in the support thread, but backing up to Time Machine should also help purge snapshots of intermediate artifacts, once the above tools are invoked.
 
 ## Major filetypes
 
 ### Jupyter
 
-Interactive Jupyter notebook examples are at [`src/jupyter`](src/jupyter), listed in increasing order of creation number.
+Interactive Jupyter notebook examples are at [`src/jupyter`], listed in increasing order of creation number.
 The earliest notebooks are subject to breaking changes at the most recent commit, but they have been archived so as to be functional at the commit when they where finalized.
 Hence, older commits can be checked out and experimented with, but mostly they are useful for harvesting old code patterns.
 
 ### Markdown
 
 Markdown files have a line break for each new sentence to make diff tracking easier.
-GitBook markdown source files are at [`doc/doc-site/`](doc/doc-site/).
+GitBook markdown source files are at [`doc/doc-site/`].
 
 ### Move
 
-Move source code is at [`src/move/econia`](src/move/econia).
+Move source code is at [`src/move/econia`].
 In the absence of a formal style guide, Move code is formatted similarly to PEP8-style Python code.
-Auto-generated module documentation files are at [`src/move/econia/build/Econia/docs`](src/move/econia/build/Econia/docs).
+Auto-generated module documentation files are at [`src/move/econia/build/Econia/docs`].
 
 ### Python
 
-The Econia Python package source code is at [`src/python/econia`](src/python/econia).
+The Econia Python package source code is at [`src/python/econia`].
 Python source is formatted according to the PEP8 style guide, and uses NumPy-style docstrings and PEP484-style type annotations, which are automatically parsed into a documentation website via Sphinx.
-Sphinx documentation source files are at [`doc/sphinx`](doc/sphinx).
+Sphinx documentation source files are at [`doc/sphinx`].
+
+<!---Alphabetized reference links-->
+
+[`aptos-core` #2142]:                   https://github.com/aptos-labs/aptos-core/issues/2142
+[`cargo cache`]:                        https://github.com/matthiaskrgr/cargo-cache
+[`detox`]:                              https://github.com/whitfin/detox
+[`doc/doc-site/`]:                      doc/doc-site/
+[`doc/sphinx`]:                         doc/sphinx
+[`kondo`]:                              https://github.com/tbillington/kondo
+[`src/jupyter`]:                        src/jupyter
+[`src/move/econia`]:                    src/move/econia
+[`src/move/econia/build/Econia/docs`]:  src/move/econia/build/Econia/docs
+[`src/move/econia/ss.sh`]:              src/move/econia/ss.sh
+[`src/python/econia`]:                  src/python/econia
+[adding a precompiled binary]:          https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode
+[install the `aptos` CLI]:              https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli
+[local Time Machine snapshots]:         https://discussions.apple.com/thread/7676695
+[official Aptos developer setup guide]: https://aptos.dev/guides/getting-started
+[Teach yourself Move on Aptos]:         https://github.com/econia-labs/teach-yourself-move

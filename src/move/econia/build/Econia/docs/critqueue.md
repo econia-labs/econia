@@ -177,13 +177,22 @@ following bit structure (<code>NOT</code> denotes bitwise complement):
 
 | Bit(s) | Ascending crit-queue | Descending crit-queue |
 |--------|----------------------|-----------------------|
-| 0-61   | Enqueue count        | <code>NOT</code> enqueue count   |
-| 62     | 0                    | 1                     |
-| 63     | 0                    | 0                     |
 | 64-127 | Enqueue key          | Enqueue key           |
+| 63     | 0                    | 0                     |
+| 62     | 0                    | 1                     |
+| 0-61   | Enqueue count        | <code>NOT</code> enqueue count   |
+
+With the enqueue key contained in the most significant bits,
+elements are thus sorted in the crit-bit tree first by enqueue key
+and then by:
+
+* Enqueue count if an ascending crit-queue, or
+* Bitwise complement of enqueue count if a descending queue.
 
 Continuing the above example, this yields the following leaf keys
-and crit-bit tree for an ascending crit-queue:
+and crit-bit tree for an ascending crit-queue, with elements
+dequeued via inorder successor traversal starting from the minimum
+leaf key:
 
 | Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
 |-------------|----------------------|--------------------|
@@ -193,13 +202,69 @@ and crit-bit tree for an ascending crit-queue:
 | $k_{1, 1}$  | <code>000...001</code>          | <code>000...001</code>        |
 | $k_{3, 0}$  | <code>000...011</code>          | <code>000...000</code>        |
 
+>                                          65th
+>                                         /    \
+>                                     64th      k_{3, 0}
+>                            ________/    \________
+>                         0th                      0th
+>     Dequeue            /   \                    /   \
+>      first --> k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
+
+For a descending crit-queue, elements are dequeued via
+inorder successor traversal starting from the maximum leaf key:
+
+| Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
+|-------------|----------------------|--------------------|
+| $k_{3, 0}$  | <code>000...011</code>          | <code>011...111</code>        |
+| $k_{1, 0}$  | <code>000...001</code>          | <code>011...111</code>        |
+| $k_{1, 1}$  | <code>000...001</code>          | <code>011...110</code>        |
+| $k_{0, 0}$  | <code>000...000</code>          | <code>011...111</code>        |
+| $k_{0, 1}$  | <code>000...000</code>          | <code>011...110</code>        |
+
 >                               65th
->                              /    \
->                          64th      k_{3, 0}
+>                              /    \            Dequeue
+>                          64th      k_{3, 0} <-- first
 >                 ________/    \________
 >              0th                      0th
 >             /   \                    /   \
->     k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
+>     k_{0, 1}     k_{0, 0}    k_{1, 1}     k_{1, 0}
+
+
+
+<a name="@Parent_keys_8"></a>
+
+### Parent keys
+
+
+If the insertion of a crit-bit tree leaf is accompanied by the
+generation of a crit-bit tree parent node, the parent is assigned
+a "parent key" that is identical to the corresponding leaf key,
+except with bit 63 set. This schema allows for between leaf keys
+and parent keys based simply on bit 63.
+
+
+<a name="@Key_tables_9"></a>
+
+### Key tables
+
+
+Enqueue, leaf, and parent keys are stored in separate hash tables:
+
+| Table key  | Key type | Table value                       |
+|------------|----------|-----------------------------------|
+| Enqueue    | <code>u64</code>    | Enqueue count for key, if nonzero |
+| Leaf       | <code>u128</code>   | Crit-bit tree leaf                |
+| Parent     | <code>u128</code>   | Crit-bit tree parent node         |
+
+The enqueue key table is initialized empty, such that before
+enqueuing the first instance of a given enqueue key, $k_{i, 0}$,
+the enqueue key table does not have an entry for key $i$. After
+$k_{i, 0}$ is enqueued, the entry $\langle i, 0\rangle$ is added to
+the enqueue key table, and for each subsequent enqueue,
+$k_{i, n}$, the value corresponding to key $i$, the enqueue count,
+is updated to $n$. Since bits 62 and 63 in leaf keys are
+reserved for flag bits, the maximum enqueue count per enqueue key
+is thus $2^{62} - 1$.
 
 ---
 
@@ -212,28 +277,27 @@ and crit-bit tree for an ascending crit-queue:
     -  [Enqueue key multiplicity](#@Enqueue_key_multiplicity_5)
     -  [Dequeue order](#@Dequeue_order_6)
     -  [Leaf key structure](#@Leaf_key_structure_7)
--  [Struct `QueueCrit`](#0xc0deb00c_critqueue_QueueCrit)
     -  [Parent keys](#@Parent_keys_8)
     -  [Key tables](#@Key_tables_9)
-    -  [Insertion key table](#@Insertion_key_table_10)
-    -  [Advantages](#@Advantages_11)
+-  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
+    -  [Advantages](#@Advantages_10)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
 -  [Struct `Parent`](#0xc0deb00c_critqueue_Parent)
--  [Constants](#@Constants_12)
--  [Function `crit_borrow`](#0xc0deb00c_critqueue_crit_borrow)
--  [Function `crit_borrow_mut`](#0xc0deb00c_critqueue_crit_borrow_mut)
--  [Function `crit_pop`](#0xc0deb00c_critqueue_crit_pop)
--  [Function `get_head`](#0xc0deb00c_critqueue_get_head)
--  [Function `insert`](#0xc0deb00c_critqueue_insert)
+-  [Constants](#@Constants_11)
+-  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
+-  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
+-  [Function `dequeue`](#0xc0deb00c_critqueue_dequeue)
+    -  [Parameters](#@Parameters_12)
+    -  [Returns](#@Returns_13)
+    -  [Aborts if](#@Aborts_if_14)
+-  [Function `dequeue_init`](#0xc0deb00c_critqueue_dequeue_init)
+    -  [Parameters](#@Parameters_15)
+    -  [Returns](#@Returns_16)
+    -  [Aborts if](#@Aborts_if_17)
+-  [Function `enqueue`](#0xc0deb00c_critqueue_enqueue)
+-  [Function `get_head_leaf_key`](#0xc0deb00c_critqueue_get_head_leaf_key)
 -  [Function `new`](#0xc0deb00c_critqueue_new)
--  [Function `queue_pop_init`](#0xc0deb00c_critqueue_queue_pop_init)
-    -  [Parameters](#@Parameters_13)
-    -  [Returns](#@Returns_14)
-    -  [Aborts if](#@Aborts_if_15)
--  [Function `queue_pop`](#0xc0deb00c_critqueue_queue_pop)
-    -  [Parameters](#@Parameters_16)
-    -  [Returns](#@Returns_17)
-    -  [Aborts if](#@Aborts_if_18)
+-  [Function `remove`](#0xc0deb00c_critqueue_remove)
 -  [Function `takes_priority`](#0xc0deb00c_critqueue_takes_priority)
 -  [Function `trails_head`](#0xc0deb00c_critqueue_trails_head)
 
@@ -244,77 +308,17 @@ and crit-bit tree for an ascending crit-queue:
 
 
 
-<a name="0xc0deb00c_critqueue_QueueCrit"></a>
+<a name="0xc0deb00c_critqueue_CritQueue"></a>
 
-## Struct `QueueCrit`
-
-With the insertion key contained in the most significant bits,
-elements are thus sorted in the crit-bit tree first by insertion
-key and then by:
-
-* Insertion count if an ascending queue, or
-* Bitwise complement of insertion count if a descending queue.
-
-Hence when accessing elements starting from the front of the
-queue, the queue-specific sorting order is thus acheived by:
-
-* Inorder successor traversal starting from the minimum leaf key
-if an ascending queue, or
-* Inorder predecessor traversal starting from the maximum leaf
-key if a descending queue.
+## Struct `CritQueue`
 
 
-<a name="@Parent_keys_8"></a>
-
-### Parent keys
-
-
-If the insertion of a crit-bit tree leaf is accompanied by the
-generation of a crit-bit tree parent node, the parent is
-assigned a "parent key" that is identical to the corresponding
-leaf key, except with bit 63 set. This schema allows for
-discrimination between leaf keys and parent keys based simply
-on bit 63.
-
-
-<a name="@Key_tables_9"></a>
-
-### Key tables
-
-
-Insertion, leaf, and parent keys are each stored in separate
-hash tables:
-
-| Table key  | Key type | Table value                         |
-|------------|----------|-------------------------------------|
-| Insertion  | <code>u64</code>    | Insertion count for key, if nonzero |
-| Leaf       | <code>u128</code>   | Crit-bit tree leaf                  |
-| Parent     | <code>u128</code>   | Crit-bit tree parent node           |
-
-
-<a name="@Insertion_key_table_10"></a>
-
-### Insertion key table
-
-
-The insertion key table is initialized empty, such that before
-inserting the first instance of a given insertion key,
-$k_{i, 0}$, the insertion key table does not have an entry for
-key $i$. During insertion, the entry $\{i, 0\}$ is added to the
-table, and for each subsequent insertion, $k_{i, n}$, the value
-corresponding to key $i$ is updated to $n$.
-
-Since bits 62 and 63 in leaf keys are reserved for flag bits,
-the maximum insertion count per insertion key is thus
-$2^{62} - 1$.
-
-
-<a name="@Advantages_11"></a>
+<a name="@Advantages_10"></a>
 
 ### Advantages
 
 
-Key-value insertion to a <code><a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a></code> accepts a <code>u64</code> insertion
+Key-value insertion to a <code>QueueCrit</code> accepts a <code>u64</code> insertion
 key and an insertion value of type <code>V</code>, and returns a <code>u128</code>
 leaf key. Subsequent leaf key lookup, including deletion, is
 thus $O(1)$ since each <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> is stored in a <code>Table</code>,
@@ -338,7 +342,7 @@ parallelized insertion count aggregator.
 ---
 
 
-<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt; <b>has</b> store
+<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt; <b>has</b> store
 </code></pre>
 
 
@@ -352,13 +356,13 @@ parallelized insertion count aggregator.
 <code>direction: bool</code>
 </dt>
 <dd>
- Queue sort direction, <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
+ Crit-queue sort direction, <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
 </dd>
 <dt>
 <code>root: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- Key of root node. If none, tree is empty.
+ Crit-bit tree root node key. If none, tree is empty.
 </dd>
 <dt>
 <code>head: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
@@ -369,10 +373,10 @@ parallelized insertion count aggregator.
  if <code>direction</code> is <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
 </dd>
 <dt>
-<code>insertions: <a href="_Table">table::Table</a>&lt;u64, u64&gt;</code>
+<code>enqueues: <a href="_Table">table::Table</a>&lt;u64, u64&gt;</code>
 </dt>
 <dd>
- Map from insertion key to 0-indexed insertion count.
+ Map from enqueue key to 0-indexed enqueue count.
 </dd>
 <dt>
 <code>parents: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Parent">critqueue::Parent</a>&gt;</code>
@@ -384,7 +388,7 @@ parallelized insertion count aggregator.
 <code>leaves: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">critqueue::Leaf</a>&lt;V&gt;&gt;</code>
 </dt>
 <dd>
- Map from leaf key to <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> having insertion value type <code>V</code>.
+ Map from leaf key to <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> having enqueue value type <code>V</code>.
 </dd>
 </dl>
 
@@ -412,7 +416,7 @@ A crit-bit tree leaf node.
 <code>value: V</code>
 </dt>
 <dd>
- Insertion value.
+ Enqueue value.
 </dd>
 <dt>
 <code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
@@ -471,7 +475,7 @@ A crit-bit tree parent node.
 
 </details>
 
-<a name="@Constants_12"></a>
+<a name="@Constants_11"></a>
 
 ## Constants
 
@@ -498,7 +502,7 @@ Descending sort direction flag. <code>1</code> when cast to <code>u64</code> bit
 
 <a name="0xc0deb00c_critqueue_DIRECTION"></a>
 
-Bit number of queue sort direction flag.
+Bit number of crit-queue sort direction flag.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_DIRECTION">DIRECTION</a>: u8 = 62;
@@ -536,14 +540,14 @@ Node type bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_P
 
 
 
-<a name="0xc0deb00c_critqueue_crit_borrow"></a>
+<a name="0xc0deb00c_critqueue_borrow"></a>
 
-## Function `crit_borrow`
+## Function `borrow`
 
-Borrow insertion value corresponding to given leaf key.
+Borrow enqueue value corresponding to given leaf key.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_crit_borrow">crit_borrow</a>&lt;V&gt;(_queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;, _leaf_key: u128)
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _leaf_key: u128)
 </code></pre>
 
 
@@ -552,8 +556,8 @@ Borrow insertion value corresponding to given leaf key.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_crit_borrow">crit_borrow</a>&lt;V&gt;(
-    _queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;,
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(
+    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     _leaf_key: u128
 )/*: &V*/ {}
 </code></pre>
@@ -562,14 +566,14 @@ Borrow insertion value corresponding to given leaf key.
 
 </details>
 
-<a name="0xc0deb00c_critqueue_crit_borrow_mut"></a>
+<a name="0xc0deb00c_critqueue_borrow_mut"></a>
 
-## Function `crit_borrow_mut`
+## Function `borrow_mut`
 
-Mutably borrow insertion value corresponding to given leaf key.
+Mutably borrow enqueue value corresponding to given leaf key.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_crit_borrow_mut">crit_borrow_mut</a>&lt;V&gt;(_queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;, _leaf_key: u128)
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _leaf_key: u128)
 </code></pre>
 
 
@@ -578,8 +582,8 @@ Mutably borrow insertion value corresponding to given leaf key.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_crit_borrow_mut">crit_borrow_mut</a>&lt;V&gt;(
-    _queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;,
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(
+    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     _leaf_key: u128
 )/*: &V*/ {}
 </code></pre>
@@ -588,14 +592,44 @@ Mutably borrow insertion value corresponding to given leaf key.
 
 </details>
 
-<a name="0xc0deb00c_critqueue_crit_pop"></a>
+<a name="0xc0deb00c_critqueue_dequeue"></a>
 
-## Function `crit_pop`
+## Function `dequeue`
 
-Pop corresonding leaf, return insertion value.
+Dequeue head and borrow next element in the queue, the new head.
+
+Should only be called after <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>()</code> indicates that
+iteration can proceed, or if a subsequent call to <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>
+indicates the same.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_crit_pop">crit_pop</a>&lt;V&gt;(_queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;, _leaf_key: u128)
+<a name="@Parameters_12"></a>
+
+### Parameters
+
+* <code>crit_queue_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
+
+
+<a name="@Returns_13"></a>
+
+### Returns
+
+* <code>u128</code>: New queue head leaf key.
+* <code>&<b>mut</b> V</code>: Mutable reference to new queue head enqueue value.
+* <code>bool</code>: <code><b>true</b></code> if the new queue head <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> has a parent, and
+thus if iteration can proceed.
+
+
+<a name="@Aborts_if_14"></a>
+
+### Aborts if
+
+* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
+* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is a singleton, e.g. if there are no
+elements to proceed to after dequeueing.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -604,24 +638,116 @@ Pop corresonding leaf, return insertion value.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_crit_pop">crit_pop</a>&lt;V&gt;(
-    _queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;,
-    _leaf_key: u128
-)/*: V*/ {}
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>&lt;V&gt;(
+    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;
+)//: (
+    //u128,
+    //&<b>mut</b> V,
+    //bool
+/*)*/ {
+    // Can ensure that there is a queue head by attempting <b>to</b> borrow
+    // the corresponding leaf key from the <a href="">option</a> field, which
+    //aborts <b>if</b> it is none.
+}
 </code></pre>
 
 
 
 </details>
 
-<a name="0xc0deb00c_critqueue_get_head"></a>
+<a name="0xc0deb00c_critqueue_dequeue_init"></a>
 
-## Function `get_head`
+## Function `dequeue_init`
+
+Mutably borrow the head of the queue before dequeueing.
+
+
+<a name="@Parameters_15"></a>
+
+### Parameters
+
+* <code>crit_queue_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
+
+
+<a name="@Returns_16"></a>
+
+### Returns
+
+* <code>u128</code>: Queue head leaf key.
+* <code>&<b>mut</b> V</code>: Mutable reference to queue head enqueue value.
+* <code>bool</code>: <code><b>true</b></code> if the queue <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> has a parent, and thus if
+there is another element to iterate to. If <code><b>false</b></code>, can still
+remove the head via <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
+
+
+<a name="@Aborts_if_17"></a>
+
+### Aborts if
+
+* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>&lt;V&gt;(
+    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;
+)//: (
+    //u128,
+    //&<b>mut</b> V,
+    //bool
+/*)*/ {
+    // Can ensure that there is a queue head by attempting <b>to</b> borrow
+    // corresponding leaf key from `<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>.head`, which aborts
+    // <b>if</b> none.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_enqueue"></a>
+
+## Function `enqueue`
+
+Enqueue key-value pair, returning generated leaf key.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_enqueue">enqueue</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _enqueue_key: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_enqueue">enqueue</a>&lt;V&gt;(
+    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    _enqueue_key: u64,
+    //_enqueue_value: V,
+)/*: u128*/ {}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_get_head_leaf_key"></a>
+
+## Function `get_head_leaf_key`
 
 Return head leaf key, if any.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head">get_head</a>&lt;V&gt;(_queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_leaf_key">get_head_leaf_key</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -630,36 +756,9 @@ Return head leaf key, if any.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head">get_head</a>&lt;V&gt;(
-    _queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;,
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_leaf_key">get_head_leaf_key</a>&lt;V&gt;(
+    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
 )/*: Option&lt;u128&gt; */ {}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_insert"></a>
-
-## Function `insert`
-
-Insert key-value pair, returning generated leaf key.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(_queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;, _insert_key: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(
-    _queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;,
-    _insert_key: u64,
-    //_insert_value: V,
-)/*: u128*/ {}
 </code></pre>
 
 
@@ -670,7 +769,7 @@ Insert key-value pair, returning generated leaf key.
 
 ## Function `new`
 
-Return <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code> <code><a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a></code>, per <code>direction</code>.
+Return <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code> <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, per <code>direction</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V&gt;(_direction: bool)
@@ -684,46 +783,21 @@ Return <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V&gt;(
     _direction: bool
-)/*: <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>*/ {}
+)/*: QueueCrit*/ {}
 </code></pre>
 
 
 
 </details>
 
-<a name="0xc0deb00c_critqueue_queue_pop_init"></a>
+<a name="0xc0deb00c_critqueue_remove"></a>
 
-## Function `queue_pop_init`
+## Function `remove`
 
-Mutably borrow the head of the queue in preparation for a pop.
-
-
-<a name="@Parameters_13"></a>
-
-### Parameters
-
-* <code>queue_crit_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a></code>.
+Remove corresonding leaf, return enqueue value.
 
 
-<a name="@Returns_14"></a>
-
-### Returns
-
-* <code>u128</code>: Queue head leaf key.
-* <code>&<b>mut</b> V</code>: Mutable reference to queue head insertion value.
-* <code>bool</code>: <code><b>true</b></code> if the queue <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> has a parent, and thus if
-there is another element to iterate to. If <code><b>false</b></code>, can still
-pop the head via <code><a href="critqueue.md#0xc0deb00c_critqueue_crit_pop">crit_pop</a>()</code>.
-
-
-<a name="@Aborts_if_15"></a>
-
-### Aborts if
-
-* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a></code> is empty.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_queue_pop_init">queue_pop_init</a>&lt;V&gt;(_queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _leaf_key: u128)
 </code></pre>
 
 
@@ -732,80 +806,10 @@ pop the head via <code><a href="critqueue.md#0xc0deb00c_critqueue_crit_pop">crit
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_queue_pop_init">queue_pop_init</a>&lt;V&gt;(
-    _queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;
-)//: (
-    //u128,
-    //&<b>mut</b> V,
-    //bool
-/*)*/ {
-    // Can ensure that there is a queue head by attempting <b>to</b> borrow
-    // corresponding leaf key from `CritQueue.head`, which aborts
-    // <b>if</b> none.
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_queue_pop"></a>
-
-## Function `queue_pop`
-
-Pop head and borrow next element in the queue, the new head.
-
-Should only be called after <code>queue_borrow_mut()</code> indicates that
-iteration can proceed, or if a subsequent call to <code><a href="critqueue.md#0xc0deb00c_critqueue_queue_pop">queue_pop</a>()</code>
-indicates the same.
-
-
-<a name="@Parameters_16"></a>
-
-### Parameters
-
-* <code>queue_crit_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a></code>.
-
-
-<a name="@Returns_17"></a>
-
-### Returns
-
-* <code>u128</code>: New queue head leaf key.
-* <code>&<b>mut</b> V</code>: Mutable reference to new queue head insertion value.
-* <code>bool</code>: <code><b>true</b></code> if the new queue head <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> has a parent, and
-thus if iteration can proceed for another pop.
-
-
-<a name="@Aborts_if_18"></a>
-
-### Aborts if
-
-* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a></code> is empty.
-* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a></code> is a singleton, e.g. if there are no
-elements to proceed to after popping.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_queue_pop">queue_pop</a>&lt;V&gt;(_queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_queue_pop">queue_pop</a>&lt;V&gt;(
-    _queue_crit_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;
-)//: (
-    //u128,
-    //&<b>mut</b> V,
-    //bool
-/*)*/ {
-    // Can ensure that there is a queue head by attempting <b>to</b> borrow
-    // the corresonding leaf key from the <a href="">option</a> field, which aborts
-    // <b>if</b> it is none.
-}
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(
+    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    _leaf_key: u128
+)/*: V*/ {}
 </code></pre>
 
 
@@ -816,11 +820,11 @@ elements to proceed to after popping.
 
 ## Function `takes_priority`
 
-Return <code><b>true</b></code> if <code>insertion_key</code> would become new head if
-inserted, else <code><b>false</b></code>.
+Return <code><b>true</b></code> if <code>enqueue_key</code> would become new head if
+enqueued, else <code><b>false</b></code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_takes_priority">takes_priority</a>&lt;V&gt;(_queue_crit_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;, _insertion_key: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_takes_priority">takes_priority</a>&lt;V&gt;(_crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _enqueue_key: u64)
 </code></pre>
 
 
@@ -830,13 +834,12 @@ inserted, else <code><b>false</b></code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_takes_priority">takes_priority</a>&lt;V&gt;(
-    _queue_crit_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;,
-    _insertion_key: u64
+    _crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    _enqueue_key: u64
 )/*: bool*/ {
     // Return <b>true</b> <b>if</b> empty.
-    // If ascending, <b>return</b> <b>true</b> <b>if</b> less than head insertion key.
-    // If descending, <b>return</b> <b>true</b> <b>if</b> greater than head insertion
-    // key.
+    // If ascending, <b>return</b> <b>true</b> <b>if</b> less than head enqueue key.
+    // If descending, <b>return</b> <b>true</b> <b>if</b> greater than head enqueue key.
 }
 </code></pre>
 
@@ -848,11 +851,11 @@ inserted, else <code><b>false</b></code>.
 
 ## Function `trails_head`
 
-Return <code><b>true</b></code> if <code>insertion_key</code> would not become the head if
-inserted.
+Return <code><b>true</b></code> if <code>enqueue_key</code> would not become the head if
+enqueued.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_trails_head">trails_head</a>&lt;V&gt;(_queue_crit_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">critqueue::QueueCrit</a>&lt;V&gt;, _insertion_key: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_trails_head">trails_head</a>&lt;V&gt;(_crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _enqueue_key: u64)
 </code></pre>
 
 
@@ -862,14 +865,14 @@ inserted.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_trails_head">trails_head</a>&lt;V&gt;(
-    _queue_crit_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_QueueCrit">QueueCrit</a>&lt;V&gt;,
-    _insertion_key: u64
+    _crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    _enqueue_key: u64
 )/*: bool*/ {
     // Return <b>false</b> <b>if</b> empty.
     // If ascending, <b>return</b> <b>true</b> <b>if</b> greater than/equal <b>to</b> head
-    // insertion key.
+    // enqueue key.
     // If descending, <b>return</b> <b>true</b> <b>if</b> less than/equal <b>to</b> head
-    // insertion key.
+    // enqueue key.
 }
 </code></pre>
 

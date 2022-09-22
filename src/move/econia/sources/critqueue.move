@@ -140,13 +140,22 @@
 ///
 /// | Bit(s) | Ascending crit-queue | Descending crit-queue |
 /// |--------|----------------------|-----------------------|
-/// | 0-61   | Enqueue count        | `NOT` enqueue count   |
-/// | 62     | 0                    | 1                     |
-/// | 63     | 0                    | 0                     |
 /// | 64-127 | Enqueue key          | Enqueue key           |
+/// | 63     | 0                    | 0                     |
+/// | 62     | 0                    | 1                     |
+/// | 0-61   | Enqueue count        | `NOT` enqueue count   |
+///
+/// With the enqueue key contained in the most significant bits,
+/// elements are thus sorted in the crit-bit tree first by enqueue key
+/// and then by:
+///
+/// * Enqueue count if an ascending crit-queue, or
+/// * Bitwise complement of enqueue count if a descending queue.
 ///
 /// Continuing the above example, this yields the following leaf keys
-/// and crit-bit tree for an ascending crit-queue:
+/// and crit-bit tree for an ascending crit-queue, with elements
+/// dequeued via inorder successor traversal starting from the minimum
+/// leaf key:
 ///
 /// | Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
 /// |-------------|----------------------|--------------------|
@@ -156,13 +165,61 @@
 /// | $k_{1, 1}$  | `000...001`          | `000...001`        |
 /// | $k_{3, 0}$  | `000...011`          | `000...000`        |
 ///
+/// >                                          65th
+/// >                                         /    \
+/// >                                     64th      k_{3, 0}
+/// >                            ________/    \________
+/// >                         0th                      0th
+/// >     Dequeue            /   \                    /   \
+/// >      first --> k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
+///
+/// For a descending crit-queue, elements are dequeued via
+/// inorder successor traversal starting from the maximum leaf key:
+///
+/// | Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
+/// |-------------|----------------------|--------------------|
+/// | $k_{3, 0}$  | `000...011`          | `011...111`        |
+/// | $k_{1, 0}$  | `000...001`          | `011...111`        |
+/// | $k_{1, 1}$  | `000...001`          | `011...110`        |
+/// | $k_{0, 0}$  | `000...000`          | `011...111`        |
+/// | $k_{0, 1}$  | `000...000`          | `011...110`        |
+///
 /// >                               65th
-/// >                              /    \
-/// >                          64th      k_{3, 0}
+/// >                              /    \            Dequeue
+/// >                          64th      k_{3, 0} <-- first
 /// >                 ________/    \________
 /// >              0th                      0th
 /// >             /   \                    /   \
-/// >     k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
+/// >     k_{0, 1}     k_{0, 0}    k_{1, 1}     k_{1, 0}
+///
+///
+/// ## Parent keys
+///
+/// If the insertion of a crit-bit tree leaf is accompanied by the
+/// generation of a crit-bit tree parent node, the parent is assigned
+/// a "parent key" that is identical to the corresponding leaf key,
+/// except with bit 63 set. This schema allows for between leaf keys
+/// and parent keys based simply on bit 63.
+///
+/// ## Key tables
+///
+/// Enqueue, leaf, and parent keys are stored in separate hash tables:
+///
+/// | Table key  | Key type | Table value                       |
+/// |------------|----------|-----------------------------------|
+/// | Enqueue    | `u64`    | Enqueue count for key, if nonzero |
+/// | Leaf       | `u128`   | Crit-bit tree leaf                |
+/// | Parent     | `u128`   | Crit-bit tree parent node         |
+///
+/// The enqueue key table is initialized empty, such that before
+/// enqueuing the first instance of a given enqueue key, $k_{i, 0}$,
+/// the enqueue key table does not have an entry for key $i$. After
+/// $k_{i, 0}$ is enqueued, the entry $\langle i, 0\rangle$ is added to
+/// the enqueue key table, and for each subsequent enqueue,
+/// $k_{i, n}$, the value corresponding to key $i$, the enqueue count,
+/// is updated to $n$. Since bits 62 and 63 in leaf keys are
+/// reserved for flag bits, the maximum enqueue count per enqueue key
+/// is thus $2^{62} - 1$.
 ///
 /// ---
 ///
@@ -177,54 +234,6 @@ module econia::critqueue {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// With the insertion key contained in the most significant bits,
-    /// elements are thus sorted in the crit-bit tree first by insertion
-    /// key and then by:
-    ///
-    /// * Insertion count if an ascending queue, or
-    /// * Bitwise complement of insertion count if a descending queue.
-    ///
-    /// Hence when accessing elements starting from the front of the
-    /// queue, the queue-specific sorting order is thus acheived by:
-    ///
-    /// * Inorder successor traversal starting from the minimum leaf key
-    ///   if an ascending queue, or
-    /// * Inorder predecessor traversal starting from the maximum leaf
-    ///   key if a descending queue.
-    ///
-    /// # Parent keys
-    ///
-    /// If the insertion of a crit-bit tree leaf is accompanied by the
-    /// generation of a crit-bit tree parent node, the parent is
-    /// assigned a "parent key" that is identical to the corresponding
-    /// leaf key, except with bit 63 set. This schema allows for
-    /// discrimination between leaf keys and parent keys based simply
-    /// on bit 63.
-    ///
-    /// # Key tables
-    ///
-    /// Insertion, leaf, and parent keys are each stored in separate
-    /// hash tables:
-    ///
-    /// | Table key  | Key type | Table value                         |
-    /// |------------|----------|-------------------------------------|
-    /// | Insertion  | `u64`    | Insertion count for key, if nonzero |
-    /// | Leaf       | `u128`   | Crit-bit tree leaf                  |
-    /// | Parent     | `u128`   | Crit-bit tree parent node           |
-    ///
-    /// # Insertion key table
-    ///
-    /// The insertion key table is initialized empty, such that before
-    /// inserting the first instance of a given insertion key,
-    /// $k_{i, 0}$, the insertion key table does not have an entry for
-    /// key $i$. During insertion, the entry $\{i, 0\}$ is added to the
-    /// table, and for each subsequent insertion, $k_{i, n}$, the value
-    /// corresponding to key $i$ is updated to $n$.
-    ///
-    /// Since bits 62 and 63 in leaf keys are reserved for flag bits,
-    /// the maximum insertion count per insertion key is thus
-    /// $2^{62} - 1$.
-    ///
     /// # Advantages
     ///
     /// Key-value insertion to a `QueueCrit` accepts a `u64` insertion
@@ -250,26 +259,26 @@ module econia::critqueue {
     ///
     /// ---
     ///
-    struct QueueCrit<V> has store {
-        /// Queue sort direction, `ASCENDING` or `DESCENDING`.
+    struct CritQueue<V> has store {
+        /// Crit-queue sort direction, `ASCENDING` or `DESCENDING`.
         direction: bool,
-        /// Key of root node. If none, tree is empty.
+        /// Crit-bit tree root node key. If none, tree is empty.
         root: Option<u128>,
         /// Queue head key. If none, tree is empty. Else minimum leaf
         /// key if `direction` is `ASCENDING`, and maximum leaf key
         /// if `direction` is `DESCENDING`.
         head: Option<u128>,
-        /// Map from insertion key to 0-indexed insertion count.
-        insertions: Table<u64, u64>,
+        /// Map from enqueue key to 0-indexed enqueue count.
+        enqueues: Table<u64, u64>,
         /// Map from parent key to `Parent`.
         parents: Table<u128, Parent>,
-        /// Map from leaf key to `Leaf` having insertion value type `V`.
+        /// Map from leaf key to `Leaf` having enqueue value type `V`.
         leaves: Table<u128, Leaf<V>>
     }
 
     /// A crit-bit tree leaf node.
     struct Leaf<V> has store {
-        /// Insertion value.
+        /// Enqueue value.
         value: V,
         /// If none, node is root. Else parent key.
         parent: Option<u128>
@@ -298,7 +307,7 @@ module econia::critqueue {
     /// Node type bit flag indicating `Parent`.
     const PARENT: u64 = 1;
 
-    /// Bit number of queue sort direction flag.
+    /// Bit number of crit-queue sort direction flag.
     const DIRECTION: u8 = 62;
     /// Ascending sort direction flag. `0` when cast to `u64` bit flag.
     const ASCENDING: bool = false;
@@ -309,57 +318,65 @@ module econia::critqueue {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Borrow insertion value corresponding to given leaf key.
-    public fun crit_borrow<V>(
-        _queue_crit_ref_mut: &mut QueueCrit<V>,
+    /// Borrow enqueue value corresponding to given leaf key.
+    public fun borrow<V>(
+        _crit_queue_ref_mut: &mut CritQueue<V>,
         _leaf_key: u128
     )/*: &V*/ {}
 
-    /// Mutably borrow insertion value corresponding to given leaf key.
-    public fun crit_borrow_mut<V>(
-        _queue_crit_ref_mut: &mut QueueCrit<V>,
+    /// Mutably borrow enqueue value corresponding to given leaf key.
+    public fun borrow_mut<V>(
+        _crit_queue_ref_mut: &mut CritQueue<V>,
         _leaf_key: u128
     )/*: &V*/ {}
 
-    /// Pop corresonding leaf, return insertion value.
-    public fun crit_pop<V>(
-        _queue_crit_ref_mut: &mut QueueCrit<V>,
-        _leaf_key: u128
-    )/*: V*/ {}
-
-    /// Return head leaf key, if any.
-    public fun get_head<V>(
-        _queue_crit_ref_mut: &mut QueueCrit<V>,
-    )/*: Option<u128> */ {}
-
-    /// Insert key-value pair, returning generated leaf key.
-    public fun insert<V>(
-        _queue_crit_ref_mut: &mut QueueCrit<V>,
-        _insert_key: u64,
-        //_insert_value: V,
-    )/*: u128*/ {}
-
-    /// Return `ASCENDING` or `DESCENDING` `QueueCrit`, per `direction`.
-    public fun new<V>(
-        _direction: bool
-    )/*: QueueCrit*/ {}
-
-    /// Mutably borrow the head of the queue in preparation for a pop.
+    /// Dequeue head and borrow next element in the queue, the new head.
+    ///
+    /// Should only be called after `dequeue_init()` indicates that
+    /// iteration can proceed, or if a subsequent call to `dequeue()`
+    /// indicates the same.
     ///
     /// # Parameters
-    /// * `queue_crit_ref_mut`: Mutable reference to `QueueCrit`.
+    /// * `crit_queue_ref_mut`: Mutable reference to `CritQueue`.
+    ///
+    /// # Returns
+    /// * `u128`: New queue head leaf key.
+    /// * `&mut V`: Mutable reference to new queue head enqueue value.
+    /// * `bool`: `true` if the new queue head `Leaf` has a parent, and
+    ///   thus if iteration can proceed.
+    ///
+    /// # Aborts if
+    /// * Indicated `CritQueue` is empty.
+    /// * Indicated `CritQueue` is a singleton, e.g. if there are no
+    ///   elements to proceed to after dequeueing.
+    public fun dequeue<V>(
+        _crit_queue_ref_mut: &mut CritQueue<V>
+    )//: (
+        //u128,
+        //&mut V,
+        //bool
+    /*)*/ {
+        // Can ensure that there is a queue head by attempting to borrow
+        // the corresponding leaf key from the option field, which
+        //aborts if it is none.
+    }
+
+    /// Mutably borrow the head of the queue before dequeueing.
+    ///
+    /// # Parameters
+    /// * `crit_queue_ref_mut`: Mutable reference to `CritQueue`.
     ///
     /// # Returns
     /// * `u128`: Queue head leaf key.
-    /// * `&mut V`: Mutable reference to queue head insertion value.
+    /// * `&mut V`: Mutable reference to queue head enqueue value.
     /// * `bool`: `true` if the queue `Leaf` has a parent, and thus if
     ///   there is another element to iterate to. If `false`, can still
-    ///   pop the head via `crit_pop()`.
+    ///   remove the head via `remove()`.
     ///
     /// # Aborts if
-    /// * Indicated `QueueCrit` is empty.
-    public fun queue_pop_init<V>(
-        _queue_crit_ref_mut: &mut QueueCrit<V>
+    /// * Indicated `CritQueue` is empty.
+    public fun dequeue_init<V>(
+        _crit_queue_ref_mut: &mut CritQueue<V>
     )//: (
         //u128,
         //&mut V,
@@ -370,60 +387,51 @@ module econia::critqueue {
         // if none.
     }
 
-    /// Pop head and borrow next element in the queue, the new head.
-    ///
-    /// Should only be called after `queue_borrow_mut()` indicates that
-    /// iteration can proceed, or if a subsequent call to `queue_pop()`
-    /// indicates the same.
-    ///
-    /// # Parameters
-    /// * `queue_crit_ref_mut`: Mutable reference to `QueueCrit`.
-    ///
-    /// # Returns
-    /// * `u128`: New queue head leaf key.
-    /// * `&mut V`: Mutable reference to new queue head insertion value.
-    /// * `bool`: `true` if the new queue head `Leaf` has a parent, and
-    ///   thus if iteration can proceed for another pop.
-    ///
-    /// # Aborts if
-    /// * Indicated `QueueCrit` is empty.
-    /// * Indicated `QueueCrit` is a singleton, e.g. if there are no
-    ///   elements to proceed to after popping.
-    public fun queue_pop<V>(
-        _queue_crit_ref_mut: &mut QueueCrit<V>
-    )//: (
-        //u128,
-        //&mut V,
-        //bool
-    /*)*/ {
-        // Can ensure that there is a queue head by attempting to borrow
-        // the corresonding leaf key from the option field, which aborts
-        // if it is none.
-    }
+    /// Enqueue key-value pair, returning generated leaf key.
+    public fun enqueue<V>(
+        _crit_queue_ref_mut: &mut CritQueue<V>,
+        _enqueue_key: u64,
+        //_enqueue_value: V,
+    )/*: u128*/ {}
 
-    /// Return `true` if `insertion_key` would become new head if
-    /// inserted, else `false`.
+    /// Return head leaf key, if any.
+    public fun get_head_leaf_key<V>(
+        _crit_queue_ref_mut: &mut CritQueue<V>,
+    )/*: Option<u128> */ {}
+
+    /// Return `ASCENDING` or `DESCENDING` `CritQueue`, per `direction`.
+    public fun new<V>(
+        _direction: bool
+    )/*: QueueCrit*/ {}
+
+    /// Remove corresonding leaf, return enqueue value.
+    public fun remove<V>(
+        _crit_queue_ref_mut: &mut CritQueue<V>,
+        _leaf_key: u128
+    )/*: V*/ {}
+
+    /// Return `true` if `enqueue_key` would become new head if
+    /// enqueued, else `false`.
     public fun takes_priority<V>(
-        _queue_crit_ref: &QueueCrit<V>,
-        _insertion_key: u64
+        _crit_queue_ref: &CritQueue<V>,
+        _enqueue_key: u64
     )/*: bool*/ {
         // Return true if empty.
-        // If ascending, return true if less than head insertion key.
-        // If descending, return true if greater than head insertion
-        // key.
+        // If ascending, return true if less than head enqueue key.
+        // If descending, return true if greater than head enqueue key.
     }
 
-    /// Return `true` if `insertion_key` would not become the head if
-    /// inserted.
+    /// Return `true` if `enqueue_key` would not become the head if
+    /// enqueued.
     public fun trails_head<V>(
-        _queue_crit_ref: &QueueCrit<V>,
-        _insertion_key: u64
+        _crit_queue_ref: &CritQueue<V>,
+        _enqueue_key: u64
     )/*: bool*/ {
         // Return false if empty.
         // If ascending, return true if greater than/equal to head
-        // insertion key.
+        // enqueue key.
         // If descending, return true if less than/equal to head
-        // insertion key.
+        // enqueue key.
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

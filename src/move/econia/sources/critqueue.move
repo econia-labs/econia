@@ -401,18 +401,6 @@ module econia::critqueue {
 
     // To implement >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Borrow enqueue value corresponding to given leaf key.
-    public fun borrow<V>(
-        _crit_queue_ref_mut: &mut CritQueue<V>,
-        _leaf_key: u128
-    )/*: &V*/ {}
-
-    /// Mutably borrow enqueue value corresponding to given leaf key.
-    public fun borrow_mut<V>(
-        _crit_queue_ref_mut: &mut CritQueue<V>,
-        _leaf_key: u128
-    )/*: &V*/ {}
-
     /// Dequeue head and borrow next element in the queue, the new head.
     ///
     /// Should only be called after `dequeue_init()` indicates that
@@ -477,44 +465,55 @@ module econia::critqueue {
         //_enqueue_value: V,
     )/*: u128*/ {}
 
-    /// Return head leaf key, if any.
-    public fun get_head_leaf_key<V>(
-        _crit_queue_ref_mut: &mut CritQueue<V>,
-    )/*: Option<u128> */ {}
-
     /// Remove corresponding leaf, return enqueue value.
     public fun remove<V>(
         _crit_queue_ref_mut: &mut CritQueue<V>,
         _leaf_key: u128
     )/*: V*/ {}
 
-    /// Return `true` if `enqueue_key` would become new head if
-    /// enqueued, else `false`.
-    public fun takes_priority<V>(
-        _crit_queue_ref: &CritQueue<V>,
-        _enqueue_key: u64
-    )/*: bool*/ {
-        // Return true if empty.
-        // If ascending, return true if less than head enqueue key.
-        // If descending, return true if greater than head enqueue key.
-    }
-
-    /// Return `true` if `enqueue_key` would not become the head if
-    /// enqueued.
-    public fun trails_head<V>(
-        _crit_queue_ref: &CritQueue<V>,
-        _enqueue_key: u64
-    )/*: bool*/ {
-        // Return false if empty.
-        // If ascending, return true if greater than/equal to head
-        // enqueue key.
-        // If descending, return true if less than/equal to head
-        // enqueue key.
-    }
-
     // To implement <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Borrow enqueue value corresponding to given `leaf_key` for given
+    /// `CritQueue`.
+    public fun borrow<V>(
+        crit_queue_ref: &CritQueue<V>,
+        leaf_key: u128
+    ): &V {
+        &table::borrow(&crit_queue_ref.leaves, leaf_key).value
+    }
+
+    /// Mutably borrow enqueue value corresponding to given `leaf_key`
+    /// for given `CritQueue`.
+    public fun borrow_mut<V>(
+        crit_queue_ref_mut: &mut CritQueue<V>,
+        leaf_key: u128
+    ): &mut V {
+        &mut table::borrow_mut(&mut crit_queue_ref_mut.leaves, leaf_key).value
+    }
+
+    /// Return head leaf key of given `CritQueue`, if any.
+    public fun get_head_leaf_key<V>(
+        crit_queue_ref: &CritQueue<V>,
+    ): Option<u128> {
+        crit_queue_ref.head
+    }
+
+    /// Return `true` if given `CritQueue` has the given `leaf_key`.
+    public fun has_leaf_key<V>(
+        crit_queue_ref: &CritQueue<V>,
+        leaf_key: u128
+    ): bool {
+        table::contains(&crit_queue_ref.leaves, leaf_key)
+    }
+
+    /// Return `true` if given `CritQueue` is empty.
+    public fun is_empty<V>(
+        crit_queue_ref: &CritQueue<V>,
+    ): bool {
+        option::is_none(&crit_queue_ref.root)
+    }
 
     /// Return `ASCENDING` or `DESCENDING` `CritQueue`, per `direction`.
     public fun new<V: store>(
@@ -528,6 +527,46 @@ module econia::critqueue {
             inners: table::new(),
             leaves: table::new()
         }
+    }
+
+    /// Return `true` if, were `enqueue_key` to be enqueued, it would
+    /// trail behind the head of the given `CritQueue`.
+    public fun would_trail_head<V>(
+        crit_queue_ref: &CritQueue<V>,
+        enqueue_key: u64
+    ): bool {
+        // Return false if the crit-queue is empty and has no head.
+        if (option::is_none(&crit_queue_ref.head)) false else
+            // Otherwise, if the crit-queue is ascending, return true
+            // if enqueue key is greater than or equal to the enqueue
+            // key encoded in the head leaf key.
+            if (crit_queue_ref.direction == ASCENDING) (enqueue_key as u128) >=
+                *option::borrow(&crit_queue_ref.head) >> ENQUEUE_KEY
+            // Otherwise, if the crit-queue is descending, return true
+            // if the enqueue key is less than or equal to the enqueue
+            // key encoded in the head leaf key.
+            else (enqueue_key as u128) <=
+                *option::borrow(&crit_queue_ref.head) >> ENQUEUE_KEY
+    }
+
+    /// Return `true` if, were `enqueue_key` to be enqueued, it would
+    /// become new the new head of the given `CritQueue`.
+    public fun would_become_new_head<V>(
+        crit_queue_ref: &CritQueue<V>,
+        enqueue_key: u64
+    ): bool {
+        // Return true if the crit-queue is empty and has no head.
+        if (option::is_none(&crit_queue_ref.head)) true else
+            // Otherwise, if the crit-queue is ascending, return true
+            // if enqueue key is less than the enqueue key encoded in
+            // the head leaf key.
+            if (crit_queue_ref.direction == ASCENDING) (enqueue_key as u128) <
+                *option::borrow(&crit_queue_ref.head) >> ENQUEUE_KEY
+            // Otherwise, if the crit-queue is descending, return true
+            // if the enqueue key is greater than the enqueue key
+            // encoded in the head leaf key.
+            else (enqueue_key as u128) >
+                *option::borrow(&crit_queue_ref.head) >> ENQUEUE_KEY
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -745,7 +784,7 @@ module econia::critqueue {
     #[test_only]
     /// Return a bitmask with all bits high except for bit `b`,
     /// 0-indexed starting at LSB: bitshift 1 by `b`, XOR with `HI_128`
-    fun b_lo(b: u8): u128 {1 << b ^ HI_128}
+    fun bit_lo(b: u8): u128 {1 << b ^ HI_128}
 
     #[test_only]
     /// Return a `u128` corresponding to provided byte string `s`. The
@@ -792,10 +831,25 @@ module econia::critqueue {
 
     #[test]
     /// Verify successful bitmask generation
-    fun test_b_lo() {
-        assert!(b_lo(0) == HI_128 - 1, 0);
-        assert!(b_lo(1) == HI_128 - 2, 0);
-        assert!(b_lo(127) == 0x7fffffffffffffffffffffffffffffff, 0);
+    fun test_bit_lo() {
+        assert!(bit_lo(0) == HI_128 - 1, 0);
+        assert!(bit_lo(1) == HI_128 - 2, 0);
+        assert!(bit_lo(127) == 0x7fffffffffffffffffffffffffffffff, 0);
+    }
+
+    #[test]
+    /// Verify borrowing, immutably and mutably.
+    fun test_borrowers():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Add a mock leaf to the leaves table.
+        table::add(&mut crit_queue.leaves, 0,
+            Leaf{value: 0, parent: option::none()});
+        // Assert correct value borrow.
+        assert!(*borrow(&crit_queue, 0) == 0, 0);
+        *borrow_mut(&mut crit_queue, 0) = 123; // Mutate value.
+        assert!(*borrow(&crit_queue, 0) == 123, 0); // Assert mutation.
+        crit_queue // Return crit-queue.
     }
 
     #[test]
@@ -807,6 +861,20 @@ module econia::critqueue {
             assert!(get_critical_bit(0, 1 << b) == b, (b as u64));
             b = b + 1; // Increment bit counter.
         };
+    }
+
+    #[test]
+    /// Verify lookup returns.
+    fun test_get_head_leaf_key():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert no head leaf key indicated.
+        assert!(option::is_none(&get_head_leaf_key(&crit_queue)), 0);
+        // Set mock head leaf key.
+        option::fill(&mut crit_queue.head, 123);
+        // Assert head leaf key returned correctly.
+        assert!(*option::borrow(&get_head_leaf_key(&crit_queue)) == 123, 0);
+        crit_queue // Return crit-queue.
     }
 
     #[test]
@@ -889,6 +957,34 @@ module econia::critqueue {
     }
 
     #[test]
+    /// Verify returns for membership checks.
+    fun test_has_leaf_key():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert arbitrary leaf key not contained.
+        assert!(!has_leaf_key(&crit_queue, 0), 0);
+        // Add a mock leaf to the leaves table.
+        table::add(&mut crit_queue.leaves, 0,
+            Leaf{value: 0, parent: option::none()});
+        // Assert arbitrary leaf key contained.
+        assert!(has_leaf_key(&crit_queue, 0), 0);
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
+    /// Verify successful returns.
+    fun test_is_empty():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert is marked empty.
+        assert!(is_empty(&crit_queue), 0);
+        option::fill(&mut crit_queue.root, 1234); // Mark mock root.
+        // Assert is marked not empty.
+        assert!(!is_empty(&crit_queue), 0);
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
     /// Verify successful determination of key types.
     fun test_key_types() {
         assert!(is_inner_key(u_128_by_32(
@@ -944,6 +1040,43 @@ module econia::critqueue {
     #[expected_failure(abort_code = 100)]
     /// Verify failure for non-binary-representative byte string.
     fun test_u_failure() {u_128(b"2");}
+
+    #[test]
+    /// Verify lookup returns.
+    fun test_would_become_trail_head():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert return for value that would become new head.
+        assert!(would_become_new_head(&crit_queue, HI_64), 0);
+        // Assert return for value that would not trail head.
+        assert!(!would_trail_head(&crit_queue, HI_64), 0);
+        // Set mock head leaf key.
+        option::fill(&mut crit_queue.head, u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+        ));
+        // Assert return for value that would become new head.
+        assert!(would_become_new_head(&crit_queue, (u_128(b"01") as u64)), 0);
+        // Assert return for value that would not trail head.
+        assert!(!would_trail_head(&crit_queue, (u_128(b"01") as u64)), 0);
+        // Assert return for value that would not become new head.
+        assert!(!would_become_new_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        // Assert return for value that would trail head.
+        assert!(would_trail_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        // Flip crit-queue direction.
+        crit_queue.direction = DESCENDING;
+        // Assert return for value that would become new head.
+        assert!(would_become_new_head(&crit_queue, (u_128(b"11") as u64)), 0);
+        // Assert return for value that would not trail head.
+        assert!(!would_trail_head(&crit_queue, (u_128(b"11") as u64)), 0);
+        // Assert return for value that would not become new head.
+        assert!(!would_become_new_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        // Assert return for value that would trail head.
+        assert!(would_trail_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        crit_queue // Return crit-queue.
+    }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

@@ -4,6 +4,8 @@
   - [Bit helpers](#bit-helpers)
   - [Enqueueing](#enqueueing)
   - [Initialization](#initialization)
+  - [Borrowers](#borrowers)
+  - [Lookup](#lookup)
 
 ## Bit helpers
 
@@ -38,5 +40,28 @@ get_leaf_key
 flowchart LR
 
 new
+
+```
+
+## Borrowers
+
+```mermaid
+
+flowchart LR
+
+borrow
+borrow_mut
+
+```
+
+## Lookup
+
+```mermaid
+
+get_head_leaf_key
+has_leaf_key
+is_empty
+would_trail_head
+would_become_new_head
 
 ```

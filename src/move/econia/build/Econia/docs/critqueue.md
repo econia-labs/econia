@@ -298,10 +298,10 @@ is thus $2^{62} - 1$.
 
 
 In the present implementation, key-value pairs are enqueued via
-<code><a href="critqueue.md#0xc0deb00c_critqueue_enqueue">enqueue</a>()</code>, which accepts a <code>u64</code> enqueue key and an enqueue value
+<code>enqueue()</code>, which accepts a <code>u64</code> enqueue key and an enqueue value
 of type <code>V</code>. A corresponding <code>u128</code> leaf key is returned, which can
-be used for subsequent leaf key lookup via <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>,
-<code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, or <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
+be used for subsequent leaf key lookup via <code>borrow()</code>,
+<code>borrow_mut()</code>, or <code>remove()</code>.
 
 
 <a name="@Enqueues_12"></a>
@@ -327,7 +327,7 @@ parallelized insertion count aggregator.
 ### Removals
 
 
-With <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes stored in a <code>Table</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code> operations are
+With <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes stored in a <code>Table</code>, <code>remove()</code> operations are
 thus $O(1)$, and are additionally parallelizable in the general case
 where:
 
@@ -360,7 +360,7 @@ Here, removing $k_{2, 5}$ simply updates the dequeue sequence to:
 
 Dequeues, as a form of removal, are $O(1)$, but since they alter
 the head of the queue, they are not parallelizable. Dequeues
-are initialized via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>()</code>, and iterated via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>.
+are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue()</code>.
 
 ---
 
@@ -383,32 +383,7 @@ are initialized via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_ini
 -  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
 -  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
--  [Constants](#@Constants_15)
--  [Function `dequeue`](#0xc0deb00c_critqueue_dequeue)
-    -  [Parameters](#@Parameters_16)
-    -  [Returns](#@Returns_17)
-    -  [Aborts if](#@Aborts_if_18)
--  [Function `dequeue_init`](#0xc0deb00c_critqueue_dequeue_init)
-    -  [Parameters](#@Parameters_19)
-    -  [Returns](#@Returns_20)
-    -  [Aborts if](#@Aborts_if_21)
--  [Function `enqueue`](#0xc0deb00c_critqueue_enqueue)
--  [Function `remove`](#0xc0deb00c_critqueue_remove)
--  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
--  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
--  [Function `get_head_leaf_key`](#0xc0deb00c_critqueue_get_head_leaf_key)
--  [Function `has_leaf_key`](#0xc0deb00c_critqueue_has_leaf_key)
--  [Function `is_empty`](#0xc0deb00c_critqueue_is_empty)
--  [Function `new`](#0xc0deb00c_critqueue_new)
--  [Function `would_trail_head`](#0xc0deb00c_critqueue_would_trail_head)
--  [Function `would_become_new_head`](#0xc0deb00c_critqueue_would_become_new_head)
--  [Function `get_critical_bit`](#0xc0deb00c_critqueue_get_critical_bit)
-    -  [XOR/AND method](#@XOR/AND_method_22)
-    -  [Binary search method](#@Binary_search_method_23)
--  [Function `get_leaf_key`](#0xc0deb00c_critqueue_get_leaf_key)
--  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
--  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
--  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
+-  [Struct `SubQueueNode`](#0xc0deb00c_critqueue_SubQueueNode)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -438,39 +413,39 @@ Hybrid between a crit-bit tree and a queue. See above.
 <code>direction: bool</code>
 </dt>
 <dd>
- Crit-queue sort direction, <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
+ Crit-queue sort direction, <code>ASCENDING</code> or <code>DESCENDING</code>.
 </dd>
 <dt>
 <code>root: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- Crit-bit tree root node key. If none, tree is empty.
+ Node key of crit-bit tree root. None if crit-queue is empty.
 </dd>
 <dt>
 <code>head: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- Queue head key. If none, tree is empty. Else minimum leaf
- key if <code>direction</code> is <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code>, and maximum leaf key
- if <code>direction</code> is <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
-</dd>
-<dt>
-<code>enqueues: <a href="_Table">table::Table</a>&lt;u64, u64&gt;</code>
-</dt>
-<dd>
- Map from enqueue key to 0-indexed enqueue count.
+ Access key of crit-queue head. None if crit-queue is empty,
+ else minimum access key if ascending crit-queue, and
+ maximum access key if descending crit-queue.
 </dd>
 <dt>
 <code>inners: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>&gt;</code>
 </dt>
 <dd>
- Map from inner key to <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code>.
+ Map from inner key to inner node.
 </dd>
 <dt>
-<code>leaves: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">critqueue::Leaf</a>&lt;V&gt;&gt;</code>
+<code>leaves: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">critqueue::Leaf</a>&gt;</code>
 </dt>
 <dd>
- Map from leaf key to <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> having enqueue value type <code>V</code>.
+ Map from leaf key to leaf node.
+</dd>
+<dt>
+<code>values: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">critqueue::SubQueueNode</a>&lt;V&gt;&gt;</code>
+</dt>
+<dd>
+ Map from access key to sub-queue node.
 </dd>
 </dl>
 
@@ -527,10 +502,61 @@ A crit-bit tree inner node.
 
 ## Struct `Leaf`
 
-A crit-bit tree leaf node.
+A crit-bit tree leaf node. A free leaf if no sub-queue head.
+Else the root of the crit-bit tree if no parent.
 
 
-<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a>&lt;V&gt; <b>has</b> store
+<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a> <b>has</b> store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>count: u64</code>
+</dt>
+<dd>
+ 0-indexed insertion count for corresponding insertion key.
+</dd>
+<dt>
+<code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
+</dt>
+<dd>
+ If no sub-queue head, should also be none, since leaf is a
+ free leaf. Else corresponds to the inner key of the parent
+ node, none when leaf is the root of the crit-bit tree.
+</dd>
+<dt>
+<code>head: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
+</dt>
+<dd>
+ If none, node is a free leaf. Else the access key of the
+ sub-queue head.
+</dd>
+<dt>
+<code>tail: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
+</dt>
+<dd>
+ If none, node is a free leaf. Else the access key of the
+ sub-queue tail.
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_SubQueueNode"></a>
+
+## Struct `SubQueueNode`
+
+A node in a sub-queue.
+
+
+<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>&lt;V&gt; <b>has</b> store
 </code></pre>
 
 
@@ -544,909 +570,21 @@ A crit-bit tree leaf node.
 <code>value: V</code>
 </dt>
 <dd>
- Enqueue value.
+ Insertion value.
 </dd>
 <dt>
-<code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
+<code>previous: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- If none, node is root. Else parent key.
+ Access key of previous sub-queue node, if any.
+</dd>
+<dt>
+<code>next: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
+</dt>
+<dd>
+ Access key of next sub-queue node, if any.
 </dd>
 </dl>
-
-
-</details>
-
-<a name="@Constants_15"></a>
-
-## Constants
-
-
-<a name="0xc0deb00c_critqueue_ASCENDING"></a>
-
-Ascending crit-queue flag.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>: bool = <b>false</b>;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_ASCENDING_BIT_FLAG"></a>
-
-Crit-queue direction bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING_BIT_FLAG">ASCENDING_BIT_FLAG</a>: u128 = 0;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_DESCENDING"></a>
-
-Descending crit-queue flag.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>: bool = <b>true</b>;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_DESCENDING_BIT_FLAG"></a>
-
-Crit-queue direction bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING_BIT_FLAG">DESCENDING_BIT_FLAG</a>: u128 = 1;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_DIRECTION"></a>
-
-Bit number of crit-queue direction bit flag.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_DIRECTION">DIRECTION</a>: u8 = 62;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_ENQUEUE_KEY"></a>
-
-Number of bits to shift when encoding enqueue key in leaf key.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a>: u8 = 64;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES"></a>
-
-When an enqueue key has been enqueued too many times.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES">E_TOO_MANY_ENQUEUES</a>: u64 = 0;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_HI_128"></a>
-
-<code>u128</code> bitmask with all bits set, generated in Python via
-<code>hex(int('1' * 128, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_HI_64"></a>
-
-<code>u64</code> bitmask with all bits set, generated in Python via
-<code>hex(int('1' * 64, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT"></a>
-
-Maximum number of times a given enqueue key can be enqueued.
-A <code>u64</code> bitmask with all bits set except 62 and 63, generated
-in Python via <code>hex(int('1' * 62, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT">MAX_ENQUEUE_COUNT</a>: u64 = 4611686018427387903;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_MSB_u128"></a>
-
-Most significant bit number for a <code>u128</code>
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MSB_u128">MSB_u128</a>: u8 = 127;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_NODE_INNER"></a>
-
-Result of bitwise <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code> for <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>: u128 = 9223372036854775808;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_NODE_LEAF"></a>
-
-Result of bitwise <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code> for <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> node.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>: u128 = 0;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_NODE_TYPE"></a>
-
-<code>u128</code> bitmask set at bit 63, the node type bit flag, generated
-in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u128 = 9223372036854775808;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING"></a>
-
-<code>XOR</code> bitmask for flipping all 62 enqueue count bits and setting
-bit 63 high in the case of a descending crit-queue. <code>u64</code>
-bitmask with all bits set except bit 63, generated in Python via
-<code>hex(int('1' * 63, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>: u64 = 9223372036854775807;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_dequeue"></a>
-
-## Function `dequeue`
-
-Dequeue head and borrow next element in the queue, the new head.
-
-Should only be called after <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>()</code> indicates that
-iteration can proceed, or if a subsequent call to <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>
-indicates the same.
-
-
-<a name="@Parameters_16"></a>
-
-### Parameters
-
-* <code>crit_queue_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
-
-
-<a name="@Returns_17"></a>
-
-### Returns
-
-* <code>u128</code>: New queue head leaf key.
-* <code>&<b>mut</b> V</code>: Mutable reference to new queue head enqueue value.
-* <code>bool</code>: <code><b>true</b></code> if the new queue head <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> has a parent, and
-thus if iteration can proceed.
-
-
-<a name="@Aborts_if_18"></a>
-
-### Aborts if
-
-* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
-* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is a singleton, e.g. if there are no
-elements to proceed to after dequeueing.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>&lt;V&gt;(
-    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;
-)//: (
-    //u128,
-    //&<b>mut</b> V,
-    //bool
-/*)*/ {
-    // Can ensure that there is a queue head by attempting <b>to</b> borrow
-    // the corresponding leaf key from the <a href="">option</a> field, which
-    // aborts <b>if</b> it is none.
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_dequeue_init"></a>
-
-## Function `dequeue_init`
-
-Mutably borrow the head of the queue before dequeueing.
-
-
-<a name="@Parameters_19"></a>
-
-### Parameters
-
-* <code>crit_queue_ref_mut</code>: Mutable reference to <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
-
-
-<a name="@Returns_20"></a>
-
-### Returns
-
-* <code>u128</code>: Queue head leaf key.
-* <code>&<b>mut</b> V</code>: Mutable reference to queue head enqueue value.
-* <code>bool</code>: <code><b>true</b></code> if the queue <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> has a parent, and thus if
-there is another element to iterate to. If <code><b>false</b></code>, can still
-remove the head via <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
-
-
-<a name="@Aborts_if_21"></a>
-
-### Aborts if
-
-* Indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue_init">dequeue_init</a>&lt;V&gt;(
-    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;
-)//: (
-    //u128,
-    //&<b>mut</b> V,
-    //bool
-/*)*/ {
-    // Can ensure that there is a queue head by attempting <b>to</b> borrow
-    // corresponding leaf key from `<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>.head`, which aborts
-    // <b>if</b> none.
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_enqueue"></a>
-
-## Function `enqueue`
-
-Enqueue key-value pair, returning generated leaf key.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_enqueue">enqueue</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _enqueue_key: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_enqueue">enqueue</a>&lt;V&gt;(
-    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    _enqueue_key: u64,
-    //_enqueue_value: V,
-)/*: u128*/ {}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_remove"></a>
-
-## Function `remove`
-
-Remove corresponding leaf, return enqueue value.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(_crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _leaf_key: u128)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(
-    _crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    _leaf_key: u128
-)/*: V*/ {}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_borrow"></a>
-
-## Function `borrow`
-
-Borrow enqueue value corresponding to given <code>leaf_key</code> for given
-<code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128): &V
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    leaf_key: u128
-): &V {
-    &<a href="_borrow">table::borrow</a>(&crit_queue_ref.leaves, leaf_key).value
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_borrow_mut"></a>
-
-## Function `borrow_mut`
-
-Mutably borrow enqueue value corresponding to given <code>leaf_key</code>
-for given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128): &<b>mut</b> V
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(
-    crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    leaf_key: u128
-): &<b>mut</b> V {
-    &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(&<b>mut</b> crit_queue_ref_mut.leaves, leaf_key).value
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_get_head_leaf_key"></a>
-
-## Function `get_head_leaf_key`
-
-Return head leaf key of given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, if any.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_leaf_key">get_head_leaf_key</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): <a href="_Option">option::Option</a>&lt;u128&gt;
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_leaf_key">get_head_leaf_key</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-): Option&lt;u128&gt; {
-    crit_queue_ref.head
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_has_leaf_key"></a>
-
-## Function `has_leaf_key`
-
-Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has the given <code>leaf_key</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_leaf_key">has_leaf_key</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_leaf_key">has_leaf_key</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    leaf_key: u128
-): bool {
-    <a href="_contains">table::contains</a>(&crit_queue_ref.leaves, leaf_key)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_is_empty"></a>
-
-## Function `is_empty`
-
-Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-): bool {
-    <a href="_is_none">option::is_none</a>(&crit_queue_ref.root)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_new"></a>
-
-## Function `new`
-
-Return <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code> <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, per <code>direction</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(direction: bool): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(
-    direction: bool
-): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt; {
-    <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>{
-        direction,
-        root: <a href="_none">option::none</a>(),
-        head: <a href="_none">option::none</a>(),
-        enqueues: <a href="_new">table::new</a>(),
-        inners: <a href="_new">table::new</a>(),
-        leaves: <a href="_new">table::new</a>()
-    }
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_would_trail_head"></a>
-
-## Function `would_trail_head`
-
-Return <code><b>true</b></code> if, were <code>enqueue_key</code> to be enqueued, it would
-trail behind the head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, enqueue_key: u64): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    enqueue_key: u64
-): bool {
-    // Return <b>false</b> <b>if</b> the crit-queue is empty and <b>has</b> no head.
-    <b>if</b> (<a href="_is_none">option::is_none</a>(&crit_queue_ref.head)) <b>false</b> <b>else</b>
-        // Otherwise, <b>if</b> the crit-queue is ascending, <b>return</b> <b>true</b>
-        // <b>if</b> enqueue key is greater than or equal <b>to</b> the enqueue
-        // key encoded in the head leaf key.
-        <b>if</b> (crit_queue_ref.direction == <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>) (enqueue_key <b>as</b> u128) &gt;=
-            *<a href="_borrow">option::borrow</a>(&crit_queue_ref.head) &gt;&gt; <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a>
-        // Otherwise, <b>if</b> the crit-queue is descending, <b>return</b> <b>true</b>
-        // <b>if</b> the enqueue key is less than or equal <b>to</b> the enqueue
-        // key encoded in the head leaf key.
-        <b>else</b> (enqueue_key <b>as</b> u128) &lt;=
-            *<a href="_borrow">option::borrow</a>(&crit_queue_ref.head) &gt;&gt; <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_would_become_new_head"></a>
-
-## Function `would_become_new_head`
-
-Return <code><b>true</b></code> if, were <code>enqueue_key</code> to be enqueued, it would
-become new the new head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, enqueue_key: u64): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    enqueue_key: u64
-): bool {
-    // Return <b>true</b> <b>if</b> the crit-queue is empty and <b>has</b> no head.
-    <b>if</b> (<a href="_is_none">option::is_none</a>(&crit_queue_ref.head)) <b>true</b> <b>else</b>
-        // Otherwise, <b>if</b> the crit-queue is ascending, <b>return</b> <b>true</b>
-        // <b>if</b> enqueue key is less than the enqueue key encoded in
-        // the head leaf key.
-        <b>if</b> (crit_queue_ref.direction == <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>) (enqueue_key <b>as</b> u128) &lt;
-            *<a href="_borrow">option::borrow</a>(&crit_queue_ref.head) &gt;&gt; <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a>
-        // Otherwise, <b>if</b> the crit-queue is descending, <b>return</b> <b>true</b>
-        // <b>if</b> the enqueue key is greater than the enqueue key
-        // encoded in the head leaf key.
-        <b>else</b> (enqueue_key <b>as</b> u128) &gt;
-            *<a href="_borrow">option::borrow</a>(&crit_queue_ref.head) &gt;&gt; <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_get_critical_bit"></a>
-
-## Function `get_critical_bit`
-
-Return the number of the most significant bit (0-indexed from
-LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
-
-
-<a name="@XOR/AND_method_22"></a>
-
-### XOR/AND method
-
-
-To begin with, a bitwise XOR is used to flag all differing bits:
-
->              s1: 11110001
->              s2: 11011100
->     x = s1 ^ s2: 00101101
->                    |- critical bit = 5
-
-Here, the critical bit is equivalent to the bit number of the
-most significant set bit in XOR result <code>x = s1 ^ s2</code>. At this
-point, [Langley 2008](#references) notes that <code>x</code> bitwise AND
-<code>x - 1</code> will be nonzero so long as <code>x</code> contains at least some
-bits set which are of lesser significance than the critical bit:
-
->                   x: 00101101
->               x - 1: 00101100
->     x = x & (x - 1): 00101100
-
-Thus he suggests repeating <code>x & (x - 1)</code> while the new result
-<code>x = x & (x - 1)</code> is not equal to zero, because such a loop will
-eventually reduce <code>x</code> to a power of two (excepting the trivial
-case where <code>x</code> starts as all 0 except bit 0 set, for which the
-loop never enters past the initial conditional check). Per this
-method, using the new <code>x</code> value for the current example, the
-second iteration proceeds as follows:
-
->               x: 00101100
->           x - 1: 00101011
-> x = x & (x - 1): 00101000
-
-The third iteration:
-
->                   x: 00101000
->               x - 1: 00100111
->     x = x & (x - 1): 00100000
-Now, <code>x & x - 1</code> will equal zero and the loop will not begin a
-fourth iteration:
-
->                 x: 00100000
->             x - 1: 00011111
->     x AND (x - 1): 00000000
-
-Thus after three iterations a corresponding critical bit bitmask
-has been determined. However, in the case where the two input
-strings vary at all bits of lesser significance than that of the
-critical bit, there may be required as many as <code>k - 1</code>
-iterations, where <code>k</code> is the number of bits in each string under
-comparison. For instance, consider the case of the two 8-bit
-strings <code>s1</code> and <code>s2</code> as follows:
-
->                  s1: 10101010
->                  s2: 01010101
->         x = s1 ^ s2: 11111111
->                      |- critical bit = 7
->     x = x & (x - 1): 11111110 [iteration 1]
->     x = x & (x - 1): 11111100 [iteration 2]
->     x = x & (x - 1): 11111000 [iteration 3]
->     ...
-
-Notably, this method is only suggested after already having
-identified the varying byte between the two strings, thus
-limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
-
-
-<a name="@Binary_search_method_23"></a>
-
-### Binary search method
-
-
-For the present implementation, strings are not partitioned into
-a multi-byte array, rather, they are stored as <code>u128</code> integers,
-so a binary search is instead proposed. Here, the same
-<code>x = s1 ^ s2</code> operation is first used to identify all differing
-bits, before iterating on an upper and lower bound for the
-critical bit number:
-
->              s1: 10101010
->              s2: 01010101
->     x = s1 ^ s2: 11111111
->           u = 7 -|      |- l = 0
-
-The upper bound <code>u</code> is initialized to the length of the string
-(7 in this example, but 127 for a <code>u128</code>), and the lower bound
-<code>l</code> is initialized to 0. Next the midpoint <code>m</code> is calculated as
-the average of <code>u</code> and <code>l</code>, in this case <code>m = (7 + 0) / 2 = 3</code>,
-per truncating integer division. Now, the shifted compare value
-<code>s = r &gt;&gt; m</code> is calculated and updates are applied according to
-three potential outcomes:
-
-* <code>s == 1</code> means that the critical bit <code>c</code> is equal to <code>m</code>
-* <code>s == 0</code> means that <code>c &lt; m</code>, so <code>u</code> is set to <code>m - 1</code>
-* <code>s &gt; 1</code> means that <code>c &gt; m</code>, so <code>l</code> us set to <code>m + 1</code>
-
-Hence, continuing the current example:
-
->              x: 11111111
->     s = x >> m: 00011111
-
-<code>s &gt; 1</code>, so <code>l = m + 1 = 4</code>, and the search window has shrunk:
-
->     x = s1 ^ s2: 11111111
->           u = 7 -|  |- l = 4
-
-Updating the midpoint yields <code>m = (7 + 4) / 2 = 5</code>:
-
->              x: 11111111
->     s = x >> m: 00000111
-
-Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 6</code>, and the window
-shrinks again:
-
->     x = s1 ^ s2: 11111111
->           u = 7 -||- l = 6
->     s = x >> m: 00000011
-
-Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 7</code>, the final iteration:
-
->     x = s1 ^ s2: 11111111
->           u = 7 -|- l = 7
->     s = x >> m: 00000001
-
-Here, <code>s == 1</code>, which means that <code>c = m = 7</code>. Notably this
-search has converged after only 3 iterations, as opposed to 7
-for the linear search proposed above, and in general such a
-search converges after $log_2(k)$ iterations at most, where $k$
-is the number of bits in each of the strings <code>s1</code> and <code>s2</code> under
-comparison. Hence this search method improves the $O(k)$ search
-proposed by [Langley 2008](#references) to $O(log_2(k))$, and
-moreover, determines the actual number of the critical bit,
-rather than just a bitmask with bit <code>c</code> set, as he proposes,
-which can also be easily generated via <code>1 &lt;&lt; c</code>.
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bit">get_critical_bit</a>(s1: u128, s2: u128): u8
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bit">get_critical_bit</a>(
-    s1: u128,
-    s2: u128,
-): u8 {
-    <b>let</b> x = s1 ^ s2; // XOR result marked 1 at bits that differ.
-    <b>let</b> l = 0; // Lower bound on critical bit search.
-    <b>let</b> u = <a href="critqueue.md#0xc0deb00c_critqueue_MSB_u128">MSB_u128</a>; // Upper bound on critical bit search.
-    <b>loop</b> { // Begin binary search.
-        <b>let</b> m = (l + u) / 2; // Calculate midpoint of search window.
-        <b>let</b> s = x &gt;&gt; m; // Calculate midpoint shift of XOR result.
-        <b>if</b> (s == 1) <b>return</b> m; // If shift equals 1, c = m.
-        // Update search bounds.
-        <b>if</b> (s &gt; 1) l = m + 1 <b>else</b> u = m - 1;
-    }
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_get_leaf_key"></a>
-
-## Function `get_leaf_key`
-
-Return the leaf key corresponding to the given <code>enqueue_key</code>
-for the indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_leaf_key">get_leaf_key</a>&lt;V&gt;(enqueue_key: u64, crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): u128
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_leaf_key">get_leaf_key</a>&lt;V&gt;(
-    enqueue_key: u64,
-    crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;
-): u128 {
-    // Borrow mutable reference <b>to</b> enqueue count <a href="">table</a>.
-    <b>let</b> enqueues_ref_mut = &<b>mut</b> crit_queue_ref_mut.enqueues;
-    <b>let</b> enqueue_count = 0; // Assume key <b>has</b> not been enqueued.
-    // If the key <b>has</b> already been enqueued:
-    <b>if</b> (<a href="_contains">table::contains</a>(enqueues_ref_mut, enqueue_key)) {
-        // Borrow mutable reference <b>to</b> enqueue count.
-        <b>let</b> enqueue_count_ref_mut =
-            <a href="_borrow_mut">table::borrow_mut</a>(enqueues_ref_mut, enqueue_key);
-        // Get enqueue count of current enqueue key.
-        enqueue_count = *enqueue_count_ref_mut + 1;
-        // Assert max enqueue count is not exceeded.
-        <b>assert</b>!(enqueue_count &lt;= <a href="critqueue.md#0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT">MAX_ENQUEUE_COUNT</a>, <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES">E_TOO_MANY_ENQUEUES</a>);
-        // Update enqueue count <a href="">table</a>.
-        *enqueue_count_ref_mut = enqueue_count;
-    } <b>else</b> { // If the enqueue key <b>has</b> not been enqueued:
-        // Initialize the enqueue count <b>to</b> 0.
-        <a href="_add">table::add</a>(enqueues_ref_mut, enqueue_key, enqueue_count);
-    }; // Enqueue count <b>has</b> been assigned.
-    // If a descending crit-queue, flip all bits of the count.
-    <b>if</b> (crit_queue_ref_mut.direction == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) enqueue_count =
-        enqueue_count ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>;
-    // Return leaf key <b>with</b> encoded enqueue key and enqueue count.
-    (enqueue_key <b>as</b> u128) &lt;&lt; <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a> | (enqueue_count <b>as</b> u128)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_is_inner_key"></a>
-
-## Function `is_inner_key`
-
-Return <code><b>true</b></code> if <code>node_key</code> indicates an <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node.
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(node_key: u128): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(
-    node_key: u128
-): bool {
-    node_key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_is_leaf_key"></a>
-
-## Function `is_leaf_key`
-
-Return <code><b>true</b></code> if <code>node_key</code> indicates a <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code>.
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(node_key: u128): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(
-    node_key: u128
-): bool {
-    node_key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_is_set"></a>
-
-## Function `is_set`
-
-Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</code>
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_set">is_set</a>(key: u128, bit_number: u8): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_set">is_set</a>(key: u128, bit_number: u8): bool {key &gt;&gt; bit_number & 1 == 1}
-</code></pre>
-
 
 
 </details>

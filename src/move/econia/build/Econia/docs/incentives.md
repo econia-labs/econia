@@ -373,16 +373,6 @@ When caller is not Econia, but should be.
 
 
 
-<a name="0xc0deb00c_incentives_HI_64"></a>
-
-<code>u64</code> bitmask with all bits set
-
-
-<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>: u64 = 18446744073709551615;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_incentives_BUY"></a>
 
 Buy direction flag.
@@ -652,6 +642,16 @@ Index of fee share in vectorized representation of an
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_INDEX">FEE_SHARE_DIVISOR_INDEX</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_incentives_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_HI_64">HI_64</a>: u64 = 18446744073709551615;
 </code></pre>
 
 

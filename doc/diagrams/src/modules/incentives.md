@@ -16,7 +16,6 @@
 flowchart LR
 
 EconiaFeeStore
-FeeAccountSignerCapabilityStore
 IncentiveParameters
 IntegratorFeeStore
 IntegratorFeeStores
@@ -33,7 +32,6 @@ flowchart LR
 
 get_cost_to_upgrade_integrator_fee_store --> get_tier_activation_fee
 get_custodian_registration_fee
-get_fee_account_address
 get_fee_share_divisor
 get_integrator_withdrawal_fee --> get_tier_withdrawal_fee
 get_market_registration_fee
@@ -68,12 +66,12 @@ flowchart LR
 
 withdraw_econia_fees --> withdraw_econia_fees_internal
 withdraw_econia_fees_all --> withdraw_econia_fees_internal
-withdraw_econia_fees_internal --> get_fee_account_address
+withdraw_econia_fees_internal --> resource_account::get_address
 withdraw_utility_coins --> withdraw_utility_coins_internal
 withdraw_utility_coins_all --> withdraw_utility_coins_internal
-withdraw_utility_coins_internal --> get_fee_account_address
-register_econia_fee_store_entry --> get_fee_account
-deposit_utility_coins --> get_fee_account_address
+withdraw_utility_coins_internal --> resource_account::get_address
+register_econia_fee_store_entry --> resource_account::get_signer
+deposit_utility_coins --> resource_account::get_address
 deposit_utility_coins --> range_check_coin_merge
 deposit_utility_coins_verified --> verify_utility_coin_type
 deposit_utility_coins_verified --> deposit_utility_coins
@@ -120,7 +118,7 @@ flowchart LR
 
 assess_taker_fees --> get_fee_share_divisor
 assess_taker_fees --> get_taker_fee_divisor
-assess_taker_fees --> get_fee_account_address
+assess_taker_fees --> resource_account::get_address
 assess_taker_fees --> range_check_coin_merge
 calculate_max_quote_match
 

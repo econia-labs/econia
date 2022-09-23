@@ -7,10 +7,10 @@ module econia::incentives {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use aptos_framework::account::{Self, SignerCapability};
     use aptos_framework::aptos_coin::AptosCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_std::type_info::{Self, TypeInfo};
+    use econia::resource_account;
     use econia::table_list::{Self, TableList};
     use std::signer::address_of;
     use std::vector;
@@ -19,6 +19,8 @@ module econia::incentives {
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    #[test_only]
+    use aptos_framework::account;
     #[test_only]
     use econia::assets::{Self, QC, UC};
 
@@ -32,13 +34,6 @@ module econia::incentives {
         /// Map from market ID to fees collected for given market,
         /// enabling duplicate checks and interable indexing.
         map: TableList<u64, Coin<QuoteCoinType>>
-    }
-
-    /// Stores a signing capability for the resource account where
-    /// fees, collected by Econia, are stored.
-    struct FeeAccountSignerCapabilityStore has key {
-        /// Signing capability for fee collection resource account.
-        fee_account_signer_capability: SignerCapability
     }
 
     /// Incentive parameters for assorted operations.
@@ -287,19 +282,6 @@ module econia::incentives {
         borrow_global<IncentiveParameters>(@econia).custodian_registration_fee
     }
 
-    /// Return fee account address.
-    public fun get_fee_account_address():
-    address
-    acquires FeeAccountSignerCapabilityStore {
-        // Borrow immutable reference to fee account signer capability.
-        let fee_account_signer_capability_ref =
-            &borrow_global<FeeAccountSignerCapabilityStore>(@econia).
-                fee_account_signer_capability;
-        // Return its address.
-        account::get_signer_capability_address(
-            fee_account_signer_capability_ref)
-    }
-
     /// Return integrator fee share divisor for `tier`.
     public fun get_fee_share_divisor(
         tier: u8
@@ -442,7 +424,6 @@ module econia::incentives {
         new_tier: u8,
         utility_coins: coin::Coin<UtilityCoinType>
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -484,7 +465,6 @@ module econia::incentives {
         amount: u64
     ): coin::Coin<QuoteCoinType>
     acquires
-        FeeAccountSignerCapabilityStore,
         EconiaFeeStore
     {
         withdraw_econia_fees_internal<QuoteCoinType>(
@@ -501,7 +481,6 @@ module econia::incentives {
         market_id: u64,
     ): coin::Coin<QuoteCoinType>
     acquires
-        FeeAccountSignerCapabilityStore,
         EconiaFeeStore
     {
         withdraw_econia_fees_internal<QuoteCoinType>(
@@ -533,7 +512,6 @@ module econia::incentives {
         utility_coins: coin::Coin<UtilityCoinType>
     ): coin::Coin<QuoteCoinType>
     acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -564,7 +542,6 @@ module econia::incentives {
         amount: u64
     ): coin::Coin<UtilityCoinType>
     acquires
-        FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
         withdraw_utility_coins_internal<UtilityCoinType>(econia, false, amount)
@@ -578,7 +555,6 @@ module econia::incentives {
         econia: &signer
     ): coin::Coin<UtilityCoinType>
     acquires
-        FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
         withdraw_utility_coins_internal<UtilityCoinType>(econia, true, 0)
@@ -601,7 +577,6 @@ module econia::incentives {
         taker_fee_divisor: u64,
         integrator_fee_store_tiers: vector<vector<u64>>
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
         set_incentive_parameters<UtilityCoinType>(econia,
@@ -623,7 +598,6 @@ module econia::incentives {
         market_id: u64,
         new_tier: u8,
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -658,7 +632,6 @@ module econia::incentives {
         integrator: &signer,
         market_id: u64
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -721,7 +694,6 @@ module econia::incentives {
         quote_coins_ref_mut: &mut coin::Coin<QuoteCoinType>
     ) acquires
         EconiaFeeStore,
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores
     {
@@ -767,7 +739,7 @@ module econia::incentives {
         // Extract resultant amount from supplied quote coins.
         let econia_fees = coin::extract(quote_coins_ref_mut, econia_fee_share);
         // Get fee account address.
-        let fee_account_address = get_fee_account_address();
+        let fee_account_address = resource_account::get_address();
         // Borrow mutable reference to Econia fee store map for given
         // quote coin type.
         let econia_fee_store_map_ref_mut =
@@ -893,7 +865,6 @@ module econia::incentives {
     >(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         UtilityCoinStore
     {
@@ -908,7 +879,6 @@ module econia::incentives {
     >(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         UtilityCoinStore
     {
@@ -923,7 +893,6 @@ module econia::incentives {
     >(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         UtilityCoinStore
     {
@@ -937,11 +906,11 @@ module econia::incentives {
         market_id: u64
     ) acquires
         EconiaFeeStore,
-        FeeAccountSignerCapabilityStore
     {
-        let fee_account = get_fee_account(); // Get fee account signer.
+        // Get fee account signer.
+        let fee_account = resource_account::get_signer();
         // Get fee account address.
-        let fee_account_address = get_fee_account_address();
+        let fee_account_address = address_of(&fee_account);
         // If an Econia fee store for the quote coin type has not
         // already been initialized at the fee account:
         if (!exists<EconiaFeeStore<QuoteCoinType>>(fee_account_address))
@@ -979,7 +948,6 @@ module econia::incentives {
         tier: u8,
         utility_coins: coin::Coin<UtilityCoinType>
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -1026,11 +994,10 @@ module econia::incentives {
     fun deposit_utility_coins<UtilityCoinType>(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
-        FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
         // Get fee account address.
-        let fee_account_address = get_fee_account_address();
+        let fee_account_address = resource_account::get_address();
         // Borrow mutable reference to coins in utility coin store.
         let utility_coins_ref_mut =
             &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
@@ -1049,7 +1016,6 @@ module econia::incentives {
         coins: coin::Coin<UtilityCoinType>,
         min_amount: u64
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         UtilityCoinStore
     {
@@ -1061,56 +1027,12 @@ module econia::incentives {
         deposit_utility_coins(coins);
     }
 
-    /// Return fee account signer generated from stored capability.
-    fun get_fee_account():
-    signer
-    acquires FeeAccountSignerCapabilityStore {
-        // Borrow immutable reference to fee account signer capability.
-        let fee_account_signer_capability_ref =
-            &borrow_global<FeeAccountSignerCapabilityStore>(@econia).
-                fee_account_signer_capability;
-        account:: // Create and return a signer from it.
-            create_signer_with_capability(fee_account_signer_capability_ref)
-    }
-
-    /// Initialize the resource account where fees, collected by Econia,
-    /// are stored.
-    ///
-    /// # Parameters
-    /// * `econia`: The Econia account `signer`.
-    ///
-    /// # Returns
-    /// * `signer`: The resource account `signer`.
-    ///
-    /// # Seed considerations
-    /// * Resource account creation seed supplied as an empty vector,
-    ///   pending the acceptance of `aptos-core` PR #4173. If PR is not
-    ///   accepted by version release, will be updated to accept a seed
-    ///   as a function argument.
-    ///
-    /// # Aborts if
-    /// * `econia` does not indicate the Econia account.
-    fun init_fee_account(
-        econia: &signer
-    ): signer {
-        // Assert signer is from Econia account.
-        assert!(address_of(econia) == @econia, E_NOT_ECONIA);
-        // Create resource account, storing signing capability.
-        let (fee_account, fee_account_signer_capability) = account::
-            create_resource_account(econia, b"");
-        // Store fee account signer capability under Econia account.
-        move_to(econia, FeeAccountSignerCapabilityStore{
-            fee_account_signer_capability});
-        fee_account // Return fee account signer.
-    }
-
     /// Initialize incentives during first-time publication.
     ///
     /// Uses hard-coded genesis parameters that can be updated later.
     fun init_module(
         econia: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
         // Vectorize fee store tier parameters.
@@ -1204,11 +1126,9 @@ module econia::incentives {
     ///   time.
     ///
     /// # Assumptions
-    /// * If `updating` is `true`, an `IncentiveParameters` and a
-    ///   `FeeAccountSignerCapabilityStore` already exist at the Econia
-    ///   account.
-    /// * If `updating` is `false`, neither an
-    ///   `IncentiveParameters` nor a `FeeAccountSignerCapabilityStore`
+    /// * If `updating` is `true`, an `IncentiveParameters` already
+    ///   exists at the Econia account.
+    /// * If `updating` is `false`, an `IncentiveParameters` does not
     ///   exist at the Econia account.
     ///
     /// # Aborts if
@@ -1225,7 +1145,6 @@ module econia::incentives {
         integrator_fee_store_tiers_ref: &vector<vector<u64>>,
         updating: bool
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
         // Range check inputs.
@@ -1233,11 +1152,8 @@ module econia::incentives {
             market_registration_fee, underwriter_registration_fee,
             custodian_registration_fee, taker_fee_divisor,
             integrator_fee_store_tiers_ref);
-        // Get fee account signer: if updating previously-set values,
-        // get it from the stored capability.
-        let fee_account = if (updating) get_fee_account() else
-            // Else get fee account signer by initializing the account.
-            init_fee_account(econia);
+        // Get fee account signer.
+        let fee_account = resource_account::get_signer();
         // Initialize a utility coin store under the fee acount (aborts
         // if not an initialized coin type).
         init_utility_coin_store<UtilityCoinType>(&fee_account);
@@ -1446,13 +1362,12 @@ module econia::incentives {
         amount: u64
     ): coin::Coin<QuoteCoinType>
     acquires
-        FeeAccountSignerCapabilityStore,
         EconiaFeeStore
     {
         // Assert account is Econia.
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
         // Get fee account address.
-        let fee_account_address = get_fee_account_address();
+        let fee_account_address = resource_account::get_address();
         // Borrow mutable reference to Econia fee store map for given
         // quote coin type.
         let econia_fee_store_map_ref_mut =
@@ -1476,13 +1391,12 @@ module econia::incentives {
         amount: u64
     ): coin::Coin<UtilityCoinType>
     acquires
-        FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
         // Assert account is Econia.
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
         // Get fee account address.
-        let fee_account_address = get_fee_account_address();
+        let fee_account_address = resource_account::get_address();
         // Borrow mutable reference to coins in utility coin store.
         let utility_coins_ref_mut =
             &mut borrow_global_mut<UtilityCoinStore<UtilityCoinType>>(
@@ -1508,12 +1422,11 @@ module econia::incentives {
         market_id: u64
     ): u64
     acquires
-        EconiaFeeStore,
-        FeeAccountSignerCapabilityStore
+        EconiaFeeStore
     {
         coin::value(table_list::borrow(
             &borrow_global<EconiaFeeStore<QuoteCoinType>>(
-                    get_fee_account_address()).map, market_id))
+                resource_account::get_address()).map, market_id))
     }
 
     #[test_only]
@@ -1563,24 +1476,23 @@ module econia::incentives {
     public fun get_utility_coin_store_balance_test():
     u64
     acquires
-        FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
         coin::value(&borrow_global<UtilityCoinStore<UC>>(
-                get_fee_account_address()).coins)
+            resource_account::get_address()).coins)
     }
 
     #[test_only]
     /// Initialize incentives with `UC` coin type.
     public fun init_incentives_test()
     acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
         assets::init_coin_types_test(); // Initialize coin types.
         // Get signer for Econia account.
         let econia = account::create_signer_with_capability(
             &account::create_test_signer_cap(@econia));
+        resource_account::init_test(); // Init fee account.
         // Vectorize fee store tier parameters.
         let tier_0 = vector::singleton(FEE_SHARE_DIVISOR_0);
         vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
@@ -1642,7 +1554,6 @@ module econia::incentives {
     /// Verify deposits for mixed registration fees.
     fun test_deposit_registration_fees_mixed()
     acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         UtilityCoinStore
     {
@@ -1669,7 +1580,6 @@ module econia::incentives {
     /// Verify failure for not enough utility coins.
     fun test_deposit_utility_coins_verified_not_enough()
     acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         UtilityCoinStore
     {
@@ -1683,7 +1593,6 @@ module econia::incentives {
     fun test_deposit_withdraw_utility_coins(
         econia: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         UtilityCoinStore
     {
@@ -1706,7 +1615,6 @@ module econia::incentives {
     fun test_get_cost_to_upgrade_integrator_fee_store_not_upgrade(
         integrator: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -1721,24 +1629,15 @@ module econia::incentives {
             integrator, market_id, tier);
     }
 
-    #[test(account = @user)]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for non-Econia caller.
-    fun test_init_fee_account_not_econia(
-        account: &signer
-    ) {
-        init_fee_account(account); // Attempt invalid invocation.
-    }
-
     #[test(econia = @econia)]
     /// Verify initializing, updating, and getting incentive parameters.
     fun test_init_update_get_incentives(
         econia: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
         assets::init_coin_types_test(); // Init coin types.
+        resource_account::init_test(); // Init fee account.
         init_module(econia); // Initialize incentives.
         // Assert state.
         verify_utility_coin_type<AptosCoin>();
@@ -1758,8 +1657,8 @@ module econia::incentives {
             TIER_ACTIVATION_FEE_1, 0);
         assert!(get_tier_withdrawal_fee((0 as u8)) == WITHDRAWAL_FEE_0, 0);
         assert!(get_tier_withdrawal_fee((1 as u8)) == WITHDRAWAL_FEE_1, 0);
-        assert!(
-            exists<UtilityCoinStore<AptosCoin>>(get_fee_account_address()), 0);
+        assert!(exists<UtilityCoinStore<AptosCoin>>(
+            resource_account::get_address()), 0);
         // Update incentive parameters.
         let market_registration_fee = MARKET_REGISTRATION_FEE + 5;
         let underwriter_registration_fee = UNDERWRITER_REGISTRATION_FEE + 5;
@@ -1802,16 +1701,17 @@ module econia::incentives {
         assert!(get_tier_activation_fee((1 as u8)) ==
             tier_activation_fee_1, 0);
         assert!(get_tier_withdrawal_fee((1 as u8)) == withdrawal_fee_1, 0);
-        assert!(exists<UtilityCoinStore<QC>>(get_fee_account_address()), 0);
+        assert!(
+            exists<UtilityCoinStore<QC>>(resource_account::get_address()), 0);
     }
 
-    #[test(econia = @econia)]
+    #[test]
     /// Verify successful `UtilityCoinStore` initialization.
-    fun test_init_utility_coin_store(
-        econia: &signer
-    ) {
+    fun test_init_utility_coin_store() {
         assets::init_coin_types_test(); // Init coin types.
-        let fee_account = init_fee_account(econia); // Init fee account.
+        resource_account::init_test(); // Init fee account.
+        // Get fee account signer.
+        let fee_account = resource_account::get_signer();
         // Init utility coin store under fee account.
         init_utility_coin_store<QC>(&fee_account);
         // Verify can call re-init for when already initialized.
@@ -1851,7 +1751,6 @@ module econia::incentives {
         integrator: &signer
     ) acquires
         EconiaFeeStore,
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -2238,10 +2137,10 @@ module econia::incentives {
     fun test_update_incentives_fewer_tiers(
         econia: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
         assets::init_coin_types_test(); // Init coin types.
+        resource_account::init_test(); // Init fee account.
         init_module(econia); // Initialize incentives.
         // Vectorize fee store tier parameters.
         let tier_0 = vector::singleton(FEE_SHARE_DIVISOR_0);
@@ -2259,7 +2158,6 @@ module econia::incentives {
     fun test_upgrade_integrator_fee_store_via_coinstore(
         integrator: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters,
         IntegratorFeeStores,
         UtilityCoinStore
@@ -2298,7 +2196,6 @@ module econia::incentives {
     /// Verify failure for wrong type.
     fun test_verify_utility_coin_type()
     acquires
-        FeeAccountSignerCapabilityStore,
         IncentiveParameters
     {
         init_incentives_test(); // Initialize incentives for testing.
@@ -2311,7 +2208,6 @@ module econia::incentives {
     fun test_withdraw_econia_fees_all_not_econia(
         account: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         EconiaFeeStore
     {
         // Attempt invalid invocation.
@@ -2325,7 +2221,6 @@ module econia::incentives {
     fun test_withdraw_econia_fees_not_econia(
         account: &signer
     ) acquires
-        FeeAccountSignerCapabilityStore,
         EconiaFeeStore
     {
         // Attempt invalid invocation.
@@ -2340,7 +2235,6 @@ module econia::incentives {
         account: &signer
     ): coin::Coin<UC>
     acquires
-        FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
         // Attempt invalid invocation.
@@ -2354,7 +2248,6 @@ module econia::incentives {
         account: &signer
     ): coin::Coin<UC>
     acquires
-        FeeAccountSignerCapabilityStore,
         UtilityCoinStore
     {
         // Attempt invalid invocation.

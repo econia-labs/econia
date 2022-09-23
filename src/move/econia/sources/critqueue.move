@@ -392,7 +392,7 @@ module econia::critqueue {
     const NODE_LEAF: u128 = 0;
     /// `XOR` bitmask for flipping all 62 enqueue count bits and setting
     /// bit 63 high in the case of a descending crit-queue. `u64`
-    /// bitmask with all bits set except bit 63, generated in python via
+    /// bitmask with all bits set except bit 63, generated in Python via
     /// `hex(int('1' * 63, 2))`.
     const NOT_ENQUEUE_COUNT_DESCENDING: u64 = 0x7fffffffffffffff;
 

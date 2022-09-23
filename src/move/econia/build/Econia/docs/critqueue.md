@@ -711,7 +711,7 @@ in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
 
 <code>XOR</code> bitmask for flipping all 62 enqueue count bits and setting
 bit 63 high in the case of a descending crit-queue. <code>u64</code>
-bitmask with all bits set except bit 63, generated in python via
+bitmask with all bits set except bit 63, generated in Python via
 <code>hex(int('1' * 63, 2))</code>.
 
 

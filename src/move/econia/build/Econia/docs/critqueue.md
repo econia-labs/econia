@@ -634,7 +634,8 @@ When an enqueue key has been enqueued too many times.
 
 <a name="0xc0deb00c_critqueue_HI_128"></a>
 
-<code>u128</code> bitmask with all bits set
+<code>u128</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 128, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
@@ -644,7 +645,8 @@ When an enqueue key has been enqueued too many times.
 
 <a name="0xc0deb00c_critqueue_HI_64"></a>
 
-<code>u64</code> bitmask with all bits set
+<code>u64</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 64, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
@@ -654,8 +656,9 @@ When an enqueue key has been enqueued too many times.
 
 <a name="0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT"></a>
 
-Maximum number of times a given enqueue key can be enqueued,
-equal to a <code>u64</code> bitmask with all bits set except 62 and 63.
+Maximum number of times a given enqueue key can be enqueued.
+A <code>u64</code> bitmask with all bits set except 62 and 63, generated
+in Python via <code>hex(int('1' * 62, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT">MAX_ENQUEUE_COUNT</a>: u64 = 4611686018427387903;
@@ -695,7 +698,8 @@ Result of bitwise <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_c
 
 <a name="0xc0deb00c_critqueue_NODE_TYPE"></a>
 
-Bitmask set at bit 63, the node type bit flag.
+<code>u128</code> bitmask set at bit 63, the node type bit flag, generated
+in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u128 = 9223372036854775808;
@@ -703,13 +707,15 @@ Bitmask set at bit 63, the node type bit flag.
 
 
 
-<a name="0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT"></a>
+<a name="0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING"></a>
 
-<code>XOR</code> bitmask for flipping all bits in a 62-bit enqueue count,
-equal to a <code>u64</code> bitmask with all bits set except 62 and 63.
+<code>XOR</code> bitmask for flipping all 62 enqueue count bits and setting
+bit 63 high in the case of a descending crit-queue. <code>u64</code>
+bitmask with all bits set except bit 63, generated in python via
+<code>hex(int('1' * 63, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT">NOT_ENQUEUE_COUNT</a>: u64 = 4611686018427387903;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>: u64 = 9223372036854775807;
 </code></pre>
 
 
@@ -1358,7 +1364,7 @@ for the indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">Cr
     }; // Enqueue count <b>has</b> been assigned.
     // If a descending crit-queue, flip all bits of the count.
     <b>if</b> (crit_queue_ref_mut.direction == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) enqueue_count =
-        enqueue_count ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT">NOT_ENQUEUE_COUNT</a>;
+        enqueue_count ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>;
     // Return leaf key <b>with</b> encoded enqueue key and enqueue count.
     (enqueue_key <b>as</b> u128) &lt;&lt; <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a> | (enqueue_count <b>as</b> u128)
 }

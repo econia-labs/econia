@@ -371,24 +371,30 @@ module econia::critqueue {
     const DIRECTION: u8 = 62;
     /// Number of bits to shift when encoding enqueue key in leaf key.
     const ENQUEUE_KEY: u8 = 64;
-    /// `u128` bitmask with all bits set
+    /// `u128` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 128, 2))`.
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
-    /// `u64` bitmask with all bits set
+    /// `u64` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
-    /// Maximum number of times a given enqueue key can be enqueued,
-    /// equal to a `u64` bitmask with all bits set except 62 and 63.
+    /// Maximum number of times a given enqueue key can be enqueued.
+    /// A `u64` bitmask with all bits set except 62 and 63, generated
+    /// in Python via `hex(int('1' * 62, 2))`.
     const MAX_ENQUEUE_COUNT: u64 = 0x3fffffffffffffff;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
-    /// Bitmask set at bit 63, the node type bit flag.
+    /// `u128` bitmask set at bit 63, the node type bit flag, generated
+    /// in Python via `hex(int('1' + '0' * 63, 2))`.
     const NODE_TYPE: u128 = 0x8000000000000000;
     /// Result of bitwise `AND` with `NODE_TYPE` for `Inner` node.
     const NODE_INNER: u128 = 0x8000000000000000;
     /// Result of bitwise `AND` with `NODE_TYPE` for `Leaf` node.
     const NODE_LEAF: u128 = 0;
-    /// `XOR` bitmask for flipping all bits in a 62-bit enqueue count,
-    /// equal to a `u64` bitmask with all bits set except 62 and 63.
-    const NOT_ENQUEUE_COUNT: u64 = 0x3fffffffffffffff;
+    /// `XOR` bitmask for flipping all 62 enqueue count bits and setting
+    /// bit 63 high in the case of a descending crit-queue. `u64`
+    /// bitmask with all bits set except bit 63, generated in python via
+    /// `hex(int('1' * 63, 2))`.
+    const NOT_ENQUEUE_COUNT_DESCENDING: u64 = 0x7fffffffffffffff;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -747,7 +753,7 @@ module econia::critqueue {
         }; // Enqueue count has been assigned.
         // If a descending crit-queue, flip all bits of the count.
         if (crit_queue_ref_mut.direction == DESCENDING) enqueue_count =
-            enqueue_count ^ NOT_ENQUEUE_COUNT;
+            enqueue_count ^ NOT_ENQUEUE_COUNT_DESCENDING;
         // Return leaf key with encoded enqueue key and enqueue count.
         (enqueue_key as u128) << ENQUEUE_KEY | (enqueue_count as u128)
     }
@@ -916,19 +922,19 @@ module econia::critqueue {
         assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000001",
-            b"00111111111111111111111111111111",
+            b"01111111111111111111111111111111",
             b"11111111111111111111111111111111",
         ), 0);
         assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000001",
-            b"00111111111111111111111111111111",
+            b"01111111111111111111111111111111",
             b"11111111111111111111111111111110",
         ), 0);
         assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000001",
-            b"00111111111111111111111111111111",
+            b"01111111111111111111111111111111",
             b"11111111111111111111111111111101",
         ), 0);
         *table::borrow_mut(&mut crit_queue.enqueues, 1) =
@@ -937,7 +943,7 @@ module econia::critqueue {
         assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000001",
-            b"00000000000000000000000000000000",
+            b"01000000000000000000000000000000",
             b"00000000000000000000000000000000",
         ), 0);
         crit_queue // Return crit-queue.

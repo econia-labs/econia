@@ -2363,7 +2363,8 @@ Uses hard-coded genesis parameters that can be updated later.
 Initialize a <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code> under the Econia fee account.
 
 Returns without initializing if a <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code> already
-exists for given <code>CoinType</code>.
+exists for given <code>CoinType</code>, which may happen in the case of
+switching back to a utility coin type after having abandoned it.
 
 
 <a name="@Type_Parameters_32"></a>
@@ -2542,7 +2543,7 @@ highest tier would become subject to undefined behavior.
         integrator_fee_store_tiers_ref);
     // Get fee <a href="">account</a> <a href="">signer</a>.
     <b>let</b> fee_account = resource_account::get_signer();
-    // Initialize a utility <a href="">coin</a> store under the fee acount (aborts
+    // Initialize a utility <a href="">coin</a> store under the fee <a href="">account</a> (aborts
     // <b>if</b> not an initialized <a href="">coin</a> type).
     <a href="incentives.md#0xc0deb00c_incentives_init_utility_coin_store">init_utility_coin_store</a>&lt;UtilityCoinType&gt;(&fee_account);
     <b>if</b> (updating) { // If updating previously-set values:

@@ -17,6 +17,12 @@ module econia::incentives {
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    friend econia::registry;
+
+    // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
@@ -1054,7 +1060,8 @@ module econia::incentives {
     /// Initialize a `UtilityCoinStore` under the Econia fee account.
     ///
     /// Returns without initializing if a `UtilityCoinStore` already
-    /// exists for given `CoinType`.
+    /// exists for given `CoinType`, which may happen in the case of
+    /// switching back to a utility coin type after having abandoned it.
     ///
     /// # Type Parameters
     /// * `CoinType`: Utility coin phantom type.
@@ -1154,7 +1161,7 @@ module econia::incentives {
             integrator_fee_store_tiers_ref);
         // Get fee account signer.
         let fee_account = resource_account::get_signer();
-        // Initialize a utility coin store under the fee acount (aborts
+        // Initialize a utility coin store under the fee account (aborts
         // if not an initialized coin type).
         init_utility_coin_store<UtilityCoinType>(&fee_account);
         if (updating) { // If updating previously-set values:

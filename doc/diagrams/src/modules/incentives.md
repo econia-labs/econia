@@ -51,7 +51,7 @@ flowchart LR
 update_incentives --> set_incentive_parameters
 init_module --> set_incentive_parameters
 set_incentive_parameters --> set_incentive_parameters_parse_tiers_vector
-set_incentive_parameters --> init_fee_account
+set_incentive_parameters --> resource_account::get_signer
 set_incentive_parameters --> set_incentive_parameters_range_check_inputs
 set_incentive_parameters --> init_utility_coin_store
 set_incentive_parameters --> get_n_fee_store_tiers

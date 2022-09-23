@@ -63,15 +63,6 @@ get_keyfile_info() {
 # Print git log in one line
 git_log_one_line() {git log --oneline --max-count=1}
 
-# Init Econia once published on chain, assuming `keyfile` and `addr` are
-# stored in global memory
-init_econia() {
-    aptos move run \
-        --function-id 0x$addr::registry::init_registry \
-        --private-key-file $keyfile \
-        --assume-yes
-}
-
 # Publish to either a temporary devnet address or an official devnet
 # address
 #
@@ -101,7 +92,6 @@ publish_from_keyfile() {
         --override-size-check \
         --included-artifacts none \
         --assume-yes
-    init_econia # Run the initialization function
     # Print explorer link for address
     echo https://aptos-explorer.netlify.app/account/0x$addr
     # Substitute back docgen address

@@ -403,6 +403,8 @@ are initialized via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_ini
 -  [Function `get_critical_bit`](#0xc0deb00c_critqueue_get_critical_bit)
     -  [XOR/AND method](#@XOR/AND_method_22)
     -  [Binary search method](#@Binary_search_method_23)
+-  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
+-  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
 
 
@@ -627,26 +629,6 @@ Bit number of crit-queue direction bit flag.
 
 
 
-<a name="0xc0deb00c_critqueue_INNER"></a>
-
-Node type bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_INNER">INNER</a>: u128 = 1;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_LEAF"></a>
-
-Node type bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_LEAF">LEAF</a>: u128 = 0;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_critqueue_MSB_u128"></a>
 
 Most significant bit number for a <code>u128</code>
@@ -657,12 +639,32 @@ Most significant bit number for a <code>u128</code>
 
 
 
+<a name="0xc0deb00c_critqueue_NODE_INNER"></a>
+
+Result of bitwise <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code> for <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>: u128 = 9223372036854775808;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_NODE_LEAF"></a>
+
+Result of bitwise <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code> for <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> node.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>: u128 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_NODE_TYPE"></a>
 
-Bit number of crit-bit tree node type bit flag.
+Bitmask set at bit 63, the node type bit flag.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u8 = 63;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u128 = 9223372036854775808;
 </code></pre>
 
 
@@ -1175,6 +1177,60 @@ which can also be easily generated via <code>1 &lt;&lt; c</code>.
         // Update search bounds.
         <b>if</b> (s &gt; 1) l = m + 1 <b>else</b> u = m - 1;
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_is_inner_key"></a>
+
+## Function `is_inner_key`
+
+Return <code><b>true</b></code> if <code>node_key</code> indicates an <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(node_key: u128): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(
+    node_key: u128
+): bool {
+    node_key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_is_leaf_key"></a>
+
+## Function `is_leaf_key`
+
+Return <code><b>true</b></code> if <code>node_key</code> indicates a <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code>.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(node_key: u128): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(
+    node_key: u128
+): bool {
+    node_key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>
 }
 </code></pre>
 

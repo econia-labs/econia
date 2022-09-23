@@ -12,6 +12,8 @@ flowchart LR
 b_lo
 get_critical_bit
 is_set
+is_inner_key
+is_leaf_key
 u
 u_long
 

@@ -373,14 +373,14 @@ module econia::critqueue {
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
     /// `u64` bitmask with all bits set
     const HI_64: u64 = 0xffffffffffffffff;
-    /// Node type bit flag indicating `Inner`.
-    const INNER: u128 = 1;
-    /// Node type bit flag indicating `Leaf`.
-    const LEAF: u128 = 0;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
-    /// Bit number of crit-bit tree node type bit flag.
-    const NODE_TYPE: u8 = 63;
+    /// Bitmask set at bit 63, the node type bit flag.
+    const NODE_TYPE: u128 = 0x8000000000000000;
+    /// Result of bitwise `AND` with `NODE_TYPE` for `Inner` node.
+    const NODE_INNER: u128 = 0x8000000000000000;
+    /// Result of bitwise `AND` with `NODE_TYPE` for `Leaf` node.
+    const NODE_LEAF: u128 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -654,6 +654,20 @@ module econia::critqueue {
         }
     }
 
+    /// Return `true` if `node_key` indicates an `Inner` node.
+    fun is_inner_key(
+        node_key: u128
+    ): bool {
+        node_key & NODE_TYPE == NODE_INNER
+    }
+
+    /// Return `true` if `node_key` indicates a `Leaf`.
+    fun is_leaf_key(
+        node_key: u128
+    ): bool {
+        node_key & NODE_TYPE == NODE_LEAF
+    }
+
     /// Return `true` if `key` is set at `bit_number`
     fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
 
@@ -733,6 +747,23 @@ module econia::critqueue {
             assert!(get_critical_bit(0, 1 << b) == b, (b as u64));
             b = b + 1; // Increment bit counter.
         };
+    }
+
+    #[test]
+    /// Verify successful determination of key types.
+    fun test_key_types() {
+        assert!(is_inner_key(u_long(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"10000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+        )), 0);
+        assert!(is_leaf_key(u_long(
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+        )), 0);
     }
 
     #[test]

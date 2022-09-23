@@ -27,7 +27,7 @@ Bit numbers are 0-indexed from the least-significant bit (LSB):
 * [Enqueue key multiplicity](#enqueue-key-multiplicity)
 * [Dequeue order](#dequeue-order)
 * [Leaf key structure](#leaf-key-structure)
-* [Parent keys](#parent-keys)
+* [Inner keys](#inner-keys)
 * [Key tables](#key-tables)
 
 [Operations](#operations):
@@ -68,17 +68,17 @@ Crit-bit trees support the following operations:
 ### Structure
 
 
-The present implementation involves a tree with <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> and <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code>
-nodes. <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> nodes have two <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> children each, and <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code>
-nodes do not have children. <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes store a value of type <code>V</code>,
-and have a <code>u128</code> key. <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> nodes store a <code>u8</code> indicating the
+The present implementation involves a tree with <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> and <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code>
+nodes. <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> nodes have two <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> children each, and <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes
+do not have children. <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes store a value of type <code>V</code>, and
+have a <code>u128</code> key. <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> nodes store a <code>u8</code> indicating the
 most-significant critical bit (crit-bit) of divergence between
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys from the <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> node's two subtrees: <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys in
-a <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> node's left subtree are unset at the critical bit, while
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys in a <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> node's right subtree are set at the
+<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys from the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node's two subtrees: <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys in an
+<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node's left subtree are unset at the critical bit, while
+<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys in a <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node's right subtree are set at the
 critical bit.
 
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> nodes are arranged hierarchically, with the most
+<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> nodes are arranged hierarchically, with the most
 significant critical bits at the top of the tree. For instance, the
 <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code> would be stored in a
 crit-bit tree as follows:
@@ -91,14 +91,15 @@ crit-bit tree as follows:
 >             /   \
 >           110   111
 
-Here, the <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> node marked <code>2nd</code> stores the critical bit <code>2</code>,
-the <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> node marked <code>1st</code> stores the critical bit <code>1</code>, and the
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> node marked <code>0th</code> stores the critical bit <code>0</code>. Hence, the
-sole <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key in the left subtree of the <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> marked <code>2nd</code> is
-unset at bit 2, while all the keys in right subtree of the <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code>
-marked <code>2nd</code> are set at bit 2. And similarly for the <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code> marked
-<code>0th</code>, the <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its left child is unset at bit 0, while the
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its right child is set at bit 0.
+Here, the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>2nd</code> stores the critical bit <code>2</code>, the
+<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>1st</code> stores the critical bit <code>1</code>, and the
+<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>0th</code> stores the critical bit <code>0</code>. Hence, the
+sole <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key in the left subtree of the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>2nd
+</code> is unset at bit 2, while all the keys in right subtree of
+the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>2nd</code> are set at bit 2. And similarly
+for the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>0th</code>, the <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its left child
+is unset at bit 0, while the <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its right child is set
+at bit 0.
 
 
 <a name="@References_4"></a>
@@ -254,16 +255,16 @@ inorder predecessor traversal starting from the maximum leaf key:
 
 
 
-<a name="@Parent_keys_9"></a>
+<a name="@Inner_keys_9"></a>
 
-### Parent keys
+### Inner keys
 
 
 If the insertion of a crit-bit tree leaf is accompanied by the
-generation of a crit-bit tree parent node, the parent is assigned
-a "parent key" that is identical to the corresponding leaf key,
+generation of a crit-bit tree inner node, the inner node is assigned
+an "inner key" that is identical to the corresponding leaf key,
 except with bit 63 set. This schema allows for
-discrimination between leaf keys and parent keys based simply on
+discrimination between leaf keys and inner keys based simply on
 bit 63.
 
 
@@ -272,13 +273,13 @@ bit 63.
 ### Key tables
 
 
-Enqueue, leaf, and parent keys are stored in separate hash tables:
+Enqueue, inner, and leaf keys are stored in separate hash tables:
 
 | Table key  | Key type | Table value                       |
 |------------|----------|-----------------------------------|
 | Enqueue    | <code>u64</code>    | Enqueue count for key, if nonzero |
+| Inner      | <code>u128</code>   | Crit-bit tree inner node          |
 | Leaf       | <code>u128</code>   | Crit-bit tree leaf                |
-| Parent     | <code>u128</code>   | Crit-bit tree parent node         |
 
 The enqueue key table is initialized empty, such that before
 enqueuing the first instance of a given enqueue key, $k_{i, 0}$,
@@ -373,15 +374,15 @@ are initialized via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_ini
     -  [Enqueue key multiplicity](#@Enqueue_key_multiplicity_6)
     -  [Dequeue order](#@Dequeue_order_7)
     -  [Leaf key structure](#@Leaf_key_structure_8)
-    -  [Parent keys](#@Parent_keys_9)
+    -  [Inner keys](#@Inner_keys_9)
     -  [Key tables](#@Key_tables_10)
 -  [Operations](#@Operations_11)
     -  [Enqueues](#@Enqueues_12)
     -  [Removals](#@Removals_13)
     -  [Dequeues](#@Dequeues_14)
 -  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
+-  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
--  [Struct `Parent`](#0xc0deb00c_critqueue_Parent)
 -  [Constants](#@Constants_15)
 -  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
@@ -455,16 +456,62 @@ Hybrid between a crit-bit tree and a queue. See above.
  Map from enqueue key to 0-indexed enqueue count.
 </dd>
 <dt>
-<code>parents: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Parent">critqueue::Parent</a>&gt;</code>
+<code>inners: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>&gt;</code>
 </dt>
 <dd>
- Map from parent key to <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code>.
+ Map from inner key to <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code>.
 </dd>
 <dt>
 <code>leaves: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">critqueue::Leaf</a>&lt;V&gt;&gt;</code>
 </dt>
 <dd>
  Map from leaf key to <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> having enqueue value type <code>V</code>.
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_Inner"></a>
+
+## Struct `Inner`
+
+A crit-bit tree inner node.
+
+
+<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a> <b>has</b> store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>bit: u8</code>
+</dt>
+<dd>
+ Critical bit position.
+</dd>
+<dt>
+<code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
+</dt>
+<dd>
+ If none, node is root. Else parent key.
+</dd>
+<dt>
+<code>left: u128</code>
+</dt>
+<dd>
+ Left child key.
+</dd>
+<dt>
+<code>right: u128</code>
+</dt>
+<dd>
+ Right child key.
 </dd>
 </dl>
 
@@ -499,52 +546,6 @@ A crit-bit tree leaf node.
 </dt>
 <dd>
  If none, node is root. Else parent key.
-</dd>
-</dl>
-
-
-</details>
-
-<a name="0xc0deb00c_critqueue_Parent"></a>
-
-## Struct `Parent`
-
-A crit-bit tree parent node.
-
-
-<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a> <b>has</b> store
-</code></pre>
-
-
-
-<details>
-<summary>Fields</summary>
-
-
-<dl>
-<dt>
-<code>bit: u8</code>
-</dt>
-<dd>
- Critical bit position.
-</dd>
-<dt>
-<code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
-</dt>
-<dd>
- If none, node is root. Else parent key.
-</dd>
-<dt>
-<code>left: u128</code>
-</dt>
-<dd>
- Left child key.
-</dd>
-<dt>
-<code>right: u128</code>
-</dt>
-<dd>
- Right child key.
 </dd>
 </dl>
 
@@ -626,6 +627,16 @@ Bit number of crit-queue direction bit flag.
 
 
 
+<a name="0xc0deb00c_critqueue_INNER"></a>
+
+Node type bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_INNER">INNER</a>: u128 = 1;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_LEAF"></a>
 
 Node type bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code>.
@@ -652,16 +663,6 @@ Bit number of crit-bit tree node type bit flag.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u8 = 63;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_PARENT"></a>
-
-Node type bit flag indicating <code><a href="critqueue.md#0xc0deb00c_critqueue_Parent">Parent</a></code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_PARENT">PARENT</a>: u128 = 1;
 </code></pre>
 
 

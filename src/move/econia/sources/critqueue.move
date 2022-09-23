@@ -18,7 +18,7 @@
 /// * [Enqueue key multiplicity](#enqueue-key-multiplicity)
 /// * [Dequeue order](#dequeue-order)
 /// * [Leaf key structure](#leaf-key-structure)
-/// * [Parent keys](#parent-keys)
+/// * [Inner keys](#inner-keys)
 /// * [Key tables](#key-tables)
 ///
 /// [Operations](#operations):
@@ -47,17 +47,17 @@
 ///
 /// ## Structure
 ///
-/// The present implementation involves a tree with `Leaf` and `Parent`
-/// nodes. `Parent` nodes have two `Leaf` children each, and `Leaf`
-/// nodes do not have children. `Leaf` nodes store a value of type `V`,
-/// and have a `u128` key. `Parent` nodes store a `u8` indicating the
+/// The present implementation involves a tree with `Inner` and `Leaf`
+/// nodes. `Inner` nodes have two `Leaf` children each, and `Leaf` nodes
+/// do not have children. `Leaf` nodes store a value of type `V`, and
+/// have a `u128` key. `Inner` nodes store a `u8` indicating the
 /// most-significant critical bit (crit-bit) of divergence between
-/// `Leaf` keys from the `Parent` node's two subtrees: `Leaf` keys in
-/// a `Parent` node's left subtree are unset at the critical bit, while
-/// `Leaf` keys in a `Parent` node's right subtree are set at the
+/// `Leaf` keys from the `Inner` node's two subtrees: `Leaf` keys in an
+/// `Inner` node's left subtree are unset at the critical bit, while
+/// `Leaf` keys in a `Inner` node's right subtree are set at the
 /// critical bit.
 ///
-/// `Parent` nodes are arranged hierarchically, with the most
+/// `Inner` nodes are arranged hierarchically, with the most
 /// significant critical bits at the top of the tree. For instance, the
 /// `Leaf` keys `001`, `101`, `110`, and `111` would be stored in a
 /// crit-bit tree as follows:
@@ -70,14 +70,15 @@
 /// >             /   \
 /// >           110   111
 ///
-/// Here, the `Parent` node marked `2nd` stores the critical bit `2`,
-/// the `Parent` node marked `1st` stores the critical bit `1`, and the
-/// `Parent` node marked `0th` stores the critical bit `0`. Hence, the
-/// sole `Leaf` key in the left subtree of the `Parent` marked `2nd` is
-/// unset at bit 2, while all the keys in right subtree of the `Parent`
-/// marked `2nd` are set at bit 2. And similarly for the `Parent` marked
-/// `0th`, the `Leaf` key of its left child is unset at bit 0, while the
-/// `Leaf` key of its right child is set at bit 0.
+/// Here, the `Inner` node marked `2nd` stores the critical bit `2`, the
+/// `Inner` node marked `1st` stores the critical bit `1`, and the
+/// `Inner` node marked `0th` stores the critical bit `0`. Hence, the
+/// sole `Leaf` key in the left subtree of the `Inner` node marked `2nd
+/// ` is unset at bit 2, while all the keys in right subtree of
+/// the `Inner` node marked `2nd` are set at bit 2. And similarly
+/// for the `Inner` node marked `0th`, the `Leaf` key of its left child
+/// is unset at bit 0, while the `Leaf` key of its right child is set
+/// at bit 0.
 ///
 /// ## References
 ///
@@ -212,24 +213,24 @@
 /// >     k_{0, 1}     k_{0, 0}    k_{1, 1}     k_{1, 0}
 ///
 ///
-/// ## Parent keys
+/// ## Inner keys
 ///
 /// If the insertion of a crit-bit tree leaf is accompanied by the
-/// generation of a crit-bit tree parent node, the parent is assigned
-/// a "parent key" that is identical to the corresponding leaf key,
+/// generation of a crit-bit tree inner node, the inner node is assigned
+/// an "inner key" that is identical to the corresponding leaf key,
 /// except with bit 63 set. This schema allows for
-/// discrimination between leaf keys and parent keys based simply on
+/// discrimination between leaf keys and inner keys based simply on
 /// bit 63.
 ///
 /// ## Key tables
 ///
-/// Enqueue, leaf, and parent keys are stored in separate hash tables:
+/// Enqueue, inner, and leaf keys are stored in separate hash tables:
 ///
 /// | Table key  | Key type | Table value                       |
 /// |------------|----------|-----------------------------------|
 /// | Enqueue    | `u64`    | Enqueue count for key, if nonzero |
+/// | Inner      | `u128`   | Crit-bit tree inner node          |
 /// | Leaf       | `u128`   | Crit-bit tree leaf                |
-/// | Parent     | `u128`   | Crit-bit tree parent node         |
 ///
 /// The enqueue key table is initialized empty, such that before
 /// enqueuing the first instance of a given enqueue key, $k_{i, 0}$,
@@ -328,22 +329,14 @@ module econia::critqueue {
         head: Option<u128>,
         /// Map from enqueue key to 0-indexed enqueue count.
         enqueues: Table<u64, u64>,
-        /// Map from parent key to `Parent`.
-        parents: Table<u128, Parent>,
+        /// Map from inner key to `Inner`.
+        inners: Table<u128, Inner>,
         /// Map from leaf key to `Leaf` having enqueue value type `V`.
         leaves: Table<u128, Leaf<V>>
     }
 
-    /// A crit-bit tree leaf node.
-    struct Leaf<V> has store {
-        /// Enqueue value.
-        value: V,
-        /// If none, node is root. Else parent key.
-        parent: Option<u128>
-    }
-
-    /// A crit-bit tree parent node.
-    struct Parent has store {
+    /// A crit-bit tree inner node.
+    struct Inner has store {
         /// Critical bit position.
         bit: u8,
         /// If none, node is root. Else parent key.
@@ -352,6 +345,14 @@ module econia::critqueue {
         left: u128,
         /// Right child key.
         right: u128
+    }
+
+    /// A crit-bit tree leaf node.
+    struct Leaf<V> has store {
+        /// Enqueue value.
+        value: V,
+        /// If none, node is root. Else parent key.
+        parent: Option<u128>
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -372,14 +373,14 @@ module econia::critqueue {
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
     /// `u64` bitmask with all bits set
     const HI_64: u64 = 0xffffffffffffffff;
+    /// Node type bit flag indicating `Inner`.
+    const INNER: u128 = 1;
     /// Node type bit flag indicating `Leaf`.
     const LEAF: u128 = 0;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
     /// Bit number of crit-bit tree node type bit flag.
     const NODE_TYPE: u8 = 63;
-    /// Node type bit flag indicating `Parent`.
-    const PARENT: u128 = 1;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

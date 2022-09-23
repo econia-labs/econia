@@ -303,8 +303,8 @@ module econia::critqueue {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use aptos_std::table::{Table};
-    use std::option::{Option};
+    use aptos_std::table::{Self, Table};
+    use std::option::{Self, Option};
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -369,10 +369,15 @@ module econia::critqueue {
     const DESCENDING_BIT_FLAG: u128 = 1;
     /// Bit number of crit-queue direction bit flag.
     const DIRECTION: u8 = 62;
+    /// Number of bits to shift when encoding enqueue key in leaf key.
+    const ENQUEUE_KEY: u8 = 64;
     /// `u128` bitmask with all bits set
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
     /// `u64` bitmask with all bits set
     const HI_64: u64 = 0xffffffffffffffff;
+    /// Maximum number of times a given enqueue key can be enqueued,
+    /// equal to a `u64` bitmask with all bits set except 62 and 63.
+    const MAX_ENQUEUE_COUNT: u64 = 0x3fffffffffffffff;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
     /// Bitmask set at bit 63, the node type bit flag.
@@ -381,8 +386,18 @@ module econia::critqueue {
     const NODE_INNER: u128 = 0x8000000000000000;
     /// Result of bitwise `AND` with `NODE_TYPE` for `Leaf` node.
     const NODE_LEAF: u128 = 0;
+    /// `XOR` bitmask for flipping all bits in a 62-bit enqueue count,
+    /// equal to a `u64` bitmask with all bits set except 62 and 63.
+    const NOT_ENQUEUE_COUNT: u64 = 0x3fffffffffffffff;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// When an enqueue key has been enqueued too many times.
+    const E_TOO_MANY_ENQUEUES: u64 = 0;
+
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // To implement >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -467,11 +482,6 @@ module econia::critqueue {
         _crit_queue_ref_mut: &mut CritQueue<V>,
     )/*: Option<u128> */ {}
 
-    /// Return `ASCENDING` or `DESCENDING` `CritQueue`, per `direction`.
-    public fun new<V>(
-        _direction: bool
-    )/*: QueueCrit*/ {}
-
     /// Remove corresponding leaf, return enqueue value.
     public fun remove<V>(
         _crit_queue_ref_mut: &mut CritQueue<V>,
@@ -503,6 +513,24 @@ module econia::critqueue {
     }
 
     // To implement <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return `ASCENDING` or `DESCENDING` `CritQueue`, per `direction`.
+    public fun new<V: store>(
+        direction: bool
+    ): CritQueue<V> {
+        CritQueue{
+            direction,
+            root: option::none(),
+            head: option::none(),
+            enqueues: table::new(),
+            inners: table::new(),
+            leaves: table::new()
+        }
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -654,6 +682,37 @@ module econia::critqueue {
         }
     }
 
+    /// Return the leaf key corresponding to the given `enqueue_key`
+    /// for the indicated `CritQueue`.
+    fun get_leaf_key<V>(
+        enqueue_key: u64,
+        crit_queue_ref_mut: &mut CritQueue<V>
+    ): u128 {
+        // Borrow mutable reference to enqueue count table.
+        let enqueues_ref_mut = &mut crit_queue_ref_mut.enqueues;
+        let enqueue_count = 0; // Assume key has not been enqueued.
+        // If the key has already been enqueued:
+        if (table::contains(enqueues_ref_mut, enqueue_key)) {
+            // Borrow mutable reference to enqueue count.
+            let enqueue_count_ref_mut =
+                table::borrow_mut(enqueues_ref_mut, enqueue_key);
+            // Get enqueue count of current enqueue key.
+            enqueue_count = *enqueue_count_ref_mut + 1;
+            // Assert max enqueue count is not exceeded.
+            assert!(enqueue_count <= MAX_ENQUEUE_COUNT, E_TOO_MANY_ENQUEUES);
+            // Update enqueue count table.
+            *enqueue_count_ref_mut = enqueue_count;
+        } else { // If the enqueue key has not been enqueued:
+            // Initialize the enqueue count to 0.
+            table::add(enqueues_ref_mut, enqueue_key, enqueue_count);
+        }; // Enqueue count has been assigned.
+        // If a descending crit-queue, flip all bits of the count.
+        if (crit_queue_ref_mut.direction == DESCENDING) enqueue_count =
+            enqueue_count ^ NOT_ENQUEUE_COUNT;
+        // Return leaf key with encoded enqueue key and enqueue count.
+        (enqueue_key as u128) << ENQUEUE_KEY | (enqueue_count as u128)
+    }
+
     /// Return `true` if `node_key` indicates an `Inner` node.
     fun is_inner_key(
         node_key: u128
@@ -692,7 +751,7 @@ module econia::critqueue {
     /// Return a `u128` corresponding to provided byte string `s`. The
     /// byte should only contain only "0"s and "1"s, up to 128
     /// characters max (e.g. `b"100101...10101010"`).
-    public fun u(
+    public fun u_128(
         s: vector<u8>
     ): u128 {
         let n = vector::length<u8>(&s); // Get number of bits.
@@ -713,8 +772,9 @@ module econia::critqueue {
 
     #[test_only]
     /// Return `u128` corresponding to concatenated result of `a`, `b`,
-    /// `c`, and `d`. Useful for line-wrapping long byte strings.
-    public fun u_long(
+    /// `c`, and `d`. Useful for line-wrapping long byte strings, and
+    /// inspection via 32-bit sections.
+    public fun u_128_by_32(
         a: vector<u8>,
         b: vector<u8>,
         c: vector<u8>,
@@ -723,7 +783,7 @@ module econia::critqueue {
         vector::append<u8>(&mut c, d); // Append d onto c.
         vector::append<u8>(&mut b, c); // Append c onto b.
         vector::append<u8>(&mut a, b); // Append b onto a.
-        u(a) // Return u128 equivalent of concatenated bytestring
+        u_128(a) // Return u128 equivalent of concatenated bytestring.
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -750,15 +810,94 @@ module econia::critqueue {
     }
 
     #[test]
+    /// Verify successful leaf key generation.
+    fun test_get_leaf_key():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert successful returns across multiple queries.
+        assert!(get_leaf_key(0, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+        ), 0);
+        assert!(get_leaf_key(0, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001",
+        ), 0);
+        assert!(get_leaf_key(0, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+        ), 0);
+        *table::borrow_mut(&mut crit_queue.enqueues, 0) =
+            MAX_ENQUEUE_COUNT - 1; // Set count to one less than max.
+        // Assert can get one final leaf key.
+        assert!(get_leaf_key(0, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+        ), 0);
+        // Flip the enqueue direction.
+        crit_queue.direction = DESCENDING;
+        // Assert successful returns across multiple queries.
+        assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001",
+            b"00111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+        ), 0);
+        assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001",
+            b"00111111111111111111111111111111",
+            b"11111111111111111111111111111110",
+        ), 0);
+        assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001",
+            b"00111111111111111111111111111111",
+            b"11111111111111111111111111111101",
+        ), 0);
+        *table::borrow_mut(&mut crit_queue.enqueues, 1) =
+            MAX_ENQUEUE_COUNT - 1; // Set count to one less than max.
+        // Assert can get one final leaf key.
+        assert!(get_leaf_key(1, &mut crit_queue) == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+        ), 0);
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for exceeding maximum enqueue count.
+    fun test_get_leaf_key_too_many_enqueues():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Set count to max.
+        table::add(&mut crit_queue.enqueues, 0, MAX_ENQUEUE_COUNT);
+        // Attempt to enqueue one more.
+        get_leaf_key(0, &mut crit_queue);
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
     /// Verify successful determination of key types.
     fun test_key_types() {
-        assert!(is_inner_key(u_long(
+        assert!(is_inner_key(u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
             b"10000000000000000000000000000000",
             b"00000000000000000000000000000000",
         )), 0);
-        assert!(is_leaf_key(u_long(
+        assert!(is_leaf_key(u_128_by_32(
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
             b"01111111111111111111111111111111",
@@ -769,31 +908,31 @@ module econia::critqueue {
     #[test]
     /// Verify correct returns.
     fun test_is_set_success() {
-        assert!(is_set(u(b"11"), 0), 0);
-        assert!(is_set(u(b"11"), 1), 0);
-        assert!(!is_set(u(b"10"), 0), 0);
-        assert!(!is_set(u(b"01"), 1), 0);
+        assert!(is_set(u_128(b"11"), 0), 0);
+        assert!(is_set(u_128(b"11"), 1), 0);
+        assert!(!is_set(u_128(b"10"), 0), 0);
+        assert!(!is_set(u_128(b"01"), 1), 0);
     }
 
     #[test]
     /// Verify successful return values
-    fun test_u() {
-        assert!(u(b"0") == 0, 0);
-        assert!(u(b"1") == 1, 0);
-        assert!(u(b"00") == 0, 0);
-        assert!(u(b"01") == 1, 0);
-        assert!(u(b"10") == 2, 0);
-        assert!(u(b"11") == 3, 0);
-        assert!(u(b"10101010") == 170, 0);
-        assert!(u(b"00000001") == 1, 0);
-        assert!(u(b"11111111") == 255, 0);
-        assert!(u_long(
+    fun test_u_128() {
+        assert!(u_128(b"0") == 0, 0);
+        assert!(u_128(b"1") == 1, 0);
+        assert!(u_128(b"00") == 0, 0);
+        assert!(u_128(b"01") == 1, 0);
+        assert!(u_128(b"10") == 2, 0);
+        assert!(u_128(b"11") == 3, 0);
+        assert!(u_128(b"10101010") == 170, 0);
+        assert!(u_128(b"00000001") == 1, 0);
+        assert!(u_128(b"11111111") == 255, 0);
+        assert!(u_128_by_32(
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111"
         ) == HI_128, 0);
-        assert!(u_long(
+        assert!(u_128_by_32(
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
@@ -804,7 +943,7 @@ module econia::critqueue {
     #[test]
     #[expected_failure(abort_code = 100)]
     /// Verify failure for non-binary-representative byte string.
-    fun test_u_failure() {u(b"2");}
+    fun test_u_failure() {u_128(b"2");}
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

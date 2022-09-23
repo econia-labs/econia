@@ -1,9 +1,11 @@
 # critqueue.move
 
 - [critqueue.move](#critqueuemove)
-  - [Bitwise helpers](#bitwise-helpers)
+  - [Bit helpers](#bit-helpers)
+  - [Enqueueing](#enqueueing)
+  - [Initialization](#initialization)
 
-## Bitwise helpers
+## Bit helpers
 
 ```mermaid
 
@@ -16,5 +18,25 @@ is_inner_key
 is_leaf_key
 u
 u_long
+
+```
+
+## Enqueueing
+
+```mermaid
+
+flowchart LR
+
+get_leaf_key
+
+```
+
+## Initialization
+
+```mermaid
+
+flowchart LR
+
+new
 
 ```

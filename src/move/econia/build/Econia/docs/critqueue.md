@@ -396,13 +396,14 @@ are initialized via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue_ini
     -  [Aborts if](#@Aborts_if_21)
 -  [Function `enqueue`](#0xc0deb00c_critqueue_enqueue)
 -  [Function `get_head_leaf_key`](#0xc0deb00c_critqueue_get_head_leaf_key)
--  [Function `new`](#0xc0deb00c_critqueue_new)
 -  [Function `remove`](#0xc0deb00c_critqueue_remove)
 -  [Function `takes_priority`](#0xc0deb00c_critqueue_takes_priority)
 -  [Function `trails_head`](#0xc0deb00c_critqueue_trails_head)
+-  [Function `new`](#0xc0deb00c_critqueue_new)
 -  [Function `get_critical_bit`](#0xc0deb00c_critqueue_get_critical_bit)
     -  [XOR/AND method](#@XOR/AND_method_22)
     -  [Binary search method](#@Binary_search_method_23)
+-  [Function `get_leaf_key`](#0xc0deb00c_critqueue_get_leaf_key)
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
@@ -609,6 +610,26 @@ Bit number of crit-queue direction bit flag.
 
 
 
+<a name="0xc0deb00c_critqueue_ENQUEUE_KEY"></a>
+
+Number of bits to shift when encoding enqueue key in leaf key.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a>: u8 = 64;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES"></a>
+
+When an enqueue key has been enqueued too many times.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES">E_TOO_MANY_ENQUEUES</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_HI_128"></a>
 
 <code>u128</code> bitmask with all bits set
@@ -625,6 +646,17 @@ Bit number of crit-queue direction bit flag.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT"></a>
+
+Maximum number of times a given enqueue key can be enqueued,
+equal to a <code>u64</code> bitmask with all bits set except 62 and 63.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT">MAX_ENQUEUE_COUNT</a>: u64 = 4611686018427387903;
 </code></pre>
 
 
@@ -665,6 +697,17 @@ Bitmask set at bit 63, the node type bit flag.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u128 = 9223372036854775808;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT"></a>
+
+<code>XOR</code> bitmask for flipping all bits in a 62-bit enqueue count,
+equal to a <code>u64</code> bitmask with all bits set except 62 and 63.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT">NOT_ENQUEUE_COUNT</a>: u64 = 4611686018427387903;
 </code></pre>
 
 
@@ -894,31 +937,6 @@ Return head leaf key, if any.
 
 </details>
 
-<a name="0xc0deb00c_critqueue_new"></a>
-
-## Function `new`
-
-Return <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code> <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, per <code>direction</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V&gt;(_direction: bool)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V&gt;(
-    _direction: bool
-)/*: QueueCrit*/ {}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_critqueue_remove"></a>
 
 ## Function `remove`
@@ -1002,6 +1020,40 @@ enqueued.
     // enqueue key.
     // If descending, <b>return</b> <b>true</b> <b>if</b> less than/equal <b>to</b> head
     // enqueue key.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_new"></a>
+
+## Function `new`
+
+Return <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code> <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, per <code>direction</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(direction: bool): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(
+    direction: bool
+): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt; {
+    <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>{
+        direction,
+        root: <a href="_none">option::none</a>(),
+        head: <a href="_none">option::none</a>(),
+        enqueues: <a href="_new">table::new</a>(),
+        inners: <a href="_new">table::new</a>(),
+        leaves: <a href="_new">table::new</a>()
+    }
 }
 </code></pre>
 
@@ -1177,6 +1229,57 @@ which can also be easily generated via <code>1 &lt;&lt; c</code>.
         // Update search bounds.
         <b>if</b> (s &gt; 1) l = m + 1 <b>else</b> u = m - 1;
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_get_leaf_key"></a>
+
+## Function `get_leaf_key`
+
+Return the leaf key corresponding to the given <code>enqueue_key</code>
+for the indicated <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_leaf_key">get_leaf_key</a>&lt;V&gt;(enqueue_key: u64, crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_leaf_key">get_leaf_key</a>&lt;V&gt;(
+    enqueue_key: u64,
+    crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;
+): u128 {
+    // Borrow mutable reference <b>to</b> enqueue count <a href="">table</a>.
+    <b>let</b> enqueues_ref_mut = &<b>mut</b> crit_queue_ref_mut.enqueues;
+    <b>let</b> enqueue_count = 0; // Assume key <b>has</b> not been enqueued.
+    // If the key <b>has</b> already been enqueued:
+    <b>if</b> (<a href="_contains">table::contains</a>(enqueues_ref_mut, enqueue_key)) {
+        // Borrow mutable reference <b>to</b> enqueue count.
+        <b>let</b> enqueue_count_ref_mut =
+            <a href="_borrow_mut">table::borrow_mut</a>(enqueues_ref_mut, enqueue_key);
+        // Get enqueue count of current enqueue key.
+        enqueue_count = *enqueue_count_ref_mut + 1;
+        // Assert max enqueue count is not exceeded.
+        <b>assert</b>!(enqueue_count &lt;= <a href="critqueue.md#0xc0deb00c_critqueue_MAX_ENQUEUE_COUNT">MAX_ENQUEUE_COUNT</a>, <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES">E_TOO_MANY_ENQUEUES</a>);
+        // Update enqueue count <a href="">table</a>.
+        *enqueue_count_ref_mut = enqueue_count;
+    } <b>else</b> { // If the enqueue key <b>has</b> not been enqueued:
+        // Initialize the enqueue count <b>to</b> 0.
+        <a href="_add">table::add</a>(enqueues_ref_mut, enqueue_key, enqueue_count);
+    }; // Enqueue count <b>has</b> been assigned.
+    // If a descending crit-queue, flip all bits of the count.
+    <b>if</b> (crit_queue_ref_mut.direction == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) enqueue_count =
+        enqueue_count ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT">NOT_ENQUEUE_COUNT</a>;
+    // Return leaf key <b>with</b> encoded enqueue key and enqueue count.
+    (enqueue_key <b>as</b> u128) &lt;&lt; <a href="critqueue.md#0xc0deb00c_critqueue_ENQUEUE_KEY">ENQUEUE_KEY</a> | (enqueue_count <b>as</b> u128)
 }
 </code></pre>
 

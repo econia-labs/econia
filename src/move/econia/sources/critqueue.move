@@ -1256,7 +1256,7 @@ module econia::critqueue {
         assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
         assert!(*option::borrow(&leaf_ref.tail) == access_key, 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
-        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node.
     }
 
     #[test]
@@ -1323,7 +1323,7 @@ module econia::critqueue {
         assert!(option::is_none(&old_tail_ref.previous), 0);
         assert!(*option::borrow(&old_tail_ref.next) == access_key, 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
-        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node.
     }
 
     #[test]
@@ -1368,7 +1368,7 @@ module econia::critqueue {
         assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
         assert!(*option::borrow(&leaf_ref.tail) == access_key, 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
-        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node.
     }
 
     #[test]
@@ -1437,7 +1437,63 @@ module econia::critqueue {
         assert!(option::is_none(&old_tail_ref.previous), 0);
         assert!(*option::borrow(&old_tail_ref.next) == access_key, 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
-        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for max insertion count exceedance.
+    fun test_insert_update_subqueue_max_failure() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        let insertion_key = u_64(b"1010101"); // Get insertion key.
+        let insertion_value = 0; // Declare quasi-null insertion value.
+        // Declare insertion count as max.
+        let count = MAX_INSERTION_COUNT;
+        // Get leaf key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Initialize new sub-queue node for allocated leaf.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
+        // Insert to crit-queue an allocated free leaf.
+        table::add(&mut critqueue.leaves, leaf_key, Leaf{
+            count, parent: option::none(), head: option::none(),
+            tail: option::none()});
+        // Attempt invalid invocation.
+        let (_, _) = insert_update_subqueue(
+            &mut critqueue, &mut subqueue_node, leaf_key);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node.
+    }
+
+    #[test]
+    /// Verify successful insertion up to max insertion count.
+    fun test_insert_update_subqueue_max_success() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        let insertion_key = u_64(b"1010101"); // Get insertion key.
+        let insertion_value = 0; // Declare quasi-null insertion value.
+        // Declare insertion count as one less than max.
+        let count = MAX_INSERTION_COUNT - 1;
+        // Get leaf key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Initialize new sub-queue node for allocated leaf.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
+        // Insert to crit-queue an allocated free leaf.
+        table::add(&mut critqueue.leaves, leaf_key, Leaf{
+            count, parent: option::none(), head: option::none(),
+            tail: option::none()});
+        // Update sub-queue, storing access key.
+        let (access_key, _) = insert_update_subqueue(
+            &mut critqueue, &mut subqueue_node, leaf_key);
+        // Assert access key as expected.
+        assert!(access_key == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000001010101",
+            b"00111111111111111111111111111111",
+            b"11111111111111111111111111111111"
+        ), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node.
     }
 
     #[test]

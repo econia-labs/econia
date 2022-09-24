@@ -662,21 +662,22 @@ module econia::critqueue {
         insertion_key: u64,
         insertion_value: V
     ): u128 {
+        // Initialize a sub-queue node with the insertion value,
+        // assuming it is the sole sub-queue node in a free leaf.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
         // Get leaf key from insertion key.
         let leaf_key = (insertion_key as u128) << INSERTION_KEY;
         // Borrow mutable reference to leaves table.
         let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
         // Determine if corresponding leaf has already been allocated.
         let leaf_already_allocated = table::contains(leaves_ref_mut, leaf_key);
-        // Initialize a sub-queue node with the insertion value,
-        // assuming it is the sole sub-queue node in a free leaf.
-        let subqueue_node = SubQueueNode{insertion_value,
-            previous: option::none(), next: option::none()};
         // Get access key for new sub-queue node, and if corresponding
         // leaf node is a free leaf. If leaf is already allocated:
         let (access_key, _free_leaf) = if (leaf_already_allocated)
-            // Update its sub-queue, storing the access key of the
-            // new sub-queue node and if the corresponding leaf is free.
+            // Update its sub-queue and the new sub-queue node, storing
+            // the access key of the new sub-queue node and if the
+            // corresponding leaf is free.
             insert_update_subqueue(
                 critqueue_ref_mut, &mut subqueue_node, leaf_key)
             // Otherwise, store access key of the new sub-queue node,
@@ -684,9 +685,11 @@ module econia::critqueue {
             else (insert_allocate_leaf(critqueue_ref_mut, leaf_key), true);
         // Borrow mutable reference to sub-queue nodes table.
         let subqueue_nodes_ref_mut = &mut critqueue_ref_mut.subqueue_nodes;
-        // Add new sub-queue node to the table.
+        // Add new sub-queue node to the sub-queue nodes table.
         table::add(subqueue_nodes_ref_mut, access_key, subqueue_node);
-        // insert_free_leaf(critqueue_ref_mut, leaf_key);
+        // Check the crit-queue head, updating as necessary.
+        insert_check_head(critqueue_ref_mut, access_key);
+        // if (free_leaf) insert_leaf(critqueue_ref_mut, leaf_key);
         access_key // Return access key.
     }
 
@@ -939,6 +942,35 @@ module econia::critqueue {
         access_key // Return access key.
     }
 
+    /// Check head of given `CritQueue`, optionally setting it to the
+    /// `access_key` of a new key-value insertion pair.
+    ///
+    /// Inner function for `insert()`.
+    fun insert_check_head<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        access_key: u128
+    ) {
+        // Get crit-queue sort order.
+        let order = critqueue_ref_mut.order;
+        // Get mutable reference to crit-queue head field.
+        let head_ref_mut = &mut critqueue_ref_mut.head;
+        if (option::is_none(head_ref_mut)) { // If an empty crit-queue:
+            // Set the head to be the new access key.
+            option::fill(head_ref_mut, access_key);
+        } else { // If crit-queue is not empty:
+            // If the sort order is ascending and new access key is less
+            // than that of the crit-queue head, or
+            if ((order == ASCENDING &&
+                    access_key < *option::borrow(head_ref_mut)) ||
+                // If descending sort order and new access key is
+                // greater than that of crit-queue head:
+                (order == DESCENDING &&
+                    access_key > *option::borrow(head_ref_mut)))
+                // Set new access key as the crit-queue head.
+                _ = option::swap(head_ref_mut, access_key);
+        };
+    }
+
     /// Update a sub-queue, inside an allocated leaf, during insertion.
     ///
     /// Inner function for `insert()`.
@@ -1006,7 +1038,6 @@ module econia::critqueue {
         };
         (access_key, free_leaf) // Return access key and if free leaf.
     }
-
 
     /// Return `true` if crit-bit tree node `key` is an inner key.
     fun is_inner_key(key: u128): bool {key & NODE_TYPE == NODE_INNER}
@@ -1209,6 +1240,48 @@ module econia::critqueue {
         assert!(option::is_none(&leaf_ref.parent), 0);
         assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
         assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify successful state updates.
+    fun test_insert_check_head() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        let new_access_key = u_128(b"10101"); // Get new access key.
+        // Check head against new access key.
+        insert_check_head(&mut critqueue, new_access_key);
+        // Assert head updates to new access key.
+        assert!(*option::borrow(&critqueue.head) == new_access_key, 0);
+        // Store new access key as old access key.
+        let old_access_key = new_access_key;
+        // Declare new access key that is less than old one.
+        new_access_key = old_access_key - 1;
+        // Check head against new access key.
+        insert_check_head(&mut critqueue, new_access_key);
+        // Assert head updates to new access key.
+        assert!(*option::borrow(&critqueue.head) == new_access_key, 0);
+        // Store new access key as old access key.
+        old_access_key = new_access_key;
+        // Declare new access key that is more than old one.
+        new_access_key = old_access_key + 1;
+        // Check head against new access key.
+        insert_check_head(&mut critqueue, new_access_key);
+        // Assert head unchanged.
+        assert!(*option::borrow(&critqueue.head) == old_access_key, 0);
+        // Switch to descending crit-queue.
+        critqueue.order = DESCENDING;
+        // Check head against new access key.
+        insert_check_head(&mut critqueue, new_access_key);
+        // Assert head updates to new access key.
+        assert!(*option::borrow(&critqueue.head) == new_access_key, 0);
+        // Store new access key as old access key.
+        old_access_key = new_access_key;
+        // Declare new access key that is less than old one.
+        new_access_key = old_access_key - 1;
+        // Check head against new access key.
+        insert_check_head(&mut critqueue, new_access_key);
+        // Assert head unchanged.
+        assert!(*option::borrow(&critqueue.head) == old_access_key, 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 

@@ -660,6 +660,7 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `insert_allocate_leaf`](#0xc0deb00c_critqueue_insert_allocate_leaf)
     -  [Returns](#@Returns_31)
     -  [Assumptions](#@Assumptions_32)
+-  [Function `insert_check_head`](#0xc0deb00c_critqueue_insert_check_head)
 -  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
     -  [Returns](#@Returns_33)
     -  [Assumptions](#@Assumptions_34)
@@ -1147,21 +1148,22 @@ Insert the given <code>key</code>-<code>value</code> insertion pair into the giv
     insertion_key: u64,
     insertion_value: V
 ): u128 {
+    // Initialize a sub-queue node <b>with</b> the insertion value,
+    // assuming it is the sole sub-queue node in a free leaf.
+    <b>let</b> subqueue_node = <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>{insertion_value,
+        previous: <a href="_none">option::none</a>(), next: <a href="_none">option::none</a>()};
     // Get leaf key from insertion key.
     <b>let</b> leaf_key = (insertion_key <b>as</b> u128) &lt;&lt; <a href="critqueue.md#0xc0deb00c_critqueue_INSERTION_KEY">INSERTION_KEY</a>;
     // Borrow mutable reference <b>to</b> leaves <a href="">table</a>.
     <b>let</b> leaves_ref_mut = &<b>mut</b> critqueue_ref_mut.leaves;
     // Determine <b>if</b> corresponding leaf <b>has</b> already been allocated.
     <b>let</b> leaf_already_allocated = <a href="_contains">table::contains</a>(leaves_ref_mut, leaf_key);
-    // Initialize a sub-queue node <b>with</b> the insertion value,
-    // assuming it is the sole sub-queue node in a free leaf.
-    <b>let</b> subqueue_node = <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>{insertion_value,
-        previous: <a href="_none">option::none</a>(), next: <a href="_none">option::none</a>()};
     // Get access key for new sub-queue node, and <b>if</b> corresponding
     // leaf node is a free leaf. If leaf is already allocated:
     <b>let</b> (access_key, _free_leaf) = <b>if</b> (leaf_already_allocated)
-        // Update its sub-queue, storing the access key of the
-        // new sub-queue node and <b>if</b> the corresponding leaf is free.
+        // Update its sub-queue and the new sub-queue node, storing
+        // the access key of the new sub-queue node and <b>if</b> the
+        // corresponding leaf is free.
         <a href="critqueue.md#0xc0deb00c_critqueue_insert_update_subqueue">insert_update_subqueue</a>(
             critqueue_ref_mut, &<b>mut</b> subqueue_node, leaf_key)
         // Otherwise, store access key of the new sub-queue node,
@@ -1169,9 +1171,11 @@ Insert the given <code>key</code>-<code>value</code> insertion pair into the giv
         <b>else</b> (<a href="critqueue.md#0xc0deb00c_critqueue_insert_allocate_leaf">insert_allocate_leaf</a>(critqueue_ref_mut, leaf_key), <b>true</b>);
     // Borrow mutable reference <b>to</b> sub-queue nodes <a href="">table</a>.
     <b>let</b> subqueue_nodes_ref_mut = &<b>mut</b> critqueue_ref_mut.subqueue_nodes;
-    // Add new sub-queue node <b>to</b> the <a href="">table</a>.
+    // Add new sub-queue node <b>to</b> the sub-queue nodes <a href="">table</a>.
     <a href="_add">table::add</a>(subqueue_nodes_ref_mut, access_key, subqueue_node);
-    // insert_free_leaf(critqueue_ref_mut, leaf_key);
+    // Check the crit-queue head, updating <b>as</b> necessary.
+    <a href="critqueue.md#0xc0deb00c_critqueue_insert_check_head">insert_check_head</a>(critqueue_ref_mut, access_key);
+    // <b>if</b> (free_leaf) insert_leaf(critqueue_ref_mut, leaf_key);
     access_key // Return access key.
 }
 </code></pre>
@@ -1553,6 +1557,55 @@ leaf.
     // Add the leaf <b>to</b> the leaves <a href="">table</a>.
     <a href="_add">table::add</a>(leaves_ref_mut, leaf_key, leaf);
     access_key // Return access key.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_insert_check_head"></a>
+
+## Function `insert_check_head`
+
+Check head of given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, optionally setting it to the
+<code>access_key</code> of a new key-value insertion pair.
+
+Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_check_head">insert_check_head</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_check_head">insert_check_head</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    access_key: u128
+) {
+    // Get crit-queue sort order.
+    <b>let</b> order = critqueue_ref_mut.order;
+    // Get mutable reference <b>to</b> crit-queue head field.
+    <b>let</b> head_ref_mut = &<b>mut</b> critqueue_ref_mut.head;
+    <b>if</b> (<a href="_is_none">option::is_none</a>(head_ref_mut)) { // If an empty crit-queue:
+        // Set the head <b>to</b> be the new access key.
+        <a href="_fill">option::fill</a>(head_ref_mut, access_key);
+    } <b>else</b> { // If crit-queue is not empty:
+        // If the sort order is ascending and new access key is less
+        // than that of the crit-queue head, or
+        <b>if</b> ((order == <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a> &&
+                access_key &lt; *<a href="_borrow">option::borrow</a>(head_ref_mut)) ||
+            // If descending sort order and new access key is
+            // greater than that of crit-queue head:
+            (order == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a> &&
+                access_key &gt; *<a href="_borrow">option::borrow</a>(head_ref_mut)))
+            // Set new access key <b>as</b> the crit-queue head.
+            _ = <a href="_swap">option::swap</a>(head_ref_mut, access_key);
+    };
 }
 </code></pre>
 

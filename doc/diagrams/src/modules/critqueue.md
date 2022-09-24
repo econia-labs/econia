@@ -1,35 +1,22 @@
 # critqueue.move
 
 - [critqueue.move](#critqueuemove)
-  - [Bit helpers](#bit-helpers)
-  - [Enqueueing](#enqueueing)
+  - [Bitwise functions](#bitwise-functions)
   - [Initialization](#initialization)
+  - [Insertion](#insertion)
   - [Borrowers](#borrowers)
   - [Lookup](#lookup)
 
-## Bit helpers
+## Bitwise functions
 
 ```mermaid
 
 flowchart LR
 
-b_lo
-get_critical_bit
-is_set
+get_critical_bitmask
 is_inner_key
 is_leaf_key
-u
-u_long
-
-```
-
-## Enqueueing
-
-```mermaid
-
-flowchart LR
-
-get_leaf_key
+is_set
 
 ```
 
@@ -40,6 +27,19 @@ get_leaf_key
 flowchart LR
 
 new
+
+```
+
+## Insertion
+
+```mermaid
+
+flowchart LR
+
+insert --> insert_update_subqueue
+insert --> insert_allocate_leaf
+insert --> insert_check_head
+insert --> insert_leaf
 
 ```
 
@@ -58,10 +58,12 @@ borrow_mut
 
 ```mermaid
 
-get_head_leaf_key
-has_leaf_key
+flowchart LR
+
+get_head_access_key
+has_access_key
 is_empty
-would_trail_head
 would_become_new_head
+would_trail_head
 
 ```

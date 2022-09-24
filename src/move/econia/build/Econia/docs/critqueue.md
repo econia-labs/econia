@@ -19,19 +19,58 @@ The present implementation, based on hash tables, offers:
 
 * Insertions that are $O(1)$ in the best case, $O(log(n))$ in the
 intermediate case, and parallelizable in the general case.
-* Removals that are always $O(1)$ and parallelizable in the general
+* Removals that are always $O(1)$, and parallelizable in the general
 case.
 * Iterated dequeues that are always $O(1)$.
 
 
+<a name="@Module-level_documentation_sections_0"></a>
 
-<a name="@Bit_conventions_0"></a>
+## Module-level documentation sections
+
+
+[Bit conventions](#bit-conventions)
+
+* [Number](#number)
+* [Status](#status)
+
+[Crit-bit trees](#crit-bit-trees)
+
+* [General](#general)
+* [Structure](#structure)
+* [Insertions](#insertions)
+* [Removals](#removals)
+* [As a map](#as-a-map)
+* [References](#references)
+
+[Crit-queues](#crit-queues)
+
+* [Key storage multiplicity](#key-storage-multiplicity)
+* [Sorting order](#sorting-order)
+* [Leaves](#leaves)
+* [Subqueue nodes](#subqueue-nodes)
+* [Inner keys](#inner-keys)
+* [Insertion counts](#insertion-counts)
+* [Dequeue order preservation](#dequeue-order-preservation)
+* [Subqueue removal updates](#subqueue-removal-updates)
+* [Free leaves](#free-leaves)
+* [Dequeues](#dequeues)
+
+[Implementation analysis](#implementation-analysis)
+
+* [Core functionality](#core-functionality)
+* [Inserting](#inserting)
+* [Removing](#removing)
+* [Dequeuing](#dequeuing)
+
+
+<a name="@Bit_conventions_1"></a>
 
 ## Bit conventions
 
 
 
-<a name="@Number_1"></a>
+<a name="@Number_2"></a>
 
 ### Number
 
@@ -42,7 +81,7 @@ Bit numbers are 0-indexed from the least-significant bit (LSB):
 >      bit 5 = 0 -|    |- bit 0 = 1
 
 
-<a name="@Status_2"></a>
+<a name="@Status_3"></a>
 
 ### Status
 
@@ -51,13 +90,13 @@ Bit numbers are 0-indexed from the least-significant bit (LSB):
 Hence <code>11101</code> is set at bit 0 and unset at bit 1.
 
 
-<a name="@Crit-bit_trees_3"></a>
+<a name="@Crit-bit_trees_4"></a>
 
 ## Crit-bit trees
 
 
 
-<a name="@General_4"></a>
+<a name="@General_5"></a>
 
 ### General
 
@@ -77,7 +116,7 @@ support the following operations:
 * Inorder successor iteration
 
 
-<a name="@Structure_5"></a>
+<a name="@Structure_6"></a>
 
 ### Structure
 
@@ -111,7 +150,7 @@ for <code>0th</code>, its left child key is unset at bit 0, while its right
 child key is set at bit 0.
 
 
-<a name="@Insertions_6"></a>
+<a name="@Insertions_7"></a>
 
 ### Insertions
 
@@ -139,7 +178,7 @@ Here, <code>111</code> may not be re-inserted unless it is first removed from
 the tree.
 
 
-<a name="@Removals_7"></a>
+<a name="@Removals_8"></a>
 
 ### Removals
 
@@ -155,7 +194,7 @@ results in:
 >        101    110
 
 
-<a name="@As_a_map_8"></a>
+<a name="@As_a_map_9"></a>
 
 ### As a map
 
@@ -180,7 +219,7 @@ produces the following tree:
 >           <110, v_2>     <111, v_1>
 
 
-<a name="@References_9"></a>
+<a name="@References_10"></a>
 
 ### References
 
@@ -200,13 +239,13 @@ https://github.com/agl/critbit
 https://wiki.tcl-lang.org/page/critbit
 
 
-<a name="@Crit-queues_10"></a>
+<a name="@Crit-queues_11"></a>
 
 ## Crit-queues
 
 
 
-<a name="@Key_storage_multiplicity_11"></a>
+<a name="@Key_storage_multiplicity_12"></a>
 
 ### Key storage multiplicity
 
@@ -231,7 +270,7 @@ having the same insertion key, that were previously inserted.
 insertion pair having insertion count $j$.
 
 
-<a name="@Sorting_order_12"></a>
+<a name="@Sorting_order_13"></a>
 
 ### Sorting order
 
@@ -267,7 +306,7 @@ In a descending crit-queue, the dequeue sequence would instead be:
 5. $k_{0, 1} = \texttt{0b00}$
 
 
-<a name="@Leaves_13"></a>
+<a name="@Leaves_14"></a>
 
 ### Leaves
 
@@ -307,7 +346,7 @@ Leaf keys are guaranteed to be unique, and all leaf nodes are stored
 in a single hash table.
 
 
-<a name="@Subqueue_nodes_14"></a>
+<a name="@Subqueue_nodes_15"></a>
 
 ### Subqueue nodes
 
@@ -346,7 +385,7 @@ dequeued in descending lexicographical order:
 | $k_{0, 1}$    | <code>000...000</code>          | <code>011...110</code>        |
 
 
-<a name="@Inner_keys_15"></a>
+<a name="@Inner_keys_16"></a>
 
 ### Inner keys
 
@@ -361,7 +400,7 @@ bit 63.
 All inner nodes are stored in a single hash table.
 
 
-<a name="@Insertion_counts_16"></a>
+<a name="@Insertion_counts_17"></a>
 
 ### Insertion counts
 
@@ -383,7 +422,7 @@ Since bits 62 and 63 in access keys are reserved for flag bits, the
 maximum insertion count per insertion key is thus $2^{62} - 1$.
 
 
-<a name="@Dequeue_order_preservation_17"></a>
+<a name="@Dequeue_order_preservation_18"></a>
 
 ### Dequeue order preservation
 
@@ -407,7 +446,7 @@ Here, removing $k_{2, 5}$ simply updates the dequeue sequence to:
 4. $k_{5, 0}$
 
 
-<a name="@Subqueue_removal_updates_18"></a>
+<a name="@Subqueue_removal_updates_19"></a>
 
 ### Subqueue removal updates
 
@@ -448,7 +487,7 @@ deallocated, but rather, is converted to a "free leaf" with an
 empty subqueue.
 
 
-<a name="@Free_leaves_19"></a>
+<a name="@Free_leaves_20"></a>
 
 ### Free leaves
 
@@ -468,7 +507,7 @@ with insertion key 0, $k_{0, 3}$, produces:
 >             [k_{0, 3}]      [k_{1, 0}]
 
 
-<a name="@Dequeues_20"></a>
+<a name="@Dequeues_21"></a>
 
 ### Dequeues
 
@@ -487,15 +526,15 @@ head of the subqueue in the next leaf, which is accessed by either:
 * Inorder successor traversal if an ascending crit-queue.
 
 
-<a name="@Implementation_analysis_21"></a>
+<a name="@Implementation_analysis_22"></a>
 
 ## Implementation analysis
 
 
 
-<a name="@Core_functions_22"></a>
+<a name="@Core_functionality_23"></a>
 
-### Core functions
+### Core functionality
 
 
 In the present implementation, key-value insertion pairs are
@@ -505,9 +544,9 @@ returned, which can be used for subsequent access key lookup via <code>
 borrow()</code>, <code>borrow_mut()</code>, <code>dequeue()</code>, or <code>remove()</code>.
 
 
-<a name="@Insertions_23"></a>
+<a name="@Inserting_24"></a>
 
-### Insertions
+### Inserting
 
 
 Insertions are, like a crit-bit tree, $O(k)$ in the worst case,
@@ -534,9 +573,9 @@ updates, and may potentially be eliminated in the case of a
 parallelized insertion count aggregator.
 
 
-<a name="@Removals_24"></a>
+<a name="@Removing_25"></a>
 
-### Removals
+### Removing
 
 
 With subqueue nodes stored in a hash table, removal operations via
@@ -549,9 +588,9 @@ general case where:
 4. They alter neither the head nor the tail of the same subqueue.
 
 
-<a name="@Dequeues_25"></a>
+<a name="@Dequeuing_26"></a>
 
-### Dequeues
+### Dequeuing
 
 
 Dequeues, as a form of removal, are $O(1)$, but since they alter
@@ -561,32 +600,33 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 ---
 
 
--  [Bit conventions](#@Bit_conventions_0)
-    -  [Number](#@Number_1)
-    -  [Status](#@Status_2)
--  [Crit-bit trees](#@Crit-bit_trees_3)
-    -  [General](#@General_4)
-    -  [Structure](#@Structure_5)
-    -  [Insertions](#@Insertions_6)
-    -  [Removals](#@Removals_7)
-    -  [As a map](#@As_a_map_8)
-    -  [References](#@References_9)
--  [Crit-queues](#@Crit-queues_10)
-    -  [Key storage multiplicity](#@Key_storage_multiplicity_11)
-    -  [Sorting order](#@Sorting_order_12)
-    -  [Leaves](#@Leaves_13)
-    -  [Subqueue nodes](#@Subqueue_nodes_14)
-    -  [Inner keys](#@Inner_keys_15)
-    -  [Insertion counts](#@Insertion_counts_16)
-    -  [Dequeue order preservation](#@Dequeue_order_preservation_17)
-    -  [Subqueue removal updates](#@Subqueue_removal_updates_18)
-    -  [Free leaves](#@Free_leaves_19)
-    -  [Dequeues](#@Dequeues_20)
--  [Implementation analysis](#@Implementation_analysis_21)
-    -  [Core functions](#@Core_functions_22)
-    -  [Insertions](#@Insertions_23)
-    -  [Removals](#@Removals_24)
-    -  [Dequeues](#@Dequeues_25)
+-  [Module-level documentation sections](#@Module-level_documentation_sections_0)
+-  [Bit conventions](#@Bit_conventions_1)
+    -  [Number](#@Number_2)
+    -  [Status](#@Status_3)
+-  [Crit-bit trees](#@Crit-bit_trees_4)
+    -  [General](#@General_5)
+    -  [Structure](#@Structure_6)
+    -  [Insertions](#@Insertions_7)
+    -  [Removals](#@Removals_8)
+    -  [As a map](#@As_a_map_9)
+    -  [References](#@References_10)
+-  [Crit-queues](#@Crit-queues_11)
+    -  [Key storage multiplicity](#@Key_storage_multiplicity_12)
+    -  [Sorting order](#@Sorting_order_13)
+    -  [Leaves](#@Leaves_14)
+    -  [Subqueue nodes](#@Subqueue_nodes_15)
+    -  [Inner keys](#@Inner_keys_16)
+    -  [Insertion counts](#@Insertion_counts_17)
+    -  [Dequeue order preservation](#@Dequeue_order_preservation_18)
+    -  [Subqueue removal updates](#@Subqueue_removal_updates_19)
+    -  [Free leaves](#@Free_leaves_20)
+    -  [Dequeues](#@Dequeues_21)
+-  [Implementation analysis](#@Implementation_analysis_22)
+    -  [Core functionality](#@Core_functionality_23)
+    -  [Inserting](#@Inserting_24)
+    -  [Removing](#@Removing_25)
+    -  [Dequeuing](#@Dequeuing_26)
 -  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
 -  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)

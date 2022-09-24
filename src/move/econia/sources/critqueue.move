@@ -14,10 +14,45 @@
 ///
 /// * Insertions that are $O(1)$ in the best case, $O(log(n))$ in the
 ///   intermediate case, and parallelizable in the general case.
-/// * Removals that are always $O(1)$ and parallelizable in the general
+/// * Removals that are always $O(1)$, and parallelizable in the general
 ///   case.
 /// * Iterated dequeues that are always $O(1)$.
 ///
+/// # Module-level documentation sections
+///
+/// [Bit conventions](#bit-conventions)
+///
+/// * [Number](#number)
+/// * [Status](#status)
+///
+/// [Crit-bit trees](#crit-bit-trees)
+///
+/// * [General](#general)
+/// * [Structure](#structure)
+/// * [Insertions](#insertions)
+/// * [Removals](#removals)
+/// * [As a map](#as-a-map)
+/// * [References](#references)
+///
+/// [Crit-queues](#crit-queues)
+///
+/// * [Key storage multiplicity](#key-storage-multiplicity)
+/// * [Sorting order](#sorting-order)
+/// * [Leaves](#leaves)
+/// * [Subqueue nodes](#subqueue-nodes)
+/// * [Inner keys](#inner-keys)
+/// * [Insertion counts](#insertion-counts)
+/// * [Dequeue order preservation](#dequeue-order-preservation)
+/// * [Subqueue removal updates](#subqueue-removal-updates)
+/// * [Free leaves](#free-leaves)
+/// * [Dequeues](#dequeues)
+///
+/// [Implementation analysis](#implementation-analysis)
+///
+/// * [Core functionality](#core-functionality)
+/// * [Inserting](#inserting)
+/// * [Removing](#removing)
+/// * [Dequeuing](#dequeuing)
 ///
 /// # Bit conventions
 ///
@@ -399,7 +434,7 @@
 ///
 /// # Implementation analysis
 ///
-/// ## Core functions
+/// ## Core functionality
 ///
 /// In the present implementation, key-value insertion pairs are
 /// inserted via `insert()`, which accepts a `u64` insertion key and
@@ -407,7 +442,7 @@
 /// returned, which can be used for subsequent access key lookup via `
 /// borrow()`, `borrow_mut()`, `dequeue()`, or `remove()`.
 ///
-/// ## Insertions
+/// ## Inserting
 ///
 /// Insertions are, like a crit-bit tree, $O(k)$ in the worst case,
 /// where $k = 64$ (the number of variable bits in an insertion key),
@@ -432,7 +467,7 @@
 /// updates, and may potentially be eliminated in the case of a
 /// parallelized insertion count aggregator.
 ///
-/// ## Removals
+/// ## Removing
 ///
 /// With subqueue nodes stored in a hash table, removal operations via
 /// access key are are thus $O(1)$, and are parallelizable in the
@@ -443,7 +478,7 @@
 /// 3. They do not write to overlapping subqueue edges.
 /// 4. They alter neither the head nor the tail of the same subqueue.
 ///
-/// ## Dequeues
+/// ## Dequeuing
 ///
 /// Dequeues, as a form of removal, are $O(1)$, but since they alter
 /// the head of the queue, they are not parallelizable. Dequeues

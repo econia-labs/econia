@@ -631,6 +631,11 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
 -  [Struct `SubQueueNode`](#0xc0deb00c_critqueue_SubQueueNode)
+-  [Constants](#@Constants_27)
+-  [Function `get_critical_bit`](#0xc0deb00c_critqueue_get_critical_bit)
+    -  [XOR/AND method](#@XOR/AND_method_28)
+    -  [Binary search method](#@Binary_search_method_29)
+-  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -832,6 +837,240 @@ A node in a subqueue.
  Access key of next subqueue node, if any.
 </dd>
 </dl>
+
+
+</details>
+
+<a name="@Constants_27"></a>
+
+## Constants
+
+
+<a name="0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES"></a>
+
+When an enqueue key has been enqueued too many times.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES">E_TOO_MANY_ENQUEUES</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_HI_128"></a>
+
+<code>u128</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 128, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_MSB_u128"></a>
+
+Most significant bit number for a <code>u128</code>
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MSB_u128">MSB_u128</a>: u8 = 127;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_get_critical_bit"></a>
+
+## Function `get_critical_bit`
+
+Return the number of the most significant bit (0-indexed from
+LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
+
+
+<a name="@XOR/AND_method_28"></a>
+
+### XOR/AND method
+
+
+To begin with, a bitwise XOR is used to flag all differing bits:
+
+>              s1: 11110001
+>              s2: 11011100
+>     x = s1 ^ s2: 00101101
+>                    |- critical bit = 5
+
+Here, the critical bit is equivalent to the bit number of the
+most significant set bit in XOR result <code>x = s1 ^ s2</code>. At this
+point, [Langley 2008](#references) notes that <code>x</code> bitwise AND
+<code>x - 1</code> will be nonzero so long as <code>x</code> contains at least some
+bits set which are of lesser significance than the critical bit:
+
+>                   x: 00101101
+>               x - 1: 00101100
+>     x = x & (x - 1): 00101100
+
+Thus he suggests repeating <code>x & (x - 1)</code> while the new result
+<code>x = x & (x - 1)</code> is not equal to zero, because such a loop will
+eventually reduce <code>x</code> to a power of two (excepting the trivial
+case where <code>x</code> starts as all 0 except bit 0 set, for which the
+loop never enters past the initial conditional check). Per this
+method, using the new <code>x</code> value for the current example, the
+second iteration proceeds as follows:
+
+>               x: 00101100
+>           x - 1: 00101011
+> x = x & (x - 1): 00101000
+
+The third iteration:
+
+>                   x: 00101000
+>               x - 1: 00100111
+>     x = x & (x - 1): 00100000
+Now, <code>x & x - 1</code> will equal zero and the loop will not begin a
+fourth iteration:
+
+>                 x: 00100000
+>             x - 1: 00011111
+>     x AND (x - 1): 00000000
+
+Thus after three iterations a corresponding critical bit bitmask
+has been determined. However, in the case where the two input
+strings vary at all bits of lesser significance than that of the
+critical bit, there may be required as many as <code>k - 1</code>
+iterations, where <code>k</code> is the number of bits in each string under
+comparison. For instance, consider the case of the two 8-bit
+strings <code>s1</code> and <code>s2</code> as follows:
+
+>                  s1: 10101010
+>                  s2: 01010101
+>         x = s1 ^ s2: 11111111
+>                      |- critical bit = 7
+>     x = x & (x - 1): 11111110 [iteration 1]
+>     x = x & (x - 1): 11111100 [iteration 2]
+>     x = x & (x - 1): 11111000 [iteration 3]
+>     ...
+
+Notably, this method is only suggested after already having
+identified the varying byte between the two strings, thus
+limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
+
+
+<a name="@Binary_search_method_29"></a>
+
+### Binary search method
+
+
+For the present implementation, strings are not partitioned into
+a multi-byte array, rather, they are stored as <code>u128</code> integers,
+so a binary search is instead proposed. Here, the same
+<code>x = s1 ^ s2</code> operation is first used to identify all differing
+bits, before iterating on an upper and lower bound for the
+critical bit number:
+
+>              s1: 10101010
+>              s2: 01010101
+>     x = s1 ^ s2: 11111111
+>           u = 7 -|      |- l = 0
+
+The upper bound <code>u</code> is initialized to the length of the string
+(7 in this example, but 127 for a <code>u128</code>), and the lower bound
+<code>l</code> is initialized to 0. Next the midpoint <code>m</code> is calculated as
+the average of <code>u</code> and <code>l</code>, in this case <code>m = (7 + 0) / 2 = 3</code>,
+per truncating integer division. Now, the shifted compare value
+<code>s = r &gt;&gt; m</code> is calculated and updates are applied according to
+three potential outcomes:
+
+* <code>s == 1</code> means that the critical bit <code>c</code> is equal to <code>m</code>
+* <code>s == 0</code> means that <code>c &lt; m</code>, so <code>u</code> is set to <code>m - 1</code>
+* <code>s &gt; 1</code> means that <code>c &gt; m</code>, so <code>l</code> us set to <code>m + 1</code>
+
+Hence, continuing the current example:
+
+>              x: 11111111
+>     s = x >> m: 00011111
+
+<code>s &gt; 1</code>, so <code>l = m + 1 = 4</code>, and the search window has shrunk:
+
+>     x = s1 ^ s2: 11111111
+>           u = 7 -|  |- l = 4
+
+Updating the midpoint yields <code>m = (7 + 4) / 2 = 5</code>:
+
+>              x: 11111111
+>     s = x >> m: 00000111
+
+Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 6</code>, and the window
+shrinks again:
+
+>     x = s1 ^ s2: 11111111
+>           u = 7 -||- l = 6
+>     s = x >> m: 00000011
+
+Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 7</code>, the final iteration:
+
+>     x = s1 ^ s2: 11111111
+>           u = 7 -|- l = 7
+>     s = x >> m: 00000001
+
+Here, <code>s == 1</code>, which means that <code>c = m = 7</code>. Notably this
+search has converged after only 3 iterations, as opposed to 7
+for the linear search proposed above, and in general such a
+search converges after $log_2(k)$ iterations at most, where $k$
+is the number of bits in each of the strings <code>s1</code> and <code>s2</code> under
+comparison. Hence this search method improves the $O(k)$ search
+proposed by [Langley 2008](#references) to $O(log_2(k))$, and
+moreover, determines the actual number of the critical bit,
+rather than just a bitmask with bit <code>c</code> set, as he proposes,
+which can also be easily generated via <code>1 &lt;&lt; c</code>.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bit">get_critical_bit</a>(s1: u128, s2: u128): u8
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bit">get_critical_bit</a>(
+    s1: u128,
+    s2: u128,
+): u8 {
+    <b>let</b> x = s1 ^ s2; // XOR result marked 1 at bits that differ.
+    <b>let</b> l = 0; // Lower bound on critical bit search.
+    <b>let</b> u = <a href="critqueue.md#0xc0deb00c_critqueue_MSB_u128">MSB_u128</a>; // Upper bound on critical bit search.
+    <b>loop</b> { // Begin binary search.
+        <b>let</b> m = (l + u) / 2; // Calculate midpoint of search window.
+        <b>let</b> s = x &gt;&gt; m; // Calculate midpoint shift of XOR result.
+        <b>if</b> (s == 1) <b>return</b> m; // If shift equals 1, c = m.
+        // Update search bounds.
+        <b>if</b> (s &gt; 1) l = m + 1 <b>else</b> u = m - 1;
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_is_set"></a>
+
+## Function `is_set`
+
+Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_set">is_set</a>(key: u128, bit_number: u8): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_set">is_set</a>(key: u128, bit_number: u8): bool {key &gt;&gt; bit_number & 1 == 1}
+</code></pre>
+
 
 
 </details>

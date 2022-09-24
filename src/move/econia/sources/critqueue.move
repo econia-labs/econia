@@ -1114,8 +1114,7 @@ module econia::critqueue {
 
     #[test]
     /// Verify borrowing, immutably and mutably.
-    fun test_borrowers():
-    CritQueue<u8> {
+    fun test_borrowers() {
         let critqueue = new(ASCENDING); // Get ascending crit-queue.
         // Add a mock sub-queue node to the values table.
         table::add(&mut critqueue.subqueue_nodes, 0,
@@ -1125,7 +1124,7 @@ module econia::critqueue {
         assert!(*borrow(&critqueue, 0) == 0, 0);
         *borrow_mut(&mut critqueue, 0) = 123; // Mutate value.
         assert!(*borrow(&critqueue, 0) == 123, 0); // Assert mutation.
-        critqueue // Return crit-queue.
+        drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
     #[test]
@@ -1141,22 +1140,20 @@ module econia::critqueue {
 
     #[test]
     /// Verify lookup returns.
-    fun test_get_head_access_key():
-    CritQueue<u8> {
-        let critqueue = new(ASCENDING); // Get ascending crit-queue.
+    fun test_get_head_access_key() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
         // Assert no head access key indicated.
         assert!(option::is_none(&get_head_access_key(&critqueue)), 0);
         // Set mock head access key.
         option::fill(&mut critqueue.head, 123);
         // Assert head access key returned correctly.
         assert!(*option::borrow(&get_head_access_key(&critqueue)) == 123, 0);
-        critqueue // Return crit-queue.
+        drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 
     #[test]
     /// Verify returns for membership checks.
-    fun test_has_access_key():
-    CritQueue<u8> {
+    fun test_has_access_key() {
         let critqueue = new(ASCENDING); // Get ascending crit-queue.
         // Assert arbitrary access key not contained.
         assert!(!has_access_key(&critqueue, 0), 0);
@@ -1166,7 +1163,7 @@ module econia::critqueue {
                 next: option::none()});
         // Assert arbitrary access key contained.
         assert!(has_access_key(&critqueue, 0), 0);
-        critqueue // Return crit-queue.
+        drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 
     #[test]
@@ -1498,15 +1495,14 @@ module econia::critqueue {
 
     #[test]
     /// Verify successful returns.
-    fun test_is_empty():
-    CritQueue<u8> {
-        let critqueue = new(ASCENDING); // Get ascending crit-queue.
+    fun test_is_empty() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
         // Assert is marked empty.
         assert!(is_empty(&critqueue), 0);
         option::fill(&mut critqueue.root, 1234); // Mark mock root.
         // Assert is marked not empty.
         assert!(!is_empty(&critqueue), 0);
-        critqueue // Return crit-queue.
+        drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 
     #[test]
@@ -1578,9 +1574,8 @@ module econia::critqueue {
 
     #[test]
     /// Verify lookup returns.
-    fun test_would_become_trail_head():
-    CritQueue<u8> {
-        let critqueue = new(ASCENDING); // Get ascending crit-queue.
+    fun test_would_become_trail_head() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
         // Assert return for value that would become new head.
         assert!(would_become_new_head(&critqueue, HI_64), 0);
         // Assert return for value that would not trail head.
@@ -1612,7 +1607,7 @@ module econia::critqueue {
         assert!(!would_become_new_head(&critqueue, (u_128(b"10") as u64)), 0);
         // Assert return for insertion key that would trail head.
         assert!(would_trail_head(&critqueue, (u_128(b"10") as u64)), 0);
-        critqueue // Return crit-queue.
+        drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

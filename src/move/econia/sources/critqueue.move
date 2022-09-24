@@ -490,8 +490,8 @@ module econia::critqueue {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use aptos_std::table::{Table};
-    use std::option::Option;
+    use aptos_std::table::{Self, Table};
+    use std::option::{Self, Option};
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -506,8 +506,8 @@ module econia::critqueue {
 
     /// Hybrid between a crit-bit tree and a queue. See above.
     struct CritQueue<V> has store {
-        /// Crit-queue sort direction, `ASCENDING` or `DESCENDING`.
-        direction: bool,
+        /// Crit-queue sort order, `ASCENDING` or `DESCENDING`.
+        order: bool,
         /// Node key of crit-bit tree root. None if crit-queue is empty.
         root: Option<u128>,
         /// Access key of crit-queue head. None if crit-queue is empty,
@@ -572,13 +572,125 @@ module econia::critqueue {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Ascending crit-queue flag.
+    const ASCENDING: bool = false;
+    /// Descending crit-queue flag.
+    const DESCENDING: bool = true;
     /// `u128` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 128, 2))`.
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// `u64` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 64, 2))`.
+    const HI_64: u64 = 0xffffffffffffffff;
+    /// Number of bits that insertion key is shifted in a `u128` key.
+    const INSERTION_KEY: u8 = 64;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
+    /// `u128` bitmask set at bit 63, the crit-bit tree node type
+    /// bit flag, generated in Python via `hex(int('1' + '0' * 63, 2))`.
+    const NODE_TYPE: u128 = 0x8000000000000000;
+    /// Result of bitwise crit-bit tree node key `AND` with `NODE_TYPE`,
+    /// indicating that the key is set at bit 63 and is thus an inner
+    /// key. Generated in Python via `hex(int('1' + '0' * 63, 2))`.
+    const NODE_INNER: u128 = 0x8000000000000000;
+    /// Result of bitwise crit-bit tree node key `AND` with `NODE_TYPE`,
+    /// indicating that the key is unset at bit 63 and is thus a leaf
+    /// key.
+    const NODE_LEAF: u128 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Borrow insertion value corresponding to `access_key` in given
+    /// `CritQueue`, aborting if no such access key.
+    public fun borrow<V>(
+        crit_queue_ref: &CritQueue<V>,
+        access_key: u128
+    ): &V {
+        &table::borrow(&crit_queue_ref.values, access_key).value
+    }
+
+    /// Mutably borrow insertion value corresponding to `access_key`
+    /// `CritQueue`, aborting if no such access key
+    public fun borrow_mut<V>(
+        crit_queue_ref_mut: &mut CritQueue<V>,
+        access_key: u128
+    ): &mut V {
+        &mut table::borrow_mut(&mut crit_queue_ref_mut.values, access_key).
+            value
+    }
+
+    /// Return access key of given `CritQueue` head, if any.
+    public fun get_head_access_key<V>(
+        crit_queue_ref: &CritQueue<V>,
+    ): Option<u128> {
+        crit_queue_ref.head
+    }
+
+    /// Return `true` if given `CritQueue` has the given `access_key`.
+    public fun has_access_key<V>(
+        crit_queue_ref: &CritQueue<V>,
+        access_key: u128
+    ): bool {
+        table::contains(&crit_queue_ref.values, access_key)
+    }
+
+    /// Return `true` if given `CritQueue` is empty.
+    public fun is_empty<V>(
+        crit_queue_ref: &CritQueue<V>,
+    ): bool {
+        option::is_none(&crit_queue_ref.root)
+    }
+
+    /// Return `CritQueue` of sort `order` `ASCENDING` or `DESCENDING`.
+    public fun new<V: store>(
+        order: bool
+    ): CritQueue<V> {
+        CritQueue{
+            order,
+            root: option::none(),
+            head: option::none(),
+            inners: table::new(),
+            leaves: table::new(),
+            values: table::new()
+        }
+    }
+
+    /// Return `true` if, were `insertion_key` to be inserted, its
+    /// access key would become the new head of the given `CritQueue`.
+    public fun would_become_new_head<V>(
+        crit_queue_ref: &CritQueue<V>,
+        insertion_key: u64
+    ): bool {
+        // If the crit-queue is empty and thus has no head:
+        if (option::is_none(&crit_queue_ref.head)) {
+            // Return that insertion key would become new head.
+            return true
+        } else { // Otherwise, if crit-queue is not empty:
+            // Get insertion key of crit-queue head.
+            let head_insertion_key = (*option::borrow(&crit_queue_ref.head) >>
+                INSERTION_KEY as u64);
+            // If an ascending crit-queue, return true if insertion key
+            // is less than insertion key of crit-queue head.
+            return if (crit_queue_ref.order == ASCENDING)
+                insertion_key < head_insertion_key else
+                // If a descending crit-queue, return true if insertion
+                // key is greater than insertion key of crit-queue head.
+                insertion_key > head_insertion_key
+        }
+    }
+
+    /// Return `true` if, were `insertion_key` to be inserted, its
+    /// access key would trail behind the head of the given `CritQueue`.
+    public fun would_trail_head<V>(
+        crit_queue_ref: &CritQueue<V>,
+        insertion_key: u64
+    ): bool {
+        !would_become_new_head(crit_queue_ref, insertion_key)
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -730,7 +842,13 @@ module econia::critqueue {
         }
     }
 
-    /// Return `true` if `key` is set at `bit_number`
+    /// Return `true` if crit-bit tree node `key` is an inner key.
+    fun is_inner_key(key: u128): bool {key & NODE_TYPE == NODE_INNER}
+
+    /// Return `true` if crit-bit tree `node_key` is a leaf key.
+    fun is_leaf_key(key: u128): bool {key & NODE_TYPE == NODE_LEAF}
+
+    /// Return `true` if `key` is set at `bit_number`.
     fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -802,6 +920,21 @@ module econia::critqueue {
     }
 
     #[test]
+    /// Verify borrowing, immutably and mutably.
+    fun test_borrowers():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Add a mock subqueue node to the values table.
+        table::add(&mut crit_queue.values, 0, SubQueueNode{
+            value: 0, previous: option::none(), next: option::none()});
+        // Assert correct value borrow.
+        assert!(*borrow(&crit_queue, 0) == 0, 0);
+        *borrow_mut(&mut crit_queue, 0) = 123; // Mutate value.
+        assert!(*borrow(&crit_queue, 0) == 123, 0); // Assert mutation.
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
     /// Verify successful calculation of critical bit at all positions.
     fun test_get_critical_bit() {
         let b = 0; // Start loop for bit 0.
@@ -813,12 +946,71 @@ module econia::critqueue {
     }
 
     #[test]
+    /// Verify lookup returns.
+    fun test_get_head_access_key():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert no head access key indicated.
+        assert!(option::is_none(&get_head_access_key(&crit_queue)), 0);
+        // Set mock head access key.
+        option::fill(&mut crit_queue.head, 123);
+        // Assert head access key returned correctly.
+        assert!(*option::borrow(&get_head_access_key(&crit_queue)) == 123, 0);
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
+    /// Verify returns for membership checks.
+    fun test_has_access_key():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert arbitrary access key not contained.
+        assert!(!has_access_key(&crit_queue, 0), 0);
+        // Add a mock subqueue node to the values table.
+        table::add(&mut crit_queue.values, 0, SubQueueNode{
+            value: 0, previous: option::none(), next: option::none()});
+        // Assert arbitrary access key contained.
+        assert!(has_access_key(&crit_queue, 0), 0);
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
+    /// Verify successful returns.
+    fun test_is_empty():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert is marked empty.
+        assert!(is_empty(&crit_queue), 0);
+        option::fill(&mut crit_queue.root, 1234); // Mark mock root.
+        // Assert is marked not empty.
+        assert!(!is_empty(&crit_queue), 0);
+        crit_queue // Return crit-queue.
+    }
+
+    #[test]
     /// Verify correct returns.
     fun test_is_set_success() {
         assert!(is_set(u_128(b"11"), 0), 0);
         assert!(is_set(u_128(b"11"), 1), 0);
         assert!(!is_set(u_128(b"10"), 0), 0);
         assert!(!is_set(u_128(b"01"), 1), 0);
+    }
+
+    #[test]
+    /// Verify successful determination of key types.
+    fun test_key_types() {
+        assert!(is_inner_key(u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"10000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+        )), 0);
+        assert!(is_leaf_key(u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+        )), 0);
     }
 
     #[test]
@@ -851,6 +1043,45 @@ module econia::critqueue {
     #[expected_failure(abort_code = 100)]
     /// Verify failure for non-binary-representative byte string.
     fun test_u_failure() {u_128(b"2");}
+
+    #[test]
+    /// Verify lookup returns.
+    fun test_would_become_trail_head():
+    CritQueue<u8> {
+        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        // Assert return for value that would become new head.
+        assert!(would_become_new_head(&crit_queue, HI_64), 0);
+        // Assert return for value that would not trail head.
+        assert!(!would_trail_head(&crit_queue, HI_64), 0);
+        // Set mock head access key.
+        option::fill(&mut crit_queue.head, u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+        ));
+        // Assert return for insertion key that would become new head.
+        assert!(would_become_new_head(&crit_queue, (u_128(b"01") as u64)), 0);
+        // Assert return for insertion key that would not trail head.
+        assert!(!would_trail_head(&crit_queue, (u_128(b"01") as u64)), 0);
+        // Assert return for insertion key that would not become new
+        // head.
+        assert!(!would_become_new_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        // Assert return for insertion key that would trail head.
+        assert!(would_trail_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        // Flip crit-queue order.
+        crit_queue.order = DESCENDING;
+        // Assert return for insertion key that would become new head.
+        assert!(would_become_new_head(&crit_queue, (u_128(b"11") as u64)), 0);
+        // Assert return for insertion key that would not trail head.
+        assert!(!would_trail_head(&crit_queue, (u_128(b"11") as u64)), 0);
+        // Assert return for insertion key that would not become new
+        // head.
+        assert!(!would_become_new_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        // Assert return for insertion key that would trail head.
+        assert!(would_trail_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        crit_queue // Return crit-queue.
+    }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

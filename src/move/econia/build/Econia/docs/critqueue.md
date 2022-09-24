@@ -541,7 +541,7 @@ In the present implementation, key-value insertion pairs are
 inserted via <code>insert()</code>, which accepts a <code>u64</code> insertion key and
 insertion value of type <code>V</code>. A corresponding <code>u128</code> access key is
 returned, which can be used for subsequent access key lookup via <code>
-borrow()</code>, <code>borrow_mut()</code>, <code>dequeue()</code>, or <code>remove()</code>.
+<a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code>dequeue()</code>, or <code>remove()</code>.
 
 
 <a name="@Inserting_24"></a>
@@ -632,9 +632,19 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
 -  [Struct `SubQueueNode`](#0xc0deb00c_critqueue_SubQueueNode)
 -  [Constants](#@Constants_27)
+-  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
+-  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
+-  [Function `get_head_access_key`](#0xc0deb00c_critqueue_get_head_access_key)
+-  [Function `has_access_key`](#0xc0deb00c_critqueue_has_access_key)
+-  [Function `is_empty`](#0xc0deb00c_critqueue_is_empty)
+-  [Function `new`](#0xc0deb00c_critqueue_new)
+-  [Function `would_become_new_head`](#0xc0deb00c_critqueue_would_become_new_head)
+-  [Function `would_trail_head`](#0xc0deb00c_critqueue_would_trail_head)
 -  [Function `get_critical_bit`](#0xc0deb00c_critqueue_get_critical_bit)
     -  [XOR/AND method](#@XOR/AND_method_28)
     -  [Binary search method](#@Binary_search_method_29)
+-  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
+-  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
 
 
@@ -662,10 +672,10 @@ Hybrid between a crit-bit tree and a queue. See above.
 
 <dl>
 <dt>
-<code>direction: bool</code>
+<code>order: bool</code>
 </dt>
 <dd>
- Crit-queue sort direction, <code>ASCENDING</code> or <code>DESCENDING</code>.
+ Crit-queue sort order, <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
 </dd>
 <dt>
 <code>root: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
@@ -846,6 +856,26 @@ A node in a subqueue.
 ## Constants
 
 
+<a name="0xc0deb00c_critqueue_ASCENDING"></a>
+
+Ascending crit-queue flag.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_DESCENDING"></a>
+
+Descending crit-queue flag.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES"></a>
 
 When an enqueue key has been enqueued too many times.
@@ -867,6 +897,27 @@ When an enqueue key has been enqueued too many times.
 
 
 
+<a name="0xc0deb00c_critqueue_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 64, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_INSERTION_KEY"></a>
+
+Number of bits that insertion key is shifted in a <code>u128</code> key.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_INSERTION_KEY">INSERTION_KEY</a>: u8 = 64;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_MSB_u128"></a>
 
 Most significant bit number for a <code>u128</code>
@@ -876,6 +927,289 @@ Most significant bit number for a <code>u128</code>
 </code></pre>
 
 
+
+<a name="0xc0deb00c_critqueue_NODE_INNER"></a>
+
+Result of bitwise crit-bit tree node key <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code>,
+indicating that the key is set at bit 63 and is thus an inner
+key. Generated in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>: u128 = 9223372036854775808;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_NODE_LEAF"></a>
+
+Result of bitwise crit-bit tree node key <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code>,
+indicating that the key is unset at bit 63 and is thus a leaf
+key.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>: u128 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_NODE_TYPE"></a>
+
+<code>u128</code> bitmask set at bit 63, the crit-bit tree node type
+bit flag, generated in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u128 = 9223372036854775808;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_borrow"></a>
+
+## Function `borrow`
+
+Borrow insertion value corresponding to <code>access_key</code> in given
+<code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, aborting if no such access key.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(
+    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    access_key: u128
+): &V {
+    &<a href="_borrow">table::borrow</a>(&crit_queue_ref.values, access_key).value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_borrow_mut"></a>
+
+## Function `borrow_mut`
+
+Mutably borrow insertion value corresponding to <code>access_key</code>
+<code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, aborting if no such access key
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &<b>mut</b> V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(
+    crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    access_key: u128
+): &<b>mut</b> V {
+    &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(&<b>mut</b> crit_queue_ref_mut.values, access_key).
+        value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_get_head_access_key"></a>
+
+## Function `get_head_access_key`
+
+Return access key of given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> head, if any.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_access_key">get_head_access_key</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): <a href="_Option">option::Option</a>&lt;u128&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_access_key">get_head_access_key</a>&lt;V&gt;(
+    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+): Option&lt;u128&gt; {
+    crit_queue_ref.head
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_has_access_key"></a>
+
+## Function `has_access_key`
+
+Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has the given <code>access_key</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_access_key">has_access_key</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_access_key">has_access_key</a>&lt;V&gt;(
+    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    access_key: u128
+): bool {
+    <a href="_contains">table::contains</a>(&crit_queue_ref.values, access_key)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_is_empty"></a>
+
+## Function `is_empty`
+
+Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(
+    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+): bool {
+    <a href="_is_none">option::is_none</a>(&crit_queue_ref.root)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_new"></a>
+
+## Function `new`
+
+Return <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> of sort <code>order</code> <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(order: bool): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(
+    order: bool
+): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt; {
+    <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>{
+        order,
+        root: <a href="_none">option::none</a>(),
+        head: <a href="_none">option::none</a>(),
+        inners: <a href="_new">table::new</a>(),
+        leaves: <a href="_new">table::new</a>(),
+        values: <a href="_new">table::new</a>()
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_would_become_new_head"></a>
+
+## Function `would_become_new_head`
+
+Return <code><b>true</b></code> if, were <code>insertion_key</code> to be inserted, its
+access key would become the new head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(
+    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    insertion_key: u64
+): bool {
+    // If the crit-queue is empty and thus <b>has</b> no head:
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&crit_queue_ref.head)) {
+        // Return that insertion key would become new head.
+        <b>return</b> <b>true</b>
+    } <b>else</b> { // Otherwise, <b>if</b> crit-queue is not empty:
+        // Get insertion key of crit-queue head.
+        <b>let</b> head_insertion_key = (*<a href="_borrow">option::borrow</a>(&crit_queue_ref.head) &gt;&gt;
+            <a href="critqueue.md#0xc0deb00c_critqueue_INSERTION_KEY">INSERTION_KEY</a> <b>as</b> u64);
+        // If an ascending crit-queue, <b>return</b> <b>true</b> <b>if</b> insertion key
+        // is less than insertion key of crit-queue head.
+        <b>return</b> <b>if</b> (crit_queue_ref.order == <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>)
+            insertion_key &lt; head_insertion_key <b>else</b>
+            // If a descending crit-queue, <b>return</b> <b>true</b> <b>if</b> insertion
+            // key is greater than insertion key of crit-queue head.
+            insertion_key &gt; head_insertion_key
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_would_trail_head"></a>
+
+## Function `would_trail_head`
+
+Return <code><b>true</b></code> if, were <code>insertion_key</code> to be inserted, its
+access key would trail behind the head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(
+    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    insertion_key: u64
+): bool {
+    !<a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>(crit_queue_ref, insertion_key)
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_critqueue_get_critical_bit"></a>
 
@@ -1052,11 +1386,57 @@ which can also be easily generated via <code>1 &lt;&lt; c</code>.
 
 </details>
 
+<a name="0xc0deb00c_critqueue_is_inner_key"></a>
+
+## Function `is_inner_key`
+
+Return <code><b>true</b></code> if crit-bit tree node <code>key</code> is an inner key.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(key: u128): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(key: u128): bool {key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_is_leaf_key"></a>
+
+## Function `is_leaf_key`
+
+Return <code><b>true</b></code> if crit-bit tree <code>node_key</code> is a leaf key.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(key: u128): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(key: u128): bool {key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_critqueue_is_set"></a>
 
 ## Function `is_set`
 
-Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</code>
+Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</code>.
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_set">is_set</a>(key: u128, bit_number: u8): bool

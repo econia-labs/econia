@@ -1,5 +1,24 @@
 /// Hybrid data structure combining crit-bit tree and queue properties.
 ///
+/// A crit-queue contains an inner crit-bit tree with subqueues at each
+/// leaf node, enabling chronological ordering among multiple instances
+/// of the same insertion key. Like a crit-bit tree, a crit-queue can be
+/// used as an associative array that maps keys to values, as in the
+/// present implementation. While multiple instances of the same
+/// insertion key are sorted by order of insertion, different
+/// insertion keys can be sorted in either ascending or descending
+/// order relative to the head of the crit-queue, as specified during
+/// initialization.
+///
+/// The present implementation, based on hash tables, offers:
+///
+/// * Insertions that are $O(1)$ in the best case, $O(log(n))$ in the
+///   intermediate case, and parallelizable in the general case.
+/// * Removals that are always $O(1)$ and parallelizable in the general
+///   case.
+/// * Iterated dequeues that are always $O(1)$.
+///
+///
 /// # Bit conventions
 ///
 /// ## Number

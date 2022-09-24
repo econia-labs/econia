@@ -7,17 +7,17 @@ Crit-queue: A hybrid between a crit-bit tree and a queue.
 
 A crit-queue contains an inner crit-bit tree with sub-queues at each
 leaf node, enabling chronological ordering among multiple instances
-of the same insertion key. Like a crit-bit tree, a crit-queue can be
-used as an associative array that maps keys to values, as in the
-present implementation. While multiple instances of the same
+of the same insertion key. While multiple instances of the same
 insertion key are sorted by order of insertion, different
 insertion keys can be sorted in either ascending or descending
 order relative to the head of the crit-queue, as specified during
-initialization.
+initialization. Like a crit-bit tree, a crit-queue can be used as an
+associative array that maps keys to values, as in the present
+implementation.
 
 The present implementation, based on hash tables, offers:
 
-* Insertions that are $O(1)$ in the best case, $O(log(n))$ in the
+* Insertions that are $O(1)$ in the best case, $O(log_2(n))$ in the
 intermediate case, and parallelizable in the general case.
 * Removals that are always $O(1)$, and parallelizable in the general
 case.
@@ -33,6 +33,7 @@ case.
 
 * [Number](#number)
 * [Status](#status)
+* [Masking](#masking)
 
 [Crit-bit trees](#crit-bit-trees)
 
@@ -90,13 +91,24 @@ Bit numbers are 0-indexed from the least-significant bit (LSB):
 Hence <code>11101</code> is set at bit 0 and unset at bit 1.
 
 
-<a name="@Crit-bit_trees_4"></a>
+<a name="@Masking_4"></a>
+
+### Masking
+
+
+In the present implementation, a bitmask refers to a bitstring that
+is only set at the indicated bit. For example, a bitmask with bit 0
+set corresponds to <code>000...001</code>, and a bitmask with bit 3 set
+corresponds to <code>000...01000</code>.
+
+
+<a name="@Crit-bit_trees_5"></a>
 
 ## Crit-bit trees
 
 
 
-<a name="@General_5"></a>
+<a name="@General_6"></a>
 
 ### General
 
@@ -116,15 +128,15 @@ support the following operations:
 * Inorder successor iteration
 
 
-<a name="@Structure_6"></a>
+<a name="@Structure_7"></a>
 
 ### Structure
 
 
 Crit-bit trees have two types of nodes: inner nodes, and leaf nodes.
 Inner nodes have two leaf children each, and leaf nodes do not
-have children. Inner nodes store an integer, known as a critical bit
-(crit-bit), which indicates the most-significant bit of
+have children. Inner nodes store a bitmask set at the node's
+critical bit (crit-bit), which indicates the most-significant bit of
 divergence between keys from the node's two subtrees: keys in an
 inner node's left subtree are unset at the critical bit, while
 keys in an inner node's right subtree are set at the critical bit.
@@ -141,16 +153,16 @@ critical bits at the top of the tree. For example, the binary keys
 >             /   \
 >           110   111
 
-Here, the inner node marked <code>2nd</code> stores the critical bit 2, the
-inner node marked <code>1st</code> stores the critical bit 1, and the
-inner node marked <code>0th</code> stores the critical bit 0. Hence, the sole
-key in the left subtree of <code>2nd</code> is unset at bit 2, while all the
-keys in the right subtree of <code>2nd</code> are set at bit 2. And similarly
-for <code>0th</code>, its left child key is unset at bit 0, while its right
-child key is set at bit 0.
+Here, the inner node marked <code>2nd</code> stores a bitmask set at bit 2, the
+inner node marked <code>1st</code> stores a bitmask set at bit 1, and the inner
+node marked <code>0th</code> stores a bitmask set at bit 0. Hence, the sole key
+in the left subtree of <code>2nd</code> is unset at bit 2, while all the keys
+in the right subtree of <code>2nd</code> are set at bit 2. And similarly for
+<code>0th</code>, the key of its left child is unset at bit 0, while the key of
+its right child is set at bit 0.
 
 
-<a name="@Insertions_7"></a>
+<a name="@Insertions_8"></a>
 
 ### Insertions
 
@@ -178,7 +190,7 @@ Here, <code>111</code> may not be re-inserted unless it is first removed from
 the tree.
 
 
-<a name="@Removals_8"></a>
+<a name="@Removals_9"></a>
 
 ### Removals
 
@@ -194,7 +206,7 @@ results in:
 >        101    110
 
 
-<a name="@As_a_map_9"></a>
+<a name="@As_a_map_10"></a>
 
 ### As a map
 
@@ -219,17 +231,17 @@ produces the following tree:
 >           <110, v_2>     <111, v_1>
 
 
-<a name="@References_10"></a>
+<a name="@References_11"></a>
 
 ### References
 
 
-* [Bernstein 2006]
+* [Bernstein 2004] (Earliest identified author)
 * [Langley 2008] (Primary reference for this implementation)
 * [Langley 2012]
 * [Tcler's Wiki 2021]
 
-[Bernstein 2006]:
+[Bernstein 2004]:
 https://cr.yp.to/critbit.html
 [Langley 2008]:
 https://www.imperialviolet.org/2008/09/29/critbit-trees.html
@@ -239,13 +251,13 @@ https://github.com/agl/critbit
 https://wiki.tcl-lang.org/page/critbit
 
 
-<a name="@Crit-queues_11"></a>
+<a name="@Crit-queues_12"></a>
 
 ## Crit-queues
 
 
 
-<a name="@Key_storage_multiplicity_12"></a>
+<a name="@Key_storage_multiplicity_13"></a>
 
 ### Key storage multiplicity
 
@@ -270,7 +282,7 @@ having the same insertion key, that were previously inserted.
 insertion pair having insertion count $j$.
 
 
-<a name="@Sorting_order_13"></a>
+<a name="@Sorting_order_14"></a>
 
 ### Sorting order
 
@@ -306,7 +318,7 @@ In a descending crit-queue, the dequeue sequence would instead be:
 5. $k_{0, 1} = \texttt{0b00}$
 
 
-<a name="@Leaves_14"></a>
+<a name="@Leaves_15"></a>
 
 ### Leaves
 
@@ -346,7 +358,7 @@ Leaf keys are guaranteed to be unique, and all leaf nodes are stored
 in a single hash table.
 
 
-<a name="@Sub-queue_nodes_15"></a>
+<a name="@Sub-queue_nodes_16"></a>
 
 ### Sub-queue nodes
 
@@ -385,7 +397,7 @@ dequeued in descending lexicographical order:
 | $k_{0, 1}$    | <code>000...000</code>          | <code>011...110</code>        |
 
 
-<a name="@Inner_keys_16"></a>
+<a name="@Inner_keys_17"></a>
 
 ### Inner keys
 
@@ -400,7 +412,7 @@ bit 63.
 All inner nodes are stored in a single hash table.
 
 
-<a name="@Insertion_counts_17"></a>
+<a name="@Insertion_counts_18"></a>
 
 ### Insertion counts
 
@@ -422,7 +434,7 @@ Since bits 62 and 63 in access keys are reserved for flag bits, the
 maximum insertion count per insertion key is thus $2^{62} - 1$.
 
 
-<a name="@Dequeue_order_preservation_18"></a>
+<a name="@Dequeue_order_preservation_19"></a>
 
 ### Dequeue order preservation
 
@@ -446,7 +458,7 @@ Here, removing $k_{2, 5}$ simply updates the dequeue sequence to:
 4. $k_{5, 0}$
 
 
-<a name="@Sub-queue_removal_updates_19"></a>
+<a name="@Sub-queue_removal_updates_20"></a>
 
 ### Sub-queue removal updates
 
@@ -487,7 +499,7 @@ deallocated, but rather, is converted to a "free leaf" with an
 empty sub-queue.
 
 
-<a name="@Free_leaves_20"></a>
+<a name="@Free_leaves_21"></a>
 
 ### Free leaves
 
@@ -507,7 +519,7 @@ with insertion key 0, $k_{0, 3}$, produces:
 >             [k_{0, 3}]      [k_{1, 0}]
 
 
-<a name="@Dequeues_21"></a>
+<a name="@Dequeues_22"></a>
 
 ### Dequeues
 
@@ -526,13 +538,13 @@ head of the sub-queue in the next leaf, which is accessed by either:
 * Inorder successor traversal if an ascending crit-queue.
 
 
-<a name="@Implementation_analysis_22"></a>
+<a name="@Implementation_analysis_23"></a>
 
 ## Implementation analysis
 
 
 
-<a name="@Core_functionality_23"></a>
+<a name="@Core_functionality_24"></a>
 
 ### Core functionality
 
@@ -544,7 +556,7 @@ returned, which can be used for subsequent access key lookup via <code>
 <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code>dequeue()</code>, or <code>remove()</code>.
 
 
-<a name="@Inserting_24"></a>
+<a name="@Inserting_25"></a>
 
 ### Inserting
 
@@ -554,8 +566,8 @@ where $k = 64$ (the number of variable bits in an insertion key),
 since a new leaf node has to be inserted into the crit-bit tree.
 In the intermediate case where a new leaf node has to be inserted
 into the crit-bit tree but the tree is generally balanced,
-insertions improve to $O(log(n))$, where $n$ is the number of leaves
-in the tree. In the best case, where the corresponding
+insertions improve to $O(log_2(n))$, where $n$ is the number of
+leaves in the tree. In the best case, where the corresponding
 sub-queue already has a leaf in the crit-bit tree and a new
 sub-queue node simply has to be inserted at the tail of the
 sub-queue, insertions improve to $O(1)$.
@@ -573,7 +585,7 @@ updates, and may potentially be eliminated in the case of a
 parallelized insertion count aggregator.
 
 
-<a name="@Removing_25"></a>
+<a name="@Removing_26"></a>
 
 ### Removing
 
@@ -588,7 +600,7 @@ general case where:
 4. They alter neither the head nor the tail of the same sub-queue.
 
 
-<a name="@Dequeuing_26"></a>
+<a name="@Dequeuing_27"></a>
 
 ### Dequeuing
 
@@ -604,34 +616,35 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Bit conventions](#@Bit_conventions_1)
     -  [Number](#@Number_2)
     -  [Status](#@Status_3)
--  [Crit-bit trees](#@Crit-bit_trees_4)
-    -  [General](#@General_5)
-    -  [Structure](#@Structure_6)
-    -  [Insertions](#@Insertions_7)
-    -  [Removals](#@Removals_8)
-    -  [As a map](#@As_a_map_9)
-    -  [References](#@References_10)
--  [Crit-queues](#@Crit-queues_11)
-    -  [Key storage multiplicity](#@Key_storage_multiplicity_12)
-    -  [Sorting order](#@Sorting_order_13)
-    -  [Leaves](#@Leaves_14)
-    -  [Sub-queue nodes](#@Sub-queue_nodes_15)
-    -  [Inner keys](#@Inner_keys_16)
-    -  [Insertion counts](#@Insertion_counts_17)
-    -  [Dequeue order preservation](#@Dequeue_order_preservation_18)
-    -  [Sub-queue removal updates](#@Sub-queue_removal_updates_19)
-    -  [Free leaves](#@Free_leaves_20)
-    -  [Dequeues](#@Dequeues_21)
--  [Implementation analysis](#@Implementation_analysis_22)
-    -  [Core functionality](#@Core_functionality_23)
-    -  [Inserting](#@Inserting_24)
-    -  [Removing](#@Removing_25)
-    -  [Dequeuing](#@Dequeuing_26)
+    -  [Masking](#@Masking_4)
+-  [Crit-bit trees](#@Crit-bit_trees_5)
+    -  [General](#@General_6)
+    -  [Structure](#@Structure_7)
+    -  [Insertions](#@Insertions_8)
+    -  [Removals](#@Removals_9)
+    -  [As a map](#@As_a_map_10)
+    -  [References](#@References_11)
+-  [Crit-queues](#@Crit-queues_12)
+    -  [Key storage multiplicity](#@Key_storage_multiplicity_13)
+    -  [Sorting order](#@Sorting_order_14)
+    -  [Leaves](#@Leaves_15)
+    -  [Sub-queue nodes](#@Sub-queue_nodes_16)
+    -  [Inner keys](#@Inner_keys_17)
+    -  [Insertion counts](#@Insertion_counts_18)
+    -  [Dequeue order preservation](#@Dequeue_order_preservation_19)
+    -  [Sub-queue removal updates](#@Sub-queue_removal_updates_20)
+    -  [Free leaves](#@Free_leaves_21)
+    -  [Dequeues](#@Dequeues_22)
+-  [Implementation analysis](#@Implementation_analysis_23)
+    -  [Core functionality](#@Core_functionality_24)
+    -  [Inserting](#@Inserting_25)
+    -  [Removing](#@Removing_26)
+    -  [Dequeuing](#@Dequeuing_27)
 -  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
 -  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
 -  [Struct `SubQueueNode`](#0xc0deb00c_critqueue_SubQueueNode)
--  [Constants](#@Constants_27)
+-  [Constants](#@Constants_28)
 -  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
 -  [Function `get_head_access_key`](#0xc0deb00c_critqueue_get_head_access_key)
@@ -641,9 +654,9 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `new`](#0xc0deb00c_critqueue_new)
 -  [Function `would_become_new_head`](#0xc0deb00c_critqueue_would_become_new_head)
 -  [Function `would_trail_head`](#0xc0deb00c_critqueue_would_trail_head)
--  [Function `get_critical_bit`](#0xc0deb00c_critqueue_get_critical_bit)
-    -  [XOR/AND method](#@XOR/AND_method_28)
-    -  [Binary search method](#@Binary_search_method_29)
+-  [Function `get_critical_bitmask`](#0xc0deb00c_critqueue_get_critical_bitmask)
+    -  [<code>XOR</code>/<code>AND</code> method](#@<code>XOR</code>/<code>AND</code>_method_29)
+    -  [Binary search method](#@Binary_search_method_30)
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
@@ -733,10 +746,10 @@ A crit-bit tree inner node.
 
 <dl>
 <dt>
-<code>bit: u8</code>
+<code>bitmask: u128</code>
 </dt>
 <dd>
- Critical bit position.
+ Bitmask set at critical bit.
 </dd>
 <dt>
 <code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
@@ -852,7 +865,7 @@ A node in a sub-queue.
 
 </details>
 
-<a name="@Constants_27"></a>
+<a name="@Constants_28"></a>
 
 ## Constants
 
@@ -1335,31 +1348,32 @@ access key would trail behind the head of the given <code><a href="critqueue.md#
 
 </details>
 
-<a name="0xc0deb00c_critqueue_get_critical_bit"></a>
+<a name="0xc0deb00c_critqueue_get_critical_bitmask"></a>
 
-## Function `get_critical_bit`
+## Function `get_critical_bitmask`
 
-Return the number of the most significant bit (0-indexed from
-LSB) at which two non-identical bitstrings, <code>s1</code> and <code>s2</code>, vary.
-
-
-<a name="@XOR/AND_method_28"></a>
-
-### XOR/AND method
+Return a bitmask set at the most significant bit at which two
+unequal bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-To begin with, a bitwise XOR is used to flag all differing bits:
+<a name="@<code>XOR</code>/<code>AND</code>_method_29"></a>
+
+### <code>XOR</code>/<code>AND</code> method
+
+
+Frist, a bitwise <code>XOR</code> is used to flag all differing bits:
 
 >              s1: 11110001
 >              s2: 11011100
 >     x = s1 ^ s2: 00101101
->                    |- critical bit = 5
+>                    ^ critical bit = 5
 
 Here, the critical bit is equivalent to the bit number of the
-most significant set bit in XOR result <code>x = s1 ^ s2</code>. At this
-point, [Langley 2008](#references) notes that <code>x</code> bitwise AND
-<code>x - 1</code> will be nonzero so long as <code>x</code> contains at least some
-bits set which are of lesser significance than the critical bit:
+most significant set bit in the bitwise <code>XOR</code> result
+<code>x = s1 ^ s2</code>. At this point, [Langley 2008] notes that <code>x</code>
+bitwise <code>AND</code> <code>x - 1</code> will be nonzero so long as <code>x</code> contains
+at least some bits set which are of lesser significance than the
+critical bit:
 
 >                   x: 00101101
 >               x - 1: 00101100
@@ -1373,9 +1387,9 @@ loop never enters past the initial conditional check). Per this
 method, using the new <code>x</code> value for the current example, the
 second iteration proceeds as follows:
 
->               x: 00101100
->           x - 1: 00101011
-> x = x & (x - 1): 00101000
+>                   x: 00101100
+>               x - 1: 00101011
+>     x = x & (x - 1): 00101000
 
 The third iteration:
 
@@ -1389,9 +1403,9 @@ fourth iteration:
 >             x - 1: 00011111
 >     x AND (x - 1): 00000000
 
-Thus after three iterations a corresponding critical bit bitmask
+Thus after three iterations a corresponding critical bitmask
 has been determined. However, in the case where the two input
-strings vary at all bits of lesser significance than that of the
+strings vary at all bits of lesser significance than the
 critical bit, there may be required as many as <code>k - 1</code>
 iterations, where <code>k</code> is the number of bits in each string under
 comparison. For instance, consider the case of the two 8-bit
@@ -1400,7 +1414,7 @@ strings <code>s1</code> and <code>s2</code> as follows:
 >                  s1: 10101010
 >                  s2: 01010101
 >         x = s1 ^ s2: 11111111
->                      |- critical bit = 7
+>                      ^ critical bit = 7
 >     x = x & (x - 1): 11111110 [iteration 1]
 >     x = x & (x - 1): 11111100 [iteration 2]
 >     x = x & (x - 1): 11111000 [iteration 3]
@@ -1411,34 +1425,37 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_29"></a>
+<a name="@Binary_search_method_30"></a>
 
 ### Binary search method
 
 
-For the present implementation, strings are not partitioned into
-a multi-byte array, rather, they are stored as <code>u128</code> integers,
-so a binary search is instead proposed. Here, the same
-<code>x = s1 ^ s2</code> operation is first used to identify all differing
-bits, before iterating on an upper and lower bound for the
-critical bit number:
+For the present implementation, unlike in [Langley 2008],
+strings are not partitioned into a multi-byte array, rather,
+they are stored as <code>u128</code> integers, so a binary search is
+instead proposed. Here, the same <code>x = s1 ^ s2</code> operation is
+first used to identify all differing bits, before iterating on
+an upper (<code>u</code>) and lower bound (<code>l</code>) for the critical bit
+number:
 
 >              s1: 10101010
 >              s2: 01010101
 >     x = s1 ^ s2: 11111111
->           u = 7 -|      |- l = 0
+>            u = 7 ^      ^ l = 0
 
-The upper bound <code>u</code> is initialized to the length of the string
-(7 in this example, but 127 for a <code>u128</code>), and the lower bound
-<code>l</code> is initialized to 0. Next the midpoint <code>m</code> is calculated as
-the average of <code>u</code> and <code>l</code>, in this case <code>m = (7 + 0) / 2 = 3</code>,
-per truncating integer division. Now, the shifted compare value
-<code>s = r &gt;&gt; m</code> is calculated and updates are applied according to
-three potential outcomes:
+The upper bound <code>u</code> is initialized to the length of the
+bitstring (7 in this example, but 127 for a <code>u128</code>), and the
+lower bound <code>l</code> is initialized to 0. Next the midpoint <code>m</code> is
+calculated as the average of <code>u</code> and <code>l</code>, in this case
+<code>m = (7 + 0) / 2 = 3</code>, per truncating integer division. Finally,
+the shifted compare value <code>s = x &gt;&gt; m</code> is calculated, with the
+result having three potential outcomes:
 
-* <code>s == 1</code> means that the critical bit <code>c</code> is equal to <code>m</code>
-* <code>s == 0</code> means that <code>c &lt; m</code>, so <code>u</code> is set to <code>m - 1</code>
-* <code>s &gt; 1</code> means that <code>c &gt; m</code>, so <code>l</code> us set to <code>m + 1</code>
+| Shift result | Outcome                              |
+|--------------|--------------------------------------|
+| <code>s == 1</code>     | The critical bit <code>c</code> is equal to <code>m</code> |
+| <code>s == 0</code>     | <code>c &lt; m</code>, so set <code>u</code> to <code>m - 1</code>       |
+| <code>s &gt; 1</code>      | <code>c &gt; m</code>, so set <code>l</code> to <code>m + 1</code>       |
 
 Hence, continuing the current example:
 
@@ -1448,7 +1465,7 @@ Hence, continuing the current example:
 <code>s &gt; 1</code>, so <code>l = m + 1 = 4</code>, and the search window has shrunk:
 
 >     x = s1 ^ s2: 11111111
->           u = 7 -|  |- l = 4
+>            u = 7 ^  ^ l = 4
 
 Updating the midpoint yields <code>m = (7 + 4) / 2 = 5</code>:
 
@@ -1459,28 +1476,32 @@ Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 6</code>, and the windo
 shrinks again:
 
 >     x = s1 ^ s2: 11111111
->           u = 7 -||- l = 6
->     s = x >> m: 00000011
+>            u = 7 ^^ l = 6
+>      s = x >> m: 00000011
 
 Again <code>s &gt; 1</code>, so update <code>l = m + 1 = 7</code>, the final iteration:
 
 >     x = s1 ^ s2: 11111111
->           u = 7 -|- l = 7
->     s = x >> m: 00000001
+>            u = 7 ^ l = 7
+>      s = x >> m: 00000001
 
-Here, <code>s == 1</code>, which means that <code>c = m = 7</code>. Notably this
-search has converged after only 3 iterations, as opposed to 7
-for the linear search proposed above, and in general such a
-search converges after $log_2(k)$ iterations at most, where $k$
-is the number of bits in each of the strings <code>s1</code> and <code>s2</code> under
-comparison. Hence this search method improves the $O(k)$ search
-proposed by [Langley 2008](#references) to $O(log_2(k))$, and
-moreover, determines the actual number of the critical bit,
-rather than just a bitmask with bit <code>c</code> set, as he proposes,
-which can also be easily generated via <code>1 &lt;&lt; c</code>.
+Here, <code>s == 1</code>, which means that <code>c = m = 7</code>, and the
+corresponding critical bitmask <code>1 &lt;&lt; c</code> is returned:
+
+>         s1: 10101010
+>         s2: 01010101
+>     1 << c: 10000000
+
+Notably this search has converged after only 3 iterations, as
+opposed to 7 for the linear search proposed above, and in
+general such a search converges after $log_2(k)$ iterations at
+most, where $k$ is the number of bits in each of the strings
+<code>s1</code> and <code>s2</code> under comparison. Hence this search method
+improves the $O(k)$ search proposed by [Langley 2008] to
+$O(log_2(k))$.
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bit">get_critical_bit</a>(s1: u128, s2: u128): u8
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bitmask">get_critical_bitmask</a>(s1: u128, s2: u128): u128
 </code></pre>
 
 
@@ -1489,17 +1510,17 @@ which can also be easily generated via <code>1 &lt;&lt; c</code>.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bit">get_critical_bit</a>(
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bitmask">get_critical_bitmask</a>(
     s1: u128,
     s2: u128,
-): u8 {
+): u128 {
     <b>let</b> x = s1 ^ s2; // XOR result marked 1 at bits that differ.
     <b>let</b> l = 0; // Lower bound on critical bit search.
     <b>let</b> u = <a href="critqueue.md#0xc0deb00c_critqueue_MSB_u128">MSB_u128</a>; // Upper bound on critical bit search.
     <b>loop</b> { // Begin binary search.
         <b>let</b> m = (l + u) / 2; // Calculate midpoint of search window.
         <b>let</b> s = x &gt;&gt; m; // Calculate midpoint shift of XOR result.
-        <b>if</b> (s == 1) <b>return</b> m; // If shift equals 1, c = m.
+        <b>if</b> (s == 1) <b>return</b> 1 &lt;&lt; m; // If shift equals 1, c = m.
         // Update search bounds.
         <b>if</b> (s &gt; 1) l = m + 1 <b>else</b> u = m - 1;
     }

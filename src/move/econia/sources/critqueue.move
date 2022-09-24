@@ -2,17 +2,17 @@
 ///
 /// A crit-queue contains an inner crit-bit tree with sub-queues at each
 /// leaf node, enabling chronological ordering among multiple instances
-/// of the same insertion key. Like a crit-bit tree, a crit-queue can be
-/// used as an associative array that maps keys to values, as in the
-/// present implementation. While multiple instances of the same
+/// of the same insertion key. While multiple instances of the same
 /// insertion key are sorted by order of insertion, different
 /// insertion keys can be sorted in either ascending or descending
 /// order relative to the head of the crit-queue, as specified during
-/// initialization.
+/// initialization. Like a crit-bit tree, a crit-queue can be used as an
+/// associative array that maps keys to values, as in the present
+/// implementation.
 ///
 /// The present implementation, based on hash tables, offers:
 ///
-/// * Insertions that are $O(1)$ in the best case, $O(log(n))$ in the
+/// * Insertions that are $O(1)$ in the best case, $O(log_2(n))$ in the
 ///   intermediate case, and parallelizable in the general case.
 /// * Removals that are always $O(1)$, and parallelizable in the general
 ///   case.
@@ -24,6 +24,7 @@
 ///
 /// * [Number](#number)
 /// * [Status](#status)
+/// * [Masking](#masking)
 ///
 /// [Crit-bit trees](#crit-bit-trees)
 ///
@@ -68,6 +69,13 @@
 /// `0` is considered an "unset" bit, and `1` is considered a "set" bit.
 /// Hence `11101` is set at bit 0 and unset at bit 1.
 ///
+/// ## Masking
+///
+/// In the present implementation, a bitmask refers to a bitstring that
+/// is only set at the indicated bit. For example, a bitmask with bit 0
+/// set corresponds to `000...001`, and a bitmask with bit 3 set
+/// corresponds to `000...01000`.
+///
 /// # Crit-bit trees
 ///
 /// ## General
@@ -90,8 +98,8 @@
 ///
 /// Crit-bit trees have two types of nodes: inner nodes, and leaf nodes.
 /// Inner nodes have two leaf children each, and leaf nodes do not
-/// have children. Inner nodes store an integer, known as a critical bit
-/// (crit-bit), which indicates the most-significant bit of
+/// have children. Inner nodes store a bitmask set at the node's
+/// critical bit (crit-bit), which indicates the most-significant bit of
 /// divergence between keys from the node's two subtrees: keys in an
 /// inner node's left subtree are unset at the critical bit, while
 /// keys in an inner node's right subtree are set at the critical bit.
@@ -108,13 +116,13 @@
 /// >             /   \
 /// >           110   111
 ///
-/// Here, the inner node marked `2nd` stores the critical bit 2, the
-/// inner node marked `1st` stores the critical bit 1, and the
-/// inner node marked `0th` stores the critical bit 0. Hence, the sole
-/// key in the left subtree of `2nd` is unset at bit 2, while all the
-/// keys in the right subtree of `2nd` are set at bit 2. And similarly
-/// for `0th`, its left child key is unset at bit 0, while its right
-/// child key is set at bit 0.
+/// Here, the inner node marked `2nd` stores a bitmask set at bit 2, the
+/// inner node marked `1st` stores a bitmask set at bit 1, and the inner
+/// node marked `0th` stores a bitmask set at bit 0. Hence, the sole key
+/// in the left subtree of `2nd` is unset at bit 2, while all the keys
+/// in the right subtree of `2nd` are set at bit 2. And similarly for
+/// `0th`, the key of its left child is unset at bit 0, while the key of
+/// its right child is set at bit 0.
 ///
 /// ## Insertions
 ///
@@ -175,12 +183,12 @@
 ///
 /// ## References
 ///
-/// * [Bernstein 2006]
+/// * [Bernstein 2004] (Earliest identified author)
 /// * [Langley 2008] (Primary reference for this implementation)
 /// * [Langley 2012]
 /// * [Tcler's Wiki 2021]
 ///
-/// [Bernstein 2006]:
+/// [Bernstein 2004]:
 ///     https://cr.yp.to/critbit.html
 /// [Langley 2008]:
 ///     https://www.imperialviolet.org/2008/09/29/critbit-trees.html
@@ -449,8 +457,8 @@
 /// since a new leaf node has to be inserted into the crit-bit tree.
 /// In the intermediate case where a new leaf node has to be inserted
 /// into the crit-bit tree but the tree is generally balanced,
-/// insertions improve to $O(log(n))$, where $n$ is the number of leaves
-/// in the tree. In the best case, where the corresponding
+/// insertions improve to $O(log_2(n))$, where $n$ is the number of
+/// leaves in the tree. In the best case, where the corresponding
 /// sub-queue already has a leaf in the crit-bit tree and a new
 /// sub-queue node simply has to be inserted at the tail of the
 /// sub-queue, insertions improve to $O(1)$.
@@ -524,8 +532,8 @@ module econia::critqueue {
 
     /// A crit-bit tree inner node.
     struct Inner has store {
-        /// Critical bit position.
-        bit: u8,
+        /// Bitmask set at critical bit.
+        bitmask: u128,
         /// If none, node is root. Else parent key.
         parent: Option<u128>,
         /// Left child key.
@@ -781,23 +789,24 @@ module econia::critqueue {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return the number of the most significant bit (0-indexed from
-    /// LSB) at which two non-identical bitstrings, `s1` and `s2`, vary.
+    /// Return a bitmask set at the most significant bit at which two
+    /// unequal bitstrings, `s1` and `s2`, vary.
     ///
-    /// # XOR/AND method
+    /// # `XOR`/`AND` method
     ///
-    /// To begin with, a bitwise XOR is used to flag all differing bits:
+    /// Frist, a bitwise `XOR` is used to flag all differing bits:
     ///
     /// >              s1: 11110001
     /// >              s2: 11011100
     /// >     x = s1 ^ s2: 00101101
-    /// >                    |- critical bit = 5
+    /// >                    ^ critical bit = 5
     ///
     /// Here, the critical bit is equivalent to the bit number of the
-    /// most significant set bit in XOR result `x = s1 ^ s2`. At this
-    /// point, [Langley 2008](#references) notes that `x` bitwise AND
-    /// `x - 1` will be nonzero so long as `x` contains at least some
-    /// bits set which are of lesser significance than the critical bit:
+    /// most significant set bit in the bitwise `XOR` result
+    /// `x = s1 ^ s2`. At this point, [Langley 2008] notes that `x`
+    /// bitwise `AND` `x - 1` will be nonzero so long as `x` contains
+    /// at least some bits set which are of lesser significance than the
+    /// critical bit:
     ///
     /// >                   x: 00101101
     /// >               x - 1: 00101100
@@ -811,9 +820,9 @@ module econia::critqueue {
     /// method, using the new `x` value for the current example, the
     /// second iteration proceeds as follows:
     ///
-    /// >               x: 00101100
-    /// >           x - 1: 00101011
-    /// > x = x & (x - 1): 00101000
+    /// >                   x: 00101100
+    /// >               x - 1: 00101011
+    /// >     x = x & (x - 1): 00101000
     ///
     /// The third iteration:
     ///
@@ -828,9 +837,9 @@ module econia::critqueue {
     /// >             x - 1: 00011111
     /// >     x AND (x - 1): 00000000
     ///
-    /// Thus after three iterations a corresponding critical bit bitmask
+    /// Thus after three iterations a corresponding critical bitmask
     /// has been determined. However, in the case where the two input
-    /// strings vary at all bits of lesser significance than that of the
+    /// strings vary at all bits of lesser significance than the
     /// critical bit, there may be required as many as `k - 1`
     /// iterations, where `k` is the number of bits in each string under
     /// comparison. For instance, consider the case of the two 8-bit
@@ -839,7 +848,7 @@ module econia::critqueue {
     /// >                  s1: 10101010
     /// >                  s2: 01010101
     /// >         x = s1 ^ s2: 11111111
-    /// >                      |- critical bit = 7
+    /// >                      ^ critical bit = 7
     /// >     x = x & (x - 1): 11111110 [iteration 1]
     /// >     x = x & (x - 1): 11111100 [iteration 2]
     /// >     x = x & (x - 1): 11111000 [iteration 3]
@@ -851,29 +860,32 @@ module econia::critqueue {
     ///
     /// # Binary search method
     ///
-    /// For the present implementation, strings are not partitioned into
-    /// a multi-byte array, rather, they are stored as `u128` integers,
-    /// so a binary search is instead proposed. Here, the same
-    /// `x = s1 ^ s2` operation is first used to identify all differing
-    /// bits, before iterating on an upper and lower bound for the
-    /// critical bit number:
+    /// For the present implementation, unlike in [Langley 2008],
+    /// strings are not partitioned into a multi-byte array, rather,
+    /// they are stored as `u128` integers, so a binary search is
+    /// instead proposed. Here, the same `x = s1 ^ s2` operation is
+    /// first used to identify all differing bits, before iterating on
+    /// an upper (`u`) and lower bound (`l`) for the critical bit
+    /// number:
     ///
     /// >              s1: 10101010
     /// >              s2: 01010101
     /// >     x = s1 ^ s2: 11111111
-    /// >           u = 7 -|      |- l = 0
+    /// >            u = 7 ^      ^ l = 0
     ///
-    /// The upper bound `u` is initialized to the length of the string
-    /// (7 in this example, but 127 for a `u128`), and the lower bound
-    /// `l` is initialized to 0. Next the midpoint `m` is calculated as
-    /// the average of `u` and `l`, in this case `m = (7 + 0) / 2 = 3`,
-    /// per truncating integer division. Now, the shifted compare value
-    /// `s = r >> m` is calculated and updates are applied according to
-    /// three potential outcomes:
+    /// The upper bound `u` is initialized to the length of the
+    /// bitstring (7 in this example, but 127 for a `u128`), and the
+    /// lower bound `l` is initialized to 0. Next the midpoint `m` is
+    /// calculated as the average of `u` and `l`, in this case
+    /// `m = (7 + 0) / 2 = 3`, per truncating integer division. Finally,
+    /// the shifted compare value `s = x >> m` is calculated, with the
+    /// result having three potential outcomes:
     ///
-    /// * `s == 1` means that the critical bit `c` is equal to `m`
-    /// * `s == 0` means that `c < m`, so `u` is set to `m - 1`
-    /// * `s > 1` means that `c > m`, so `l` us set to `m + 1`
+    /// | Shift result | Outcome                              |
+    /// |--------------|--------------------------------------|
+    /// | `s == 1`     | The critical bit `c` is equal to `m` |
+    /// | `s == 0`     | `c < m`, so set `u` to `m - 1`       |
+    /// | `s > 1`      | `c > m`, so set `l` to `m + 1`       |
     ///
     /// Hence, continuing the current example:
     ///
@@ -883,7 +895,7 @@ module econia::critqueue {
     /// `s > 1`, so `l = m + 1 = 4`, and the search window has shrunk:
     ///
     /// >     x = s1 ^ s2: 11111111
-    /// >           u = 7 -|  |- l = 4
+    /// >            u = 7 ^  ^ l = 4
     ///
     /// Updating the midpoint yields `m = (7 + 4) / 2 = 5`:
     ///
@@ -894,36 +906,40 @@ module econia::critqueue {
     /// shrinks again:
     ///
     /// >     x = s1 ^ s2: 11111111
-    /// >           u = 7 -||- l = 6
-    /// >     s = x >> m: 00000011
+    /// >            u = 7 ^^ l = 6
+    /// >      s = x >> m: 00000011
     ///
     /// Again `s > 1`, so update `l = m + 1 = 7`, the final iteration:
     ///
     /// >     x = s1 ^ s2: 11111111
-    /// >           u = 7 -|- l = 7
-    /// >     s = x >> m: 00000001
+    /// >            u = 7 ^ l = 7
+    /// >      s = x >> m: 00000001
     ///
-    /// Here, `s == 1`, which means that `c = m = 7`. Notably this
-    /// search has converged after only 3 iterations, as opposed to 7
-    /// for the linear search proposed above, and in general such a
-    /// search converges after $log_2(k)$ iterations at most, where $k$
-    /// is the number of bits in each of the strings `s1` and `s2` under
-    /// comparison. Hence this search method improves the $O(k)$ search
-    /// proposed by [Langley 2008](#references) to $O(log_2(k))$, and
-    /// moreover, determines the actual number of the critical bit,
-    /// rather than just a bitmask with bit `c` set, as he proposes,
-    /// which can also be easily generated via `1 << c`.
-    fun get_critical_bit(
+    /// Here, `s == 1`, which means that `c = m = 7`, and the
+    /// corresponding critical bitmask `1 << c` is returned:
+    ///
+    /// >         s1: 10101010
+    /// >         s2: 01010101
+    /// >     1 << c: 10000000
+    ///
+    /// Notably this search has converged after only 3 iterations, as
+    /// opposed to 7 for the linear search proposed above, and in
+    /// general such a search converges after $log_2(k)$ iterations at
+    /// most, where $k$ is the number of bits in each of the strings
+    /// `s1` and `s2` under comparison. Hence this search method
+    /// improves the $O(k)$ search proposed by [Langley 2008] to
+    /// $O(log_2(k))$.
+    fun get_critical_bitmask(
         s1: u128,
         s2: u128,
-    ): u8 {
+    ): u128 {
         let x = s1 ^ s2; // XOR result marked 1 at bits that differ.
         let l = 0; // Lower bound on critical bit search.
         let u = MSB_u128; // Upper bound on critical bit search.
         loop { // Begin binary search.
             let m = (l + u) / 2; // Calculate midpoint of search window.
             let s = x >> m; // Calculate midpoint shift of XOR result.
-            if (s == 1) return m; // If shift equals 1, c = m.
+            if (s == 1) return 1 << m; // If shift equals 1, c = m.
             // Update search bounds.
             if (s > 1) l = m + 1 else u = m - 1;
         }
@@ -1024,11 +1040,11 @@ module econia::critqueue {
 
     #[test]
     /// Verify successful calculation of critical bit at all positions.
-    fun test_get_critical_bit() {
+    fun test_get_critical_bitmask() {
         let b = 0; // Start loop for bit 0.
         while (b <= MSB_u128) { // Loop over all bit numbers.
             // Compare 0 versus a bitmask that is only set at bit b.
-            assert!(get_critical_bit(0, 1 << b) == b, (b as u64));
+            assert!(get_critical_bitmask(0, 1 << b) == 1 << b, (b as u64));
             b = b + 1; // Increment bit counter.
         };
     }

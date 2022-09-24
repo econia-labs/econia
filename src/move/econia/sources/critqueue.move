@@ -1,6 +1,6 @@
-/// Hybrid data structure combining crit-bit tree and queue properties.
+/// Crit-queue: A hybrid between a crit-bit tree and a queue.
 ///
-/// A crit-queue contains an inner crit-bit tree with subqueues at each
+/// A crit-queue contains an inner crit-bit tree with sub-queues at each
 /// leaf node, enabling chronological ordering among multiple instances
 /// of the same insertion key. Like a crit-bit tree, a crit-queue can be
 /// used as an associative array that maps keys to values, as in the
@@ -39,11 +39,11 @@
 /// * [Key storage multiplicity](#key-storage-multiplicity)
 /// * [Sorting order](#sorting-order)
 /// * [Leaves](#leaves)
-/// * [Subqueue nodes](#subqueue-nodes)
+/// * [Sub-queue nodes](#sub-queue-nodes)
 /// * [Inner keys](#inner-keys)
 /// * [Insertion counts](#insertion-counts)
 /// * [Dequeue order preservation](#dequeue-order-preservation)
-/// * [Subqueue removal updates](#subqueue-removal-updates)
+/// * [Sub-queue removal updates](#sub-queue-removal-updates)
 /// * [Free leaves](#free-leaves)
 /// * [Dequeues](#dequeues)
 ///
@@ -263,7 +263,7 @@
 /// | `1 = 0b01`    | `000...001`          | `000...000`        |
 /// | `3 = 0b11`    | `000...011`          | `000...000`        |
 ///
-/// Each leaf contains a nested subqueue of key-values insertion
+/// Each leaf contains a nested sub-queue of key-values insertion
 /// pairs all sharing the corresponding insertion key, with lower
 /// insertion counts at the front of the queue. Continuing the above
 /// example, this yields the following:
@@ -275,14 +275,14 @@
 /// >                            /      \
 /// >          000...000000...000        000...001000...000
 /// >     [k_{0, 0} --> k_{0, 1}]        [k_{1, 0} --> k_{1, 1}]
-/// >      ^ subqueue head                ^ subqueue head
+/// >      ^ sub-queue head               ^ sub-queue head
 ///
 /// Leaf keys are guaranteed to be unique, and all leaf nodes are stored
 /// in a single hash table.
 ///
-/// ## Subqueue nodes
+/// ## Sub-queue nodes
 ///
-/// All subqueue nodes are similarly stored in single hash table, and
+/// All sub-queue nodes are similarly stored in single hash table, and
 /// assigned a unique "access key" with the following bit structure
 /// (`NOT` denotes bitwise complement):
 ///
@@ -336,10 +336,10 @@
 /// When $k_{i, 0}$ is inserted, a new leaf node is initialized with
 /// an insertion counter set to 0, then added to the leaf hash table.
 /// The new leaf node is inserted to the crit-bit tree, and a
-/// corresponding subqueue node is placed at the head of the new leaf's
-/// subqueue. For each subsequent insertion of the same insertion key,
+/// corresponding sub-queue node is placed at the head of the new leaf's
+/// sub-queue. For each subsequent insertion of the same insertion key,
 /// $k_{i, n}$, the leaf insertion counter is updated to $n$, and the
-/// new subqueue node becomes the tail of the corresponding subqueue.
+/// new sub-queue node becomes the tail of the corresponding sub-queue.
 ///
 /// Since bits 62 and 63 in access keys are reserved for flag bits, the
 /// maximum insertion count per insertion key is thus $2^{62} - 1$.
@@ -364,10 +364,10 @@
 /// 3. $k_{4, 5}$
 /// 4. $k_{5, 0}$
 ///
-/// ## Subqueue removal updates
+/// ## Sub-queue removal updates
 ///
-/// Removal via access key lookup in the subqueue node hash table leads
-/// to an update within the corresponding subqueue.
+/// Removal via access key lookup in the sub-queue node hash table leads
+/// to an update within the corresponding sub-queue.
 ///
 /// For example, consider the following crit-queue:
 ///
@@ -375,7 +375,7 @@
 /// >                                         /    \
 /// >                       000...000000...000      000...001000...000
 /// >     [k_{0, 0} --> k_{0, 1} --> k_{0, 2}]      [k_{1, 0}]
-/// >      ^ subqueue head
+/// >      ^ sub-queue head
 ///
 /// Removal of $k_{0, 1}$ produces:
 ///
@@ -399,17 +399,17 @@
 ///
 /// Notably, however, the leaf corresponding to insertion key 0 is not
 /// deallocated, but rather, is converted to a "free leaf" with an
-/// empty subqueue.
+/// empty sub-queue.
 ///
 /// ## Free leaves
 ///
-/// Free leaves are leaf nodes with an empty subqueue.
+/// Free leaves are leaf nodes with an empty sub-queue.
 ///
 /// Free leaves track insertion counts in case another key-value
 /// insertion pair, having the insertion key encoded in the free leaf
 /// key, is inserted. Here, the free leaf is added back to the crit-bit
-/// tree and the new subqueue node becomes the head of the leaf's
-/// subqueue. Continuing the example, inserting another key-value pair
+/// tree and the new sub-queue node becomes the head of the leaf's
+/// sub-queue. Continuing the example, inserting another key-value pair
 /// with insertion key 0, $k_{0, 3}$, produces:
 ///
 /// >                        64th
@@ -425,9 +425,9 @@
 /// * The maximum access key in a descending crit-queue, or
 /// * The minimum access key in an ascending crit-queue.
 ///
-/// After all elements in the corresponding subqueue have been dequeued
+/// After all elements in the corresponding sub-queue have been dequeued
 /// in order of ascending insertion count, dequeueing proceeds with the
-/// head of the subqueue in the next leaf, which is accessed by either:
+/// head of the sub-queue in the next leaf, which is accessed by either:
 ///
 /// * Inorder predecessor traversal if a descending crit-queue, or
 /// * Inorder successor traversal if an ascending crit-queue.
@@ -451,17 +451,17 @@
 /// into the crit-bit tree but the tree is generally balanced,
 /// insertions improve to $O(log(n))$, where $n$ is the number of leaves
 /// in the tree. In the best case, where the corresponding
-/// subqueue already has a leaf in the crit-bit tree and a new
-/// subqueue node simply has to be inserted at the tail of the subqueue,
-/// insertions improve to $O(1)$.
+/// sub-queue already has a leaf in the crit-bit tree and a new
+/// sub-queue node simply has to be inserted at the tail of the
+/// sub-queue, insertions improve to $O(1)$.
 ///
 /// Insertions are parallelizable in the general case where:
 ///
 /// 1. They do not alter the head of the crit-queue.
 /// 2. They do not write to overlapping crit-bit tree edges.
-/// 3. They do not write to overlapping subqueue edges.
-/// 4. They alter neither the head nor the tail of the same subqueue.
-/// 5. They do not write to the same subqueue.
+/// 3. They do not write to overlapping sub-queue edges.
+/// 4. They alter neither the head nor the tail of the same sub-queue.
+/// 5. They do not write to the same sub-queue.
 ///
 /// The final parallelism constraint is a result of insertion count
 /// updates, and may potentially be eliminated in the case of a
@@ -469,14 +469,14 @@
 ///
 /// ## Removing
 ///
-/// With subqueue nodes stored in a hash table, removal operations via
+/// With sub-queue nodes stored in a hash table, removal operations via
 /// access key are are thus $O(1)$, and are parallelizable in the
 /// general case where:
 ///
 /// 1. They do not alter the head of the crit-queue.
 /// 2. They do not write to overlapping crit-bit tree edges.
-/// 3. They do not write to overlapping subqueue edges.
-/// 4. They alter neither the head nor the tail of the same subqueue.
+/// 3. They do not write to overlapping sub-queue edges.
+/// 4. They alter neither the head nor the tail of the same sub-queue.
 ///
 /// ## Dequeuing
 ///
@@ -518,7 +518,7 @@ module econia::critqueue {
         inners: Table<u128, Inner>,
         /// Map from leaf key to leaf node.
         leaves: Table<u128, Leaf>,
-        /// Map from access key to subqueue node.
+        /// Map from access key to sub-queue node.
         subqueue_nodes: Table<u128, SubQueueNode<V>>
     }
 
@@ -534,30 +534,30 @@ module econia::critqueue {
         right: u128
     }
 
-    /// A crit-bit tree leaf node. A free leaf if no subqueue head.
+    /// A crit-bit tree leaf node. A free leaf if no sub-queue head.
     /// Else the root of the crit-bit tree if no parent.
     struct Leaf has store {
         /// 0-indexed insertion count for corresponding insertion key.
         count: u64,
-        /// If no subqueue head, should also be none, since leaf is a
+        /// If no sub-queue head, should also be none, since leaf is a
         /// free leaf. Else corresponds to the inner key of the parent
         /// node, none when leaf is the root of the crit-bit tree.
         parent: Option<u128>,
         /// If none, node is a free leaf. Else the access key of the
-        /// subqueue head.
+        /// sub-queue head.
         head: Option<u128>,
         /// If none, node is a free leaf. Else the access key of the
-        /// subqueue tail.
+        /// sub-queue tail.
         tail: Option<u128>
     }
 
-    /// A node in a subqueue.
+    /// A node in a sub-queue.
     struct SubQueueNode<V> has store {
         /// Insertion value.
         insertion_value: V,
-        /// Access key of previous subqueue node, if any.
+        /// Access key of previous sub-queue node, if any.
         previous: Option<u128>,
-        /// Access key of next subqueue node, if any.
+        /// Access key of next sub-queue node, if any.
         next: Option<u128>
     }
 
@@ -614,36 +614,36 @@ module econia::critqueue {
     /// Borrow insertion value corresponding to `access_key` in given
     /// `CritQueue`, aborting if no such access key.
     public fun borrow<V>(
-        crit_queue_ref: &CritQueue<V>,
+        critqueue_ref: &CritQueue<V>,
         access_key: u128
     ): &V {
         &table::borrow(
-            &crit_queue_ref.subqueue_nodes, access_key).insertion_value
+            &critqueue_ref.subqueue_nodes, access_key).insertion_value
     }
 
     /// Mutably borrow insertion value corresponding to `access_key`
     /// `CritQueue`, aborting if no such access key
     public fun borrow_mut<V>(
-        crit_queue_ref_mut: &mut CritQueue<V>,
+        critqueue_ref_mut: &mut CritQueue<V>,
         access_key: u128
     ): &mut V {
         &mut table::borrow_mut(
-            &mut crit_queue_ref_mut.subqueue_nodes, access_key).insertion_value
+            &mut critqueue_ref_mut.subqueue_nodes, access_key).insertion_value
     }
 
     /// Return access key of given `CritQueue` head, if any.
     public fun get_head_access_key<V>(
-        crit_queue_ref: &CritQueue<V>,
+        critqueue_ref: &CritQueue<V>,
     ): Option<u128> {
-        crit_queue_ref.head
+        critqueue_ref.head
     }
 
     /// Return `true` if given `CritQueue` has the given `access_key`.
     public fun has_access_key<V>(
-        crit_queue_ref: &CritQueue<V>,
+        critqueue_ref: &CritQueue<V>,
         access_key: u128
     ): bool {
-        table::contains(&crit_queue_ref.subqueue_nodes, access_key)
+        table::contains(&critqueue_ref.subqueue_nodes, access_key)
     }
 
     /// Insert the given `key`-`value` insertion pair into the given
@@ -652,7 +652,7 @@ module econia::critqueue {
     /// Aborts if the given insertion `key` has already been inserted
     /// the maximum number of times.
     public fun insert<V>(
-        crit_queue_ref_mut: &mut CritQueue<V>,
+        critqueue_ref_mut: &mut CritQueue<V>,
         insertion_key: u64,
         insertion_value: V
     ): u128 {
@@ -661,8 +661,8 @@ module econia::critqueue {
         // Get leaf key from insertion key.
         let leaf_key = (insertion_key as u128) << INSERTION_KEY;
         // Borrow mutable reference to leaves table.
-        let leaves_ref_mut = &mut crit_queue_ref_mut.leaves;
-        // Initialize a subqueue node with the insertion value.
+        let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
+        // Initialize a sub-queue node with the insertion value.
         let subqueue_node = SubQueueNode{insertion_value,
             previous: option::none(), next: option::none()};
         let access_key; // Declare access key
@@ -680,24 +680,24 @@ module econia::critqueue {
             access_key = leaf_key | (count as u128);
             // If a descending crit-queue, take bitwise complement of
             // insertion count and set the bit flag for sort order.
-            if (crit_queue_ref_mut.order == DESCENDING) access_key =
+            if (critqueue_ref_mut.order == DESCENDING) access_key =
                 access_key ^ NOT_ENQUEUE_COUNT_DESCENDING;
             // If not a free leaf:
             if (option::is_some(&leaf_ref_mut.tail)) {
                 free_leaf = false; // Flag as such.
-                // Get the subqueue tail access key.
+                // Get the sub-queue tail access key.
                 let tail_access_key = *option::borrow(&leaf_ref_mut.tail);
-                // Borrow mutable reference to the old subqueue tail.
+                // Borrow mutable reference to the old sub-queue tail.
                 let tail_ref_mut = table::borrow_mut(
-                    &mut crit_queue_ref_mut.subqueue_nodes, tail_access_key);
-                // Set old subqueue tail to have as its next subqueue
-                // node the new subqueue node.
+                    &mut critqueue_ref_mut.subqueue_nodes, tail_access_key);
+                // Set old sub-queue tail to have as its next sub-queue
+                // node the new sub-queue node.
                 tail_ref_mut.next = option::some(access_key);
-                // Set the new subqueue node to have as its previous
-                // subqueue node the old subqueue tail.
+                // Set the new sub-queue node to have as its previous
+                // sub-queue node the old sub-queue tail.
                 subqueue_node.previous = option::some(tail_access_key);
-                // Set the subqueue to have the new subqueue node as its
-                // tail.
+                // Set the sub-queue to have the new sub-queue node as
+                // its tail.
                 leaf_ref_mut.tail = option::some(access_key);
             };
         } else { // If the insertion key has not been inserted before:
@@ -706,18 +706,18 @@ module econia::critqueue {
             access_key = leaf_key;
             // If a descending crit-queue, take bitwise complement of
             // insertion count and set the bit flag for sort order.
-            if (crit_queue_ref_mut.order == DESCENDING) access_key =
+            if (critqueue_ref_mut.order == DESCENDING) access_key =
                 access_key ^ NOT_ENQUEUE_COUNT_DESCENDING;
             // Declare leaf with insertion count 0, no parent, and new
-            // subqueue node as both head and tail.
+            // sub-queue node as both head and tail.
             let leaf = Leaf{count: 0, parent: option::none(), head:
                 option::some(access_key), tail: option::some(access_key)};
             // Add the leaf to the leaves table.
             table::add(leaves_ref_mut, access_key, leaf);
         };
-        // Borrow mutable reference to subqueue nodes table.
-        let subqueue_nodes_ref_mut = &mut crit_queue_ref_mut.subqueue_nodes;
-        // Add corresponding subqueue node to the table.
+        // Borrow mutable reference to sub-queue nodes table.
+        let subqueue_nodes_ref_mut = &mut critqueue_ref_mut.subqueue_nodes;
+        // Add corresponding sub-queue node to the table.
         table::add(subqueue_nodes_ref_mut, access_key, subqueue_node);
         free_leaf; // Insert free leaf to tree if free.
         access_key // Return access key.
@@ -725,9 +725,9 @@ module econia::critqueue {
 
     /// Return `true` if given `CritQueue` is empty.
     public fun is_empty<V>(
-        crit_queue_ref: &CritQueue<V>,
+        critqueue_ref: &CritQueue<V>,
     ): bool {
-        option::is_none(&crit_queue_ref.root)
+        option::is_none(&critqueue_ref.root)
     }
 
     /// Return `CritQueue` of sort `order` `ASCENDING` or `DESCENDING`.
@@ -747,20 +747,20 @@ module econia::critqueue {
     /// Return `true` if, were `insertion_key` to be inserted, its
     /// access key would become the new head of the given `CritQueue`.
     public fun would_become_new_head<V>(
-        crit_queue_ref: &CritQueue<V>,
+        critqueue_ref: &CritQueue<V>,
         insertion_key: u64
     ): bool {
         // If the crit-queue is empty and thus has no head:
-        if (option::is_none(&crit_queue_ref.head)) {
+        if (option::is_none(&critqueue_ref.head)) {
             // Return that insertion key would become new head.
             return true
         } else { // Otherwise, if crit-queue is not empty:
             // Get insertion key of crit-queue head.
-            let head_insertion_key = (*option::borrow(&crit_queue_ref.head) >>
+            let head_insertion_key = (*option::borrow(&critqueue_ref.head) >>
                 INSERTION_KEY as u64);
             // If an ascending crit-queue, return true if insertion key
             // is less than insertion key of crit-queue head.
-            return if (crit_queue_ref.order == ASCENDING)
+            return if (critqueue_ref.order == ASCENDING)
                 insertion_key < head_insertion_key else
                 // If a descending crit-queue, return true if insertion
                 // key is greater than insertion key of crit-queue head.
@@ -771,10 +771,10 @@ module econia::critqueue {
     /// Return `true` if, were `insertion_key` to be inserted, its
     /// access key would trail behind the head of the given `CritQueue`.
     public fun would_trail_head<V>(
-        crit_queue_ref: &CritQueue<V>,
+        critqueue_ref: &CritQueue<V>,
         insertion_key: u64
     ): bool {
-        !would_become_new_head(crit_queue_ref, insertion_key)
+        !would_become_new_head(critqueue_ref, insertion_key)
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1010,16 +1010,16 @@ module econia::critqueue {
     /// Verify borrowing, immutably and mutably.
     fun test_borrowers():
     CritQueue<u8> {
-        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
-        // Add a mock subqueue node to the values table.
-        table::add(&mut crit_queue.subqueue_nodes, 0,
+        let critqueue = new(ASCENDING); // Get ascending crit-queue.
+        // Add a mock sub-queue node to the values table.
+        table::add(&mut critqueue.subqueue_nodes, 0,
             SubQueueNode{insertion_value: 0, previous: option::none(),
                 next: option::none()});
         // Assert correct value borrow.
-        assert!(*borrow(&crit_queue, 0) == 0, 0);
-        *borrow_mut(&mut crit_queue, 0) = 123; // Mutate value.
-        assert!(*borrow(&crit_queue, 0) == 123, 0); // Assert mutation.
-        crit_queue // Return crit-queue.
+        assert!(*borrow(&critqueue, 0) == 0, 0);
+        *borrow_mut(&mut critqueue, 0) = 123; // Mutate value.
+        assert!(*borrow(&critqueue, 0) == 123, 0); // Assert mutation.
+        critqueue // Return crit-queue.
     }
 
     #[test]
@@ -1037,43 +1037,43 @@ module econia::critqueue {
     /// Verify lookup returns.
     fun test_get_head_access_key():
     CritQueue<u8> {
-        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        let critqueue = new(ASCENDING); // Get ascending crit-queue.
         // Assert no head access key indicated.
-        assert!(option::is_none(&get_head_access_key(&crit_queue)), 0);
+        assert!(option::is_none(&get_head_access_key(&critqueue)), 0);
         // Set mock head access key.
-        option::fill(&mut crit_queue.head, 123);
+        option::fill(&mut critqueue.head, 123);
         // Assert head access key returned correctly.
-        assert!(*option::borrow(&get_head_access_key(&crit_queue)) == 123, 0);
-        crit_queue // Return crit-queue.
+        assert!(*option::borrow(&get_head_access_key(&critqueue)) == 123, 0);
+        critqueue // Return crit-queue.
     }
 
     #[test]
     /// Verify returns for membership checks.
     fun test_has_access_key():
     CritQueue<u8> {
-        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        let critqueue = new(ASCENDING); // Get ascending crit-queue.
         // Assert arbitrary access key not contained.
-        assert!(!has_access_key(&crit_queue, 0), 0);
-        // Add a mock subqueue node to the values table.
-        table::add(&mut crit_queue.subqueue_nodes, 0,
+        assert!(!has_access_key(&critqueue, 0), 0);
+        // Add a mock sub-queue node to the values table.
+        table::add(&mut critqueue.subqueue_nodes, 0,
             SubQueueNode{insertion_value: 0, previous: option::none(),
                 next: option::none()});
         // Assert arbitrary access key contained.
-        assert!(has_access_key(&crit_queue, 0), 0);
-        crit_queue // Return crit-queue.
+        assert!(has_access_key(&critqueue, 0), 0);
+        critqueue // Return crit-queue.
     }
 
     #[test]
     /// Verify successful returns.
     fun test_is_empty():
     CritQueue<u8> {
-        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        let critqueue = new(ASCENDING); // Get ascending crit-queue.
         // Assert is marked empty.
-        assert!(is_empty(&crit_queue), 0);
-        option::fill(&mut crit_queue.root, 1234); // Mark mock root.
+        assert!(is_empty(&critqueue), 0);
+        option::fill(&mut critqueue.root, 1234); // Mark mock root.
         // Assert is marked not empty.
-        assert!(!is_empty(&crit_queue), 0);
-        crit_queue // Return crit-queue.
+        assert!(!is_empty(&critqueue), 0);
+        critqueue // Return crit-queue.
     }
 
     #[test]
@@ -1137,39 +1137,39 @@ module econia::critqueue {
     /// Verify lookup returns.
     fun test_would_become_trail_head():
     CritQueue<u8> {
-        let crit_queue = new(ASCENDING); // Get ascending crit-queue.
+        let critqueue = new(ASCENDING); // Get ascending crit-queue.
         // Assert return for value that would become new head.
-        assert!(would_become_new_head(&crit_queue, HI_64), 0);
+        assert!(would_become_new_head(&critqueue, HI_64), 0);
         // Assert return for value that would not trail head.
-        assert!(!would_trail_head(&crit_queue, HI_64), 0);
+        assert!(!would_trail_head(&critqueue, HI_64), 0);
         // Set mock head access key.
-        option::fill(&mut crit_queue.head, u_128_by_32(
+        option::fill(&mut critqueue.head, u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000010",
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
         ));
         // Assert return for insertion key that would become new head.
-        assert!(would_become_new_head(&crit_queue, (u_128(b"01") as u64)), 0);
+        assert!(would_become_new_head(&critqueue, (u_128(b"01") as u64)), 0);
         // Assert return for insertion key that would not trail head.
-        assert!(!would_trail_head(&crit_queue, (u_128(b"01") as u64)), 0);
+        assert!(!would_trail_head(&critqueue, (u_128(b"01") as u64)), 0);
         // Assert return for insertion key that would not become new
         // head.
-        assert!(!would_become_new_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        assert!(!would_become_new_head(&critqueue, (u_128(b"10") as u64)), 0);
         // Assert return for insertion key that would trail head.
-        assert!(would_trail_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        assert!(would_trail_head(&critqueue, (u_128(b"10") as u64)), 0);
         // Flip crit-queue order.
-        crit_queue.order = DESCENDING;
+        critqueue.order = DESCENDING;
         // Assert return for insertion key that would become new head.
-        assert!(would_become_new_head(&crit_queue, (u_128(b"11") as u64)), 0);
+        assert!(would_become_new_head(&critqueue, (u_128(b"11") as u64)), 0);
         // Assert return for insertion key that would not trail head.
-        assert!(!would_trail_head(&crit_queue, (u_128(b"11") as u64)), 0);
+        assert!(!would_trail_head(&critqueue, (u_128(b"11") as u64)), 0);
         // Assert return for insertion key that would not become new
         // head.
-        assert!(!would_become_new_head(&crit_queue, (u_128(b"10") as u64)), 0);
+        assert!(!would_become_new_head(&critqueue, (u_128(b"10") as u64)), 0);
         // Assert return for insertion key that would trail head.
-        assert!(would_trail_head(&crit_queue, (u_128(b"10") as u64)), 0);
-        crit_queue // Return crit-queue.
+        assert!(would_trail_head(&critqueue, (u_128(b"10") as u64)), 0);
+        critqueue // Return crit-queue.
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

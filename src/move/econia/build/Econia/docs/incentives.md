@@ -105,7 +105,7 @@ updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incenti
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="">0x1::vector</a>;
 <b>use</b> <a href="resource_account.md#0xc0deb00c_resource_account">0xc0deb00c::resource_account</a>;
-<b>use</b> <a href="tablist.md#0xc0deb00c_table_list">0xc0deb00c::table_list</a>;
+<b>use</b> <a href="tablist.md#0xc0deb00c_tablist">0xc0deb00c::tablist</a>;
 </code></pre>
 
 
@@ -129,7 +129,7 @@ reserved for Econia.
 
 <dl>
 <dt>
-<code>map: <a href="tablist.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;u64, <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;&gt;</code>
+<code>map: <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;u64, <a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;&gt;</code>
 </dt>
 <dd>
  Map from market ID to fees collected for given market,
@@ -260,7 +260,7 @@ All of an integrator's <code>IntregratorFeeStore</code>s for given
 
 <dl>
 <dt>
-<code>map: <a href="tablist.md#0xc0deb00c_table_list_TableList">table_list::TableList</a>&lt;u64, <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">incentives::IntegratorFeeStore</a>&lt;QuoteCoinType&gt;&gt;</code>
+<code>map: <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;u64, <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">incentives::IntegratorFeeStore</a>&lt;QuoteCoinType&gt;&gt;</code>
 </dt>
 <dd>
  Map from market ID to <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code>, enabling
@@ -875,7 +875,7 @@ collisions with the matching engine.
             integrator_address).map;
     // Borrow mutable reference <b>to</b> corresponding integrator fee
     // store for given market ID.
-    <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+    <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
         integrator_fee_stores_map_ref_mut, market_id);
     // Get current tier number.
     <b>let</b> current_tier = integrator_fee_store_ref_mut.tier;
@@ -994,7 +994,7 @@ collisions with the matching engine.
         <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(address_of(integrator)).map;
     // Borrow mutable reference <b>to</b> integrator fee store for given
     // market ID.
-    <b>let</b> integrator_fee_store_ref = <a href="tablist.md#0xc0deb00c_table_list_borrow">table_list::borrow</a>(
+    <b>let</b> integrator_fee_store_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(
         integrator_fee_stores_map_ref, market_id);
     // Return withdrawal fee for given tier.
     <a href="incentives.md#0xc0deb00c_incentives_get_tier_withdrawal_fee">get_tier_withdrawal_fee</a>(integrator_fee_store_ref.tier)
@@ -1285,7 +1285,7 @@ Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">I
             integrator_address).map;
     // Borrow mutable reference <b>to</b> integrator fee store for given
     // market ID.
-    <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+    <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
         integrator_fee_stores_map_ref_mut, market_id);
     // Set the new tier.
     integrator_fee_store_ref_mut.tier = new_tier;
@@ -1457,7 +1457,7 @@ engine.
         <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(address_of(integrator)).map;
     // Borrow mutable reference <b>to</b> integrator fee store for given
     // market ID.
-    <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+    <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
         integrator_fee_stores_map_ref_mut, market_id);
     // Get fee <b>to</b> withdraw from fee store at given tier.
     <b>let</b> withdrawal_fee = <a href="incentives.md#0xc0deb00c_incentives_get_tier_withdrawal_fee">get_tier_withdrawal_fee</a>(
@@ -1772,12 +1772,12 @@ per above.
                 integrator_address).map;
         // Determine <b>if</b> the fee stores map cotains an entry for the
         // given market ID.
-        <b>let</b> contains_market_id_entry = <a href="tablist.md#0xc0deb00c_table_list_contains">table_list::contains</a>(
+        <b>let</b> contains_market_id_entry = <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(
             integrator_fee_stores_map_ref_mut, market_id);
         // If fee stores map contains an entry for given market ID:
         <b>if</b> (contains_market_id_entry) {
             // Borrow mutable reference <b>to</b> corresponding fee store.
-            <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+            <b>let</b> integrator_fee_store_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
                 integrator_fee_stores_map_ref_mut, market_id);
             // Get fee share divisor for given tier.
             <b>let</b> fee_share_divisor = <a href="incentives.md#0xc0deb00c_incentives_get_fee_share_divisor">get_fee_share_divisor</a>(
@@ -1810,7 +1810,7 @@ per above.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>&lt;QuoteCoinType&gt;&gt;(
             fee_account_address).map;
     // Borrow mutable reference <b>to</b> fees for given market ID.
-    <b>let</b> econia_fee_store_coins_ref_mut = <a href="tablist.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+    <b>let</b> econia_fee_store_coins_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
         econia_fee_store_map_ref_mut, market_id);
     // Verify merge will not overflow Econia fee store.
     <a href="incentives.md#0xc0deb00c_incentives_range_check_coin_merge">range_check_coin_merge</a>(
@@ -2128,7 +2128,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">E
     <b>if</b> (!<b>exists</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>&lt;QuoteCoinType&gt;&gt;(fee_account_address))
         // Move <b>to</b> the Econia fee <a href="">account</a> an empty one.
         <b>move_to</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>&lt;QuoteCoinType&gt;&gt;(&fee_account,
-            <a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>{map: <a href="tablist.md#0xc0deb00c_table_list_new">table_list::new</a>()});
+            <a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>{map: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>()});
     // Borrow mutable reference <b>to</b> Econia fee store map for
     // given quote <a href="">coin</a> type.
     <b>let</b> econia_fee_store_map_ref_mut =
@@ -2137,7 +2137,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">E
     // Declare zero coins of quote <a href="">coin</a> type
     <b>let</b> zero_coins = <a href="_zero">coin::zero</a>&lt;QuoteCoinType&gt;();
     // Add <b>to</b> fee store map an entry given market ID and no coins.
-    <a href="tablist.md#0xc0deb00c_table_list_add">table_list::add</a>(econia_fee_store_map_ref_mut, market_id, zero_coins);
+    <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(econia_fee_store_map_ref_mut, market_id, zero_coins);
 }
 </code></pre>
 
@@ -2204,7 +2204,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
     <b>if</b> (!<b>exists</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(integrator_address))
         // Move <b>to</b> the integrator <a href="">account</a> an empty one.
         <b>move_to</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>&lt;QuoteCoinType&gt;&gt;(integrator,
-            <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>{map: <a href="tablist.md#0xc0deb00c_table_list_new">table_list::new</a>()});
+            <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStores">IntegratorFeeStores</a>{map: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>()});
     // Declare integrator fee store for given tier, <b>with</b> no coins.
     <b>let</b> integrator_fee_store =
         <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a>{tier, coins: <a href="_zero">coin::zero</a>&lt;QuoteCoinType&gt;()};
@@ -2215,7 +2215,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
             integrator_address).map;
     // Add <b>to</b> the map an entry having <b>with</b> given market ID and
     // generated integrator fee store.
-    <a href="tablist.md#0xc0deb00c_table_list_add">table_list::add</a>(integrator_fee_stores_map_ref_mut, market_id,
+    <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(integrator_fee_stores_map_ref_mut, market_id,
         integrator_fee_store);
 }
 </code></pre>
@@ -2839,7 +2839,7 @@ if <code><a href="">account</a></code> is not Econia.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">EconiaFeeStore</a>&lt;QuoteCoinType&gt;&gt;(
             fee_account_address).map;
     // Borrow mutable reference <b>to</b> fees for given market ID.
-    <b>let</b> fee_coins_ref_mut = <a href="tablist.md#0xc0deb00c_table_list_borrow_mut">table_list::borrow_mut</a>(
+    <b>let</b> fee_coins_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
         econia_fee_store_map_ref_mut, market_id);
     // If flagged <b>to</b> extract all, extract all and <b>return</b>.
     <b>if</b> (all) <a href="_extract_all">coin::extract_all</a>(fee_coins_ref_mut) <b>else</b>

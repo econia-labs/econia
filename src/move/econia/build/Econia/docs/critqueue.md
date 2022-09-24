@@ -3,9 +3,9 @@
 
 # Module `0xc0deb00c::critqueue`
 
-Hybrid data structure combining crit-bit tree and queue properties.
+Crit-queue: A hybrid between a crit-bit tree and a queue.
 
-A crit-queue contains an inner crit-bit tree with subqueues at each
+A crit-queue contains an inner crit-bit tree with sub-queues at each
 leaf node, enabling chronological ordering among multiple instances
 of the same insertion key. Like a crit-bit tree, a crit-queue can be
 used as an associative array that maps keys to values, as in the
@@ -48,11 +48,11 @@ case.
 * [Key storage multiplicity](#key-storage-multiplicity)
 * [Sorting order](#sorting-order)
 * [Leaves](#leaves)
-* [Subqueue nodes](#subqueue-nodes)
+* [Sub-queue nodes](#sub-queue-nodes)
 * [Inner keys](#inner-keys)
 * [Insertion counts](#insertion-counts)
 * [Dequeue order preservation](#dequeue-order-preservation)
-* [Subqueue removal updates](#subqueue-removal-updates)
+* [Sub-queue removal updates](#sub-queue-removal-updates)
 * [Free leaves](#free-leaves)
 * [Dequeues](#dequeues)
 
@@ -328,7 +328,7 @@ Continuing the above example:
 | <code>1 = 0b01</code>    | <code>000...001</code>          | <code>000...000</code>        |
 | <code>3 = 0b11</code>    | <code>000...011</code>          | <code>000...000</code>        |
 
-Each leaf contains a nested subqueue of key-values insertion
+Each leaf contains a nested sub-queue of key-values insertion
 pairs all sharing the corresponding insertion key, with lower
 insertion counts at the front of the queue. Continuing the above
 example, this yields the following:
@@ -340,18 +340,18 @@ example, this yields the following:
 >                            /      \
 >          000...000000...000        000...001000...000
 >     [k_{0, 0} --> k_{0, 1}]        [k_{1, 0} --> k_{1, 1}]
->      ^ subqueue head                ^ subqueue head
+>      ^ sub-queue head               ^ sub-queue head
 
 Leaf keys are guaranteed to be unique, and all leaf nodes are stored
 in a single hash table.
 
 
-<a name="@Subqueue_nodes_15"></a>
+<a name="@Sub-queue_nodes_15"></a>
 
-### Subqueue nodes
+### Sub-queue nodes
 
 
-All subqueue nodes are similarly stored in single hash table, and
+All sub-queue nodes are similarly stored in single hash table, and
 assigned a unique "access key" with the following bit structure
 (<code>NOT</code> denotes bitwise complement):
 
@@ -413,10 +413,10 @@ to insertion key $i$.
 When $k_{i, 0}$ is inserted, a new leaf node is initialized with
 an insertion counter set to 0, then added to the leaf hash table.
 The new leaf node is inserted to the crit-bit tree, and a
-corresponding subqueue node is placed at the head of the new leaf's
-subqueue. For each subsequent insertion of the same insertion key,
+corresponding sub-queue node is placed at the head of the new leaf's
+sub-queue. For each subsequent insertion of the same insertion key,
 $k_{i, n}$, the leaf insertion counter is updated to $n$, and the
-new subqueue node becomes the tail of the corresponding subqueue.
+new sub-queue node becomes the tail of the corresponding sub-queue.
 
 Since bits 62 and 63 in access keys are reserved for flag bits, the
 maximum insertion count per insertion key is thus $2^{62} - 1$.
@@ -446,13 +446,13 @@ Here, removing $k_{2, 5}$ simply updates the dequeue sequence to:
 4. $k_{5, 0}$
 
 
-<a name="@Subqueue_removal_updates_19"></a>
+<a name="@Sub-queue_removal_updates_19"></a>
 
-### Subqueue removal updates
+### Sub-queue removal updates
 
 
-Removal via access key lookup in the subqueue node hash table leads
-to an update within the corresponding subqueue.
+Removal via access key lookup in the sub-queue node hash table leads
+to an update within the corresponding sub-queue.
 
 For example, consider the following crit-queue:
 
@@ -460,7 +460,7 @@ For example, consider the following crit-queue:
 >                                         /    \
 >                       000...000000...000      000...001000...000
 >     [k_{0, 0} --> k_{0, 1} --> k_{0, 2}]      [k_{1, 0}]
->      ^ subqueue head
+>      ^ sub-queue head
 
 Removal of $k_{0, 1}$ produces:
 
@@ -484,7 +484,7 @@ single leaf at its root:
 
 Notably, however, the leaf corresponding to insertion key 0 is not
 deallocated, but rather, is converted to a "free leaf" with an
-empty subqueue.
+empty sub-queue.
 
 
 <a name="@Free_leaves_20"></a>
@@ -492,13 +492,13 @@ empty subqueue.
 ### Free leaves
 
 
-Free leaves are leaf nodes with an empty subqueue.
+Free leaves are leaf nodes with an empty sub-queue.
 
 Free leaves track insertion counts in case another key-value
 insertion pair, having the insertion key encoded in the free leaf
 key, is inserted. Here, the free leaf is added back to the crit-bit
-tree and the new subqueue node becomes the head of the leaf's
-subqueue. Continuing the example, inserting another key-value pair
+tree and the new sub-queue node becomes the head of the leaf's
+sub-queue. Continuing the example, inserting another key-value pair
 with insertion key 0, $k_{0, 3}$, produces:
 
 >                        64th
@@ -518,9 +518,9 @@ that stores:
 * The maximum access key in a descending crit-queue, or
 * The minimum access key in an ascending crit-queue.
 
-After all elements in the corresponding subqueue have been dequeued
+After all elements in the corresponding sub-queue have been dequeued
 in order of ascending insertion count, dequeueing proceeds with the
-head of the subqueue in the next leaf, which is accessed by either:
+head of the sub-queue in the next leaf, which is accessed by either:
 
 * Inorder predecessor traversal if a descending crit-queue, or
 * Inorder successor traversal if an ascending crit-queue.
@@ -556,17 +556,17 @@ In the intermediate case where a new leaf node has to be inserted
 into the crit-bit tree but the tree is generally balanced,
 insertions improve to $O(log(n))$, where $n$ is the number of leaves
 in the tree. In the best case, where the corresponding
-subqueue already has a leaf in the crit-bit tree and a new
-subqueue node simply has to be inserted at the tail of the subqueue,
-insertions improve to $O(1)$.
+sub-queue already has a leaf in the crit-bit tree and a new
+sub-queue node simply has to be inserted at the tail of the
+sub-queue, insertions improve to $O(1)$.
 
 Insertions are parallelizable in the general case where:
 
 1. They do not alter the head of the crit-queue.
 2. They do not write to overlapping crit-bit tree edges.
-3. They do not write to overlapping subqueue edges.
-4. They alter neither the head nor the tail of the same subqueue.
-5. They do not write to the same subqueue.
+3. They do not write to overlapping sub-queue edges.
+4. They alter neither the head nor the tail of the same sub-queue.
+5. They do not write to the same sub-queue.
 
 The final parallelism constraint is a result of insertion count
 updates, and may potentially be eliminated in the case of a
@@ -578,14 +578,14 @@ parallelized insertion count aggregator.
 ### Removing
 
 
-With subqueue nodes stored in a hash table, removal operations via
+With sub-queue nodes stored in a hash table, removal operations via
 access key are are thus $O(1)$, and are parallelizable in the
 general case where:
 
 1. They do not alter the head of the crit-queue.
 2. They do not write to overlapping crit-bit tree edges.
-3. They do not write to overlapping subqueue edges.
-4. They alter neither the head nor the tail of the same subqueue.
+3. They do not write to overlapping sub-queue edges.
+4. They alter neither the head nor the tail of the same sub-queue.
 
 
 <a name="@Dequeuing_26"></a>
@@ -615,11 +615,11 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
     -  [Key storage multiplicity](#@Key_storage_multiplicity_12)
     -  [Sorting order](#@Sorting_order_13)
     -  [Leaves](#@Leaves_14)
-    -  [Subqueue nodes](#@Subqueue_nodes_15)
+    -  [Sub-queue nodes](#@Sub-queue_nodes_15)
     -  [Inner keys](#@Inner_keys_16)
     -  [Insertion counts](#@Insertion_counts_17)
     -  [Dequeue order preservation](#@Dequeue_order_preservation_18)
-    -  [Subqueue removal updates](#@Subqueue_removal_updates_19)
+    -  [Sub-queue removal updates](#@Sub-queue_removal_updates_19)
     -  [Free leaves](#@Free_leaves_20)
     -  [Dequeues](#@Dequeues_21)
 -  [Implementation analysis](#@Implementation_analysis_22)
@@ -708,7 +708,7 @@ Hybrid between a crit-bit tree and a queue. See above.
 <code>subqueue_nodes: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">critqueue::SubQueueNode</a>&lt;V&gt;&gt;</code>
 </dt>
 <dd>
- Map from access key to subqueue node.
+ Map from access key to sub-queue node.
 </dd>
 </dl>
 
@@ -765,7 +765,7 @@ A crit-bit tree inner node.
 
 ## Struct `Leaf`
 
-A crit-bit tree leaf node. A free leaf if no subqueue head.
+A crit-bit tree leaf node. A free leaf if no sub-queue head.
 Else the root of the crit-bit tree if no parent.
 
 
@@ -789,7 +789,7 @@ Else the root of the crit-bit tree if no parent.
 <code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- If no subqueue head, should also be none, since leaf is a
+ If no sub-queue head, should also be none, since leaf is a
  free leaf. Else corresponds to the inner key of the parent
  node, none when leaf is the root of the crit-bit tree.
 </dd>
@@ -798,14 +798,14 @@ Else the root of the crit-bit tree if no parent.
 </dt>
 <dd>
  If none, node is a free leaf. Else the access key of the
- subqueue head.
+ sub-queue head.
 </dd>
 <dt>
 <code>tail: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
  If none, node is a free leaf. Else the access key of the
- subqueue tail.
+ sub-queue tail.
 </dd>
 </dl>
 
@@ -816,7 +816,7 @@ Else the root of the crit-bit tree if no parent.
 
 ## Struct `SubQueueNode`
 
-A node in a subqueue.
+A node in a sub-queue.
 
 
 <pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>&lt;V&gt; <b>has</b> store
@@ -839,13 +839,13 @@ A node in a subqueue.
 <code>previous: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- Access key of previous subqueue node, if any.
+ Access key of previous sub-queue node, if any.
 </dd>
 <dt>
 <code>next: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- Access key of next subqueue node, if any.
+ Access key of next sub-queue node, if any.
 </dd>
 </dl>
 
@@ -997,7 +997,7 @@ Borrow insertion value corresponding to <code>access_key</code> in given
 <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, aborting if no such access key.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &V
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &V
 </code></pre>
 
 
@@ -1007,11 +1007,11 @@ Borrow insertion value corresponding to <code>access_key</code> in given
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     access_key: u128
 ): &V {
     &<a href="_borrow">table::borrow</a>(
-        &crit_queue_ref.subqueue_nodes, access_key).insertion_value
+        &critqueue_ref.subqueue_nodes, access_key).insertion_value
 }
 </code></pre>
 
@@ -1027,7 +1027,7 @@ Mutably borrow insertion value corresponding to <code>access_key</code>
 <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, aborting if no such access key
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &<b>mut</b> V
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &<b>mut</b> V
 </code></pre>
 
 
@@ -1037,11 +1037,11 @@ Mutably borrow insertion value corresponding to <code>access_key</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(
-    crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     access_key: u128
 ): &<b>mut</b> V {
     &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(
-        &<b>mut</b> crit_queue_ref_mut.subqueue_nodes, access_key).insertion_value
+        &<b>mut</b> critqueue_ref_mut.subqueue_nodes, access_key).insertion_value
 }
 </code></pre>
 
@@ -1056,7 +1056,7 @@ Mutably borrow insertion value corresponding to <code>access_key</code>
 Return access key of given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> head, if any.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_access_key">get_head_access_key</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): <a href="_Option">option::Option</a>&lt;u128&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_access_key">get_head_access_key</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): <a href="_Option">option::Option</a>&lt;u128&gt;
 </code></pre>
 
 
@@ -1066,9 +1066,9 @@ Return access key of given <code><a href="critqueue.md#0xc0deb00c_critqueue_Crit
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_access_key">get_head_access_key</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
 ): Option&lt;u128&gt; {
-    crit_queue_ref.head
+    critqueue_ref.head
 }
 </code></pre>
 
@@ -1083,7 +1083,7 @@ Return access key of given <code><a href="critqueue.md#0xc0deb00c_critqueue_Crit
 Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has the given <code>access_key</code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_access_key">has_access_key</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): bool
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_access_key">has_access_key</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): bool
 </code></pre>
 
 
@@ -1093,10 +1093,10 @@ Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_access_key">has_access_key</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     access_key: u128
 ): bool {
-    <a href="_contains">table::contains</a>(&crit_queue_ref.subqueue_nodes, access_key)
+    <a href="_contains">table::contains</a>(&critqueue_ref.subqueue_nodes, access_key)
 }
 </code></pre>
 
@@ -1115,7 +1115,7 @@ Aborts if the given insertion <code>key</code> has already been inserted
 the maximum number of times.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64, insertion_value: V): u128
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64, insertion_value: V): u128
 </code></pre>
 
 
@@ -1125,7 +1125,7 @@ the maximum number of times.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(
-    crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     insertion_key: u64,
     insertion_value: V
 ): u128 {
@@ -1134,8 +1134,8 @@ the maximum number of times.
     // Get leaf key from insertion key.
     <b>let</b> leaf_key = (insertion_key <b>as</b> u128) &lt;&lt; <a href="critqueue.md#0xc0deb00c_critqueue_INSERTION_KEY">INSERTION_KEY</a>;
     // Borrow mutable reference <b>to</b> leaves <a href="">table</a>.
-    <b>let</b> leaves_ref_mut = &<b>mut</b> crit_queue_ref_mut.leaves;
-    // Initialize a subqueue node <b>with</b> the insertion value.
+    <b>let</b> leaves_ref_mut = &<b>mut</b> critqueue_ref_mut.leaves;
+    // Initialize a sub-queue node <b>with</b> the insertion value.
     <b>let</b> subqueue_node = <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>{insertion_value,
         previous: <a href="_none">option::none</a>(), next: <a href="_none">option::none</a>()};
     <b>let</b> access_key; // Declare access key
@@ -1153,24 +1153,24 @@ the maximum number of times.
         access_key = leaf_key | (count <b>as</b> u128);
         // If a descending crit-queue, take bitwise complement of
         // insertion count and set the bit flag for sort order.
-        <b>if</b> (crit_queue_ref_mut.order == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) access_key =
+        <b>if</b> (critqueue_ref_mut.order == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) access_key =
             access_key ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>;
         // If not a free leaf:
         <b>if</b> (<a href="_is_some">option::is_some</a>(&leaf_ref_mut.tail)) {
             free_leaf = <b>false</b>; // Flag <b>as</b> such.
-            // Get the subqueue tail access key.
+            // Get the sub-queue tail access key.
             <b>let</b> tail_access_key = *<a href="_borrow">option::borrow</a>(&leaf_ref_mut.tail);
-            // Borrow mutable reference <b>to</b> the <b>old</b> subqueue tail.
+            // Borrow mutable reference <b>to</b> the <b>old</b> sub-queue tail.
             <b>let</b> tail_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
-                &<b>mut</b> crit_queue_ref_mut.subqueue_nodes, tail_access_key);
-            // Set <b>old</b> subqueue tail <b>to</b> have <b>as</b> its next subqueue
-            // node the new subqueue node.
+                &<b>mut</b> critqueue_ref_mut.subqueue_nodes, tail_access_key);
+            // Set <b>old</b> sub-queue tail <b>to</b> have <b>as</b> its next sub-queue
+            // node the new sub-queue node.
             tail_ref_mut.next = <a href="_some">option::some</a>(access_key);
-            // Set the new subqueue node <b>to</b> have <b>as</b> its previous
-            // subqueue node the <b>old</b> subqueue tail.
+            // Set the new sub-queue node <b>to</b> have <b>as</b> its previous
+            // sub-queue node the <b>old</b> sub-queue tail.
             subqueue_node.previous = <a href="_some">option::some</a>(tail_access_key);
-            // Set the subqueue <b>to</b> have the new subqueue node <b>as</b> its
-            // tail.
+            // Set the sub-queue <b>to</b> have the new sub-queue node <b>as</b>
+            // its tail.
             leaf_ref_mut.tail = <a href="_some">option::some</a>(access_key);
         };
     } <b>else</b> { // If the insertion key <b>has</b> not been inserted before:
@@ -1179,18 +1179,18 @@ the maximum number of times.
         access_key = leaf_key;
         // If a descending crit-queue, take bitwise complement of
         // insertion count and set the bit flag for sort order.
-        <b>if</b> (crit_queue_ref_mut.order == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) access_key =
+        <b>if</b> (critqueue_ref_mut.order == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) access_key =
             access_key ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>;
         // Declare leaf <b>with</b> insertion count 0, no parent, and new
-        // subqueue node <b>as</b> both head and tail.
+        // sub-queue node <b>as</b> both head and tail.
         <b>let</b> leaf = <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a>{count: 0, parent: <a href="_none">option::none</a>(), head:
             <a href="_some">option::some</a>(access_key), tail: <a href="_some">option::some</a>(access_key)};
         // Add the leaf <b>to</b> the leaves <a href="">table</a>.
         <a href="_add">table::add</a>(leaves_ref_mut, access_key, leaf);
     };
-    // Borrow mutable reference <b>to</b> subqueue nodes <a href="">table</a>.
-    <b>let</b> subqueue_nodes_ref_mut = &<b>mut</b> crit_queue_ref_mut.subqueue_nodes;
-    // Add corresponding subqueue node <b>to</b> the <a href="">table</a>.
+    // Borrow mutable reference <b>to</b> sub-queue nodes <a href="">table</a>.
+    <b>let</b> subqueue_nodes_ref_mut = &<b>mut</b> critqueue_ref_mut.subqueue_nodes;
+    // Add corresponding sub-queue node <b>to</b> the <a href="">table</a>.
     <a href="_add">table::add</a>(subqueue_nodes_ref_mut, access_key, subqueue_node);
     free_leaf; // Insert free leaf <b>to</b> tree <b>if</b> free.
     access_key // Return access key.
@@ -1208,7 +1208,7 @@ the maximum number of times.
 Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): bool
 </code></pre>
 
 
@@ -1218,9 +1218,9 @@ Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
 ): bool {
-    <a href="_is_none">option::is_none</a>(&crit_queue_ref.root)
+    <a href="_is_none">option::is_none</a>(&critqueue_ref.root)
 }
 </code></pre>
 
@@ -1270,7 +1270,7 @@ Return <code><b>true</b></code> if, were <code>insertion_key</code> to be insert
 access key would become the new head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
 </code></pre>
 
 
@@ -1280,20 +1280,20 @@ access key would become the new head of the given <code><a href="critqueue.md#0x
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     insertion_key: u64
 ): bool {
     // If the crit-queue is empty and thus <b>has</b> no head:
-    <b>if</b> (<a href="_is_none">option::is_none</a>(&crit_queue_ref.head)) {
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref.head)) {
         // Return that insertion key would become new head.
         <b>return</b> <b>true</b>
     } <b>else</b> { // Otherwise, <b>if</b> crit-queue is not empty:
         // Get insertion key of crit-queue head.
-        <b>let</b> head_insertion_key = (*<a href="_borrow">option::borrow</a>(&crit_queue_ref.head) &gt;&gt;
+        <b>let</b> head_insertion_key = (*<a href="_borrow">option::borrow</a>(&critqueue_ref.head) &gt;&gt;
             <a href="critqueue.md#0xc0deb00c_critqueue_INSERTION_KEY">INSERTION_KEY</a> <b>as</b> u64);
         // If an ascending crit-queue, <b>return</b> <b>true</b> <b>if</b> insertion key
         // is less than insertion key of crit-queue head.
-        <b>return</b> <b>if</b> (crit_queue_ref.order == <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>)
+        <b>return</b> <b>if</b> (critqueue_ref.order == <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>)
             insertion_key &lt; head_insertion_key <b>else</b>
             // If a descending crit-queue, <b>return</b> <b>true</b> <b>if</b> insertion
             // key is greater than insertion key of crit-queue head.
@@ -1314,7 +1314,7 @@ Return <code><b>true</b></code> if, were <code>insertion_key</code> to be insert
 access key would trail behind the head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
 </code></pre>
 
 
@@ -1324,10 +1324,10 @@ access key would trail behind the head of the given <code><a href="critqueue.md#
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(
-    crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     insertion_key: u64
 ): bool {
-    !<a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>(crit_queue_ref, insertion_key)
+    !<a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>(critqueue_ref, insertion_key)
 }
 </code></pre>
 

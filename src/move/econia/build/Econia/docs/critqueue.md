@@ -5,45 +5,40 @@
 
 Hybrid data structure combining crit-bit tree and queue properties.
 
+
+<a name="@Bit_conventions_0"></a>
+
+## Bit conventions
+
+
+
+<a name="@Number_1"></a>
+
+### Number
+
+
 Bit numbers are 0-indexed from the least-significant bit (LSB):
 
 >     11101...1010010101
 >      bit 5 = 0 -|    |- bit 0 = 1
 
 
-<a name="@Module-level_documentation_sections_0"></a>
+<a name="@Status_2"></a>
 
-## Module-level documentation sections
-
-
-[Crit-bit trees](#crit-bit-trees):
-
-* [General](#general)
-* [Structure](#structure)
-* [References](#references)
-
-[Crit-queues](#crit-queues):
-
-* [Enqueue key multiplicity](#enqueue-key-multiplicity)
-* [Dequeue order](#dequeue-order)
-* [Leaf key structure](#leaf-key-structure)
-* [Inner keys](#inner-keys)
-* [Key tables](#key-tables)
-
-[Operations](#operations):
-
-* [Enqueues](#enqueues)
-* [Removals](#removals)
-* [Dequeues](#dequeues)
+### Status
 
 
-<a name="@Crit-bit_trees_1"></a>
+<code>0</code> is considered an "unset" bit, and <code>1</code> is considered a "set" bit.
+Hence <code>11101</code> is set at bit 0 and unset at bit 1.
+
+
+<a name="@Crit-bit_trees_3"></a>
 
 ## Crit-bit trees
 
 
 
-<a name="@General_2"></a>
+<a name="@General_4"></a>
 
 ### General
 
@@ -51,10 +46,10 @@ Bit numbers are 0-indexed from the least-significant bit (LSB):
 A critical bit (crit-bit) tree is a compact binary prefix tree
 that stores a prefix-free set of bitstrings, like n-bit integers or
 variable-length 0-terminated byte strings. For a given set of keys
-there exists a unique crit-bit tree representing the set, to the
-effect that crit-bit trees do not require complex rebalancing
-algorithms like those of AVL or red-black binary search trees.
-Crit-bit trees support the following operations:
+there exists a unique crit-bit tree representing the set, such that
+crit-bit trees do not require complex rebalancing algorithms like
+those of AVL or red-black binary search trees. Crit-bit trees
+support the following operations:
 
 * Membership testing
 * Insertion
@@ -63,25 +58,22 @@ Crit-bit trees support the following operations:
 * Inorder successor iteration
 
 
-<a name="@Structure_3"></a>
+<a name="@Structure_5"></a>
 
 ### Structure
 
 
-The present implementation involves a tree with <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> and <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code>
-nodes. <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> nodes have two <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> children each, and <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes
-do not have children. <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes store a value of type <code>V</code>, and
-have a <code>u128</code> key. <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> nodes store a <code>u8</code> indicating the
-most-significant critical bit (crit-bit) of divergence between
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys from the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node's two subtrees: <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys in an
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node's left subtree are unset at the critical bit, while
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys in a <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node's right subtree are set at the
-critical bit.
+Crit-bit trees have two types of nodes: inner nodes, and leaf nodes.
+Inner nodes have two leaf children each, and leaf nodes do not
+have children. Inner nodes store an integer, known as a critical bit
+(crit-bit), which indicates the most-significant bit of
+divergence between keys from the node's two subtrees: keys in an
+inner node's left subtree are unset at the critical bit, while
+keys in an inner node's right subtree are set at the critical bit.
 
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> nodes are arranged hierarchically, with the most
-significant critical bits at the top of the tree. For instance, the
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> keys <code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code> would be stored in a
-crit-bit tree as follows:
+Inner nodes are arranged hierarchically, with the most-significant
+critical bits at the top of the tree. For example, the binary keys
+<code>001</code>, <code>101</code>, <code>110</code>, and <code>111</code> produce the following crit-bit tree:
 
 >        2nd
 >       /   \
@@ -91,18 +83,85 @@ crit-bit tree as follows:
 >             /   \
 >           110   111
 
-Here, the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>2nd</code> stores the critical bit <code>2</code>, the
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>1st</code> stores the critical bit <code>1</code>, and the
-<code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>0th</code> stores the critical bit <code>0</code>. Hence, the
-sole <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key in the left subtree of the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>2nd
-</code> is unset at bit 2, while all the keys in right subtree of
-the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>2nd</code> are set at bit 2. And similarly
-for the <code><a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code> node marked <code>0th</code>, the <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its left child
-is unset at bit 0, while the <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> key of its right child is set
-at bit 0.
+Here, the inner node marked <code>2nd</code> stores the critical bit 2, the
+inner node marked <code>1st</code> stores the critical bit 1, and the
+inner node marked <code>0th</code> stores the critical bit 0. Hence, the sole
+key in the left subtree of <code>2nd</code> is unset at bit 2, while all the
+keys in the right subtree of <code>2nd</code> are set at bit 2. And similarly
+for <code>0th</code>, its left child key is unset at bit 0, while its right
+child key is set at bit 0.
 
 
-<a name="@References_4"></a>
+<a name="@Insertions_6"></a>
+
+### Insertions
+
+
+Crit-bit trees are automatically sorted upon insertion, such that
+inserting <code>111</code> to
+
+>        2nd
+>       /   \
+>     001   1st
+>          /   \
+>        101    110
+
+produces:
+
+>        2nd
+>       /   \
+>     001   1st
+>          /   \
+>        101   0th
+>             /   \
+>           110   111
+
+Here, <code>111</code> may not be re-inserted unless it is first removed from
+the tree.
+
+
+<a name="@Removals_7"></a>
+
+### Removals
+
+
+Continuing the above example, crit-bit trees are automatically
+compacted and sorted upon removal, such that removing <code>111</code> again
+results in:
+
+>        2nd
+>       /   \
+>     001   1st
+>          /   \
+>        101    110
+
+
+<a name="@As_a_map_8"></a>
+
+### As a map
+
+
+Crit-bit trees can be used as an associative array that maps keys
+to values, simply by storing values in the leaves of the tree.
+For example, the insertion sequence
+
+1. $\langle \texttt{0b001}, v_0 \rangle$
+2. $\langle \texttt{0b111}, v_1 \rangle$
+3. $\langle \texttt{0b110}, v_2 \rangle$
+4. $\langle \texttt{0b101}, v_3 \rangle$
+
+produces the following tree:
+
+>                2nd
+>               /   \
+>     <001, v_0>    1st
+>                  /   \
+>        <101, v_3>    0th
+>                     /   \
+>           <110, v_2>     <111, v_1>
+
+
+<a name="@References_9"></a>
 
 ### References
 
@@ -122,222 +181,198 @@ https://github.com/agl/critbit
 https://wiki.tcl-lang.org/page/critbit
 
 
-<a name="@Crit-queues_5"></a>
+<a name="@Crit-queues_10"></a>
 
 ## Crit-queues
 
 
 
-<a name="@Enqueue_key_multiplicity_6"></a>
+<a name="@Key_storage_multiplicity_11"></a>
 
-### Enqueue key multiplicity
-
-
-Unlike a crit-bit tree, which only allows for a single insertion of
-a given key, crit-queues support multiple enqueues of a given key
-across key-value pairs. For example, the following key-value pairs,
-all having the same "enqueue key", <code>3</code>, may be stored inside of a
-single crit-queue:
-
-* $p_{3, 0} = \langle 3, 5 \rangle$
-* $p_{3, 1} = \langle 3, 8 \rangle$
-* $p_{3, 2} = \langle 3, 2 \rangle$
-* $p_{3, 3} = \langle 3, 5 \rangle$
-
-Here, key-value pair $p_{i, j}$ has enqueue key $i$ and "enqueue
-count" $j$, with the enqueue count describing the number
-of key-value pairs, having the same enqueue key, that were
-previously enqueued.
+### Key storage multiplicity
 
 
-<a name="@Dequeue_order_7"></a>
+Unlike a crit-bit tree, which can only store one instance of a given
+key, crit-queues can store multiple instances. For example, the
+following insertion sequence, without intermediate removals, is
+invalid in a crit-bit tree but valid in a crit-queue:
 
-### Dequeue order
+1. $p_{3, 0} = \langle 3, 5 \rangle$
+2. $p_{3, 1} = \langle 3, 8 \rangle$
+3. $p_{3, 2} = \langle 3, 2 \rangle$
+4. $p_{3, 3} = \langle 3, 5 \rangle$
+
+Here, the "key-value insertion pair"
+$p_{i, j} = \langle i, v_j \rangle$ has:
+
+* "Insertion key" $i$: the inserted key.
+* "Insertion count" $j$: the number of key-value insertion pairs,
+having the same insertion key, that were previously inserted.
+* "Insertion value" $v_j$: the value from the key-value
+insertion pair having insertion count $j$.
 
 
-After a key-value pair has been enqueued and assigned an enqueue
-count, a separate key is generated, which allows for sorted
-insertion into a crit-bit tree. Here, the corresponding "leaf key"
-is constructed such that key-value pairs are sorted within the
-crit-bit tree by:
+<a name="@Sorting_order_12"></a>
 
-1. Either ascending or descending order of enqueue key, then by
-2. Ascending order of enqueue count.
+### Sorting order
 
-For example, consider the following enqueue sequence ($k_{i, j}$
-denotes enqueue key $i$ with enqueue count $j$):
 
-1. $k_{0, 0}$
-2. $k_{1, 0}$
-3. $k_{1, 1}$
-4. $k_{0, 1}$
-5. $k_{3, 0}$
+Key-value insertion pairs in a crit-queue are sorted by:
 
-In an ascending crit-queue, these elements would be dequeued as
-follows:
+1. Either ascending or descending order of insertion key, then by
+2. Ascending order of insertion count.
 
-1. $k_{0, 0}$
-2. $k_{0, 1}$
-3. $k_{1, 0}$
-4. $k_{1, 1}$
-5. $k_{3, 0}$
+For example, consider the following binary insertion key sequence,
+where $k_{i, j}$ denotes insertion key $i$ with insertion count $j$:
+
+1. $k_{0, 0} = \texttt{0b00}$
+2. $k_{1, 0} = \texttt{0b01}$
+3. $k_{1, 1} = \texttt{0b01}$
+4. $k_{0, 1} = \texttt{0b00}$
+5. $k_{3, 0} = \texttt{0b11}$
+
+In an ascending crit-queue, the dequeue sequence would be:
+
+1. $k_{0, 0} = \texttt{0b00}$
+2. $k_{0, 1} = \texttt{0b00}$
+3. $k_{1, 0} = \texttt{0b01}$
+4. $k_{1, 1} = \texttt{0b01}$
+5. $k_{3, 0} = \texttt{0b11}$
 
 In a descending crit-queue, the dequeue sequence would instead be:
 
-1. $k_{3, 0}$
-2. $k_{1, 0}$
-3. $k_{1, 1}$
-4. $k_{0, 0}$
-5. $k_{0, 1}$
+1. $k_{3, 0} = \texttt{0b11}$
+2. $k_{1, 0} = \texttt{0b01}$
+3. $k_{1, 1} = \texttt{0b01}$
+4. $k_{0, 0} = \texttt{0b00}$
+5. $k_{0, 1} = \texttt{0b00}$
 
 
-<a name="@Leaf_key_structure_8"></a>
+<a name="@Leaves_13"></a>
 
-### Leaf key structure
+### Leaves
 
 
-In the present implementation, crit-queue leaf keys have the
-following bit structure (<code>NOT</code> denotes bitwise complement):
+The present crit-queue implementation involves a crit-bit tree with
+a leaf node for each insertion key, where each "leaf key" has the
+following bit structure:
+
+| Bit(s) | Value         |
+|--------|---------------|
+| 64-127 | Insertion key |
+| 0-63   | 0             |
+
+Continuing the above example:
+
+| Insertion key | Leaf key bits 64-127 | Leaf key bits 0-63 |
+|---------------|----------------------|--------------------|
+| <code>0 = 0b00</code>    | <code>000...000</code>          | <code>000...000</code>        |
+| <code>1 = 0b01</code>    | <code>000...001</code>          | <code>000...000</code>        |
+| <code>3 = 0b11</code>    | <code>000...011</code>          | <code>000...000</code>        |
+
+Each leaf contains a nested subqueue of key-values insertion
+pairs all sharing the corresponding insertion key, with lower
+insertion counts at the front of the queue. Continuing the above
+example, this yields the following:
+
+>                                   65th
+>                                  /    \
+>                              64th      000...011000...000
+>                             /    \     [k_{3, 0}]
+>                            /      \
+>          000...000000...000        000...001000...000
+>     [k_{0, 0} --> k_{0, 1}]        [k_{1, 0} --> k_{1, 1}]
+>      ^ subqueue head                ^ subqueue head
+
+Leaf keys are guaranteed to be unique, and all leaf nodes are stored
+in a single hash table.
+
+
+<a name="@Subqueue_nodes_14"></a>
+
+### Subqueue nodes
+
+
+All subqueue nodes are similarly stored in single hash table, and
+assigned a unique "access key" with the following bit structure
+(<code>NOT</code> denotes bitwise complement):
 
 | Bit(s) | Ascending crit-queue | Descending crit-queue |
 |--------|----------------------|-----------------------|
-| 64-127 | Enqueue key          | Enqueue key           |
+| 64-127 | Insertion key        | Insertion key         |
 | 63     | 0                    | 0                     |
 | 62     | 0                    | 1                     |
-| 0-61   | Enqueue count        | <code>NOT</code> enqueue count   |
+| 0-61   | Insertion count      | <code>NOT</code> insertion count |
 
-With the enqueue key contained in the most significant bits,
-elements are thus sorted in the crit-bit tree first by enqueue key
-and then by:
+For an ascending crit-queue, access keys are thus dequeued in
+ascending lexicographical order:
 
-* Enqueue count if an ascending crit-queue, or
-* Bitwise complement of enqueue count if a descending queue.
+| Insertion key | Access key bits 64-127 | Access key bits 0-63 |
+|---------------|------------------------|----------------------|
+| $k_{0, 0}$    | <code>000...000</code>            | <code>000...000</code>          |
+| $k_{0, 1}$    | <code>000...000</code>            | <code>000...001</code>          |
+| $k_{1, 0}$    | <code>000...001</code>            | <code>000...000</code>          |
+| $k_{1, 1}$    | <code>000...001</code>            | <code>000...001</code>          |
+| $k_{3, 0}$    | <code>000...011</code>            | <code>000...000</code>          |
 
-Continuing the above example, this yields the following leaf keys
-and crit-bit tree for an ascending crit-queue, with elements
-dequeued via inorder successor traversal starting from the minimum
-leaf key:
+Conversely, for a descending crit-queue, access keys are thus
+dequeued in descending lexicographical order:
 
-| Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
-|-------------|----------------------|--------------------|
-| $k_{0, 0}$  | <code>000...000</code>          | <code>000...000</code>        |
-| $k_{0, 1}$  | <code>000...000</code>          | <code>000...001</code>        |
-| $k_{1, 0}$  | <code>000...001</code>          | <code>000...000</code>        |
-| $k_{1, 1}$  | <code>000...001</code>          | <code>000...001</code>        |
-| $k_{3, 0}$  | <code>000...011</code>          | <code>000...000</code>        |
-
->                                          65th
->                                         /    \
->                                     64th      k_{3, 0}
->                            ________/    \________
->                         0th                      0th
->      Queue             /   \                    /   \
->       head --> k_{0, 0}     k_{0, 1}    k_{1, 0}     k_{1, 1}
-
-For a descending crit-queue, elements are dequeued via
-inorder predecessor traversal starting from the maximum leaf key:
-
-| Enqueue key | Leaf key bits 64-127 | Leaf key bits 0-63 |
-|-------------|----------------------|--------------------|
-| $k_{3, 0}$  | <code>000...011</code>          | <code>011...111</code>        |
-| $k_{1, 0}$  | <code>000...001</code>          | <code>011...111</code>        |
-| $k_{1, 1}$  | <code>000...001</code>          | <code>011...110</code>        |
-| $k_{0, 0}$  | <code>000...000</code>          | <code>011...111</code>        |
-| $k_{0, 1}$  | <code>000...000</code>          | <code>011...110</code>        |
-
->                               65th
->                              /    \             Queue
->                          64th      k_{3, 0} <-- head
->                 ________/    \________
->              0th                      0th
->             /   \                    /   \
->     k_{0, 1}     k_{0, 0}    k_{1, 1}     k_{1, 0}
+| Insertion key | Access key bits 64-127 | Access key bits 0-63 |
+|---------------|----------------------|--------------------|
+| $k_{3, 0}$    | <code>000...011</code>          | <code>011...111</code>        |
+| $k_{1, 0}$    | <code>000...001</code>          | <code>011...111</code>        |
+| $k_{1, 1}$    | <code>000...001</code>          | <code>011...110</code>        |
+| $k_{0, 0}$    | <code>000...000</code>          | <code>011...111</code>        |
+| $k_{0, 1}$    | <code>000...000</code>          | <code>011...110</code>        |
 
 
-
-<a name="@Inner_keys_9"></a>
+<a name="@Inner_keys_15"></a>
 
 ### Inner keys
 
 
-If the insertion of a crit-bit tree leaf is accompanied by the
-generation of a crit-bit tree inner node, the inner node is assigned
-an "inner key" that is identical to the corresponding leaf key,
-except with bit 63 set. This schema allows for
-discrimination between leaf keys and inner keys based simply on
+After access key assignment, if the insertion of a key-value
+insertion pair requires the creation of a new inner node, the
+inner node is assigned a unique "inner key" that is identical to
+the new access key, except with bit 63 set. This schema allows for
+discrimination between inner keys and leaf keys based solely on
 bit 63.
 
-
-<a name="@Key_tables_10"></a>
-
-### Key tables
+All inner nodes are stored in a single hash table.
 
 
-Enqueue, inner, and leaf keys are stored in separate hash tables:
+<a name="@Insertion_counts_16"></a>
 
-| Table key  | Key type | Table value                       |
-|------------|----------|-----------------------------------|
-| Enqueue    | <code>u64</code>    | Enqueue count for key, if nonzero |
-| Inner      | <code>u128</code>   | Crit-bit tree inner node          |
-| Leaf       | <code>u128</code>   | Crit-bit tree leaf                |
-
-The enqueue key table is initialized empty, such that before
-enqueuing the first instance of a given enqueue key, $k_{i, 0}$,
-the enqueue key table does not have an entry for key $i$. After
-$k_{i, 0}$ is enqueued, the entry $\langle i, 0\rangle$ is added to
-the enqueue key table, and for each subsequent enqueue,
-$k_{i, n}$, the value corresponding to key $i$, the enqueue count,
-is updated to $n$. Since bits 62 and 63 in leaf keys are
-reserved for flag bits, the maximum enqueue count per enqueue key
-is thus $2^{62} - 1$.
+### Insertion counts
 
 
-<a name="@Operations_11"></a>
+Insertion counts are tracked in leaf nodes, such that before the
+insertion of the first instance of a given insertion key,
+$k_{i, 0}$, the leaf table does not have an entry corresponding
+to insertion key $i$.
 
-## Operations
+When $k_{i, 0}$ is inserted, a new leaf node is initialized with
+an insertion counter set to 0, then added to the leaf hash table.
+The new leaf node is inserted to the crit-bit tree, and a
+corresponding subqueue node is placed at the head of the new leaf's
+subqueue. For each subsequent insertion of the same insertion key,
+$k_{i, n}$, the leaf insertion counter is updated to $n$, and the
+new subqueue node becomes the tail of the corresponding subqueue.
 
-
-In the present implementation, key-value pairs are enqueued via
-<code>enqueue()</code>, which accepts a <code>u64</code> enqueue key and an enqueue value
-of type <code>V</code>. A corresponding <code>u128</code> leaf key is returned, which can
-be used for subsequent leaf key lookup via <code>borrow()</code>,
-<code>borrow_mut()</code>, or <code>remove()</code>.
-
-
-<a name="@Enqueues_12"></a>
-
-### Enqueues
-
-
-Enqueues are, like a crit-bit tree, $O(k^{\dagger})$ in the worst
-case, where $k^{\dagger} = k - 2 = 126$ (the number of variable bits
-in a leaf key), but parallelizable in the general case where:
-
-1. Enqueues do not alter the head of the crit-queue.
-2. Enqueues do not write to overlapping tree edges.
-3. Enqueues do not share the same enqueue key.
-
-The third parallelism constraint is a result of enqueue count
-updates, and may potentially be eliminated in the case of a
-parallelized insertion count aggregator.
+Since bits 62 and 63 in access keys are reserved for flag bits, the
+maximum insertion count per insertion key is thus $2^{62} - 1$.
 
 
-<a name="@Removals_13"></a>
+<a name="@Dequeue_order_preservation_17"></a>
 
-### Removals
+### Dequeue order preservation
 
 
-With <code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a></code> nodes stored in a <code>Table</code>, <code>remove()</code> operations are
-thus $O(1)$, and are additionally parallelizable in the general case
-where:
-
-1. Removals do not write to overlapping tree edges.
-2. Removals do not alter the head of the crit-queue.
-
-Removals can take place from anywhere inside of the crit-queue, with
-the specified sorting order preserved among remaining elements. For
-example, consider the elements in an ascending crit-queue with the
-following dequeue sequence:
+Removals can take place from anywhere inside of a crit-queue, with
+the specified dequeue order preserved among remaining elements.
+For example, consider the elements in an ascending crit-queue
+with the following dequeue sequence:
 
 1. $k_{0, 6}$
 2. $k_{2, 5}$
@@ -353,7 +388,149 @@ Here, removing $k_{2, 5}$ simply updates the dequeue sequence to:
 4. $k_{5, 0}$
 
 
-<a name="@Dequeues_14"></a>
+<a name="@Subqueue_removal_updates_18"></a>
+
+### Subqueue removal updates
+
+
+Removal via access key lookup in the subqueue node hash table leads
+to an update within the corresponding subqueue.
+
+For example, consider the following crit-queue:
+
+>                                          64th
+>                                         /    \
+>                       000...000000...000      000...001000...000
+>     [k_{0, 0} --> k_{0, 1} --> k_{0, 2}]      [k_{1, 0}]
+>      ^ subqueue head
+
+Removal of $k_{0, 1}$ produces:
+
+>                             64th
+>                            /    \
+>          000...000000...000      000...001000...000
+>     [k_{0, 0} --> k_{0, 2}]      [k_{1, 0}]
+
+And similarly for $k_{0, 0}$:
+
+>                        64th
+>                       /    \
+>     000...000000...000      000...001000...000
+>             [k_{0, 2}]      [k_{1, 0}]
+
+Here, if ${k_{0, 2}}$ were to be removed, the tree would then have a
+single leaf at its root:
+
+>     000...001000...000 (root)
+>         [k_{1, 0}]
+
+Notably, however, the leaf corresponding to insertion key 0 is not
+deallocated, but rather, is converted to a "free leaf" with an
+empty subqueue.
+
+
+<a name="@Free_leaves_19"></a>
+
+### Free leaves
+
+
+Free leaves are leaf nodes with an empty subqueue.
+
+Free leaves track insertion counts in case another key-value
+insertion pair, having the insertion key encoded in the free leaf
+key, is inserted. Here, the free leaf is added back to the crit-bit
+tree and the new subqueue node becomes the head of the leaf's
+subqueue. Continuing the example, inserting another key-value pair
+with insertion key 0, $k_{0, 3}$, produces:
+
+>                        64th
+>                       /    \
+>     000...000000...000      000...001000...000
+>             [k_{0, 3}]      [k_{1, 0}]
+
+
+<a name="@Dequeues_20"></a>
+
+### Dequeues
+
+
+Dequeues are processed as removals from the crit-queue head, a field
+that stores:
+
+* The maximum access key in a descending crit-queue, or
+* The minimum access key in an ascending crit-queue.
+
+After all elements in the corresponding subqueue have been dequeued
+in order of ascending insertion count, dequeueing proceeds with the
+head of the subqueue in the next leaf, which is accessed by either:
+
+* Inorder predecessor traversal if a descending crit-queue, or
+* Inorder successor traversal if an ascending crit-queue.
+
+
+<a name="@Implementation_analysis_21"></a>
+
+## Implementation analysis
+
+
+
+<a name="@Core_functions_22"></a>
+
+### Core functions
+
+
+In the present implementation, key-value insertion pairs are
+inserted via <code>insert()</code>, which accepts a <code>u64</code> insertion key and
+insertion value of type <code>V</code>. A corresponding <code>u128</code> access key is
+returned, which can be used for subsequent access key lookup via <code>
+borrow()</code>, <code>borrow_mut()</code>, <code>dequeue()</code>, or <code>remove()</code>.
+
+
+<a name="@Insertions_23"></a>
+
+### Insertions
+
+
+Insertions are, like a crit-bit tree, $O(k)$ in the worst case,
+where $k = 64$ (the number of variable bits in an insertion key),
+since a new leaf node has to be inserted into the crit-bit tree.
+In the intermediate case where a new leaf node has to be inserted
+into the crit-bit tree but the tree is generally balanced,
+insertions improve to $O(log(n))$, where $n$ is the number of leaves
+in the tree. In the best case, where the corresponding
+subqueue already has a leaf in the crit-bit tree and a new
+subqueue node simply has to be inserted at the tail of the subqueue,
+insertions improve to $O(1)$.
+
+Insertions are parallelizable in the general case where:
+
+1. They do not alter the head of the crit-queue.
+2. They do not write to overlapping crit-bit tree edges.
+3. They do not write to overlapping subqueue edges.
+4. They alter neither the head nor the tail of the same subqueue.
+5. They do not write to the same subqueue.
+
+The final parallelism constraint is a result of insertion count
+updates, and may potentially be eliminated in the case of a
+parallelized insertion count aggregator.
+
+
+<a name="@Removals_24"></a>
+
+### Removals
+
+
+With subqueue nodes stored in a hash table, removal operations via
+access key are are thus $O(1)$, and are parallelizable in the
+general case where:
+
+1. They do not alter the head of the crit-queue.
+2. They do not write to overlapping crit-bit tree edges.
+3. They do not write to overlapping subqueue edges.
+4. They alter neither the head nor the tail of the same subqueue.
+
+
+<a name="@Dequeues_25"></a>
 
 ### Dequeues
 
@@ -365,21 +542,32 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 ---
 
 
--  [Module-level documentation sections](#@Module-level_documentation_sections_0)
--  [Crit-bit trees](#@Crit-bit_trees_1)
-    -  [General](#@General_2)
-    -  [Structure](#@Structure_3)
-    -  [References](#@References_4)
--  [Crit-queues](#@Crit-queues_5)
-    -  [Enqueue key multiplicity](#@Enqueue_key_multiplicity_6)
-    -  [Dequeue order](#@Dequeue_order_7)
-    -  [Leaf key structure](#@Leaf_key_structure_8)
-    -  [Inner keys](#@Inner_keys_9)
-    -  [Key tables](#@Key_tables_10)
--  [Operations](#@Operations_11)
-    -  [Enqueues](#@Enqueues_12)
-    -  [Removals](#@Removals_13)
-    -  [Dequeues](#@Dequeues_14)
+-  [Bit conventions](#@Bit_conventions_0)
+    -  [Number](#@Number_1)
+    -  [Status](#@Status_2)
+-  [Crit-bit trees](#@Crit-bit_trees_3)
+    -  [General](#@General_4)
+    -  [Structure](#@Structure_5)
+    -  [Insertions](#@Insertions_6)
+    -  [Removals](#@Removals_7)
+    -  [As a map](#@As_a_map_8)
+    -  [References](#@References_9)
+-  [Crit-queues](#@Crit-queues_10)
+    -  [Key storage multiplicity](#@Key_storage_multiplicity_11)
+    -  [Sorting order](#@Sorting_order_12)
+    -  [Leaves](#@Leaves_13)
+    -  [Subqueue nodes](#@Subqueue_nodes_14)
+    -  [Inner keys](#@Inner_keys_15)
+    -  [Insertion counts](#@Insertion_counts_16)
+    -  [Dequeue order preservation](#@Dequeue_order_preservation_17)
+    -  [Subqueue removal updates](#@Subqueue_removal_updates_18)
+    -  [Free leaves](#@Free_leaves_19)
+    -  [Dequeues](#@Dequeues_20)
+-  [Implementation analysis](#@Implementation_analysis_21)
+    -  [Core functions](#@Core_functions_22)
+    -  [Insertions](#@Insertions_23)
+    -  [Removals](#@Removals_24)
+    -  [Dequeues](#@Dequeues_25)
 -  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
 -  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Leaf`](#0xc0deb00c_critqueue_Leaf)
@@ -445,7 +633,7 @@ Hybrid between a crit-bit tree and a queue. See above.
 <code>values: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">critqueue::SubQueueNode</a>&lt;V&gt;&gt;</code>
 </dt>
 <dd>
- Map from access key to sub-queue node.
+ Map from access key to subqueue node.
 </dd>
 </dl>
 
@@ -502,7 +690,7 @@ A crit-bit tree inner node.
 
 ## Struct `Leaf`
 
-A crit-bit tree leaf node. A free leaf if no sub-queue head.
+A crit-bit tree leaf node. A free leaf if no subqueue head.
 Else the root of the crit-bit tree if no parent.
 
 
@@ -526,7 +714,7 @@ Else the root of the crit-bit tree if no parent.
 <code>parent: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- If no sub-queue head, should also be none, since leaf is a
+ If no subqueue head, should also be none, since leaf is a
  free leaf. Else corresponds to the inner key of the parent
  node, none when leaf is the root of the crit-bit tree.
 </dd>
@@ -535,14 +723,14 @@ Else the root of the crit-bit tree if no parent.
 </dt>
 <dd>
  If none, node is a free leaf. Else the access key of the
- sub-queue head.
+ subqueue head.
 </dd>
 <dt>
 <code>tail: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
  If none, node is a free leaf. Else the access key of the
- sub-queue tail.
+ subqueue tail.
 </dd>
 </dl>
 
@@ -553,7 +741,7 @@ Else the root of the crit-bit tree if no parent.
 
 ## Struct `SubQueueNode`
 
-A node in a sub-queue.
+A node in a subqueue.
 
 
 <pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>&lt;V&gt; <b>has</b> store
@@ -576,13 +764,13 @@ A node in a sub-queue.
 <code>previous: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- Access key of previous sub-queue node, if any.
+ Access key of previous subqueue node, if any.
 </dd>
 <dt>
 <code>next: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
 </dt>
 <dd>
- Access key of next sub-queue node, if any.
+ Access key of next subqueue node, if any.
 </dd>
 </dl>
 

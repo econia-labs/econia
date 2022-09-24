@@ -519,7 +519,7 @@ module econia::critqueue {
         /// Map from leaf key to leaf node.
         leaves: Table<u128, Leaf>,
         /// Map from access key to subqueue node.
-        values: Table<u128, SubQueueNode<V>>
+        subqueue_nodes: Table<u128, SubQueueNode<V>>
     }
 
     /// A crit-bit tree inner node.
@@ -554,7 +554,7 @@ module econia::critqueue {
     /// A node in a subqueue.
     struct SubQueueNode<V> has store {
         /// Insertion value.
-        value: V,
+        insertion_value: V,
         /// Access key of previous subqueue node, if any.
         previous: Option<u128>,
         /// Access key of next subqueue node, if any.
@@ -565,8 +565,8 @@ module econia::critqueue {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When an enqueue key has been enqueued too many times.
-    const E_TOO_MANY_ENQUEUES: u64 = 0;
+    /// When an insertion key has been inserted too many times.
+    const E_TOO_MANY_INSERTIONS: u64 = 0;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -584,6 +584,10 @@ module econia::critqueue {
     const HI_64: u64 = 0xffffffffffffffff;
     /// Number of bits that insertion key is shifted in a `u128` key.
     const INSERTION_KEY: u8 = 64;
+    /// Maximum number of times a given insertion key can be inserted.
+    /// A `u64` bitmask with all bits set except 62 and 63, generated
+    /// in Python via `hex(int('1' * 62, 2))`.
+    const MAX_INSERTION_COUNT: u64 = 0x3fffffffffffffff;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
     /// `u128` bitmask set at bit 63, the crit-bit tree node type
@@ -597,6 +601,11 @@ module econia::critqueue {
     /// indicating that the key is unset at bit 63 and is thus a leaf
     /// key.
     const NODE_LEAF: u128 = 0;
+    /// `XOR` bitmask for flipping insertion count bits 0-61 and
+    /// setting bit 62 high in the case of a descending crit-queue.
+    /// `u64` bitmask with all bits set except bit 63, cast to a `u128`.
+    /// Generated in Python via `hex(int('1' * 63, 2))`.
+    const NOT_ENQUEUE_COUNT_DESCENDING: u128 = 0x7fffffffffffffff;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -608,7 +617,8 @@ module econia::critqueue {
         crit_queue_ref: &CritQueue<V>,
         access_key: u128
     ): &V {
-        &table::borrow(&crit_queue_ref.values, access_key).value
+        &table::borrow(
+            &crit_queue_ref.subqueue_nodes, access_key).insertion_value
     }
 
     /// Mutably borrow insertion value corresponding to `access_key`
@@ -617,8 +627,8 @@ module econia::critqueue {
         crit_queue_ref_mut: &mut CritQueue<V>,
         access_key: u128
     ): &mut V {
-        &mut table::borrow_mut(&mut crit_queue_ref_mut.values, access_key).
-            value
+        &mut table::borrow_mut(
+            &mut crit_queue_ref_mut.subqueue_nodes, access_key).insertion_value
     }
 
     /// Return access key of given `CritQueue` head, if any.
@@ -633,7 +643,84 @@ module econia::critqueue {
         crit_queue_ref: &CritQueue<V>,
         access_key: u128
     ): bool {
-        table::contains(&crit_queue_ref.values, access_key)
+        table::contains(&crit_queue_ref.subqueue_nodes, access_key)
+    }
+
+    /// Insert the given `key`-`value` insertion pair into the given
+    /// `CritQueue`, returning an access key.
+    ///
+    /// Aborts if the given insertion `key` has already been inserted
+    /// the maximum number of times.
+    public fun insert<V>(
+        crit_queue_ref_mut: &mut CritQueue<V>,
+        insertion_key: u64,
+        insertion_value: V
+    ): u128 {
+        // Assume corresponding leaf node is a free leaf.
+        let free_leaf = true;
+        // Get leaf key from insertion key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Borrow mutable reference to leaves table.
+        let leaves_ref_mut = &mut crit_queue_ref_mut.leaves;
+        // Initialize a subqueue node with the insertion value.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
+        let access_key; // Declare access key
+        // If corresponding leaf node has already been allocated:
+        if (table::contains(leaves_ref_mut, leaf_key)) {
+            // Borrow mutable reference to the leaf.
+            let leaf_ref_mut = table::borrow_mut(leaves_ref_mut, leaf_key);
+            // Get insertion count of new insertion key.
+            let count = leaf_ref_mut.count + 1;
+            // Assert max insertion count is not exceeded.
+            assert!(count <= MAX_INSERTION_COUNT, E_TOO_MANY_INSERTIONS);
+            // Update leaf insertion counter.
+            leaf_ref_mut.count = count;
+            // Get access key, assuming an ascending crit-queue.
+            access_key = leaf_key | (count as u128);
+            // If a descending crit-queue, take bitwise complement of
+            // insertion count and set the bit flag for sort order.
+            if (crit_queue_ref_mut.order == DESCENDING) access_key =
+                access_key ^ NOT_ENQUEUE_COUNT_DESCENDING;
+            // If not a free leaf:
+            if (option::is_some(&leaf_ref_mut.tail)) {
+                free_leaf = false; // Flag as such.
+                // Get the subqueue tail access key.
+                let tail_access_key = *option::borrow(&leaf_ref_mut.tail);
+                // Borrow mutable reference to the old subqueue tail.
+                let tail_ref_mut = table::borrow_mut(
+                    &mut crit_queue_ref_mut.subqueue_nodes, tail_access_key);
+                // Set old subqueue tail to have as its next subqueue
+                // node the new subqueue node.
+                tail_ref_mut.next = option::some(access_key);
+                // Set the new subqueue node to have as its previous
+                // subqueue node the old subqueue tail.
+                subqueue_node.previous = option::some(tail_access_key);
+                // Set the subqueue to have the new subqueue node as its
+                // tail.
+                leaf_ref_mut.tail = option::some(access_key);
+            };
+        } else { // If the insertion key has not been inserted before:
+            // Get access key for insertion count 0, assuming an
+            // ascending crit-queue.
+            access_key = leaf_key;
+            // If a descending crit-queue, take bitwise complement of
+            // insertion count and set the bit flag for sort order.
+            if (crit_queue_ref_mut.order == DESCENDING) access_key =
+                access_key ^ NOT_ENQUEUE_COUNT_DESCENDING;
+            // Declare leaf with insertion count 0, no parent, and new
+            // subqueue node as both head and tail.
+            let leaf = Leaf{count: 0, parent: option::none(), head:
+                option::some(access_key), tail: option::some(access_key)};
+            // Add the leaf to the leaves table.
+            table::add(leaves_ref_mut, access_key, leaf);
+        };
+        // Borrow mutable reference to subqueue nodes table.
+        let subqueue_nodes_ref_mut = &mut crit_queue_ref_mut.subqueue_nodes;
+        // Add corresponding subqueue node to the table.
+        table::add(subqueue_nodes_ref_mut, access_key, subqueue_node);
+        free_leaf; // Insert free leaf to tree if free.
+        access_key // Return access key.
     }
 
     /// Return `true` if given `CritQueue` is empty.
@@ -653,7 +740,7 @@ module econia::critqueue {
             head: option::none(),
             inners: table::new(),
             leaves: table::new(),
-            values: table::new()
+            subqueue_nodes: table::new()
         }
     }
 
@@ -925,8 +1012,9 @@ module econia::critqueue {
     CritQueue<u8> {
         let crit_queue = new(ASCENDING); // Get ascending crit-queue.
         // Add a mock subqueue node to the values table.
-        table::add(&mut crit_queue.values, 0, SubQueueNode{
-            value: 0, previous: option::none(), next: option::none()});
+        table::add(&mut crit_queue.subqueue_nodes, 0,
+            SubQueueNode{insertion_value: 0, previous: option::none(),
+                next: option::none()});
         // Assert correct value borrow.
         assert!(*borrow(&crit_queue, 0) == 0, 0);
         *borrow_mut(&mut crit_queue, 0) = 123; // Mutate value.
@@ -967,8 +1055,9 @@ module econia::critqueue {
         // Assert arbitrary access key not contained.
         assert!(!has_access_key(&crit_queue, 0), 0);
         // Add a mock subqueue node to the values table.
-        table::add(&mut crit_queue.values, 0, SubQueueNode{
-            value: 0, previous: option::none(), next: option::none()});
+        table::add(&mut crit_queue.subqueue_nodes, 0,
+            SubQueueNode{insertion_value: 0, previous: option::none(),
+                next: option::none()});
         // Assert arbitrary access key contained.
         assert!(has_access_key(&crit_queue, 0), 0);
         crit_queue // Return crit-queue.

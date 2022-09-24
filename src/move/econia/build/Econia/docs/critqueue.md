@@ -538,7 +538,7 @@ head of the subqueue in the next leaf, which is accessed by either:
 
 
 In the present implementation, key-value insertion pairs are
-inserted via <code>insert()</code>, which accepts a <code>u64</code> insertion key and
+inserted via <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>, which accepts a <code>u64</code> insertion key and
 insertion value of type <code>V</code>. A corresponding <code>u128</code> access key is
 returned, which can be used for subsequent access key lookup via <code>
 <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code>dequeue()</code>, or <code>remove()</code>.
@@ -636,6 +636,7 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
 -  [Function `get_head_access_key`](#0xc0deb00c_critqueue_get_head_access_key)
 -  [Function `has_access_key`](#0xc0deb00c_critqueue_has_access_key)
+-  [Function `insert`](#0xc0deb00c_critqueue_insert)
 -  [Function `is_empty`](#0xc0deb00c_critqueue_is_empty)
 -  [Function `new`](#0xc0deb00c_critqueue_new)
 -  [Function `would_become_new_head`](#0xc0deb00c_critqueue_would_become_new_head)
@@ -704,7 +705,7 @@ Hybrid between a crit-bit tree and a queue. See above.
  Map from leaf key to leaf node.
 </dd>
 <dt>
-<code>values: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">critqueue::SubQueueNode</a>&lt;V&gt;&gt;</code>
+<code>subqueue_nodes: <a href="_Table">table::Table</a>&lt;u128, <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">critqueue::SubQueueNode</a>&lt;V&gt;&gt;</code>
 </dt>
 <dd>
  Map from access key to subqueue node.
@@ -829,7 +830,7 @@ A node in a subqueue.
 
 <dl>
 <dt>
-<code>value: V</code>
+<code>insertion_value: V</code>
 </dt>
 <dd>
  Insertion value.
@@ -876,12 +877,12 @@ Descending crit-queue flag.
 
 
 
-<a name="0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES"></a>
+<a name="0xc0deb00c_critqueue_E_TOO_MANY_INSERTIONS"></a>
 
-When an enqueue key has been enqueued too many times.
+When an insertion key has been inserted too many times.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_ENQUEUES">E_TOO_MANY_ENQUEUES</a>: u64 = 0;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_INSERTIONS">E_TOO_MANY_INSERTIONS</a>: u64 = 0;
 </code></pre>
 
 
@@ -914,6 +915,18 @@ Number of bits that insertion key is shifted in a <code>u128</code> key.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_INSERTION_KEY">INSERTION_KEY</a>: u8 = 64;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_MAX_INSERTION_COUNT"></a>
+
+Maximum number of times a given insertion key can be inserted.
+A <code>u64</code> bitmask with all bits set except 62 and 63, generated
+in Python via <code>hex(int('1' * 62, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_INSERTION_COUNT">MAX_INSERTION_COUNT</a>: u64 = 4611686018427387903;
 </code></pre>
 
 
@@ -963,6 +976,19 @@ bit flag, generated in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
 
 
 
+<a name="0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING"></a>
+
+<code>XOR</code> bitmask for flipping insertion count bits 0-61 and
+setting bit 62 high in the case of a descending crit-queue.
+<code>u64</code> bitmask with all bits set except bit 63, cast to a <code>u128</code>.
+Generated in Python via <code>hex(int('1' * 63, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>: u128 = 9223372036854775807;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_borrow"></a>
 
 ## Function `borrow`
@@ -984,7 +1010,8 @@ Borrow insertion value corresponding to <code>access_key</code> in given
     crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     access_key: u128
 ): &V {
-    &<a href="_borrow">table::borrow</a>(&crit_queue_ref.values, access_key).value
+    &<a href="_borrow">table::borrow</a>(
+        &crit_queue_ref.subqueue_nodes, access_key).insertion_value
 }
 </code></pre>
 
@@ -1013,8 +1040,8 @@ Mutably borrow insertion value corresponding to <code>access_key</code>
     crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     access_key: u128
 ): &<b>mut</b> V {
-    &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(&<b>mut</b> crit_queue_ref_mut.values, access_key).
-        value
+    &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(
+        &<b>mut</b> crit_queue_ref_mut.subqueue_nodes, access_key).insertion_value
 }
 </code></pre>
 
@@ -1069,7 +1096,104 @@ Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_
     crit_queue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     access_key: u128
 ): bool {
-    <a href="_contains">table::contains</a>(&crit_queue_ref.values, access_key)
+    <a href="_contains">table::contains</a>(&crit_queue_ref.subqueue_nodes, access_key)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_insert"></a>
+
+## Function `insert`
+
+Insert the given <code>key</code>-<code>value</code> insertion pair into the given
+<code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, returning an access key.
+
+Aborts if the given insertion <code>key</code> has already been inserted
+the maximum number of times.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64, insertion_value: V): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(
+    crit_queue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    insertion_key: u64,
+    insertion_value: V
+): u128 {
+    // Assume corresponding leaf node is a free leaf.
+    <b>let</b> free_leaf = <b>true</b>;
+    // Get leaf key from insertion key.
+    <b>let</b> leaf_key = (insertion_key <b>as</b> u128) &lt;&lt; <a href="critqueue.md#0xc0deb00c_critqueue_INSERTION_KEY">INSERTION_KEY</a>;
+    // Borrow mutable reference <b>to</b> leaves <a href="">table</a>.
+    <b>let</b> leaves_ref_mut = &<b>mut</b> crit_queue_ref_mut.leaves;
+    // Initialize a subqueue node <b>with</b> the insertion value.
+    <b>let</b> subqueue_node = <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>{insertion_value,
+        previous: <a href="_none">option::none</a>(), next: <a href="_none">option::none</a>()};
+    <b>let</b> access_key; // Declare access key
+    // If corresponding leaf node <b>has</b> already been allocated:
+    <b>if</b> (<a href="_contains">table::contains</a>(leaves_ref_mut, leaf_key)) {
+        // Borrow mutable reference <b>to</b> the leaf.
+        <b>let</b> leaf_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, leaf_key);
+        // Get insertion count of new insertion key.
+        <b>let</b> count = leaf_ref_mut.count + 1;
+        // Assert max insertion count is not exceeded.
+        <b>assert</b>!(count &lt;= <a href="critqueue.md#0xc0deb00c_critqueue_MAX_INSERTION_COUNT">MAX_INSERTION_COUNT</a>, <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_INSERTIONS">E_TOO_MANY_INSERTIONS</a>);
+        // Update leaf insertion counter.
+        leaf_ref_mut.count = count;
+        // Get access key, assuming an ascending crit-queue.
+        access_key = leaf_key | (count <b>as</b> u128);
+        // If a descending crit-queue, take bitwise complement of
+        // insertion count and set the bit flag for sort order.
+        <b>if</b> (crit_queue_ref_mut.order == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) access_key =
+            access_key ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>;
+        // If not a free leaf:
+        <b>if</b> (<a href="_is_some">option::is_some</a>(&leaf_ref_mut.tail)) {
+            free_leaf = <b>false</b>; // Flag <b>as</b> such.
+            // Get the subqueue tail access key.
+            <b>let</b> tail_access_key = *<a href="_borrow">option::borrow</a>(&leaf_ref_mut.tail);
+            // Borrow mutable reference <b>to</b> the <b>old</b> subqueue tail.
+            <b>let</b> tail_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(
+                &<b>mut</b> crit_queue_ref_mut.subqueue_nodes, tail_access_key);
+            // Set <b>old</b> subqueue tail <b>to</b> have <b>as</b> its next subqueue
+            // node the new subqueue node.
+            tail_ref_mut.next = <a href="_some">option::some</a>(access_key);
+            // Set the new subqueue node <b>to</b> have <b>as</b> its previous
+            // subqueue node the <b>old</b> subqueue tail.
+            subqueue_node.previous = <a href="_some">option::some</a>(tail_access_key);
+            // Set the subqueue <b>to</b> have the new subqueue node <b>as</b> its
+            // tail.
+            leaf_ref_mut.tail = <a href="_some">option::some</a>(access_key);
+        };
+    } <b>else</b> { // If the insertion key <b>has</b> not been inserted before:
+        // Get access key for insertion count 0, assuming an
+        // ascending crit-queue.
+        access_key = leaf_key;
+        // If a descending crit-queue, take bitwise complement of
+        // insertion count and set the bit flag for sort order.
+        <b>if</b> (crit_queue_ref_mut.order == <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>) access_key =
+            access_key ^ <a href="critqueue.md#0xc0deb00c_critqueue_NOT_ENQUEUE_COUNT_DESCENDING">NOT_ENQUEUE_COUNT_DESCENDING</a>;
+        // Declare leaf <b>with</b> insertion count 0, no parent, and new
+        // subqueue node <b>as</b> both head and tail.
+        <b>let</b> leaf = <a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a>{count: 0, parent: <a href="_none">option::none</a>(), head:
+            <a href="_some">option::some</a>(access_key), tail: <a href="_some">option::some</a>(access_key)};
+        // Add the leaf <b>to</b> the leaves <a href="">table</a>.
+        <a href="_add">table::add</a>(leaves_ref_mut, access_key, leaf);
+    };
+    // Borrow mutable reference <b>to</b> subqueue nodes <a href="">table</a>.
+    <b>let</b> subqueue_nodes_ref_mut = &<b>mut</b> crit_queue_ref_mut.subqueue_nodes;
+    // Add corresponding subqueue node <b>to</b> the <a href="">table</a>.
+    <a href="_add">table::add</a>(subqueue_nodes_ref_mut, access_key, subqueue_node);
+    free_leaf; // Insert free leaf <b>to</b> tree <b>if</b> free.
+    access_key // Return access key.
 }
 </code></pre>
 
@@ -1129,7 +1253,7 @@ Return <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>
         head: <a href="_none">option::none</a>(),
         inners: <a href="_new">table::new</a>(),
         leaves: <a href="_new">table::new</a>(),
-        values: <a href="_new">table::new</a>()
+        subqueue_nodes: <a href="_new">table::new</a>()
     }
 }
 </code></pre>

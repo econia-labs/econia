@@ -908,6 +908,9 @@ module econia::critqueue {
     ///
     /// Inner function for `insert()`.
     ///
+    /// # Returns
+    /// * `u128`: Access key of new sub-queue node.
+    ///
     /// # Assumptions
     /// * `critqueue_ref_mut` indicates a `CritQueue` that does not have
     ///   an allocated leaf with the given `leaf_key`.
@@ -932,13 +935,17 @@ module econia::critqueue {
         // Borrow mutable reference to leaves table.
         let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
         // Add the leaf to the leaves table.
-        table::add(leaves_ref_mut, access_key, leaf);
+        table::add(leaves_ref_mut, leaf_key, leaf);
         access_key // Return access key.
     }
 
     /// Update a sub-queue, inside an allocated leaf, during insertion.
     ///
     /// Inner function for `insert()`.
+    ///
+    /// # Returns
+    /// * `u128`: Access key of new sub-queue node.
+    /// * `bool`: `true` if allocated leaf is a free leaf, else `false`.
     ///
     /// # Assumptions
     /// * `critqueue_ref_mut` indicates a `CritQueue` that already
@@ -1026,6 +1033,33 @@ module econia::critqueue {
     /// Return a bitmask with all bits high except for bit `b`,
     /// 0-indexed starting at LSB: bitshift 1 by `b`, XOR with `HI_128`
     fun bit_lo(b: u8): u128 {1 << b ^ HI_128}
+
+    #[test_only]
+    /// Destroy a crit-queue even if it is not empty.
+    fun drop_critqueue_test<V>(
+        critqueue: CritQueue<V>
+    ) {
+        // Unpack all fields, dropping those that are not tables.
+        let CritQueue<V>{order: _, root: _, head: _, inners, leaves,
+            subqueue_nodes} = critqueue;
+        // Drop all tables.
+        table::drop_unchecked(inners);
+        table::drop_unchecked(leaves);
+        table::drop_unchecked(subqueue_nodes);
+    }
+
+    #[test_only]
+    /// Unpack and destroy a sub-queue node.
+    fun drop_subqueue_node_test<V: drop>(
+        subqueue_node: SubQueueNode<V>
+    ) {
+        let SubQueueNode<V>{insertion_value: _, previous: _, next: _} =
+            subqueue_node;
+    }
+
+    #[test_only]
+    /// Wraper for `u_128()`, casting to return to `u64`.
+    public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
 
     #[test_only]
     /// Return a `u128` corresponding to provided byte string `s`. The
@@ -1136,6 +1170,277 @@ module econia::critqueue {
     }
 
     #[test]
+    /// Verify successful allocation.
+    fun test_insert_allocate_leaf() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        let insertion_key = u_64(b"1010101"); // Get insertion key.
+        // Get leaf key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Allocate new leaf, storing access key of new sub-queue node.
+        let access_key = insert_allocate_leaf(&mut critqueue, leaf_key);
+        // Assert access key as expected.
+        assert!(access_key == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000001010101",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000"
+        ), 0);
+        // Borrow reference to newly-allocated leaf.
+        let leaf_ref = table::borrow(&critqueue.leaves, leaf_key);
+        // Assert fields.
+        assert!(leaf_ref.count == 0, 0);
+        assert!(option::is_none(&leaf_ref.parent), 0);
+        assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
+        assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
+        critqueue.order = DESCENDING; // Switch crit-queue order.
+        insertion_key = u_64(b"10101"); // Reassign insertion key.
+        // Reassign leaf key.
+        leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Allocate new leaf, storing access key of new sub-queue node.
+        access_key = insert_allocate_leaf(&mut critqueue, leaf_key);
+        // Assert access key as expected.
+        assert!(access_key == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000010101",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111111"
+        ), 0);
+        // Borrow reference to newly-allocated leaf.
+        leaf_ref = table::borrow(&critqueue.leaves, leaf_key);
+        // Assert fields.
+        assert!(leaf_ref.count == 0, 0);
+        assert!(option::is_none(&leaf_ref.parent), 0);
+        assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
+        assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify correct update for ascending crit-queue, free leaf.
+    fun test_insert_update_subqueue_ascending_free() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        let insertion_key = u_64(b"1010101"); // Get insertion key.
+        let insertion_value = 0; // Declare quasi-null insertion value.
+        let count = u_64(b"110"); // Declare nonzero insertion count.
+        // Get leaf key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Initialize new sub-queue node for allocated leaf.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
+        // Insert to crit-queue an allocated free leaf.
+        table::add(&mut critqueue.leaves, leaf_key, Leaf{
+            count, parent: option::none(), head: option::none(),
+            tail: option::none()});
+        // Update sub-queue, storing access key and if allocated leaf is
+        // a free leaf.
+        let (access_key, free_leaf) = insert_update_subqueue(
+            &mut critqueue, &mut subqueue_node, leaf_key);
+        // Assert access key as expected.
+        assert!(access_key == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000001010101",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000111"
+        ), 0);
+        // Assert indicated as free leaf.
+        assert!(free_leaf, 0);
+        // Assert sub-queue node fields.
+        assert!(subqueue_node.insertion_value == insertion_value, 0);
+        assert!(option::is_none(&subqueue_node.previous), 0);
+        assert!(option::is_none(&subqueue_node.next), 0);
+        // Borrow immutable reference to allocated leaf.
+        let leaf_ref = table::borrow(&critqueue.leaves, leaf_key);
+        // Assert fields.
+        assert!(leaf_ref.count == count + 1, 0);
+        assert!(option::is_none(&leaf_ref.parent), 0);
+        assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
+        assert!(*option::borrow(&leaf_ref.tail) == access_key, 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+    }
+
+    #[test]
+    /// Verify correct update for ascending crit-queue, leaf already in
+    /// tree.
+    fun test_insert_update_subqueue_ascending_not_free() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        let insertion_key = u_64(b"1010101"); // Get insertion key.
+        let insertion_value = 0; // Declare quasi-null insertion value.
+        let count = u_64(b"110"); // Declare nonzero insertion count.
+        // Get leaf key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Declare different value for old tail node insertion value.
+        let old_tail_node_value = 1;
+        // Get access key for old tail, the most recent insertion.
+        let old_tail_access_key = leaf_key | (count as u128);
+        // Declare key of mock parent to allocated leaf.
+        let parent_key = 1234;
+        // Initialize old tail node at head of sub-queue.
+        let old_tail_node = SubQueueNode{insertion_value: old_tail_node_value,
+            previous: option::none(), next: option::none()};
+        // Add old tail node to sub-queue nodes table.
+        table::add(&mut critqueue.subqueue_nodes, old_tail_access_key,
+            old_tail_node);
+        // Insert to crit-queue an allocated free leaf having old tail
+        // node as its head.
+        table::add(&mut critqueue.leaves, leaf_key, Leaf{
+            count, parent: option::some(parent_key),
+            head: option::some(old_tail_access_key),
+            tail: option::some(old_tail_access_key)});
+        // Initialize new sub-queue node for allocated leaf.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
+        // Update sub-queue, storing access key and if allocated leaf is
+        // a free leaf.
+        let (access_key, free_leaf) = insert_update_subqueue(
+            &mut critqueue, &mut subqueue_node, leaf_key);
+        // Assert access key as expected.
+        assert!(access_key == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000001010101",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000111"
+        ), 0);
+        // Assert indicated as not free leaf.
+        assert!(!free_leaf, 0);
+        // Assert sub-queue node fields.
+        assert!(subqueue_node.insertion_value == insertion_value, 0);
+        assert!(*option::borrow(&subqueue_node.previous) ==
+            old_tail_access_key, 0);
+        assert!(option::is_none(&subqueue_node.next), 0);
+        // Borrow immutable reference to allocated leaf.
+        let leaf_ref = table::borrow(&critqueue.leaves, leaf_key);
+        // Assert fields.
+        assert!(leaf_ref.count == count + 1, 0);
+        assert!(*option::borrow(&leaf_ref.parent) == parent_key, 0);
+        assert!(*option::borrow(&leaf_ref.head) == old_tail_access_key, 0);
+        assert!(*option::borrow(&leaf_ref.tail) == access_key, 0);
+        // Borrow immutable reference to old sub-queue tail node.
+        let old_tail_ref = table::borrow(
+            &critqueue.subqueue_nodes, old_tail_access_key);
+        // Assert old sub-queue tail node fields.
+        assert!(old_tail_ref.insertion_value == old_tail_node_value, 0);
+        assert!(option::is_none(&old_tail_ref.previous), 0);
+        assert!(*option::borrow(&old_tail_ref.next) == access_key, 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+    }
+
+    #[test]
+    /// Verify correct update for descending crit-queue, free leaf.
+    fun test_insert_update_subqueue_descending_free() {
+        // Get ascending crit-queue.
+        let critqueue = new<u8>(DESCENDING);
+        let insertion_key = u_64(b"1010101"); // Get insertion key.
+        let insertion_value = 0; // Declare quasi-null insertion value.
+        let count = u_64(b"110"); // Declare nonzero insertion count.
+        // Get leaf key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Initialize new sub-queue node for allocated leaf.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
+        // Insert to crit-queue an allocated free leaf.
+        table::add(&mut critqueue.leaves, leaf_key, Leaf{
+            count, parent: option::none(), head: option::none(),
+            tail: option::none()});
+        // Update sub-queue, storing access key and if allocated leaf is
+        // a free leaf.
+        let (access_key, free_leaf) = insert_update_subqueue(
+            &mut critqueue, &mut subqueue_node, leaf_key);
+        // Assert access key as expected.
+        assert!(access_key == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000001010101",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111000"
+        ), 0);
+        // Assert indicated as free leaf.
+        assert!(free_leaf, 0);
+        // Assert sub-queue node fields.
+        assert!(subqueue_node.insertion_value == insertion_value, 0);
+        assert!(option::is_none(&subqueue_node.previous), 0);
+        assert!(option::is_none(&subqueue_node.next), 0);
+        // Borrow immutable reference to allocated leaf.
+        let leaf_ref = table::borrow(&critqueue.leaves, leaf_key);
+        // Assert fields.
+        assert!(leaf_ref.count == count + 1, 0);
+        assert!(option::is_none(&leaf_ref.parent), 0);
+        assert!(*option::borrow(&leaf_ref.head) == access_key, 0);
+        assert!(*option::borrow(&leaf_ref.tail) == access_key, 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+    }
+
+    #[test]
+    /// Verify correct update for descending crit-queue, leaf already in
+    /// tree.
+    fun test_insert_update_subqueue_descending_not_free() {
+        // Get descending crit-queue.
+        let critqueue = new<u8>(DESCENDING);
+        let insertion_key = u_64(b"1010101"); // Get insertion key.
+        let insertion_value = 0; // Declare quasi-null insertion value.
+        let count = u_64(b"110"); // Declare nonzero insertion count.
+        // Get leaf key.
+        let leaf_key = (insertion_key as u128) << INSERTION_KEY;
+        // Declare different value for old tail node insertion value.
+        let old_tail_node_value = 1;
+        // Get access key for old tail, the most recent insertion.
+        let old_tail_access_key = (leaf_key | (count as u128)) ^
+            NOT_INSERTION_COUNT_DESCENDING;
+        // Declare key of mock parent to allocated leaf.
+        let parent_key = 1234;
+        // Initialize old tail node at head of sub-queue.
+        let old_tail_node = SubQueueNode{insertion_value: old_tail_node_value,
+            previous: option::none(), next: option::none()};
+        // Add old tail node to sub-queue nodes table.
+        table::add(&mut critqueue.subqueue_nodes, old_tail_access_key,
+            old_tail_node);
+        // Insert to crit-queue an allocated free leaf having old tail
+        // node as its head.
+        table::add(&mut critqueue.leaves, leaf_key, Leaf{
+            count, parent: option::some(parent_key),
+            head: option::some(old_tail_access_key),
+            tail: option::some(old_tail_access_key)});
+        // Initialize new sub-queue node for allocated leaf.
+        let subqueue_node = SubQueueNode{insertion_value,
+            previous: option::none(), next: option::none()};
+        // Update sub-queue, storing access key and if allocated leaf is
+        // a free leaf.
+        let (access_key, free_leaf) = insert_update_subqueue(
+            &mut critqueue, &mut subqueue_node, leaf_key);
+        // Assert access key as expected.
+        assert!(access_key == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000001010101",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111000"
+        ), 0);
+        // Assert indicated as not free leaf.
+        assert!(!free_leaf, 0);
+        // Assert sub-queue node fields.
+        assert!(subqueue_node.insertion_value == insertion_value, 0);
+        assert!(*option::borrow(&subqueue_node.previous) ==
+            old_tail_access_key, 0);
+        assert!(option::is_none(&subqueue_node.next), 0);
+        // Borrow immutable reference to allocated leaf.
+        let leaf_ref = table::borrow(&critqueue.leaves, leaf_key);
+        // Assert fields.
+        assert!(leaf_ref.count == count + 1, 0);
+        assert!(*option::borrow(&leaf_ref.parent) == parent_key, 0);
+        assert!(*option::borrow(&leaf_ref.head) == old_tail_access_key, 0);
+        assert!(*option::borrow(&leaf_ref.tail) == access_key, 0);
+        // Borrow immutable reference to old sub-queue tail node.
+        let old_tail_ref = table::borrow(
+            &critqueue.subqueue_nodes, old_tail_access_key);
+        // Assert old sub-queue tail node fields.
+        assert!(old_tail_ref.insertion_value == old_tail_node_value, 0);
+        assert!(option::is_none(&old_tail_ref.previous), 0);
+        assert!(*option::borrow(&old_tail_ref.next) == access_key, 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        drop_subqueue_node_test(subqueue_node); // Drop sub-queue node
+    }
+
+    #[test]
     /// Verify successful returns.
     fun test_is_empty():
     CritQueue<u8> {
@@ -1176,7 +1481,7 @@ module econia::critqueue {
 
     #[test]
     /// Verify successful return values
-    fun test_u_128() {
+    fun test_u_128_64() {
         assert!(u_128(b"0") == 0, 0);
         assert!(u_128(b"1") == 1, 0);
         assert!(u_128(b"00") == 0, 0);
@@ -1198,6 +1503,16 @@ module econia::critqueue {
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111110"
         ) == HI_128 - 1, 0);
+        assert!(u_64(b"0") == 0, 0);
+        assert!(u_64(b"0") == 0, 0);
+        assert!(u_64(b"1") == 1, 0);
+        assert!(u_64(b"00") == 0, 0);
+        assert!(u_64(b"01") == 1, 0);
+        assert!(u_64(b"10") == 2, 0);
+        assert!(u_64(b"11") == 3, 0);
+        assert!(u_64(b"10101010") == 170, 0);
+        assert!(u_64(b"00000001") == 1, 0);
+        assert!(u_64(b"11111111") == 255, 0);
     }
 
     #[test]

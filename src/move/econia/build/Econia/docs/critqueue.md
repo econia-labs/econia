@@ -658,10 +658,12 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
     -  [<code>XOR</code>/<code>AND</code> method](#@<code>XOR</code>/<code>AND</code>_method_29)
     -  [Binary search method](#@Binary_search_method_30)
 -  [Function `insert_allocate_leaf`](#0xc0deb00c_critqueue_insert_allocate_leaf)
-    -  [Assumptions](#@Assumptions_31)
--  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
+    -  [Returns](#@Returns_31)
     -  [Assumptions](#@Assumptions_32)
-    -  [Aborts if](#@Aborts_if_33)
+-  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
+    -  [Returns](#@Returns_33)
+    -  [Assumptions](#@Assumptions_34)
+    -  [Aborts if](#@Aborts_if_35)
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
@@ -1504,7 +1506,14 @@ Allocate a leaf during insertion.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@Assumptions_31"></a>
+<a name="@Returns_31"></a>
+
+### Returns
+
+* <code>u128</code>: Access key of new sub-queue node.
+
+
+<a name="@Assumptions_32"></a>
 
 ### Assumptions
 
@@ -1542,7 +1551,7 @@ leaf.
     // Borrow mutable reference <b>to</b> leaves <a href="">table</a>.
     <b>let</b> leaves_ref_mut = &<b>mut</b> critqueue_ref_mut.leaves;
     // Add the leaf <b>to</b> the leaves <a href="">table</a>.
-    <a href="_add">table::add</a>(leaves_ref_mut, access_key, leaf);
+    <a href="_add">table::add</a>(leaves_ref_mut, leaf_key, leaf);
     access_key // Return access key.
 }
 </code></pre>
@@ -1560,7 +1569,15 @@ Update a sub-queue, inside an allocated leaf, during insertion.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@Assumptions_32"></a>
+<a name="@Returns_33"></a>
+
+### Returns
+
+* <code>u128</code>: Access key of new sub-queue node.
+* <code>bool</code>: <code><b>true</b></code> if allocated leaf is a free leaf, else <code><b>false</b></code>.
+
+
+<a name="@Assumptions_34"></a>
 
 ### Assumptions
 
@@ -1571,7 +1588,7 @@ appropriate access key, which has been initialized as if it
 were the sole sub-queue node in a free leaf.
 
 
-<a name="@Aborts_if_33"></a>
+<a name="@Aborts_if_35"></a>
 
 ### Aborts if
 

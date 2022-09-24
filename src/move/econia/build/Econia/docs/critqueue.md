@@ -78,7 +78,7 @@ case.
 Bit numbers are 0-indexed from the least-significant bit (LSB):
 
 >     11101...1010010101
->      bit 5 = 0 -|    |- bit 0 = 1
+>       bit 5 = 0 ^    ^ bit 0 = 1
 
 
 <a name="@Status_3"></a>

@@ -547,9 +547,10 @@ module econia::critqueue {
     struct Leaf has store {
         /// 0-indexed insertion count for corresponding insertion key.
         count: u64,
-        /// If no sub-queue head, should also be none, since leaf is a
-        /// free leaf. Else corresponds to the inner key of the parent
-        /// node, none when leaf is the root of the crit-bit tree.
+        /// If no sub-queue head or tail, should also be none, since
+        /// leaf is a free leaf. Else corresponds to the inner key of
+        /// the leaf's parent node, none when leaf is the root of the
+        /// crit-bit tree.
         parent: Option<u128>,
         /// If none, node is a free leaf. Else the access key of the
         /// sub-queue head.
@@ -613,7 +614,7 @@ module econia::critqueue {
     /// setting bit 62 high in the case of a descending crit-queue.
     /// `u64` bitmask with all bits set except bit 63, cast to a `u128`.
     /// Generated in Python via `hex(int('1' * 63, 2))`.
-    const NOT_ENQUEUE_COUNT_DESCENDING: u128 = 0x7fffffffffffffff;
+    const NOT_INSERTION_COUNT_DESCENDING: u128 = 0x7fffffffffffffff;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -656,78 +657,36 @@ module econia::critqueue {
 
     /// Insert the given `key`-`value` insertion pair into the given
     /// `CritQueue`, returning an access key.
-    ///
-    /// Aborts if the given insertion `key` has already been inserted
-    /// the maximum number of times.
     public fun insert<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         insertion_key: u64,
         insertion_value: V
     ): u128 {
-        // Assume corresponding leaf node is a free leaf.
-        let free_leaf = true;
         // Get leaf key from insertion key.
         let leaf_key = (insertion_key as u128) << INSERTION_KEY;
         // Borrow mutable reference to leaves table.
         let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
-        // Initialize a sub-queue node with the insertion value.
+        // Determine if corresponding leaf has already been allocated.
+        let leaf_already_allocated = table::contains(leaves_ref_mut, leaf_key);
+        // Initialize a sub-queue node with the insertion value,
+        // assuming it is the sole sub-queue node in a free leaf.
         let subqueue_node = SubQueueNode{insertion_value,
             previous: option::none(), next: option::none()};
-        let access_key; // Declare access key
-        // If corresponding leaf node has already been allocated:
-        if (table::contains(leaves_ref_mut, leaf_key)) {
-            // Borrow mutable reference to the leaf.
-            let leaf_ref_mut = table::borrow_mut(leaves_ref_mut, leaf_key);
-            // Get insertion count of new insertion key.
-            let count = leaf_ref_mut.count + 1;
-            // Assert max insertion count is not exceeded.
-            assert!(count <= MAX_INSERTION_COUNT, E_TOO_MANY_INSERTIONS);
-            // Update leaf insertion counter.
-            leaf_ref_mut.count = count;
-            // Get access key, assuming an ascending crit-queue.
-            access_key = leaf_key | (count as u128);
-            // If a descending crit-queue, take bitwise complement of
-            // insertion count and set the bit flag for sort order.
-            if (critqueue_ref_mut.order == DESCENDING) access_key =
-                access_key ^ NOT_ENQUEUE_COUNT_DESCENDING;
-            // If not a free leaf:
-            if (option::is_some(&leaf_ref_mut.tail)) {
-                free_leaf = false; // Flag as such.
-                // Get the sub-queue tail access key.
-                let tail_access_key = *option::borrow(&leaf_ref_mut.tail);
-                // Borrow mutable reference to the old sub-queue tail.
-                let tail_ref_mut = table::borrow_mut(
-                    &mut critqueue_ref_mut.subqueue_nodes, tail_access_key);
-                // Set old sub-queue tail to have as its next sub-queue
-                // node the new sub-queue node.
-                tail_ref_mut.next = option::some(access_key);
-                // Set the new sub-queue node to have as its previous
-                // sub-queue node the old sub-queue tail.
-                subqueue_node.previous = option::some(tail_access_key);
-                // Set the sub-queue to have the new sub-queue node as
-                // its tail.
-                leaf_ref_mut.tail = option::some(access_key);
-            };
-        } else { // If the insertion key has not been inserted before:
-            // Get access key for insertion count 0, assuming an
-            // ascending crit-queue.
-            access_key = leaf_key;
-            // If a descending crit-queue, take bitwise complement of
-            // insertion count and set the bit flag for sort order.
-            if (critqueue_ref_mut.order == DESCENDING) access_key =
-                access_key ^ NOT_ENQUEUE_COUNT_DESCENDING;
-            // Declare leaf with insertion count 0, no parent, and new
-            // sub-queue node as both head and tail.
-            let leaf = Leaf{count: 0, parent: option::none(), head:
-                option::some(access_key), tail: option::some(access_key)};
-            // Add the leaf to the leaves table.
-            table::add(leaves_ref_mut, access_key, leaf);
-        };
+        // Get access key for new sub-queue node, and if corresponding
+        // leaf node is a free leaf. If leaf is already allocated:
+        let (access_key, _free_leaf) = if (leaf_already_allocated)
+            // Update its sub-queue, storing the access key of the
+            // new sub-queue node and if the corresponding leaf is free.
+            insert_update_subqueue(
+                critqueue_ref_mut, &mut subqueue_node, leaf_key)
+            // Otherwise, store access key of the new sub-queue node,
+            // found in a newly-allocated free leaf.
+            else (insert_allocate_leaf(critqueue_ref_mut, leaf_key), true);
         // Borrow mutable reference to sub-queue nodes table.
         let subqueue_nodes_ref_mut = &mut critqueue_ref_mut.subqueue_nodes;
-        // Add corresponding sub-queue node to the table.
+        // Add new sub-queue node to the table.
         table::add(subqueue_nodes_ref_mut, access_key, subqueue_node);
-        free_leaf; // Insert free leaf to tree if free.
+        // insert_free_leaf(critqueue_ref_mut, leaf_key);
         access_key // Return access key.
     }
 
@@ -944,6 +903,103 @@ module econia::critqueue {
             if (s > 1) l = m + 1 else u = m - 1;
         }
     }
+
+    /// Allocate a leaf during insertion.
+    ///
+    /// Inner function for `insert()`.
+    ///
+    /// # Assumptions
+    /// * `critqueue_ref_mut` indicates a `CritQueue` that does not have
+    ///   an allocated leaf with the given `leaf_key`.
+    /// * A `SubQueueNode` with the appropriate access key has been
+    ///   initialized as if it were the sole sub-queue node in a free
+    ///   leaf.
+    fun insert_allocate_leaf<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        leaf_key: u128
+    ): u128 {
+        // Get the sort order of the crit-queue.
+        let order = critqueue_ref_mut.order;
+        // Get access key. If ascending, is identical to leaf key, which
+        // has insertion count in bits 64-127 and 0 for bits 0-63.
+        let access_key = if (order == ASCENDING) leaf_key else
+            // Else same, but flipped insertion count and bit 63 set.
+            leaf_key  ^ NOT_INSERTION_COUNT_DESCENDING;
+        // Declare leaf with insertion count 0, no parent, and new
+        // sub-queue node as both head and tail.
+        let leaf = Leaf{count: 0, parent: option::none(), head:
+            option::some(access_key), tail: option::some(access_key)};
+        // Borrow mutable reference to leaves table.
+        let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
+        // Add the leaf to the leaves table.
+        table::add(leaves_ref_mut, access_key, leaf);
+        access_key // Return access key.
+    }
+
+    /// Update a sub-queue, inside an allocated leaf, during insertion.
+    ///
+    /// Inner function for `insert()`.
+    ///
+    /// # Assumptions
+    /// * `critqueue_ref_mut` indicates a `CritQueue` that already
+    ///   contains an allocated leaf with the given `leaf_key`.
+    /// * `subqueue_node_ref_mut` indicates a `SubQueueNode` with the
+    ///   appropriate access key, which has been initialized as if it
+    ///   were the sole sub-queue node in a free leaf.
+    ///
+    /// # Aborts if
+    /// * Insertion key encoded in `leaf_key` has already been inserted
+    ///   the maximum number of times.
+    fun insert_update_subqueue<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        subqueue_node_ref_mut: &mut SubQueueNode<V>,
+        leaf_key: u128,
+    ): (
+        u128,
+        bool
+    ) {
+        // Get the sort order of the crit-queue.
+        let order = critqueue_ref_mut.order;
+        // Borrow mutable reference to leaves table.
+        let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
+        // Borrow mutable reference to leaf.
+        let leaf_ref_mut = table::borrow_mut(leaves_ref_mut, leaf_key);
+        // Get insertion count of new insertion key.
+        let count = leaf_ref_mut.count + 1;
+        // Assert max insertion count is not exceeded.
+        assert!(count <= MAX_INSERTION_COUNT, E_TOO_MANY_INSERTIONS);
+        // Update leaf insertion counter.
+        leaf_ref_mut.count = count;
+        // Get access key. If ascending, bits 64-127 are the same as the
+        // leaf key, and bits 0-63 are the insertion count.
+        let access_key = if (order == ASCENDING) leaf_key | (count as u128)
+            // Else same, but flipped insertion count and bit 63 set.
+            else (leaf_key | (count as u128)) ^ NOT_INSERTION_COUNT_DESCENDING;
+        // Get old sub-queue tail field.
+        let old_tail = leaf_ref_mut.tail;
+        // Set sub-queue to have new sub-queue node as its tail.
+        leaf_ref_mut.tail = option::some(access_key);
+        let free_leaf = true; // Assume free leaf.
+        if (option::is_none(&old_tail)) { // If leaf is a free leaf:
+            // Update sub-queue to have new node as its head.
+            leaf_ref_mut.head = option::some(access_key);
+        } else { // If not a free leaf:
+            free_leaf = false; // Flag as such.
+            // Get the access key of the old sub-queue tail.
+            let old_tail_access_key = *option::borrow(&old_tail);
+            // Borrow mutable reference to the old sub-queue tail.
+            let old_tail_ref_mut = table::borrow_mut(
+                &mut critqueue_ref_mut.subqueue_nodes, old_tail_access_key);
+            // Set old sub-queue tail to have as its next sub-queue
+            // node the new sub-queue node.
+            old_tail_ref_mut.next = option::some(access_key);
+            // Set the new sub-queue node to have as its previous
+            // sub-queue node the old sub-queue tail.
+            subqueue_node_ref_mut.previous = old_tail;
+        };
+        (access_key, free_leaf) // Return access key and if free leaf.
+    }
+
 
     /// Return `true` if crit-bit tree node `key` is an inner key.
     fun is_inner_key(key: u128): bool {key & NODE_TYPE == NODE_INNER}

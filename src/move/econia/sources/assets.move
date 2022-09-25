@@ -72,23 +72,9 @@ module econia::assets {
         coin::burn<CoinType>(coins, burn_capability); // Burn coins
     }
 
-    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[cmd]
-    /// Initialize mock base and quote coin types under Econia account
-    public entry fun init_coin_types(
-        account: &signer
-    ) {
-        init_coin_type<BC>(account, BASE_COIN_NAME, BASE_COIN_SYMBOL,
-            BASE_COIN_DECIMALS); // Initialize mock base coin
-        init_coin_type<QC>(account, QUOTE_COIN_NAME, QUOTE_COIN_SYMBOL,
-            QUOTE_COIN_DECIMALS); // Initialize mock quote coin
-    }
-
-    #[cmd]
     /// Mint new `amount` of `CoinType`, aborting if not called by
     /// Econia account or if `CoinCapabilities` uninitialized
-    public entry fun mint<CoinType>(
+    public fun mint<CoinType>(
         account: &signer,
         amount: u64
     ): coin::Coin<CoinType>
@@ -104,6 +90,19 @@ module econia::assets {
                 account_address).mint_capability;
         // Mint specified amount
         coin::mint<CoinType>(amount, mint_capability)
+    }
+
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Initialize mock base and quote coin types under Econia account
+    public entry fun init_coin_types(
+        account: &signer
+    ) {
+        init_coin_type<BC>(account, BASE_COIN_NAME, BASE_COIN_SYMBOL,
+            BASE_COIN_DECIMALS); // Initialize mock base coin
+        init_coin_type<QC>(account, QUOTE_COIN_NAME, QUOTE_COIN_SYMBOL,
+            QUOTE_COIN_DECIMALS); // Initialize mock quote coin
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

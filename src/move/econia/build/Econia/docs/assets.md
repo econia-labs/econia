@@ -12,8 +12,8 @@ Mock asset types for on- and off-chain testing.
 -  [Constants](#@Constants_0)
 -  [Function `burn`](#0xc0deb00c_assets_burn)
     -  [Assumes](#@Assumes_1)
--  [Function `init_coin_types`](#0xc0deb00c_assets_init_coin_types)
 -  [Function `mint`](#0xc0deb00c_assets_mint)
+-  [Function `init_coin_types`](#0xc0deb00c_assets_init_coin_types)
 -  [Function `init_coin_type`](#0xc0deb00c_assets_init_coin_type)
 
 
@@ -253,6 +253,46 @@ Burn <code>coins</code>
 
 </details>
 
+<a name="0xc0deb00c_assets_mint"></a>
+
+## Function `mint`
+
+Mint new <code>amount</code> of <code>CoinType</code>, aborting if not called by
+Econia account or if <code><a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a></code> uninitialized
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_mint">mint</a>&lt;CoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_mint">mint</a>&lt;CoinType&gt;(
+    <a href="">account</a>: &<a href="">signer</a>,
+    amount: u64
+): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
+<b>acquires</b> <a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a> {
+    // Get <a href="">account</a> <b>address</b>
+    <b>let</b> account_address = address_of(<a href="">account</a>);
+    // Assert caller is Econia
+    <b>assert</b>!(account_address == @econia, <a href="assets.md#0xc0deb00c_assets_E_NOT_ECONIA">E_NOT_ECONIA</a>);
+    <b>assert</b>!(<b>exists</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(account_address),
+        <a href="assets.md#0xc0deb00c_assets_E_NO_CAPABILITIES">E_NO_CAPABILITIES</a>); // Assert <a href="">coin</a> capabilities initialized
+    // Borrow immutable reference <b>to</b> mint capability
+    <b>let</b> mint_capability = &<b>borrow_global</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
+            account_address).mint_capability;
+    // Mint specified amount
+    <a href="_mint">coin::mint</a>&lt;CoinType&gt;(amount, mint_capability)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_assets_init_coin_types"></a>
 
 ## Function `init_coin_types`
@@ -276,46 +316,6 @@ Initialize mock base and quote coin types under Econia account
         <a href="assets.md#0xc0deb00c_assets_BASE_COIN_DECIMALS">BASE_COIN_DECIMALS</a>); // Initialize mock base <a href="">coin</a>
     <a href="assets.md#0xc0deb00c_assets_init_coin_type">init_coin_type</a>&lt;<a href="assets.md#0xc0deb00c_assets_QC">QC</a>&gt;(<a href="">account</a>, <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_NAME">QUOTE_COIN_NAME</a>, <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_SYMBOL">QUOTE_COIN_SYMBOL</a>,
         <a href="assets.md#0xc0deb00c_assets_QUOTE_COIN_DECIMALS">QUOTE_COIN_DECIMALS</a>); // Initialize mock quote <a href="">coin</a>
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_assets_mint"></a>
-
-## Function `mint`
-
-Mint new <code>amount</code> of <code>CoinType</code>, aborting if not called by
-Econia account or if <code><a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a></code> uninitialized
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="assets.md#0xc0deb00c_assets_mint">mint</a>&lt;CoinType&gt;(<a href="">account</a>: &<a href="">signer</a>, amount: u64): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="assets.md#0xc0deb00c_assets_mint">mint</a>&lt;CoinType&gt;(
-    <a href="">account</a>: &<a href="">signer</a>,
-    amount: u64
-): <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;
-<b>acquires</b> <a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a> {
-    // Get <a href="">account</a> <b>address</b>
-    <b>let</b> account_address = address_of(<a href="">account</a>);
-    // Assert caller is Econia
-    <b>assert</b>!(account_address == @econia, <a href="assets.md#0xc0deb00c_assets_E_NOT_ECONIA">E_NOT_ECONIA</a>);
-    <b>assert</b>!(<b>exists</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(account_address),
-        <a href="assets.md#0xc0deb00c_assets_E_NO_CAPABILITIES">E_NO_CAPABILITIES</a>); // Assert <a href="">coin</a> capabilities initialized
-    // Borrow immutable reference <b>to</b> mint capability
-    <b>let</b> mint_capability = &<b>borrow_global</b>&lt;<a href="assets.md#0xc0deb00c_assets_CoinCapabilities">CoinCapabilities</a>&lt;CoinType&gt;&gt;(
-            account_address).mint_capability;
-    // Mint specified amount
-    <a href="_mint">coin::mint</a>&lt;CoinType&gt;(amount, mint_capability)
 }
 </code></pre>
 

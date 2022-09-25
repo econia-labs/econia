@@ -305,6 +305,30 @@ module econia::market {
             &limit_price
         );
     }
+
+    /// Register a market having at least one asset that is not a coin
+    /// type, which requires the authority of custodian indicated by
+    /// `generic_asset_transfer_custodian_id_ref` to verify deposits
+    /// and withdrawals of non-coin assets.
+    ///
+    /// See wrapped function `register_market()`.
+    public fun register_market_generic<
+        BaseType,
+        QuoteType
+    >(
+        host: &signer,
+        lot_size: u64,
+        tick_size: u64,
+        generic_asset_transfer_custodian_id_ref: &CustodianCapability
+    ) acquires OrderBooks {
+        register_market<BaseType, QuoteType>(
+            host,
+            lot_size,
+            tick_size,
+            registry::custodian_id(generic_asset_transfer_custodian_id_ref)
+        );
+    }
+
     /// Swap between coins of `BaseCoinType` and `QuoteCoinType`.
     ///
     /// # Type parameters
@@ -615,30 +639,6 @@ module econia::market {
             &min_quote,
             &max_quote,
             &limit_price
-        );
-    }
-
-    #[cmd]
-    /// Register a market having at least one asset that is not a coin
-    /// type, which requires the authority of custodian indicated by
-    /// `generic_asset_transfer_custodian_id_ref` to verify deposits
-    /// and withdrawals of non-coin assets.
-    ///
-    /// See wrapped function `register_market()`.
-    public entry fun register_market_generic<
-        BaseType,
-        QuoteType
-    >(
-        host: &signer,
-        lot_size: u64,
-        tick_size: u64,
-        generic_asset_transfer_custodian_id_ref: &CustodianCapability
-    ) acquires OrderBooks {
-        register_market<BaseType, QuoteType>(
-            host,
-            lot_size,
-            tick_size,
-            registry::custodian_id(generic_asset_transfer_custodian_id_ref)
         );
     }
 

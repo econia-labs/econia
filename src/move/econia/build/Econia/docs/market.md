@@ -33,6 +33,7 @@ testing functions are at [<code>doc/doc-site/overview/matching.md</code>](
 -  [Function `cancel_limit_order_custodian`](#0xc0deb00c_market_cancel_limit_order_custodian)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
 -  [Function `place_market_order_custodian`](#0xc0deb00c_market_place_market_order_custodian)
+-  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
     -  [Type parameters](#@Type_parameters_1)
     -  [Parameters](#@Parameters_2)
@@ -49,7 +50,6 @@ testing functions are at [<code>doc/doc-site/overview/matching.md</code>](
 -  [Function `cancel_limit_order_user`](#0xc0deb00c_market_cancel_limit_order_user)
 -  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
 -  [Function `place_market_order_user`](#0xc0deb00c_market_place_market_order_user)
--  [Function `register_market_generic`](#0xc0deb00c_market_register_market_generic)
 -  [Function `register_market_pure_coin`](#0xc0deb00c_market_register_market_pure_coin)
 -  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
 -  [Function `cancel_all_limit_orders`](#0xc0deb00c_market_cancel_all_limit_orders)
@@ -928,6 +928,49 @@ See wrapped function <code>place_market_order_order()</code>.
 
 </details>
 
+<a name="0xc0deb00c_market_register_market_generic"></a>
+
+## Function `register_market_generic`
+
+Register a market having at least one asset that is not a coin
+type, which requires the authority of custodian indicated by
+<code>generic_asset_transfer_custodian_id_ref</code> to verify deposits
+and withdrawals of non-coin assets.
+
+See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market">register_market</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_generic">register_market_generic</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_generic">register_market_generic</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    host: &<a href="">signer</a>,
+    lot_size: u64,
+    tick_size: u64,
+    generic_asset_transfer_custodian_id_ref: &CustodianCapability
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseType, QuoteType&gt;(
+        host,
+        lot_size,
+        tick_size,
+        <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(generic_asset_transfer_custodian_id_ref)
+    );
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_swap_coins"></a>
 
 ## Function `swap_coins`
@@ -1385,49 +1428,6 @@ See wrapped function <code>place_market_order_order()</code>.
         &min_quote,
         &max_quote,
         &limit_price
-    );
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_market_register_market_generic"></a>
-
-## Function `register_market_generic`
-
-Register a market having at least one asset that is not a coin
-type, which requires the authority of custodian indicated by
-<code>generic_asset_transfer_custodian_id_ref</code> to verify deposits
-and withdrawals of non-coin assets.
-
-See wrapped function <code><a href="market.md#0xc0deb00c_market_register_market">register_market</a>()</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_generic">register_market_generic</a>&lt;BaseType, QuoteType&gt;(host: &<a href="">signer</a>, lot_size: u64, tick_size: u64, generic_asset_transfer_custodian_id_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_generic">register_market_generic</a>&lt;
-    BaseType,
-    QuoteType
-&gt;(
-    host: &<a href="">signer</a>,
-    lot_size: u64,
-    tick_size: u64,
-    generic_asset_transfer_custodian_id_ref: &CustodianCapability
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseType, QuoteType&gt;(
-        host,
-        lot_size,
-        tick_size,
-        <a href="registry.md#0xc0deb00c_registry_custodian_id">registry::custodian_id</a>(generic_asset_transfer_custodian_id_ref)
     );
 }
 </code></pre>

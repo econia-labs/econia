@@ -1664,10 +1664,9 @@ Inner function for <code>insert_leaf_general()</code>.
 ### Parameters
 
 * <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
-* <code>anchor_node_ref_mut</code>: Mutable reference to the inner node to
-insert below, the "anchor node".
-* <code>critical_bitmask</code>: Critical bitmask to set for new inner
-node.
+* <code>anchor_node_key</code>: Key of the inner node to insert below, the
+"anchor node".
+* <code>new_inner_node_bitmask</code>: Critical bitmask for new inner node.
 * <code>access_key</code>: Access key of the key-value insertion pair just
 inserted.
 
@@ -1678,8 +1677,9 @@ inserted.
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with the insertion key
 encoded in <code>access_key</code>.
-* Critical bitmask is less than that of anchor node, which has
-been reached via upward walk in <code>insert_leaf_general()</code>.
+* <code>new_inner_node_bitmask</code> is less than that of anchor node,
+which has been reached via upward walk in
+<code>insert_leaf_general()</code>.
 
 
 <a name="@Reference_diagrams_35"></a>
@@ -1772,7 +1772,7 @@ new inner node's right child is the new leaf.
 * <code>test_insert_leaf_general_below_case_2()</code>
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_general_below">insert_leaf_general_below</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, anchor_node_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>, critical_bitmask: u128, access_key: u128)
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_general_below">insert_leaf_general_below</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, anchor_node_key: u128, new_inner_node_bitmask: u128, access_key: u128)
 </code></pre>
 
 
@@ -1783,34 +1783,35 @@ new inner node's right child is the new leaf.
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_general_below">insert_leaf_general_below</a>&lt;V&gt;(
     critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    anchor_node_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>,
-    critical_bitmask: u128,
+    anchor_node_key: u128,
+    new_inner_node_bitmask: u128,
     access_key: u128,
 ) {
-    // Get free leaf key corresponding <b>to</b> access key.
-    <b>let</b> leaf_key = access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>;
+    // Get new leaf key corresponding <b>to</b> access key.
+    <b>let</b> new_leaf_key = access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>;
     // Get inner key for new inner node corresponding <b>to</b> access key.
-    <b>let</b> new_inner_key = access_key | <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY">ACCESS_KEY_TO_INNER_KEY</a>;
-    // Get anchor node critical bitmask.
-    <b>let</b> anchor_bitmask = anchor_node_ref_mut.bitmask;
-    <b>let</b> displaced_child_key; // Declare displaced anchor child key.
-    <b>let</b> anchor_node_key; // Declare anchor node key.
+    <b>let</b> new_inner_node_key = access_key | <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY">ACCESS_KEY_TO_INNER_KEY</a>;
     // Borrow mutable reference <b>to</b> inner nodes <a href="">table</a>.
     <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
     // Borrow mutable reference <b>to</b> leaves <a href="">table</a>.
     <b>let</b> leaves_ref_mut = &<b>mut</b> critqueue_ref_mut.leaves;
-    // If free leaf key AND anchor bitmask is 0, free leaf is unset
+    <b>let</b> anchor_node_ref_mut = // Mutably borrow anchor node.
+        <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, anchor_node_key);
+    // Get anchor node critical bitmask.
+    <b>let</b> anchor_bitmask = anchor_node_ref_mut.bitmask;
+    <b>let</b> displaced_child_key; // Declare displaced child key.
+    // If new leaf key AND anchor bitmask is 0, new leaf is unset
     // at anchor node's critical bit and should thus go on its left:
-    <b>if</b> (leaf_key & anchor_bitmask == 0) {
+    <b>if</b> (new_leaf_key & anchor_bitmask == 0) {
         // Displaced child is thus on anchor's left.
         displaced_child_key = anchor_node_ref_mut.left;
-        // Anchor now <b>has</b> <b>as</b> its left child the new inner node.
-        anchor_node_ref_mut.left = new_inner_key;
-    } <b>else</b> { // If free leaf goes <b>to</b> right of anchor node:
+        // Anchor node now <b>has</b> <b>as</b> its left child the new inner node.
+        anchor_node_ref_mut.left = new_inner_node_key;
+    } <b>else</b> { // If new leaf goes <b>to</b> right of anchor node:
         // Displaced child is thus on anchor's right.
         displaced_child_key = anchor_node_ref_mut.right;
-        // Anchor now <b>has</b> <b>as</b> its right child the new inner node.
-        anchor_node_ref_mut.right = new_inner_key;
+        // Anchor node now <b>has</b> the new inner node <b>as</b> right child.
+        anchor_node_ref_mut.right = new_inner_node_key;
     };
     // Determine <b>if</b> displaced child is a leaf.
     <b>let</b> displaced_child_is_leaf =
@@ -1822,23 +1823,23 @@ new inner node's right child is the new leaf.
             <b>else</b> // Else borrow from inner nodes <a href="">table</a>.
         &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, displaced_child_key).parent;
     // Swap anchor node key in displaced child's parent field <b>with</b>
-    // the new inner node key, storing the anchor node key.
-    anchor_node_key =
-        <a href="_swap">option::swap</a>(displaced_child_parent_field_ref_mut, new_inner_key);
-    // If free leaf key AND new inner node's critical bitmask is 0,
+    // the new inner node key, discarding the anchor node key.
+    <a href="_swap">option::swap</a>(displaced_child_parent_field_ref_mut, new_inner_node_key);
+    // If new leaf key AND new inner node's critical bitmask is 0,
     // free leaf is unset at new inner node's critical bit and
     // should thus go on its left, <b>with</b> displaced child on new
     // inner node's right. Else the opposite.
-    <b>let</b> (left, right) = <b>if</b> (leaf_key & critical_bitmask == 0)
-        (leaf_key, displaced_child_key) <b>else</b>
-        (displaced_child_key, leaf_key);
+    <b>let</b> (left, right) = <b>if</b> (new_leaf_key & new_inner_node_bitmask == 0)
+        (new_leaf_key, displaced_child_key) <b>else</b>
+        (displaced_child_key, new_leaf_key);
     // Add <b>to</b> inner nodes <a href="">table</a> the new inner node.
-    <a href="_add">table::add</a>(inners_ref_mut, new_inner_key, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{left, right,
-        bitmask: critical_bitmask, parent: <a href="_some">option::some</a>(anchor_node_key)});
-    // Borrow mutable reference <b>to</b> free leaf.
-    <b>let</b> free_leaf_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, leaf_key);
-    // Set free leaf <b>to</b> <b>has</b> <b>as</b> its parent the new inner node.
-    <a href="_swap">option::swap</a>(&<b>mut</b> free_leaf_ref_mut.parent, new_inner_key);
+    <a href="_add">table::add</a>(inners_ref_mut, new_inner_node_key, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{left, right,
+        bitmask: new_inner_node_bitmask,
+        parent: <a href="_some">option::some</a>(anchor_node_key)});
+    <b>let</b> new_leaf_ref_mut = // Borrow mutable reference <b>to</b> new leaf.
+        <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, new_leaf_key);
+    // Set new leaf <b>to</b> have <b>as</b> its parent the new inner node.
+    <a href="_fill">option::fill</a>(&<b>mut</b> new_leaf_ref_mut.parent, new_inner_node_key);
 }
 </code></pre>
 
@@ -2025,7 +2026,7 @@ Starting at the root, walk down from inner node to inner node,
 branching left whenever <code>seed_key</code> is unset at an inner node's
 critical bit, and right whenever <code>seed_key</code> is set at an inner
 node's critical bit. After arriving at a leaf, known as the
-"match leaf", return its leaf key the inner key of its parent,
+"match leaf", return its leaf key, the inner key of its parent,
 and the parent's critical bitmask.
 
 

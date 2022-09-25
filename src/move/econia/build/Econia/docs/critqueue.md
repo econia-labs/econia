@@ -668,6 +668,8 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
+-  [Function `search`](#0xc0deb00c_critqueue_search)
+    -  [Returns](#@Returns_36)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1776,6 +1778,81 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_set">is_set</a>(key: u128, bit_number: u8): bool {key &gt;&gt; bit_number & 1 == 1}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_search"></a>
+
+## Function `search`
+
+Search for <code>leaf_key</code> in <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> having inner node at root.
+
+Starting at the root, walk from inner node to inner node,
+branching left whenever <code>leaf_key</code> is unset at an inner node's
+critical bit, and right whenever <code>leaf_key</code> is unset at the
+critical bit, eventually arriving at a "search leaf" associated
+with the following:
+
+| Term              | Meaning                            |
+|-------------------|------------------------------------|
+| Search leaf key   | Leaf key that search ended on      |
+| Search parent key | Inner key of parent to search leaf |
+| Search bitmask    | Search parent's critical bitmask   |
+
+
+<a name="@Returns_36"></a>
+
+### Returns
+
+* <code>u128</code>: Search leaf key.
+* <code>u128</code>: Search parent key.
+* <code>u128</code>: Search bitmask.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128): (u128, u128, u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    leaf_key: u128
+): (
+    u128,
+    u128,
+    u128
+) {
+    // Borrow immutable reference <b>to</b> <a href="">table</a> of inner nodes.
+    <b>let</b> inners_ref = &critqueue_ref.inners;
+    // Initialize search parent key <b>to</b> inner key of root.
+    <b>let</b> parent_key = *<a href="_borrow">option::borrow</a>(&critqueue_ref.root);
+    // Initialize search parent <b>to</b> corresponding node
+    <b>let</b> parent = <a href="_borrow">table::borrow</a>(inners_ref, parent_key);
+    <b>loop</b> { // Loop over inner nodes until arriving at a leaf:
+        // If leaf key AND inner node's critical bitmask is 0, then
+        // the leaf key is unset at the critical bit, so branch <b>to</b>
+        // the inner node's left child. Else the right child.
+        <b>let</b> child_key = <b>if</b> (leaf_key & parent.bitmask == 0)
+            parent.left <b>else</b> parent.right;
+        // If child is a leaf, have arrived at the search leaf.
+        <b>if</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>) <b>return</b>
+            // So <b>return</b> search leaf key, search parent key, and
+            // search bitmask.
+            (child_key, parent_key, parent.bitmask);
+        // If have not returned, child is an inner node, so parent
+        // key for next iteration becomes child key.
+        parent_key = child_key;
+        // Borrow immutable reference <b>to</b> new parent.
+        parent = <a href="_borrow">table::borrow</a>(inners_ref, parent_key);
+    }
+}
 </code></pre>
 
 

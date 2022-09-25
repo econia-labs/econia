@@ -679,7 +679,9 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `search`](#0xc0deb00c_critqueue_search)
     -  [Returns](#@Returns_43)
     -  [Assumptions](#@Assumptions_44)
-    -  [Reference diagram](#@Reference_diagram_45)
+    -  [Reference diagrams](#@Reference_diagrams_45)
+        -  [Leaf at root](#@Leaf_at_root_46)
+        -  [Inner node at root](#@Inner_node_at_root_47)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -2022,12 +2024,13 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 Search in given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> for closest match to <code>seed_key</code>.
 
-Starting at the root, walk down from inner node to inner node,
-branching left whenever <code>seed_key</code> is unset at an inner node's
-critical bit, and right whenever <code>seed_key</code> is set at an inner
-node's critical bit. After arriving at a leaf, known as the
-"match leaf", return its leaf key, the inner key of its parent,
-and the parent's critical bitmask.
+If root is a leaf, return immediately. Otherwise, starting at
+the root, walk down from inner node to inner node, branching
+left whenever <code>seed_key</code> is unset at an inner node's critical
+bit, and right whenever <code>seed_key</code> is set at an inner node's
+critical bit. After arriving at a leaf, known as the "match
+leaf", return its leaf key, the inner key of its parent, and the
+parent's critical bitmask.
 
 
 <a name="@Returns_43"></a>
@@ -2035,20 +2038,20 @@ and the parent's critical bitmask.
 ### Returns
 
 * <code>u128</code>: Match leaf key.
-* <code>u128</code>: Match parent inner key.
-* <code>u128</code>: Match parent's critical bitmask.
+* <code>Option&lt;u128&gt;</code>: Match parent inner key, if any.
+* <code>Option&lt;u128&gt;</code>: Match parent's critical bitmask, if any.
 
 
 <a name="@Assumptions_44"></a>
 
 ### Assumptions
 
-* Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has an inner node at its root.
+* Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> does not have an empty crit-bit tree.
 
 
-<a name="@Reference_diagram_45"></a>
+<a name="@Reference_diagrams_45"></a>
 
-### Reference diagram
+### Reference diagrams
 
 
 For ease of illustration, critical bitmasks and leaf keys are
@@ -2056,6 +2059,24 @@ depicted relative to bit 64, but tested with correspondingly
 bitshifted amounts, for inner keys that are additionally
 encoded with a mock insertion key, mock insertion count,
 and inner node bit flag.
+
+
+<a name="@Leaf_at_root_46"></a>
+
+#### Leaf at root
+
+
+>     111
+
+| <code>seed_key</code> | Match leaf key | Match parent bitmask |
+|------------|----------------|----------------------|
+| Any        | <code>111</code>          | None                 |
+
+
+<a name="@Inner_node_at_root_47"></a>
+
+#### Inner node at root
+
 
 >        2nd
 >       /   \
@@ -2072,7 +2093,7 @@ and inner node bit flag.
 See <code>test_search()</code>.
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, seed_key: u128): (u128, u128, u128)
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, seed_key: u128): (u128, <a href="_Option">option::Option</a>&lt;u128&gt;, <a href="_Option">option::Option</a>&lt;u128&gt;)
 </code></pre>
 
 
@@ -2086,13 +2107,18 @@ See <code>test_search()</code>.
     seed_key: u128
 ): (
     u128,
-    u128,
-    u128
+    Option&lt;u128&gt;,
+    Option&lt;u128&gt;
 ) {
+    // Get crit-queue root key.
+    <b>let</b> root_key = *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.root);
+    // If root is a leaf, <b>return</b> its leaf key, and indicate that
+    // it does not have a parent.
+    <b>if</b> (root_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>) <b>return</b>
+        (root_key, <a href="_none">option::none</a>(), <a href="_none">option::none</a>());
+    <b>let</b> parent_key = root_key; // Otherwise begin walk from root.
     // Borrow mutable reference <b>to</b> <a href="">table</a> of inner nodes.
     <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
-    // Initialize match parent key <b>to</b> inner key of root.
-    <b>let</b> parent_key = *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.root);
     // Initialize match parent <b>to</b> corresponding node.
     <b>let</b> parent_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, parent_key);
     <b>loop</b> { // Loop over inner nodes until arriving at a leaf:
@@ -2106,8 +2132,10 @@ See <code>test_search()</code>.
         // If child is a leaf, have arrived at the match leaf.
         <b>if</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>) <b>return</b>
             // So <b>return</b> the match leaf key, the inner key of the
-            // match parent, and the match parent's bitmask.
-            (child_key, parent_key, parent_bitmask);
+            // match parent, and the match parent's bitmask, <b>with</b>
+            // the latter two packed in an <a href="">option</a>
+            (child_key, <a href="_some">option::some</a>(parent_key),
+                <a href="_some">option::some</a>(parent_bitmask));
         // If have not returned, child is an inner node, so inner
         // key for next iteration becomes parent key.
         parent_key = child_key;

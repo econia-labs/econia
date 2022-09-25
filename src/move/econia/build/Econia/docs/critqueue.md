@@ -664,21 +664,22 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `insert_leaf_general_below`](#0xc0deb00c_critqueue_insert_leaf_general_below)
     -  [Parameters](#@Parameters_33)
     -  [Assumptions](#@Assumptions_34)
-    -  [Diagrams](#@Diagrams_35)
+    -  [Reference diagrams](#@Reference_diagrams_35)
         -  [Anchor node children polarity](#@Anchor_node_children_polarity_36)
         -  [Child displacement](#@Child_displacement_37)
         -  [New inner node children polarity](#@New_inner_node_children_polarity_38)
+        -  [Testing](#@Testing_39)
 -  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
-    -  [Returns](#@Returns_39)
-    -  [Assumptions](#@Assumptions_40)
-    -  [Aborts if](#@Aborts_if_41)
+    -  [Returns](#@Returns_40)
+    -  [Assumptions](#@Assumptions_41)
+    -  [Aborts if](#@Aborts_if_42)
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
 -  [Function `search`](#0xc0deb00c_critqueue_search)
-    -  [Returns](#@Returns_42)
-    -  [Assumptions](#@Assumptions_43)
-    -  [Reference diagram](#@Reference_diagram_44)
+    -  [Returns](#@Returns_43)
+    -  [Assumptions](#@Assumptions_44)
+    -  [Reference diagram](#@Reference_diagram_45)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1681,15 +1682,18 @@ encoded in <code>access_key</code>.
 been reached via upward walk in <code>insert_leaf_general()</code>.
 
 
-<a name="@Diagrams_35"></a>
+<a name="@Reference_diagrams_35"></a>
 
-### Diagrams
+### Reference diagrams
 
 
-For ease of illustration, trees are depicted with lower numbers
-that are correspondingly bitshifted by 64 bits, with inner nodes
-flagged as such (during testing). Examples refer to the
-following diagram:
+For ease of illustration, critical bitmasks and leaf keys are
+depicted relative to bit 64, but tested with correspondingly
+bitshifted amounts, for inner keys that are additionally
+encoded with a mock insertion key, mock insertion count,
+and inner node bit flag.
+
+Both insertion examples reference the following diagram:
 
 >         3rd
 >        /   \
@@ -1706,10 +1710,11 @@ following diagram:
 The anchor node is the node below which the free leaf and new
 inner node should be inserted, for example either <code>3rd</code> or
 <code>1st</code>. The free leaf key can be inserted to either the left or
-the right of the anchor node, depending on its whether it is set
-at the anchor node's critical bit. For example, a free leaf
-key of <code>1010</code> would be inserted to the right of <code>1st</code>, while a
-free leaf key of <code>1000</code> would be inserted to the left of <code>1st</code>.
+the right of the anchor node, depending on its whether it is
+unset or set, respectively, at the anchor node's critical bit.
+For example, per below, a free leaf key of <code>1000</code> would
+be inserted to the left of <code>1st</code>, while a free leaf key of
+<code>1111</code> would be inserted to the right of <code>3rd</code>.
 
 
 <a name="@Child_displacement_37"></a>
@@ -1728,7 +1733,7 @@ For example, inserting free leaf key <code>1000</code> displaces <code>1001</cod
 >                         /   \
 >     new inner node -> 0th   1011
 >                      /   \
->      free leaf -> 1000   1001 <- displaced child
+>       new leaf -> 1000   1001 <- displaced child
 
 Both leaves and inner nodes can be displaced. For example,
 were free leaf key <code>1111</code> to be inserted instead, it would
@@ -1738,7 +1743,7 @@ displace <code>1st</code>:
 >                       /   \
 >                    0001   2nd <- new inner node
 >                          /   \
->     displaced child -> 1st   1111 <- free leaf
+>     displaced child -> 1st   1111 <- new leaf
 >                       /   \
 >                    1001   1011
 
@@ -1750,12 +1755,21 @@ displace <code>1st</code>:
 
 The new inner node can have the new leaf as either its left or
 right child, depending on the new inner node's critical bit.
-As in the first example above, when the free leaf is unset at
-the new inner node's critical bit, the left child is the free
-leaf and the right child is the displaced child. Conversely, as
-in the second example above, when the free leaf is set at the
-new inner node's critical bit, the left child is the displaced
-child and the right child is the free leaf.
+As in the first example above, where the new leaf is unset at
+the new inner node's critical bit, the new inner node's left
+child is the new leaf and new inner node's right child is the
+displaced child. Conversely, as in the second example above,
+where the new leaf is set at the new inner node's critical bit,
+the new inner node's left child is the displaced child and the
+new inner node's right child is the new leaf.
+
+
+<a name="@Testing_39"></a>
+
+#### Testing
+
+* <code>test_insert_leaf_general_below_case_1()</code>
+* <code>test_insert_leaf_general_below_case_2()</code>
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_general_below">insert_leaf_general_below</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, anchor_node_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>, critical_bitmask: u128, access_key: u128)
@@ -1841,7 +1855,7 @@ Update a sub-queue, inside an allocated leaf, during insertion.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@Returns_39"></a>
+<a name="@Returns_40"></a>
 
 ### Returns
 
@@ -1849,7 +1863,7 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">inse
 * <code>bool</code>: <code><b>true</b></code> if allocated leaf is a free leaf, else <code><b>false</b></code>.
 
 
-<a name="@Assumptions_40"></a>
+<a name="@Assumptions_41"></a>
 
 ### Assumptions
 
@@ -1860,7 +1874,7 @@ appropriate access key, which has been initialized as if it
 were the sole sub-queue node in a free leaf.
 
 
-<a name="@Aborts_if_41"></a>
+<a name="@Aborts_if_42"></a>
 
 ### Aborts if
 
@@ -2015,7 +2029,7 @@ leaf", return its leaf key and a mutable reference to its
 parent.
 
 
-<a name="@Returns_42"></a>
+<a name="@Returns_43"></a>
 
 ### Returns
 
@@ -2023,14 +2037,14 @@ parent.
 * <code>&<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code>: Mutable reference to parent of match leaf.
 
 
-<a name="@Assumptions_43"></a>
+<a name="@Assumptions_44"></a>
 
 ### Assumptions
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has an inner node at its root.
 
 
-<a name="@Reference_diagram_44"></a>
+<a name="@Reference_diagram_45"></a>
 
 ### Reference diagram
 

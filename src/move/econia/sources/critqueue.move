@@ -992,35 +992,45 @@ module econia::critqueue {
         // Get free leaf key corresponding to access key.
         let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
         // Search for closest leaf, returning its leaf key, the inner
-        // key of its parent, and the parent's critical bitmask.
-        let (match_leaf_key, parent_key, parent_bitmask) =
+        // key of its parent, and the parent's critical bitmask, to
+        // initiate walk up tree.
+        let (walk_node_key, optional_parent_key, optional_parent_bitmask) =
             search(critqueue_ref_mut, leaf_key);
         // Get critical bitmask between leaf key and search leaf key.
-        let critical_bitmask = get_critical_bitmask(leaf_key, match_leaf_key);
-        // Borrow mutable reference to inner nodes table.
-        // (may need to have this go second to last).
-        let inners_ref_mut = critqueue_ref_mut.inners;
+        let critical_bitmask = get_critical_bitmask(leaf_key, walk_node_key);
         loop { // Start walking up tree from search leaf.
-            // If critical bitmask is less than that of match parent:
-            if (critical_bitmask < parent_bitmask) {
-                // Insert corresponding leaf leaf below it.
+            // Walk node is root if has no parent, so insert above it.
+            if (option::is_none(&optional_parent_key)
+                return insert_leaf_general_above_root(critqueue_ref_mut,
+                    critical_bitmask, walk_node_key, access_key)
+            // Otherwise there is a parent, so get its key and bitmask.
+            let (parent_key, parent_bitmask) =
+                (*option::borrow(&optional_parent_key),
+                 *option::borrow(&optional_parent_bitmask));
+            // If critical bitmask is less than that of parent:
+            if (critical_bitmask < parent_bitmask)
+                // Insert corresponding free leaf below the parent.
                 return insert_leaf_general_below(critqueue_ref_mut,
-                    parent_key, critical_bitmask, access_key);
-            // If critical bitmask not less than that of match parent:
-            } else {
-                // Get match parent's parent.
-                let optional_grandparent_key = match_parent_ref_mut.parent;
-                // If search parent is root:
-                if (option::is_none(optional_grandparent_key)) {
-                    return insert_leaf_general_above_root(
-                        critqueue_ref_mut,
-                        critical_bitmask,
-                        access_key, // Need for getting new inner key
-                    )
-                }
-                // Continue walk for next inner node up the tree.
-                match_parent_ref_mut = table::borrow(inners_ref_mut,
-                    *option::borrow(&optional_grandparent_key))
+                    parent_key, critical_bitmask, access_key)
+            // If have not returned, walk continues at parent node.
+            walk_node_key = parent_key;
+            // Immutably borrow inner nodes table.
+            let inners_ref = &critqueue.inners;
+            // Immutably borrow the new inner node to walk.
+            let walk_node_ref = table::borrow(inners_ref, walk_node_key);
+            // Get its optional parent key.
+            optional_parent_key = walk_node_ref.parent;
+            // If new node to walk has no parent:
+            if (option::is_none(*optional_parent_key)) {
+                // Set optional parent bitmask to none.
+                optional_parent_bitmask = option::none();
+            } else { // If new node to walk does have a parent:
+                // Get the parent's key.
+                parent_key = *(option::borrow(optional_parent_key);
+                // Immutably borrow the parent.
+                parent_ref = table::borrow(inners_ref, parent_key);
+                // Pack its bitmask in an option.
+                optional_parent_bitmask = option::some(parent_ref.bitmask);
             }
         }
     }

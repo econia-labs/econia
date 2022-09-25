@@ -1431,7 +1431,7 @@ module econia::critbit {
     /// >          /   \
     /// >        011   0th <- search parent
     /// >             /   \
-    /// >           101   111 <- search outer node
+    /// >           110   111 <- search outer node
     /// >
     /// >       Insert 100
     /// >       --------->

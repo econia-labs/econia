@@ -581,6 +581,10 @@ module econia::critqueue {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// `u128` bitmask set at bit 63, for converting an access key
+    /// to an inner key via bitwise `OR`. Generated in Python via
+    /// `hex(int('1' + '0' * 63, 2))`.
+    const ACCESS_KEY_TO_INNER_KEY: u128 = 0x8000000000000000;
     /// `u128` bitmask set at bits 64-127, for converting an access key
     /// to a leaf key via bitwise `AND`. Generated in Python via
     /// `hex(int('1' * 64 + '0' * 64, 2))`.
@@ -605,15 +609,16 @@ module econia::critqueue {
     const MSB_u128: u8 = 127;
     /// `u128` bitmask set at bit 63, the crit-bit tree node type
     /// bit flag, generated in Python via `hex(int('1' + '0' * 63, 2))`.
-    const NODE_TYPE: u128 = 0x8000000000000000;
-    /// Result of bitwise crit-bit tree node key `AND` with `NODE_TYPE`,
-    /// indicating that the key is set at bit 63 and is thus an inner
-    /// key. Generated in Python via `hex(int('1' + '0' * 63, 2))`.
-    const NODE_INNER: u128 = 0x8000000000000000;
-    /// Result of bitwise crit-bit tree node key `AND` with `NODE_TYPE`,
-    /// indicating that the key is unset at bit 63 and is thus a leaf
-    /// key.
-    const NODE_LEAF: u128 = 0;
+    const TREE_NODE_TYPE: u128 = 0x8000000000000000;
+    /// Result of bitwise crit-bit tree node key `AND` with
+    /// `TREE_NODE_TYPE`, indicating that the key is set at bit 63 and
+    /// is thus an inner key. Generated in Python via
+    /// `hex(int('1' + '0' * 63, 2))`.
+    const TREE_NODE_INNER: u128 = 0x8000000000000000;
+    /// Result of bitwise crit-bit tree node key `AND` with
+    /// `TREE_NODE_TYPE`, indicating that the key is unset at bit 63
+    /// and is thus a leaf key.
+    const TREE_NODE_LEAF: u128 = 0;
     /// `XOR` bitmask for flipping insertion count bits 0-61 and
     /// setting bit 62 high in the case of a descending crit-queue.
     /// `u64` bitmask with all bits set except bit 63, cast to a `u128`.
@@ -976,6 +981,7 @@ module econia::critqueue {
     }
 
 /*
+    /// Inner function for `insert_leaf()`.
     /// # Assumptions
     /// * Given `CritQueue` has a free leaf with the insertion key
     ///   encoded in `access_key`.
@@ -983,23 +989,19 @@ module econia::critqueue {
         critqueue_ref_mut: &mut CritQueue,
         access_key: u128,
     ) {
+        // Get free leaf key corresponding to access key.
+        let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
         // Search for closest leaf, returning its leaf key, and a
         // mutable reference to its parent.
         let (search_leaf_key, search_parent_ref_mut) =
-            search(critqueue_ref_mut, access_key);
-            // ^ Should be able to extract leaf key from access key
+            search(critqueue_ref_mut, leaf_key);
         // Get critical bitmask between leaf key and search leaf key.
         let critical_bitmask = get_critical_bitmask(leaf_key, search_leaf_key);
-        loop { // Start walking up the tree.
+        loop { // Start walking up tree from search leaf.
             // If critical bitmask is less than that of search parent:
             if (critical_bitmask < search_parent_ref_mut.bitmask) {
-                return insert_leaf_general_below(
-                    // Should work if child is leaf or inner
-                    critqueue_ref_mut,
-                    search_parent_ref_mut,
-                    critical_bitmask,
-                    access_key, // Need for getting new inner key
-                )
+                return insert_leaf_general_below(critqueue_ref_mut,
+                    search_parent_ref_mut, critical_bitmask, access_key);
             } else { // If critical bitmask is not less than search parent:
                 // Get search parent's parent.
                 let optional_grandparent_key = search_parent_ref_mut.parent;
@@ -1007,7 +1009,6 @@ module econia::critqueue {
                 if (option::is_none(optional_grandparent_key)) {
                     return insert_leaf_general_above_root(
                         critqueue_ref_mut,
-                        search_parent_ref_mut,
                         critical_bitmask,
                         access_key, // Need for getting new inner key
                     )
@@ -1021,6 +1022,145 @@ module econia::critqueue {
         }
     }
 */
+
+    /// Insert new free leaf and inner node below anchor node.
+    ///
+    /// Inner function for `insert_leaf_general()`.
+    ///
+    /// # Parameters
+    /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
+    /// * `anchor_node_ref_mut`: Mutable reference to the inner node to
+    ///   insert below, the "anchor node".
+    /// * `critical_bitmask`: Critical bitmask to set for new inner
+    ///   node.
+    /// * `access_key`: Access key of the key-value insertion pair just
+    ///   inserted.
+    ///
+    /// # Assumptions
+    /// * Given `CritQueue` has a free leaf with the insertion key
+    ///   encoded in `access_key`.
+    /// * Critical bitmask is less than that of anchor node, which has
+    ///   been reached via upward walk in `insert_leaf_general()`.
+    ///
+    /// # Diagrams
+    ///
+    /// For ease of illustration, trees are depicted with lower numbers
+    /// that are correspondingly bitshifted by 64 bits, with inner nodes
+    /// flagged as such (during testing). Examples refer to the
+    /// following diagram:
+    ///
+    /// >         3rd
+    /// >        /   \
+    /// >     0001   1st
+    /// >           /   \
+    /// >        1001   1011
+    ///
+    /// ## Anchor node children polarity
+    ///
+    /// The anchor node is the node below which the free leaf and new
+    /// inner node should be inserted, for example either `3rd` or
+    /// `1st`. The free leaf key can be inserted to either the left or
+    /// the right of the anchor node, depending on its whether it is set
+    /// at the anchor node's critical bit. For example, a free leaf
+    /// key of `1010` would be inserted to the right of `1st`, while a
+    /// free leaf key of `1000` would be inserted to the left of `1st`.
+    ///
+    /// ## Child displacement
+    ///
+    /// When a leaf key is inserted, a new inner node is generated,
+    /// which displaces either the left or the right child of the anchor
+    /// node, based on the side that the leaf key should be inserted.
+    /// For example, inserting free leaf key `1000` displaces `1001`:
+    ///
+    /// >                       3rd
+    /// >                      /   \
+    /// >                   0001   1st <- anchor node
+    /// >                         /   \
+    /// >     new inner node -> 0th   1011
+    /// >                      /   \
+    /// >      free leaf -> 1000   1001 <- displaced child
+    ///
+    /// Both leaves and inner nodes can be displaced. For example,
+    /// were free leaf key `1111` to be inserted instead, it would
+    /// displace `1st`:
+    ///
+    /// >                        3rd <- anchor node
+    /// >                       /   \
+    /// >                    0001   2nd <- new inner node
+    /// >                          /   \
+    /// >     displaced child -> 1st   1111 <- free leaf
+    /// >                       /   \
+    /// >                    1001   1011
+    ///
+    /// ## New inner node children polarity
+    ///
+    /// The new inner node can have the new leaf as either its left or
+    /// right child, depending on the new inner node's critical bit.
+    /// As in the first example above, when the free leaf is unset at
+    /// the new inner node's critical bit, the left child is the free
+    /// leaf and the right child is the displaced child. Conversely, as
+    /// in the second example above, when the free leaf is set at the
+    /// new inner node's critical bit, the left child is the displaced
+    /// child and the right child is the free leaf.
+    fun insert_leaf_general_below<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        anchor_node_ref_mut: &mut Inner,
+        critical_bitmask: u128,
+        access_key: u128,
+    ) {
+        // Get free leaf key corresponding to access key.
+        let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
+        // Get inner key for new inner node corresponding to access key.
+        let new_inner_key = access_key | ACCESS_KEY_TO_INNER_KEY;
+        // Get anchor node critical bitmask.
+        let anchor_bitmask = anchor_node_ref_mut.bitmask;
+        let displaced_child_key; // Declare displaced anchor child key.
+        let anchor_node_key; // Declare anchor node key.
+        // Borrow mutable reference to inner nodes table.
+        let inners_ref_mut = &mut critqueue_ref_mut.inners;
+        // Borrow mutable reference to leaves table.
+        let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
+        // If free leaf key AND anchor bitmask is 0, free leaf is unset
+        // at anchor node's critical bit and should thus go on its left:
+        if (leaf_key & anchor_bitmask == 0) {
+            // Displaced child is thus on anchor's left.
+            displaced_child_key = anchor_node_ref_mut.left;
+            // Anchor now has as its left child the new inner node.
+            anchor_node_ref_mut.left = new_inner_key;
+        } else { // If free leaf goes to right of anchor node:
+            // Displaced child is thus on anchor's right.
+            displaced_child_key = anchor_node_ref_mut.right;
+            // Anchor now has as its right child the new inner node.
+            anchor_node_ref_mut.right = new_inner_key;
+        };
+        // Determine if displaced child is a leaf.
+        let displaced_child_is_leaf =
+            displaced_child_key & TREE_NODE_TYPE == TREE_NODE_LEAF;
+        // Get mutable reference to displaced child's parent field:
+        let displaced_child_parent_field_ref_mut = if (displaced_child_is_leaf)
+            // If displaced child is a leaf, borrow from leaves table.
+            &mut table::borrow_mut(leaves_ref_mut, displaced_child_key).parent
+                else // Else borrow from inner nodes table.
+            &mut table::borrow_mut(inners_ref_mut, displaced_child_key).parent;
+        // Swap anchor node key in displaced child's parent field with
+        // the new inner node key, storing the anchor node key.
+        anchor_node_key =
+            option::swap(displaced_child_parent_field_ref_mut, new_inner_key);
+        // If free leaf key AND new inner node's critical bitmask is 0,
+        // free leaf is unset at new inner node's critical bit and
+        // should thus go on its left, with displaced child on new
+        // inner node's right. Else the opposite.
+        let (left, right) = if (leaf_key & critical_bitmask == 0)
+            (leaf_key, displaced_child_key) else
+            (displaced_child_key, leaf_key);
+        // Add to inner nodes table the new inner node.
+        table::add(inners_ref_mut, new_inner_key, Inner{left, right,
+            bitmask: critical_bitmask, parent: option::some(anchor_node_key)});
+        // Borrow mutable reference to free leaf.
+        let free_leaf_ref_mut = table::borrow_mut(leaves_ref_mut, leaf_key);
+        // Set free leaf to has as its parent the new inner node.
+        option::swap(&mut free_leaf_ref_mut.parent, new_inner_key);
+    }
 
     /// Update a sub-queue, inside an allocated leaf, during insertion.
     ///
@@ -1091,35 +1231,33 @@ module econia::critqueue {
     }
 
     /// Return `true` if crit-bit tree node `key` is an inner key.
-    fun is_inner_key(key: u128): bool {key & NODE_TYPE == NODE_INNER}
+    fun is_inner_key(key: u128): bool {key & TREE_NODE_TYPE == TREE_NODE_INNER}
 
-    /// Return `true` if crit-bit tree `node_key` is a leaf key.
-    fun is_leaf_key(key: u128): bool {key & NODE_TYPE == NODE_LEAF}
+    /// Return `true` if crit-bit tree node `key` is a leaf key.
+    fun is_leaf_key(key: u128): bool {key & TREE_NODE_TYPE == TREE_NODE_LEAF}
 
     /// Return `true` if `key` is set at `bit_number`.
     fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
 
-    /// Search in given `CritQueue` for the closest match to a leaf key
-    /// having the same insertion key as that encoded in `access_key`.
+    /// Search in given `CritQueue` for the closest match to `leaf_key`.
     ///
     /// Starting at the root, walk down from inner node to inner node,
-    /// branching left whenever corresponding leaf key is unset at an
-    /// inner node's critical bit, and right whenever corresponding
-    /// leaf key is unset at the critical bit. After arriving at a leaf,
-    /// return its leaf key and a mutable reference to its parent.
+    /// branching left whenever `leaf_key` is unset at an inner node's
+    /// critical bit, and right whenever `leaf_key` is unset at the
+    /// critical bit. After arriving at a leaf, known as the "search
+    /// leaf", return its leaf key and a mutable reference to its
+    /// parent.
     ///
     /// # Returns
     /// * `u128`: Search leaf key.
     /// * `u128`: Mutable parent to search leaf.
     fun search<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
-        access_key: u128
+        leaf_key: u128
     ): (
         u128,
         &mut Inner
     ) {
-        // Get leaf key corresponding to access key.
-        let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
         // Borrow mutable reference to table of inner nodes.
         let inners_ref_mut = &mut critqueue_ref_mut.inners;
         // Initialize search parent key to inner key of root.
@@ -1135,7 +1273,7 @@ module econia::critqueue {
             let child_key = if (leaf_key & parent_bitmask == 0)
                 parent_ref_mut.left else parent_ref_mut.right;
             // If child is a leaf, have arrived at the search leaf.
-            if (child_key & NODE_TYPE == NODE_LEAF) return
+            if (child_key & TREE_NODE_TYPE == TREE_NODE_LEAF) return
                 // So return the search leaf key and a mutable reference
                 // to the search parent.
                 (child_key, parent_ref_mut);
@@ -1721,8 +1859,8 @@ module econia::critqueue {
         // Mutably borrow leaves table.
         let leaves_ref_mut = &mut critqueue.leaves;
         // Define inner keys.
-        let inner_key_2nd = 1234 << INSERTION_KEY | NODE_INNER;
-        let inner_key_1st = 5678 << INSERTION_KEY | NODE_INNER;
+        let inner_key_2nd = 1234 << INSERTION_KEY | TREE_NODE_INNER;
+        let inner_key_1st = 5678 << INSERTION_KEY | TREE_NODE_INNER;
         // Define leaf keys.
         let leaf_key_001 = u_128(b"001") << INSERTION_KEY;
         let leaf_key_101 = u_128(b"101") << INSERTION_KEY;
@@ -1749,17 +1887,17 @@ module econia::critqueue {
             option::some(inner_key_1st), head, tail});
         table::add(leaves_ref_mut, leaf_key_111, Leaf{count, parent:
             option::some(inner_key_1st), head, tail});
-        // Search tree for assorted mock access keys, asserting returns.
+        // Search tree for assorted leaf keys, asserting returns.
         let (search_leaf_key, search_parent_ref_mut) =
-            search(&mut critqueue, (u_128(b"011") << INSERTION_KEY) | 1234);
+            search(&mut critqueue, u_128(b"011") << INSERTION_KEY);
         assert!(search_leaf_key == leaf_key_001, 0);
         assert!(search_parent_ref_mut.bitmask == 1 << (2 + INSERTION_KEY), 0);
         (search_leaf_key, search_parent_ref_mut) =
-            search(&mut critqueue, (u_128(b"100") << INSERTION_KEY) | 5678);
+            search(&mut critqueue, u_128(b"100") << INSERTION_KEY);
         assert!(search_leaf_key == leaf_key_101, 0);
         assert!(search_parent_ref_mut.bitmask == 1 << (1 + INSERTION_KEY), 0);
         (search_leaf_key, search_parent_ref_mut) =
-            search(&mut critqueue, (u_128(b"111") << INSERTION_KEY) | 4321);
+            search(&mut critqueue, u_128(b"111") << INSERTION_KEY);
         assert!(search_leaf_key == leaf_key_111, 0);
         assert!(search_parent_ref_mut.bitmask == 1 << (1 + INSERTION_KEY), 0);
         drop_critqueue_test(critqueue) // Drop crit-queue.

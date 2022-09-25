@@ -661,15 +661,22 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
     -  [Returns](#@Returns_31)
     -  [Assumptions](#@Assumptions_32)
 -  [Function `insert_check_head`](#0xc0deb00c_critqueue_insert_check_head)
--  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
-    -  [Returns](#@Returns_33)
+-  [Function `insert_leaf_general_below`](#0xc0deb00c_critqueue_insert_leaf_general_below)
+    -  [Parameters](#@Parameters_33)
     -  [Assumptions](#@Assumptions_34)
-    -  [Aborts if](#@Aborts_if_35)
+    -  [Diagrams](#@Diagrams_35)
+        -  [Anchor node children polarity](#@Anchor_node_children_polarity_36)
+        -  [Child displacement](#@Child_displacement_37)
+        -  [New inner node children polarity](#@New_inner_node_children_polarity_38)
+-  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
+    -  [Returns](#@Returns_39)
+    -  [Assumptions](#@Assumptions_40)
+    -  [Aborts if](#@Aborts_if_41)
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
 -  [Function `search`](#0xc0deb00c_critqueue_search)
-    -  [Returns](#@Returns_36)
+    -  [Returns](#@Returns_42)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -881,6 +888,18 @@ A node in a sub-queue.
 ## Constants
 
 
+<a name="0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY"></a>
+
+<code>u128</code> bitmask set at bit 63, for converting an access key
+to an inner key via bitwise <code>OR</code>. Generated in Python via
+<code>hex(int('1' + '0' * 63, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY">ACCESS_KEY_TO_INNER_KEY</a>: u128 = 9223372036854775808;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY"></a>
 
 <code>u128</code> bitmask set at bits 64-127, for converting an access key
@@ -977,41 +996,6 @@ Most significant bit number for a <code>u128</code>
 
 
 
-<a name="0xc0deb00c_critqueue_NODE_INNER"></a>
-
-Result of bitwise crit-bit tree node key <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code>,
-indicating that the key is set at bit 63 and is thus an inner
-key. Generated in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>: u128 = 9223372036854775808;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_NODE_LEAF"></a>
-
-Result of bitwise crit-bit tree node key <code>AND</code> with <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code>,
-indicating that the key is unset at bit 63 and is thus a leaf
-key.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>: u128 = 0;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_NODE_TYPE"></a>
-
-<code>u128</code> bitmask set at bit 63, the crit-bit tree node type
-bit flag, generated in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u128 = 9223372036854775808;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_critqueue_NOT_INSERTION_COUNT_DESCENDING"></a>
 
 <code>XOR</code> bitmask for flipping insertion count bits 0-61 and
@@ -1021,6 +1005,42 @@ Generated in Python via <code>hex(int('1' * 63, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_INSERTION_COUNT_DESCENDING">NOT_INSERTION_COUNT_DESCENDING</a>: u128 = 9223372036854775807;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_TREE_NODE_INNER"></a>
+
+Result of bitwise crit-bit tree node key <code>AND</code> with
+<code><a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a></code>, indicating that the key is set at bit 63 and
+is thus an inner key. Generated in Python via
+<code>hex(int('1' + '0' * 63, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_INNER">TREE_NODE_INNER</a>: u128 = 9223372036854775808;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_TREE_NODE_LEAF"></a>
+
+Result of bitwise crit-bit tree node key <code>AND</code> with
+<code><a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a></code>, indicating that the key is unset at bit 63
+and is thus a leaf key.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>: u128 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_TREE_NODE_TYPE"></a>
+
+<code>u128</code> bitmask set at bit 63, the crit-bit tree node type
+bit flag, generated in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a>: u128 = 9223372036854775808;
 </code></pre>
 
 
@@ -1627,6 +1647,189 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">inse
 
 </details>
 
+<a name="0xc0deb00c_critqueue_insert_leaf_general_below"></a>
+
+## Function `insert_leaf_general_below`
+
+Insert new free leaf and inner node below anchor node.
+
+Inner function for <code>insert_leaf_general()</code>.
+
+
+<a name="@Parameters_33"></a>
+
+### Parameters
+
+* <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
+* <code>anchor_node_ref_mut</code>: Mutable reference to the inner node to
+insert below, the "anchor node".
+* <code>critical_bitmask</code>: Critical bitmask to set for new inner
+node.
+* <code>access_key</code>: Access key of the key-value insertion pair just
+inserted.
+
+
+<a name="@Assumptions_34"></a>
+
+### Assumptions
+
+* Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with the insertion key
+encoded in <code>access_key</code>.
+* Critical bitmask is less than that of anchor node, which has
+been reached via upward walk in <code>insert_leaf_general()</code>.
+
+
+<a name="@Diagrams_35"></a>
+
+### Diagrams
+
+
+For ease of illustration, trees are depicted with lower numbers
+that are correspondingly bitshifted by 64 bits, with inner nodes
+flagged as such (during testing). Examples refer to the
+following diagram:
+
+>         3rd
+>        /   \
+>     0001   1st
+>           /   \
+>        1001   1011
+
+
+<a name="@Anchor_node_children_polarity_36"></a>
+
+#### Anchor node children polarity
+
+
+The anchor node is the node below which the free leaf and new
+inner node should be inserted, for example either <code>3rd</code> or
+<code>1st</code>. The free leaf key can be inserted to either the left or
+the right of the anchor node, depending on its whether it is set
+at the anchor node's critical bit. For example, a free leaf
+key of <code>1010</code> would be inserted to the right of <code>1st</code>, while a
+free leaf key of <code>1000</code> would be inserted to the left of <code>1st</code>.
+
+
+<a name="@Child_displacement_37"></a>
+
+#### Child displacement
+
+
+When a leaf key is inserted, a new inner node is generated,
+which displaces either the left or the right child of the anchor
+node, based on the side that the leaf key should be inserted.
+For example, inserting free leaf key <code>1000</code> displaces <code>1001</code>:
+
+>                       3rd
+>                      /   \
+>                   0001   1st <- anchor node
+>                         /   \
+>     new inner node -> 0th   1011
+>                      /   \
+>      free leaf -> 1000   1001 <- displaced child
+
+Both leaves and inner nodes can be displaced. For example,
+were free leaf key <code>1111</code> to be inserted instead, it would
+displace <code>1st</code>:
+
+>                        3rd <- anchor node
+>                       /   \
+>                    0001   2nd <- new inner node
+>                          /   \
+>     displaced child -> 1st   1111 <- free leaf
+>                       /   \
+>                    1001   1011
+
+
+<a name="@New_inner_node_children_polarity_38"></a>
+
+#### New inner node children polarity
+
+
+The new inner node can have the new leaf as either its left or
+right child, depending on the new inner node's critical bit.
+As in the first example above, when the free leaf is unset at
+the new inner node's critical bit, the left child is the free
+leaf and the right child is the displaced child. Conversely, as
+in the second example above, when the free leaf is set at the
+new inner node's critical bit, the left child is the displaced
+child and the right child is the free leaf.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_general_below">insert_leaf_general_below</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, anchor_node_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>, critical_bitmask: u128, access_key: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_general_below">insert_leaf_general_below</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    anchor_node_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>,
+    critical_bitmask: u128,
+    access_key: u128,
+) {
+    // Get free leaf key corresponding <b>to</b> access key.
+    <b>let</b> leaf_key = access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>;
+    // Get inner key for new inner node corresponding <b>to</b> access key.
+    <b>let</b> new_inner_key = access_key | <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY">ACCESS_KEY_TO_INNER_KEY</a>;
+    // Get anchor node critical bitmask.
+    <b>let</b> anchor_bitmask = anchor_node_ref_mut.bitmask;
+    <b>let</b> displaced_child_key; // Declare displaced anchor child key.
+    <b>let</b> anchor_node_key; // Declare anchor node key.
+    // Borrow mutable reference <b>to</b> inner nodes <a href="">table</a>.
+    <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
+    // Borrow mutable reference <b>to</b> leaves <a href="">table</a>.
+    <b>let</b> leaves_ref_mut = &<b>mut</b> critqueue_ref_mut.leaves;
+    // If free leaf key AND anchor bitmask is 0, free leaf is unset
+    // at anchor node's critical bit and should thus go on its left:
+    <b>if</b> (leaf_key & anchor_bitmask == 0) {
+        // Displaced child is thus on anchor's left.
+        displaced_child_key = anchor_node_ref_mut.left;
+        // Anchor now <b>has</b> <b>as</b> its left child the new inner node.
+        anchor_node_ref_mut.left = new_inner_key;
+    } <b>else</b> { // If free leaf goes <b>to</b> right of anchor node:
+        // Displaced child is thus on anchor's right.
+        displaced_child_key = anchor_node_ref_mut.right;
+        // Anchor now <b>has</b> <b>as</b> its right child the new inner node.
+        anchor_node_ref_mut.right = new_inner_key;
+    };
+    // Determine <b>if</b> displaced child is a leaf.
+    <b>let</b> displaced_child_is_leaf =
+        displaced_child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>;
+    // Get mutable reference <b>to</b> displaced child's parent field:
+    <b>let</b> displaced_child_parent_field_ref_mut = <b>if</b> (displaced_child_is_leaf)
+        // If displaced child is a leaf, borrow from leaves <a href="">table</a>.
+        &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, displaced_child_key).parent
+            <b>else</b> // Else borrow from inner nodes <a href="">table</a>.
+        &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, displaced_child_key).parent;
+    // Swap anchor node key in displaced child's parent field <b>with</b>
+    // the new inner node key, storing the anchor node key.
+    anchor_node_key =
+        <a href="_swap">option::swap</a>(displaced_child_parent_field_ref_mut, new_inner_key);
+    // If free leaf key AND new inner node's critical bitmask is 0,
+    // free leaf is unset at new inner node's critical bit and
+    // should thus go on its left, <b>with</b> displaced child on new
+    // inner node's right. Else the opposite.
+    <b>let</b> (left, right) = <b>if</b> (leaf_key & critical_bitmask == 0)
+        (leaf_key, displaced_child_key) <b>else</b>
+        (displaced_child_key, leaf_key);
+    // Add <b>to</b> inner nodes <a href="">table</a> the new inner node.
+    <a href="_add">table::add</a>(inners_ref_mut, new_inner_key, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{left, right,
+        bitmask: critical_bitmask, parent: <a href="_some">option::some</a>(anchor_node_key)});
+    // Borrow mutable reference <b>to</b> free leaf.
+    <b>let</b> free_leaf_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, leaf_key);
+    // Set free leaf <b>to</b> <b>has</b> <b>as</b> its parent the new inner node.
+    <a href="_swap">option::swap</a>(&<b>mut</b> free_leaf_ref_mut.parent, new_inner_key);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_critqueue_insert_update_subqueue"></a>
 
 ## Function `insert_update_subqueue`
@@ -1636,7 +1839,7 @@ Update a sub-queue, inside an allocated leaf, during insertion.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@Returns_33"></a>
+<a name="@Returns_39"></a>
 
 ### Returns
 
@@ -1644,7 +1847,7 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">inse
 * <code>bool</code>: <code><b>true</b></code> if allocated leaf is a free leaf, else <code><b>false</b></code>.
 
 
-<a name="@Assumptions_34"></a>
+<a name="@Assumptions_40"></a>
 
 ### Assumptions
 
@@ -1655,7 +1858,7 @@ appropriate access key, which has been initialized as if it
 were the sole sub-queue node in a free leaf.
 
 
-<a name="@Aborts_if_35"></a>
+<a name="@Aborts_if_41"></a>
 
 ### Aborts if
 
@@ -1743,7 +1946,7 @@ Return <code><b>true</b></code> if crit-bit tree node <code>key</code> is an inn
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(key: u128): bool {key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_INNER">NODE_INNER</a>}
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_inner_key">is_inner_key</a>(key: u128): bool {key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_INNER">TREE_NODE_INNER</a>}
 </code></pre>
 
 
@@ -1754,7 +1957,7 @@ Return <code><b>true</b></code> if crit-bit tree node <code>key</code> is an inn
 
 ## Function `is_leaf_key`
 
-Return <code><b>true</b></code> if crit-bit tree <code>node_key</code> is a leaf key.
+Return <code><b>true</b></code> if crit-bit tree node <code>key</code> is a leaf key.
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(key: u128): bool
@@ -1766,7 +1969,7 @@ Return <code><b>true</b></code> if crit-bit tree <code>node_key</code> is a leaf
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(key: u128): bool {key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>}
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_leaf_key">is_leaf_key</a>(key: u128): bool {key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>}
 </code></pre>
 
 
@@ -1800,17 +2003,17 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 ## Function `search`
 
-Search in given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> for the closest match to a leaf key
-having the same insertion key as that encoded in <code>access_key</code>.
+Search in given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> for the closest match to <code>leaf_key</code>.
 
 Starting at the root, walk down from inner node to inner node,
-branching left whenever corresponding leaf key is unset at an
-inner node's critical bit, and right whenever corresponding
-leaf key is unset at the critical bit. After arriving at a leaf,
-return its leaf key and a mutable reference to its parent.
+branching left whenever <code>leaf_key</code> is unset at an inner node's
+critical bit, and right whenever <code>leaf_key</code> is unset at the
+critical bit. After arriving at a leaf, known as the "search
+leaf", return its leaf key and a mutable reference to its
+parent.
 
 
-<a name="@Returns_36"></a>
+<a name="@Returns_42"></a>
 
 ### Returns
 
@@ -1818,7 +2021,7 @@ return its leaf key and a mutable reference to its parent.
 * <code>u128</code>: Mutable parent to search leaf.
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): (u128, &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>)
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128): (u128, &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>)
 </code></pre>
 
 
@@ -1829,13 +2032,11 @@ return its leaf key and a mutable reference to its parent.
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(
     critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    access_key: u128
+    leaf_key: u128
 ): (
     u128,
     &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>
 ) {
-    // Get leaf key corresponding <b>to</b> access key.
-    <b>let</b> leaf_key = access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>;
     // Borrow mutable reference <b>to</b> <a href="">table</a> of inner nodes.
     <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
     // Initialize search parent key <b>to</b> inner key of root.
@@ -1851,7 +2052,7 @@ return its leaf key and a mutable reference to its parent.
         <b>let</b> child_key = <b>if</b> (leaf_key & parent_bitmask == 0)
             parent_ref_mut.left <b>else</b> parent_ref_mut.right;
         // If child is a leaf, have arrived at the search leaf.
-        <b>if</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_NODE_LEAF">NODE_LEAF</a>) <b>return</b>
+        <b>if</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>) <b>return</b>
             // So <b>return</b> the search leaf key and a mutable reference
             // <b>to</b> the search parent.
             (child_key, parent_ref_mut);

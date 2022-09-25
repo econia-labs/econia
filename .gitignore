@@ -6,6 +6,9 @@
 *.out
 *.synctex.gz
 
+# System
+*.DS_Store
+
 # Secrets
 .secrets/*
 

@@ -677,6 +677,8 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
 -  [Function `search`](#0xc0deb00c_critqueue_search)
     -  [Returns](#@Returns_42)
+    -  [Assumptions](#@Assumptions_43)
+    -  [Reference diagram](#@Reference_diagram_44)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -2003,12 +2005,12 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 ## Function `search`
 
-Search in given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> for the closest match to <code>leaf_key</code>.
+Search in given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> for closest match to <code>seed_key</code>.
 
 Starting at the root, walk down from inner node to inner node,
-branching left whenever <code>leaf_key</code> is unset at an inner node's
-critical bit, and right whenever <code>leaf_key</code> is unset at the
-critical bit. After arriving at a leaf, known as the "search
+branching left whenever <code>seed_key</code> is unset at an inner node's
+critical bit, and right whenever <code>seed_key</code> is unset at
+the critical bit. After arriving at a leaf, known as the "match
 leaf", return its leaf key and a mutable reference to its
 parent.
 
@@ -2017,11 +2019,44 @@ parent.
 
 ### Returns
 
-* <code>u128</code>: Search leaf key.
-* <code>u128</code>: Mutable parent to search leaf.
+* <code>u128</code>: Match leaf key.
+* <code>&<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code>: Mutable reference to parent of match leaf.
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128): (u128, &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>)
+<a name="@Assumptions_43"></a>
+
+### Assumptions
+
+* Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has an inner node at its root.
+
+
+<a name="@Reference_diagram_44"></a>
+
+### Reference diagram
+
+
+For ease of illustration, critical bitmasks and leaf keys are
+depicted relative to bit 64, but tested with correspondingly
+bitshifted amounts, for inner keys that are additionally
+encoded with a mock insertion key, mock insertion count,
+and inner node bit flag.
+
+>        2nd
+>       /   \
+>     001   1st
+>          /   \
+>        101   111
+
+| <code>seed_key</code> | Match leaf key  | Match parent bitmask  |
+|------------|-----------------|-----------------------|
+| <code>011</code>      | <code>001</code>           | <code>2nd</code>                 |
+| <code>100</code>      | <code>101</code>           | <code>1st</code>                 |
+| <code>111</code>      | <code>111</code>           | <code>1st</code>                 |
+
+See <code>test_search()</code>.
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, seed_key: u128): (u128, &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>)
 </code></pre>
 
 
@@ -2032,16 +2067,16 @@ parent.
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(
     critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    leaf_key: u128
+    seed_key: u128
 ): (
     u128,
     &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>
 ) {
     // Borrow mutable reference <b>to</b> <a href="">table</a> of inner nodes.
     <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
-    // Initialize search parent key <b>to</b> inner key of root.
+    // Initialize match parent key <b>to</b> inner key of root.
     <b>let</b> parent_key = *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.root);
-    // Initialize search parent <b>to</b> corresponding node.
+    // Initialize match parent <b>to</b> corresponding node.
     <b>let</b> parent_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, parent_key);
     <b>loop</b> { // Loop over inner nodes until arriving at a leaf:
         // Get bitmask of inner node for current iteration.
@@ -2049,15 +2084,15 @@ parent.
         // If leaf key AND inner node's critical bitmask is 0, then
         // the leaf key is unset at the critical bit, so branch <b>to</b>
         // the inner node's left child. Else the right child.
-        <b>let</b> child_key = <b>if</b> (leaf_key & parent_bitmask == 0)
+        <b>let</b> child_key = <b>if</b> (seed_key & parent_bitmask == 0)
             parent_ref_mut.left <b>else</b> parent_ref_mut.right;
-        // If child is a leaf, have arrived at the search leaf.
+        // If child is a leaf, have arrived at the match leaf.
         <b>if</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>) <b>return</b>
-            // So <b>return</b> the search leaf key and a mutable reference
-            // <b>to</b> the search parent.
+            // So <b>return</b> the match leaf key and a mutable reference
+            // <b>to</b> the match parent.
             (child_key, parent_ref_mut);
         // If have not returned, child is an inner node, so inner
-        // key for next iteration becomes child key.
+        // key for next iteration becomes parent key.
         parent_key = child_key;
         // Borrow mutable reference <b>to</b> new inner node <b>to</b> check.
         parent_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, parent_key);

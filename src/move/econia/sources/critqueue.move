@@ -993,18 +993,23 @@ module econia::critqueue {
         let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
         // Search for closest leaf, returning its leaf key, and a
         // mutable reference to its parent.
-        let (search_leaf_key, search_parent_ref_mut) =
+        let (match_key, match_parent_ref_mut) =
             search(critqueue_ref_mut, leaf_key);
         // Get critical bitmask between leaf key and search leaf key.
-        let critical_bitmask = get_critical_bitmask(leaf_key, search_leaf_key);
+        let critical_bitmask = get_critical_bitmask(leaf_key, match_key);
+        // Borrow mutable reference to inner nodes table.
+        // (may need to have this go second to last).
+        let inners_ref_mut = critqueue_ref_mut.inners;
         loop { // Start walking up tree from search leaf.
-            // If critical bitmask is less than that of search parent:
-            if (critical_bitmask < search_parent_ref_mut.bitmask) {
+            // If critical bitmask is less than that of match parent:
+            if (critical_bitmask < match_parent_ref_mut.bitmask) {
+                // Insert corresponding leaf leaf below it.
                 return insert_leaf_general_below(critqueue_ref_mut,
-                    search_parent_ref_mut, critical_bitmask, access_key);
-            } else { // If critical bitmask is not less than search parent:
-                // Get search parent's parent.
-                let optional_grandparent_key = search_parent_ref_mut.parent;
+                    match_parent_ref_mut, critical_bitmask, access_key);
+            // If critical bitmask not less than that of match parent:
+            } else {
+                // Get match parent's parent.
+                let optional_grandparent_key = match_parent_ref_mut.parent;
                 // If search parent is root:
                 if (option::is_none(optional_grandparent_key)) {
                     return insert_leaf_general_above_root(
@@ -1013,10 +1018,8 @@ module econia::critqueue {
                         access_key, // Need for getting new inner key
                     )
                 }
-                // Borrow mutable reference to inner nodes table.
-                let inners_ref_mut = critqueue_ref_mut.inners;
                 // Continue walk for next inner node up the tree.
-                search_parent_ref_mut = table::borrow(inners_ref_mut,
+                match_parent_ref_mut = table::borrow(inners_ref_mut,
                     *option::borrow(&optional_grandparent_key))
             }
         }
@@ -1239,30 +1242,55 @@ module econia::critqueue {
     /// Return `true` if `key` is set at `bit_number`.
     fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
 
-    /// Search in given `CritQueue` for the closest match to `leaf_key`.
+    /// Search in given `CritQueue` for closest match to `seed_key`.
     ///
     /// Starting at the root, walk down from inner node to inner node,
-    /// branching left whenever `leaf_key` is unset at an inner node's
-    /// critical bit, and right whenever `leaf_key` is unset at the
-    /// critical bit. After arriving at a leaf, known as the "search
+    /// branching left whenever `seed_key` is unset at an inner node's
+    /// critical bit, and right whenever `seed_key` is unset at
+    /// the critical bit. After arriving at a leaf, known as the "match
     /// leaf", return its leaf key and a mutable reference to its
     /// parent.
     ///
     /// # Returns
-    /// * `u128`: Search leaf key.
-    /// * `u128`: Mutable parent to search leaf.
+    /// * `u128`: Match leaf key.
+    /// * `&mut Inner`: Mutable reference to parent of match leaf.
+    ///
+    /// # Assumptions
+    /// * Given `CritQueue` has an inner node at its root.
+    ///
+    /// # Reference diagram
+    ///
+    /// For ease of illustration, critical bitmasks and leaf keys are
+    /// depicted relative to bit 64, but tested with correspondingly
+    /// bitshifted amounts, for inner keys that are additionally
+    /// encoded with a mock insertion key, mock insertion count,
+    /// and inner node bit flag.
+    ///
+    /// >        2nd
+    /// >       /   \
+    /// >     001   1st
+    /// >          /   \
+    /// >        101   111
+    ///
+    /// | `seed_key` | Match leaf key  | Match parent bitmask  |
+    /// |------------|-----------------|-----------------------|
+    /// | `011`      | `001`           | `2nd`                 |
+    /// | `100`      | `101`           | `1st`                 |
+    /// | `111`      | `111`           | `1st`                 |
+    ///
+    /// See `test_search()`.
     fun search<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
-        leaf_key: u128
+        seed_key: u128
     ): (
         u128,
         &mut Inner
     ) {
         // Borrow mutable reference to table of inner nodes.
         let inners_ref_mut = &mut critqueue_ref_mut.inners;
-        // Initialize search parent key to inner key of root.
+        // Initialize match parent key to inner key of root.
         let parent_key = *option::borrow(&critqueue_ref_mut.root);
-        // Initialize search parent to corresponding node.
+        // Initialize match parent to corresponding node.
         let parent_ref_mut = table::borrow_mut(inners_ref_mut, parent_key);
         loop { // Loop over inner nodes until arriving at a leaf:
             // Get bitmask of inner node for current iteration.
@@ -1270,15 +1298,15 @@ module econia::critqueue {
             // If leaf key AND inner node's critical bitmask is 0, then
             // the leaf key is unset at the critical bit, so branch to
             // the inner node's left child. Else the right child.
-            let child_key = if (leaf_key & parent_bitmask == 0)
+            let child_key = if (seed_key & parent_bitmask == 0)
                 parent_ref_mut.left else parent_ref_mut.right;
-            // If child is a leaf, have arrived at the search leaf.
+            // If child is a leaf, have arrived at the match leaf.
             if (child_key & TREE_NODE_TYPE == TREE_NODE_LEAF) return
-                // So return the search leaf key and a mutable reference
-                // to the search parent.
+                // So return the match leaf key and a mutable reference
+                // to the match parent.
                 (child_key, parent_ref_mut);
             // If have not returned, child is an inner node, so inner
-            // key for next iteration becomes child key.
+            // key for next iteration becomes parent key.
             parent_key = child_key;
             // Borrow mutable reference to new inner node to check.
             parent_ref_mut = table::borrow_mut(inners_ref_mut, parent_key);
@@ -1842,25 +1870,16 @@ module econia::critqueue {
     }
 
     #[test]
-    /// Verify successful search returns for following tree, with all
-    /// strings, bitmasks, and keys shifted 64 bits, and inner nodes
-    /// flagged as such.
-    ///
-    /// >        2nd
-    /// >       /   \
-    /// >     001   1st
-    /// >          /   \
-    /// >        101   111
-    ///
+    /// Verify reference diagram cases from `search()`.
     fun test_search() {
         let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
         // Mutably borrow inner nodes table.
         let inners_ref_mut = &mut critqueue.inners;
         // Mutably borrow leaves table.
         let leaves_ref_mut = &mut critqueue.leaves;
-        // Define inner keys.
-        let inner_key_2nd = 1234 << INSERTION_KEY | TREE_NODE_INNER;
-        let inner_key_1st = 5678 << INSERTION_KEY | TREE_NODE_INNER;
+        // Define inner keys for mock insertion keys and counts.
+        let inner_key_2nd = 2 << INSERTION_KEY | TREE_NODE_INNER | 1234;
+        let inner_key_1st = 2 << INSERTION_KEY | TREE_NODE_INNER | 5678;
         // Define leaf keys.
         let leaf_key_001 = u_128(b"001") << INSERTION_KEY;
         let leaf_key_101 = u_128(b"101") << INSERTION_KEY;
@@ -1887,19 +1906,19 @@ module econia::critqueue {
             option::some(inner_key_1st), head, tail});
         table::add(leaves_ref_mut, leaf_key_111, Leaf{count, parent:
             option::some(inner_key_1st), head, tail});
-        // Search tree for assorted leaf keys, asserting returns.
-        let (search_leaf_key, search_parent_ref_mut) =
+        // Search tree for assorted seed keys, asserting returns.
+        let (match_key, match_parent_ref_mut) =
             search(&mut critqueue, u_128(b"011") << INSERTION_KEY);
-        assert!(search_leaf_key == leaf_key_001, 0);
-        assert!(search_parent_ref_mut.bitmask == 1 << (2 + INSERTION_KEY), 0);
-        (search_leaf_key, search_parent_ref_mut) =
+        assert!(match_key == leaf_key_001, 0);
+        assert!(match_parent_ref_mut.bitmask == 1 << (2 + INSERTION_KEY), 0);
+        (match_key, match_parent_ref_mut) =
             search(&mut critqueue, u_128(b"100") << INSERTION_KEY);
-        assert!(search_leaf_key == leaf_key_101, 0);
-        assert!(search_parent_ref_mut.bitmask == 1 << (1 + INSERTION_KEY), 0);
-        (search_leaf_key, search_parent_ref_mut) =
+        assert!(match_key == leaf_key_101, 0);
+        assert!(match_parent_ref_mut.bitmask == 1 << (1 + INSERTION_KEY), 0);
+        (match_key, match_parent_ref_mut) =
             search(&mut critqueue, u_128(b"111") << INSERTION_KEY);
-        assert!(search_leaf_key == leaf_key_111, 0);
-        assert!(search_parent_ref_mut.bitmask == 1 << (1 + INSERTION_KEY), 0);
+        assert!(match_key == leaf_key_111, 0);
+        assert!(match_parent_ref_mut.bitmask == 1 << (1 + INSERTION_KEY), 0);
         drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 

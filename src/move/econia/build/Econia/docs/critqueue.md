@@ -2023,9 +2023,9 @@ Search in given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">Crit
 
 Starting at the root, walk down from inner node to inner node,
 branching left whenever <code>seed_key</code> is unset at an inner node's
-critical bit, and right whenever <code>seed_key</code> is unset at
-the critical bit. After arriving at a leaf, known as the "match
-leaf", return its leaf key and a mutable reference to its
+critical bit, and right whenever <code>seed_key</code> is set at an inner
+node's critical bit. After arriving at a leaf, known as the
+"match leaf", return its leaf key and the inner key of its
 parent.
 
 
@@ -2034,7 +2034,7 @@ parent.
 ### Returns
 
 * <code>u128</code>: Match leaf key.
-* <code>&<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a></code>: Mutable reference to parent of match leaf.
+* <code>u128</code>: Match parent inner key.
 
 
 <a name="@Assumptions_44"></a>
@@ -2070,7 +2070,7 @@ and inner node bit flag.
 See <code>test_search()</code>.
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, seed_key: u128): (u128, &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>)
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, seed_key: u128): (u128, u128)
 </code></pre>
 
 
@@ -2084,7 +2084,7 @@ See <code>test_search()</code>.
     seed_key: u128
 ): (
     u128,
-    &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>
+    u128
 ) {
     // Borrow mutable reference <b>to</b> <a href="">table</a> of inner nodes.
     <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
@@ -2102,9 +2102,9 @@ See <code>test_search()</code>.
             parent_ref_mut.left <b>else</b> parent_ref_mut.right;
         // If child is a leaf, have arrived at the match leaf.
         <b>if</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>) <b>return</b>
-            // So <b>return</b> the match leaf key and a mutable reference
-            // <b>to</b> the match parent.
-            (child_key, parent_ref_mut);
+            // So <b>return</b> the match leaf key and the inner key of
+            // the match parent.
+            (child_key, parent_key);
         // If have not returned, child is an inner node, so inner
         // key for next iteration becomes parent key.
         parent_key = child_key;

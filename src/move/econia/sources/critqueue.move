@@ -1256,12 +1256,13 @@ module econia::critqueue {
     /// branching left whenever `seed_key` is unset at an inner node's
     /// critical bit, and right whenever `seed_key` is set at an inner
     /// node's critical bit. After arriving at a leaf, known as the
-    /// "match leaf", return its leaf key and the inner key of its
-    /// parent.
+    /// "match leaf", return its leaf key the inner key of its parent,
+    /// and the parent's critical bitmask.
     ///
     /// # Returns
     /// * `u128`: Match leaf key.
     /// * `u128`: Match parent inner key.
+    /// * `u128`: Match parent's critical bitmask.
     ///
     /// # Assumptions
     /// * Given `CritQueue` has an inner node at its root.
@@ -1292,6 +1293,7 @@ module econia::critqueue {
         seed_key: u128
     ): (
         u128,
+        u128,
         u128
     ) {
         // Borrow mutable reference to table of inner nodes.
@@ -1310,9 +1312,9 @@ module econia::critqueue {
                 parent_ref_mut.left else parent_ref_mut.right;
             // If child is a leaf, have arrived at the match leaf.
             if (child_key & TREE_NODE_TYPE == TREE_NODE_LEAF) return
-                // So return the match leaf key and the inner key of
-                // the match parent.
-                (child_key, parent_key);
+                // So return the match leaf key, the inner key of the
+                // match parent, and the match parent's bitmask.
+                (child_key, parent_key, parent_bitmask);
             // If have not returned, child is an inner node, so inner
             // key for next iteration becomes parent key.
             parent_key = child_key;
@@ -1998,21 +2000,24 @@ module econia::critqueue {
         table::add(leaves_ref_mut, leaf_key_111, Leaf{count, parent:
             option::some(inner_key_1st), head, tail});
         // Search tree for assorted seed keys, asserting returns.
-        let (match_key, match_parent_key) =
+        let (match_key, match_parent_key, match_parent_bitmask) =
             search(&mut critqueue, u_128(b"011") << INSERTION_KEY);
         assert!(match_key == leaf_key_001, 0);
         assert!(borrow_inner_test(&critqueue, match_parent_key).bitmask ==
-            1 << (2 + INSERTION_KEY), 0);
-        (match_key, match_parent_key) =
+            match_parent_bitmask, 0);
+        assert!(match_parent_bitmask == 1 << (2 + INSERTION_KEY), 0);
+        (match_key, match_parent_key, match_parent_bitmask) =
             search(&mut critqueue, u_128(b"100") << INSERTION_KEY);
         assert!(match_key == leaf_key_101, 0);
         assert!(borrow_inner_test(&critqueue, match_parent_key).bitmask ==
-            1 << (1 + INSERTION_KEY), 0);
-        (match_key, match_parent_key) =
+            match_parent_bitmask, 0);
+        assert!(match_parent_bitmask == 1 << (1 + INSERTION_KEY), 0);
+        (match_key, match_parent_key, match_parent_bitmask) =
             search(&mut critqueue, u_128(b"111") << INSERTION_KEY);
         assert!(match_key == leaf_key_111, 0);
         assert!(borrow_inner_test(&critqueue, match_parent_key).bitmask ==
-            1 << (1 + INSERTION_KEY), 0);
+            match_parent_bitmask, 0);
+        assert!(match_parent_bitmask == 1 << (1 + INSERTION_KEY), 0);
         drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 

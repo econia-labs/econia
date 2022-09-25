@@ -2025,8 +2025,8 @@ Starting at the root, walk down from inner node to inner node,
 branching left whenever <code>seed_key</code> is unset at an inner node's
 critical bit, and right whenever <code>seed_key</code> is set at an inner
 node's critical bit. After arriving at a leaf, known as the
-"match leaf", return its leaf key and the inner key of its
-parent.
+"match leaf", return its leaf key the inner key of its parent,
+and the parent's critical bitmask.
 
 
 <a name="@Returns_43"></a>
@@ -2035,6 +2035,7 @@ parent.
 
 * <code>u128</code>: Match leaf key.
 * <code>u128</code>: Match parent inner key.
+* <code>u128</code>: Match parent's critical bitmask.
 
 
 <a name="@Assumptions_44"></a>
@@ -2070,7 +2071,7 @@ and inner node bit flag.
 See <code>test_search()</code>.
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, seed_key: u128): (u128, u128)
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, seed_key: u128): (u128, u128, u128)
 </code></pre>
 
 
@@ -2083,6 +2084,7 @@ See <code>test_search()</code>.
     critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     seed_key: u128
 ): (
+    u128,
     u128,
     u128
 ) {
@@ -2102,9 +2104,9 @@ See <code>test_search()</code>.
             parent_ref_mut.left <b>else</b> parent_ref_mut.right;
         // If child is a leaf, have arrived at the match leaf.
         <b>if</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>) <b>return</b>
-            // So <b>return</b> the match leaf key and the inner key of
-            // the match parent.
-            (child_key, parent_key);
+            // So <b>return</b> the match leaf key, the inner key of the
+            // match parent, and the match parent's bitmask.
+            (child_key, parent_key, parent_bitmask);
         // If have not returned, child is an inner node, so inner
         // key for next iteration becomes parent key.
         parent_key = child_key;

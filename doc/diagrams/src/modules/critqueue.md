@@ -40,6 +40,13 @@ insert --> insert_update_subqueue
 insert --> insert_allocate_leaf
 insert --> insert_check_head
 insert --> insert_leaf
+insert_leaf --> insert_leaf_empty
+insert_leaf --> insert_leaf_singleton
+insert_leaf --> insert_leaf_general
+insert_leaf_general --> search
+insert_leaf_general --> get_critical_bitmask
+insert_leaf_general --> insert_leaf_general_below
+insert_leaf_general --> insert_leaf_general_above_root
 
 ```
 

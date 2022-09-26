@@ -1013,27 +1013,27 @@ module econia::critqueue {
     ///
     /// 1. Start by inserting `0011` to an empty tree:
     ///
-    /// >     0011
+    /// >     0011 <- new leaf
     ///
     /// 2. Then insert `0100`:
     ///
-    /// >         2nd
+    /// >         2nd <- new inner node
     /// >        /   \
-    /// >     0011   0100
+    /// >     0011   0100 <- new leaf
     ///
     /// 3. Insert `0101`:
     ///
     /// >         2nd
     /// >        /   \
-    /// >     0011   0th
+    /// >     0011   0th <- new inner node
     /// >           /   \
-    /// >        0100   0101
+    /// >        0100   0101 <- new leaf
     ///
     /// 4. Insert `1000`:
     ///
-    /// >            3rd
+    /// >            3rd <- new innner node
     /// >           /   \
-    /// >         2nd   1000
+    /// >         2nd   1000 <- new leaf
     /// >        /   \
     /// >     0011   0th
     /// >           /   \
@@ -1045,9 +1045,9 @@ module econia::critqueue {
     /// >           /   \
     /// >         2nd   1000
     /// >        /   \
-    /// >     0011   1st
+    /// >     0011   1st <- new inner node
     /// >           /   \
-    /// >         0th   0110
+    /// >         0th   0110 <- new leaf
     /// >        /   \
     /// >     0100   0101
     ///
@@ -1634,6 +1634,24 @@ module econia::critqueue {
     }
 
     #[test_only]
+    /// Return all fields for inner node having `inner_key` in given
+    /// `CritQueue`.
+    fun get_inner_fields_test<V>(
+        critqueue_ref: &CritQueue<V>,
+        inner_key: u128
+    ): (
+        u128,
+        Option<u128>,
+        u128,
+        u128
+    ) {
+        // Immutably borrow indicated inner node.
+        let inner_ref = borrow_inner_test(critqueue_ref, inner_key);
+        // Return all fields.
+        (inner_ref.bitmask, inner_ref.parent, inner_ref.left, inner_ref.right)
+    }
+
+    #[test_only]
     /// Wraper for `u_128()`, casting to return to `u64`.
     public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
 
@@ -1834,7 +1852,8 @@ module econia::critqueue {
     /// Verify final tree for `insert_leaf()` reference insertions.
     fun test_insert_leaf() {
         let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
-        // Declare access keys with mock insertion counts.
+        // Declare access keys with mock insertion counts, in order of
+        // insertion.
         let access_key_0011 = u_128(b"0011") << INSERTION_KEY | 123;
         let access_key_0100 = u_128(b"0100") << INSERTION_KEY | 456;
         let access_key_0101 = u_128(b"0101") << INSERTION_KEY | 0;
@@ -1847,18 +1866,62 @@ module econia::critqueue {
         allocate_free_leaf_test(&mut critqueue, access_key_0101);
         allocate_free_leaf_test(&mut critqueue, access_key_1000);
         allocate_free_leaf_test(&mut critqueue, access_key_0110);
-        // Insert all leaves.
+        // Insert all leaves in order.
         insert_leaf(&mut critqueue, access_key_0011);
         insert_leaf(&mut critqueue, access_key_0100);
         insert_leaf(&mut critqueue, access_key_0101);
         insert_leaf(&mut critqueue, access_key_1000);
         insert_leaf(&mut critqueue, access_key_0110);
+        // Get inner keys from the access keys that lead to
+        // their generation, in order of insertion.
+        let inner_key_2nd = access_key_0100 | ACCESS_KEY_TO_INNER_KEY;
+        let inner_key_0th = access_key_0101 | ACCESS_KEY_TO_INNER_KEY;
+        let inner_key_3rd = access_key_1000 | ACCESS_KEY_TO_INNER_KEY;
+        let inner_key_1st = access_key_0110 | ACCESS_KEY_TO_INNER_KEY;
         // Get leaf keys from access keys.
-        //let leaf_key_0011 =  access_key_0011 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_0100 =  access_key_0100 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_0101 =  access_key_0101 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_1000 =  access_key_1000 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_0110 =  access_key_0110 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_0011 =  access_key_0011 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_0100 =  access_key_0100 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_0101 =  access_key_0101 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_1000 =  access_key_1000 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_0110 =  access_key_0110 & ACCESS_KEY_TO_LEAF_KEY;
+        // Assert root.
+        assert!(*option::borrow(&critqueue.root) == inner_key_3rd, 0);
+        // Assert leaf key parent fields, for ascending leaf keys.
+        assert!(*option::borrow(&borrow_leaf_test(&critqueue, leaf_key_0011).
+            parent) == inner_key_2nd, 0);
+        assert!(*option::borrow(&borrow_leaf_test(&critqueue, leaf_key_0100).
+            parent) == inner_key_0th, 0);
+        assert!(*option::borrow(&borrow_leaf_test(&critqueue, leaf_key_0101).
+            parent) == inner_key_0th, 0);
+        assert!(*option::borrow(&borrow_leaf_test(&critqueue, leaf_key_0110).
+            parent) == inner_key_1st, 0);
+        assert!(*option::borrow(&borrow_leaf_test(&critqueue, leaf_key_1000).
+            parent) == inner_key_3rd, 0);
+        // Assert all inner node fields, for ascending critical bit.
+        let (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_0th);
+        assert!(bitmask                  == 1 << (0 + INSERTION_KEY), 0);
+        assert!(*option::borrow(&parent) == inner_key_1st           , 0);
+        assert!(left                     == leaf_key_0100           , 0);
+        assert!(right                    == leaf_key_0101           , 0);
+        (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_1st);
+        assert!(bitmask                  == 1 << (1 + INSERTION_KEY), 0);
+        assert!(*option::borrow(&parent) == inner_key_2nd           , 0);
+        assert!(left                     == inner_key_0th           , 0);
+        assert!(right                    == leaf_key_0110           , 0);
+        (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_2nd);
+        assert!(bitmask                  == 1 << (2 + INSERTION_KEY), 0);
+        assert!(*option::borrow(&parent) == inner_key_3rd           , 0);
+        assert!(left                     == leaf_key_0011           , 0);
+        assert!(right                    == inner_key_1st           , 0);
+        (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_3rd);
+        assert!(bitmask                  == 1 << (3 + INSERTION_KEY), 0);
+        assert!(option::is_none(&parent)                            , 0);
+        assert!(left                     == inner_key_2nd           , 0);
+        assert!(right                    == leaf_key_1000           , 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
@@ -1880,8 +1943,8 @@ module econia::critqueue {
             parent: option::none()});
         // Declare access key with mock insertion count.
         let access_key = u_128(b"0000") << INSERTION_KEY | 4321;
-        // Declare new inner node key
-        let new_inner_node_key = access_key | TREE_NODE_TYPE;
+        // Declare new inner node key.
+        let new_inner_node_key = access_key | ACCESS_KEY_TO_INNER_KEY;
         // Declare critical bitmask for new inner node.
         let new_inner_node_bitmask = 1 << (2 + INSERTION_KEY);
         // Declare new leaf key.
@@ -1931,8 +1994,8 @@ module econia::critqueue {
             parent: option::none()});
         // Declare access key with mock insertion count.
         let access_key = u_128(b"1111") << INSERTION_KEY | 4321;
-        // Declare new inner node key
-        let new_inner_node_key = access_key | TREE_NODE_TYPE;
+        // Declare new inner node key.
+        let new_inner_node_key = access_key | ACCESS_KEY_TO_INNER_KEY;
         // Declare critical bitmask for new inner node.
         let new_inner_node_bitmask = 1 << (3 + INSERTION_KEY);
         // Declare new leaf key.
@@ -1993,8 +2056,8 @@ module econia::critqueue {
             parent: option::some(inner_key_1st)});
         // Declare access key with mock insertion count.
         let access_key = u_128(b"0001") << INSERTION_KEY | 4321;
-        // Declare new inner node key
-        let new_inner_node_key = access_key | TREE_NODE_TYPE;
+        // Declare new inner node key.
+        let new_inner_node_key = access_key | ACCESS_KEY_TO_INNER_KEY;
         // Declare critical bitmask for new inner node.
         let new_inner_node_bitmask = 1 << (3 + INSERTION_KEY);
         // Declare new leaf key.
@@ -2058,8 +2121,8 @@ module econia::critqueue {
         // Declare access key with mock insertion count.
         let access_key = u_128(b"1100") << INSERTION_KEY | 4321 ^
             NOT_INSERTION_COUNT_DESCENDING;
-        // Declare new inner node key
-        let new_inner_node_key = access_key | TREE_NODE_TYPE;
+        // Declare new inner node key.
+        let new_inner_node_key = access_key | ACCESS_KEY_TO_INNER_KEY;
         // Declare critical bitmask for new inner node.
         let new_inner_node_bitmask = 1 << (2 + INSERTION_KEY);
         // Declare new leaf key.
@@ -2129,8 +2192,8 @@ module econia::critqueue {
             parent: option::some(inner_key_1st)});
         // Declare access key with mock insertion count.
         let access_key = u_128(b"1000") << INSERTION_KEY | 4321;
-        // Declare new inner node key
-        let new_inner_node_key = access_key | TREE_NODE_TYPE;
+        // Declare new inner node key.
+        let new_inner_node_key = access_key | ACCESS_KEY_TO_INNER_KEY;
         // Declare critical bitmask for new inner node.
         let new_inner_node_bitmask = 1 << (0 + INSERTION_KEY);
         // Declare new leaf key.
@@ -2206,8 +2269,8 @@ module econia::critqueue {
         // Declare access key with mock insertion count.
         let access_key = u_128(b"1111") << INSERTION_KEY | 4321 ^
             NOT_INSERTION_COUNT_DESCENDING;
-        // Declare new inner node key
-        let new_inner_node_key = access_key | TREE_NODE_TYPE;
+        // Declare new inner node key.
+        let new_inner_node_key = access_key | ACCESS_KEY_TO_INNER_KEY;
         // Declare critical bitmask for new inner node.
         let new_inner_node_bitmask = 1 << (2 + INSERTION_KEY);
         // Declare new leaf key.

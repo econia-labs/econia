@@ -1714,27 +1714,27 @@ and inner node bit flag.
 
 1. Start by inserting <code>0011</code> to an empty tree:
 
->     0011
+>     0011 <- new leaf
 
 2. Then insert <code>0100</code>:
 
->         2nd
+>         2nd <- new inner node
 >        /   \
->     0011   0100
+>     0011   0100 <- new leaf
 
 3. Insert <code>0101</code>:
 
 >         2nd
 >        /   \
->     0011   0th
+>     0011   0th <- new inner node
 >           /   \
->        0100   0101
+>        0100   0101 <- new leaf
 
 4. Insert <code>1000</code>:
 
->            3rd
+>            3rd <- new innner node
 >           /   \
->         2nd   1000
+>         2nd   1000 <- new leaf
 >        /   \
 >     0011   0th
 >           /   \
@@ -1746,9 +1746,9 @@ and inner node bit flag.
 >           /   \
 >         2nd   1000
 >        /   \
->     0011   1st
+>     0011   1st <- new inner node
 >           /   \
->         0th   0110
+>         0th   0110 <- new leaf
 >        /   \
 >     0100   0101
 

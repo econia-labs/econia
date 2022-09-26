@@ -42,8 +42,8 @@ insert --> insert_check_head
 insert --> insert_leaf
 insert_leaf --> search
 insert_leaf --> get_critical_bitmask
-insert_leaf --> insert_leaf_below_anchor_node
 insert_leaf --> insert_leaf_above_root_node
+insert_leaf --> insert_leaf_below_anchor_node
 
 ```
 

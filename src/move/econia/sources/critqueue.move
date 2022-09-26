@@ -683,7 +683,7 @@ module econia::critqueue {
         let leaf_already_allocated = table::contains(leaves_ref_mut, leaf_key);
         // Get access key for new sub-queue node, and if corresponding
         // leaf node is a free leaf. If leaf is already allocated:
-        let (access_key, _free_leaf) = if (leaf_already_allocated)
+        let (access_key, free_leaf) = if (leaf_already_allocated)
             // Update its sub-queue and the new sub-queue node, storing
             // the access key of the new sub-queue node and if the
             // corresponding leaf is free.
@@ -698,7 +698,8 @@ module econia::critqueue {
         table::add(subqueue_nodes_ref_mut, access_key, subqueue_node);
         // Check the crit-queue head, updating as necessary.
         insert_check_head(critqueue_ref_mut, access_key);
-        // if (free_leaf) insert_leaf(critqueue_ref_mut, leaf_key, access_key);
+        // If leaf is free, insert it to the crit-bit tree.
+        if (free_leaf) insert_leaf(critqueue_ref_mut, access_key);
         access_key // Return access key.
     }
 
@@ -994,9 +995,10 @@ module econia::critqueue {
     ///
     /// # Parameters
     /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
-    /// * `leaf_key`: Leaf key of free leaf to insert.
     /// * `access_key`: Unique access key of key-value insertion pair
-    ///   just inserted, from which new inner node key is derived.
+    ///   just inserted, from which is derived the new leaf key
+    ///   corresponding to the free leaf to insert, and optionally, a
+    ///   new inner key for a new inner node to insert.
     ///
     /// # Assumptions
     /// * Given `CritQueue` has a free leaf with `leaf_key`.
@@ -1053,9 +1055,10 @@ module econia::critqueue {
     /// * `test_insert_leaf()`
     fun insert_leaf<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
-        leaf_key: u128,
         access_key: u128
     ) {
+        // Get leaf key for free leaf inserted to tree.
+        let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
         // If crit-queue is empty, set root as new leaf key and return.
         if (option::is_none(&critqueue_ref_mut.root))
             return option::fill(&mut critqueue_ref_mut.root, leaf_key);
@@ -1806,12 +1809,6 @@ module econia::critqueue {
         //let access_key_1000 = u_128(b"1000") << INSERTION_KEY | 1;
         //let access_key_0110 = u_128(b"0110") << INSERTION_KEY |
             //(MAX_INSERTION_COUNT as u128);
-        // Get leaf keys from access keys.
-        let leaf_key_0011 =  access_key_0011 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_0100 =  access_key_0100 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_0101 =  access_key_0101 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_1000 =  access_key_1000 & ACCESS_KEY_TO_LEAF_KEY;
-        //let leaf_key_0110 =  access_key_0110 & ACCESS_KEY_TO_LEAF_KEY;
         // Allocate free leaves for all access keys.
         allocate_free_leaf_test(&mut critqueue, access_key_0011);
         //allocate_free_leaf_test(&mut critqueue, access_key_0100);
@@ -1819,11 +1816,17 @@ module econia::critqueue {
         //allocate_free_leaf_test(&mut critqueue, access_key_1000);
         //allocate_free_leaf_test(&mut critqueue, access_key_0110);
         // Insert all leaves.
-        insert_leaf(&mut critqueue, leaf_key_0011, access_key_0011);
-        //insert_leaf(&mut critqueue, leaf_key_0100, access_key_0100);
-        //insert_leaf(&mut critqueue, leaf_key_0101, access_key_0101);
-        //insert_leaf(&mut critqueue, leaf_key_1000, access_key_1000);
-        //insert_leaf(&mut critqueue, leaf_key_0110, access_key_0110);
+        insert_leaf(&mut critqueue, access_key_0011);
+        //insert_leaf(&mut critqueue, access_key_0100);
+        //insert_leaf(&mut critqueue, access_key_0101);
+        //insert_leaf(&mut critqueue, access_key_1000);
+        //insert_leaf(&mut critqueue, access_key_0110);
+        // Get leaf keys from access keys.
+        //let leaf_key_0011 =  access_key_0011 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_0100 =  access_key_0100 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_0101 =  access_key_0101 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_1000 =  access_key_1000 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_0110 =  access_key_0110 & ACCESS_KEY_TO_LEAF_KEY;
         critqueue
         //drop_critqueue_test(critqueue); // Drop crit-queue.
     }

@@ -1212,7 +1212,7 @@ Insert the given <code>key</code>-<code>value</code> insertion pair into the giv
     <b>let</b> leaf_already_allocated = <a href="_contains">table::contains</a>(leaves_ref_mut, leaf_key);
     // Get access key for new sub-queue node, and <b>if</b> corresponding
     // leaf node is a free leaf. If leaf is already allocated:
-    <b>let</b> (access_key, _free_leaf) = <b>if</b> (leaf_already_allocated)
+    <b>let</b> (access_key, free_leaf) = <b>if</b> (leaf_already_allocated)
         // Update its sub-queue and the new sub-queue node, storing
         // the access key of the new sub-queue node and <b>if</b> the
         // corresponding leaf is free.
@@ -1227,7 +1227,8 @@ Insert the given <code>key</code>-<code>value</code> insertion pair into the giv
     <a href="_add">table::add</a>(subqueue_nodes_ref_mut, access_key, subqueue_node);
     // Check the crit-queue head, updating <b>as</b> necessary.
     <a href="critqueue.md#0xc0deb00c_critqueue_insert_check_head">insert_check_head</a>(critqueue_ref_mut, access_key);
-    // <b>if</b> (free_leaf) <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>(critqueue_ref_mut, leaf_key, access_key);
+    // If leaf is free, insert it <b>to</b> the crit-bit tree.
+    <b>if</b> (free_leaf) <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>(critqueue_ref_mut, access_key);
     access_key // Return access key.
 }
 </code></pre>
@@ -1687,9 +1688,10 @@ the root of the tree, whichever comes first.
 ### Parameters
 
 * <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
-* <code>leaf_key</code>: Leaf key of free leaf to insert.
 * <code>access_key</code>: Unique access key of key-value insertion pair
-just inserted, from which new inner node key is derived.
+just inserted, from which is derived the new leaf key
+corresponding to the free leaf to insert, and optionally, a
+new inner key for a new inner node to insert.
 
 
 <a name="@Assumptions_34"></a>
@@ -1758,7 +1760,7 @@ and inner node bit flag.
 * <code>test_insert_leaf()</code>
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128, access_key: u128)
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128)
 </code></pre>
 
 
@@ -1769,9 +1771,10 @@ and inner node bit flag.
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>&lt;V&gt;(
     critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    leaf_key: u128,
     access_key: u128
 ) {
+    // Get leaf key for free leaf inserted <b>to</b> tree.
+    <b>let</b> leaf_key = access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>;
     // If crit-queue is empty, set root <b>as</b> new leaf key and <b>return</b>.
     <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref_mut.root))
         <b>return</b> <a href="_fill">option::fill</a>(&<b>mut</b> critqueue_ref_mut.root, leaf_key);

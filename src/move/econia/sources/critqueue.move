@@ -1891,19 +1891,19 @@ module econia::critqueue {
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000101",
             b"00000000000000000000000000000000",
-            b"00000000000000000000000000000101"
+            b"00000000000000000000000000000101" // Insertion count 4
         ), 0);
         assert!(access_key_010_1 == u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000010",
             b"00000000000000000000000000000000",
-            b"00000000000000000000000000000001"
+            b"00000000000000000000000000000001" // Insertion count 1
         ), 0);
         assert!(access_key_000_3 == u_128_by_32(
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
-            b"00000000000000000000000000000011"
+            b"00000000000000000000000000000011" // Insertion count 3
         ), 0);
         // Assert crit-queue head.
         assert!(*option::borrow(&critqueue.head) == access_key_000_3, 0);
@@ -1931,7 +1931,159 @@ module econia::critqueue {
         assert!(left                     == inner_key_1st           , 0);
         assert!(right                    == leaf_key_101            , 0);
         // Assert leaf state for ascending leaf order.
-        // Assert sub-queue node state for ascending order of insertion.
+        let (count, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_000);
+        assert!(count                    == 3               , 0);
+        assert!(*option::borrow(&parent) == inner_key_1st   , 0);
+        assert!(*option::borrow(&head)   == access_key_000_3, 0);
+        assert!(*option::borrow(&tail)   == access_key_000_3, 0);
+        (count, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_010);
+        assert!(count                    == 1               , 0);
+        assert!(*option::borrow(&parent) == inner_key_1st   , 0);
+        assert!(*option::borrow(&head)   == access_key_010_0, 0);
+        assert!(*option::borrow(&tail)   == access_key_010_1, 0);
+        (count, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_101);
+        assert!(count                    == 5               , 0);
+        assert!(*option::borrow(&parent) == inner_key_2nd   , 0);
+        assert!(*option::borrow(&head)   == access_key_101_5, 0);
+        assert!(*option::borrow(&tail)   == access_key_101_5, 0);
+        // Assert sub-queue node state for ascending insertion count,
+        // within sub-queues of ascending insertion key.
+        let (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_000_3);
+        assert!(value                      == 8               , 0);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(option::is_none(&next)                        , 0);
+        (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_010_0);
+        assert!(value                      == 4               , 0);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(*option::borrow(&next)     == access_key_010_1, 0);
+        (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_010_1);
+        assert!(value                      == 6               , 0);
+        assert!(*option::borrow(&previous) == access_key_010_0, 0);
+        assert!(option::is_none(&next)                        , 0);
+        (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_101_5);
+        assert!(value                      == 9               , 0);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(option::is_none(&next)                        , 0);
+        drop_critqueue_test(critqueue) // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify successful execution of `insert()` reference insertions.
+    fun test_insert_descending() {
+        // Get descending crit-queue.
+        let critqueue = new<u8>(DESCENDING);
+        // Allocate free leaves with specified insertion counts.
+        allocate_free_leaf_test(
+            &mut critqueue, u_128(b"101") << INSERTION_KEY | 4 ^
+                NOT_INSERTION_COUNT_DESCENDING);
+        allocate_free_leaf_test(
+            &mut critqueue, u_128(b"000") << INSERTION_KEY | 2 ^
+                NOT_INSERTION_COUNT_DESCENDING);
+        // Insert key-value insertion pairs, storing access keys.
+        // access_key_xxx_y implies insertion key xxx (binary) and
+        // insertion count y (decimal)
+        let access_key_010_0 = insert(&mut critqueue, u_64(b"010"), 4);
+        let access_key_101_5 = insert(&mut critqueue, u_64(b"101"), 9);
+        let access_key_010_1 = insert(&mut critqueue, u_64(b"010"), 6);
+        let access_key_000_3 = insert(&mut critqueue, u_64(b"000"), 8);
+        // Assert access keys.
+        assert!(access_key_010_0 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111111"
+        ), 0);
+        assert!(access_key_101_5 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000101",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111010" // Insertion count 4
+        ), 0);
+        assert!(access_key_010_1 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111110" // Insertion count 1
+        ), 0);
+        assert!(access_key_000_3 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"01111111111111111111111111111111",
+            b"11111111111111111111111111111100" // Insertion count 3
+        ), 0);
+        // Assert crit-queue head.
+        assert!(*option::borrow(&critqueue.head) == access_key_101_5, 0);
+        // Get inner keys from the access keys that lead to
+        // their generation, in order of insertion.
+        let inner_key_2nd = access_key_101_5 | ACCESS_KEY_TO_INNER_KEY;
+        let inner_key_1st = access_key_000_3 | ACCESS_KEY_TO_INNER_KEY;
+        // Assert crit-queue root.
+        assert!(*option::borrow(&critqueue.root) == inner_key_2nd, 0);
+        // Get leaf keys
+        let leaf_key_000 = access_key_000_3 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_010 = access_key_010_1 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_101 = access_key_101_5 & ACCESS_KEY_TO_LEAF_KEY;
+        // Assert all inner node state for ascending critical bit.
+        let (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_1st);
+        assert!(bitmask                  == 1 << (1 + INSERTION_KEY), 0);
+        assert!(*option::borrow(&parent) == inner_key_2nd           , 0);
+        assert!(left                     == leaf_key_000            , 0);
+        assert!(right                    == leaf_key_010            , 0);
+        (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_2nd);
+        assert!(bitmask                  == 1 << (2 + INSERTION_KEY), 0);
+        assert!(option::is_none(&parent)                            , 0);
+        assert!(left                     == inner_key_1st           , 0);
+        assert!(right                    == leaf_key_101            , 0);
+        // Assert leaf state for ascending leaf order.
+        let (count, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_000);
+        assert!(count                    == 3               , 0);
+        assert!(*option::borrow(&parent) == inner_key_1st   , 0);
+        assert!(*option::borrow(&head)   == access_key_000_3, 0);
+        assert!(*option::borrow(&tail)   == access_key_000_3, 0);
+        (count, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_010);
+        assert!(count                    == 1               , 0);
+        assert!(*option::borrow(&parent) == inner_key_1st   , 0);
+        assert!(*option::borrow(&head)   == access_key_010_0, 0);
+        assert!(*option::borrow(&tail)   == access_key_010_1, 0);
+        (count, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_101);
+        assert!(count                    == 5               , 0);
+        assert!(*option::borrow(&parent) == inner_key_2nd   , 0);
+        assert!(*option::borrow(&head)   == access_key_101_5, 0);
+        assert!(*option::borrow(&tail)   == access_key_101_5, 0);
+        // Assert sub-queue node state for ascending insertion count,
+        // within sub-queues of ascending insertion key.
+        let (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_000_3);
+        assert!(value                      == 8               , 0);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(option::is_none(&next)                        , 0);
+        (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_010_0);
+        assert!(value                      == 4               , 0);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(*option::borrow(&next)     == access_key_010_1, 0);
+        (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_010_1);
+        assert!(value                      == 6               , 0);
+        assert!(*option::borrow(&previous) == access_key_010_0, 0);
+        assert!(option::is_none(&next)                        , 0);
+        (value, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_101_5);
+        assert!(value                      == 9               , 0);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(option::is_none(&next)                        , 0);
         drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 

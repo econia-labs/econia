@@ -1718,6 +1718,44 @@ module econia::critqueue {
     }
 
     #[test_only]
+    /// Return all fields for leaf having `leaf_key` in given
+    /// `CritQueue`.
+    fun get_leaf_fields_test<V>(
+        critqueue_ref: &CritQueue<V>,
+        leaf_key: u128
+    ): (
+        u64,
+        Option<u128>,
+        Option<u128>,
+        Option<u128>
+    ) {
+        // Immutably borrow indicated leaf.
+        let leaf_ref = borrow_leaf_test(critqueue_ref, leaf_key);
+        // Return all fields.
+        (leaf_ref.count, leaf_ref.parent, leaf_ref.head, leaf_ref.tail)
+    }
+
+    #[test_only]
+    /// Return all fields for sub-queue node having `access_key` in
+    /// given `CritQueue`.
+    fun get_subqueue_node_fields_test<V: copy>(
+        critqueue_ref: &CritQueue<V>,
+        access_key: u128
+    ): (
+        V,
+        Option<u128>,
+        Option<u128>
+    ) {
+        // Immutably borrow indicated sub-queue node.
+        let subqueue_node_ref =
+            borrow_subqueue_node_test(critqueue_ref, access_key);
+        // Return all fields.
+        (subqueue_node_ref.insertion_value,
+         subqueue_node_ref.previous,
+         subqueue_node_ref.next)
+    }
+
+    #[test_only]
     /// Wraper for `u_128()`, casting to return to `u64`.
     public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
 
@@ -1879,8 +1917,7 @@ module econia::critqueue {
         let leaf_key_000 = access_key_000_3 & ACCESS_KEY_TO_LEAF_KEY;
         let leaf_key_010 = access_key_010_1 & ACCESS_KEY_TO_LEAF_KEY;
         let leaf_key_101 = access_key_101_5 & ACCESS_KEY_TO_LEAF_KEY;
-        // Assert inner node state in ascending order of critical bit.
-        // Assert all inner node fields, for ascending critical bit.
+        // Assert all inner node state for ascending critical bit.
         let (bitmask, parent, left, right) =
             get_inner_fields_test(&critqueue, inner_key_1st);
         assert!(bitmask                  == 1 << (1 + INSERTION_KEY), 0);
@@ -1893,8 +1930,8 @@ module econia::critqueue {
         assert!(option::is_none(&parent)                            , 0);
         assert!(left                     == inner_key_1st           , 0);
         assert!(right                    == leaf_key_101            , 0);
-        // Assert leaves and sub-queue node state in ascending
-        // leaf order, then ascending insertion count.
+        // Assert leaf state for ascending leaf order.
+        // Assert sub-queue node state for ascending order of insertion.
         drop_critqueue_test(critqueue) // Drop crit-queue.
     }
 

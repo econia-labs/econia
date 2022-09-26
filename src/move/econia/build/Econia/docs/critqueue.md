@@ -1724,33 +1724,33 @@ and inner node bit flag.
 
 3. Insert <code>0101</code>:
 
->          2nd
->         /   \
->      0011   0th
->            /   \
->         0100   0101
+>         2nd
+>        /   \
+>     0011   0th
+>           /   \
+>        0100   0101
 
 4. Insert <code>1000</code>:
 
->             3rd
->            /   \
->          2nd   1000
->         /   \
->      0011   0th
->            /   \
->         0100   0101
+>            3rd
+>           /   \
+>         2nd   1000
+>        /   \
+>     0011   0th
+>           /   \
+>        0100   0101
 
 5. Insert <code>0110</code>:
 
->             3rd
->            /   \
->          2nd   1000
->         /   \
->      0011   1st
->            /   \
->          0th   0110
->         /   \
->      0100   0101
+>            3rd
+>           /   \
+>         2nd   1000
+>        /   \
+>     0011   1st
+>           /   \
+>         0th   0110
+>        /   \
+>     0100   0101
 
 
 <a name="@Testing_36"></a>
@@ -2124,8 +2124,8 @@ new inner node's right child is the new leaf.
 
 #### Testing
 
-* <code>test_insert_leaf_below_anchor_node_case_1()</code>
-* <code>test_insert_leaf_below_anchor_node_case_2()</code>
+* <code>test_insert_leaf_below_anchor_node_1()</code>
+* <code>test_insert_leaf_below_anchor_node_2()</code>
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_below_anchor_node">insert_leaf_below_anchor_node</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, anchor_node_key: u128, new_inner_node_key: u128, new_inner_node_bitmask: u128, new_leaf_key: u128)

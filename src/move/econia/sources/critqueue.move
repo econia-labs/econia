@@ -1023,33 +1023,33 @@ module econia::critqueue {
     ///
     /// 3. Insert `0101`:
     ///
-    /// >          2nd
-    /// >         /   \
-    /// >      0011   0th
-    /// >            /   \
-    /// >         0100   0101
+    /// >         2nd
+    /// >        /   \
+    /// >     0011   0th
+    /// >           /   \
+    /// >        0100   0101
     ///
     /// 4. Insert `1000`:
     ///
-    /// >             3rd
-    /// >            /   \
-    /// >          2nd   1000
-    /// >         /   \
-    /// >      0011   0th
-    /// >            /   \
-    /// >         0100   0101
+    /// >            3rd
+    /// >           /   \
+    /// >         2nd   1000
+    /// >        /   \
+    /// >     0011   0th
+    /// >           /   \
+    /// >        0100   0101
     ///
     /// 5. Insert `0110`:
     ///
-    /// >             3rd
-    /// >            /   \
-    /// >          2nd   1000
-    /// >         /   \
-    /// >      0011   1st
-    /// >            /   \
-    /// >          0th   0110
-    /// >         /   \
-    /// >      0100   0101
+    /// >            3rd
+    /// >           /   \
+    /// >         2nd   1000
+    /// >        /   \
+    /// >     0011   1st
+    /// >           /   \
+    /// >         0th   0110
+    /// >        /   \
+    /// >     0100   0101
     ///
     /// ## Testing
     /// * `test_insert_leaf()`
@@ -1311,8 +1311,8 @@ module econia::critqueue {
     /// new inner node's right child is the new leaf.
     ///
     /// ## Testing
-    /// * `test_insert_leaf_below_anchor_node_case_1()`
-    /// * `test_insert_leaf_below_anchor_node_case_2()`
+    /// * `test_insert_leaf_below_anchor_node_1()`
+    /// * `test_insert_leaf_below_anchor_node_2()`
     fun insert_leaf_below_anchor_node<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         anchor_node_key: u128,
@@ -1832,35 +1832,34 @@ module econia::critqueue {
 
     #[test]
     /// Verify final tree for `insert_leaf()` reference insertions.
-    fun test_insert_leaffffffffffffffffffffffffffff(): CritQueue<u8> {
+    fun test_insert_leaf() {
         let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
         // Declare access keys with mock insertion counts.
         let access_key_0011 = u_128(b"0011") << INSERTION_KEY | 123;
-        //let access_key_0100 = u_128(b"0100") << INSERTION_KEY | 456;
-        //let access_key_0101 = u_128(b"0101") << INSERTION_KEY | 0;
-        //let access_key_1000 = u_128(b"1000") << INSERTION_KEY | 1;
-        //let access_key_0110 = u_128(b"0110") << INSERTION_KEY |
-            //(MAX_INSERTION_COUNT as u128);
+        let access_key_0100 = u_128(b"0100") << INSERTION_KEY | 456;
+        let access_key_0101 = u_128(b"0101") << INSERTION_KEY | 0;
+        let access_key_1000 = u_128(b"1000") << INSERTION_KEY | 1;
+        let access_key_0110 = u_128(b"0110") << INSERTION_KEY |
+            (MAX_INSERTION_COUNT as u128);
         // Allocate free leaves for all access keys.
         allocate_free_leaf_test(&mut critqueue, access_key_0011);
-        //allocate_free_leaf_test(&mut critqueue, access_key_0100);
-        //allocate_free_leaf_test(&mut critqueue, access_key_0101);
-        //allocate_free_leaf_test(&mut critqueue, access_key_1000);
-        //allocate_free_leaf_test(&mut critqueue, access_key_0110);
+        allocate_free_leaf_test(&mut critqueue, access_key_0100);
+        allocate_free_leaf_test(&mut critqueue, access_key_0101);
+        allocate_free_leaf_test(&mut critqueue, access_key_1000);
+        allocate_free_leaf_test(&mut critqueue, access_key_0110);
         // Insert all leaves.
         insert_leaf(&mut critqueue, access_key_0011);
-        //insert_leaf(&mut critqueue, access_key_0100);
-        //insert_leaf(&mut critqueue, access_key_0101);
-        //insert_leaf(&mut critqueue, access_key_1000);
-        //insert_leaf(&mut critqueue, access_key_0110);
+        insert_leaf(&mut critqueue, access_key_0100);
+        insert_leaf(&mut critqueue, access_key_0101);
+        insert_leaf(&mut critqueue, access_key_1000);
+        insert_leaf(&mut critqueue, access_key_0110);
         // Get leaf keys from access keys.
         //let leaf_key_0011 =  access_key_0011 & ACCESS_KEY_TO_LEAF_KEY;
         //let leaf_key_0100 =  access_key_0100 & ACCESS_KEY_TO_LEAF_KEY;
         //let leaf_key_0101 =  access_key_0101 & ACCESS_KEY_TO_LEAF_KEY;
         //let leaf_key_1000 =  access_key_1000 & ACCESS_KEY_TO_LEAF_KEY;
         //let leaf_key_0110 =  access_key_0110 & ACCESS_KEY_TO_LEAF_KEY;
-        critqueue
-        //drop_critqueue_test(critqueue); // Drop crit-queue.
+        drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
     #[test]
@@ -2093,7 +2092,7 @@ module econia::critqueue {
     #[test]
     /// Verify state updates for `insert_leaf_below_anchor_node()`
     /// reference insertion 1.
-    fun test_insert_leaf_below_anchor_node_case_1() {
+    fun test_insert_leaf_below_anchor_node_1() {
         let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
         // Mutably borrow inner nodes table.
         let inners_ref_mut = &mut critqueue.inners;
@@ -2166,7 +2165,7 @@ module econia::critqueue {
     #[test]
     /// Verify state updates for `insert_leaf_below_anchor_node()`
     /// reference insertion 2.
-    fun test_insert_leaf_below_anchor_node_case_2() {
+    fun test_insert_leaf_below_anchor_node_2() {
         // Get descending crit-queue.
         let critqueue = new<u8>(DESCENDING);
         // Mutably borrow inner nodes table.

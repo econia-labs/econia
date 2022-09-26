@@ -607,6 +607,15 @@ module econia::critqueue {
     const MAX_INSERTION_COUNT: u64 = 0x3fffffffffffffff;
     /// Most significant bit number for a `u128`
     const MSB_u128: u8 = 127;
+    /// `XOR` bitmask for flipping insertion count bits 0-61 and
+    /// setting bit 62 high in the case of a descending crit-queue.
+    /// `u64` bitmask with all bits set except bit 63, cast to a `u128`.
+    /// Generated in Python via `hex(int('1' * 63, 2))`.
+    const NOT_INSERTION_COUNT_DESCENDING: u128 = 0x7fffffffffffffff;
+    /// Flag for inorder predecessor traversal.
+    const PREDECESSOR: bool = true;
+    /// Flag for inorder successor traversal.
+    const SUCCESSOR: bool = false;
     /// `u128` bitmask set at bit 63, the crit-bit tree node type
     /// bit flag, generated in Python via `hex(int('1' + '0' * 63, 2))`.
     const TREE_NODE_TYPE: u128 = 0x8000000000000000;
@@ -619,11 +628,6 @@ module econia::critqueue {
     /// `TREE_NODE_TYPE`, indicating that the key is unset at bit 63
     /// and is thus a leaf key.
     const TREE_NODE_LEAF: u128 = 0;
-    /// `XOR` bitmask for flipping insertion count bits 0-61 and
-    /// setting bit 62 high in the case of a descending crit-queue.
-    /// `u64` bitmask with all bits set except bit 63, cast to a `u128`.
-    /// Generated in Python via `hex(int('1' * 63, 2))`.
-    const NOT_INSERTION_COUNT_DESCENDING: u128 = 0x7fffffffffffffff;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1604,6 +1608,130 @@ module econia::critqueue {
             // Borrow mutable reference to new inner node to check.
             parent_ref_mut = table::borrow_mut(inners_ref_mut, parent_key);
         }
+    }
+
+    /// Traverse from leaf to inorder predecessor or successor.
+    ///
+    /// # Parameters
+    /// * `critqueue_ref`: Immutable reference to given `CritQueue`.
+    /// * `start_leaf_key`: Leaf key of leaf to traverse from.
+    /// * `target`: Either `PREDECESSOR` or `SUCCESSOR`.
+    ///
+    /// # Returns
+    /// * `Option<u128>`: Leaf key of either inorder predecessor or
+    ///   successor to leaf having `start_leaf_key`, if any.
+    ///
+    /// # Membership considerations
+    /// * Aborts if no leaf in crit-queue with given `start_leaf_key`.
+    /// * Returns none if `start_leaf_key` indicates a free leaf.
+    /// * Returns none if `start_leaf_key` indicates crit-bit root.
+    ///
+    /// # Reference diagram
+    ///
+    /// ## Conventions
+    ///
+    /// For ease of illustration, critical bitmasks and leaf keys are
+    /// depicted relative to bit 64, but tested with correspondingly
+    /// bitshifted amounts. Insertion keys are given in binary:
+    ///
+    /// >            3rd
+    /// >           /   \
+    /// >         2nd   1000
+    /// >        /   \
+    /// >     0011   1st
+    /// >           /   \
+    /// >         0th   0110
+    /// >        /   \
+    /// >     0100   0101
+    ///
+    /// Traversal starts at the "start leaf", walks to an "apex node",
+    /// then ends at the "target leaf", if any.
+    ///
+    /// ## Inorder predecessor
+    ///
+    /// 1. Walk up from the start leaf until arriving at the inner node
+    ///    that has the start leaf key as the minimum key in its right
+    ///    subtree, the apex node: walk up until arriving at a parent
+    ///    that has the last walked node as its right child.
+    /// 2. Walk down to the maximum key in the apex node's left subtree,
+    ///    the target leaf: walk to apex node's left child, then walk
+    ///    along right children, breaking out at a leaf.
+    ///
+    /// | Start key | Apex node | Target leaf |
+    /// |-----------|-----------|-------------|
+    /// | `1000`    | `3rd`     | `0110`      |
+    /// | `0110`    | `1st`     | `0101`      |
+    /// | `0101`    | `0th`     | `0100`      |
+    /// | `0100`    | `2nd`     | `0011`      |
+    /// | `0011`    | None      | None        |
+    ///
+    /// ## Inorder successor
+    ///
+    /// 1. Walk up from the start leaf until arriving at the inner node
+    ///    that has the start leaf key as the maximum key in its left
+    ///    subtree, the apex node: walk up until arriving at a parent
+    ///    that has the last walked node as its left child.
+    /// 2. Walk down to the minimum key in the apex node's right
+    ///    subtree, the target leaf: walk to apex node's right child,
+    ///    then walk along left children, breaking out at a leaf.
+    ///
+    /// | Start key | Apex node | Target leaf |
+    /// |-----------|-----------|-------------|
+    /// | `0011`    | `2nd`     | `0100`      |
+    /// | `0100`    | `0th`     | `0101`      |
+    /// | `0101`    | `1st`     | `0110`      |
+    /// | `0110`    | `3rd`     | `1000`      |
+    /// | `1000`    | None      | None        |
+    ///
+    /// ## Testing
+    /// * `test_traverse()`
+    fun traverse<V>(
+        critqueue_ref: &CritQueue<V>,
+        start_leaf_key: u128,
+        target: bool
+    ): Option<u128> {
+        // Immutably borrow leaves table.
+        let leaves_ref = &critqueue_ref.leaves;
+        // Immutably borrow inner nodes table.
+        let inners_ref = &critqueue_ref.inners;
+        // Immutably borrow start leaf, first child for upward walk.
+        let start_leaf_ref = table::borrow(leaves_ref, start_leaf_key);
+        // Immutably borrow optional parent key.
+        let optional_parent_key_ref = &start_leaf_ref.parent;
+        let parent_ref; // Declare reference to parent node.
+        loop { // Begin upward walk to apex node.
+            // If no parent to walk to, return no target node.
+            if (option::is_none(optional_parent_key_ref)) return
+                option::none();
+            // Get inner key of parent.
+            let parent_key = *option::borrow(optional_parent_key_ref);
+            // Immutably borrow parent.
+            parent_ref = table::borrow(inners_ref, parent_key);
+            let bitmask = parent_ref.bitmask; // Get parent's bitmask.
+            // If predecessor traversal and leaf key is set at critical
+            // bit (if upward walk has reached parent via right child),
+            if ((target == PREDECESSOR && bitmask & start_leaf_key != 0) ||
+                 // or if successor traversal and leaf key is unset at
+                 // critical bit (if upward walk has reached parent via
+                 // left child):
+                (target == SUCCESSOR   && bitmask & start_leaf_key == 0))
+                 break; // Then break, since apex node has been reached.
+            // Otherwise keep looping, checking the parent's parent.
+            optional_parent_key_ref = &parent_ref.parent;
+        }; // Now at apex node.
+        // If predecessor traversal review apex node's left child next,
+        let child_key = if (target == PREDECESSOR) parent_ref.left else
+            parent_ref.right; // Else the right child.
+        // While the child under review is an innner node:
+        while (child_key & TREE_NODE_TYPE == TREE_NODE_INNER) {
+            // Immutably borrow the child.
+            let child_ref = table::borrow(inners_ref, child_key);
+            // For the next iteration, review the child's right child
+            // if predecessor traversal, else the left child.
+            child_key = if (target == PREDECESSOR) child_ref.right else
+                child_ref.left;
+        }; // Have arrived at a leaf.
+        option::some(child_key) // Return option-packed target leaf key.
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -3029,6 +3157,61 @@ module econia::critqueue {
             match_parent_bitmask, 0);
         assert!(match_parent_bitmask == 1 << (1 + INSERTION_KEY), 0);
         drop_critqueue_test(critqueue) // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify returns for `traverse()` edge cases, reference diagram.
+    fun test_traverse() {
+        let critqueue = new(ASCENDING); // Get ascending crit-queue.
+        // Declare access key for mock free leaf
+        let access_key_free_leaf = u_128(b"1100") << INSERTION_KEY | 1234;
+        // Allocate mock free leaf
+        allocate_free_leaf_test(&mut critqueue, access_key_free_leaf);
+        // Assert none return.
+        assert!(option::is_none(&traverse(&critqueue,
+            access_key_free_leaf & ACCESS_KEY_TO_LEAF_KEY, PREDECESSOR)), 0);
+        // Insert single leaf key at root.
+        let access_key_1111 = insert(&mut critqueue, u_64(b"1111"), 123);
+        // Assert none return.
+        assert!(option::is_none(&traverse(&critqueue,
+            access_key_1111 & ACCESS_KEY_TO_LEAF_KEY, PREDECESSOR)), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        critqueue = new(ASCENDING); // Get ascending crit-queue.
+        // Insert leafs from reference diagram, storing leaf keys
+        // derived from returned access keys.
+        let leaf_key_0011 = insert(&mut critqueue, u_64(b"0011"), 123) &
+            ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_0100 = insert(&mut critqueue, u_64(b"0100"), 456) &
+            ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_0101 = insert(&mut critqueue, u_64(b"0101"), 789) &
+            ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_0110 = insert(&mut critqueue, u_64(b"0110"), 987) &
+            ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_1000 = insert(&mut critqueue, u_64(b"1000"), 654) &
+            ACCESS_KEY_TO_LEAF_KEY;
+        // Assert inorder predecessor returns per reference table.
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_1000, PREDECESSOR)) == leaf_key_0110, 0);
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_0110, PREDECESSOR)) == leaf_key_0101, 0);
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_0101, PREDECESSOR)) == leaf_key_0100, 0);
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_0100, PREDECESSOR)) == leaf_key_0011, 0);
+        assert!(option::is_none(&traverse(&critqueue,
+            leaf_key_0011, PREDECESSOR))                 , 0);
+        // Assert inorder success returns per reference table.
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_0011, SUCCESSOR)) == leaf_key_0100, 0);
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_0100, SUCCESSOR)) == leaf_key_0101, 0);
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_0101, SUCCESSOR)) == leaf_key_0110, 0);
+        assert!(*option::borrow(&traverse(&critqueue,
+            leaf_key_0110, SUCCESSOR)) == leaf_key_1000, 0);
+        assert!(option::is_none(&traverse(&critqueue,
+            leaf_key_1000, SUCCESSOR))                 , 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
     #[test]

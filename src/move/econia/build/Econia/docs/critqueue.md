@@ -701,6 +701,15 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
         -  [Leaf at root](#@Leaf_at_root_66)
         -  [Inner node at root](#@Inner_node_at_root_67)
         -  [Testing](#@Testing_68)
+-  [Function `traverse`](#0xc0deb00c_critqueue_traverse)
+    -  [Parameters](#@Parameters_69)
+    -  [Returns](#@Returns_70)
+    -  [Membership considerations](#@Membership_considerations_71)
+    -  [Reference diagram](#@Reference_diagram_72)
+        -  [Conventions](#@Conventions_73)
+        -  [Inorder predecessor](#@Inorder_predecessor_74)
+        -  [Inorder successor](#@Inorder_successor_75)
+        -  [Testing](#@Testing_76)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1029,6 +1038,26 @@ Generated in Python via <code>hex(int('1' * 63, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_INSERTION_COUNT_DESCENDING">NOT_INSERTION_COUNT_DESCENDING</a>: u128 = 9223372036854775807;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_PREDECESSOR"></a>
+
+Flag for inorder predecessor traversal.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_SUCCESSOR"></a>
+
+Flag for inorder successor traversal.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_SUCCESSOR">SUCCESSOR</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -2594,6 +2623,182 @@ and inner node bit flag.
         // Borrow mutable reference <b>to</b> new inner node <b>to</b> check.
         parent_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, parent_key);
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_traverse"></a>
+
+## Function `traverse`
+
+Traverse from leaf to inorder predecessor or successor.
+
+
+<a name="@Parameters_69"></a>
+
+### Parameters
+
+* <code>critqueue_ref</code>: Immutable reference to given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
+* <code>start_leaf_key</code>: Leaf key of leaf to traverse from.
+* <code>target</code>: Either <code><a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_SUCCESSOR">SUCCESSOR</a></code>.
+
+
+<a name="@Returns_70"></a>
+
+### Returns
+
+* <code>Option&lt;u128&gt;</code>: Leaf key of either inorder predecessor or
+successor to leaf having <code>start_leaf_key</code>, if any.
+
+
+<a name="@Membership_considerations_71"></a>
+
+### Membership considerations
+
+* Aborts if no leaf in crit-queue with given <code>start_leaf_key</code>.
+* Returns none if <code>start_leaf_key</code> indicates a free leaf.
+* Returns none if <code>start_leaf_key</code> indicates crit-bit root.
+
+
+<a name="@Reference_diagram_72"></a>
+
+### Reference diagram
+
+
+
+<a name="@Conventions_73"></a>
+
+#### Conventions
+
+
+For ease of illustration, critical bitmasks and leaf keys are
+depicted relative to bit 64, but tested with correspondingly
+bitshifted amounts. Insertion keys are given in binary:
+
+>            3rd
+>           /   \
+>         2nd   1000
+>        /   \
+>     0011   1st
+>           /   \
+>         0th   0110
+>        /   \
+>     0100   0101
+
+Traversal starts at the "start leaf", walks to an "apex node",
+then ends at the "target leaf", if any.
+
+
+<a name="@Inorder_predecessor_74"></a>
+
+#### Inorder predecessor
+
+
+1. Walk up from the start leaf until arriving at the inner node
+that has the start leaf key as the minimum key in its right
+subtree, the apex node: walk up until arriving at a parent
+that has the last walked node as its right child.
+2. Walk down to the maximum key in the apex node's left subtree,
+the target leaf: walk to apex node's left child, then walk
+along right children, breaking out at a leaf.
+
+| Start key | Apex node | Target leaf |
+|-----------|-----------|-------------|
+| <code>1000</code>    | <code>3rd</code>     | <code>0110</code>      |
+| <code>0110</code>    | <code>1st</code>     | <code>0101</code>      |
+| <code>0101</code>    | <code>0th</code>     | <code>0100</code>      |
+| <code>0100</code>    | <code>2nd</code>     | <code>0011</code>      |
+| <code>0011</code>    | None      | None        |
+
+
+<a name="@Inorder_successor_75"></a>
+
+#### Inorder successor
+
+
+1. Walk up from the start leaf until arriving at the inner node
+that has the start leaf key as the maximum key in its left
+subtree, the apex node: walk up until arriving at a parent
+that has the last walked node as its left child.
+2. Walk down to the minimum key in the apex node's right
+subtree, the target leaf: walk to apex node's right child,
+then walk along left children, breaking out at a leaf.
+
+| Start key | Apex node | Target leaf |
+|-----------|-----------|-------------|
+| <code>0011</code>    | <code>2nd</code>     | <code>0100</code>      |
+| <code>0100</code>    | <code>0th</code>     | <code>0101</code>      |
+| <code>0101</code>    | <code>1st</code>     | <code>0110</code>      |
+| <code>0110</code>    | <code>3rd</code>     | <code>1000</code>      |
+| <code>1000</code>    | None      | None        |
+
+
+<a name="@Testing_76"></a>
+
+#### Testing
+
+* <code>test_traverse()</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_traverse">traverse</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, start_leaf_key: u128, target: bool): <a href="_Option">option::Option</a>&lt;u128&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_traverse">traverse</a>&lt;V&gt;(
+    critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    start_leaf_key: u128,
+    target: bool
+): Option&lt;u128&gt; {
+    // Immutably borrow leaves <a href="">table</a>.
+    <b>let</b> leaves_ref = &critqueue_ref.leaves;
+    // Immutably borrow inner nodes <a href="">table</a>.
+    <b>let</b> inners_ref = &critqueue_ref.inners;
+    // Immutably borrow start leaf, first child for upward walk.
+    <b>let</b> start_leaf_ref = <a href="_borrow">table::borrow</a>(leaves_ref, start_leaf_key);
+    // Immutably borrow optional parent key.
+    <b>let</b> optional_parent_key_ref = &start_leaf_ref.parent;
+    <b>let</b> parent_ref; // Declare reference <b>to</b> parent node.
+    <b>loop</b> { // Begin upward walk <b>to</b> apex node.
+        // If no parent <b>to</b> walk <b>to</b>, <b>return</b> no target node.
+        <b>if</b> (<a href="_is_none">option::is_none</a>(optional_parent_key_ref)) <b>return</b>
+            <a href="_none">option::none</a>();
+        // Get inner key of parent.
+        <b>let</b> parent_key = *<a href="_borrow">option::borrow</a>(optional_parent_key_ref);
+        // Immutably borrow parent.
+        parent_ref = <a href="_borrow">table::borrow</a>(inners_ref, parent_key);
+        <b>let</b> bitmask = parent_ref.bitmask; // Get parent's bitmask.
+        // If predecessor traversal and leaf key is set at critical
+        // bit (<b>if</b> upward walk <b>has</b> reached parent via right child),
+        <b>if</b> ((target == <a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a> && bitmask & start_leaf_key != 0) ||
+             // or <b>if</b> successor traversal and leaf key is unset at
+             // critical bit (<b>if</b> upward walk <b>has</b> reached parent via
+             // left child):
+            (target == <a href="critqueue.md#0xc0deb00c_critqueue_SUCCESSOR">SUCCESSOR</a>   && bitmask & start_leaf_key == 0))
+             <b>break</b>; // Then <b>break</b>, since apex node <b>has</b> been reached.
+        // Otherwise keep looping, checking the parent's parent.
+        optional_parent_key_ref = &parent_ref.parent;
+    }; // Now at apex node.
+    // If predecessor traversal review apex node's left child next,
+    <b>let</b> child_key = <b>if</b> (target == <a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a>) parent_ref.left <b>else</b>
+        parent_ref.right; // Else the right child.
+    // While the child under review is an innner node:
+    <b>while</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_INNER">TREE_NODE_INNER</a>) {
+        // Immutably borrow the child.
+        <b>let</b> child_ref = <a href="_borrow">table::borrow</a>(inners_ref, child_key);
+        // For the next iteration, review the child's right child
+        // <b>if</b> predecessor traversal, <b>else</b> the left child.
+        child_key = <b>if</b> (target == <a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a>) child_ref.right <b>else</b>
+            child_ref.left;
+    }; // Have arrived at a leaf.
+    <a href="_some">option::some</a>(child_key) // Return <a href="">option</a>-packed target leaf key.
 }
 </code></pre>
 

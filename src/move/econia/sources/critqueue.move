@@ -980,31 +980,96 @@ module econia::critqueue {
         };
     }
 
-/*
+    /// Insert a free leaf to the crit-bit tree in a crit-queue.
+    ///
     /// Inner function for `insert()`.
+    ///
+    /// If crit-queue is empty, set root as new leaf key and return,
+    /// otherwise search for the closest leaf in the crit-bit tree. Then
+    /// get the critical bit between the new leaf key and the search
+    /// match, which becomes the critical bitmask of a new inner node to
+    /// insert. Start walking up the tree, inserting the new inner node
+    /// below the first walked node with a larger critical bit, or above
+    /// the root of the tree, whichever comes first.
+    ///
+    /// # Parameters
+    /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
+    /// * `leaf_key`: Leaf key of free leaf to insert.
+    /// * `access_key`: Unique access key of key-value insertion pair
+    ///   just inserted, from which new inner node key is derived.
+    ///
     /// # Assumptions
-    /// * Given `CritQueue` has a free leaf with the insertion key
-    ///   encoded in `access_key`.
+    /// * Given `CritQueue` has a free leaf with `leaf_key`.
+    ///
+    /// # Diagrams
+    ///
+    /// For ease of illustration, critical bitmasks and leaf keys are
+    /// depicted relative to bit 64, but tested with correspondingly
+    /// bitshifted amounts, for inner keys that are additionally
+    /// encoded with a mock insertion key, mock insertion count,
+    /// and inner node bit flag.
+    ///
+    /// 1. Start by inserting `0011` to an empty tree:
+    ///
+    /// >     0011
+    ///
+    /// 2. Then insert `0100`:
+    ///
+    /// >         2nd
+    /// >        /   \
+    /// >     0011   0100
+    ///
+    /// 3. Insert `0101`:
+    ///
+    /// >          2nd
+    /// >         /   \
+    /// >      0011   0th
+    /// >            /   \
+    /// >         0100   0101
+    ///
+    /// 4. Insert `1000`:
+    ///
+    /// >             3rd
+    /// >            /   \
+    /// >          2nd   1000
+    /// >         /   \
+    /// >      0011   0th
+    /// >            /   \
+    /// >         0100   0101
+    ///
+    /// 5. Insert `0110`:
+    ///
+    /// >             3rd
+    /// >            /   \
+    /// >          2nd   1000
+    /// >         /   \
+    /// >      0011   1st
+    /// >            /   \
+    /// >          0th   0110
+    /// >         /   \
+    /// >      0100   0101
+    ///
+    /// ## Testing
+    /// * `test_insert_leaf()`
     fun insert_leaf<V>(
-        critqueue_ref_mut: &mut CritQueue,
+        critqueue_ref_mut: &mut CritQueue<V>,
         leaf_key: u128,
-        access_key: u128,
+        access_key: u128
     ) {
         // If crit-queue is empty, set root as new leaf key and return.
         if (option::is_none(&critqueue_ref_mut.root))
-            return critqueue_ref_mut.root = leaf_key;
+            return option::fill(&mut critqueue_ref_mut.root, leaf_key);
         // Get inner key for new inner node corresponding to access key.
         let new_inner_node_key = access_key | ACCESS_KEY_TO_INNER_KEY;
         // Search for closest leaf, returning its leaf key, the inner
-        // key of its parent, and the parent's critical bitmask, to
-        // initiate walk up tree.
+        // key of its parent, and the parent's critical bitmask.
         let (walk_node_key, optional_parent_key, optional_parent_bitmask) =
             search(critqueue_ref_mut, leaf_key);
-        // Get critical bitmask between leaf key and search leaf key.
+        // Get critical bitmask between new leaf key and walk leaf key.
         let critical_bitmask = get_critical_bitmask(leaf_key, walk_node_key);
         loop { // Start walking up tree from search leaf.
             // Return if walk node is root and has no parent,
-            if (option::is_none(&optional_parent_key) return
+            if (option::is_none(&optional_parent_key)) return
                 // By inserting free leaf above it.
                 insert_leaf_above_root_node(critqueue_ref_mut, walk_node_key,
                     new_inner_node_key, critical_bitmask, leaf_key);
@@ -1020,26 +1085,25 @@ module econia::critqueue {
             // If have not returned, walk continues at parent node.
             walk_node_key = parent_key;
             // Immutably borrow inner nodes table.
-            let inners_ref = &critqueue.inners;
+            let inners_ref = &critqueue_ref_mut.inners;
             // Immutably borrow the new inner node to walk.
             let walk_node_ref = table::borrow(inners_ref, walk_node_key);
             // Get its optional parent key.
             optional_parent_key = walk_node_ref.parent;
             // If new node to walk has no parent:
-            if (option::is_none(*optional_parent_key)) {
+            if (option::is_none(&optional_parent_key)) {
                 // Set optional parent bitmask to none.
                 optional_parent_bitmask = option::none();
             } else { // If new node to walk does have a parent:
                 // Get the parent's key.
-                parent_key = *(option::borrow(optional_parent_key);
+                parent_key = *(option::borrow(&optional_parent_key));
                 // Immutably borrow the parent.
-                parent_ref = table::borrow(inners_ref, parent_key);
+                let parent_ref = table::borrow(inners_ref, parent_key);
                 // Pack its bitmask in an option.
                 optional_parent_bitmask = option::some(parent_ref.bitmask);
             }
         }
     }
-*/
 
     /// Insert new free leaf and inner node above the root inner node.
     ///
@@ -1729,6 +1793,39 @@ module econia::critqueue {
         // Assert head unchanged.
         assert!(*option::borrow(&critqueue.head) == old_access_key, 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify final tree for `insert_leaf()` reference insertions.
+    fun test_insert_leaffffffffffffffffffffffffffff(): CritQueue<u8> {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Declare access keys with mock insertion counts.
+        let access_key_0011 = u_128(b"0011") << INSERTION_KEY | 123;
+        //let access_key_0100 = u_128(b"0100") << INSERTION_KEY | 456;
+        //let access_key_0101 = u_128(b"0101") << INSERTION_KEY | 0;
+        //let access_key_1000 = u_128(b"1000") << INSERTION_KEY | 1;
+        //let access_key_0110 = u_128(b"0110") << INSERTION_KEY |
+            //(MAX_INSERTION_COUNT as u128);
+        // Get leaf keys from access keys.
+        let leaf_key_0011 =  access_key_0011 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_0100 =  access_key_0100 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_0101 =  access_key_0101 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_1000 =  access_key_1000 & ACCESS_KEY_TO_LEAF_KEY;
+        //let leaf_key_0110 =  access_key_0110 & ACCESS_KEY_TO_LEAF_KEY;
+        // Allocate free leaves for all access keys.
+        allocate_free_leaf_test(&mut critqueue, access_key_0011);
+        //allocate_free_leaf_test(&mut critqueue, access_key_0100);
+        //allocate_free_leaf_test(&mut critqueue, access_key_0101);
+        //allocate_free_leaf_test(&mut critqueue, access_key_1000);
+        //allocate_free_leaf_test(&mut critqueue, access_key_0110);
+        // Insert all leaves.
+        insert_leaf(&mut critqueue, leaf_key_0011, access_key_0011);
+        //insert_leaf(&mut critqueue, leaf_key_0100, access_key_0100);
+        //insert_leaf(&mut critqueue, leaf_key_0101, access_key_0101);
+        //insert_leaf(&mut critqueue, leaf_key_1000, access_key_1000);
+        //insert_leaf(&mut critqueue, leaf_key_0110, access_key_0110);
+        critqueue
+        //drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
     #[test]

@@ -661,35 +661,40 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
     -  [Returns](#@Returns_31)
     -  [Assumptions](#@Assumptions_32)
 -  [Function `insert_check_head`](#0xc0deb00c_critqueue_insert_check_head)
--  [Function `insert_leaf_above_root_node`](#0xc0deb00c_critqueue_insert_leaf_above_root_node)
+-  [Function `insert_leaf`](#0xc0deb00c_critqueue_insert_leaf)
     -  [Parameters](#@Parameters_33)
     -  [Assumptions](#@Assumptions_34)
-    -  [Reference diagrams](#@Reference_diagrams_35)
-        -  [Insertion above to the left](#@Insertion_above_to_the_left_36)
-        -  [Insertion above to the right](#@Insertion_above_to_the_right_37)
-        -  [Testing](#@Testing_38)
+    -  [Diagrams](#@Diagrams_35)
+        -  [Testing](#@Testing_36)
+-  [Function `insert_leaf_above_root_node`](#0xc0deb00c_critqueue_insert_leaf_above_root_node)
+    -  [Parameters](#@Parameters_37)
+    -  [Assumptions](#@Assumptions_38)
+    -  [Reference diagrams](#@Reference_diagrams_39)
+        -  [Insertion above to the left](#@Insertion_above_to_the_left_40)
+        -  [Insertion above to the right](#@Insertion_above_to_the_right_41)
+        -  [Testing](#@Testing_42)
 -  [Function `insert_leaf_below_anchor_node`](#0xc0deb00c_critqueue_insert_leaf_below_anchor_node)
-    -  [Parameters](#@Parameters_39)
-    -  [Assumptions](#@Assumptions_40)
-    -  [Reference diagrams](#@Reference_diagrams_41)
-        -  [Anchor node children polarity](#@Anchor_node_children_polarity_42)
-        -  [Child displacement](#@Child_displacement_43)
-        -  [New inner node children polarity](#@New_inner_node_children_polarity_44)
-        -  [Testing](#@Testing_45)
+    -  [Parameters](#@Parameters_43)
+    -  [Assumptions](#@Assumptions_44)
+    -  [Reference diagrams](#@Reference_diagrams_45)
+        -  [Anchor node children polarity](#@Anchor_node_children_polarity_46)
+        -  [Child displacement](#@Child_displacement_47)
+        -  [New inner node children polarity](#@New_inner_node_children_polarity_48)
+        -  [Testing](#@Testing_49)
 -  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
-    -  [Returns](#@Returns_46)
-    -  [Assumptions](#@Assumptions_47)
-    -  [Aborts if](#@Aborts_if_48)
+    -  [Returns](#@Returns_50)
+    -  [Assumptions](#@Assumptions_51)
+    -  [Aborts if](#@Aborts_if_52)
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
 -  [Function `search`](#0xc0deb00c_critqueue_search)
-    -  [Returns](#@Returns_49)
-    -  [Assumptions](#@Assumptions_50)
-    -  [Reference diagrams](#@Reference_diagrams_51)
-        -  [Leaf at root](#@Leaf_at_root_52)
-        -  [Inner node at root](#@Inner_node_at_root_53)
-        -  [Testing](#@Testing_54)
+    -  [Returns](#@Returns_53)
+    -  [Assumptions](#@Assumptions_54)
+    -  [Reference diagrams](#@Reference_diagrams_55)
+        -  [Leaf at root](#@Leaf_at_root_56)
+        -  [Inner node at root](#@Inner_node_at_root_57)
+        -  [Testing](#@Testing_58)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1222,7 +1227,7 @@ Insert the given <code>key</code>-<code>value</code> insertion pair into the giv
     <a href="_add">table::add</a>(subqueue_nodes_ref_mut, access_key, subqueue_node);
     // Check the crit-queue head, updating <b>as</b> necessary.
     <a href="critqueue.md#0xc0deb00c_critqueue_insert_check_head">insert_check_head</a>(critqueue_ref_mut, access_key);
-    // <b>if</b> (free_leaf) insert_leaf(critqueue_ref_mut, leaf_key, access_key);
+    // <b>if</b> (free_leaf) <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>(critqueue_ref_mut, leaf_key, access_key);
     access_key // Return access key.
 }
 </code></pre>
@@ -1660,16 +1665,177 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">inse
 
 </details>
 
+<a name="0xc0deb00c_critqueue_insert_leaf"></a>
+
+## Function `insert_leaf`
+
+Insert a free leaf to the crit-bit tree in a crit-queue.
+
+Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
+
+If crit-queue is empty, set root as new leaf key and return,
+otherwise search for the closest leaf in the crit-bit tree. Then
+get the critical bit between the new leaf key and the search
+match, which becomes the critical bitmask of a new inner node to
+insert. Start walking up the tree, inserting the new inner node
+below the first walked node with a larger critical bit, or above
+the root of the tree, whichever comes first.
+
+
+<a name="@Parameters_33"></a>
+
+### Parameters
+
+* <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
+* <code>leaf_key</code>: Leaf key of free leaf to insert.
+* <code>access_key</code>: Unique access key of key-value insertion pair
+just inserted, from which new inner node key is derived.
+
+
+<a name="@Assumptions_34"></a>
+
+### Assumptions
+
+* Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with <code>leaf_key</code>.
+
+
+<a name="@Diagrams_35"></a>
+
+### Diagrams
+
+
+For ease of illustration, critical bitmasks and leaf keys are
+depicted relative to bit 64, but tested with correspondingly
+bitshifted amounts, for inner keys that are additionally
+encoded with a mock insertion key, mock insertion count,
+and inner node bit flag.
+
+1. Start by inserting <code>0011</code> to an empty tree:
+
+>     0011
+
+2. Then insert <code>0100</code>:
+
+>         2nd
+>        /   \
+>     0011   0100
+
+3. Insert <code>0101</code>:
+
+>          2nd
+>         /   \
+>      0011   0th
+>            /   \
+>         0100   0101
+
+4. Insert <code>1000</code>:
+
+>             3rd
+>            /   \
+>          2nd   1000
+>         /   \
+>      0011   0th
+>            /   \
+>         0100   0101
+
+5. Insert <code>0110</code>:
+
+>             3rd
+>            /   \
+>          2nd   1000
+>         /   \
+>      0011   1st
+>            /   \
+>          0th   0110
+>         /   \
+>      0100   0101
+
+
+<a name="@Testing_36"></a>
+
+#### Testing
+
+* <code>test_insert_leaf()</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128, access_key: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    leaf_key: u128,
+    access_key: u128
+) {
+    // If crit-queue is empty, set root <b>as</b> new leaf key and <b>return</b>.
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref_mut.root))
+        <b>return</b> <a href="_fill">option::fill</a>(&<b>mut</b> critqueue_ref_mut.root, leaf_key);
+    // Get inner key for new inner node corresponding <b>to</b> access key.
+    <b>let</b> new_inner_node_key = access_key | <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY">ACCESS_KEY_TO_INNER_KEY</a>;
+    // Search for closest leaf, returning its leaf key, the inner
+    // key of its parent, and the parent's critical bitmask.
+    <b>let</b> (walk_node_key, optional_parent_key, optional_parent_bitmask) =
+        <a href="critqueue.md#0xc0deb00c_critqueue_search">search</a>(critqueue_ref_mut, leaf_key);
+    // Get critical bitmask between new leaf key and walk leaf key.
+    <b>let</b> critical_bitmask = <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bitmask">get_critical_bitmask</a>(leaf_key, walk_node_key);
+    <b>loop</b> { // Start walking up tree from search leaf.
+        // Return <b>if</b> walk node is root and <b>has</b> no parent,
+        <b>if</b> (<a href="_is_none">option::is_none</a>(&optional_parent_key)) <b>return</b>
+            // By inserting free leaf above it.
+            <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_above_root_node">insert_leaf_above_root_node</a>(critqueue_ref_mut, walk_node_key,
+                new_inner_node_key, critical_bitmask, leaf_key);
+        // Otherwise there is a parent, so get its key and bitmask.
+        <b>let</b> (parent_key, parent_bitmask) =
+            (*<a href="_borrow">option::borrow</a>(&optional_parent_key),
+             *<a href="_borrow">option::borrow</a>(&optional_parent_bitmask));
+        // Return <b>if</b> critical bitmask is less than that of parent,
+        <b>if</b> (critical_bitmask &lt; parent_bitmask) <b>return</b>
+            // By inserting free leaf below the parent.
+            <a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf_below_anchor_node">insert_leaf_below_anchor_node</a>(critqueue_ref_mut, parent_key,
+                new_inner_node_key, critical_bitmask, leaf_key);
+        // If have not returned, walk continues at parent node.
+        walk_node_key = parent_key;
+        // Immutably borrow inner nodes <a href="">table</a>.
+        <b>let</b> inners_ref = &critqueue_ref_mut.inners;
+        // Immutably borrow the new inner node <b>to</b> walk.
+        <b>let</b> walk_node_ref = <a href="_borrow">table::borrow</a>(inners_ref, walk_node_key);
+        // Get its optional parent key.
+        optional_parent_key = walk_node_ref.parent;
+        // If new node <b>to</b> walk <b>has</b> no parent:
+        <b>if</b> (<a href="_is_none">option::is_none</a>(&optional_parent_key)) {
+            // Set optional parent bitmask <b>to</b> none.
+            optional_parent_bitmask = <a href="_none">option::none</a>();
+        } <b>else</b> { // If new node <b>to</b> walk does have a parent:
+            // Get the parent's key.
+            parent_key = *(<a href="_borrow">option::borrow</a>(&optional_parent_key));
+            // Immutably borrow the parent.
+            <b>let</b> parent_ref = <a href="_borrow">table::borrow</a>(inners_ref, parent_key);
+            // Pack its bitmask in an <a href="">option</a>.
+            optional_parent_bitmask = <a href="_some">option::some</a>(parent_ref.bitmask);
+        }
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_critqueue_insert_leaf_above_root_node"></a>
 
 ## Function `insert_leaf_above_root_node`
 
 Insert new free leaf and inner node above the root inner node.
 
-Inner function for <code>insert_leaf()</code>.
+Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>()</code>.
 
 
-<a name="@Parameters_33"></a>
+<a name="@Parameters_37"></a>
 
 ### Parameters
 
@@ -1680,16 +1846,16 @@ Inner function for <code>insert_leaf()</code>.
 * <code>new_leaf_key</code>: Leaf key of free leaf to insert to the tree.
 
 
-<a name="@Assumptions_34"></a>
+<a name="@Assumptions_38"></a>
 
 ### Assumptions
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with <code>new_leaf_key</code>.
 * <code>new_inner_node_bitmask</code> is greater than that of root node,
-which has been reached via upward walk in <code>insert_leaf()</code>.
+which has been reached via upward walk in <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>()</code>.
 
 
-<a name="@Reference_diagrams_35"></a>
+<a name="@Reference_diagrams_39"></a>
 
 ### Reference diagrams
 
@@ -1707,7 +1873,7 @@ Both insertion examples reference the following diagram:
 >     1001   1011
 
 
-<a name="@Insertion_above_to_the_left_36"></a>
+<a name="@Insertion_above_to_the_left_40"></a>
 
 #### Insertion above to the left
 
@@ -1721,7 +1887,7 @@ Here, inserting <code>0001</code> yields:
 >                    1001   1011
 
 
-<a name="@Insertion_above_to_the_right_37"></a>
+<a name="@Insertion_above_to_the_right_41"></a>
 
 #### Insertion above to the right
 
@@ -1735,7 +1901,7 @@ If <code>1100</code> were to be inserted instead:
 >                  1001   1011
 
 
-<a name="@Testing_38"></a>
+<a name="@Testing_42"></a>
 
 #### Testing
 
@@ -1795,10 +1961,10 @@ If <code>1100</code> were to be inserted instead:
 
 Insert new free leaf and inner node below anchor node.
 
-Inner function for <code>insert_leaf()</code>.
+Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>()</code>.
 
 
-<a name="@Parameters_39"></a>
+<a name="@Parameters_43"></a>
 
 ### Parameters
 
@@ -1810,18 +1976,18 @@ Inner function for <code>insert_leaf()</code>.
 * <code>new_leaf_key</code>: Leaf key of free leaf to insert to the tree.
 
 
-<a name="@Assumptions_40"></a>
+<a name="@Assumptions_44"></a>
 
 ### Assumptions
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with <code>new_leaf_key</code>.
 * <code>new_inner_node_bitmask</code> is less than that of anchor node,
-which has been reached via upward walk in <code>insert_leaf()</code>.
+which has been reached via upward walk in <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>()</code>.
 * <code>new_inner_node_bitmask</code> is greater than that of the displaced
 child, if the displaced child is an inner node (see below).
 
 
-<a name="@Reference_diagrams_41"></a>
+<a name="@Reference_diagrams_45"></a>
 
 ### Reference diagrams
 
@@ -1841,7 +2007,7 @@ Both insertion examples reference the following diagram:
 >        1001   1011
 
 
-<a name="@Anchor_node_children_polarity_42"></a>
+<a name="@Anchor_node_children_polarity_46"></a>
 
 #### Anchor node children polarity
 
@@ -1856,7 +2022,7 @@ be inserted to the left of <code>1st</code>, while a free leaf key of
 <code>1111</code> would be inserted to the right of <code>3rd</code>.
 
 
-<a name="@Child_displacement_43"></a>
+<a name="@Child_displacement_47"></a>
 
 #### Child displacement
 
@@ -1887,7 +2053,7 @@ displace <code>1st</code>:
 >                    1001   1011
 
 
-<a name="@New_inner_node_children_polarity_44"></a>
+<a name="@New_inner_node_children_polarity_48"></a>
 
 #### New inner node children polarity
 
@@ -1903,7 +2069,7 @@ the new inner node's left child is the displaced child and the
 new inner node's right child is the new leaf.
 
 
-<a name="@Testing_45"></a>
+<a name="@Testing_49"></a>
 
 #### Testing
 
@@ -1992,7 +2158,7 @@ Update a sub-queue, inside an allocated leaf, during insertion.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@Returns_46"></a>
+<a name="@Returns_50"></a>
 
 ### Returns
 
@@ -2000,7 +2166,7 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">inse
 * <code>bool</code>: <code><b>true</b></code> if allocated leaf is a free leaf, else <code><b>false</b></code>.
 
 
-<a name="@Assumptions_47"></a>
+<a name="@Assumptions_51"></a>
 
 ### Assumptions
 
@@ -2011,7 +2177,7 @@ appropriate access key, which has been initialized as if it
 were the sole sub-queue node in a free leaf.
 
 
-<a name="@Aborts_if_48"></a>
+<a name="@Aborts_if_52"></a>
 
 ### Aborts if
 
@@ -2167,7 +2333,7 @@ leaf", return its leaf key, the inner key of its parent, and the
 parent's critical bitmask.
 
 
-<a name="@Returns_49"></a>
+<a name="@Returns_53"></a>
 
 ### Returns
 
@@ -2176,14 +2342,14 @@ parent's critical bitmask.
 * <code>Option&lt;u128&gt;</code>: Match parent's critical bitmask, if any.
 
 
-<a name="@Assumptions_50"></a>
+<a name="@Assumptions_54"></a>
 
 ### Assumptions
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> does not have an empty crit-bit tree.
 
 
-<a name="@Reference_diagrams_51"></a>
+<a name="@Reference_diagrams_55"></a>
 
 ### Reference diagrams
 
@@ -2195,7 +2361,7 @@ encoded with a mock insertion key, mock insertion count,
 and inner node bit flag.
 
 
-<a name="@Leaf_at_root_52"></a>
+<a name="@Leaf_at_root_56"></a>
 
 #### Leaf at root
 
@@ -2207,7 +2373,7 @@ and inner node bit flag.
 | Any        | <code>111</code>          | None                 |
 
 
-<a name="@Inner_node_at_root_53"></a>
+<a name="@Inner_node_at_root_57"></a>
 
 #### Inner node at root
 
@@ -2225,7 +2391,7 @@ and inner node bit flag.
 | <code>111</code>      | <code>111</code>           | <code>1st</code>                 |
 
 
-<a name="@Testing_54"></a>
+<a name="@Testing_58"></a>
 
 #### Testing
 

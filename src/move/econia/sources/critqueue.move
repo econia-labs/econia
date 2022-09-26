@@ -282,8 +282,8 @@
 /// >                             /    \     [k_{3, 0}]
 /// >                            /      \
 /// >          000...000000...000        000...001000...000
-/// >     [k_{0, 0} --> k_{0, 1}]        [k_{1, 0} --> k_{1, 1}]
-/// >      ^ sub-queue head               ^ sub-queue head
+/// >      [k_{0, 0} -> k_{0, 1}]        [k_{1, 0} -> k_{1, 1}]
+/// >       ^ sub-queue head              ^ sub-queue head
 ///
 /// Leaf keys are guaranteed to be unique, and all leaf nodes are stored
 /// in a single hash table.
@@ -382,15 +382,15 @@
 /// >                                          64th
 /// >                                         /    \
 /// >                       000...000000...000      000...001000...000
-/// >     [k_{0, 0} --> k_{0, 1} --> k_{0, 2}]      [k_{1, 0}]
-/// >      ^ sub-queue head
+/// >       [k_{0, 0} -> k_{0, 1} -> k_{0, 2}]      [k_{1, 0}]
+/// >        ^ sub-queue head
 ///
 /// Removal of $k_{0, 1}$ produces:
 ///
 /// >                             64th
 /// >                            /    \
 /// >          000...000000...000      000...001000...000
-/// >     [k_{0, 0} --> k_{0, 2}]      [k_{1, 0}]
+/// >      [k_{0, 0} -> k_{0, 2}]      [k_{1, 0}]
 ///
 /// And similarly for $k_{0, 0}$:
 ///
@@ -664,8 +664,74 @@ module econia::critqueue {
         table::contains(&critqueue_ref.subqueue_nodes, access_key)
     }
 
-    /// Insert the given `key`-`value` insertion pair into the given
+    /// Insert the given key-value insertion pair into the given
     /// `CritQueue`, returning an access key.
+    ///
+    /// # Parameters
+    /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
+    /// * `insertion_key`: Key to insert.
+    /// * `insertion_value`: Value to insert.
+    ///
+    /// # Returns
+    /// * `u128`: Access key for given key-value pair.
+    ///
+    /// # Reference diagrams
+    ///
+    /// ## Conventions
+    ///
+    /// For ease of illustration, critical bitmasks and leaf keys are
+    /// depicted relative to bit 64, but tested with correspondingly
+    /// bitshifted amounts. Insertion keys are given in binary, while
+    /// insertion values and insertion counts are given in decimal:
+    ///
+    /// >     101
+    /// >     [n_0{7} -> n_1{8}]
+    ///
+    /// Here, `101` refers to a crit-bit tree leaf for insertion key
+    /// `101`, which has a sub-queue with node `n_0{7}` at its head,
+    /// having insertion count 0 and an insertion value of 7. The
+    /// next sub-queue node `v_1{8}`, the sub-queue tail, has insertion
+    /// count 1 and insertion value 8.
+    ///
+    /// ## Insertion sequence
+    ///
+    /// 1. Insert `{010, 4}`:
+    ///
+    /// >     010 <- new leaf
+    /// >     [n_0{4}]
+    /// >      ^ new sub-queue node
+    ///
+    /// 2. Insert `{101, 9}`, for `001` as a free leaf with insertion
+    ///    count 4 prior to the insertion:
+    ///
+    /// >             2nd <- new inner node
+    /// >            /   \
+    /// >          010   101 <- new leaf node
+    /// >     [n_0{4}]   [n_5{9}]
+    /// >                 ^ new sub-queue node
+    ///
+    /// 3. Insert `{010, 6}`:
+    ///
+    /// >                       2nd
+    /// >                      /   \
+    /// >                    010   101
+    /// >     [n_0{4} -> n_1{6}]   [n_5{9}]
+    /// >                ^ new sub-queue node
+    ///
+    /// 4. Insert `{000, 8}`, for `000` as a free leaf with insertion
+    ///    count 2 prior to the insertion:
+    ///
+    /// >                          2nd
+    /// >                         /   \
+    /// >     new inner node -> 1st    101
+    /// >                      /   \   [n_5{9}]
+    /// >        new leaf -> 000   010
+    /// >               [n_3{8}]   [n_0{4} -> n_1{6}]
+    /// >                ^ new sub-queue node
+    ///
+    /// ## Testing
+    /// * `test_insert_ascending()`.
+    /// * `test_insert_descending()`.
     public fun insert<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         insertion_key: u64,

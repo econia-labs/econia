@@ -1827,6 +1827,78 @@ module econia::critqueue {
     }
 
     #[test]
+    /// Verify successful execution of `insert()` reference insertions.
+    fun test_insert_ascending() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Allocate free leaves with specified insertion counts.
+        allocate_free_leaf_test(
+            &mut critqueue, u_128(b"101") << INSERTION_KEY | 4);
+        allocate_free_leaf_test(
+            &mut critqueue, u_128(b"000") << INSERTION_KEY | 2);
+        // Insert key-value insertion pairs, storing access keys.
+        // access_key_xxx_y implies insertion key xxx (binary) and
+        // insertion count y (decimal)
+        let access_key_010_0 = insert(&mut critqueue, u_64(b"010"), 4);
+        let access_key_101_5 = insert(&mut critqueue, u_64(b"101"), 9);
+        let access_key_010_1 = insert(&mut critqueue, u_64(b"010"), 6);
+        let access_key_000_3 = insert(&mut critqueue, u_64(b"000"), 8);
+        // Assert access keys.
+        assert!(access_key_010_0 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000"
+        ), 0);
+        assert!(access_key_101_5 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000101",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000101"
+        ), 0);
+        assert!(access_key_010_1 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001"
+        ), 0);
+        assert!(access_key_000_3 == u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000011"
+        ), 0);
+        // Assert crit-queue head.
+        assert!(*option::borrow(&critqueue.head) == access_key_000_3, 0);
+        // Get inner keys from the access keys that lead to
+        // their generation, in order of insertion.
+        let inner_key_2nd = access_key_101_5 | ACCESS_KEY_TO_INNER_KEY;
+        let inner_key_1st = access_key_000_3 | ACCESS_KEY_TO_INNER_KEY;
+        // Assert crit-queue root.
+        assert!(*option::borrow(&critqueue.root) == inner_key_2nd, 0);
+        // Get leaf keys
+        let leaf_key_000 = access_key_000_3 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_010 = access_key_010_1 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_101 = access_key_101_5 & ACCESS_KEY_TO_LEAF_KEY;
+        // Assert inner node state in ascending order of critical bit.
+        // Assert all inner node fields, for ascending critical bit.
+        let (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_1st);
+        assert!(bitmask                  == 1 << (1 + INSERTION_KEY), 0);
+        assert!(*option::borrow(&parent) == inner_key_2nd           , 0);
+        assert!(left                     == leaf_key_000            , 0);
+        assert!(right                    == leaf_key_010            , 0);
+        (bitmask, parent, left, right) =
+            get_inner_fields_test(&critqueue, inner_key_2nd);
+        assert!(bitmask                  == 1 << (2 + INSERTION_KEY), 0);
+        assert!(option::is_none(&parent)                            , 0);
+        assert!(left                     == inner_key_1st           , 0);
+        assert!(right                    == leaf_key_101            , 0);
+        // Assert leaves and sub-queue node state in ascending
+        // leaf order, then ascending insertion count.
+        drop_critqueue_test(critqueue) // Drop crit-queue.
+    }
+
+    #[test]
     /// Verify successful allocation.
     fun test_insert_allocate_leaf() {
         let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.

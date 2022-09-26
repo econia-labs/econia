@@ -570,7 +570,6 @@ module econia::incentives {
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    #[cmd]
     /// Wrapped call to `set_incentives()`, when calling after
     /// initialization.
     ///

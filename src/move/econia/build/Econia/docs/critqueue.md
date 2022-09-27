@@ -553,7 +553,7 @@ In the present implementation, key-value insertion pairs are
 inserted via <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>, which accepts a <code>u64</code> insertion key and
 insertion value of type <code>V</code>. A corresponding <code>u128</code> access key is
 returned, which can be used for subsequent access key lookup via <code>
-<a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code>dequeue()</code>, or <code>remove()</code>.
+<a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code>dequeue()</code>, or <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
 
 
 <a name="@Inserting_25"></a>
@@ -658,6 +658,7 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
         -  [Testing](#@Testing_34)
 -  [Function `is_empty`](#0xc0deb00c_critqueue_is_empty)
 -  [Function `new`](#0xc0deb00c_critqueue_new)
+-  [Function `remove`](#0xc0deb00c_critqueue_remove)
 -  [Function `would_become_new_head`](#0xc0deb00c_critqueue_would_become_new_head)
 -  [Function `would_trail_head`](#0xc0deb00c_critqueue_would_trail_head)
 -  [Function `get_critical_bitmask`](#0xc0deb00c_critqueue_get_critical_bitmask)
@@ -694,6 +695,7 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
+-  [Function `remove_leaf`](#0xc0deb00c_critqueue_remove_leaf)
 -  [Function `remove_subqueue_node`](#0xc0deb00c_critqueue_remove_subqueue_node)
     -  [Parameters](#@Parameters_63)
     -  [Returns](#@Returns_64)
@@ -1423,6 +1425,64 @@ Return <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>
         leaves: <a href="_new">table::new</a>(),
         subqueue_nodes: <a href="_new">table::new</a>()
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_remove"></a>
+
+## Function `remove`
+
+Remove and return from given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> the insertion value
+corresponding to <code>access_key</code>, aborting if no such entry.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    access_key: u128
+): V {
+    // Get insertion value by removing the sub-queue node it was
+    // contained in, storing the optional new head field of the
+    // corresponding sub-queue.
+    <b>let</b> (insertion_value, optional_new_subqueue_head_field) =
+        <a href="critqueue.md#0xc0deb00c_critqueue_remove_subqueue_node">remove_subqueue_node</a>(critqueue_ref_mut, access_key);
+    // If the sub-queue <b>has</b> a new head field:
+    <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_new_subqueue_head_field)) {
+        // Get the new sub-queue head field.
+        <b>let</b> new_subqueue_head_field =
+            *<a href="_borrow">option::borrow</a>(&optional_new_subqueue_head_field);
+        // If the new sub-queue head field is none, then the
+        // sub-queue is now empty and its leaf is now free:
+        <b>if</b> (<a href="_is_none">option::is_none</a>(&new_subqueue_head_field)) {
+            // So remove the leaf from the crit-bit tree.
+            <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>(critqueue_ref_mut,
+                access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>);
+        // Otherwise, <b>if</b> the new sub-queue head field indicates a
+        // different sub-queue node then the one just removed:
+        } <b>else</b> {
+            // Check <b>to</b> see <b>if</b> the removed sub-queue node was the
+            // head of the crit-queue.
+            <b>let</b> just_removed_critqueue_head = access_key ==
+                *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.head);
+            // If the crit-queue head was just removed, then the
+            // new sub-queue head is also the new crit-queue head.
+            <b>if</b> (just_removed_critqueue_head)
+                critqueue_ref_mut.head = new_subqueue_head_field;
+        }
+    };
+    insertion_value // Return insertion value.
 }
 </code></pre>
 
@@ -2501,11 +2561,46 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 </details>
 
+<a name="0xc0deb00c_critqueue_remove_leaf"></a>
+
+## Function `remove_leaf`
+
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>&lt;V&gt;(_critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _leaf_key: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>&lt;V&gt;(
+    _critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    _leaf_key: u128,
+) {
+    // If leaf key <b>has</b> same insertion key <b>as</b> crit-queue head:
+        // Traverse <b>to</b> predecessor/successor, based on order
+        // If traverse returns none, set crit-queue head <b>as</b> <b>return</b>
+        // Else <b>if</b> traverse returns some, then at a leaf <b>with</b> a
+        // sub-queue, so set crit-queue head <b>as</b> sub-queue's head
+    // Crit-queue head is now current.
+    // Remove nodes <b>as</b> in crit-bit
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_critqueue_remove_subqueue_node"></a>
 
 ## Function `remove_subqueue_node`
 
 Remove insertion value corresponding to given access key.
+
+Aborts if no such insertion value for given access key.
 
 
 <a name="@Parameters_63"></a>

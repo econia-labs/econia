@@ -794,6 +794,44 @@ module econia::critqueue {
         }
     }
 
+    /// Remove and return from given `CritQueue` the insertion value
+    /// corresponding to `access_key`, aborting if no such entry.
+    public fun remove<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        access_key: u128
+    ): V {
+        // Get insertion value by removing the sub-queue node it was
+        // contained in, storing the optional new head field of the
+        // corresponding sub-queue.
+        let (insertion_value, optional_new_subqueue_head_field) =
+            remove_subqueue_node(critqueue_ref_mut, access_key);
+        // If the sub-queue has a new head field:
+        if (option::is_some(&optional_new_subqueue_head_field)) {
+            // Get the new sub-queue head field.
+            let new_subqueue_head_field =
+                *option::borrow(&optional_new_subqueue_head_field);
+            // If the new sub-queue head field is none, then the
+            // sub-queue is now empty and its leaf is now free:
+            if (option::is_none(&new_subqueue_head_field)) {
+                // So remove the leaf from the crit-bit tree.
+                remove_leaf(critqueue_ref_mut,
+                    access_key & ACCESS_KEY_TO_LEAF_KEY);
+            // Otherwise, if the new sub-queue head field indicates a
+            // different sub-queue node then the one just removed:
+            } else {
+                // Check to see if the removed sub-queue node was the
+                // head of the crit-queue.
+                let just_removed_critqueue_head = access_key ==
+                    *option::borrow(&critqueue_ref_mut.head);
+                // If the crit-queue head was just removed, then the
+                // new sub-queue head is also the new crit-queue head.
+                if (just_removed_critqueue_head)
+                    critqueue_ref_mut.head = new_subqueue_head_field;
+            }
+        };
+        insertion_value // Return insertion value.
+    }
+
     /// Return `true` if, were `insertion_key` to be inserted, its
     /// access key would become the new head of the given `CritQueue`.
     public fun would_become_new_head<V>(
@@ -1518,7 +1556,22 @@ module econia::critqueue {
     /// Return `true` if `key` is set at `bit_number`.
     fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
 
+    fun remove_leaf<V>(
+        _critqueue_ref_mut: &mut CritQueue<V>,
+        _leaf_key: u128,
+    ) {
+        // If leaf key has same insertion key as crit-queue head:
+            // Traverse to predecessor/successor, based on order
+            // If traverse returns none, set crit-queue head as return
+            // Else if traverse returns some, then at a leaf with a
+            // sub-queue, so set crit-queue head as sub-queue's head
+        // Crit-queue head is now current.
+        // Remove nodes as in crit-bit
+    }
+
     /// Remove insertion value corresponding to given access key.
+    ///
+    /// Aborts if no such insertion value for given access key.
     ///
     /// # Parameters
     /// * `critqueue_ref_mut`: Mutable reference to given `CritQueue`.

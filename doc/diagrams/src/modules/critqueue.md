@@ -4,6 +4,7 @@
   - [Bitwise functions](#bitwise-functions)
   - [Initialization](#initialization)
   - [Insertion](#insertion)
+  - [Removal](#removal)
   - [Borrowers](#borrowers)
   - [Lookup](#lookup)
 
@@ -44,6 +45,20 @@ insert_leaf --> search
 insert_leaf --> get_critical_bitmask
 insert_leaf --> insert_leaf_above_root_node
 insert_leaf --> insert_leaf_below_anchor_node
+
+```
+
+## Removal
+
+```mermaid
+
+flowchart LR
+
+dequeue --> remove
+
+remove --> remove_subqueue_node
+remove --> remove_leaf
+remove_leaf --> traverse
 
 ```
 

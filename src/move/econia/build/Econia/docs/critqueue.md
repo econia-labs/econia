@@ -694,22 +694,29 @@ are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue(
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
--  [Function `search`](#0xc0deb00c_critqueue_search)
-    -  [Returns](#@Returns_63)
-    -  [Assumptions](#@Assumptions_64)
+-  [Function `remove_subqueue_node`](#0xc0deb00c_critqueue_remove_subqueue_node)
+    -  [Parameters](#@Parameters_63)
+    -  [Returns](#@Returns_64)
     -  [Reference diagrams](#@Reference_diagrams_65)
-        -  [Leaf at root](#@Leaf_at_root_66)
-        -  [Inner node at root](#@Inner_node_at_root_67)
+        -  [Conventions](#@Conventions_66)
+        -  [Removal sequence:](#@Removal_sequence:_67)
         -  [Testing](#@Testing_68)
+-  [Function `search`](#0xc0deb00c_critqueue_search)
+    -  [Returns](#@Returns_69)
+    -  [Assumptions](#@Assumptions_70)
+    -  [Reference diagrams](#@Reference_diagrams_71)
+        -  [Leaf at root](#@Leaf_at_root_72)
+        -  [Inner node at root](#@Inner_node_at_root_73)
+        -  [Testing](#@Testing_74)
 -  [Function `traverse`](#0xc0deb00c_critqueue_traverse)
-    -  [Parameters](#@Parameters_69)
-    -  [Returns](#@Returns_70)
-    -  [Membership considerations](#@Membership_considerations_71)
-    -  [Reference diagram](#@Reference_diagram_72)
-        -  [Conventions](#@Conventions_73)
-        -  [Inorder predecessor](#@Inorder_predecessor_74)
-        -  [Inorder successor](#@Inorder_successor_75)
-        -  [Testing](#@Testing_76)
+    -  [Parameters](#@Parameters_75)
+    -  [Returns](#@Returns_76)
+    -  [Membership considerations](#@Membership_considerations_77)
+    -  [Reference diagram](#@Reference_diagram_78)
+        -  [Conventions](#@Conventions_79)
+        -  [Inorder predecessor](#@Inorder_predecessor_80)
+        -  [Inorder successor](#@Inorder_successor_81)
+        -  [Testing](#@Testing_82)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -2494,6 +2501,145 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 </details>
 
+<a name="0xc0deb00c_critqueue_remove_subqueue_node"></a>
+
+## Function `remove_subqueue_node`
+
+Remove insertion value corresponding to given access key.
+
+
+<a name="@Parameters_63"></a>
+
+### Parameters
+
+* <code>critqueue_ref_mut</code>: Mutable reference to given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
+* <code>access_key</code>: Access key corresponding to insertion value.
+
+
+<a name="@Returns_64"></a>
+
+### Returns
+
+* <code>V</code>: Insertion value corresponding to <code>access_key</code>.
+* <code>Option&lt;Option&lt;u128&gt;&gt;</code>: The new sub-queue head field indicated
+by the corresponding leaf (<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a>.head</code>), if removal resulted
+in an update to the sub-queue head field.
+
+
+<a name="@Reference_diagrams_65"></a>
+
+### Reference diagrams
+
+
+
+<a name="@Conventions_66"></a>
+
+#### Conventions
+
+
+For ease of illustration, sub-queue node leaf key is depicted
+relative to bit 64, but tested with a correspondingly bitshifted
+amount. Insertion counts and values are given in decimal:
+
+>     101
+>     [n_0{7} -> n_1{8} -> n_2{4} -> n_3{5}]
+
+Here, all sub-queue nodes have insertion key <code>101</code>, and <code>n_i{j}</code>
+indicates a sub-queue node with insertion count <code>i</code> and
+insertion value <code>j</code>.
+
+
+<a name="@Removal_sequence:_67"></a>
+
+#### Removal sequence:
+
+
+1. Remove <code>n_2{4}</code>, neither the sub-queue head nor tail,
+yielding:
+
+>     101
+>     [n_0{7} -> n_1{8} -> n_3{5}]
+
+2. Remove <code>n_3{5}</code>, the sub-queue tail:
+
+>     101
+>     [n_0{7} -> n_1{8}]
+
+3. Remove <code>n_0{7}</code>, the sub-queue head:
+
+>     101
+>     [n_1{8}]
+
+4. Remove <code>n_1{8}</code>, the sub-queue head and tail:
+
+>     101
+>     []
+
+
+<a name="@Testing_68"></a>
+
+#### Testing
+
+* <code>test_remove_subqueue_node()</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_subqueue_node">remove_subqueue_node</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): (V, <a href="_Option">option::Option</a>&lt;<a href="_Option">option::Option</a>&lt;u128&gt;&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_subqueue_node">remove_subqueue_node</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    access_key: u128
+): (
+    V,
+    Option&lt;Option&lt;u128&gt;&gt;
+) {
+    // Mutably borrow sub-queue nodes <a href="">table</a>.
+    <b>let</b> subqueue_nodes_ref_mut = &<b>mut</b> critqueue_ref_mut.subqueue_nodes;
+    // Mutably borrow leaves <a href="">table</a>.
+    <b>let</b> leaves_ref_mut = &<b>mut</b> critqueue_ref_mut.leaves;
+    // Mutably borrow leaf containing corresponding sub-queue.
+    <b>let</b> leaf_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, access_key &
+        <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>);
+    // Remove sub-queue node from <a href="">table</a> and unpack its fields.
+    <b>let</b> <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a>{insertion_value, previous, next} = <a href="_remove">table::remove</a>(
+        subqueue_nodes_ref_mut, access_key);
+    // Assume sub-queue head is unaltered by removal.
+    <b>let</b> optional_new_subqueue_head_field = <a href="_none">option::none</a>();
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&previous)) { // If node was sub-queue head:
+        // Set <b>as</b> sub-queue head field the node's next field.
+        leaf_ref_mut.head = next;
+        // Update optional new sub-queue head field <b>return</b> value.
+        optional_new_subqueue_head_field = <a href="_some">option::some</a>(next);
+    } <b>else</b> { // If node was not sub-queue head:
+        // Update the node having the previous access key <b>to</b> have <b>as</b>
+        // its next field the next field of the removed node.
+        <a href="_borrow_mut">table::borrow_mut</a>(subqueue_nodes_ref_mut,
+            *<a href="_borrow">option::borrow</a>(&previous)).next = next;
+    };
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&next)) { // If node was sub-queue tail:
+        // Set <b>as</b> sub-queue tail field the node's previous field.
+        leaf_ref_mut.tail = previous;
+    } <b>else</b> { // If node was not sub-queue tail:
+        // Update the node having the next access key <b>to</b> have <b>as</b> its
+        // previous field the previous field of the removed node.
+        <a href="_borrow_mut">table::borrow_mut</a>(subqueue_nodes_ref_mut,
+            *<a href="_borrow">option::borrow</a>(&next)).previous = previous;
+    };
+    // Return insertion value and optional new sub-queue head field.
+    (insertion_value, optional_new_subqueue_head_field)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_critqueue_search"></a>
 
 ## Function `search`
@@ -2509,7 +2655,7 @@ leaf", return its leaf key, the inner key of its parent, and the
 parent's critical bitmask.
 
 
-<a name="@Returns_63"></a>
+<a name="@Returns_69"></a>
 
 ### Returns
 
@@ -2518,14 +2664,14 @@ parent's critical bitmask.
 * <code>Option&lt;u128&gt;</code>: Match parent's critical bitmask, if any.
 
 
-<a name="@Assumptions_64"></a>
+<a name="@Assumptions_70"></a>
 
 ### Assumptions
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> does not have an empty crit-bit tree.
 
 
-<a name="@Reference_diagrams_65"></a>
+<a name="@Reference_diagrams_71"></a>
 
 ### Reference diagrams
 
@@ -2537,7 +2683,7 @@ encoded with a mock insertion key, mock insertion count,
 and inner node bit flag.
 
 
-<a name="@Leaf_at_root_66"></a>
+<a name="@Leaf_at_root_72"></a>
 
 #### Leaf at root
 
@@ -2549,7 +2695,7 @@ and inner node bit flag.
 | Any        | <code>111</code>          | None                 |
 
 
-<a name="@Inner_node_at_root_67"></a>
+<a name="@Inner_node_at_root_73"></a>
 
 #### Inner node at root
 
@@ -2567,7 +2713,7 @@ and inner node bit flag.
 | <code>111</code>      | <code>111</code>           | <code>1st</code>                 |
 
 
-<a name="@Testing_68"></a>
+<a name="@Testing_74"></a>
 
 #### Testing
 
@@ -2637,7 +2783,7 @@ and inner node bit flag.
 Traverse from leaf to inorder predecessor or successor.
 
 
-<a name="@Parameters_69"></a>
+<a name="@Parameters_75"></a>
 
 ### Parameters
 
@@ -2646,7 +2792,7 @@ Traverse from leaf to inorder predecessor or successor.
 * <code>target</code>: Either <code><a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_SUCCESSOR">SUCCESSOR</a></code>.
 
 
-<a name="@Returns_70"></a>
+<a name="@Returns_76"></a>
 
 ### Returns
 
@@ -2654,7 +2800,7 @@ Traverse from leaf to inorder predecessor or successor.
 successor to leaf having <code>start_leaf_key</code>, if any.
 
 
-<a name="@Membership_considerations_71"></a>
+<a name="@Membership_considerations_77"></a>
 
 ### Membership considerations
 
@@ -2663,13 +2809,13 @@ successor to leaf having <code>start_leaf_key</code>, if any.
 * Returns none if <code>start_leaf_key</code> indicates crit-bit root.
 
 
-<a name="@Reference_diagram_72"></a>
+<a name="@Reference_diagram_78"></a>
 
 ### Reference diagram
 
 
 
-<a name="@Conventions_73"></a>
+<a name="@Conventions_79"></a>
 
 #### Conventions
 
@@ -2692,7 +2838,7 @@ Traversal starts at the "start leaf", walks to an "apex node",
 then ends at the "target leaf", if any.
 
 
-<a name="@Inorder_predecessor_74"></a>
+<a name="@Inorder_predecessor_80"></a>
 
 #### Inorder predecessor
 
@@ -2714,7 +2860,7 @@ along right children, breaking out at a leaf.
 | <code>0011</code>    | None      | None        |
 
 
-<a name="@Inorder_successor_75"></a>
+<a name="@Inorder_successor_81"></a>
 
 #### Inorder successor
 
@@ -2736,7 +2882,7 @@ then walk along left children, breaking out at a leaf.
 | <code>1000</code>    | None      | None        |
 
 
-<a name="@Testing_76"></a>
+<a name="@Testing_82"></a>
 
 #### Testing
 

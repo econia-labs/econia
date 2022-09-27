@@ -1518,6 +1518,101 @@ module econia::critqueue {
     /// Return `true` if `key` is set at `bit_number`.
     fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
 
+    /// Remove insertion value corresponding to given access key.
+    ///
+    /// # Parameters
+    /// * `critqueue_ref_mut`: Mutable reference to given `CritQueue`.
+    /// * `access_key`: Access key corresponding to insertion value.
+    ///
+    /// # Returns
+    /// * `V`: Insertion value corresponding to `access_key`.
+    /// * `Option<Option<u128>>`: The new sub-queue head field indicated
+    ///   by the corresponding leaf (`Leaf.head`), if removal resulted
+    ///   in an update to the sub-queue head field.
+    ///
+    /// # Reference diagrams
+    ///
+    /// ## Conventions
+    ///
+    /// For ease of illustration, sub-queue node leaf key is depicted
+    /// relative to bit 64, but tested with a correspondingly bitshifted
+    /// amount. Insertion counts and values are given in decimal:
+    ///
+    /// >     101
+    /// >     [n_0{7} -> n_1{8} -> n_2{4} -> n_3{5}]
+    ///
+    /// Here, all sub-queue nodes have insertion key `101`, and `n_i{j}`
+    /// indicates a sub-queue node with insertion count `i` and
+    /// insertion value `j`.
+    ///
+    /// ## Removal sequence:
+    ///
+    /// 1. Remove `n_2{4}`, neither the sub-queue head nor tail,
+    ///    yielding:
+    ///
+    /// >     101
+    /// >     [n_0{7} -> n_1{8} -> n_3{5}]
+    ///
+    /// 2. Remove `n_3{5}`, the sub-queue tail:
+    ///
+    /// >     101
+    /// >     [n_0{7} -> n_1{8}]
+    ///
+    /// 3. Remove `n_0{7}`, the sub-queue head:
+    ///
+    /// >     101
+    /// >     [n_1{8}]
+    ///
+    /// 4. Remove `n_1{8}`, the sub-queue head and tail:
+    ///
+    /// >     101
+    /// >     []
+    ///
+    /// ## Testing
+    /// * `test_remove_subqueue_node()`
+    fun remove_subqueue_node<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        access_key: u128
+    ): (
+        V,
+        Option<Option<u128>>
+    ) {
+        // Mutably borrow sub-queue nodes table.
+        let subqueue_nodes_ref_mut = &mut critqueue_ref_mut.subqueue_nodes;
+        // Mutably borrow leaves table.
+        let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
+        // Mutably borrow leaf containing corresponding sub-queue.
+        let leaf_ref_mut = table::borrow_mut(leaves_ref_mut, access_key &
+            ACCESS_KEY_TO_LEAF_KEY);
+        // Remove sub-queue node from table and unpack its fields.
+        let SubQueueNode{insertion_value, previous, next} = table::remove(
+            subqueue_nodes_ref_mut, access_key);
+        // Assume sub-queue head is unaltered by removal.
+        let optional_new_subqueue_head_field = option::none();
+        if (option::is_none(&previous)) { // If node was sub-queue head:
+            // Set as sub-queue head field the node's next field.
+            leaf_ref_mut.head = next;
+            // Update optional new sub-queue head field return value.
+            optional_new_subqueue_head_field = option::some(next);
+        } else { // If node was not sub-queue head:
+            // Update the node having the previous access key to have as
+            // its next field the next field of the removed node.
+            table::borrow_mut(subqueue_nodes_ref_mut,
+                *option::borrow(&previous)).next = next;
+        };
+        if (option::is_none(&next)) { // If node was sub-queue tail:
+            // Set as sub-queue tail field the node's previous field.
+            leaf_ref_mut.tail = previous;
+        } else { // If node was not sub-queue tail:
+            // Update the node having the next access key to have as its
+            // previous field the previous field of the removed node.
+            table::borrow_mut(subqueue_nodes_ref_mut,
+                *option::borrow(&next)).previous = previous;
+        };
+        // Return insertion value and optional new sub-queue head field.
+        (insertion_value, optional_new_subqueue_head_field)
+    }
+
     /// Search in given `CritQueue` for closest match to `seed_key`.
     ///
     /// If root is a leaf, return immediately. Otherwise, starting at
@@ -2433,7 +2528,7 @@ module econia::critqueue {
     /// Verify state updates for `insert_leaf_above_root_node()`
     /// reference insertion 2.
     fun test_insert_leaf_above_root_node_2() {
-        // Get ascending crit-queue.
+        // Get descending crit-queue.
         let critqueue = new<u8>(DESCENDING);
         // Mutably borrow leaves table.
         let leaves_ref_mut = &mut critqueue.leaves;
@@ -2546,7 +2641,7 @@ module econia::critqueue {
     /// Verify state updates for `insert_leaf_above_root_node()`
     /// reference insertion 4.
     fun test_insert_leaf_above_root_node_4() {
-        // Get ascending crit-queue.
+        // Get descending crit-queue.
         let critqueue = new<u8>(DESCENDING);
         // Mutably borrow inner nodes table.
         let inners_ref_mut = &mut critqueue.inners;
@@ -2871,7 +2966,7 @@ module econia::critqueue {
     #[test]
     /// Verify correct update for descending crit-queue, free leaf.
     fun test_insert_update_subqueue_descending_free() {
-        // Get ascending crit-queue.
+        // Get descending crit-queue.
         let critqueue = new<u8>(DESCENDING);
         let insertion_key = u_64(b"1010101"); // Get insertion key.
         let insertion_value = 0; // Declare quasi-null insertion value.
@@ -3074,6 +3169,92 @@ module econia::critqueue {
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
         )), 0);
+    }
+
+    #[test]
+    /// Verify reference removals from `remove_subqueue_nodes()`.
+    fun test_remove_subqueue_node() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Insert sub-queue nodes, storing relevant access keys.
+        let access_key_n_0_7 = insert(&mut critqueue, u_64(b"101"), 7);
+        let access_key_n_1_8 = insert(&mut critqueue, u_64(b"101"), 8);
+        let access_key_n_2_4 = insert(&mut critqueue, u_64(b"101"), 4);
+        let access_key_n_3_5 = insert(&mut critqueue, u_64(b"101"), 5);
+        // Get leaf key.
+        let leaf_key = access_key_n_0_7 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute first reference removal, storing returns.
+        let (insertion_value, optional_new_subqueue_head_field) =
+            remove_subqueue_node(&mut critqueue, access_key_n_2_4);
+        // Assert returns.
+        assert!(insertion_value == 4, 0);
+        assert!(option::is_none(&optional_new_subqueue_head_field), 0);
+        // Assert sub-queue head and tail.
+        let (_, _, head, tail) = get_leaf_fields_test(&critqueue, leaf_key);
+        assert!(*option::borrow(&head) == access_key_n_0_7, 0);
+        assert!(*option::borrow(&tail) == access_key_n_3_5, 0);
+        // Assert remaining sub-queue nodes' previous and next fields.
+        let (_, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_n_0_7);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(*option::borrow(&next)     == access_key_n_1_8, 0);
+        (_, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_n_1_8);
+        assert!(*option::borrow(&previous) == access_key_n_0_7, 0);
+        assert!(*option::borrow(&next)     == access_key_n_3_5, 0);
+        (_, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_n_3_5);
+        assert!(*option::borrow(&previous) == access_key_n_1_8, 0);
+        assert!(option::is_none(&next)                        , 0);
+        // Execute second reference removal, storing returns.
+        (insertion_value, optional_new_subqueue_head_field) =
+            remove_subqueue_node(&mut critqueue, access_key_n_3_5);
+        // Assert returns.
+        assert!(insertion_value == 5, 0);
+        assert!(option::is_none(&optional_new_subqueue_head_field), 0);
+        // Assert sub-queue head and tail.
+        (_, _, head, tail) = get_leaf_fields_test(&critqueue, leaf_key);
+        assert!(*option::borrow(&head) == access_key_n_0_7, 0);
+        assert!(*option::borrow(&tail) == access_key_n_1_8, 0);
+        // Assert remaining sub-queue nodes' previous and next fields.
+        (_, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_n_0_7);
+        assert!(option::is_none(&previous)                    , 0);
+        assert!(*option::borrow(&next)     == access_key_n_1_8, 0);
+        (_, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_n_1_8);
+        assert!(*option::borrow(&previous) == access_key_n_0_7, 0);
+        assert!(option::is_none(&next)                        , 0);
+        // Execute third reference removal, storing returns.
+        (insertion_value, optional_new_subqueue_head_field) =
+            remove_subqueue_node(&mut critqueue, access_key_n_0_7);
+        // Assert returns.
+        assert!(insertion_value == 7, 0);
+        let new_subqueue_head_field =
+            *option::borrow(&optional_new_subqueue_head_field);
+        assert!(*option::borrow(&new_subqueue_head_field) ==
+            access_key_n_1_8, 0);
+        // Assert sub-queue head and tail.
+        (_, _, head, tail) = get_leaf_fields_test(&critqueue, leaf_key);
+        assert!(*option::borrow(&head) == access_key_n_1_8, 0);
+        assert!(*option::borrow(&tail) == access_key_n_1_8, 0);
+        // Assert remaining sub-queue node's previous and next fields.
+        (_, previous, next) =
+            get_subqueue_node_fields_test(&critqueue, access_key_n_1_8);
+        assert!(option::is_none(&previous), 0);
+        assert!(option::is_none(&next)    , 0);
+        // Execute third reference removal, storing returns.
+        (insertion_value, optional_new_subqueue_head_field) =
+            remove_subqueue_node(&mut critqueue, access_key_n_1_8);
+        // Assert returns.
+        assert!(insertion_value == 8, 0);
+        let new_subqueue_head_field =
+            *option::borrow(&optional_new_subqueue_head_field);
+        assert!(option::is_none(&new_subqueue_head_field), 0);
+        // Assert sub-queue head and tail.
+        (_, _, head, tail) = get_leaf_fields_test(&critqueue, leaf_key);
+        assert!(option::is_none(&head), 0);
+        assert!(option::is_none(&tail), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
     #[test]

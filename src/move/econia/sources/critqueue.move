@@ -1,13 +1,22 @@
 /// Crit-queue: A hybrid between a crit-bit tree and a queue.
 ///
 /// A crit-queue contains an inner crit-bit tree with sub-queues at each
-/// leaf node, enabling chronological ordering among multiple instances
-/// of the same insertion key. While multiple instances of the same
-/// insertion key are sorted by order of insertion, different
-/// insertion keys can be sorted in either ascending or descending
-/// order relative to the head of the crit-queue, as specified during
-/// initialization. Like a crit-bit tree, a crit-queue can be used as an
-/// associative array that maps keys to values, as in the present
+/// leaf node, and can store multiple instances of the same insertion
+/// key. Each such instance is stored in its own sub-queue node at a
+/// crit-bit tree leaf corresponding to the given insertion key, with
+/// multiple instances of the same insertion key sorted by order of
+/// insertion within a sub-queue. Different insertion keys,
+/// corresponding to different leaves in the crit-bit tree, are sorted
+/// in lexicographical order, with the effect that individual insertion
+/// key instances can be dequeued from the crit-queue in:
+///
+/// 1. Either ascending or descending order of insertion key (with
+///    polarity set upon initialization), then by
+/// 2. Ascending order of insertion within a sub-queue.
+///
+/// Like a crit-bit tree, a crit-queue allows for insertions and
+/// removals from any portion of the crit-queue, and can also be used as
+/// an associative array for mapping keys to values, as in the present
 /// implementation.
 ///
 /// The present implementation, based on hash tables, offers:
@@ -18,7 +27,7 @@
 ///   case.
 /// * Iterated dequeues that are always $O(1)$.
 ///
-/// # Module-level documentation sections
+/// # General overview sections
 ///
 /// [Bit conventions](#bit-conventions)
 ///
@@ -54,6 +63,8 @@
 /// * [Inserting](#inserting)
 /// * [Removing](#removing)
 /// * [Dequeuing](#dequeuing)
+///
+/// [Complete docgen index](#complete-docgen-index)
 ///
 /// # Bit conventions
 ///
@@ -137,13 +148,13 @@
 ///
 /// produces:
 ///
-/// >        2nd
-/// >       /   \
-/// >     001   1st
-/// >          /   \
-/// >        101   0th
-/// >             /   \
-/// >           110   111
+/// >                    2nd
+/// >                   /   \
+/// >                 001   1st <- has new right child
+/// >                      /   \
+/// >                    101   0th <- new inner node
+/// >                         /   \
+/// >     has new parent -> 110   111 <- new leaf
 ///
 /// Here, `111` may not be re-inserted unless it is first removed from
 /// the tree.
@@ -156,9 +167,9 @@
 ///
 /// >        2nd
 /// >       /   \
-/// >     001   1st
+/// >     001   1st <- has new right child
 /// >          /   \
-/// >        101    110
+/// >        101    110 <- has new parent
 ///
 /// ## As a map
 ///
@@ -492,8 +503,9 @@
 /// the head of the queue, they are not parallelizable. Dequeues
 /// are initialized via `dequeue_init()`, and iterated via `dequeue()`.
 ///
-/// ---
+/// # Complete docgen index
 ///
+/// The below index is automatically generated from source code:
 module econia::critqueue {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1598,7 +1610,7 @@ module econia::critqueue {
     /// indicates a sub-queue node with insertion count `i` and
     /// insertion value `j`.
     ///
-    /// ## Removal sequence:
+    /// ## Removal sequence
     ///
     /// 1. Remove `n_2{4}`, neither the sub-queue head nor tail,
     ///    yielding:

@@ -812,29 +812,50 @@ module econia::critqueue {
         critqueue_ref_mut: &mut CritQueue<V>,
         access_key: u128
     ): V {
-        // Get insertion value by removing the sub-queue node it was
-        // contained in, storing the optional new head field of the
+        // Get requested insertion value by removing the sub-queue node
+        // it was stored in, storing the optional new head field of the
         // corresponding sub-queue.
         let (insertion_value, optional_new_subqueue_head_field) =
             remove_subqueue_node(critqueue_ref_mut, access_key);
+        // Check if removed sub-queue node was head of the crit-queue.
+        let just_removed_critqueue_head = access_key ==
+            *option::borrow(&critqueue_ref_mut.head);
         // If the sub-queue has a new head field:
         if (option::is_some(&optional_new_subqueue_head_field)) {
             // Get the new sub-queue head field.
             let new_subqueue_head_field =
                 *option::borrow(&optional_new_subqueue_head_field);
             // If the new sub-queue head field is none, then the
-            // sub-queue is now empty and its leaf is now free:
+            // sub-queue is now empty, so the leaf needs to be freed.
             if (option::is_none(&new_subqueue_head_field)) {
-                // So remove the leaf from the crit-bit tree.
-                remove_leaf(critqueue_ref_mut,
-                    access_key & ACCESS_KEY_TO_LEAF_KEY);
+                // Get the leaf's key from the access key.
+                let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
+                // If the crit-queue head was just removed, update it
+                // before freeing the leaf:
+                if (just_removed_critqueue_head) {
+                    // Get crit-queue insertion key sort order.
+                    let order = critqueue_ref_mut.order;
+                    // If ascending crit-queue, try traversing to the
+                    // successor of the leaf to free,
+                    let target = if (order == ASCENDING) SUCCESSOR else
+                        PREDECESSOR; // Otherwise the predecessor.
+                    // Traverse, storing optional next leaf key.
+                    let optional_next_leaf_key =
+                        traverse(critqueue_ref_mut, leaf_key, target);
+                    // Crit-queue is empty if there is no next key.
+                    let now_empty = option::is_none(&optional_next_leaf_key);
+                    // If crit-queue now empty, it has no head.
+                    critqueue_ref_mut.head = if (now_empty) option::none()
+                        // Otherwise, the new crit-queue head is the
+                        // head of the leaf just traversed to.
+                        else table::borrow(&critqueue_ref_mut.leaves,
+                            *option::borrow(&optional_next_leaf_key)).head;
+                }; // The crit-queue head is now updated.
+                // Free the leaf by removing it from the crit-bit tree.
+                remove_leaf(critqueue_ref_mut, leaf_key);
             // Otherwise, if the new sub-queue head field indicates a
             // different sub-queue node then the one just removed:
             } else {
-                // Check to see if the removed sub-queue node was the
-                // head of the crit-queue.
-                let just_removed_critqueue_head = access_key ==
-                    *option::borrow(&critqueue_ref_mut.head);
                 // If the crit-queue head was just removed, then the
                 // new sub-queue head is also the new crit-queue head.
                 if (just_removed_critqueue_head)
@@ -1572,18 +1593,18 @@ module econia::critqueue {
         _critqueue_ref_mut: &mut CritQueue<V>,
         _leaf_key: u128,
     ) {
-        // If leaf key has same insertion key as crit-queue head:
-            // Traverse to predecessor/successor, based on order
-            // If traverse returns none, set crit-queue head as return
-            // Else if traverse returns some, then at a leaf with a
-            // sub-queue, so set crit-queue head as sub-queue's head
-        // Crit-queue head is now current.
         // Remove nodes as in crit-bit
     }
 
-    /// Remove insertion value corresponding to given access key.
+    /// Remove insertion value corresponding to given access key,
+    /// aborting if no such access key in crit-queue.
     ///
-    /// Aborts if no such insertion value for given access key.
+    /// Inner function for `remove()`.
+    ///
+    /// Does not update parent field of corresponding leaf if its
+    /// sub-queue is emptied, as the parent field may be required for
+    /// traversal in `remove()` before the leaf is freed from the tree
+    /// in `remove_leaf()`.
     ///
     /// # Parameters
     /// * `critqueue_ref_mut`: Mutable reference to given `CritQueue`.
@@ -1593,45 +1614,57 @@ module econia::critqueue {
     /// * `V`: Insertion value corresponding to `access_key`.
     /// * `Option<Option<u128>>`: The new sub-queue head field indicated
     ///   by the corresponding leaf (`Leaf.head`), if removal resulted
-    ///   in an update to the sub-queue head field.
+    ///   in an update to it.
     ///
     /// # Reference diagrams
     ///
     /// ## Conventions
     ///
-    /// For ease of illustration, sub-queue node leaf key is depicted
-    /// relative to bit 64, but tested with a correspondingly bitshifted
-    /// amount. Insertion counts and values are given in decimal:
+    /// For ease of illustration, sub-queue node leaf keys are depicted
+    /// relative to bit 64, but tested with correspondingly bitshifted
+    /// amounts. Insertion counts and values are given in decimal:
     ///
-    /// >     101
-    /// >     [n_0{7} -> n_1{8} -> n_2{4} -> n_3{5}]
+    /// >                                           1st
+    /// >                                          /   \
+    /// >                                        101   111
+    /// >     [n_0{7} -> n_1{8} -> n_2{4} -> n_3{5}]   [n_0{9}]
     ///
-    /// Here, all sub-queue nodes have insertion key `101`, and `n_i{j}`
-    /// indicates a sub-queue node with insertion count `i` and
-    /// insertion value `j`.
+    /// Here, all sub-queue nodes in the left sub-queue have insertion
+    /// key `101`, for `n_i{j}` indicating a sub-queue node with
+    /// insertion count `i` and insertion value `j`.
     ///
     /// ## Removal sequence
     ///
     /// 1. Remove `n_2{4}`, neither the sub-queue head nor tail,
     ///    yielding:
     ///
-    /// >     101
-    /// >     [n_0{7} -> n_1{8} -> n_3{5}]
+    /// >                                 1st
+    /// >                                /   \
+    /// >                              101   111
+    /// >     [n_0{7} -> n_1{8} -> n_3{5}]   [n_0{9}]
     ///
     /// 2. Remove `n_3{5}`, the sub-queue tail:
     ///
-    /// >     101
-    /// >     [n_0{7} -> n_1{8}]
+    /// >                       1st
+    /// >                      /   \
+    /// >                    101   111
+    /// >     [n_0{7} -> n_1{8}]   [n_0{9}]
     ///
     /// 3. Remove `n_0{7}`, the sub-queue head:
     ///
-    /// >     101
-    /// >     [n_1{8}]
+    /// >             1st
+    /// >            /   \
+    /// >          101   111
+    /// >     [n_1{8}]   [n_0{9}]
     ///
-    /// 4. Remove `n_1{8}`, the sub-queue head and tail:
+    /// 4. Remove `n_1{8}`, the sub-queue head and tail, yielding a
+    ///    leaf that is still in the crit-bit tree but has an empty
+    ///    sub-queue:
     ///
-    /// >     101
-    /// >     []
+    /// >        1st
+    /// >       /   \
+    /// >     101   111
+    /// >     []    [n_0{9}]
     ///
     /// ## Testing
     /// * `test_remove_subqueue_node()`
@@ -3237,7 +3270,7 @@ module econia::critqueue {
     }
 
     #[test]
-    /// Verify reference removals from `remove_subqueue_nodes()`.
+    /// Verify reference removals from `remove_subqueue_node()`.
     fun test_remove_subqueue_node() {
         let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
         // Insert sub-queue nodes, storing relevant access keys.
@@ -3245,6 +3278,8 @@ module econia::critqueue {
         let access_key_n_1_8 = insert(&mut critqueue, u_64(b"101"), 8);
         let access_key_n_2_4 = insert(&mut critqueue, u_64(b"101"), 4);
         let access_key_n_3_5 = insert(&mut critqueue, u_64(b"101"), 5);
+        // Insert another leaf in the tree.
+        insert(&mut critqueue, u_64(b"111"), 9);
         // Get leaf key.
         let leaf_key = access_key_n_0_7 & ACCESS_KEY_TO_LEAF_KEY;
         // Execute first reference removal, storing returns.

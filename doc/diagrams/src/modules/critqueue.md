@@ -57,8 +57,8 @@ flowchart LR
 dequeue --> remove
 
 remove --> remove_subqueue_node
+remove --> traverse
 remove --> remove_leaf
-remove_leaf --> traverse
 
 ```
 

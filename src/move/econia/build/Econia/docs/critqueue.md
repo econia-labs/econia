@@ -1471,29 +1471,50 @@ corresponding to <code>access_key</code>, aborting if no such entry.
     critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     access_key: u128
 ): V {
-    // Get insertion value by removing the sub-queue node it was
-    // contained in, storing the optional new head field of the
+    // Get requested insertion value by removing the sub-queue node
+    // it was stored in, storing the optional new head field of the
     // corresponding sub-queue.
     <b>let</b> (insertion_value, optional_new_subqueue_head_field) =
         <a href="critqueue.md#0xc0deb00c_critqueue_remove_subqueue_node">remove_subqueue_node</a>(critqueue_ref_mut, access_key);
+    // Check <b>if</b> removed sub-queue node was head of the crit-queue.
+    <b>let</b> just_removed_critqueue_head = access_key ==
+        *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.head);
     // If the sub-queue <b>has</b> a new head field:
     <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_new_subqueue_head_field)) {
         // Get the new sub-queue head field.
         <b>let</b> new_subqueue_head_field =
             *<a href="_borrow">option::borrow</a>(&optional_new_subqueue_head_field);
         // If the new sub-queue head field is none, then the
-        // sub-queue is now empty and its leaf is now free:
+        // sub-queue is now empty, so the leaf needs <b>to</b> be freed.
         <b>if</b> (<a href="_is_none">option::is_none</a>(&new_subqueue_head_field)) {
-            // So remove the leaf from the crit-bit tree.
-            <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>(critqueue_ref_mut,
-                access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>);
+            // Get the leaf's key from the access key.
+            <b>let</b> leaf_key = access_key & <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>;
+            // If the crit-queue head was just removed, <b>update</b> it
+            // before freeing the leaf:
+            <b>if</b> (just_removed_critqueue_head) {
+                // Get crit-queue insertion key sort order.
+                <b>let</b> order = critqueue_ref_mut.order;
+                // If ascending crit-queue, try traversing <b>to</b> the
+                // successor of the leaf <b>to</b> free,
+                <b>let</b> target = <b>if</b> (order == <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>) <a href="critqueue.md#0xc0deb00c_critqueue_SUCCESSOR">SUCCESSOR</a> <b>else</b>
+                    <a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a>; // Otherwise the predecessor.
+                // Traverse, storing optional next leaf key.
+                <b>let</b> optional_next_leaf_key =
+                    <a href="critqueue.md#0xc0deb00c_critqueue_traverse">traverse</a>(critqueue_ref_mut, leaf_key, target);
+                // Crit-queue is empty <b>if</b> there is no next key.
+                <b>let</b> now_empty = <a href="_is_none">option::is_none</a>(&optional_next_leaf_key);
+                // If crit-queue now empty, it <b>has</b> no head.
+                critqueue_ref_mut.head = <b>if</b> (now_empty) <a href="_none">option::none</a>()
+                    // Otherwise, the new crit-queue head is the
+                    // head of the leaf just traversed <b>to</b>.
+                    <b>else</b> <a href="_borrow">table::borrow</a>(&critqueue_ref_mut.leaves,
+                        *<a href="_borrow">option::borrow</a>(&optional_next_leaf_key)).head;
+            }; // The crit-queue head is now updated.
+            // Free the leaf by removing it from the crit-bit tree.
+            <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>(critqueue_ref_mut, leaf_key);
         // Otherwise, <b>if</b> the new sub-queue head field indicates a
         // different sub-queue node then the one just removed:
         } <b>else</b> {
-            // Check <b>to</b> see <b>if</b> the removed sub-queue node was the
-            // head of the crit-queue.
-            <b>let</b> just_removed_critqueue_head = access_key ==
-                *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.head);
             // If the crit-queue head was just removed, then the
             // new sub-queue head is also the new crit-queue head.
             <b>if</b> (just_removed_critqueue_head)
@@ -2598,12 +2619,6 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
     _critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     _leaf_key: u128,
 ) {
-    // If leaf key <b>has</b> same insertion key <b>as</b> crit-queue head:
-        // Traverse <b>to</b> predecessor/successor, based on order
-        // If traverse returns none, set crit-queue head <b>as</b> <b>return</b>
-        // Else <b>if</b> traverse returns some, then at a leaf <b>with</b> a
-        // sub-queue, so set crit-queue head <b>as</b> sub-queue's head
-    // Crit-queue head is now current.
     // Remove nodes <b>as</b> in crit-bit
 }
 </code></pre>
@@ -2616,9 +2631,15 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 ## Function `remove_subqueue_node`
 
-Remove insertion value corresponding to given access key.
+Remove insertion value corresponding to given access key,
+aborting if no such access key in crit-queue.
 
-Aborts if no such insertion value for given access key.
+Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
+
+Does not update parent field of corresponding leaf if its
+sub-queue is emptied, as the parent field may be required for
+traversal in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code> before the leaf is freed from the tree
+in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>()</code>.
 
 
 <a name="@Parameters_64"></a>
@@ -2636,7 +2657,7 @@ Aborts if no such insertion value for given access key.
 * <code>V</code>: Insertion value corresponding to <code>access_key</code>.
 * <code>Option&lt;Option&lt;u128&gt;&gt;</code>: The new sub-queue head field indicated
 by the corresponding leaf (<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf">Leaf</a>.head</code>), if removal resulted
-in an update to the sub-queue head field.
+in an update to it.
 
 
 <a name="@Reference_diagrams_66"></a>
@@ -2650,16 +2671,18 @@ in an update to the sub-queue head field.
 #### Conventions
 
 
-For ease of illustration, sub-queue node leaf key is depicted
-relative to bit 64, but tested with a correspondingly bitshifted
-amount. Insertion counts and values are given in decimal:
+For ease of illustration, sub-queue node leaf keys are depicted
+relative to bit 64, but tested with correspondingly bitshifted
+amounts. Insertion counts and values are given in decimal:
 
->     101
->     [n_0{7} -> n_1{8} -> n_2{4} -> n_3{5}]
+>                                           1st
+>                                          /   \
+>                                        101   111
+>     [n_0{7} -> n_1{8} -> n_2{4} -> n_3{5}]   [n_0{9}]
 
-Here, all sub-queue nodes have insertion key <code>101</code>, and <code>n_i{j}</code>
-indicates a sub-queue node with insertion count <code>i</code> and
-insertion value <code>j</code>.
+Here, all sub-queue nodes in the left sub-queue have insertion
+key <code>101</code>, for <code>n_i{j}</code> indicating a sub-queue node with
+insertion count <code>i</code> and insertion value <code>j</code>.
 
 
 <a name="@Removal_sequence_68"></a>
@@ -2670,23 +2693,33 @@ insertion value <code>j</code>.
 1. Remove <code>n_2{4}</code>, neither the sub-queue head nor tail,
 yielding:
 
->     101
->     [n_0{7} -> n_1{8} -> n_3{5}]
+>                                 1st
+>                                /   \
+>                              101   111
+>     [n_0{7} -> n_1{8} -> n_3{5}]   [n_0{9}]
 
 2. Remove <code>n_3{5}</code>, the sub-queue tail:
 
->     101
->     [n_0{7} -> n_1{8}]
+>                       1st
+>                      /   \
+>                    101   111
+>     [n_0{7} -> n_1{8}]   [n_0{9}]
 
 3. Remove <code>n_0{7}</code>, the sub-queue head:
 
->     101
->     [n_1{8}]
+>             1st
+>            /   \
+>          101   111
+>     [n_1{8}]   [n_0{9}]
 
-4. Remove <code>n_1{8}</code>, the sub-queue head and tail:
+4. Remove <code>n_1{8}</code>, the sub-queue head and tail, yielding a
+leaf that is still in the crit-bit tree but has an empty
+sub-queue:
 
->     101
->     []
+>        1st
+>       /   \
+>     101   111
+>     []    [n_0{9}]
 
 
 <a name="@Testing_69"></a>

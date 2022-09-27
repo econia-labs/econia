@@ -713,30 +713,36 @@ The below index is automatically generated from source code:
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
--  [Function `remove_leaf`](#0xc0deb00c_critqueue_remove_leaf)
--  [Function `remove_subqueue_node`](#0xc0deb00c_critqueue_remove_subqueue_node)
-    -  [Parameters](#@Parameters_64)
-    -  [Returns](#@Returns_65)
+-  [Function `remove_free_leaf`](#0xc0deb00c_critqueue_remove_free_leaf)
+    -  [Assumptions](#@Assumptions_64)
+    -  [Removing the root](#@Removing_the_root_65)
     -  [Reference diagrams](#@Reference_diagrams_66)
-        -  [Conventions](#@Conventions_67)
-        -  [Removal sequence](#@Removal_sequence_68)
-        -  [Testing](#@Testing_69)
+        -  [With grandparent](#@With_grandparent_67)
+        -  [Without grandparent](#@Without_grandparent_70)
+        -  [Testing](#@Testing_73)
+-  [Function `remove_subqueue_node`](#0xc0deb00c_critqueue_remove_subqueue_node)
+    -  [Parameters](#@Parameters_74)
+    -  [Returns](#@Returns_75)
+    -  [Reference diagrams](#@Reference_diagrams_76)
+        -  [Conventions](#@Conventions_77)
+        -  [Removal sequence](#@Removal_sequence_78)
+        -  [Testing](#@Testing_79)
 -  [Function `search`](#0xc0deb00c_critqueue_search)
-    -  [Returns](#@Returns_70)
-    -  [Assumptions](#@Assumptions_71)
-    -  [Reference diagrams](#@Reference_diagrams_72)
-        -  [Leaf at root](#@Leaf_at_root_73)
-        -  [Inner node at root](#@Inner_node_at_root_74)
-        -  [Testing](#@Testing_75)
+    -  [Returns](#@Returns_80)
+    -  [Assumptions](#@Assumptions_81)
+    -  [Reference diagrams](#@Reference_diagrams_82)
+        -  [Leaf at root](#@Leaf_at_root_83)
+        -  [Inner node at root](#@Inner_node_at_root_84)
+        -  [Testing](#@Testing_85)
 -  [Function `traverse`](#0xc0deb00c_critqueue_traverse)
-    -  [Parameters](#@Parameters_76)
-    -  [Returns](#@Returns_77)
-    -  [Membership considerations](#@Membership_considerations_78)
-    -  [Reference diagram](#@Reference_diagram_79)
-        -  [Conventions](#@Conventions_80)
-        -  [Inorder predecessor](#@Inorder_predecessor_81)
-        -  [Inorder successor](#@Inorder_successor_82)
-        -  [Testing](#@Testing_83)
+    -  [Parameters](#@Parameters_86)
+    -  [Returns](#@Returns_87)
+    -  [Membership considerations](#@Membership_considerations_88)
+    -  [Reference diagram](#@Reference_diagram_89)
+        -  [Conventions](#@Conventions_90)
+        -  [Inorder predecessor](#@Inorder_predecessor_91)
+        -  [Inorder successor](#@Inorder_successor_92)
+        -  [Testing](#@Testing_93)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1511,7 +1517,7 @@ corresponding to <code>access_key</code>, aborting if no such entry.
                         *<a href="_borrow">option::borrow</a>(&optional_next_leaf_key)).head;
             }; // The crit-queue head is now updated.
             // Free the leaf by removing it from the crit-bit tree.
-            <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>(critqueue_ref_mut, leaf_key);
+            <a href="critqueue.md#0xc0deb00c_critqueue_remove_free_leaf">remove_free_leaf</a>(critqueue_ref_mut, leaf_key);
         // Otherwise, <b>if</b> the new sub-queue head field indicates a
         // different sub-queue node then the one just removed:
         } <b>else</b> {
@@ -2600,13 +2606,157 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 
 </details>
 
-<a name="0xc0deb00c_critqueue_remove_leaf"></a>
+<a name="0xc0deb00c_critqueue_remove_free_leaf"></a>
 
-## Function `remove_leaf`
+## Function `remove_free_leaf`
+
+Remove from the crit-queue crit-bit tree the leaf having the
+given key, aborting if no such leaf in the tree.
+
+Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code> that only gets called if the
+leaf's sub-queue has been emptied, which means that the leaf
+should be freed from the tree. Free leaves are not deallocated,
+however, since their insertion counter is still required to
+generate unique access keys for any future insertions. Rather,
+their parent field is simply set to none.
 
 
+<a name="@Assumptions_64"></a>
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>&lt;V&gt;(_critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, _leaf_key: u128)
+### Assumptions
+
+* Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a crit-bit tree with at least one node,
+which is the indicated leaf in the case of a singleton tree.
+
+
+<a name="@Removing_the_root_65"></a>
+
+### Removing the root
+
+
+If removing the root, the crit-queue root field should be
+updated to none. The leaf's field should already be none, since
+it was the root.
+
+
+<a name="@Reference_diagrams_66"></a>
+
+### Reference diagrams
+
+
+For ease of illustration, critical bitmasks and leaf keys are
+depicted relative to bit 64, but tested with correspondingly
+bitshifted amounts, generated via <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
+
+
+<a name="@With_grandparent_67"></a>
+
+#### With grandparent
+
+
+1. The sibling to the freed leaf must be updated to have as its
+parent the grandparent to the freed leaf.
+2. The grandparent to the freed leaf must be updated to have as
+its child the sibling to the freed leaf, on the same side
+that the removed parent was a child on.
+3. The removed parent node must be destroyed.
+4. The freed leaf must have its parent field set to none.
+
+
+<a name="@Inner_node_sibling_68"></a>
+
+##### Inner node sibling
+
+
+>           grandparent -> 2nd
+>                         /   \
+>     removed parent -> 1st   111
+>                      /   \
+>      freed leaf -> 000   0th <- sibling
+>                         /   \
+>                       010   011
+
+Becomes
+
+>     old grandparent -> 2nd
+>                       /   \
+>      old sibling -> 0th   111
+>                    /   \
+>                  010   011
+
+
+<a name="@Leaf_sibling_69"></a>
+
+##### Leaf sibling
+
+
+>                2nd <- grandparent
+>               /   \
+>             001   1st <- removed parent
+>                  /   \
+>     sibling -> 101   111 <- freed leaf
+
+Becomes
+
+>        2nd <- old grandparent
+>       /   \
+>     001   101 <- old sibling
+
+
+<a name="@Without_grandparent_70"></a>
+
+#### Without grandparent
+
+
+1. The sibling to the freed leaf must be updated to indicate
+that it has no parent.
+2. The crit-queue root must be updated to have as its root the
+sibling to the freed leaf.
+3. The removed parent node must be destroyed.
+4. The freed leaf must have its parent field set to none.
+
+
+<a name="@Inner_node_sibling_71"></a>
+
+##### Inner node sibling
+
+
+>         parent -> 2nd
+>                  /   \
+>     sibling -> 0th   111 <- freed leaf
+>               /   \
+>             010   011
+
+Becomes
+
+>        0th <- old sibling
+>       /   \
+>     010   011
+
+
+<a name="@Leaf_sibling_72"></a>
+
+##### Leaf sibling
+
+
+>                      2nd <- parent
+>                     /   \
+>     freed leaf -> 001   101 <- sibling
+
+Becomes
+
+>     101 <- old sibling
+
+
+<a name="@Testing_73"></a>
+
+#### Testing
+
+* <code>test_remove_free_leaf_inner_sibling()</code>.
+* <code>test_remove_free_leaf_leaf_sibling_root()</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_free_leaf">remove_free_leaf</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128)
 </code></pre>
 
 
@@ -2615,11 +2765,68 @@ Return <code><b>true</b></code> if <code>key</code> is set at <code>bit_number</
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>&lt;V&gt;(
-    _critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
-    _leaf_key: u128,
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove_free_leaf">remove_free_leaf</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    leaf_key: u128,
 ) {
-    // Remove nodes <b>as</b> in crit-bit
+    // If the indicated leaf is the root of the tree, then set the
+    // crit-bit root <b>to</b> none.
+    <b>if</b> (leaf_key == *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.root)) <b>return</b>
+        critqueue_ref_mut.root = <a href="_none">option::none</a>();
+    // Mutably borrow inner nodes <a href="">table</a>.
+    <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
+    // Mutably borrow leaves <a href="">table</a>.
+    <b>let</b> leaves_ref_mut = &<b>mut</b> critqueue_ref_mut.leaves;
+    // Mutably borrow leaf <b>to</b> remove.
+    <b>let</b> leaf_ref_mut = <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, leaf_key);
+    // Get the inner key of its parent.
+    <b>let</b> parent_key = *<a href="_borrow">option::borrow</a>(&leaf_ref_mut.parent);
+    // Set freed leaf <b>to</b> indicate it <b>has</b> no parent.
+    leaf_ref_mut.parent = <a href="_none">option::none</a>();
+    // Immutably borrow the parent <b>to</b> remove.
+    <b>let</b> parent_ref = <a href="_borrow">table::borrow</a>(inners_ref_mut, parent_key);
+    // If freed leaf key AND parent's bitmask is 0, freed leaf key
+    // was not set at parent's critical bit, thus was a left child.
+    <b>let</b> free_leaf_was_left_child = leaf_key & parent_ref.bitmask == 0;
+    // Sibling key is from field on opposite side of free leaf.
+    <b>let</b> sibling_key = <b>if</b> (free_leaf_was_left_child) parent_ref.right <b>else</b>
+        parent_ref.left;
+    // Declare sibling's new parent field.
+    <b>let</b> sibling_new_parent_field;
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&parent_ref.parent)) { // If parent is root:
+        // Sibling is now root, and thus <b>has</b> none for parent field.
+        sibling_new_parent_field = <a href="_none">option::none</a>();
+        // Update crit-queue root field <b>to</b> indicate the sibling.
+        critqueue_ref_mut.root = <a href="_some">option::some</a>(sibling_key);
+    } <b>else</b> { // If freed leaf <b>has</b> a grandparent:
+        // Get grandparent's inner key.
+        <b>let</b> grandparent_key = *<a href="_borrow">option::borrow</a>(&parent_ref.parent);
+        // Set it <b>as</b> sibling's new parent field.
+        sibling_new_parent_field = <a href="_some">option::some</a>(grandparent_key);
+        <b>let</b> grandparent_ref_mut = // Mutably borrow grandparent.
+            <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, grandparent_key);
+        // If freed leaf key AND grandparen't bitmask is 0, freed
+        // leaf key was not set at grandparent's critical bit, and
+        // was thus located <b>to</b> its left.
+        <b>let</b> free_leaf_was_left_grandchild = leaf_key &
+            grandparent_ref_mut.bitmask == 0;
+        // Update grandparent <b>to</b> have <b>as</b> its child the freed leaf's
+        // sibling on the same side.
+        <b>if</b> (free_leaf_was_left_grandchild) grandparent_ref_mut.left =
+            sibling_key <b>else</b> grandparent_ref_mut.right = sibling_key;
+    };
+    <b>let</b> sibling_is_leaf = // Determine <b>if</b> sibling is a leaf.
+        sibling_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_LEAF">TREE_NODE_LEAF</a>;
+    // Get mutable reference <b>to</b> sibling's parent field:
+    <b>let</b> sibling_parent_field_ref_mut = <b>if</b> (sibling_is_leaf)
+        // If sibling is a leaf, borrow from leaves <a href="">table</a>.
+        &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(leaves_ref_mut, sibling_key).parent
+            <b>else</b> // Else borrow from inner nodes <a href="">table</a>.
+        &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, sibling_key).parent;
+    // Set sibling's parent field <b>to</b> the new parent field.
+    *sibling_parent_field_ref_mut = sibling_new_parent_field;
+    <b>let</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{bitmask: _, parent: _, left: _, right: _} = <a href="_remove">table::remove</a>(
+        inners_ref_mut, parent_key); // Destroy parent inner node.
 }
 </code></pre>
 
@@ -2639,10 +2846,10 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remo
 Does not update parent field of corresponding leaf if its
 sub-queue is emptied, as the parent field may be required for
 traversal in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code> before the leaf is freed from the tree
-in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>()</code>.
+in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove_free_leaf">remove_free_leaf</a>()</code>.
 
 
-<a name="@Parameters_64"></a>
+<a name="@Parameters_74"></a>
 
 ### Parameters
 
@@ -2650,7 +2857,7 @@ in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove_leaf">remove_leaf</a>
 * <code>access_key</code>: Access key corresponding to insertion value.
 
 
-<a name="@Returns_65"></a>
+<a name="@Returns_75"></a>
 
 ### Returns
 
@@ -2660,13 +2867,13 @@ by the corresponding leaf (<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf
 in an update to it.
 
 
-<a name="@Reference_diagrams_66"></a>
+<a name="@Reference_diagrams_76"></a>
 
 ### Reference diagrams
 
 
 
-<a name="@Conventions_67"></a>
+<a name="@Conventions_77"></a>
 
 #### Conventions
 
@@ -2685,7 +2892,7 @@ key <code>101</code>, for <code>n_i{j}</code> indicating a sub-queue node with
 insertion count <code>i</code> and insertion value <code>j</code>.
 
 
-<a name="@Removal_sequence_68"></a>
+<a name="@Removal_sequence_78"></a>
 
 #### Removal sequence
 
@@ -2722,7 +2929,7 @@ sub-queue:
 >     []    [n_0{9}]
 
 
-<a name="@Testing_69"></a>
+<a name="@Testing_79"></a>
 
 #### Testing
 
@@ -2801,7 +3008,7 @@ leaf", return its leaf key, the inner key of its parent, and the
 parent's critical bitmask.
 
 
-<a name="@Returns_70"></a>
+<a name="@Returns_80"></a>
 
 ### Returns
 
@@ -2810,14 +3017,14 @@ parent's critical bitmask.
 * <code>Option&lt;u128&gt;</code>: Match parent's critical bitmask, if any.
 
 
-<a name="@Assumptions_71"></a>
+<a name="@Assumptions_81"></a>
 
 ### Assumptions
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> does not have an empty crit-bit tree.
 
 
-<a name="@Reference_diagrams_72"></a>
+<a name="@Reference_diagrams_82"></a>
 
 ### Reference diagrams
 
@@ -2829,7 +3036,7 @@ encoded with a mock insertion key, mock insertion count,
 and inner node bit flag.
 
 
-<a name="@Leaf_at_root_73"></a>
+<a name="@Leaf_at_root_83"></a>
 
 #### Leaf at root
 
@@ -2841,7 +3048,7 @@ and inner node bit flag.
 | Any        | <code>111</code>          | None                 |
 
 
-<a name="@Inner_node_at_root_74"></a>
+<a name="@Inner_node_at_root_84"></a>
 
 #### Inner node at root
 
@@ -2859,7 +3066,7 @@ and inner node bit flag.
 | <code>111</code>      | <code>111</code>           | <code>1st</code>                 |
 
 
-<a name="@Testing_75"></a>
+<a name="@Testing_85"></a>
 
 #### Testing
 
@@ -2929,7 +3136,7 @@ and inner node bit flag.
 Traverse from leaf to inorder predecessor or successor.
 
 
-<a name="@Parameters_76"></a>
+<a name="@Parameters_86"></a>
 
 ### Parameters
 
@@ -2938,7 +3145,7 @@ Traverse from leaf to inorder predecessor or successor.
 * <code>target</code>: Either <code><a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_SUCCESSOR">SUCCESSOR</a></code>.
 
 
-<a name="@Returns_77"></a>
+<a name="@Returns_87"></a>
 
 ### Returns
 
@@ -2946,7 +3153,7 @@ Traverse from leaf to inorder predecessor or successor.
 successor to leaf having <code>start_leaf_key</code>, if any.
 
 
-<a name="@Membership_considerations_78"></a>
+<a name="@Membership_considerations_88"></a>
 
 ### Membership considerations
 
@@ -2955,13 +3162,13 @@ successor to leaf having <code>start_leaf_key</code>, if any.
 * Returns none if <code>start_leaf_key</code> indicates crit-bit root.
 
 
-<a name="@Reference_diagram_79"></a>
+<a name="@Reference_diagram_89"></a>
 
 ### Reference diagram
 
 
 
-<a name="@Conventions_80"></a>
+<a name="@Conventions_90"></a>
 
 #### Conventions
 
@@ -2984,7 +3191,7 @@ Traversal starts at the "start leaf", walks to an "apex node",
 then ends at the "target leaf", if any.
 
 
-<a name="@Inorder_predecessor_81"></a>
+<a name="@Inorder_predecessor_91"></a>
 
 #### Inorder predecessor
 
@@ -3006,7 +3213,7 @@ along right children, breaking out at a leaf.
 | <code>0011</code>    | None      | None        |
 
 
-<a name="@Inorder_successor_82"></a>
+<a name="@Inorder_successor_92"></a>
 
 #### Inorder successor
 
@@ -3028,7 +3235,7 @@ then walk along left children, breaking out at a leaf.
 | <code>1000</code>    | None      | None        |
 
 
-<a name="@Testing_83"></a>
+<a name="@Testing_93"></a>
 
 #### Testing
 

@@ -852,7 +852,7 @@ module econia::critqueue {
                             *option::borrow(&optional_next_leaf_key)).head;
                 }; // The crit-queue head is now updated.
                 // Free the leaf by removing it from the crit-bit tree.
-                remove_leaf(critqueue_ref_mut, leaf_key);
+                remove_free_leaf(critqueue_ref_mut, leaf_key);
             // Otherwise, if the new sub-queue head field indicates a
             // different sub-queue node then the one just removed:
             } else {
@@ -1589,11 +1589,172 @@ module econia::critqueue {
     /// Return `true` if `key` is set at `bit_number`.
     fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
 
-    fun remove_leaf<V>(
-        _critqueue_ref_mut: &mut CritQueue<V>,
-        _leaf_key: u128,
+    /// Remove from the crit-queue crit-bit tree the leaf having the
+    /// given key, aborting if no such leaf in the tree.
+    ///
+    /// Inner function for `remove()` that only gets called if the
+    /// leaf's sub-queue has been emptied, which means that the leaf
+    /// should be freed from the tree. Free leaves are not deallocated,
+    /// however, since their insertion counter is still required to
+    /// generate unique access keys for any future insertions. Rather,
+    /// their parent field is simply set to none.
+    ///
+    /// # Assumptions
+    /// * Given `CritQueue` has a crit-bit tree with at least one node,
+    ///   which is the indicated leaf in the case of a singleton tree.
+    ///
+    /// # Removing the root
+    ///
+    /// If removing the root, the crit-queue root field should be
+    /// updated to none. The leaf's field should already be none, since
+    /// it was the root.
+    ///
+    /// # Reference diagrams
+    ///
+    /// For ease of illustration, critical bitmasks and leaf keys are
+    /// depicted relative to bit 64, but tested with correspondingly
+    /// bitshifted amounts, generated via `insert()`.
+    ///
+    /// ## With grandparent
+    ///
+    /// 1. The sibling to the freed leaf must be updated to have as its
+    ///    parent the grandparent to the freed leaf.
+    /// 2. The grandparent to the freed leaf must be updated to have as
+    ///    its child the sibling to the freed leaf, on the same side
+    ///    that the removed parent was a child on.
+    /// 3. The removed parent node must be destroyed.
+    /// 4. The freed leaf must have its parent field set to none.
+    ///
+    /// ### Inner node sibling
+    ///
+    /// >           grandparent -> 2nd
+    /// >                         /   \
+    /// >     removed parent -> 1st   111
+    /// >                      /   \
+    /// >      freed leaf -> 000   0th <- sibling
+    /// >                         /   \
+    /// >                       010   011
+    ///
+    /// Becomes
+    ///
+    /// >     old grandparent -> 2nd
+    /// >                       /   \
+    /// >      old sibling -> 0th   111
+    /// >                    /   \
+    /// >                  010   011
+    ///
+    /// ### Leaf sibling
+    ///
+    /// >                2nd <- grandparent
+    /// >               /   \
+    /// >             001   1st <- removed parent
+    /// >                  /   \
+    /// >     sibling -> 101   111 <- freed leaf
+    ///
+    /// Becomes
+    ///
+    /// >        2nd <- old grandparent
+    /// >       /   \
+    /// >     001   101 <- old sibling
+    ///
+    /// ## Without grandparent
+    ///
+    /// 1. The sibling to the freed leaf must be updated to indicate
+    ///    that it has no parent.
+    /// 2. The crit-queue root must be updated to have as its root the
+    ///    sibling to the freed leaf.
+    /// 3. The removed parent node must be destroyed.
+    /// 4. The freed leaf must have its parent field set to none.
+    ///
+    /// ### Inner node sibling
+    ///
+    /// >         parent -> 2nd
+    /// >                  /   \
+    /// >     sibling -> 0th   111 <- freed leaf
+    /// >               /   \
+    /// >             010   011
+    ///
+    /// Becomes
+    ///
+    /// >        0th <- old sibling
+    /// >       /   \
+    /// >     010   011
+    ///
+    /// ### Leaf sibling
+    ///
+    /// >                      2nd <- parent
+    /// >                     /   \
+    /// >     freed leaf -> 001   101 <- sibling
+    ///
+    /// Becomes
+    ///
+    /// >     101 <- old sibling
+    ///
+    /// ## Testing
+    /// * `test_remove_free_leaf_inner_sibling()`.
+    /// * `test_remove_free_leaf_leaf_sibling_root()`
+    fun remove_free_leaf<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        leaf_key: u128,
     ) {
-        // Remove nodes as in crit-bit
+        // If the indicated leaf is the root of the tree, then set the
+        // crit-bit root to none.
+        if (leaf_key == *option::borrow(&critqueue_ref_mut.root)) return
+            critqueue_ref_mut.root = option::none();
+        // Mutably borrow inner nodes table.
+        let inners_ref_mut = &mut critqueue_ref_mut.inners;
+        // Mutably borrow leaves table.
+        let leaves_ref_mut = &mut critqueue_ref_mut.leaves;
+        // Mutably borrow leaf to remove.
+        let leaf_ref_mut = table::borrow_mut(leaves_ref_mut, leaf_key);
+        // Get the inner key of its parent.
+        let parent_key = *option::borrow(&leaf_ref_mut.parent);
+        // Set freed leaf to indicate it has no parent.
+        leaf_ref_mut.parent = option::none();
+        // Immutably borrow the parent to remove.
+        let parent_ref = table::borrow(inners_ref_mut, parent_key);
+        // If freed leaf key AND parent's bitmask is 0, freed leaf key
+        // was not set at parent's critical bit, thus was a left child.
+        let free_leaf_was_left_child = leaf_key & parent_ref.bitmask == 0;
+        // Sibling key is from field on opposite side of free leaf.
+        let sibling_key = if (free_leaf_was_left_child) parent_ref.right else
+            parent_ref.left;
+        // Declare sibling's new parent field.
+        let sibling_new_parent_field;
+        if (option::is_none(&parent_ref.parent)) { // If parent is root:
+            // Sibling is now root, and thus has none for parent field.
+            sibling_new_parent_field = option::none();
+            // Update crit-queue root field to indicate the sibling.
+            critqueue_ref_mut.root = option::some(sibling_key);
+        } else { // If freed leaf has a grandparent:
+            // Get grandparent's inner key.
+            let grandparent_key = *option::borrow(&parent_ref.parent);
+            // Set it as sibling's new parent field.
+            sibling_new_parent_field = option::some(grandparent_key);
+            let grandparent_ref_mut = // Mutably borrow grandparent.
+                table::borrow_mut(inners_ref_mut, grandparent_key);
+            // If freed leaf key AND grandparen't bitmask is 0, freed
+            // leaf key was not set at grandparent's critical bit, and
+            // was thus located to its left.
+            let free_leaf_was_left_grandchild = leaf_key &
+                grandparent_ref_mut.bitmask == 0;
+            // Update grandparent to have as its child the freed leaf's
+            // sibling on the same side.
+            if (free_leaf_was_left_grandchild) grandparent_ref_mut.left =
+                sibling_key else grandparent_ref_mut.right = sibling_key;
+        };
+        let sibling_is_leaf = // Determine if sibling is a leaf.
+            sibling_key & TREE_NODE_TYPE == TREE_NODE_LEAF;
+        // Get mutable reference to sibling's parent field:
+        let sibling_parent_field_ref_mut = if (sibling_is_leaf)
+            // If sibling is a leaf, borrow from leaves table.
+            &mut table::borrow_mut(leaves_ref_mut, sibling_key).parent
+                else // Else borrow from inner nodes table.
+            &mut table::borrow_mut(inners_ref_mut, sibling_key).parent;
+        // Set sibling's parent field to the new parent field.
+        *sibling_parent_field_ref_mut = sibling_new_parent_field;
+        let Inner{bitmask: _, parent: _, left: _, right: _} = table::remove(
+            inners_ref_mut, parent_key); // Destroy parent inner node.
     }
 
     /// Remove insertion value corresponding to given access key,
@@ -1604,7 +1765,7 @@ module econia::critqueue {
     /// Does not update parent field of corresponding leaf if its
     /// sub-queue is emptied, as the parent field may be required for
     /// traversal in `remove()` before the leaf is freed from the tree
-    /// in `remove_leaf()`.
+    /// in `remove_free_leaf()`.
     ///
     /// # Parameters
     /// * `critqueue_ref_mut`: Mutable reference to given `CritQueue`.
@@ -3267,6 +3428,124 @@ module econia::critqueue {
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
         )), 0);
+    }
+
+    #[test]
+    /// Verify reference removals from `remove_free_leaf()` for inner
+    /// node sibling cases, first with grandparent then without.
+    fun test_remove_free_leaf_inner_sibling() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let access_key_000 = insert(&mut critqueue, u_64(b"000"), 0);
+        let access_key_010 = insert(&mut critqueue, u_64(b"010"), 0);
+        let inner_key_1st = access_key_010 | ACCESS_KEY_TO_INNER_KEY;
+        let access_key_011 = insert(&mut critqueue, u_64(b"011"), 0);
+        let inner_key_0th = access_key_011 | ACCESS_KEY_TO_INNER_KEY;
+        let access_key_111 = insert(&mut critqueue, u_64(b"111"), 0);
+        let inner_key_2nd = access_key_111 | ACCESS_KEY_TO_INNER_KEY;
+        // Get relevant leaf keys from access keys.
+        let leaf_key_000 = access_key_000 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_111 = access_key_111 & ACCESS_KEY_TO_LEAF_KEY;
+        // Remove sole sub-queue node in first leaf to remove.
+        remove_subqueue_node(&mut critqueue, access_key_000);
+        // Remove first leaf to free.
+        remove_free_leaf(&mut critqueue, leaf_key_000);
+        // Immutably borrow inner node and leaves tables.
+        let (inners_ref, leaves_ref) = (&critqueue.inners, &critqueue.leaves);
+        // Assert sibling has grandparent as parent.
+        let sibling_ref = table::borrow(inners_ref, inner_key_0th);
+        assert!(*option::borrow(&sibling_ref.parent) == inner_key_2nd, 0);
+        // Assert grandparent has sibling as child on correct side.
+        let grandparent_ref = table::borrow(inners_ref, inner_key_2nd);
+        assert!(grandparent_ref.left == inner_key_0th, 0);
+        // Assert removed parent node has been destroyed.
+        assert!(!table::contains(inners_ref, inner_key_1st), 0);
+        // Assert freed leaf has parent field as none.
+        let freed_leaf_ref = table::borrow(leaves_ref, leaf_key_000);
+        assert!(option::is_none(&freed_leaf_ref.parent), 0);
+        // Remove sole sub-queue node in second leaf to remove.
+        remove_subqueue_node(&mut critqueue, access_key_111);
+        // Remove second leaf to free.
+        remove_free_leaf(&mut critqueue, leaf_key_111);
+        // Immutably borrow inner node and leaves tables.
+        (inners_ref, leaves_ref) = (&critqueue.inners, &critqueue.leaves);
+        // Assert sibling has none for parent field.
+        sibling_ref = table::borrow(inners_ref, inner_key_0th);
+        assert!(option::is_none(&sibling_ref.parent), 0);
+        // Assert crit-queue has sibling as root.
+        assert!(*option::borrow(&critqueue.root) == inner_key_0th, 0);
+        // Assert removed parent node has been destroyed.
+        assert!(!table::contains(inners_ref, inner_key_2nd), 0);
+        // Assert freed leaf has parent field as none.
+        freed_leaf_ref = table::borrow(leaves_ref, leaf_key_111);
+        assert!(option::is_none(&freed_leaf_ref.parent), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify reference removals from `remove_free_leaf()` for leaf
+    /// sibling cases, first with grandparent then without, then remove
+    /// the sole leaf key at the root.
+    fun test_remove_free_leaf_leaf_sibling_root() {
+        // Get descending crit-queue.
+        let critqueue = new<u8>(DESCENDING);
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let access_key_001 = insert(&mut critqueue, u_64(b"001"), 0);
+        let access_key_101 = insert(&mut critqueue, u_64(b"101"), 0);
+        let inner_key_2nd = access_key_101 | ACCESS_KEY_TO_INNER_KEY;
+        let access_key_111 = insert(&mut critqueue, u_64(b"111"), 0);
+        let inner_key_1st = access_key_111 | ACCESS_KEY_TO_INNER_KEY;
+        // Get relevant leaf keys from access keys.
+        let leaf_key_001 = access_key_001 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_101 = access_key_101 & ACCESS_KEY_TO_LEAF_KEY;
+        let leaf_key_111 = access_key_111 & ACCESS_KEY_TO_LEAF_KEY;
+        // Remove sole sub-queue node in first leaf to remove.
+        remove_subqueue_node(&mut critqueue, access_key_111);
+        // Remove first leaf to free.
+        remove_free_leaf(&mut critqueue, leaf_key_111);
+        // Immutably borrow inner node and leaves tables.
+        let (inners_ref, leaves_ref) = (&critqueue.inners, &critqueue.leaves);
+        // Assert sibling has grandparent as parent.
+        let sibling_ref = table::borrow(leaves_ref, leaf_key_101);
+        assert!(*option::borrow(&sibling_ref.parent) == inner_key_2nd, 0);
+        // Assert grandparent has sibling as child on correct side.
+        let grandparent_ref = table::borrow(inners_ref, inner_key_2nd);
+        assert!(grandparent_ref.right == leaf_key_101, 0);
+        // Assert removed parent node has been destroyed.
+        assert!(!table::contains(inners_ref, inner_key_1st), 0);
+        // Assert freed leaf has parent field as none.
+        let freed_leaf_ref = table::borrow(leaves_ref, leaf_key_111);
+        assert!(option::is_none(&freed_leaf_ref.parent), 0);
+        // Remove sole sub-queue node in second leaf to remove.
+        remove_subqueue_node(&mut critqueue, access_key_001);
+        // Remove second leaf to free.
+        remove_free_leaf(&mut critqueue, leaf_key_001);
+        // Immutably borrow inner node and leaves tables.
+        (inners_ref, leaves_ref) = (&critqueue.inners, &critqueue.leaves);
+        // Assert sibling has none for parent field.
+        sibling_ref = table::borrow(leaves_ref, leaf_key_101);
+        assert!(option::is_none(&sibling_ref.parent), 0);
+        // Assert crit-queue has sibling as root.
+        assert!(*option::borrow(&critqueue.root) == leaf_key_101, 0);
+        // Assert removed parent node has been destroyed.
+        assert!(!table::contains(inners_ref, inner_key_2nd), 0);
+        // Assert freed leaf has parent field as none.
+        freed_leaf_ref = table::borrow(leaves_ref, leaf_key_001);
+        assert!(option::is_none(&freed_leaf_ref.parent), 0);
+        // Remove sole sub-queue node in final leaf to remove.
+        remove_subqueue_node(&mut critqueue, access_key_101);
+        // Remove final leaf to free.
+        remove_free_leaf(&mut critqueue, leaf_key_101);
+        // Immutably borrow leaves table.
+        leaves_ref = &critqueue.leaves;
+        // Assert crit-queue has no root.
+        assert!(option::is_none(&critqueue.root), 0);
+        // Assert freed leaf has parent field as none.
+        freed_leaf_ref = table::borrow(leaves_ref, leaf_key_101);
+        assert!(option::is_none(&freed_leaf_ref.parent), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
     #[test]

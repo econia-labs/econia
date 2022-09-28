@@ -430,6 +430,10 @@ module econia::incentives {
     /// * Requires signature of integrator to prevent excessive public
     ///   queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_cost_to_upgrade_integrator_fee_store_not_upgrade()`
     public fun get_cost_to_upgrade_integrator_fee_store<
         QuoteCoinType,
         UtilityCoinType
@@ -463,6 +467,10 @@ module econia::incentives {
     }
 
     /// Return custodian registration fee.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_custodian_registration_fee():
     u64
     acquires IncentiveParameters {
@@ -470,6 +478,10 @@ module econia::incentives {
     }
 
     /// Return integrator fee share divisor for `tier`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_fee_share_divisor(
         tier: u8
     ): u64
@@ -514,6 +526,10 @@ module econia::incentives {
     }
 
     /// Return market registration fee.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_market_registration_fee():
     u64
     acquires IncentiveParameters {
@@ -521,6 +537,10 @@ module econia::incentives {
     }
 
     /// Return number of fee store tiers.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_n_fee_store_tiers():
     u64
     acquires IncentiveParameters {
@@ -534,6 +554,10 @@ module econia::incentives {
     }
 
     /// Return taker fee divisor.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_taker_fee_divisor():
     u64
     acquires IncentiveParameters {
@@ -541,6 +565,10 @@ module econia::incentives {
     }
 
     /// Return fee to activate an `IntegratorFeeStore` to given `tier`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_tier_activation_fee(
         tier: u8
     ): u64
@@ -559,6 +587,10 @@ module econia::incentives {
 
     /// Return fee to withdraw from `IntegratorFeeStore` activated to
     /// given `tier`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_tier_withdrawal_fee(
         tier: u8
     ): u64
@@ -576,6 +608,10 @@ module econia::incentives {
     }
 
     /// Return underwriter registration fee.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun get_underwriter_registration_fee():
     u64
     acquires IncentiveParameters {
@@ -584,6 +620,10 @@ module econia::incentives {
     }
 
     /// Return `true` if `T` is the utility coin type.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     public fun is_utility_coin_type<T>():
     bool
     acquires IncentiveParameters {
@@ -643,6 +683,10 @@ module econia::incentives {
     /// # Aborts
     ///
     /// * `E_INVALID_UTILITY_COIN_TYPE`: `T` is not utility coin type.
+    ///
+    /// # Testing
+    ///
+    /// * `test_verify_utility_coin_type()`
     public fun verify_utility_coin_type<T>()
     acquires IncentiveParameters {
         assert!(is_utility_coin_type<T>(), E_INVALID_UTILITY_COIN_TYPE);
@@ -653,6 +697,11 @@ module econia::incentives {
     /// `econia`.
     ///
     /// See inner function `withdraw_econia_fees_internal()`.
+    ///
+    /// Testing
+    ///
+    /// * `test_register_assess_withdraw()`
+    /// * `test_withdraw_econia_fees_not_econia()`
     public fun withdraw_econia_fees<QuoteCoinType>(
         econia: &signer,
         market_id: u64,
@@ -670,6 +719,11 @@ module econia::incentives {
     /// `econia`.
     ///
     /// See inner function `withdraw_econia_fees_internal()`.
+    ///
+    /// Testing
+    ///
+    /// * `test_register_assess_withdraw()`
+    /// * `test_withdraw_econia_fees_all_not_econia()`
     public fun withdraw_econia_fees_all<QuoteCoinType>(
         econia: &signer,
         market_id: u64,
@@ -734,6 +788,12 @@ module econia::incentives {
     /// under authority of `econia`.
     ///
     /// See inner function `withdraw_utility_coins_internal()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_withdraw_utility_coins()`
+    /// * `test_register_assess_withdraw()`
+    /// * `test_withdraw_utility_coins_not_econia()`
     public fun withdraw_utility_coins<UtilityCoinType>(
         econia: &signer,
         amount: u64
@@ -748,6 +808,12 @@ module econia::incentives {
     /// authority of `econia`.
     ///
     /// See inner function `withdraw_utility_coins_internal()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_withdraw_utility_coins()`
+    /// * `test_register_assess_withdraw()`
+    /// * `test_withdraw_utility_coins_all_not_econia()`
     public fun withdraw_utility_coins_all<UtilityCoinType>(
         econia: &signer
     ): coin::Coin<UtilityCoinType>
@@ -765,6 +831,11 @@ module econia::incentives {
     /// initialization.
     ///
     /// Accepts same arguments as `set_incentives()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
+    /// * `test_update_incentives_fewer_tiers()`
     public entry fun update_incentives<UtilityCoinType>(
         econia: &signer,
         market_registration_fee: u64,
@@ -786,6 +857,10 @@ module econia::incentives {
     /// utility coins from an `aptos_framework::Coin::CoinStore`.
     ///
     /// See wrapped function `upgrade_integrator_fee_store()`.
+    ///
+    /// # Testing
+    ///
+    /// * `upgrade_integrator_fee_store_via_coinstore()`
     public entry fun upgrade_integrator_fee_store_via_coinstore<
         QuoteCoinType,
         UtilityCoinType
@@ -823,6 +898,10 @@ module econia::incentives {
     ///
     /// * `integrator`: Integrator account.
     /// * `market_id`: Market ID of corresponding market.
+    ///
+    /// Testing
+    ///
+    /// * `test_register_assess_withdraw()`
     public entry fun withdraw_integrator_fees_via_coinstores<
         QuoteCoinType,
         UtilityCoinType
@@ -889,6 +968,10 @@ module econia::incentives {
     ///   quote coin for a market.
     /// * `E_ECONIA_FEE_STORE_OVERFLOW`: Depositing to Econia fee store
     ///   would result in an overflow per above.
+    ///
+    /// Testing
+    ///
+    /// * `test_register_assess_withdraw()`
     public(friend) fun assess_taker_fees<QuoteCoinType>(
         market_id: u64,
         integrator_address: address,
@@ -1045,6 +1128,11 @@ module econia::incentives {
     /// * `E_MAX_QUOTE_MATCH_OVERFLOW`: Maximum amount to match does not
     ///   fit in a `u64`, which should only be possible in the case of a
     ///   `SELL`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_calculate_max_quote_match()`
+    /// * `test_calculate_max_quote_match_overflow()`
     public(friend) fun calculate_max_quote_match(
         direction: bool,
         taker_fee_divisor: u64,
@@ -1067,6 +1155,10 @@ module econia::incentives {
 
     /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
     /// amount is supplied for custodian registration.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_registration_fees_mixed()`
     public(friend) fun deposit_custodian_registration_utility_coins<
         UtilityCoinType
     >(
@@ -1081,6 +1173,10 @@ module econia::incentives {
 
     /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
     /// amount is supplied for market registration.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_registration_fees_mixed()`
     public(friend) fun deposit_market_registration_utility_coins<
         UtilityCoinType
     >(
@@ -1095,6 +1191,10 @@ module econia::incentives {
 
     /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
     /// amount is supplied for underwriter registration.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_registration_fees_mixed()`
     public(friend) fun deposit_underwriter_registration_utility_coins<
         UtilityCoinType
     >(
@@ -1109,6 +1209,10 @@ module econia::incentives {
 
     /// Register an `EconiaFeeStore` entry for given `market_id` and
     /// `QuoteCoinType`.
+    ///
+    /// Testing
+    ///
+    /// * `test_register_assess_withdraw()`
     public(friend) fun register_econia_fee_store_entry<QuoteCoinType>(
         market_id: u64
     ) acquires
@@ -1148,6 +1252,11 @@ module econia::incentives {
     /// * `market_id`: Market ID for corresponding market.
     /// * `tier`: `IntegratorFeeStore` tier to activate to.
     /// * `utility_coins`: Utility coins paid to activate to given tier.
+    ///
+    /// Testing
+    ///
+    /// * `test_register_assess_withdraw()`
+    /// * `test_upgrade_integrator_fee_store_via_coinstore()`
     public(friend) fun register_integrator_fee_store<
         QuoteCoinType,
         UtilityCoinType
@@ -1202,6 +1311,10 @@ module econia::incentives {
     ///   provide additional feedback in the unlikely event that a coin
     ///   with a supply far in excess of `HI_64` is used as a utility
     ///   coin.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_withdraw_utility_coins()`
     fun deposit_utility_coins<UtilityCoinType>(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
@@ -1228,6 +1341,10 @@ module econia::incentives {
     ///
     /// * `E_NOT_ENOUGH_UTILITY_COINS`: Insufficient utility coins
     ///   provided.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_utility_coins_verified_not_enough()`
     fun deposit_utility_coins_verified<UtilityCoinType>(
         coins: coin::Coin<UtilityCoinType>,
         min_amount: u64
@@ -1246,6 +1363,10 @@ module econia::incentives {
     /// Initialize incentives during first-time publication.
     ///
     /// Uses hard-coded genesis parameters that can be updated later.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_update_get_incentives()`
     fun init_module(
         econia: &signer
     ) acquires
@@ -1285,6 +1406,11 @@ module econia::incentives {
     ///
     /// * `E_NOT_COIN`: `CoinType` does not correspond to an initialized
     ///   `aptos_framework::coin::Coin`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_init_utility_coin_store()`
+    /// * `test_init_utility_coin_store_not_coin()`
     fun init_utility_coin_store<CoinType>(
         fee_account: &signer
     ) {
@@ -1311,6 +1437,10 @@ module econia::incentives {
     /// # Aborts
     ///
     /// * `error_code`: Proposed coin merge overflows a `u64`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_range_check_coin_merge()`
     fun range_check_coin_merge<CoinType>(
         amount: u64,
         target_coins: &coin::Coin<CoinType>,
@@ -1464,6 +1594,18 @@ module econia::incentives {
     ///   vector.
     /// * `integrator_fee_store_tiers_target_ref_mut` indicates an empty
     ///   vector.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_incentive_params_parse_tiers_vec_activate_0()`
+    /// * `test_set_incentive_params_parse_tiers_vec_activate_1()`
+    /// * `test_set_incentive_params_parse_tiers_vec_divisor_big_0()`
+    /// * `test_set_incentive_params_parse_tiers_vec_divisor_big_1()`
+    /// * `test_set_incentive_params_parse_tiers_vec_divisor_small()`
+    /// * `test_set_incentive_params_parse_tiers_vec_withdraw_big_0()`
+    /// * `test_set_incentive_params_parse_tiers_vec_withdraw_big_1()`
+    /// * `test_set_incentive_params_parse_tiers_vec_withdraw_small()`
+    /// * `test_set_incentive_params_parse_tiers_vec_wrong_length()`
     fun set_incentive_parameters_parse_tiers_vector(
         taker_fee_divisor: u64,
         integrator_fee_store_tiers_ref: &vector<vector<u64>>,
@@ -1563,6 +1705,16 @@ module econia::incentives {
     ///   indicates an empty vector.
     /// * `E_TOO_MANY_TIERS`: `integrator_fee_store_tiers_ref` indicates
     ///   a vector that is too long.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_incentive_params_range_check_inputs_custodian_fee()`
+    /// * `test_set_incentive_params_range_check_inputs_divisor()`
+    /// * `test_set_incentive_params_range_check_inputs_market_fee()`
+    /// * `test_set_incentive_params_range_check_inputs_not_econia()`
+    /// * `test_set_incentive_params_range_check_inputs_underwriter()`
+    /// * `test_set_incentive_params_range_check_inputs_vector_empty()`
+    /// * `test_set_incentive_params_range_check_inputs_vector_long()`
     fun set_incentive_parameters_range_check_inputs(
         econia: &signer,
         market_registration_fee: u64,
@@ -2130,7 +2282,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 18)]
     /// Verify failure for nonzero activation fee on first tier.
-    fun test_sent_incentive_parameters_parse_tiers_vector_activation_0() {
+    fun test_set_incentive_params_parse_tiers_vec_activate_0() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
@@ -2147,7 +2299,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 9)]
     /// Verify failure for activation fee too small on 1st tier.
-    fun test_sent_incentive_parameters_parse_tiers_vector_activation_1() {
+    fun test_set_incentive_params_parse_tiers_vec_activate_1() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
@@ -2171,7 +2323,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for fee share divisor too big on 0th tier.
-    fun test_sent_incentive_parameters_parse_tiers_vector_divisor_big_0() {
+    fun test_set_incentive_params_parse_tiers_vec_divisor_big_0() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         let tier_0 = vector::singleton(HI_64); // Divisor.
@@ -2187,7 +2339,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for fee share divisor too big on 1st tier.
-    fun test_sent_incentive_parameters_parse_tiers_vector_divisor_big_1() {
+    fun test_set_incentive_params_parse_tiers_vec_divisor_big_1() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
@@ -2210,7 +2362,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for fee share divisor too small.
-    fun test_sent_incentive_parameters_parse_tiers_vector_divisor_small() {
+    fun test_set_incentive_params_parse_tiers_vec_divisor_small() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
@@ -2228,7 +2380,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 10)]
     /// Verify failure for withdrawal fee too big on 0th tier.
-    fun test_sent_incentive_parameters_parse_tiers_vector_withdraw_big_0() {
+    fun test_set_incentive_params_parse_tiers_vec_withdraw_big_0() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
@@ -2246,7 +2398,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 10)]
     /// Verify failure for withdrawal fee too big on 1st tier.
-    fun test_sent_incentive_parameters_parse_tiers_vector_withdraw_big_1() {
+    fun test_set_incentive_params_parse_tiers_vec_withdraw_big_1() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
@@ -2269,7 +2421,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 11)]
     /// Verify failure for withdrawal fee too small.
-    fun test_sent_incentive_parameters_parse_tiers_vector_withdraw_small() {
+    fun test_set_incentive_params_parse_tiers_vec_withdraw_small() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         // Divisor.
@@ -2287,7 +2439,7 @@ module econia::incentives {
     #[test]
     #[expected_failure(abort_code = 8)]
     /// Verify failure for wrong length of inner vector.
-    fun test_sent_incentive_parameters_parse_tiers_vector_wrong_length() {
+    fun test_set_incentive_params_parse_tiers_vec_wrong_length() {
         // Declare mock inputs.
         let taker_fee_divisor = 2345;
         let integrator_fee_store_tiers = vector::singleton(vector::empty());
@@ -2300,7 +2452,7 @@ module econia::incentives {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 6)]
     /// Verify failure for custodian registration fee too low.
-    fun test_set_incentive_parameters_range_check_inputs_custodian_fee(
+    fun test_set_incentive_params_range_check_inputs_custodian_fee(
         econia: &signer
     ) {
         // Attempt invalid invocation.
@@ -2311,7 +2463,7 @@ module econia::incentives {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 7)]
     /// Verify failure for divisor too low.
-    fun test_set_incentive_parameters_range_check_inputs_divisor(
+    fun test_set_incentive_params_range_check_inputs_divisor(
         econia: &signer
     ) {
         // Attempt invalid invocation.
@@ -2322,7 +2474,7 @@ module econia::incentives {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for market registration fee too low.
-    fun test_set_incentive_parameters_range_check_inputs_market_fee(
+    fun test_set_incentive_params_range_check_inputs_market_fee(
         econia: &signer
     ) {
         // Attempt invalid invocation.
@@ -2333,7 +2485,7 @@ module econia::incentives {
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for not Econia account.
-    fun test_set_incentive_parameters_range_check_inputs_not_econia(
+    fun test_set_incentive_params_range_check_inputs_not_econia(
         account: &signer
     ) {
         // Attempt invalid invocation.
@@ -2344,7 +2496,7 @@ module econia::incentives {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 19)]
     /// Verify failure for underwriter registration fee too low.
-    fun test_set_incentive_parameters_range_check_inputs_underwriter(
+    fun test_set_incentive_params_range_check_inputs_underwriter(
         econia: &signer
     ) {
         // Attempt invalid invocation.
@@ -2355,7 +2507,7 @@ module econia::incentives {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for empty fee store tiers.
-    fun test_set_incentive_parameters_range_check_inputs_vector_empty(
+    fun test_set_incentive_params_range_check_inputs_vector_empty(
         econia: &signer
     ) {
         // Attempt invalid invocation.
@@ -2366,7 +2518,7 @@ module econia::incentives {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 14)]
     /// Verify failure for too many elements in fee store tiers vector.
-    fun test_set_incentive_parameters_range_check_inputs_vector_long(
+    fun test_set_incentive_params_range_check_inputs_vector_long(
         econia: &signer
     ) {
         // Declare empty integrator fee store tiers vector.

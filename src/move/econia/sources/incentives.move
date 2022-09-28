@@ -408,10 +408,10 @@ module econia::incentives {
     ///   to tier 3 and 100 to activate to tier 1, it costs 900 to
     ///   upgrade from tier 1 to tier 3.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * `new_tier` is not higher than the one that the
-    ///   `IntegratorFeeStore` is already activated to.
+    /// * `E_NOT_AN_UPGRADE`: `new_tier` is not higher than the one
+    ///    that the `IntegratorFeeStore` is already activated to.
     ///
     /// # Restrictions
     ///
@@ -627,6 +627,10 @@ module econia::incentives {
     }
 
     /// Assert `T` is utility coin type.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_UTILITY_COIN_TYPE`: `T` is not utility coin type.
     public fun verify_utility_coin_type<T>()
     acquires IncentiveParameters {
         assert!(is_utility_coin_type<T>(), E_INVALID_UTILITY_COIN_TYPE);
@@ -863,15 +867,16 @@ module econia::incentives {
     /// * `quote_fill`: Amount of Quote coins filled during taker match.
     /// * `quote_coins_ref_mut`: Quote coins to withdraw fees from.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * Depositing to integrator fee store would result in an
-    ///   overflow. Rather than relying on the underlying coin operation
-    ///   to abort, this check is performed to provide additional
-    ///   feedback in the unlikely event that a coin with a supply far
-    ///   in excess of `HI_64` is the quote coin for a market.
-    /// * Depositing to Econia fee store would result in an overflow
-    ///   per above.
+    /// * `E_INTEGRATOR_FEE_STORE_OVERFLOW`: Depositing to integrator
+    ///   fee store would result in an overflow. Rather than relying on
+    ///   the underlying coin operation to abort, this check is
+    ///   performed to provide additional feedback in the unlikely event
+    ///   that a coin with a supply far in excess of `HI_64` is the
+    ///   quote coin for a market.
+    /// * `E_ECONIA_FEE_STORE_OVERFLOW`: Depositing to Econia fee store
+    ///   would result in an overflow per above.
     public(friend) fun assess_taker_fees<QuoteCoinType>(
         market_id: u64,
         integrator_address: address,
@@ -1023,10 +1028,11 @@ module econia::incentives {
     ///
     /// * Taker fee divisor is greater than 1.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * Maximum amount to match does not fit in a `u64`, which should
-    ///   only be possible in the case of a `SELL`.
+    /// * `E_MAX_QUOTE_MATCH_OVERFLOW`: Maximum amount to match does not
+    ///   fit in a `u64`, which should only be possible in the case of a
+    ///   `SELL`.
     public(friend) fun calculate_max_quote_match(
         direction: bool,
         taker_fee_divisor: u64,
@@ -1176,13 +1182,14 @@ module econia::incentives {
 
     /// Deposit `coins` to the Econia `UtilityCoinStore`.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * Depositing to utility coin store would result in an overflow.
-    ///   Rather than relying on the underlying coin operation to abort,
-    ///   this check is performed to provide additional feedback in the
-    ///   unlikely event that a coin with a supply far in excess of
-    ///   `HI_64` is used as a utility coin.
+    /// * `E_UTILITY_COIN_STORE_OVERFLOW`: Depositing to utility coin
+    ///   store would result in an overflow. Rather than relying on the
+    ///   underlying coin operation to abort, this check is performed to
+    ///   provide additional feedback in the unlikely event that a coin
+    ///   with a supply far in excess of `HI_64` is used as a utility
+    ///   coin.
     fun deposit_utility_coins<UtilityCoinType>(
         coins: coin::Coin<UtilityCoinType>
     ) acquires
@@ -1204,6 +1211,11 @@ module econia::incentives {
     /// Verify that `UtilityCoinType` is the utility coin type and that
     /// `coins` has at least the `min_amount`, then deposit all utility
     /// coins to `UtilityCoinStore`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NOT_ENOUGH_UTILITY_COINS`: Insufficient utility coins
+    ///   provided.
     fun deposit_utility_coins_verified<UtilityCoinType>(
         coins: coin::Coin<UtilityCoinType>,
         min_amount: u64
@@ -1257,9 +1269,9 @@ module econia::incentives {
     ///
     /// * `fee_account`: Econia fee account `signer`.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * `CoinType` does not correspond to an initialized
+    /// * `E_NOT_COIN`: `CoinType` does not correspond to an initialized
     ///   `aptos_framework::coin::Coin`.
     fun init_utility_coin_store<CoinType>(
         fee_account: &signer
@@ -1281,8 +1293,12 @@ module econia::incentives {
     /// is an unlikely but potentially catastrophic event, especially
     /// if the overflowed account blocks other transactions from
     /// proceeding. Hence the extra feedback in this module, in the
-    /// form of a custom error code for the given operation, that allows
-    /// for diagnosis in extreme cases.
+    /// form of a custom error code for the given operation, which
+    /// allows for diagnosis in extreme cases.
+    ///
+    /// # Aborts
+    ///
+    /// * `error_code`: Proposed coin merge overflows a `u64`.
     fun range_check_coin_merge<CoinType>(
         amount: u64,
         target_coins: &coin::Coin<CoinType>,
@@ -1330,12 +1346,13 @@ module econia::incentives {
     /// * If `updating` is `false`, an `IncentiveParameters` does not
     ///   exist at the Econia account.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * `updating` is `true` and the new parameter set indicates a
-    ///   reduction in the number of fee store activation tiers, which
-    ///   would mean that integrators who had previously upgraded to the
-    ///   highest tier would become subject to undefined behavior.
+    /// * `E_FEWER_TIERS`: `updating` is `true` and the new parameter
+    ///   set indicates a reduction in the number of fee store
+    ///   activation tiers, which would mean that integrators who had
+    ///   previously upgraded to the highest tier would become subject
+    ///   to undefined behavior.
     fun set_incentive_parameters<UtilityCoinType>(
         econia: &signer,
         market_registration_fee: u64,
@@ -1409,18 +1426,22 @@ module econia::incentives {
     ///   to the `IncentiveParameters.integrator_fee_store_tiers` field
     ///   to parse into.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * An indicated inner vector from
+    /// * `E_TIER_FIELDS_WRONG_LENGTH`: An indicated inner vector from
     ///   `integrator_fee_store_tiers_ref` is the wrong length.
-    /// * Fee share divisor does not decrease with tier number.
-    /// * A fee share divisor is less than taker fee divisor.
-    /// * Tier activation fee for first tier is nonzero.
-    /// * Tier activation fee does not increase with tier number.
-    /// * There is no tier activation fee for the first tier.
-    /// * Withdrawal fee does not decrease with tier number.
-    /// * The withdrawal fee for a given tier does not meet minimum
-    ///   threshold.
+    /// * `E_FEE_SHARE_DIVISOR_TOO_BIG`: Fee share divisor does not
+    ///   decrease with tier number.
+    /// * `E_FEE_SHARE_DIVISOR_TOO_SMALL`: A fee share divisor is less
+    ///   than taker fee divisor.
+    /// * `E_FIRST_TIER_ACTIVATION_FEE_NONZERO`: Tier activation fee for
+    ///   first tier is nonzero.
+    /// * `E_ACTIVATION_FEE_TOO_SMALL`: Tier activation fee does not
+    ///   increase with tier number.
+    /// * `E_WITHDRAWAL_FEE_TOO_BIG`: Withdrawal fee does not decrease
+    ///   with tier number.
+    /// * `E_WITHDRAWAL_FEE_TOO_SMALL`: The withdrawal fee for a given
+    ///   tier does not meet minimum threshold.
     ///
     /// # Assumptions
     ///
@@ -1514,17 +1535,22 @@ module econia::incentives {
     ///   vector containing fields for a corresponding
     ///   `IntegratorFeeStoreTierParameters`.
     ///
-    /// # Aborts if
+    /// # Aborts
     ///
-    /// * `econia` is not Econia account.
-    /// * `market_registration_fee` does not meet minimum threshold.
-    /// * `underwriter_registration_fee` does not meet minimum
+    /// * `E_NOT_ECONIA`: `econia` is not Econia account.
+    /// * `E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN`:
+    ///   `market_registration_fee` does not meet minimum threshold.
+    /// * `E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN`:
+    ///   `underwriter_registration_fee` does not meet minimum
     ///   threshold.
-    /// * `custodian_registration_fee` does not meet minimum threshold.
-    /// * `taker_fee_divisor` does not meet minimum threshold.
-    /// * `integrator_fee_store_tiers_ref` indicates an empty vector.
-    /// * `integrator_fee_store_tiers_ref` indicates a vector that is
-    ///   too long.
+    /// * `E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN`:
+    ///   `custodian_registration_fee` does not meet minimum threshold.
+    /// * `E_TAKER_DIVISOR_LESS_THAN_MIN`: `taker_fee_divisor` does not
+    ///   meet minimum threshold.
+    /// * `E_EMPTY_FEE_STORE_TIERS`: `integrator_fee_store_tiers_ref`
+    ///   indicates an empty vector.
+    /// * `E_TOO_MANY_TIERS`: `integrator_fee_store_tiers_ref` indicates
+    ///   a vector that is too long.
     fun set_incentive_parameters_range_check_inputs(
         econia: &signer,
         market_registration_fee: u64,
@@ -1559,6 +1585,10 @@ module econia::incentives {
     /// `QuoteCoinType` and `market_id` if `all` is `true`, otherwise
     /// withdraw `amount` (which may corresond to all coins), aborting
     /// if `account` is not Econia.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NOT_ECONIA`: `account` is not Econia account.
     fun withdraw_econia_fees_internal<QuoteCoinType>(
         account: &signer,
         market_id: u64,
@@ -1589,6 +1619,10 @@ module econia::incentives {
     /// Withdraw all utility coins from the `UtilityCoinStore` if `all`
     /// is `true`, otherwise withdraw `amount` (which may corresond to
     /// all coins), aborting if `account` is not Econia.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NOT_ECONIA`: `account` is not Econia account.
     fun withdraw_utility_coins_internal<UtilityCoinType>(
         account: &signer,
         all: bool,

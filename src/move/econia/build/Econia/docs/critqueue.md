@@ -661,7 +661,9 @@ since they alter the head of the queue, they are not parallelizable.
 
 The below dependency charts use <code>mermaid.js</code> syntax, which can be
 automatically rendered into a diagram (depending on the browser)
-when viewing the documentation file generated from source code.
+when viewing the documentation file generated from source code. If
+a browser renders the diagrams with coloring that makes it difficult
+to read, try a different browser.
 
 * <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>:
 

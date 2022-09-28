@@ -532,7 +532,9 @@
 ///
 /// The below dependency charts use `mermaid.js` syntax, which can be
 /// automatically rendered into a diagram (depending on the browser)
-/// when viewing the documentation file generated from source code.
+/// when viewing the documentation file generated from source code. If
+/// a browser renders the diagrams with coloring that makes it difficult
+/// to read, try a different browser.
 ///
 /// * `insert()`:
 ///

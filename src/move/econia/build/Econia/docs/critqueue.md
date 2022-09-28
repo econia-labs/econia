@@ -6,7 +6,7 @@
 Crit-queue: A hybrid between a crit-bit tree and a queue.
 
 A crit-queue contains an inner crit-bit tree with sub-queues at each
-leaf node, and can store multiple instances of the same insertion
+leaf node, which can store multiple instances of the same insertion
 key. Each such instance is stored in its own sub-queue node at a
 crit-bit tree leaf corresponding to the given insertion key, with
 multiple instances of the same insertion key sorted by order of
@@ -20,9 +20,9 @@ polarity set upon initialization), then by
 2. Ascending order of insertion within a sub-queue.
 
 Like a crit-bit tree, a crit-queue allows for insertions and
-removals from any portion of the crit-queue, and can also be used as
-an associative array for mapping keys to values, as in the present
-implementation.
+removals from anywhere inside the data structure, and can similarly
+be used as an associative array that maps from keys to values, as in
+the present implementation.
 
 The present implementation, based on hash tables, offers:
 

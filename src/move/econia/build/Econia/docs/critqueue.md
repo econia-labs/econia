@@ -564,7 +564,7 @@ In the present implementation, key-value insertion pairs are
 inserted via <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>, which accepts a <code>u64</code> insertion key and
 insertion value of type <code>V</code>. A corresponding <code>u128</code> access key is
 returned, which can be used for subsequent access key lookup via <code>
-<a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code>dequeue()</code>, or <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
+<a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>, or <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
 
 
 <a name="@Inserting_25"></a>
@@ -618,7 +618,7 @@ general case where:
 
 Dequeues, as a form of removal, are $O(1)$, but since they alter
 the head of the queue, they are not parallelizable. Dequeues
-are initialized via <code>dequeue_init()</code>, and iterated via <code>dequeue()</code>.
+are initialized via <code>dequeue_init()</code>, and iterated via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>.
 
 
 <a name="@Complete_docgen_index_28"></a>
@@ -665,6 +665,7 @@ The below index is automatically generated from source code:
 -  [Constants](#@Constants_29)
 -  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
 -  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
+-  [Function `dequeue`](#0xc0deb00c_critqueue_dequeue)
 -  [Function `get_head_access_key`](#0xc0deb00c_critqueue_get_head_access_key)
 -  [Function `has_access_key`](#0xc0deb00c_critqueue_has_access_key)
 -  [Function `insert`](#0xc0deb00c_critqueue_insert)
@@ -1192,6 +1193,42 @@ Mutably borrow insertion value corresponding to <code>access_key</code>
 ): &<b>mut</b> V {
     &<b>mut</b> <a href="_borrow_mut">table::borrow_mut</a>(
         &<b>mut</b> critqueue_ref_mut.subqueue_nodes, access_key).insertion_value
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_dequeue"></a>
+
+## Function `dequeue`
+
+Dequeue the insertion value at the head of the given
+<code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, if there is one.
+
+See <code>test_dequeue()</code> for iteration syntax.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): <a href="_Option">option::Option</a>&lt;V&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+): Option&lt;V&gt; {
+    // If the crit-queue is empty, <b>return</b> none.
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref_mut.head)) <b>return</b> <a href="_none">option::none</a>();
+    // Otherwise get the access key of the crit-queue head.
+    <b>let</b> head_access_key = *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.head);
+    // Then remove and <b>return</b> the corresponding insertion value,
+    // packed in an <a href="">option</a>.
+    <a href="_some">option::some</a>(<a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>(critqueue_ref_mut, head_access_key))
 }
 </code></pre>
 

@@ -665,6 +665,22 @@ module econia::critqueue {
             &mut critqueue_ref_mut.subqueue_nodes, access_key).insertion_value
     }
 
+    /// Dequeue the insertion value at the head of the given
+    /// `CritQueue`, if there is one.
+    ///
+    /// See `test_dequeue()` for iteration syntax.
+    public fun dequeue<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+    ): Option<V> {
+        // If the crit-queue is empty, return none.
+        if (option::is_none(&critqueue_ref_mut.head)) return option::none();
+        // Otherwise get the access key of the crit-queue head.
+        let head_access_key = *option::borrow(&critqueue_ref_mut.head);
+        // Then remove and return the corresponding insertion value,
+        // packed in an option.
+        option::some(remove(critqueue_ref_mut, head_access_key))
+    }
+
     /// Return access key of given `CritQueue` head, if any.
     public fun get_head_access_key<V>(
         critqueue_ref: &CritQueue<V>,
@@ -2416,6 +2432,97 @@ module econia::critqueue {
         assert!(*borrow(&critqueue, 0) == 0, 0);
         *borrow_mut(&mut critqueue, 0) = 123; // Mutate value.
         assert!(*borrow(&critqueue, 0) == 123, 0); // Assert mutation.
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify iterated dequeue operations.
+    ///
+    /// Start by initializing, out of order, the following sub-queues:
+    ///
+    /// | Insertion key | Insertion values  |
+    /// |---------------|-------------------|
+    /// | 0             | 0, 10, 20, ... 90 |
+    /// | 1             | 1, 11, 21, ... 91 |
+    /// | ...           | ...               |
+    /// | 9             | 9, 19, 29, ... 99 |
+    ///
+    /// Then iterate and dequeue all insertion values for an ascending
+    /// crit-queue, and repeat for a descending crit-queue.
+    fun test_dequeue() {
+        let critqueue = new(ASCENDING); // Get ascending crit-queue.
+        let i = 0; // Declare loop counter.
+        while (i < 100) { // For 100 iterations:
+            // Insertion key is remainder after division by 10.
+            let insertion_key = i % 10; // Get counter modulo 10.
+            let insertion_value = i; // Insertion value is counter.
+            // Insert key-value insertion pair.
+            insert(&mut critqueue, insertion_key, insertion_value);
+            i = i + 1; // Increment loop counter.
+        };
+        let insertion_key = 0; // Initialize insertion key.
+        let insertion_count = 0; // Initialize insertion count.
+        while (!is_empty(&critqueue)) { // While crit-queue not empty:
+            // Calculate expected insertion value to dequeue.
+            let insertion_value = insertion_key + 10 * insertion_count;
+            // Get dequeue value.
+            let dequeue_value = *option::borrow(&dequeue(&mut critqueue));
+            // Assert expected dequeue value.
+            assert!(dequeue_value == insertion_value, 0);
+            // Increment the insertion count for the insertion key.
+            insertion_count = insertion_count + 1;
+            if (insertion_count == 10) { // If insertion count is 10:
+                // Increment insertion key for next expected dequeue.
+                insertion_key = insertion_key + 1;
+                // Restart the insertion counter to 0.
+                insertion_count = 0;
+            };
+        };
+        // Assert insertion key tracker has hit 10.
+        assert!(insertion_key == 10, 0);
+        // Assert insertion counter has gone back to 0.
+        assert!(insertion_count == 0, 0);
+        // Assert dequeue call returns none.
+        assert!(option::is_none(&dequeue(&mut critqueue)), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+        // Now get a descending crit-queue.
+        let critqueue = new(DESCENDING); // Get ascending crit-queue.
+        i = 0; // Declare loop counter.
+        while (i < 100) { // For 100 iterations:
+            // Insertion key is remainder after division by 10.
+            let insertion_key = i % 10; // Get counter modulo 10.
+            let insertion_value = i; // Insertion value is counter.
+            // Insert key-value insertion pair.
+            insert(&mut critqueue, insertion_key, insertion_value);
+            i = i + 1; // Increment loop counter.
+        };
+        let insertion_key = 9; // Initialize insertion key.
+        let insertion_count = 0; // Initialize insertion count.
+        while (!is_empty(&critqueue)) { // While crit-queue not empty:
+            // Calculate expected insertion value to dequeue.
+            let insertion_value = insertion_key + 10 * insertion_count;
+            // Get dequeue value.
+            let dequeue_value = *option::borrow(&dequeue(&mut critqueue));
+            // Assert expected dequeue value.
+            assert!(dequeue_value == insertion_value, 0);
+            // Increment the insertion count for the insertion key.
+            insertion_count = insertion_count + 1;
+            if (insertion_count == 10) { // If insertion count is 10:
+                // If final insertion key has been iterated on, flag
+                // it to the max value that can fit in a u64.
+                insertion_key = if (insertion_key == 0) HI_64 else
+                    // Otherwise decrement it for the next iteration.
+                    insertion_key - 1;
+                // Restart the insertion counter to 0.
+                insertion_count = 0;
+            };
+        };
+        // Assert insertion key tracker has been flagged.
+        assert!(insertion_key == HI_64, 0);
+        // Assert insertion counter has gone back to 0.
+        assert!(insertion_count == 0, 0);
+        // Assert dequeue call returns none.
+        assert!(option::is_none(&dequeue(&mut critqueue)), 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 

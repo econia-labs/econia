@@ -1758,15 +1758,6 @@ module econia::critqueue {
         (access_key, free_leaf) // Return access key and if free leaf.
     }
 
-    /// Return `true` if crit-bit tree node `key` is an inner key.
-    fun is_inner_key(key: u128): bool {key & TREE_NODE_TYPE == TREE_NODE_INNER}
-
-    /// Return `true` if crit-bit tree node `key` is a leaf key.
-    fun is_leaf_key(key: u128): bool {key & TREE_NODE_TYPE == TREE_NODE_LEAF}
-
-    /// Return `true` if `key` is set at `bit_number`.
-    fun is_set(key: u128, bit_number: u8): bool {key >> bit_number & 1 == 1}
-
     /// Remove from the crit-queue crit-bit tree the leaf having the
     /// given key, aborting if no such leaf in the tree.
     ///
@@ -2302,11 +2293,6 @@ module econia::critqueue {
     }
 
     #[test_only]
-    /// Return a bitmask with all bits high except for bit `b`,
-    /// 0-indexed starting at LSB: bitshift 1 by `b`, XOR with `HI_128`
-    fun bit_lo(b: u8): u128 {1 << b ^ HI_128}
-
-    #[test_only]
     /// Return immutable reference to inner node having `inner_key` in
     /// given `CritQueue`.
     fun borrow_inner_test<V>(
@@ -2338,7 +2324,7 @@ module econia::critqueue {
 
     #[test_only]
     /// Destroy a crit-queue even if it is not empty.
-    fun drop_critqueue_test<V>(
+    public fun drop_critqueue_test<V>(
         critqueue: CritQueue<V>
     ) {
         // Unpack all fields, dropping those that are not tables.
@@ -2416,10 +2402,6 @@ module econia::critqueue {
     }
 
     #[test_only]
-    /// Wraper for `u_128()`, casting to return to `u64`.
-    public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
-
-    #[test_only]
     /// Return a `u128` corresponding to provided byte string `s`. The
     /// byte should only contain only "0"s and "1"s, up to 128
     /// characters max (e.g. `b"100101...10101010"`).
@@ -2458,17 +2440,13 @@ module econia::critqueue {
         u_128(a) // Return u128 equivalent of concatenated bytestring.
     }
 
+    #[test_only]
+    /// Wrapper for `u_128()`, casting return to `u64`.
+    public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test]
-    /// Verify successful bitmask generation
-    fun test_bit_lo() {
-        assert!(bit_lo(0) == HI_128 - 1, 0);
-        assert!(bit_lo(1) == HI_128 - 2, 0);
-        assert!(bit_lo(127) == 0x7fffffffffffffffffffffffffffffff, 0);
-    }
 
     #[test]
     /// Verify borrowing, immutably and mutably.
@@ -3654,32 +3632,6 @@ module econia::critqueue {
         // Assert is marked not empty.
         assert!(!is_empty(&critqueue), 0);
         drop_critqueue_test(critqueue) // Drop crit-queue.
-    }
-
-    #[test]
-    /// Verify correct returns.
-    fun test_is_set_success() {
-        assert!(is_set(u_128(b"11"), 0), 0);
-        assert!(is_set(u_128(b"11"), 1), 0);
-        assert!(!is_set(u_128(b"10"), 0), 0);
-        assert!(!is_set(u_128(b"01"), 1), 0);
-    }
-
-    #[test]
-    /// Verify successful determination of key types.
-    fun test_key_types() {
-        assert!(is_inner_key(u_128_by_32(
-            b"00000000000000000000000000000000",
-            b"00000000000000000000000000000000",
-            b"10000000000000000000000000000000",
-            b"00000000000000000000000000000000",
-        )), 0);
-        assert!(is_leaf_key(u_128_by_32(
-            b"11111111111111111111111111111111",
-            b"11111111111111111111111111111111",
-            b"00000000000000000000000000000000",
-            b"00000000000000000000000000000000",
-        )), 0);
     }
 
     #[test]

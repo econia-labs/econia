@@ -10,23 +10,241 @@ upon module publication per <code><a href="incentives.md#0xc0deb00c_incentives_i
 updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
+<a name="@General_overview_sections_0"></a>
+
+## General overview sections
+
+
+[Functions](#functions)
+
+* [Public getters](#public-getters)
+* [Other public functions](#other-public-functions)
+* [Public entry functions](#public-entry-functions)
+* [Public friend functions](#public-friend-functions)
+
+[Dependency charts](#dependency-charts)
+
+* [Incentive parameters setters](#incentive-parameter-setters)
+* [Econia fee account operations](#econia-fee-account-operations)
+* [Registrant operations](#registrant-operations)
+* [Integrator operations](#integrator-operations)
+* [Match operations](#match-operations)
+
+[Complete docgen index](#complete-docgen-index)
+
+
+<a name="@Functions_1"></a>
+
+## Functions
+
+
+
+<a name="@Public_getters_2"></a>
+
+### Public getters
+
+
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store">get_cost_to_upgrade_integrator_fee_store</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_custodian_registration_fee">get_custodian_registration_fee</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_fee_share_divisor">get_fee_share_divisor</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_integrator_withdrawal_fee">get_integrator_withdrawal_fee</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">get_market_registration_fee</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_n_fee_store_tiers">get_n_fee_store_tiers</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">get_taker_fee_divisor</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_tier_activation_fee">get_tier_activation_fee</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_tier_withdrawal_fee">get_tier_withdrawal_fee</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_get_underwriter_registration_fee">get_underwriter_registration_fee</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_is_utility_coin_type">is_utility_coin_type</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_verify_utility_coin_type">verify_utility_coin_type</a>()</code>
+
+
+<a name="@Other_public_functions_3"></a>
+
+### Other public functions
+
+
+* <code><a href="incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store">upgrade_integrator_fee_store</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees">withdraw_econia_fees</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_econia_fees_all">withdraw_econia_fees_all</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees">withdraw_integrator_fees</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins">withdraw_utility_coins</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_utility_coins_all">withdraw_utility_coins_all</a>()</code>
+
+
+<a name="@Public_entry_functions_4"></a>
+
+### Public entry functions
+
+
+* <code><a href="incentives.md#0xc0deb00c_incentives_update_incentives">update_incentives</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore">upgrade_integrator_fee_store_via_coinstore</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores">withdraw_integrator_fees_via_coinstores</a>()</code>
+
+
+<a name="@Public_friend_functions_5"></a>
+
+### Public friend functions
+
+
+* <code><a href="incentives.md#0xc0deb00c_incentives_assess_taker_fees">assess_taker_fees</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">calculate_max_quote_match</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins">deposit_custodian_registration_utility_coins</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_deposit_market_registration_utility_coins">deposit_market_registration_utility_coins</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_deposit_underwriter_registration_utility_coins">deposit_underwriter_registration_utility_coins</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_register_econia_fee_store_entry">register_econia_fee_store_entry</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_register_integrator_fee_store">register_integrator_fee_store</a>()</code>
+
+
+<a name="@Dependency_charts_6"></a>
+
+## Dependency charts
+
+
+The below dependency charts use <code>mermaid.js</code> syntax, which can be
+automatically rendered into a diagram (depending on the browser)
+when viewing the documentation file generated from source code. If
+a browser renders the diagrams with coloring that makes it difficult
+to read, try a different browser.
+
+
+<a name="@Incentive_parameter_setters_7"></a>
+
+### Incentive parameter setters
+
+
+```mermaid
+
+flowchart LR
+
+update_incentives --> set_incentive_parameters
+init_module --> set_incentive_parameters
+set_incentive_parameters --> set_incentive_parameters_parse_tiers_vector
+set_incentive_parameters --> resource_account::get_signer
+set_incentive_parameters --> set_incentive_parameters_range_check_inputs
+set_incentive_parameters --> init_utility_coin_store
+set_incentive_parameters --> get_n_fee_store_tiers
+
+```
+
+
+<a name="@Econia_fee_account_operations_8"></a>
+
+### Econia fee account operations
+
+
+```mermaid
+
+flowchart LR
+
+withdraw_econia_fees --> withdraw_econia_fees_internal
+withdraw_econia_fees_all --> withdraw_econia_fees_internal
+withdraw_econia_fees_internal --> resource_account::get_address
+withdraw_utility_coins --> withdraw_utility_coins_internal
+withdraw_utility_coins_all --> withdraw_utility_coins_internal
+withdraw_utility_coins_internal --> resource_account::get_address
+register_econia_fee_store_entry --> resource_account::get_signer
+deposit_utility_coins --> resource_account::get_address
+deposit_utility_coins --> range_check_coin_merge
+deposit_utility_coins_verified --> verify_utility_coin_type
+deposit_utility_coins_verified --> deposit_utility_coins
+
+```
+
+
+<a name="@Registrant_operations_9"></a>
+
+### Registrant operations
+
+
+```mermaid
+
+flowchart LR
+
+deposit_custodian_registration_utility_coins --> deposit_utility_coins_verified
+deposit_custodian_registration_utility_coins --> get_custodian_registration_fee
+deposit_market_registration_utility_coins --> deposit_utility_coins_verified
+deposit_market_registration_utility_coins --> get_market_registration_fee
+deposit_underwriter_registration_utility_coins --> deposit_utility_coins_verified
+deposit_underwriter_registration_utility_coins --> get_underwriter_registration_fee
+
+```
+
+
+<a name="@Integrator_operations_10"></a>
+
+### Integrator operations
+
+
+```mermaid
+
+flowchart LR
+
+upgrade_integrator_fee_store --> deposit_utility_coins_verified
+withdraw_integrator_fees --> deposit_utility_coins_verified
+withdraw_integrator_fees --> get_tier_withdrawal_fee
+upgrade_integrator_fee_store_via_coinstore --> upgrade_integrator_fee_store
+withdraw_integrator_fees_via_coinstores --> get_integrator_withdrawal_fee
+withdraw_integrator_fees_via_coinstores --> withdraw_integrator_fees
+register_integrator_fee_store --> deposit_utility_coins_verified
+register_integrator_fee_store --> get_tier_activation_fee
+
+```
+
+<a name="@Match_operations_11"></a>
+
+### Match operations
+
+
+```mermaid
+
+flowchart LR
+
+assess_taker_fees --> get_fee_share_divisor
+assess_taker_fees --> get_taker_fee_divisor
+assess_taker_fees --> resource_account::get_address
+assess_taker_fees --> range_check_coin_merge
+
+```
+
+
+<a name="@Complete_docgen_index_12"></a>
+
+## Complete docgen index
+
+
+The below index is automatically generated from source code:
+
+
+-  [General overview sections](#@General_overview_sections_0)
+-  [Functions](#@Functions_1)
+    -  [Public getters](#@Public_getters_2)
+    -  [Other public functions](#@Other_public_functions_3)
+    -  [Public entry functions](#@Public_entry_functions_4)
+    -  [Public friend functions](#@Public_friend_functions_5)
+-  [Dependency charts](#@Dependency_charts_6)
+    -  [Incentive parameter setters](#@Incentive_parameter_setters_7)
+    -  [Econia fee account operations](#@Econia_fee_account_operations_8)
+    -  [Registrant operations](#@Registrant_operations_9)
+    -  [Integrator operations](#@Integrator_operations_10)
+    -  [Match operations](#@Match_operations_11)
+-  [Complete docgen index](#@Complete_docgen_index_12)
 -  [Resource `EconiaFeeStore`](#0xc0deb00c_incentives_EconiaFeeStore)
 -  [Resource `IncentiveParameters`](#0xc0deb00c_incentives_IncentiveParameters)
 -  [Struct `IntegratorFeeStore`](#0xc0deb00c_incentives_IntegratorFeeStore)
 -  [Resource `IntegratorFeeStores`](#0xc0deb00c_incentives_IntegratorFeeStores)
 -  [Struct `IntegratorFeeStoreTierParameters`](#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters)
 -  [Resource `UtilityCoinStore`](#0xc0deb00c_incentives_UtilityCoinStore)
--  [Constants](#@Constants_0)
+-  [Constants](#@Constants_13)
 -  [Function `get_cost_to_upgrade_integrator_fee_store`](#0xc0deb00c_incentives_get_cost_to_upgrade_integrator_fee_store)
-    -  [Type parameters](#@Type_parameters_1)
-    -  [Parameters](#@Parameters_2)
-    -  [Returns](#@Returns_3)
-    -  [Aborts if](#@Aborts_if_4)
-    -  [Restrictions](#@Restrictions_5)
+    -  [Type parameters](#@Type_parameters_14)
+    -  [Parameters](#@Parameters_15)
+    -  [Returns](#@Returns_16)
+    -  [Aborts if](#@Aborts_if_17)
+    -  [Restrictions](#@Restrictions_18)
 -  [Function `get_custodian_registration_fee`](#0xc0deb00c_incentives_get_custodian_registration_fee)
 -  [Function `get_fee_share_divisor`](#0xc0deb00c_incentives_get_fee_share_divisor)
 -  [Function `get_integrator_withdrawal_fee`](#0xc0deb00c_incentives_get_integrator_withdrawal_fee)
-    -  [Restrictions](#@Restrictions_6)
+    -  [Restrictions](#@Restrictions_19)
 -  [Function `get_market_registration_fee`](#0xc0deb00c_incentives_get_market_registration_fee)
 -  [Function `get_n_fee_store_tiers`](#0xc0deb00c_incentives_get_n_fee_store_tiers)
 -  [Function `get_taker_fee_divisor`](#0xc0deb00c_incentives_get_taker_fee_divisor)
@@ -35,66 +253,66 @@ updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incenti
 -  [Function `get_underwriter_registration_fee`](#0xc0deb00c_incentives_get_underwriter_registration_fee)
 -  [Function `is_utility_coin_type`](#0xc0deb00c_incentives_is_utility_coin_type)
 -  [Function `upgrade_integrator_fee_store`](#0xc0deb00c_incentives_upgrade_integrator_fee_store)
-    -  [Type parameters](#@Type_parameters_7)
-    -  [Parameters](#@Parameters_8)
+    -  [Type parameters](#@Type_parameters_20)
+    -  [Parameters](#@Parameters_21)
 -  [Function `verify_utility_coin_type`](#0xc0deb00c_incentives_verify_utility_coin_type)
 -  [Function `withdraw_econia_fees`](#0xc0deb00c_incentives_withdraw_econia_fees)
 -  [Function `withdraw_econia_fees_all`](#0xc0deb00c_incentives_withdraw_econia_fees_all)
 -  [Function `withdraw_integrator_fees`](#0xc0deb00c_incentives_withdraw_integrator_fees)
-    -  [Type parameters](#@Type_parameters_9)
-    -  [Parameters](#@Parameters_10)
-    -  [Returns](#@Returns_11)
+    -  [Type parameters](#@Type_parameters_22)
+    -  [Parameters](#@Parameters_23)
+    -  [Returns](#@Returns_24)
 -  [Function `withdraw_utility_coins`](#0xc0deb00c_incentives_withdraw_utility_coins)
 -  [Function `withdraw_utility_coins_all`](#0xc0deb00c_incentives_withdraw_utility_coins_all)
 -  [Function `update_incentives`](#0xc0deb00c_incentives_update_incentives)
 -  [Function `upgrade_integrator_fee_store_via_coinstore`](#0xc0deb00c_incentives_upgrade_integrator_fee_store_via_coinstore)
 -  [Function `withdraw_integrator_fees_via_coinstores`](#0xc0deb00c_incentives_withdraw_integrator_fees_via_coinstores)
-    -  [Type parameters](#@Type_parameters_12)
-    -  [Parameters](#@Parameters_13)
+    -  [Type parameters](#@Type_parameters_25)
+    -  [Parameters](#@Parameters_26)
 -  [Function `assess_taker_fees`](#0xc0deb00c_incentives_assess_taker_fees)
-    -  [Type parameters](#@Type_parameters_14)
-    -  [Parameters](#@Parameters_15)
-    -  [Aborts if](#@Aborts_if_16)
+    -  [Type parameters](#@Type_parameters_27)
+    -  [Parameters](#@Parameters_28)
+    -  [Aborts if](#@Aborts_if_29)
 -  [Function `calculate_max_quote_match`](#0xc0deb00c_incentives_calculate_max_quote_match)
-    -  [User input](#@User_input_17)
-    -  [Matching](#@Matching_18)
-        -  [Example buy](#@Example_buy_19)
-        -  [Example sell](#@Example_sell_20)
-    -  [Variables](#@Variables_21)
-    -  [Equations](#@Equations_22)
-        -  [Buy](#@Buy_23)
-        -  [Sell](#@Sell_24)
-    -  [Parameters](#@Parameters_25)
-    -  [Returns](#@Returns_26)
-    -  [Assumptions](#@Assumptions_27)
-    -  [Aborts if](#@Aborts_if_28)
+    -  [User input](#@User_input_30)
+    -  [Matching](#@Matching_31)
+        -  [Example buy](#@Example_buy_32)
+        -  [Example sell](#@Example_sell_33)
+    -  [Variables](#@Variables_34)
+    -  [Equations](#@Equations_35)
+        -  [Buy](#@Buy_36)
+        -  [Sell](#@Sell_37)
+    -  [Parameters](#@Parameters_38)
+    -  [Returns](#@Returns_39)
+    -  [Assumptions](#@Assumptions_40)
+    -  [Aborts if](#@Aborts_if_41)
 -  [Function `deposit_custodian_registration_utility_coins`](#0xc0deb00c_incentives_deposit_custodian_registration_utility_coins)
 -  [Function `deposit_market_registration_utility_coins`](#0xc0deb00c_incentives_deposit_market_registration_utility_coins)
 -  [Function `deposit_underwriter_registration_utility_coins`](#0xc0deb00c_incentives_deposit_underwriter_registration_utility_coins)
 -  [Function `register_econia_fee_store_entry`](#0xc0deb00c_incentives_register_econia_fee_store_entry)
 -  [Function `register_integrator_fee_store`](#0xc0deb00c_incentives_register_integrator_fee_store)
-    -  [Type parameters](#@Type_parameters_29)
-    -  [Parameters](#@Parameters_30)
+    -  [Type parameters](#@Type_parameters_42)
+    -  [Parameters](#@Parameters_43)
 -  [Function `deposit_utility_coins`](#0xc0deb00c_incentives_deposit_utility_coins)
-    -  [Aborts if](#@Aborts_if_31)
+    -  [Aborts if](#@Aborts_if_44)
 -  [Function `deposit_utility_coins_verified`](#0xc0deb00c_incentives_deposit_utility_coins_verified)
 -  [Function `init_module`](#0xc0deb00c_incentives_init_module)
 -  [Function `init_utility_coin_store`](#0xc0deb00c_incentives_init_utility_coin_store)
-    -  [Type Parameters](#@Type_Parameters_32)
-    -  [Parameters](#@Parameters_33)
-    -  [Aborts if](#@Aborts_if_34)
+    -  [Type Parameters](#@Type_Parameters_45)
+    -  [Parameters](#@Parameters_46)
+    -  [Aborts if](#@Aborts_if_47)
 -  [Function `range_check_coin_merge`](#0xc0deb00c_incentives_range_check_coin_merge)
 -  [Function `set_incentive_parameters`](#0xc0deb00c_incentives_set_incentive_parameters)
-    -  [Type Parameters](#@Type_Parameters_35)
-    -  [Parameters](#@Parameters_36)
-    -  [Assumptions](#@Assumptions_37)
-    -  [Aborts if](#@Aborts_if_38)
+    -  [Type Parameters](#@Type_Parameters_48)
+    -  [Parameters](#@Parameters_49)
+    -  [Assumptions](#@Assumptions_50)
+    -  [Aborts if](#@Aborts_if_51)
 -  [Function `set_incentive_parameters_parse_tiers_vector`](#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector)
-    -  [Aborts if](#@Aborts_if_39)
-    -  [Assumptions](#@Assumptions_40)
+    -  [Aborts if](#@Aborts_if_52)
+    -  [Assumptions](#@Assumptions_53)
 -  [Function `set_incentive_parameters_range_check_inputs`](#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs)
-    -  [Parameters](#@Parameters_41)
-    -  [Aborts if](#@Aborts_if_42)
+    -  [Parameters](#@Parameters_54)
+    -  [Aborts if](#@Aborts_if_55)
 -  [Function `withdraw_econia_fees_internal`](#0xc0deb00c_incentives_withdraw_econia_fees_internal)
 -  [Function `withdraw_utility_coins_internal`](#0xc0deb00c_incentives_withdraw_utility_coins_internal)
 
@@ -358,7 +576,7 @@ Container for utility coin fees collected by Econia.
 
 </details>
 
-<a name="@Constants_0"></a>
+<a name="@Constants_13"></a>
 
 ## Constants
 
@@ -800,7 +1018,7 @@ Index of withdrawal fee in vectorized representation of an
 Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> to higher tier.
 
 
-<a name="@Type_parameters_1"></a>
+<a name="@Type_parameters_14"></a>
 
 ### Type parameters
 
@@ -808,7 +1026,7 @@ Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_2"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
@@ -817,7 +1035,7 @@ Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>new_tier</code>: Tier to upgrade to.
 
 
-<a name="@Returns_3"></a>
+<a name="@Returns_16"></a>
 
 ### Returns
 
@@ -828,7 +1046,7 @@ to tier 3 and 100 to activate to tier 1, it costs 900 to
 upgrade from tier 1 to tier 3.
 
 
-<a name="@Aborts_if_4"></a>
+<a name="@Aborts_if_17"></a>
 
 ### Aborts if
 
@@ -836,7 +1054,7 @@ upgrade from tier 1 to tier 3.
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> is already activated to.
 
 
-<a name="@Restrictions_5"></a>
+<a name="@Restrictions_18"></a>
 
 ### Restrictions
 
@@ -962,7 +1180,7 @@ Return integrator fee share divisor for <code>tier</code>.
 Return withdrawal fee for given <code>integrator</code> and <code>market_id</code>.
 
 
-<a name="@Restrictions_6"></a>
+<a name="@Restrictions_19"></a>
 
 ### Restrictions
 
@@ -1231,7 +1449,7 @@ bool
 Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> to a higher tier.
 
 
-<a name="@Type_parameters_7"></a>
+<a name="@Type_parameters_20"></a>
 
 ### Type parameters
 
@@ -1239,7 +1457,7 @@ Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">I
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_21"></a>
 
 ### Parameters
 
@@ -1402,7 +1620,7 @@ See inner function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_e
 Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code>.
 
 
-<a name="@Type_parameters_9"></a>
+<a name="@Type_parameters_22"></a>
 
 ### Type parameters
 
@@ -1410,7 +1628,7 @@ Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_23"></a>
 
 ### Parameters
 
@@ -1422,7 +1640,7 @@ withdrawals and thus transaction collisions with the matching
 engine.
 
 
-<a name="@Returns_11"></a>
+<a name="@Returns_24"></a>
 
 ### Returns
 
@@ -1636,7 +1854,7 @@ depositing quote coins to one too.
 See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw_integrator_fees">withdraw_integrator_fees</a>()</code>.
 
 
-<a name="@Type_parameters_12"></a>
+<a name="@Type_parameters_25"></a>
 
 ### Type parameters
 
@@ -1644,7 +1862,7 @@ See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_26"></a>
 
 ### Parameters
 
@@ -1709,14 +1927,14 @@ passed on to Econia. Otherwise the integrator's fee share is
 determined based on their tier for the given market.
 
 
-<a name="@Type_parameters_14"></a>
+<a name="@Type_parameters_27"></a>
 
 ### Type parameters
 
 * <code>QuoteCoinType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_15"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -1729,7 +1947,7 @@ all fees to Econia.
 * <code>quote_coins_ref_mut</code>: Quote coins to withdraw fees from.
 
 
-<a name="@Aborts_if_16"></a>
+<a name="@Aborts_if_29"></a>
 
 ### Aborts if
 
@@ -1832,7 +2050,7 @@ per above.
 Get max quote coin match amount, per user input and fee divisor.
 
 
-<a name="@User_input_17"></a>
+<a name="@User_input_30"></a>
 
 ### User input
 
@@ -1844,7 +2062,7 @@ the case of a taker buy, and the maximum amount of quote coins
 they are willing to receive in the case of a taker sell.
 
 
-<a name="@Matching_18"></a>
+<a name="@Matching_31"></a>
 
 ### Matching
 
@@ -1855,7 +2073,7 @@ maximum amount of quote coins to match (or more specifically,
 ticks), with fees assessed after matching concludes:
 
 
-<a name="@Example_buy_19"></a>
+<a name="@Example_buy_32"></a>
 
 #### Example buy
 
@@ -1868,7 +2086,7 @@ ticks), with fees assessed after matching concludes:
 * Taker has spent 105 quote coins.
 
 
-<a name="@Example_sell_20"></a>
+<a name="@Example_sell_33"></a>
 
 #### Example sell
 
@@ -1881,7 +2099,7 @@ ticks), with fees assessed after matching concludes:
 * Taker has received 100 quote coins.
 
 
-<a name="@Variables_21"></a>
+<a name="@Variables_34"></a>
 
 ### Variables
 
@@ -1895,13 +2113,13 @@ can be described with the following variables:
 * $f = \frac{q_m}{d_t}$: Fees assessed.
 
 
-<a name="@Equations_22"></a>
+<a name="@Equations_35"></a>
 
 ### Equations
 
 
 
-<a name="@Buy_23"></a>
+<a name="@Buy_36"></a>
 
 #### Buy
 
@@ -1915,7 +2133,7 @@ $$ q_m = \frac{\Delta_t}{1 + \frac{1}{d_t}} $$
 $$ q_m = \frac{d_t \Delta_t}{d_t + 1}$$
 
 
-<a name="@Sell_24"></a>
+<a name="@Sell_37"></a>
 
 #### Sell
 
@@ -1929,7 +2147,7 @@ $$ q_m = \frac{\Delta_t}{1 - \frac{1}{d_t}} $$
 $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_38"></a>
 
 ### Parameters
 
@@ -1939,21 +2157,21 @@ $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
 user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> and received if a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
 
 
-<a name="@Returns_26"></a>
+<a name="@Returns_39"></a>
 
 ### Returns
 
 * <code>u64</code>: Maximum amount of quote coins to match.
 
 
-<a name="@Assumptions_27"></a>
+<a name="@Assumptions_40"></a>
 
 ### Assumptions
 
 * Taker fee divisor is greater than 1.
 
 
-<a name="@Aborts_if_28"></a>
+<a name="@Aborts_if_41"></a>
 
 ### Aborts if
 
@@ -2152,7 +2370,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_EconiaFeeStore">E
 Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> entry for given <code>integrator</code>.
 
 
-<a name="@Type_parameters_29"></a>
+<a name="@Type_parameters_42"></a>
 
 ### Type parameters
 
@@ -2160,7 +2378,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_30"></a>
+<a name="@Parameters_43"></a>
 
 ### Parameters
 
@@ -2231,7 +2449,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 Deposit <code>coins</code> to the Econia <code><a href="incentives.md#0xc0deb00c_incentives_UtilityCoinStore">UtilityCoinStore</a></code>.
 
 
-<a name="@Aborts_if_31"></a>
+<a name="@Aborts_if_44"></a>
 
 ### Aborts if
 
@@ -2367,21 +2585,21 @@ exists for given <code>CoinType</code>, which may happen in the case of
 switching back to a utility coin type after having abandoned it.
 
 
-<a name="@Type_Parameters_32"></a>
+<a name="@Type_Parameters_45"></a>
 
 ### Type Parameters
 
 * <code>CoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_33"></a>
+<a name="@Parameters_46"></a>
 
 ### Parameters
 
 * <code>fee_account</code>: Econia fee account <code><a href="">signer</a></code>.
 
 
-<a name="@Aborts_if_34"></a>
+<a name="@Aborts_if_47"></a>
 
 ### Aborts if
 
@@ -2469,14 +2687,14 @@ the values of <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParame
 via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>.
 
 
-<a name="@Type_Parameters_35"></a>
+<a name="@Type_Parameters_48"></a>
 
 ### Type Parameters
 
 * <code>UtilityCoinType</code>: Utility coin phantom type.
 
 
-<a name="@Parameters_36"></a>
+<a name="@Parameters_49"></a>
 
 ### Parameters
 
@@ -2496,7 +2714,7 @@ already beeen set, <code><b>false</b></code> if setting parameters for the first
 time.
 
 
-<a name="@Assumptions_37"></a>
+<a name="@Assumptions_50"></a>
 
 ### Assumptions
 
@@ -2506,7 +2724,7 @@ exists at the Econia account.
 exist at the Econia account.
 
 
-<a name="@Aborts_if_38"></a>
+<a name="@Aborts_if_51"></a>
 
 ### Aborts if
 
@@ -2608,7 +2826,7 @@ to the <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">I
 to parse into.
 
 
-<a name="@Aborts_if_39"></a>
+<a name="@Aborts_if_52"></a>
 
 ### Aborts if
 
@@ -2624,7 +2842,7 @@ to parse into.
 threshold.
 
 
-<a name="@Assumptions_40"></a>
+<a name="@Assumptions_53"></a>
 
 ### Assumptions
 
@@ -2725,7 +2943,7 @@ vector.
 Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
 
 
-<a name="@Parameters_41"></a>
+<a name="@Parameters_54"></a>
 
 ### Parameters
 
@@ -2742,7 +2960,7 @@ vector containing fields for a corresponding
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a></code>.
 
 
-<a name="@Aborts_if_42"></a>
+<a name="@Aborts_if_55"></a>
 
 ### Aborts if
 

@@ -3,6 +3,159 @@
 /// Contains hard-coded "genesis parameters" that are are set
 /// upon module publication per `init_module()`, and which can be
 /// updated later per `set_incentive_parameters()`.
+///
+/// # General overview sections
+///
+/// [Functions](#functions)
+///
+/// * [Public getters](#public-getters)
+/// * [Other public functions](#other-public-functions)
+/// * [Public entry functions](#public-entry-functions)
+/// * [Public friend functions](#public-friend-functions)
+///
+/// [Dependency charts](#dependency-charts)
+///
+/// * [Incentive parameters setters](#incentive-parameter-setters)
+/// * [Econia fee account operations](#econia-fee-account-operations)
+/// * [Registrant operations](#registrant-operations)
+/// * [Integrator operations](#integrator-operations)
+/// * [Match operations](#match-operations)
+///
+/// [Complete docgen index](#complete-docgen-index)
+///
+/// # Functions
+///
+/// ## Public getters
+///
+/// * `get_cost_to_upgrade_integrator_fee_store()`
+/// * `get_custodian_registration_fee()`
+/// * `get_fee_share_divisor()`
+/// * `get_integrator_withdrawal_fee()`
+/// * `get_market_registration_fee()`
+/// * `get_n_fee_store_tiers()`
+/// * `get_taker_fee_divisor()`
+/// * `get_tier_activation_fee()`
+/// * `get_tier_withdrawal_fee()`
+/// * `get_underwriter_registration_fee()`
+/// * `is_utility_coin_type()`
+/// * `verify_utility_coin_type()`
+///
+/// ## Other public functions
+///
+/// * `upgrade_integrator_fee_store()`
+/// * `withdraw_econia_fees()`
+/// * `withdraw_econia_fees_all()`
+/// * `withdraw_integrator_fees()`
+/// * `withdraw_utility_coins()`
+/// * `withdraw_utility_coins_all()`
+///
+/// ## Public entry functions
+///
+/// * `update_incentives()`
+/// * `upgrade_integrator_fee_store_via_coinstore()`
+/// * `withdraw_integrator_fees_via_coinstores()`
+///
+/// ## Public friend functions
+///
+/// * `assess_taker_fees()`
+/// * `calculate_max_quote_match()`
+/// * `deposit_custodian_registration_utility_coins()`
+/// * `deposit_market_registration_utility_coins()`
+/// * `deposit_underwriter_registration_utility_coins()`
+/// * `register_econia_fee_store_entry()`
+/// * `register_integrator_fee_store()`
+///
+/// # Dependency charts
+///
+/// The below dependency charts use `mermaid.js` syntax, which can be
+/// automatically rendered into a diagram (depending on the browser)
+/// when viewing the documentation file generated from source code. If
+/// a browser renders the diagrams with coloring that makes it difficult
+/// to read, try a different browser.
+///
+/// ## Incentive parameter setters
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// update_incentives --> set_incentive_parameters
+/// init_module --> set_incentive_parameters
+/// set_incentive_parameters --> set_incentive_parameters_parse_tiers_vector
+/// set_incentive_parameters --> resource_account::get_signer
+/// set_incentive_parameters --> set_incentive_parameters_range_check_inputs
+/// set_incentive_parameters --> init_utility_coin_store
+/// set_incentive_parameters --> get_n_fee_store_tiers
+///
+/// ```
+///
+/// ## Econia fee account operations
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// withdraw_econia_fees --> withdraw_econia_fees_internal
+/// withdraw_econia_fees_all --> withdraw_econia_fees_internal
+/// withdraw_econia_fees_internal --> resource_account::get_address
+/// withdraw_utility_coins --> withdraw_utility_coins_internal
+/// withdraw_utility_coins_all --> withdraw_utility_coins_internal
+/// withdraw_utility_coins_internal --> resource_account::get_address
+/// register_econia_fee_store_entry --> resource_account::get_signer
+/// deposit_utility_coins --> resource_account::get_address
+/// deposit_utility_coins --> range_check_coin_merge
+/// deposit_utility_coins_verified --> verify_utility_coin_type
+/// deposit_utility_coins_verified --> deposit_utility_coins
+///
+/// ```
+///
+/// ## Registrant operations
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// deposit_custodian_registration_utility_coins --> deposit_utility_coins_verified
+/// deposit_custodian_registration_utility_coins --> get_custodian_registration_fee
+/// deposit_market_registration_utility_coins --> deposit_utility_coins_verified
+/// deposit_market_registration_utility_coins --> get_market_registration_fee
+/// deposit_underwriter_registration_utility_coins --> deposit_utility_coins_verified
+/// deposit_underwriter_registration_utility_coins --> get_underwriter_registration_fee
+///
+/// ```
+///
+/// ## Integrator operations
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// upgrade_integrator_fee_store --> deposit_utility_coins_verified
+/// withdraw_integrator_fees --> deposit_utility_coins_verified
+/// withdraw_integrator_fees --> get_tier_withdrawal_fee
+/// upgrade_integrator_fee_store_via_coinstore --> upgrade_integrator_fee_store
+/// withdraw_integrator_fees_via_coinstores --> get_integrator_withdrawal_fee
+/// withdraw_integrator_fees_via_coinstores --> withdraw_integrator_fees
+/// register_integrator_fee_store --> deposit_utility_coins_verified
+/// register_integrator_fee_store --> get_tier_activation_fee
+///
+/// ```
+/// ## Match operations
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// assess_taker_fees --> get_fee_share_divisor
+/// assess_taker_fees --> get_taker_fee_divisor
+/// assess_taker_fees --> resource_account::get_address
+/// assess_taker_fees --> range_check_coin_merge
+///
+/// ```
+///
+/// # Complete docgen index
+///
+/// The below index is automatically generated from source code:
 module econia::incentives {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

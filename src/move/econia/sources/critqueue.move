@@ -65,6 +65,11 @@
 /// * [Removing](#removing)
 /// * [Dequeuing](#dequeuing)
 ///
+/// [Functions](#functions)
+///
+/// * [Public function index](#public-function-index)
+/// * [Dependency charts](#dependency-charts)
+///
 /// [Complete docgen index](#complete-docgen-index)
 ///
 /// # Bit conventions
@@ -506,6 +511,60 @@
 ///
 /// Dequeues are iterable, and, as a form of removal, are $O(1)$, but
 /// since they alter the head of the queue, they are not parallelizable.
+///
+/// # Functions
+///
+/// ## Public function index
+///
+/// * `borrow()`
+/// * `borrow_mut()`
+/// * `dequeue()`
+/// * `get_head_access_key()`
+/// * `has_access_key()`
+/// * `insert()`
+/// * `is_empty()`
+/// * `new()`
+/// * `remove()`
+/// * `would_become_new_head()`
+/// * `would_trail_head()`
+///
+/// ## Dependency charts
+///
+/// The below dependency charts use `mermaid.js` syntax, which can be
+/// automatically rendered into a diagram (depending on the browser)
+/// when viewing the documentation file created from source code.
+///
+/// * `insert()`:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// insert --> insert_update_subqueue
+/// insert --> insert_allocate_leaf
+/// insert --> insert_check_head
+/// insert --> insert_leaf
+///
+/// insert_leaf --> search
+/// insert_leaf --> get_critical_bitmask
+/// insert_leaf --> insert_leaf_above_root_node
+/// insert_leaf --> insert_leaf_below_anchor_node
+///
+/// ```
+///
+/// * `dequeue()` and `remove()`:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// dequeue --> remove
+///
+/// remove --> remove_subqueue_node
+/// remove --> traverse
+/// remove --> remove_free_leaf
+///
+/// ```
 ///
 /// # Complete docgen index
 ///

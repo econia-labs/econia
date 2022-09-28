@@ -561,10 +561,14 @@ head of the sub-queue in the next leaf, which is accessed by either:
 
 
 In the present implementation, key-value insertion pairs are
-inserted via <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>, which accepts a <code>u64</code> insertion key and
+inserted via <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>, which accepts a <code>u64</code> insertion key and an
 insertion value of type <code>V</code>. A corresponding <code>u128</code> access key is
-returned, which can be used for subsequent access key lookup via <code>
-<a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>, or <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>.
+returned, which can be used for subsequent access key lookup via
+<code><a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>()</code>, <code><a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>()</code>, or <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>()</code>, with the latter returning
+the corresponding insertion value after it has been removed from the
+crit-queue. No access key is required for <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>, which simply
+removes and returns the insertion value at the head of the
+crit-queue, if there is one.
 
 
 <a name="@Inserting_25"></a>
@@ -616,9 +620,8 @@ general case where:
 ### Dequeuing
 
 
-Dequeues, as a form of removal, are $O(1)$, but since they alter
-the head of the queue, they are not parallelizable. Dequeues
-are initialized via <code>dequeue_init()</code>, and iterated via <code><a href="critqueue.md#0xc0deb00c_critqueue_dequeue">dequeue</a>()</code>.
+Dequeues are iterable, and, as a form of removal, are $O(1)$, but
+since they alter the head of the queue, they are not parallelizable.
 
 
 <a name="@Complete_docgen_index_28"></a>

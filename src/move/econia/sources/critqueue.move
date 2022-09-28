@@ -456,10 +456,14 @@
 /// ## Core functionality
 ///
 /// In the present implementation, key-value insertion pairs are
-/// inserted via `insert()`, which accepts a `u64` insertion key and
+/// inserted via `insert()`, which accepts a `u64` insertion key and an
 /// insertion value of type `V`. A corresponding `u128` access key is
-/// returned, which can be used for subsequent access key lookup via `
-/// borrow()`, `borrow_mut()`, `dequeue()`, or `remove()`.
+/// returned, which can be used for subsequent access key lookup via
+/// `borrow()`, `borrow_mut()`, or `remove()`, with the latter returning
+/// the corresponding insertion value after it has been removed from the
+/// crit-queue. No access key is required for `dequeue()`, which simply
+/// removes and returns the insertion value at the head of the
+/// crit-queue, if there is one.
 ///
 /// ## Inserting
 ///
@@ -499,9 +503,8 @@
 ///
 /// ## Dequeuing
 ///
-/// Dequeues, as a form of removal, are $O(1)$, but since they alter
-/// the head of the queue, they are not parallelizable. Dequeues
-/// are initialized via `dequeue_init()`, and iterated via `dequeue()`.
+/// Dequeues are iterable, and, as a form of removal, are $O(1)$, but
+/// since they alter the head of the queue, they are not parallelizable.
 ///
 /// # Complete docgen index
 ///

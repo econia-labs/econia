@@ -9,8 +9,9 @@
 /// See `test_iterate()` and `test_iterate_remove()` for iteration
 /// syntax.
 ///
-/// ---
+/// # Complete docgen index
 ///
+/// The below index is automatically generated from source code:
 module econia::tablist {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

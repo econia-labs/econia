@@ -1520,16 +1520,16 @@ module econia::critqueue {
     /// * `u128`: Access key of new sub-queue node.
     /// * `bool`: `true` if allocated leaf is a free leaf, else `false`.
     ///
+    /// # Aborts
+    /// * `E_TOO_MANY_INSERTIONS`: Insertion key encoded in `leaf_key`
+    ///   has already been inserted the maximum number of times.
+    ///
     /// # Assumptions
     /// * `critqueue_ref_mut` indicates a `CritQueue` that already
     ///   contains an allocated leaf with the given `leaf_key`.
     /// * `subqueue_node_ref_mut` indicates a `SubQueueNode` with the
     ///   appropriate access key, which has been initialized as if it
     ///   were the sole sub-queue node in a free leaf.
-    ///
-    /// # Aborts if
-    /// * Insertion key encoded in `leaf_key` has already been inserted
-    ///   the maximum number of times.
     fun insert_update_subqueue<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         subqueue_node_ref_mut: &mut SubQueueNode<V>,

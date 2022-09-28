@@ -708,8 +708,8 @@ The below index is automatically generated from source code:
         -  [Testing](#@Testing_60)
 -  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
     -  [Returns](#@Returns_61)
-    -  [Assumptions](#@Assumptions_62)
-    -  [Aborts if](#@Aborts_if_63)
+    -  [Aborts](#@Aborts_62)
+    -  [Assumptions](#@Assumptions_63)
 -  [Function `is_inner_key`](#0xc0deb00c_critqueue_is_inner_key)
 -  [Function `is_leaf_key`](#0xc0deb00c_critqueue_is_leaf_key)
 -  [Function `is_set`](#0xc0deb00c_critqueue_is_set)
@@ -2454,7 +2454,15 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">inse
 * <code>bool</code>: <code><b>true</b></code> if allocated leaf is a free leaf, else <code><b>false</b></code>.
 
 
-<a name="@Assumptions_62"></a>
+<a name="@Aborts_62"></a>
+
+### Aborts
+
+* <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_INSERTIONS">E_TOO_MANY_INSERTIONS</a></code>: Insertion key encoded in <code>leaf_key</code>
+has already been inserted the maximum number of times.
+
+
+<a name="@Assumptions_63"></a>
 
 ### Assumptions
 
@@ -2463,14 +2471,6 @@ contains an allocated leaf with the given <code>leaf_key</code>.
 * <code>subqueue_node_ref_mut</code> indicates a <code><a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a></code> with the
 appropriate access key, which has been initialized as if it
 were the sole sub-queue node in a free leaf.
-
-
-<a name="@Aborts_if_63"></a>
-
-### Aborts if
-
-* Insertion key encoded in <code>leaf_key</code> has already been inserted
-the maximum number of times.
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_update_subqueue">insert_update_subqueue</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, subqueue_node_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">critqueue::SubQueueNode</a>&lt;V&gt;, leaf_key: u128): (u128, bool)

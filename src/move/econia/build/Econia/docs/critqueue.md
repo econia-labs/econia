@@ -228,8 +228,8 @@ results in:
 ### As a map
 
 
-Crit-bit trees can be used as an associative array that maps keys
-to values, simply by storing values in the leaves of the tree.
+Crit-bit trees can be used as an associative array that maps from
+keys to values, simply by storing values in the leaves of the tree.
 For example, the insertion sequence
 
 1. $\langle \texttt{0b001}, v_0 \rangle$
@@ -351,16 +351,16 @@ following bit structure:
 
 Continuing the above example:
 
-| Insertion key | Leaf key bits 64-127 | Leaf key bits 0-63 |
-|---------------|----------------------|--------------------|
-| <code>0 = 0b00</code>    | <code>000...000</code>          | <code>000...000</code>        |
-| <code>1 = 0b01</code>    | <code>000...001</code>          | <code>000...000</code>        |
-| <code>3 = 0b11</code>    | <code>000...011</code>          | <code>000...000</code>        |
+| Insertion key   | Leaf key bits 64-127 | Leaf key bits 0-63 |
+|-----------------|----------------------|--------------------|
+| <code>0</code> = <code>0b00</code>    | <code>000...000</code>          | <code>000...000</code>        |
+| <code>1</code> = <code>0b01</code>    | <code>000...001</code>          | <code>000...000</code>        |
+| <code>3</code> = <code>0b11</code>    | <code>000...011</code>          | <code>000...000</code>        |
 
-Each leaf contains a nested sub-queue of key-values insertion
-pairs all sharing the corresponding insertion key, with lower
-insertion counts at the front of the queue. Continuing the above
-example, this yields the following:
+Each leaf contains a nested sub-queue of key-value insertion pairs
+all sharing the corresponding insertion key, with lower insertion
+counts at the front of the queue. Continuing the above example,
+this yields the following:
 
 >                                   65th
 >                                  /    \
@@ -406,12 +406,12 @@ Conversely, for a descending crit-queue, access keys are thus
 dequeued in descending lexicographical order:
 
 | Insertion key | Access key bits 64-127 | Access key bits 0-63 |
-|---------------|----------------------|--------------------|
-| $k_{3, 0}$    | <code>000...011</code>          | <code>011...111</code>        |
-| $k_{1, 0}$    | <code>000...001</code>          | <code>011...111</code>        |
-| $k_{1, 1}$    | <code>000...001</code>          | <code>011...110</code>        |
-| $k_{0, 0}$    | <code>000...000</code>          | <code>011...111</code>        |
-| $k_{0, 1}$    | <code>000...000</code>          | <code>011...110</code>        |
+|---------------|----------------------|------------------------|
+| $k_{3, 0}$    | <code>000...011</code>          | <code>011...111</code>            |
+| $k_{1, 0}$    | <code>000...001</code>          | <code>011...111</code>            |
+| $k_{1, 1}$    | <code>000...001</code>          | <code>011...110</code>            |
+| $k_{0, 0}$    | <code>000...000</code>          | <code>011...111</code>            |
+| $k_{0, 1}$    | <code>000...000</code>          | <code>011...110</code>            |
 
 
 <a name="@Inner_keys_17"></a>
@@ -420,11 +420,11 @@ dequeued in descending lexicographical order:
 
 
 After access key assignment, if the insertion of a key-value
-insertion pair requires the creation of a new inner node, the
-inner node is assigned a unique "inner key" that is identical to
-the new access key, except with bit 63 set. This schema allows for
-discrimination between inner keys and leaf keys based solely on
-bit 63.
+insertion pair requires the creation of a new inner node, the inner
+node is assigned a unique "inner key" that is identical to the new
+access key, except with bit 63 set. This schema allows for
+discrimination between inner keys and leaf keys based solely on bit
+63, and guarantees that no two inner nodes share the same inner key.
 
 All inner nodes are stored in a single hash table.
 
@@ -440,7 +440,7 @@ $k_{i, 0}$, the leaf table does not have an entry corresponding
 to insertion key $i$.
 
 When $k_{i, 0}$ is inserted, a new leaf node is initialized with
-an insertion counter set to 0, then added to the leaf hash table.
+an insertion counter set to 0, then added to the leaves hash table.
 The new leaf node is inserted to the crit-bit tree, and a
 corresponding sub-queue node is placed at the head of the new leaf's
 sub-queue. For each subsequent insertion of the same insertion key,
@@ -544,15 +544,15 @@ with insertion key 0, $k_{0, 3}$, produces:
 Dequeues are processed as removals from the crit-queue head, a field
 that stores:
 
-* The maximum access key in a descending crit-queue, or
-* The minimum access key in an ascending crit-queue.
+* The minimum access key in an ascending crit-queue, or
+* The maximum access key in a descending crit-queue.
 
 After all elements in the corresponding sub-queue have been dequeued
-in order of ascending insertion count, dequeueing proceeds with the
+in order of ascending insertion count, dequeuing proceeds with the
 head of the sub-queue in the next leaf, which is accessed by either:
 
-* Inorder predecessor traversal if a descending crit-queue, or
-* Inorder successor traversal if an ascending crit-queue.
+* Inorder successor traversal if an ascending crit-queue, or
+* Inorder predecessor traversal if a descending crit-queue.
 
 
 <a name="@Implementation_analysis_23"></a>
@@ -661,7 +661,7 @@ since they alter the head of the queue, they are not parallelizable.
 
 The below dependency charts use <code>mermaid.js</code> syntax, which can be
 automatically rendered into a diagram (depending on the browser)
-when viewing the documentation file created from source code.
+when viewing the documentation file generated from source code.
 
 * <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>:
 
@@ -2015,7 +2015,7 @@ unequal bitstrings, <code>s1</code> and <code>s2</code>, vary.
 ### <code>XOR</code>/<code>AND</code> method
 
 
-Frist, a bitwise <code>XOR</code> is used to flag all differing bits:
+First, a bitwise <code>XOR</code> is used to flag all differing bits:
 
 >              s1: 11110001
 >              s2: 11011100
@@ -2391,7 +2391,7 @@ and inner node bit flag.
 
 4. Insert <code>1000</code>:
 
->            3rd <- new innner node
+>            3rd <- new inner node
 >           /   \
 >         2nd   1000 <- new leaf
 >        /   \
@@ -3183,7 +3183,7 @@ Becomes
         sibling_new_parent_field = <a href="_some">option::some</a>(grandparent_key);
         <b>let</b> grandparent_ref_mut = // Mutably borrow grandparent.
             <a href="_borrow_mut">table::borrow_mut</a>(inners_ref_mut, grandparent_key);
-        // If freed leaf key AND grandparen't bitmask is 0, freed
+        // If freed leaf key AND grandparent's bitmask is 0, freed
         // leaf key was not set at grandparent's critical bit, and
         // was thus located <b>to</b> its left.
         <b>let</b> free_leaf_was_left_grandchild = leaf_key &
@@ -3676,7 +3676,7 @@ then walk along left children, breaking out at a leaf.
     // If predecessor traversal review apex node's left child next,
     <b>let</b> child_key = <b>if</b> (target == <a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a>) parent_ref.left <b>else</b>
         parent_ref.right; // Else the right child.
-    // While the child under review is an innner node:
+    // While the child under review is an inner node:
     <b>while</b> (child_key & <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a> == <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_INNER">TREE_NODE_INNER</a>) {
         // Immutably borrow the child.
         <b>let</b> child_ref = <a href="_borrow">table::borrow</a>(inners_ref, child_key);

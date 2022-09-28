@@ -179,8 +179,8 @@
 ///
 /// ## As a map
 ///
-/// Crit-bit trees can be used as an associative array that maps keys
-/// to values, simply by storing values in the leaves of the tree.
+/// Crit-bit trees can be used as an associative array that maps from
+/// keys to values, simply by storing values in the leaves of the tree.
 /// For example, the insertion sequence
 ///
 /// 1. $\langle \texttt{0b001}, v_0 \rangle$
@@ -282,16 +282,16 @@
 ///
 /// Continuing the above example:
 ///
-/// | Insertion key | Leaf key bits 64-127 | Leaf key bits 0-63 |
-/// |---------------|----------------------|--------------------|
-/// | `0 = 0b00`    | `000...000`          | `000...000`        |
-/// | `1 = 0b01`    | `000...001`          | `000...000`        |
-/// | `3 = 0b11`    | `000...011`          | `000...000`        |
+/// | Insertion key   | Leaf key bits 64-127 | Leaf key bits 0-63 |
+/// |-----------------|----------------------|--------------------|
+/// | `0` = `0b00`    | `000...000`          | `000...000`        |
+/// | `1` = `0b01`    | `000...001`          | `000...000`        |
+/// | `3` = `0b11`    | `000...011`          | `000...000`        |
 ///
-/// Each leaf contains a nested sub-queue of key-values insertion
-/// pairs all sharing the corresponding insertion key, with lower
-/// insertion counts at the front of the queue. Continuing the above
-/// example, this yields the following:
+/// Each leaf contains a nested sub-queue of key-value insertion pairs
+/// all sharing the corresponding insertion key, with lower insertion
+/// counts at the front of the queue. Continuing the above example,
+/// this yields the following:
 ///
 /// >                                   65th
 /// >                                  /    \
@@ -333,21 +333,21 @@
 /// dequeued in descending lexicographical order:
 ///
 /// | Insertion key | Access key bits 64-127 | Access key bits 0-63 |
-/// |---------------|----------------------|--------------------|
-/// | $k_{3, 0}$    | `000...011`          | `011...111`        |
-/// | $k_{1, 0}$    | `000...001`          | `011...111`        |
-/// | $k_{1, 1}$    | `000...001`          | `011...110`        |
-/// | $k_{0, 0}$    | `000...000`          | `011...111`        |
-/// | $k_{0, 1}$    | `000...000`          | `011...110`        |
+/// |---------------|----------------------|------------------------|
+/// | $k_{3, 0}$    | `000...011`          | `011...111`            |
+/// | $k_{1, 0}$    | `000...001`          | `011...111`            |
+/// | $k_{1, 1}$    | `000...001`          | `011...110`            |
+/// | $k_{0, 0}$    | `000...000`          | `011...111`            |
+/// | $k_{0, 1}$    | `000...000`          | `011...110`            |
 ///
 /// ## Inner keys
 ///
 /// After access key assignment, if the insertion of a key-value
-/// insertion pair requires the creation of a new inner node, the
-/// inner node is assigned a unique "inner key" that is identical to
-/// the new access key, except with bit 63 set. This schema allows for
-/// discrimination between inner keys and leaf keys based solely on
-/// bit 63.
+/// insertion pair requires the creation of a new inner node, the inner
+/// node is assigned a unique "inner key" that is identical to the new
+/// access key, except with bit 63 set. This schema allows for
+/// discrimination between inner keys and leaf keys based solely on bit
+/// 63, and guarantees that no two inner nodes share the same inner key.
 ///
 /// All inner nodes are stored in a single hash table.
 ///
@@ -359,7 +359,7 @@
 /// to insertion key $i$.
 ///
 /// When $k_{i, 0}$ is inserted, a new leaf node is initialized with
-/// an insertion counter set to 0, then added to the leaf hash table.
+/// an insertion counter set to 0, then added to the leaves hash table.
 /// The new leaf node is inserted to the crit-bit tree, and a
 /// corresponding sub-queue node is placed at the head of the new leaf's
 /// sub-queue. For each subsequent insertion of the same insertion key,
@@ -447,15 +447,15 @@
 /// Dequeues are processed as removals from the crit-queue head, a field
 /// that stores:
 ///
-/// * The maximum access key in a descending crit-queue, or
-/// * The minimum access key in an ascending crit-queue.
+/// * The minimum access key in an ascending crit-queue, or
+/// * The maximum access key in a descending crit-queue.
 ///
 /// After all elements in the corresponding sub-queue have been dequeued
-/// in order of ascending insertion count, dequeueing proceeds with the
+/// in order of ascending insertion count, dequeuing proceeds with the
 /// head of the sub-queue in the next leaf, which is accessed by either:
 ///
-/// * Inorder predecessor traversal if a descending crit-queue, or
-/// * Inorder successor traversal if an ascending crit-queue.
+/// * Inorder successor traversal if an ascending crit-queue, or
+/// * Inorder predecessor traversal if a descending crit-queue.
 ///
 /// # Implementation analysis
 ///
@@ -532,7 +532,7 @@
 ///
 /// The below dependency charts use `mermaid.js` syntax, which can be
 /// automatically rendered into a diagram (depending on the browser)
-/// when viewing the documentation file created from source code.
+/// when viewing the documentation file generated from source code.
 ///
 /// * `insert()`:
 ///
@@ -1179,7 +1179,7 @@ module econia::critqueue {
     ///
     /// # `XOR`/`AND` method
     ///
-    /// Frist, a bitwise `XOR` is used to flag all differing bits:
+    /// First, a bitwise `XOR` is used to flag all differing bits:
     ///
     /// >              s1: 11110001
     /// >              s2: 11011100
@@ -1460,7 +1460,7 @@ module econia::critqueue {
     ///
     /// 4. Insert `1000`:
     ///
-    /// >            3rd <- new innner node
+    /// >            3rd <- new inner node
     /// >           /   \
     /// >         2nd   1000 <- new leaf
     /// >        /   \
@@ -2033,7 +2033,7 @@ module econia::critqueue {
             sibling_new_parent_field = option::some(grandparent_key);
             let grandparent_ref_mut = // Mutably borrow grandparent.
                 table::borrow_mut(inners_ref_mut, grandparent_key);
-            // If freed leaf key AND grandparen't bitmask is 0, freed
+            // If freed leaf key AND grandparent's bitmask is 0, freed
             // leaf key was not set at grandparent's critical bit, and
             // was thus located to its left.
             let free_leaf_was_left_grandchild = leaf_key &
@@ -2386,7 +2386,7 @@ module econia::critqueue {
         // If predecessor traversal review apex node's left child next,
         let child_key = if (target == PREDECESSOR) parent_ref.left else
             parent_ref.right; // Else the right child.
-        // While the child under review is an innner node:
+        // While the child under review is an inner node:
         while (child_key & TREE_NODE_TYPE == TREE_NODE_INNER) {
             // Immutably borrow the child.
             let child_ref = table::borrow(inners_ref, child_key);

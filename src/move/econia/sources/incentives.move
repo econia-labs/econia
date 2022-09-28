@@ -81,9 +81,11 @@
 ///
 /// update_incentives --> set_incentive_parameters
 /// init_module --> set_incentive_parameters
-/// set_incentive_parameters --> set_incentive_parameters_parse_tiers_vector
+/// set_incentive_parameters -->
+///     set_incentive_parameters_parse_tiers_vector
 /// set_incentive_parameters --> resource_account::get_signer
-/// set_incentive_parameters --> set_incentive_parameters_range_check_inputs
+/// set_incentive_parameters -->
+///     set_incentive_parameters_range_check_inputs
 /// set_incentive_parameters --> init_utility_coin_store
 /// set_incentive_parameters --> get_n_fee_store_tiers
 ///
@@ -115,12 +117,18 @@
 ///
 /// flowchart LR
 ///
-/// deposit_custodian_registration_utility_coins --> deposit_utility_coins_verified
-/// deposit_custodian_registration_utility_coins --> get_custodian_registration_fee
-/// deposit_market_registration_utility_coins --> deposit_utility_coins_verified
-/// deposit_market_registration_utility_coins --> get_market_registration_fee
-/// deposit_underwriter_registration_utility_coins --> deposit_utility_coins_verified
-/// deposit_underwriter_registration_utility_coins --> get_underwriter_registration_fee
+/// deposit_custodian_registration_utility_coins -->
+///     deposit_utility_coins_verified
+/// deposit_custodian_registration_utility_coins -->
+///     get_custodian_registration_fee
+/// deposit_market_registration_utility_coins -->
+///     deposit_utility_coins_verified
+/// deposit_market_registration_utility_coins -->
+///     get_market_registration_fee
+/// deposit_underwriter_registration_utility_coins -->
+///     deposit_utility_coins_verified
+/// deposit_underwriter_registration_utility_coins -->
+///     get_underwriter_registration_fee
 ///
 /// ```
 ///
@@ -133,10 +141,14 @@
 /// upgrade_integrator_fee_store --> deposit_utility_coins_verified
 /// withdraw_integrator_fees --> deposit_utility_coins_verified
 /// withdraw_integrator_fees --> get_tier_withdrawal_fee
-/// upgrade_integrator_fee_store_via_coinstore --> upgrade_integrator_fee_store
-/// withdraw_integrator_fees_via_coinstores --> get_integrator_withdrawal_fee
-/// withdraw_integrator_fees_via_coinstores --> withdraw_integrator_fees
-/// register_integrator_fee_store --> deposit_utility_coins_verified
+/// upgrade_integrator_fee_store_via_coinstore -->
+///     upgrade_integrator_fee_store
+/// withdraw_integrator_fees_via_coinstores -->
+///     get_integrator_withdrawal_fee
+/// withdraw_integrator_fees_via_coinstores -->
+///     withdraw_integrator_fees
+/// register_integrator_fee_store -->
+///     deposit_utility_coins_verified
 /// register_integrator_fee_store --> get_tier_activation_fee
 ///
 /// ```

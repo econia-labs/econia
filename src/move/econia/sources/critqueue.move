@@ -1,14 +1,15 @@
 /// Crit-queue: A hybrid between a crit-bit tree and a queue.
 ///
-/// A crit-queue contains an inner crit-bit tree with sub-queues at each
-/// leaf node, which can store multiple instances of the same insertion
-/// key. Each such instance is stored in its own sub-queue node at a
-/// crit-bit tree leaf corresponding to the given insertion key, with
-/// multiple instances of the same insertion key sorted by order of
-/// insertion within a sub-queue. Different insertion keys,
-/// corresponding to different leaves in the crit-bit tree, are sorted
-/// in lexicographical order, with the effect that individual insertion
-/// key instances can be dequeued from the crit-queue in:
+/// A crit-queue contains an inner crit-bit tree with a sub-queue at
+/// each leaf node, which can store multiple instances of the same
+/// insertion key. Each such instance is stored in its own
+/// sub-queue node at a crit-bit tree leaf corresponding to the given
+/// insertion key, with multiple instances of the same insertion key
+/// sorted by order of insertion within a sub-queue. Different
+/// insertion keys, corresponding to different leaves in the crit-bit
+/// tree, are sorted in lexicographical order, with the effect that
+/// individual insertion key instances can be dequeued from the
+/// crit-queue in:
 ///
 /// 1. Either ascending or descending order of insertion key (with
 ///    polarity set upon initialization), then by
@@ -25,7 +26,7 @@
 ///   intermediate case, and parallelizable in the general case.
 /// * Removals that are always $O(1)$, and parallelizable in the general
 ///   case.
-/// * Iterated dequeues that are always $O(1)$.
+/// * Iterable dequeues that are always $O(1)$.
 ///
 /// # General overview sections
 ///
@@ -669,19 +670,65 @@ module econia::critqueue {
     }
 
     /// Dequeue the insertion value at the head of the given
-    /// `CritQueue`, if there is one.
+    /// `CritQueue`, aborting if empty.
     ///
-    /// See `test_dequeue()` for iteration syntax.
+    /// See `test_dequeue()` for iterated dequeue syntax.
+    ///
+    /// # Example
+    ///
+    /// Consider the following insertion keys and sub-queues:
+    ///
+    /// | Insertion key | Sub-queue insertion values |
+    /// |---------------|----------------------------|
+    /// | 0             | [0 -> 10 -> 20 -> ... 90]  |
+    /// | 1             | [1 -> 11 -> 21 -> ... 91]  |
+    /// | ...           | ...                        |
+    /// | 9             | [9 -> 19 -> 29 -> ... 99]  |
+    ///
+    /// Here, insertion key `0` has the insertion value `0` at the head
+    /// of its corresponding sub-queue, followed by insertion value
+    /// `10`, `20`, and so on, up until `90`.
+    ///
+    /// Dequeuing from an ascending crit-queue yields the insertion
+    /// value sequence:
+    /// * `0`
+    /// * `10`
+    /// * ...
+    /// * `90`
+    /// * `1`
+    /// * `11`
+    /// * ...
+    /// * `91`
+    /// * ...
+    /// * `9`
+    /// * `19`
+    /// * ...
+    /// * `99`
+    ///
+    /// Dequeuing from a descending crit-queue yields:
+    /// * `9`
+    /// * `19`
+    /// * ...
+    /// * `99`
+    /// * `8`
+    /// * `18`
+    /// * ...
+    /// * `98`
+    /// * ...
+    /// * `0`
+    /// * `10`
+    /// * ...
+    /// * `90`
+    ///
+    /// # Testing
+    /// * `test_dequeue()`
     public fun dequeue<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
-    ): Option<V> {
-        // If the crit-queue is empty, return none.
-        if (option::is_none(&critqueue_ref_mut.head)) return option::none();
-        // Otherwise get the access key of the crit-queue head.
+    ): V {
+        // Get the access key of the crit-queue head.
         let head_access_key = *option::borrow(&critqueue_ref_mut.head);
-        // Then remove and return the corresponding insertion value,
-        // packed in an option.
-        option::some(remove(critqueue_ref_mut, head_access_key))
+        // Remove and return the corresponding insertion value.
+        remove(critqueue_ref_mut, head_access_key)
     }
 
     /// Return access key of given `CritQueue` head, if any.
@@ -2439,19 +2486,10 @@ module econia::critqueue {
     }
 
     #[test]
-    /// Verify iterated dequeue operations.
-    ///
-    /// Start by initializing, out of order, the following sub-queues:
-    ///
-    /// | Insertion key | Insertion values  |
-    /// |---------------|-------------------|
-    /// | 0             | 0, 10, 20, ... 90 |
-    /// | 1             | 1, 11, 21, ... 91 |
-    /// | ...           | ...               |
-    /// | 9             | 9, 19, 29, ... 99 |
-    ///
+    /// Verify iterated dequeue operations for reference state in
+    /// `dequeue()`, inserting key-value insertion pairs out of order.
     /// Then iterate and dequeue all insertion values for an ascending
-    /// crit-queue, and repeat for a descending crit-queue.
+    /// crit-queue, repeat for a descending crit-queue.
     fun test_dequeue() {
         let critqueue = new(ASCENDING); // Get ascending crit-queue.
         let i = 0; // Declare loop counter.
@@ -2468,10 +2506,8 @@ module econia::critqueue {
         while (!is_empty(&critqueue)) { // While crit-queue not empty:
             // Calculate expected insertion value to dequeue.
             let insertion_value = insertion_key + 10 * insertion_count;
-            // Get dequeue value.
-            let dequeue_value = *option::borrow(&dequeue(&mut critqueue));
             // Assert expected dequeue value.
-            assert!(dequeue_value == insertion_value, 0);
+            assert!(dequeue(&mut critqueue) == insertion_value, 0);
             // Increment the insertion count for the insertion key.
             insertion_count = insertion_count + 1;
             if (insertion_count == 10) { // If insertion count is 10:
@@ -2485,8 +2521,6 @@ module econia::critqueue {
         assert!(insertion_key == 10, 0);
         // Assert insertion counter has gone back to 0.
         assert!(insertion_count == 0, 0);
-        // Assert dequeue call returns none.
-        assert!(option::is_none(&dequeue(&mut critqueue)), 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
         // Now get a descending crit-queue.
         let critqueue = new(DESCENDING); // Get ascending crit-queue.
@@ -2504,10 +2538,8 @@ module econia::critqueue {
         while (!is_empty(&critqueue)) { // While crit-queue not empty:
             // Calculate expected insertion value to dequeue.
             let insertion_value = insertion_key + 10 * insertion_count;
-            // Get dequeue value.
-            let dequeue_value = *option::borrow(&dequeue(&mut critqueue));
             // Assert expected dequeue value.
-            assert!(dequeue_value == insertion_value, 0);
+            assert!(dequeue(&mut critqueue) == insertion_value, 0);
             // Increment the insertion count for the insertion key.
             insertion_count = insertion_count + 1;
             if (insertion_count == 10) { // If insertion count is 10:
@@ -2524,8 +2556,6 @@ module econia::critqueue {
         assert!(insertion_key == HI_64, 0);
         // Assert insertion counter has gone back to 0.
         assert!(insertion_count == 0, 0);
-        // Assert dequeue call returns none.
-        assert!(option::is_none(&dequeue(&mut critqueue)), 0);
         drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 

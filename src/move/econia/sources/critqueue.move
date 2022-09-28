@@ -710,6 +710,10 @@ module econia::critqueue {
 
     /// Borrow insertion value corresponding to `access_key` in given
     /// `CritQueue`, aborting if no such access key.
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrowers()`
     public fun borrow<V>(
         critqueue_ref: &CritQueue<V>,
         access_key: u128
@@ -720,6 +724,10 @@ module econia::critqueue {
 
     /// Mutably borrow insertion value corresponding to `access_key`
     /// `CritQueue`, aborting if no such access key
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrowers()`
     public fun borrow_mut<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         access_key: u128
@@ -794,6 +802,10 @@ module econia::critqueue {
     }
 
     /// Return access key of given `CritQueue` head, if any.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_head_access_key()`
     public fun get_head_access_key<V>(
         critqueue_ref: &CritQueue<V>,
     ): Option<u128> {
@@ -801,6 +813,10 @@ module econia::critqueue {
     }
 
     /// Return `true` if given `CritQueue` has the given `access_key`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_has_access_key()`
     public fun has_access_key<V>(
         critqueue_ref: &CritQueue<V>,
         access_key: u128
@@ -917,6 +933,10 @@ module econia::critqueue {
     }
 
     /// Return `true` if given `CritQueue` is empty.
+    ///
+    /// # Testing
+    ///
+    /// * `test_is_empty()`
     public fun is_empty<V>(
         critqueue_ref: &CritQueue<V>,
     ): bool {
@@ -1111,6 +1131,10 @@ module econia::critqueue {
 
     /// Return `true` if, were `insertion_key` to be inserted, its
     /// access key would become the new head of the given `CritQueue`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_would_become_trail_head()`
     public fun would_become_new_head<V>(
         critqueue_ref: &CritQueue<V>,
         insertion_key: u64
@@ -1135,6 +1159,10 @@ module econia::critqueue {
 
     /// Return `true` if, were `insertion_key` to be inserted, its
     /// access key would trail behind the head of the given `CritQueue`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_would_become_trail_head()`
     public fun would_trail_head<V>(
         critqueue_ref: &CritQueue<V>,
         insertion_key: u64
@@ -1286,6 +1314,10 @@ module econia::critqueue {
     /// `s1` and `s2` under comparison. Hence this search method
     /// improves the $O(k)$ search proposed by [Langley 2008] to
     /// $O(log_2(k))$.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_critical_bitmask()`
     fun get_critical_bitmask(
         s1: u128,
         s2: u128,
@@ -1317,6 +1349,10 @@ module econia::critqueue {
     /// * A `SubQueueNode` with the appropriate access key has been
     ///   initialized as if it were the sole sub-queue node in a free
     ///   leaf.
+    ///
+    /// # Testing
+    ///
+    /// * `test_insert_allocate_leaf()`
     fun insert_allocate_leaf<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         leaf_key: u128
@@ -1343,6 +1379,10 @@ module econia::critqueue {
     /// `access_key` of a new key-value insertion pair.
     ///
     /// Inner function for `insert()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_insert_check_head()`
     fun insert_check_head<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         access_key: u128
@@ -1788,6 +1828,15 @@ module econia::critqueue {
     /// * `subqueue_node_ref_mut` indicates a `SubQueueNode` with the
     ///   appropriate access key, which has been initialized as if it
     ///   were the sole sub-queue node in a free leaf.
+    ///
+    /// # Testing
+    ///
+    /// * `test_insert_update_subqueue_ascending_free()`
+    /// * `test_insert_update_subqueue_ascending_not_free()`
+    /// * `test_insert_update_subqueue_descending_free()`
+    /// * `test_insert_update_subqueue_descending_not_free()`
+    /// * `test_insert_update_subqueue_max_failure()`
+    /// * `test_insert_update_subqueue_max_success()`
     fun insert_update_subqueue<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         subqueue_node_ref_mut: &mut SubQueueNode<V>,
@@ -2497,6 +2546,11 @@ module econia::critqueue {
     /// Return a `u128` corresponding to provided byte string `s`. The
     /// byte should only contain only "0"s and "1"s, up to 128
     /// characters max (e.g. `b"100101...10101010"`).
+    ///
+    /// # Testing
+    ///
+    /// * `test_u_128_64()`
+    /// * `test_u_128_failure()`
     public fun u_128(
         s: vector<u8>
     ): u128 {
@@ -2520,6 +2574,10 @@ module econia::critqueue {
     /// Return `u128` corresponding to concatenated result of `a`, `b`,
     /// `c`, and `d`. Useful for line-wrapping long byte strings, and
     /// inspection via 32-bit sections.
+    ///
+    /// # Testing
+    ///
+    /// * `test_u_128_64()`
     public fun u_128_by_32(
         a: vector<u8>,
         b: vector<u8>,
@@ -2534,6 +2592,10 @@ module econia::critqueue {
 
     #[test_only]
     /// Wrapper for `u_128()`, casting return to `u64`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_u_128_64()`
     public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -4369,7 +4431,7 @@ module econia::critqueue {
     #[test]
     #[expected_failure(abort_code = 100)]
     /// Verify failure for non-binary-representative byte string.
-    fun test_u_failure() {u_128(b"2");}
+    fun test_u_128_failure() {u_128(b"2");}
 
     #[test]
     /// Verify lookup returns.

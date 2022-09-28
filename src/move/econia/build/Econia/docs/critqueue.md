@@ -742,93 +742,104 @@ The below index is automatically generated from source code:
 -  [Struct `SubQueueNode`](#0xc0deb00c_critqueue_SubQueueNode)
 -  [Constants](#@Constants_32)
 -  [Function `borrow`](#0xc0deb00c_critqueue_borrow)
+    -  [Testing](#@Testing_33)
 -  [Function `borrow_mut`](#0xc0deb00c_critqueue_borrow_mut)
--  [Function `dequeue`](#0xc0deb00c_critqueue_dequeue)
-    -  [Example](#@Example_33)
     -  [Testing](#@Testing_34)
+-  [Function `dequeue`](#0xc0deb00c_critqueue_dequeue)
+    -  [Example](#@Example_35)
+    -  [Testing](#@Testing_36)
 -  [Function `get_head_access_key`](#0xc0deb00c_critqueue_get_head_access_key)
+    -  [Testing](#@Testing_37)
 -  [Function `has_access_key`](#0xc0deb00c_critqueue_has_access_key)
+    -  [Testing](#@Testing_38)
 -  [Function `insert`](#0xc0deb00c_critqueue_insert)
-    -  [Parameters](#@Parameters_35)
-    -  [Returns](#@Returns_36)
-    -  [Reference diagrams](#@Reference_diagrams_37)
-        -  [Conventions](#@Conventions_38)
-        -  [Insertion sequence](#@Insertion_sequence_39)
-        -  [Testing](#@Testing_40)
--  [Function `is_empty`](#0xc0deb00c_critqueue_is_empty)
--  [Function `new`](#0xc0deb00c_critqueue_new)
--  [Function `remove`](#0xc0deb00c_critqueue_remove)
+    -  [Parameters](#@Parameters_39)
+    -  [Returns](#@Returns_40)
     -  [Reference diagrams](#@Reference_diagrams_41)
         -  [Conventions](#@Conventions_42)
-        -  [Insertion preposition sequence](#@Insertion_preposition_sequence_43)
-        -  [No sub-queue head update](#@No_sub-queue_head_update_44)
-        -  [Sub-queue head update, no free leaf](#@Sub-queue_head_update,_no_free_leaf_45)
-        -  [Free leaf generation 1](#@Free_leaf_generation_1_46)
-        -  [Free leaf generation 2](#@Free_leaf_generation_2_47)
-        -  [Testing](#@Testing_48)
+        -  [Insertion sequence](#@Insertion_sequence_43)
+    -  [Testing](#@Testing_44)
+-  [Function `is_empty`](#0xc0deb00c_critqueue_is_empty)
+    -  [Testing](#@Testing_45)
+-  [Function `new`](#0xc0deb00c_critqueue_new)
+-  [Function `remove`](#0xc0deb00c_critqueue_remove)
+    -  [Reference diagrams](#@Reference_diagrams_46)
+        -  [Conventions](#@Conventions_47)
+        -  [Insertion preposition sequence](#@Insertion_preposition_sequence_48)
+        -  [No sub-queue head update](#@No_sub-queue_head_update_49)
+        -  [Sub-queue head update, no free leaf](#@Sub-queue_head_update,_no_free_leaf_50)
+        -  [Free leaf generation 1](#@Free_leaf_generation_1_51)
+        -  [Free leaf generation 2](#@Free_leaf_generation_2_52)
+    -  [Testing](#@Testing_53)
 -  [Function `would_become_new_head`](#0xc0deb00c_critqueue_would_become_new_head)
+    -  [Testing](#@Testing_54)
 -  [Function `would_trail_head`](#0xc0deb00c_critqueue_would_trail_head)
+    -  [Testing](#@Testing_55)
 -  [Function `get_critical_bitmask`](#0xc0deb00c_critqueue_get_critical_bitmask)
-    -  [<code>XOR</code>/<code>AND</code> method](#@<code>XOR</code>/<code>AND</code>_method_49)
-    -  [Binary search method](#@Binary_search_method_50)
+    -  [<code>XOR</code>/<code>AND</code> method](#@<code>XOR</code>/<code>AND</code>_method_56)
+    -  [Binary search method](#@Binary_search_method_57)
+    -  [Testing](#@Testing_58)
 -  [Function `insert_allocate_leaf`](#0xc0deb00c_critqueue_insert_allocate_leaf)
-    -  [Returns](#@Returns_51)
-    -  [Assumptions](#@Assumptions_52)
+    -  [Returns](#@Returns_59)
+    -  [Assumptions](#@Assumptions_60)
+    -  [Testing](#@Testing_61)
 -  [Function `insert_check_head`](#0xc0deb00c_critqueue_insert_check_head)
+    -  [Testing](#@Testing_62)
 -  [Function `insert_leaf`](#0xc0deb00c_critqueue_insert_leaf)
-    -  [Parameters](#@Parameters_53)
-    -  [Assumptions](#@Assumptions_54)
-    -  [Diagrams](#@Diagrams_55)
-        -  [Testing](#@Testing_56)
+    -  [Parameters](#@Parameters_63)
+    -  [Assumptions](#@Assumptions_64)
+    -  [Diagrams](#@Diagrams_65)
+    -  [Testing](#@Testing_66)
 -  [Function `insert_leaf_above_root_node`](#0xc0deb00c_critqueue_insert_leaf_above_root_node)
-    -  [Parameters](#@Parameters_57)
-    -  [Assumptions](#@Assumptions_58)
-    -  [Reference diagrams](#@Reference_diagrams_59)
-        -  [Inserting above a leaf](#@Inserting_above_a_leaf_60)
-        -  [Inserting above an inner node](#@Inserting_above_an_inner_node_63)
-        -  [Testing](#@Testing_66)
--  [Function `insert_leaf_below_anchor_node`](#0xc0deb00c_critqueue_insert_leaf_below_anchor_node)
     -  [Parameters](#@Parameters_67)
     -  [Assumptions](#@Assumptions_68)
     -  [Reference diagrams](#@Reference_diagrams_69)
-        -  [Anchor node children polarity](#@Anchor_node_children_polarity_70)
-        -  [Child displacement](#@Child_displacement_71)
-        -  [New inner node children polarity](#@New_inner_node_children_polarity_72)
-        -  [Testing](#@Testing_73)
--  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
-    -  [Returns](#@Returns_74)
-    -  [Aborts](#@Aborts_75)
-    -  [Assumptions](#@Assumptions_76)
--  [Function `remove_free_leaf`](#0xc0deb00c_critqueue_remove_free_leaf)
-    -  [Assumptions](#@Assumptions_77)
-    -  [Removing the root](#@Removing_the_root_78)
+        -  [Inserting above a leaf](#@Inserting_above_a_leaf_70)
+        -  [Inserting above an inner node](#@Inserting_above_an_inner_node_73)
+    -  [Testing](#@Testing_76)
+-  [Function `insert_leaf_below_anchor_node`](#0xc0deb00c_critqueue_insert_leaf_below_anchor_node)
+    -  [Parameters](#@Parameters_77)
+    -  [Assumptions](#@Assumptions_78)
     -  [Reference diagrams](#@Reference_diagrams_79)
-        -  [With grandparent](#@With_grandparent_80)
-        -  [Without grandparent](#@Without_grandparent_83)
-        -  [Testing](#@Testing_86)
+        -  [Anchor node children polarity](#@Anchor_node_children_polarity_80)
+        -  [Child displacement](#@Child_displacement_81)
+        -  [New inner node children polarity](#@New_inner_node_children_polarity_82)
+    -  [Testing](#@Testing_83)
+-  [Function `insert_update_subqueue`](#0xc0deb00c_critqueue_insert_update_subqueue)
+    -  [Returns](#@Returns_84)
+    -  [Aborts](#@Aborts_85)
+    -  [Assumptions](#@Assumptions_86)
+    -  [Testing](#@Testing_87)
+-  [Function `remove_free_leaf`](#0xc0deb00c_critqueue_remove_free_leaf)
+    -  [Assumptions](#@Assumptions_88)
+    -  [Removing the root](#@Removing_the_root_89)
+    -  [Reference diagrams](#@Reference_diagrams_90)
+        -  [With grandparent](#@With_grandparent_91)
+        -  [Without grandparent](#@Without_grandparent_94)
+    -  [Testing](#@Testing_97)
 -  [Function `remove_subqueue_node`](#0xc0deb00c_critqueue_remove_subqueue_node)
-    -  [Parameters](#@Parameters_87)
-    -  [Returns](#@Returns_88)
-    -  [Reference diagrams](#@Reference_diagrams_89)
-        -  [Conventions](#@Conventions_90)
-        -  [Removal sequence](#@Removal_sequence_91)
-        -  [Testing](#@Testing_92)
+    -  [Parameters](#@Parameters_98)
+    -  [Returns](#@Returns_99)
+    -  [Reference diagrams](#@Reference_diagrams_100)
+        -  [Conventions](#@Conventions_101)
+        -  [Removal sequence](#@Removal_sequence_102)
+    -  [Testing](#@Testing_103)
 -  [Function `search`](#0xc0deb00c_critqueue_search)
-    -  [Returns](#@Returns_93)
-    -  [Assumptions](#@Assumptions_94)
-    -  [Reference diagrams](#@Reference_diagrams_95)
-        -  [Leaf at root](#@Leaf_at_root_96)
-        -  [Inner node at root](#@Inner_node_at_root_97)
-        -  [Testing](#@Testing_98)
+    -  [Returns](#@Returns_104)
+    -  [Assumptions](#@Assumptions_105)
+    -  [Reference diagrams](#@Reference_diagrams_106)
+        -  [Leaf at root](#@Leaf_at_root_107)
+        -  [Inner node at root](#@Inner_node_at_root_108)
+    -  [Testing](#@Testing_109)
 -  [Function `traverse`](#0xc0deb00c_critqueue_traverse)
-    -  [Parameters](#@Parameters_99)
-    -  [Returns](#@Returns_100)
-    -  [Membership considerations](#@Membership_considerations_101)
-    -  [Reference diagram](#@Reference_diagram_102)
-        -  [Conventions](#@Conventions_103)
-        -  [Inorder predecessor](#@Inorder_predecessor_104)
-        -  [Inorder successor](#@Inorder_successor_105)
-        -  [Testing](#@Testing_106)
+    -  [Parameters](#@Parameters_110)
+    -  [Returns](#@Returns_111)
+    -  [Membership considerations](#@Membership_considerations_112)
+    -  [Reference diagram](#@Reference_diagram_113)
+        -  [Conventions](#@Conventions_114)
+        -  [Inorder predecessor](#@Inorder_predecessor_115)
+        -  [Inorder successor](#@Inorder_successor_116)
+    -  [Testing](#@Testing_117)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1225,6 +1236,14 @@ Borrow insertion value corresponding to <code>access_key</code> in given
 <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, aborting if no such access key.
 
 
+<a name="@Testing_33"></a>
+
+### Testing
+
+
+* <code>test_borrowers()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow">borrow</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &V
 </code></pre>
 
@@ -1253,6 +1272,14 @@ Borrow insertion value corresponding to <code>access_key</code> in given
 
 Mutably borrow insertion value corresponding to <code>access_key</code>
 <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, aborting if no such access key
+
+
+<a name="@Testing_34"></a>
+
+### Testing
+
+
+* <code>test_borrowers()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_borrow_mut">borrow_mut</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): &<b>mut</b> V
@@ -1287,7 +1314,7 @@ Dequeue the insertion value at the head of the given
 See <code>test_dequeue()</code> for iterated dequeue syntax.
 
 
-<a name="@Example_33"></a>
+<a name="@Example_35"></a>
 
 ### Example
 
@@ -1307,6 +1334,7 @@ of its corresponding sub-queue, followed by insertion value
 
 Dequeuing from an ascending crit-queue yields the insertion
 value sequence:
+
 * <code>0</code>
 * <code>10</code>
 * ...
@@ -1322,6 +1350,7 @@ value sequence:
 * <code>99</code>
 
 Dequeuing from a descending crit-queue yields:
+
 * <code>9</code>
 * <code>19</code>
 * ...
@@ -1337,9 +1366,10 @@ Dequeuing from a descending crit-queue yields:
 * <code>90</code>
 
 
-<a name="@Testing_34"></a>
+<a name="@Testing_36"></a>
 
 ### Testing
+
 
 * <code>test_dequeue()</code>
 
@@ -1374,6 +1404,14 @@ Dequeuing from a descending crit-queue yields:
 Return access key of given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> head, if any.
 
 
+<a name="@Testing_37"></a>
+
+### Testing
+
+
+* <code>test_get_head_access_key()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_head_access_key">get_head_access_key</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): <a href="_Option">option::Option</a>&lt;u128&gt;
 </code></pre>
 
@@ -1399,6 +1437,14 @@ Return access key of given <code><a href="critqueue.md#0xc0deb00c_critqueue_Crit
 ## Function `has_access_key`
 
 Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has the given <code>access_key</code>.
+
+
+<a name="@Testing_38"></a>
+
+### Testing
+
+
+* <code>test_has_access_key()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_has_access_key">has_access_key</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): bool
@@ -1430,29 +1476,31 @@ Insert the given key-value insertion pair into the given
 <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>, returning an access key.
 
 
-<a name="@Parameters_35"></a>
+<a name="@Parameters_39"></a>
 
 ### Parameters
+
 
 * <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
 * <code>insertion_key</code>: Key to insert.
 * <code>insertion_value</code>: Value to insert.
 
 
-<a name="@Returns_36"></a>
+<a name="@Returns_40"></a>
 
 ### Returns
+
 
 * <code>u128</code>: Access key for given key-value pair.
 
 
-<a name="@Reference_diagrams_37"></a>
+<a name="@Reference_diagrams_41"></a>
 
 ### Reference diagrams
 
 
 
-<a name="@Conventions_38"></a>
+<a name="@Conventions_42"></a>
 
 #### Conventions
 
@@ -1472,7 +1520,7 @@ next sub-queue node <code>n_1{8}</code>, the sub-queue tail, has insertion
 count 1 and insertion value 8.
 
 
-<a name="@Insertion_sequence_39"></a>
+<a name="@Insertion_sequence_43"></a>
 
 #### Insertion sequence
 
@@ -1512,9 +1560,10 @@ count 2 prior to the insertion:
 >                ^ new sub-queue node
 
 
-<a name="@Testing_40"></a>
+<a name="@Testing_44"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_insert_ascending()</code>.
 * <code>test_insert_descending()</code>.
@@ -1576,6 +1625,14 @@ count 2 prior to the insertion:
 ## Function `is_empty`
 
 Return <code><b>true</b></code> if given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> is empty.
+
+
+<a name="@Testing_45"></a>
+
+### Testing
+
+
+* <code>test_is_empty()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_is_empty">is_empty</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;): bool
@@ -1640,13 +1697,13 @@ Remove and return from given <code><a href="critqueue.md#0xc0deb00c_critqueue_Cr
 corresponding to <code>access_key</code>, aborting if no such entry.
 
 
-<a name="@Reference_diagrams_41"></a>
+<a name="@Reference_diagrams_46"></a>
 
 ### Reference diagrams
 
 
 
-<a name="@Conventions_42"></a>
+<a name="@Conventions_47"></a>
 
 #### Conventions
 
@@ -1666,7 +1723,7 @@ next sub-queue node <code>n_1{8}</code>, the sub-queue tail, has insertion
 count 1 and insertion value 8.
 
 
-<a name="@Insertion_preposition_sequence_43"></a>
+<a name="@Insertion_preposition_sequence_48"></a>
 
 #### Insertion preposition sequence
 
@@ -1708,7 +1765,7 @@ tree after the final preposition insertion.
 >                ^ new sub-queue node
 
 
-<a name="@No_sub-queue_head_update_44"></a>
+<a name="@No_sub-queue_head_update_49"></a>
 
 #### No sub-queue head update
 
@@ -1724,7 +1781,7 @@ Remove <code>n_1{2}</code> from <code>101</code>:
 >
 
 
-<a name="@Sub-queue_head_update,_no_free_leaf_45"></a>
+<a name="@Sub-queue_head_update,_no_free_leaf_50"></a>
 
 #### Sub-queue head update, no free leaf
 
@@ -1740,7 +1797,7 @@ update for a descending crit-queue:
 >     [n_0{8}]   [n_0{4}]
 
 
-<a name="@Free_leaf_generation_1_46"></a>
+<a name="@Free_leaf_generation_1_51"></a>
 
 #### Free leaf generation 1
 
@@ -1755,7 +1812,7 @@ update for an ascending crit-queue:
 >      ^ new crit-queue head (ascending)
 
 
-<a name="@Free_leaf_generation_2_47"></a>
+<a name="@Free_leaf_generation_2_52"></a>
 
 #### Free leaf generation 2
 
@@ -1770,9 +1827,10 @@ crit-queue head update for a descending crit-queue:
 >                 ^ new crit-queue head (descending)
 
 
-<a name="@Testing_48"></a>
+<a name="@Testing_53"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_remove_no_subqueue_head_update()</code>.
 * <code>test_remove_subqueue_head_update_no_free_leaf_ascending()</code>.
@@ -1863,6 +1921,14 @@ Return <code><b>true</b></code> if, were <code>insertion_key</code> to be insert
 access key would become the new head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 
 
+<a name="@Testing_54"></a>
+
+### Testing
+
+
+* <code>test_would_become_trail_head()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_become_new_head">would_become_new_head</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
 </code></pre>
 
@@ -1907,6 +1973,14 @@ Return <code><b>true</b></code> if, were <code>insertion_key</code> to be insert
 access key would trail behind the head of the given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 
 
+<a name="@Testing_55"></a>
+
+### Testing
+
+
+* <code>test_would_become_trail_head()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_would_trail_head">would_trail_head</a>&lt;V&gt;(critqueue_ref: &<a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64): bool
 </code></pre>
 
@@ -1936,7 +2010,7 @@ Return a bitmask set at the most significant bit at which two
 unequal bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-<a name="@<code>XOR</code>/<code>AND</code>_method_49"></a>
+<a name="@<code>XOR</code>/<code>AND</code>_method_56"></a>
 
 ### <code>XOR</code>/<code>AND</code> method
 
@@ -2005,7 +2079,7 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_50"></a>
+<a name="@Binary_search_method_57"></a>
 
 ### Binary search method
 
@@ -2081,6 +2155,14 @@ improves the $O(k)$ search proposed by [Langley 2008] to
 $O(log_2(k))$.
 
 
+<a name="@Testing_58"></a>
+
+### Testing
+
+
+* <code>test_get_critical_bitmask()</code>
+
+
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_get_critical_bitmask">get_critical_bitmask</a>(s1: u128, s2: u128): u128
 </code></pre>
 
@@ -2120,22 +2202,32 @@ Allocate a leaf during insertion.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@Returns_51"></a>
+<a name="@Returns_59"></a>
 
 ### Returns
+
 
 * <code>u128</code>: Access key of new sub-queue node.
 
 
-<a name="@Assumptions_52"></a>
+<a name="@Assumptions_60"></a>
 
 ### Assumptions
+
 
 * <code>critqueue_ref_mut</code> indicates a <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> that does not have
 an allocated leaf with the given <code>leaf_key</code>.
 * A <code><a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a></code> with the appropriate access key has been
 initialized as if it were the sole sub-queue node in a free
 leaf.
+
+
+<a name="@Testing_61"></a>
+
+### Testing
+
+
+* <code>test_insert_allocate_leaf()</code>
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_allocate_leaf">insert_allocate_leaf</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, leaf_key: u128): u128
@@ -2182,6 +2274,14 @@ Check head of given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">
 <code>access_key</code> of a new key-value insertion pair.
 
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
+
+
+<a name="@Testing_62"></a>
+
+### Testing
+
+
+* <code>test_insert_check_head()</code>
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_check_head">insert_check_head</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128)
@@ -2240,9 +2340,10 @@ below the first walked node with a larger critical bit, or above
 the root of the tree, whichever comes first.
 
 
-<a name="@Parameters_53"></a>
+<a name="@Parameters_63"></a>
 
 ### Parameters
+
 
 * <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
 * <code>access_key</code>: Unique access key of key-value insertion pair
@@ -2251,14 +2352,15 @@ corresponding to the free leaf to insert, and optionally, a
 new inner key for a new inner node to insert.
 
 
-<a name="@Assumptions_54"></a>
+<a name="@Assumptions_64"></a>
 
 ### Assumptions
+
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with <code>leaf_key</code>.
 
 
-<a name="@Diagrams_55"></a>
+<a name="@Diagrams_65"></a>
 
 ### Diagrams
 
@@ -2310,9 +2412,10 @@ and inner node bit flag.
 >     0100   0101
 
 
-<a name="@Testing_56"></a>
+<a name="@Testing_66"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_insert_leaf()</code>
 
@@ -2395,9 +2498,10 @@ Insert new leaf and inner node above the root node.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>()</code>.
 
 
-<a name="@Parameters_57"></a>
+<a name="@Parameters_67"></a>
 
 ### Parameters
+
 
 * <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
 * <code>new_inner_node_key</code>: Inner key of new inner node to insert.
@@ -2405,16 +2509,17 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf"
 * <code>new_leaf_key</code>: Leaf key of free leaf to insert to the tree.
 
 
-<a name="@Assumptions_58"></a>
+<a name="@Assumptions_68"></a>
 
 ### Assumptions
+
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with <code>new_leaf_key</code>.
 * <code>new_inner_node_bitmask</code> is greater than that of root node,
 which has been reached via upward walk in <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>()</code>.
 
 
-<a name="@Reference_diagrams_59"></a>
+<a name="@Reference_diagrams_69"></a>
 
 ### Reference diagrams
 
@@ -2426,7 +2531,7 @@ encoded with a mock insertion key, mock insertion count,
 and inner node bit flag.
 
 
-<a name="@Inserting_above_a_leaf_60"></a>
+<a name="@Inserting_above_a_leaf_70"></a>
 
 #### Inserting above a leaf
 
@@ -2436,7 +2541,7 @@ Both examples reference the following diagram:
 >     0100
 
 
-<a name="@New_leaf_as_left_child_61"></a>
+<a name="@New_leaf_as_left_child_71"></a>
 
 ##### New leaf as left child
 
@@ -2448,7 +2553,7 @@ Here, inserting <code>0000</code> yields:
 >     new leaf -> 0000   0100 <- old root
 
 
-<a name="@New_leaf_as_right_child_62"></a>
+<a name="@New_leaf_as_right_child_72"></a>
 
 ##### New leaf as right child
 
@@ -2460,7 +2565,7 @@ If <code>1111</code> were to be inserted instead:
 >     old root -> 0100   1111 <- new leaf
 
 
-<a name="@Inserting_above_an_inner_node_63"></a>
+<a name="@Inserting_above_an_inner_node_73"></a>
 
 #### Inserting above an inner node
 
@@ -2472,7 +2577,7 @@ Both examples reference the following diagram:
 >     1001   1011
 
 
-<a name="@New_leaf_as_left_child_64"></a>
+<a name="@New_leaf_as_left_child_74"></a>
 
 ##### New leaf as left child
 
@@ -2486,7 +2591,7 @@ Here, inserting <code>0001</code> yields:
 >                    1001   1011
 
 
-<a name="@New_leaf_as_right_child_65"></a>
+<a name="@New_leaf_as_right_child_75"></a>
 
 ##### New leaf as right child
 
@@ -2500,9 +2605,10 @@ If <code>1100</code> were to be inserted instead:
 >                  1001   1011
 
 
-<a name="@Testing_66"></a>
+<a name="@Testing_76"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_insert_leaf_above_root_node_1()</code>
 * <code>test_insert_leaf_above_root_node_2()</code>
@@ -2572,9 +2678,10 @@ Insert new free leaf and inner node below anchor node.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf">insert_leaf</a>()</code>.
 
 
-<a name="@Parameters_67"></a>
+<a name="@Parameters_77"></a>
 
 ### Parameters
+
 
 * <code>critqueue_ref_mut</code>: Mutable reference to crit-queue.
 * <code>anchor_node_key</code>: Key of the inner node to insert below, the
@@ -2584,9 +2691,10 @@ Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert_leaf"
 * <code>new_leaf_key</code>: Leaf key of free leaf to insert to the tree.
 
 
-<a name="@Assumptions_68"></a>
+<a name="@Assumptions_78"></a>
 
 ### Assumptions
+
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a free leaf with <code>new_leaf_key</code>.
 * <code>new_inner_node_bitmask</code> is less than that of anchor node,
@@ -2595,7 +2703,7 @@ which has been reached via upward walk in <code><a href="critqueue.md#0xc0deb00c
 child, if the displaced child is an inner node (see below).
 
 
-<a name="@Reference_diagrams_69"></a>
+<a name="@Reference_diagrams_79"></a>
 
 ### Reference diagrams
 
@@ -2615,7 +2723,7 @@ Both insertion examples reference the following diagram:
 >        1001   1011
 
 
-<a name="@Anchor_node_children_polarity_70"></a>
+<a name="@Anchor_node_children_polarity_80"></a>
 
 #### Anchor node children polarity
 
@@ -2630,7 +2738,7 @@ be inserted to the left of <code>1st</code>, while a free leaf key of
 <code>1111</code> would be inserted to the right of <code>3rd</code>.
 
 
-<a name="@Child_displacement_71"></a>
+<a name="@Child_displacement_81"></a>
 
 #### Child displacement
 
@@ -2661,7 +2769,7 @@ displace <code>1st</code>:
 >                    1001   1011
 
 
-<a name="@New_inner_node_children_polarity_72"></a>
+<a name="@New_inner_node_children_polarity_82"></a>
 
 #### New inner node children polarity
 
@@ -2677,9 +2785,10 @@ the new inner node's left child is the displaced child and the
 new inner node's right child is the new leaf.
 
 
-<a name="@Testing_73"></a>
+<a name="@Testing_83"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_insert_leaf_below_anchor_node_1()</code>
 * <code>test_insert_leaf_below_anchor_node_2()</code>
@@ -2766,31 +2875,47 @@ Update a sub-queue, inside an allocated leaf, during insertion.
 Inner function for <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@Returns_74"></a>
+<a name="@Returns_84"></a>
 
 ### Returns
+
 
 * <code>u128</code>: Access key of new sub-queue node.
 * <code>bool</code>: <code><b>true</b></code> if allocated leaf is a free leaf, else <code><b>false</b></code>.
 
 
-<a name="@Aborts_75"></a>
+<a name="@Aborts_85"></a>
 
 ### Aborts
+
 
 * <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_INSERTIONS">E_TOO_MANY_INSERTIONS</a></code>: Insertion key encoded in <code>leaf_key</code>
 has already been inserted the maximum number of times.
 
 
-<a name="@Assumptions_76"></a>
+<a name="@Assumptions_86"></a>
 
 ### Assumptions
+
 
 * <code>critqueue_ref_mut</code> indicates a <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> that already
 contains an allocated leaf with the given <code>leaf_key</code>.
 * <code>subqueue_node_ref_mut</code> indicates a <code><a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">SubQueueNode</a></code> with the
 appropriate access key, which has been initialized as if it
 were the sole sub-queue node in a free leaf.
+
+
+<a name="@Testing_87"></a>
+
+### Testing
+
+
+* <code>test_insert_update_subqueue_ascending_free()</code>
+* <code>test_insert_update_subqueue_ascending_not_free()</code>
+* <code>test_insert_update_subqueue_descending_free()</code>
+* <code>test_insert_update_subqueue_descending_not_free()</code>
+* <code>test_insert_update_subqueue_max_failure()</code>
+* <code>test_insert_update_subqueue_max_success()</code>
 
 
 <pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert_update_subqueue">insert_update_subqueue</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, subqueue_node_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_SubQueueNode">critqueue::SubQueueNode</a>&lt;V&gt;, leaf_key: u128): (u128, bool)
@@ -2872,15 +2997,16 @@ generate unique access keys for any future insertions. Rather,
 their parent field is simply set to none.
 
 
-<a name="@Assumptions_77"></a>
+<a name="@Assumptions_88"></a>
 
 ### Assumptions
+
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> has a crit-bit tree with at least one node,
 which is the indicated leaf in the case of a singleton tree.
 
 
-<a name="@Removing_the_root_78"></a>
+<a name="@Removing_the_root_89"></a>
 
 ### Removing the root
 
@@ -2890,7 +3016,7 @@ updated to none. The leaf's field should already be none, since
 it was the root.
 
 
-<a name="@Reference_diagrams_79"></a>
+<a name="@Reference_diagrams_90"></a>
 
 ### Reference diagrams
 
@@ -2900,7 +3026,7 @@ depicted relative to bit 64, but tested with correspondingly
 bitshifted amounts, generated via <code><a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>()</code>.
 
 
-<a name="@With_grandparent_80"></a>
+<a name="@With_grandparent_91"></a>
 
 #### With grandparent
 
@@ -2914,7 +3040,7 @@ that the removed parent was a child on.
 4. The freed leaf must have its parent field set to none.
 
 
-<a name="@Inner_node_sibling_81"></a>
+<a name="@Inner_node_sibling_92"></a>
 
 ##### Inner node sibling
 
@@ -2936,7 +3062,7 @@ Becomes
 >                  010   011
 
 
-<a name="@Leaf_sibling_82"></a>
+<a name="@Leaf_sibling_93"></a>
 
 ##### Leaf sibling
 
@@ -2954,7 +3080,7 @@ Becomes
 >     001   101 <- old sibling
 
 
-<a name="@Without_grandparent_83"></a>
+<a name="@Without_grandparent_94"></a>
 
 #### Without grandparent
 
@@ -2967,7 +3093,7 @@ sibling to the freed leaf.
 4. The freed leaf must have its parent field set to none.
 
 
-<a name="@Inner_node_sibling_84"></a>
+<a name="@Inner_node_sibling_95"></a>
 
 ##### Inner node sibling
 
@@ -2985,7 +3111,7 @@ Becomes
 >     010   011
 
 
-<a name="@Leaf_sibling_85"></a>
+<a name="@Leaf_sibling_96"></a>
 
 ##### Leaf sibling
 
@@ -2999,9 +3125,10 @@ Becomes
 >     101 <- old sibling
 
 
-<a name="@Testing_86"></a>
+<a name="@Testing_97"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_remove_free_leaf_inner_sibling()</code>.
 * <code>test_remove_free_leaf_leaf_sibling_root()</code>
@@ -3100,17 +3227,19 @@ traversal in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>
 in <code><a href="critqueue.md#0xc0deb00c_critqueue_remove_free_leaf">remove_free_leaf</a>()</code>.
 
 
-<a name="@Parameters_87"></a>
+<a name="@Parameters_98"></a>
 
 ### Parameters
+
 
 * <code>critqueue_ref_mut</code>: Mutable reference to given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 * <code>access_key</code>: Access key corresponding to insertion value.
 
 
-<a name="@Returns_88"></a>
+<a name="@Returns_99"></a>
 
 ### Returns
+
 
 * <code>V</code>: Insertion value corresponding to <code>access_key</code>.
 * <code>Option&lt;Option&lt;u128&gt;&gt;</code>: The new sub-queue head field indicated
@@ -3118,13 +3247,13 @@ by the corresponding leaf (<code><a href="critqueue.md#0xc0deb00c_critqueue_Leaf
 in an update to it.
 
 
-<a name="@Reference_diagrams_89"></a>
+<a name="@Reference_diagrams_100"></a>
 
 ### Reference diagrams
 
 
 
-<a name="@Conventions_90"></a>
+<a name="@Conventions_101"></a>
 
 #### Conventions
 
@@ -3143,7 +3272,7 @@ key <code>101</code>, for <code>n_i{j}</code> indicating a sub-queue node with
 insertion count <code>i</code> and insertion value <code>j</code>.
 
 
-<a name="@Removal_sequence_91"></a>
+<a name="@Removal_sequence_102"></a>
 
 #### Removal sequence
 
@@ -3180,9 +3309,10 @@ sub-queue:
 >     []    [n_0{9}]
 
 
-<a name="@Testing_92"></a>
+<a name="@Testing_103"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_remove_subqueue_node()</code>
 
@@ -3259,23 +3389,25 @@ leaf", return its leaf key, the inner key of its parent, and the
 parent's critical bitmask.
 
 
-<a name="@Returns_93"></a>
+<a name="@Returns_104"></a>
 
 ### Returns
+
 
 * <code>u128</code>: Match leaf key.
 * <code>Option&lt;u128&gt;</code>: Match parent inner key, if any.
 * <code>Option&lt;u128&gt;</code>: Match parent's critical bitmask, if any.
 
 
-<a name="@Assumptions_94"></a>
+<a name="@Assumptions_105"></a>
 
 ### Assumptions
+
 
 * Given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code> does not have an empty crit-bit tree.
 
 
-<a name="@Reference_diagrams_95"></a>
+<a name="@Reference_diagrams_106"></a>
 
 ### Reference diagrams
 
@@ -3287,7 +3419,7 @@ encoded with a mock insertion key, mock insertion count,
 and inner node bit flag.
 
 
-<a name="@Leaf_at_root_96"></a>
+<a name="@Leaf_at_root_107"></a>
 
 #### Leaf at root
 
@@ -3299,7 +3431,7 @@ and inner node bit flag.
 | Any        | <code>111</code>          | None                 |
 
 
-<a name="@Inner_node_at_root_97"></a>
+<a name="@Inner_node_at_root_108"></a>
 
 #### Inner node at root
 
@@ -3317,9 +3449,10 @@ and inner node bit flag.
 | <code>111</code>      | <code>111</code>           | <code>1st</code>                 |
 
 
-<a name="@Testing_98"></a>
+<a name="@Testing_109"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_search()</code>
 
@@ -3387,39 +3520,42 @@ and inner node bit flag.
 Traverse from leaf to inorder predecessor or successor.
 
 
-<a name="@Parameters_99"></a>
+<a name="@Parameters_110"></a>
 
 ### Parameters
+
 
 * <code>critqueue_ref</code>: Immutable reference to given <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a></code>.
 * <code>start_leaf_key</code>: Leaf key of leaf to traverse from.
 * <code>target</code>: Either <code><a href="critqueue.md#0xc0deb00c_critqueue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_SUCCESSOR">SUCCESSOR</a></code>.
 
 
-<a name="@Returns_100"></a>
+<a name="@Returns_111"></a>
 
 ### Returns
+
 
 * <code>Option&lt;u128&gt;</code>: Leaf key of either inorder predecessor or
 successor to leaf having <code>start_leaf_key</code>, if any.
 
 
-<a name="@Membership_considerations_101"></a>
+<a name="@Membership_considerations_112"></a>
 
 ### Membership considerations
+
 
 * Aborts if no leaf in crit-queue with given <code>start_leaf_key</code>.
 * Returns none if <code>start_leaf_key</code> indicates a free leaf.
 * Returns none if <code>start_leaf_key</code> indicates crit-bit root.
 
 
-<a name="@Reference_diagram_102"></a>
+<a name="@Reference_diagram_113"></a>
 
 ### Reference diagram
 
 
 
-<a name="@Conventions_103"></a>
+<a name="@Conventions_114"></a>
 
 #### Conventions
 
@@ -3442,7 +3578,7 @@ Traversal starts at the "start leaf", walks to an "apex node",
 then ends at the "target leaf", if any.
 
 
-<a name="@Inorder_predecessor_104"></a>
+<a name="@Inorder_predecessor_115"></a>
 
 #### Inorder predecessor
 
@@ -3464,7 +3600,7 @@ along right children, breaking out at a leaf.
 | <code>0011</code>    | None      | None        |
 
 
-<a name="@Inorder_successor_105"></a>
+<a name="@Inorder_successor_116"></a>
 
 #### Inorder successor
 
@@ -3486,9 +3622,10 @@ then walk along left children, breaking out at a leaf.
 | <code>1000</code>    | None      | None        |
 
 
-<a name="@Testing_106"></a>
+<a name="@Testing_117"></a>
 
-#### Testing
+### Testing
+
 
 * <code>test_traverse()</code>
 

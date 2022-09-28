@@ -895,8 +895,8 @@ module econia::critqueue {
     ///
     /// # Testing
     ///
-    /// * `test_insert_ascending()`.
-    /// * `test_insert_descending()`.
+    /// * `test_insert_ascending()`
+    /// * `test_insert_descending()`
     public fun insert<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         insertion_key: u64,
@@ -1066,14 +1066,14 @@ module econia::critqueue {
     ///
     /// # Testing
     ///
-    /// * `test_remove_no_subqueue_head_update()`.
-    /// * `test_remove_subqueue_head_update_no_free_leaf_ascending()`.
-    /// * `test_remove_subqueue_head_update_no_free_leaf_descending()`.
-    /// * `test_remove_free_leaf_1_ascending()`.
-    /// * `test_remove_free_leaf_1_descending()`.
-    /// * `test_remove_free_leaf_2_ascending()`.
-    /// * `test_remove_free_leaf_2_descending()`.
-    /// * `test_remove_root()`.
+    /// * `test_remove_no_subqueue_head_update()`
+    /// * `test_remove_subqueue_head_update_no_free_leaf_ascending()`
+    /// * `test_remove_subqueue_head_update_no_free_leaf_descending()`
+    /// * `test_remove_free_leaf_1_ascending()`
+    /// * `test_remove_free_leaf_1_descending()`
+    /// * `test_remove_free_leaf_2_ascending()`
+    /// * `test_remove_free_leaf_2_descending()`
+    /// * `test_remove_root()`
     public fun remove<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         access_key: u128
@@ -1993,7 +1993,7 @@ module econia::critqueue {
     ///
     /// # Testing
     ///
-    /// * `test_remove_free_leaf_inner_sibling()`.
+    /// * `test_remove_free_leaf_inner_sibling()`
     /// * `test_remove_free_leaf_leaf_sibling_root()`
     fun remove_free_leaf<V>(
         critqueue_ref_mut: &mut CritQueue<V>,

@@ -1567,8 +1567,8 @@ count 2 prior to the insertion:
 ### Testing
 
 
-* <code>test_insert_ascending()</code>.
-* <code>test_insert_descending()</code>.
+* <code>test_insert_ascending()</code>
+* <code>test_insert_descending()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_insert">insert</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, insertion_key: u64, insertion_value: V): u128
@@ -1834,14 +1834,14 @@ crit-queue head update for a descending crit-queue:
 ### Testing
 
 
-* <code>test_remove_no_subqueue_head_update()</code>.
-* <code>test_remove_subqueue_head_update_no_free_leaf_ascending()</code>.
-* <code>test_remove_subqueue_head_update_no_free_leaf_descending()</code>.
-* <code>test_remove_free_leaf_1_ascending()</code>.
-* <code>test_remove_free_leaf_1_descending()</code>.
-* <code>test_remove_free_leaf_2_ascending()</code>.
-* <code>test_remove_free_leaf_2_descending()</code>.
-* <code>test_remove_root()</code>.
+* <code>test_remove_no_subqueue_head_update()</code>
+* <code>test_remove_subqueue_head_update_no_free_leaf_ascending()</code>
+* <code>test_remove_subqueue_head_update_no_free_leaf_descending()</code>
+* <code>test_remove_free_leaf_1_ascending()</code>
+* <code>test_remove_free_leaf_1_descending()</code>
+* <code>test_remove_free_leaf_2_ascending()</code>
+* <code>test_remove_free_leaf_2_descending()</code>
+* <code>test_remove_root()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_remove">remove</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, access_key: u128): V
@@ -3132,7 +3132,7 @@ Becomes
 ### Testing
 
 
-* <code>test_remove_free_leaf_inner_sibling()</code>.
+* <code>test_remove_free_leaf_inner_sibling()</code>
 * <code>test_remove_free_leaf_leaf_sibling_root()</code>
 
 

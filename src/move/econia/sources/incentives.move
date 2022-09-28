@@ -140,6 +140,7 @@
 /// register_integrator_fee_store --> get_tier_activation_fee
 ///
 /// ```
+///
 /// ## Match operations
 ///
 /// ```mermaid
@@ -275,15 +276,25 @@ module econia::incentives {
 
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Genesis parameter.
     const MARKET_REGISTRATION_FEE: u64 = 1000;
+    /// Genesis parameter.
     const UNDERWRITER_REGISTRATION_FEE: u64 = 500;
+    /// Genesis parameter.
     const CUSTODIAN_REGISTRATION_FEE: u64 = 100;
+    /// Genesis parameter.
     const TAKER_FEE_DIVISOR: u64 = 2000;
+    /// Genesis parameter.
     const FEE_SHARE_DIVISOR_0: u64 = 4000;
+    /// Genesis parameter.
     const FEE_SHARE_DIVISOR_1: u64 = 3000;
+    /// Genesis parameter.
     const TIER_ACTIVATION_FEE_0: u64 = 0;
+    /// Genesis parameter.
     const TIER_ACTIVATION_FEE_1: u64 = 225;
+    /// Genesis parameter.
     const WITHDRAWAL_FEE_0: u64 = 10;
+    /// Genesis parameter.
     const WITHDRAWAL_FEE_1: u64 = 5;
 
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -379,15 +390,18 @@ module econia::incentives {
     /// Calculate cost to upgrade `IntegratorFeeStore` to higher tier.
     ///
     /// # Type parameters
+    ///
     /// * `QuoteCoinType`: The quote coin type for market.
     /// * `UtilityCoinType`: The utility coin type.
     ///
     /// # Parameters
+    ///
     /// * `integrator`: Integrator account.
     /// * `market_id`: Market ID for corresponding market.
     /// * `new_tier`: Tier to upgrade to.
     ///
     /// # Returns
+    ///
     /// * `u64`: Cost, in utility coins, to upgrade to given tier,
     ///   calculated as the difference between the cumulative activation
     ///   cost for each tier. For example, if it costs 1000 to activate
@@ -395,10 +409,12 @@ module econia::incentives {
     ///   upgrade from tier 1 to tier 3.
     ///
     /// # Aborts if
+    ///
     /// * `new_tier` is not higher than the one that the
     ///   `IntegratorFeeStore` is already activated to.
     ///
     /// # Restrictions
+    ///
     /// * Requires signature of integrator to prevent excessive public
     ///   queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
@@ -461,6 +477,7 @@ module econia::incentives {
     /// Return withdrawal fee for given `integrator` and `market_id`.
     ///
     /// # Restrictions
+    ///
     /// * Requires signature of integrator to prevent excessive public
     ///   queries on an `IntegratorFeeStore` and thus transaction
     ///   collisions with the matching engine.
@@ -566,10 +583,12 @@ module econia::incentives {
     /// Upgrade `IntegratorFeeStore` to a higher tier.
     ///
     /// # Type parameters
+    ///
     /// * `QuoteCoinType`: The quote coin type for market.
     /// * `UtilityCoinType`: The utility coin type.
     ///
     /// # Parameters
+    ///
     /// * `integrator`: Integrator account.
     /// * `market_id`: Market ID for corresponding market.
     /// * `new_tier`: Tier to upgrade to.
@@ -649,10 +668,12 @@ module econia::incentives {
     /// Withdraw all fees from an `IntegratorFeeStore`.
     ///
     /// # Type parameters
+    ///
     /// * `QuoteCoinType`: The quote coin type for market.
     /// * `UtilityCoinType`: The utility coin type.
     ///
     /// # Parameters
+    ///
     /// * `integrator`: Integrator account.
     /// * `market_id`: Market ID for corresponding market.
     /// * `utility_coins`: Utility coins paid in order to make
@@ -661,6 +682,7 @@ module econia::incentives {
     ///   engine.
     ///
     /// # Returns
+    ///
     /// * `coin::Coin<QuoteCoinType>`: Quote coin fees for given market.
     public fun withdraw_integrator_fees<
         QuoteCoinType,
@@ -777,10 +799,12 @@ module econia::incentives {
     /// See wrapped function `withdraw_integrator_fees()`.
     ///
     /// # Type parameters
+    ///
     /// * `QuoteCoinType`: The quote coin type for market.
     /// * `UtilityCoinType`: The utility coin type.
     ///
     /// # Parameters
+    ///
     /// * `integrator`: Integrator account.
     /// * `market_id`: Market ID of corresponding market.
     public entry fun withdraw_integrator_fees_via_coinstores<
@@ -826,9 +850,11 @@ module econia::incentives {
     /// determined based on their tier for the given market.
     ///
     /// # Type parameters
+    ///
     /// * `QuoteCoinType`: Quote coin type for market.
     ///
     /// # Parameters
+    ///
     /// * `market_id`: Market ID for corresponding market.
     /// * `integrator_address`: Integrator's address. May be
     ///   intentionally marked an address known not to be an integrator,
@@ -838,6 +864,7 @@ module econia::incentives {
     /// * `quote_coins_ref_mut`: Quote coins to withdraw fees from.
     ///
     /// # Aborts if
+    ///
     /// * Depositing to integrator fee store would result in an
     ///   overflow. Rather than relying on the underlying coin operation
     ///   to abort, this check is performed to provide additional
@@ -982,18 +1009,22 @@ module econia::incentives {
     /// $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
     ///
     /// # Parameters
+    ///
     /// * `direction`: `BUY` or `SELL`.
     /// * `taker_fee_divisor`: Taker fee divisor.
     /// * `max_quote_delta_user`: Maximum change in quote coins seen by
     ///   user: spent if a `BUY` and received if a `SELL`.
     ///
     /// # Returns
+    ///
     /// * `u64`: Maximum amount of quote coins to match.
     ///
     /// # Assumptions
+    ///
     /// * Taker fee divisor is greater than 1.
     ///
     /// # Aborts if
+    ///
     /// * Maximum amount to match does not fit in a `u64`, which should
     ///   only be possible in the case of a `SELL`.
     public(friend) fun calculate_max_quote_match(
@@ -1089,10 +1120,12 @@ module econia::incentives {
     /// Register an `IntegratorFeeStore` entry for given `integrator`.
     ///
     /// # Type parameters
+    ///
     /// * `QuoteCoinType`: The quote coin type for market.
     /// * `UtilityCoinType`: The utility coin type.
     ///
     /// # Parameters
+    ///
     /// * `integrator`: Integrator account.
     /// * `market_id`: Market ID for corresponding market.
     /// * `tier`: `IntegratorFeeStore` tier to activate to.
@@ -1144,6 +1177,7 @@ module econia::incentives {
     /// Deposit `coins` to the Econia `UtilityCoinStore`.
     ///
     /// # Aborts if
+    ///
     /// * Depositing to utility coin store would result in an overflow.
     ///   Rather than relying on the underlying coin operation to abort,
     ///   this check is performed to provide additional feedback in the
@@ -1216,12 +1250,15 @@ module econia::incentives {
     /// switching back to a utility coin type after having abandoned it.
     ///
     /// # Type Parameters
+    ///
     /// * `CoinType`: Utility coin phantom type.
     ///
     /// # Parameters
+    ///
     /// * `fee_account`: Econia fee account `signer`.
     ///
     /// # Aborts if
+    ///
     /// * `CoinType` does not correspond to an initialized
     ///   `aptos_framework::coin::Coin`.
     fun init_utility_coin_store<CoinType>(
@@ -1266,9 +1303,11 @@ module econia::incentives {
     /// via `set_incentive_parameters_parse_tiers_vector()`.
     ///
     /// # Type Parameters
+    ///
     /// * `UtilityCoinType`: Utility coin phantom type.
     ///
     /// # Parameters
+    ///
     /// * `econia`: Econia account `signer`.
     /// * `market_registration_fee`: Market registration fee to set.
     /// * `underwriter_registration_fee`: Underwriter registration fee
@@ -1285,12 +1324,14 @@ module econia::incentives {
     ///   time.
     ///
     /// # Assumptions
+    ///
     /// * If `updating` is `true`, an `IncentiveParameters` already
     ///   exists at the Econia account.
     /// * If `updating` is `false`, an `IncentiveParameters` does not
     ///   exist at the Econia account.
     ///
     /// # Aborts if
+    ///
     /// * `updating` is `true` and the new parameter set indicates a
     ///   reduction in the number of fee store activation tiers, which
     ///   would mean that integrators who had previously upgraded to the
@@ -1369,6 +1410,7 @@ module econia::incentives {
     ///   to parse into.
     ///
     /// # Aborts if
+    ///
     /// * An indicated inner vector from
     ///   `integrator_fee_store_tiers_ref` is the wrong length.
     /// * Fee share divisor does not decrease with tier number.
@@ -1381,6 +1423,7 @@ module econia::incentives {
     ///   threshold.
     ///
     /// # Assumptions
+    ///
     /// * `taker_fee_divisor` has been range-checked via
     ///   `set_incentive_parameters_range_check_inputs()`.
     /// * An `IncentiveParameters` exists at the Econia account.
@@ -1458,6 +1501,7 @@ module econia::incentives {
     /// Range check inputs for `set_incentive_parameters()`.
     ///
     /// # Parameters
+    ///
     /// * `econia`: Econia account `signer`.
     /// * `market_registration_fee`: Market registration fee to set.
     /// * `underwriter_registration_fee`: Underwriter registration fee
@@ -1471,6 +1515,7 @@ module econia::incentives {
     ///   `IntegratorFeeStoreTierParameters`.
     ///
     /// # Aborts if
+    ///
     /// * `econia` is not Econia account.
     /// * `market_registration_fee` does not meet minimum threshold.
     /// * `underwriter_registration_fee` does not meet minimum
@@ -1575,6 +1620,7 @@ module econia::incentives {
     /// `QuoteCoinType` and `market_id`.
     ///
     /// # Restrictions
+    ///
     /// * Restricted to test-only to prevent excessive public queries
     ///   and thus transaction collisions.
     public fun get_econia_fee_store_balance_test<QuoteCoinType>(
@@ -1593,6 +1639,7 @@ module econia::incentives {
     /// `QuoteCoinType` and `market_id`.
     ///
     /// # Restrictions
+    ///
     /// * Restricted to test-only to prevent excessive public queries
     ///   and thus transaction collisions.
     public fun get_integrator_fee_store_balance_test<QuoteCoinType>(
@@ -1612,6 +1659,7 @@ module econia::incentives {
     /// `QuoteCoinType` and `market_id`.
     ///
     /// # Restrictions
+    ///
     /// * Restricted to test-only to prevent excessive public queries
     ///   and thus transaction collisions.
     public fun get_integrator_fee_store_tier_test<QuoteCoinType>(
@@ -1630,6 +1678,7 @@ module econia::incentives {
     /// coin type `UC`.
     ///
     /// # Restrictions
+    ///
     /// * Restricted to test-only to prevent excessive public queries
     ///   and thus transaction collisions.
     public fun get_utility_coin_store_balance_test():

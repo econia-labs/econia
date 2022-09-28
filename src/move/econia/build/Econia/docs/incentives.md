@@ -190,6 +190,7 @@ register_integrator_fee_store --> get_tier_activation_fee
 
 ```
 
+
 <a name="@Match_operations_11"></a>
 
 ### Match operations
@@ -613,6 +614,7 @@ Buy direction flag.
 
 <a name="0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_CUSTODIAN_REGISTRATION_FEE">CUSTODIAN_REGISTRATION_FEE</a>: u64 = 100;
@@ -847,6 +849,7 @@ When the indicated withdrawal fee is too small.
 
 <a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0">FEE_SHARE_DIVISOR_0</a>: u64 = 4000;
@@ -856,6 +859,7 @@ When the indicated withdrawal fee is too small.
 
 <a name="0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1">FEE_SHARE_DIVISOR_1</a>: u64 = 3000;
@@ -876,6 +880,7 @@ Index of fee share in vectorized representation of an
 
 <a name="0xc0deb00c_incentives_MARKET_REGISTRATION_FEE"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>: u64 = 1000;
@@ -937,6 +942,7 @@ Sell direction flag.
 
 <a name="0xc0deb00c_incentives_TAKER_FEE_DIVISOR"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TAKER_FEE_DIVISOR">TAKER_FEE_DIVISOR</a>: u64 = 2000;
@@ -946,6 +952,7 @@ Sell direction flag.
 
 <a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0">TIER_ACTIVATION_FEE_0</a>: u64 = 0;
@@ -955,6 +962,7 @@ Sell direction flag.
 
 <a name="0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>: u64 = 225;
@@ -975,6 +983,7 @@ Index of tier activation fee in vectorized representation of an
 
 <a name="0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>: u64 = 500;
@@ -984,6 +993,7 @@ Index of tier activation fee in vectorized representation of an
 
 <a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_0"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>: u64 = 10;
@@ -993,6 +1003,7 @@ Index of tier activation fee in vectorized representation of an
 
 <a name="0xc0deb00c_incentives_WITHDRAWAL_FEE_1"></a>
 
+Genesis parameter.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>: u64 = 5;
@@ -1022,6 +1033,7 @@ Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_Int
 
 ### Type parameters
 
+
 * <code>QuoteCoinType</code>: The quote coin type for market.
 * <code>UtilityCoinType</code>: The utility coin type.
 
@@ -1029,6 +1041,7 @@ Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_Int
 <a name="@Parameters_15"></a>
 
 ### Parameters
+
 
 * <code>integrator</code>: Integrator account.
 * <code>market_id</code>: Market ID for corresponding market.
@@ -1038,6 +1051,7 @@ Calculate cost to upgrade <code><a href="incentives.md#0xc0deb00c_incentives_Int
 <a name="@Returns_16"></a>
 
 ### Returns
+
 
 * <code>u64</code>: Cost, in utility coins, to upgrade to given tier,
 calculated as the difference between the cumulative activation
@@ -1050,6 +1064,7 @@ upgrade from tier 1 to tier 3.
 
 ### Aborts if
 
+
 * <code>new_tier</code> is not higher than the one that the
 <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> is already activated to.
 
@@ -1057,6 +1072,7 @@ upgrade from tier 1 to tier 3.
 <a name="@Restrictions_18"></a>
 
 ### Restrictions
+
 
 * Requires signature of integrator to prevent excessive public
 queries on an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> and thus transaction
@@ -1183,6 +1199,7 @@ Return withdrawal fee for given <code>integrator</code> and <code>market_id</cod
 <a name="@Restrictions_19"></a>
 
 ### Restrictions
+
 
 * Requires signature of integrator to prevent excessive public
 queries on an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">IntegratorFeeStore</a></code> and thus transaction
@@ -1453,6 +1470,7 @@ Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">I
 
 ### Type parameters
 
+
 * <code>QuoteCoinType</code>: The quote coin type for market.
 * <code>UtilityCoinType</code>: The utility coin type.
 
@@ -1460,6 +1478,7 @@ Upgrade <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStore">I
 <a name="@Parameters_21"></a>
 
 ### Parameters
+
 
 * <code>integrator</code>: Integrator account.
 * <code>market_id</code>: Market ID for corresponding market.
@@ -1624,6 +1643,7 @@ Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 
 ### Type parameters
 
+
 * <code>QuoteCoinType</code>: The quote coin type for market.
 * <code>UtilityCoinType</code>: The utility coin type.
 
@@ -1631,6 +1651,7 @@ Withdraw all fees from an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 <a name="@Parameters_23"></a>
 
 ### Parameters
+
 
 * <code>integrator</code>: Integrator account.
 * <code>market_id</code>: Market ID for corresponding market.
@@ -1643,6 +1664,7 @@ engine.
 <a name="@Returns_24"></a>
 
 ### Returns
+
 
 * <code><a href="_Coin">coin::Coin</a>&lt;QuoteCoinType&gt;</code>: Quote coin fees for given market.
 
@@ -1858,6 +1880,7 @@ See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw
 
 ### Type parameters
 
+
 * <code>QuoteCoinType</code>: The quote coin type for market.
 * <code>UtilityCoinType</code>: The utility coin type.
 
@@ -1865,6 +1888,7 @@ See wrapped function <code><a href="incentives.md#0xc0deb00c_incentives_withdraw
 <a name="@Parameters_26"></a>
 
 ### Parameters
+
 
 * <code>integrator</code>: Integrator account.
 * <code>market_id</code>: Market ID of corresponding market.
@@ -1931,12 +1955,14 @@ determined based on their tier for the given market.
 
 ### Type parameters
 
+
 * <code>QuoteCoinType</code>: Quote coin type for market.
 
 
 <a name="@Parameters_28"></a>
 
 ### Parameters
+
 
 * <code>market_id</code>: Market ID for corresponding market.
 * <code>integrator_address</code>: Integrator's address. May be
@@ -1950,6 +1976,7 @@ all fees to Econia.
 <a name="@Aborts_if_29"></a>
 
 ### Aborts if
+
 
 * Depositing to integrator fee store would result in an
 overflow. Rather than relying on the underlying coin operation
@@ -2151,6 +2178,7 @@ $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
 
 ### Parameters
 
+
 * <code>direction</code>: <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a></code> or <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
 * <code>taker_fee_divisor</code>: Taker fee divisor.
 * <code>max_quote_delta_user</code>: Maximum change in quote coins seen by
@@ -2161,6 +2189,7 @@ user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>
 
 ### Returns
 
+
 * <code>u64</code>: Maximum amount of quote coins to match.
 
 
@@ -2168,12 +2197,14 @@ user: spent if a <code><a href="incentives.md#0xc0deb00c_incentives_BUY">BUY</a>
 
 ### Assumptions
 
+
 * Taker fee divisor is greater than 1.
 
 
 <a name="@Aborts_if_41"></a>
 
 ### Aborts if
+
 
 * Maximum amount to match does not fit in a <code>u64</code>, which should
 only be possible in the case of a <code><a href="incentives.md#0xc0deb00c_incentives_SELL">SELL</a></code>.
@@ -2374,6 +2405,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 
 ### Type parameters
 
+
 * <code>QuoteCoinType</code>: The quote coin type for market.
 * <code>UtilityCoinType</code>: The utility coin type.
 
@@ -2381,6 +2413,7 @@ Register an <code><a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStor
 <a name="@Parameters_43"></a>
 
 ### Parameters
+
 
 * <code>integrator</code>: Integrator account.
 * <code>market_id</code>: Market ID for corresponding market.
@@ -2452,6 +2485,7 @@ Deposit <code>coins</code> to the Econia <code><a href="incentives.md#0xc0deb00c
 <a name="@Aborts_if_44"></a>
 
 ### Aborts if
+
 
 * Depositing to utility coin store would result in an overflow.
 Rather than relying on the underlying coin operation to abort,
@@ -2589,6 +2623,7 @@ switching back to a utility coin type after having abandoned it.
 
 ### Type Parameters
 
+
 * <code>CoinType</code>: Utility coin phantom type.
 
 
@@ -2596,12 +2631,14 @@ switching back to a utility coin type after having abandoned it.
 
 ### Parameters
 
+
 * <code>fee_account</code>: Econia fee account <code><a href="">signer</a></code>.
 
 
 <a name="@Aborts_if_47"></a>
 
 ### Aborts if
+
 
 * <code>CoinType</code> does not correspond to an initialized
 <code>aptos_framework::coin::Coin</code>.
@@ -2691,12 +2728,14 @@ via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_
 
 ### Type Parameters
 
+
 * <code>UtilityCoinType</code>: Utility coin phantom type.
 
 
 <a name="@Parameters_49"></a>
 
 ### Parameters
+
 
 * <code>econia</code>: Econia account <code><a href="">signer</a></code>.
 * <code>market_registration_fee</code>: Market registration fee to set.
@@ -2718,6 +2757,7 @@ time.
 
 ### Assumptions
 
+
 * If <code>updating</code> is <code><b>true</b></code>, an <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code> already
 exists at the Econia account.
 * If <code>updating</code> is <code><b>false</b></code>, an <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code> does not
@@ -2727,6 +2767,7 @@ exist at the Econia account.
 <a name="@Aborts_if_51"></a>
 
 ### Aborts if
+
 
 * <code>updating</code> is <code><b>true</b></code> and the new parameter set indicates a
 reduction in the number of fee store activation tiers, which
@@ -2830,6 +2871,7 @@ to parse into.
 
 ### Aborts if
 
+
 * An indicated inner vector from
 <code>integrator_fee_store_tiers_ref</code> is the wrong length.
 * Fee share divisor does not decrease with tier number.
@@ -2845,6 +2887,7 @@ threshold.
 <a name="@Assumptions_53"></a>
 
 ### Assumptions
+
 
 * <code>taker_fee_divisor</code> has been range-checked via
 <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>()</code>.
@@ -2947,6 +2990,7 @@ Range check inputs for <code><a href="incentives.md#0xc0deb00c_incentives_set_in
 
 ### Parameters
 
+
 * <code>econia</code>: Econia account <code><a href="">signer</a></code>.
 * <code>market_registration_fee</code>: Market registration fee to set.
 * <code>underwriter_registration_fee</code>: Underwriter registration fee
@@ -2963,6 +3007,7 @@ vector containing fields for a corresponding
 <a name="@Aborts_if_55"></a>
 
 ### Aborts if
+
 
 * <code>econia</code> is not Econia account.
 * <code>market_registration_fee</code> does not meet minimum threshold.

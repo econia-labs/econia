@@ -61,6 +61,10 @@ module econia::tablist {
 
     /// Add `key`-`value` pair to given `Tablist`, aborting if `key`
     /// already present.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun add<
         K: copy + drop + store,
         V: store
@@ -91,6 +95,10 @@ module econia::tablist {
 
     /// Return immutable reference to the value that `key` maps to,
     /// aborting if `key` is not in given `Tablist`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun borrow<
         K: copy + drop + store,
         V: store
@@ -102,11 +110,16 @@ module econia::tablist {
     }
 
     /// Borrow the `Node` in the given `Tablist` having key, returning:
+    ///
     /// * Immutable reference to corresponding value.
     /// * Key of previous `Node` in the `Tablist`, if any.
     /// * Key of next `Node` in the `Tablist`, if any.
     ///
     /// Aborts if there is no entry for `key`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_iterate()`
     public fun borrow_iterable<
         K: copy + drop + store,
         V: store
@@ -125,12 +138,17 @@ module econia::tablist {
     }
 
     /// Mutably borrow the `Node` in given `Tablist` having `key`,
-    /// having returning:
+    /// returning:
+    ///
     /// * Mutable reference to corresponding value.
     /// * Key of previous `Node` in the `Tablist`, if any.
     /// * Key of next `Node` in the `Tablist`, if any.
     ///
     /// Aborts if there is no entry for `key`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_iterate()`
     public fun borrow_iterable_mut<
         K: copy + drop + store,
         V: store
@@ -151,6 +169,12 @@ module econia::tablist {
 
     /// Return mutable reference to the value that `key` maps to,
     /// aborting if `key` is not in given `Tablist`.
+    ///
+    /// Aborts if there is no entry for `key`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun borrow_mut<
         K: copy + drop + store,
         V: store
@@ -163,6 +187,10 @@ module econia::tablist {
     }
 
     /// Return `true` if given `Tablist` contains `key`, else `false`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun contains<
         K: copy + drop + store,
         V: store
@@ -174,6 +202,15 @@ module econia::tablist {
     }
 
     /// Destroy an empty `Tablist`, aborting if not empty.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_DESTROY_NOT_EMPTY`: The tablist is not empty.
+    ///
+    /// # Testing
+    ///
+    /// * `test_destroy_empty_not_empty()`
+    /// * `test_mixed()`
     public fun destroy_empty<
         K: copy + drop + store,
         V: store
@@ -189,6 +226,10 @@ module econia::tablist {
     }
 
     /// Return optional head key from given `Tablist`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun get_head_key<
         K: copy + drop + store,
         V: store
@@ -199,6 +240,10 @@ module econia::tablist {
     }
 
     /// Return optional tail key in given `Tablist`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun get_tail_key<
         K: copy + drop + store,
         V: store
@@ -209,6 +254,10 @@ module econia::tablist {
     }
 
     /// Return number of elements in given `Tablist`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun length<
         K: copy + drop + store,
         V: store
@@ -219,6 +268,10 @@ module econia::tablist {
     }
 
     /// Return an empty `Tablist`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun new<
         K: copy + drop + store,
         V: store
@@ -231,6 +284,10 @@ module econia::tablist {
     }
 
     /// Return `true` if given `Tablist` is empty, else `false`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun is_empty<
         K: copy + drop + store,
         V: store
@@ -246,6 +303,10 @@ module econia::tablist {
     /// See wrapped function `remove_iterable()`.
     ///
     /// Aborts if there is no entry for `key`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun remove<
         K: copy + drop + store,
         V: store
@@ -263,6 +324,10 @@ module econia::tablist {
     /// next key it mapped to (if any).
     ///
     /// Aborts if there is no entry for `key`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_iterate_remove()`
     public fun remove_iterable<
         K: copy + drop + store,
         V: store
@@ -302,6 +367,10 @@ module econia::tablist {
     }
 
     /// Return a new `Tablist` containing `key`-`value` pair.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public fun singleton<
         K: copy + drop + store,
         V: store
@@ -325,6 +394,7 @@ module econia::tablist {
 
     #[test]
     /// Verify iteration in the following sequence:
+    ///
     /// * Immutably, from head to tail.
     /// * Mutably, from tail to head.
     /// * Mutably, from head to tail.

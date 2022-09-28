@@ -21,20 +21,36 @@ syntax.
 -  [Struct `Tablist`](#0xc0deb00c_tablist_Tablist)
 -  [Constants](#@Constants_0)
 -  [Function `add`](#0xc0deb00c_tablist_add)
+    -  [Testing](#@Testing_1)
 -  [Function `borrow`](#0xc0deb00c_tablist_borrow)
+    -  [Testing](#@Testing_2)
 -  [Function `borrow_iterable`](#0xc0deb00c_tablist_borrow_iterable)
+    -  [Testing](#@Testing_3)
 -  [Function `borrow_iterable_mut`](#0xc0deb00c_tablist_borrow_iterable_mut)
+    -  [Testing](#@Testing_4)
 -  [Function `borrow_mut`](#0xc0deb00c_tablist_borrow_mut)
+    -  [Testing](#@Testing_5)
 -  [Function `contains`](#0xc0deb00c_tablist_contains)
+    -  [Testing](#@Testing_6)
 -  [Function `destroy_empty`](#0xc0deb00c_tablist_destroy_empty)
+    -  [Aborts](#@Aborts_7)
+    -  [Testing](#@Testing_8)
 -  [Function `get_head_key`](#0xc0deb00c_tablist_get_head_key)
+    -  [Testing](#@Testing_9)
 -  [Function `get_tail_key`](#0xc0deb00c_tablist_get_tail_key)
+    -  [Testing](#@Testing_10)
 -  [Function `length`](#0xc0deb00c_tablist_length)
+    -  [Testing](#@Testing_11)
 -  [Function `new`](#0xc0deb00c_tablist_new)
+    -  [Testing](#@Testing_12)
 -  [Function `is_empty`](#0xc0deb00c_tablist_is_empty)
+    -  [Testing](#@Testing_13)
 -  [Function `remove`](#0xc0deb00c_tablist_remove)
+    -  [Testing](#@Testing_14)
 -  [Function `remove_iterable`](#0xc0deb00c_tablist_remove_iterable)
+    -  [Testing](#@Testing_15)
 -  [Function `singleton`](#0xc0deb00c_tablist_singleton)
+    -  [Testing](#@Testing_16)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -146,6 +162,14 @@ Add <code>key</code>-<code>value</code> pair to given <code><a href="tablist.md#
 already present.
 
 
+<a name="@Testing_1"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_add">add</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref_mut: &<b>mut</b> <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K, value: V)
 </code></pre>
 
@@ -196,6 +220,14 @@ Return immutable reference to the value that <code>key</code> maps to,
 aborting if <code>key</code> is not in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
+<a name="@Testing_2"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_borrow">borrow</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref: &<a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K): &V
 </code></pre>
 
@@ -225,11 +257,20 @@ aborting if <code>key</code> is not in given <code><a href="tablist.md#0xc0deb00
 ## Function `borrow_iterable`
 
 Borrow the <code><a href="tablist.md#0xc0deb00c_tablist_Node">Node</a></code> in the given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> having key, returning:
+
 * Immutable reference to corresponding value.
 * Key of previous <code><a href="tablist.md#0xc0deb00c_tablist_Node">Node</a></code> in the <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>, if any.
 * Key of next <code><a href="tablist.md#0xc0deb00c_tablist_Node">Node</a></code> in the <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>, if any.
 
 Aborts if there is no entry for <code>key</code>.
+
+
+<a name="@Testing_3"></a>
+
+### Testing
+
+
+* <code>test_iterate()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_borrow_iterable">borrow_iterable</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref: &<a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K): (&V, <a href="_Option">option::Option</a>&lt;K&gt;, <a href="_Option">option::Option</a>&lt;K&gt;)
@@ -268,12 +309,21 @@ Aborts if there is no entry for <code>key</code>.
 ## Function `borrow_iterable_mut`
 
 Mutably borrow the <code><a href="tablist.md#0xc0deb00c_tablist_Node">Node</a></code> in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> having <code>key</code>,
-having returning:
+returning:
+
 * Mutable reference to corresponding value.
 * Key of previous <code><a href="tablist.md#0xc0deb00c_tablist_Node">Node</a></code> in the <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>, if any.
 * Key of next <code><a href="tablist.md#0xc0deb00c_tablist_Node">Node</a></code> in the <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>, if any.
 
 Aborts if there is no entry for <code>key</code>.
+
+
+<a name="@Testing_4"></a>
+
+### Testing
+
+
+* <code>test_iterate()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_borrow_iterable_mut">borrow_iterable_mut</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref_mut: &<b>mut</b> <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K): (&<b>mut</b> V, <a href="_Option">option::Option</a>&lt;K&gt;, <a href="_Option">option::Option</a>&lt;K&gt;)
@@ -315,6 +365,16 @@ Aborts if there is no entry for <code>key</code>.
 Return mutable reference to the value that <code>key</code> maps to,
 aborting if <code>key</code> is not in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
+Aborts if there is no entry for <code>key</code>.
+
+
+<a name="@Testing_5"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
+
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">borrow_mut</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref_mut: &<b>mut</b> <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K): &<b>mut</b> V
 </code></pre>
@@ -348,6 +408,14 @@ aborting if <code>key</code> is not in given <code><a href="tablist.md#0xc0deb00
 Return <code><b>true</b></code> if given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> contains <code>key</code>, else <code><b>false</b></code>.
 
 
+<a name="@Testing_6"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_contains">contains</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref: &<a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K): bool
 </code></pre>
 
@@ -377,6 +445,23 @@ Return <code><b>true</b></code> if given <code><a href="tablist.md#0xc0deb00c_ta
 ## Function `destroy_empty`
 
 Destroy an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>, aborting if not empty.
+
+
+<a name="@Aborts_7"></a>
+
+### Aborts
+
+
+* <code><a href="tablist.md#0xc0deb00c_tablist_E_DESTROY_NOT_EMPTY">E_DESTROY_NOT_EMPTY</a></code>: The tablist is not empty.
+
+
+<a name="@Testing_8"></a>
+
+### Testing
+
+
+* <code>test_destroy_empty_not_empty()</code>
+* <code>test_mixed()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_destroy_empty">destroy_empty</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(<a href="tablist.md#0xc0deb00c_tablist">tablist</a>: <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;)
@@ -414,6 +499,14 @@ Destroy an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</
 Return optional head key from given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
+<a name="@Testing_9"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_get_head_key">get_head_key</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref: &<a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;): <a href="_Option">option::Option</a>&lt;K&gt;
 </code></pre>
 
@@ -442,6 +535,14 @@ Return optional head key from given <code><a href="tablist.md#0xc0deb00c_tablist
 ## Function `get_tail_key`
 
 Return optional tail key in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
+
+
+<a name="@Testing_10"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_get_tail_key">get_tail_key</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref: &<a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;): <a href="_Option">option::Option</a>&lt;K&gt;
@@ -474,6 +575,14 @@ Return optional tail key in given <code><a href="tablist.md#0xc0deb00c_tablist_T
 Return number of elements in given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
 
 
+<a name="@Testing_11"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_length">length</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref: &<a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;): u64
 </code></pre>
 
@@ -502,6 +611,14 @@ Return number of elements in given <code><a href="tablist.md#0xc0deb00c_tablist_
 ## Function `new`
 
 Return an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code>.
+
+
+<a name="@Testing_12"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_new">new</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(): <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;
@@ -534,6 +651,14 @@ Return an empty <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a
 ## Function `is_empty`
 
 Return <code><b>true</b></code> if given <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> is empty, else <code><b>false</b></code>.
+
+
+<a name="@Testing_13"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_is_empty">is_empty</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref: &<a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;): bool
@@ -571,6 +696,14 @@ See wrapped function <code><a href="tablist.md#0xc0deb00c_tablist_remove_iterabl
 Aborts if there is no entry for <code>key</code>.
 
 
+<a name="@Testing_14"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_remove">remove</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref_mut: &<b>mut</b> <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K): V
 </code></pre>
 
@@ -606,6 +739,14 @@ mapped to, the previous key it mapped to (if any), and the
 next key it mapped to (if any).
 
 Aborts if there is no entry for <code>key</code>.
+
+
+<a name="@Testing_15"></a>
+
+### Testing
+
+
+* <code>test_iterate_remove()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_remove_iterable">remove_iterable</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(tablist_ref_mut: &<b>mut</b> <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;, key: K): (V, <a href="_Option">option::Option</a>&lt;K&gt;, <a href="_Option">option::Option</a>&lt;K&gt;)
@@ -665,6 +806,14 @@ Aborts if there is no entry for <code>key</code>.
 ## Function `singleton`
 
 Return a new <code><a href="tablist.md#0xc0deb00c_tablist_Tablist">Tablist</a></code> containing <code>key</code>-<code>value</code> pair.
+
+
+<a name="@Testing_16"></a>
+
+### Testing
+
+
+* <code>test_mixed()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="tablist.md#0xc0deb00c_tablist_singleton">singleton</a>&lt;K: <b>copy</b>, drop, store, V: store&gt;(key: K, value: V): <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;K, V&gt;

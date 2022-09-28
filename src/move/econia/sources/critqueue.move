@@ -706,7 +706,7 @@ module econia::critqueue {
     /// Here, `101` refers to a crit-bit tree leaf for insertion key
     /// `101`, which has a sub-queue with node `n_0{7}` at its head,
     /// having insertion count 0 and an insertion value of 7. The
-    /// next sub-queue node `v_1{8}`, the sub-queue tail, has insertion
+    /// next sub-queue node `n_1{8}`, the sub-queue tail, has insertion
     /// count 1 and insertion value 8.
     ///
     /// ## Insertion sequence
@@ -808,6 +808,118 @@ module econia::critqueue {
 
     /// Remove and return from given `CritQueue` the insertion value
     /// corresponding to `access_key`, aborting if no such entry.
+    ///
+    /// # Reference diagrams
+    ///
+    /// ## Conventions
+    ///
+    /// For ease of illustration, critical bitmasks and leaf keys are
+    /// depicted relative to bit 64, but tested with correspondingly
+    /// bitshifted amounts. Insertion keys are given in binary, while
+    /// insertion values and insertion counts are given in decimal:
+    ///
+    /// >     101
+    /// >     [n_0{7} -> n_1{8}]
+    ///
+    /// Here, `101` refers to a crit-bit tree leaf for insertion key
+    /// `101`, which has a sub-queue with node `n_0{7}` at its head,
+    /// having insertion count 0 and an insertion value of 7. The
+    /// next sub-queue node `n_1{8}`, the sub-queue tail, has insertion
+    /// count 1 and insertion value 8.
+    ///
+    /// ## Insertion preposition sequence
+    ///
+    /// The below preposition sequence is applicable for all tests
+    /// other than `test_remove_root()`, for removals relative to the
+    /// tree after the final preposition insertion.
+    ///
+    /// 1. Insert `{010, 4}`:
+    ///
+    /// >     010 <- new leaf
+    /// >     [n_0{4}]
+    /// >      ^ new sub-queue node
+    ///
+    /// 2. Insert `{101, 9}`:
+    ///
+    /// >             2nd <- new inner node
+    /// >            /   \
+    /// >          010   101 <- new leaf node
+    /// >     [n_0{4}]   [n_0{9}]
+    /// >                 ^ new sub-queue node
+    ///
+    /// 3. Insert `{101, 2}`:
+    ///
+    /// >             2nd
+    /// >            /   \
+    /// >          010   101
+    /// >     [n_0{4}]   [n_0{9} -> n_1{2}]
+    /// >                           ^ new sub-queue node
+    ///
+    /// 4. Insert `{000, 8}`:
+    ///
+    /// >                          2nd
+    /// >                         /   \
+    /// >     new inner node -> 1st    101
+    /// >                      /   \   [n_0{9} -> n_1{2}]
+    /// >        new leaf -> 000   010
+    /// >               [n_0{8}]   [n_0{4}]
+    /// >                ^ new sub-queue node
+    ///
+    /// ## No sub-queue head update
+    ///
+    /// Remove `n_1{2}` from `101`:
+    ///
+    /// >                2nd
+    /// >               /   \
+    /// >             1st    101
+    /// >            /   \   [n_0{9}]
+    /// >          000   010  ^ sub-queue head is now tail too
+    /// >     [n_0{8}]   [n_0{4}]
+    /// >
+    ///
+    /// ## Sub-queue head update, no free leaf
+    ///
+    /// Remove `n_0{9}` from `101`, which results in a crit-queue head
+    /// update for a descending crit-queue:
+    ///
+    /// >                2nd
+    /// >               /   \
+    /// >             1st    101
+    /// >            /   \   [n_1{2}]
+    /// >          000   010  ^ new crit-queue head (descending)
+    /// >     [n_0{8}]   [n_0{4}]
+    ///
+    /// ## Free leaf generation 1
+    ///
+    /// Remove `n_0{8}` from `000`, which results in a crit-queue head
+    /// update for an ascending crit-queue:
+    ///
+    /// >             2nd
+    /// >            /   \
+    /// >          010    101
+    /// >     [n_0{4}]    [n_0{9} -> n_1{2}]
+    /// >      ^ new crit-queue head (ascending)
+    ///
+    /// ## Free leaf generation 2
+    ///
+    /// Remove `n_0{9}` and `n_1{2}` from `101`, which results in a
+    /// crit-queue head update for a descending crit-queue:
+    ///
+    /// >             1st
+    /// >            /   \
+    /// >          000   010
+    /// >     [n_0{8}]   [n_0{4}]
+    /// >                 ^ new crit-queue head (descending)
+    ///
+    /// ## Testing
+    /// * `test_remove_no_subqueue_head_update()`.
+    /// * `test_remove_subqueue_head_update_no_free_leaf_ascending()`.
+    /// * `test_remove_subqueue_head_update_no_free_leaf_descending()`.
+    /// * `test_remove_free_leaf_1_ascending()`.
+    /// * `test_remove_free_leaf_1_descending()`.
+    /// * `test_remove_free_leaf_2_ascending()`.
+    /// * `test_remove_free_leaf_2_descending()`.
+    /// * `test_remove_root()`.
     public fun remove<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
         access_key: u128
@@ -3428,6 +3540,266 @@ module econia::critqueue {
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
         )), 0);
+    }
+
+    #[test]
+    /// Verify reference removal from `remove()` for free leaf
+    /// generation case 1, ascending crit-queue.
+    fun test_remove_free_leaf_1_ascending() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let  access_key_n_0_4 = insert(&mut critqueue, u_64(b"010"), 4);
+        let  access_key_n_0_9 = insert(&mut critqueue, u_64(b"101"), 9);
+        let  inner_key_2nd = access_key_n_0_9 | ACCESS_KEY_TO_INNER_KEY;
+        let _access_key_n_1_2 = insert(&mut critqueue, u_64(b"101"), 2);
+        let  access_key_n_0_8 = insert(&mut critqueue, u_64(b"000"), 8);
+        let  inner_key_1st = access_key_n_0_8 | ACCESS_KEY_TO_INNER_KEY;
+        // Get leaf keys.
+        let _leaf_key_101 = access_key_n_0_9 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_010 = access_key_n_0_4 & ACCESS_KEY_TO_LEAF_KEY;
+        let  leaf_key_000 = access_key_n_0_8 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute specified removal, asserting its return value.
+        assert!(remove(&mut critqueue, access_key_n_0_8) == 8, 0);
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key_n_0_4, 0);
+        assert!(*option::borrow(&critqueue.root) == inner_key_2nd, 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_0_8), 0);
+        // Assert inner node removed.
+        assert!(!table::contains(&critqueue.inners, inner_key_1st), 0);
+        // Assert leaf freed.
+        let (_, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_000);
+        assert!(option::is_none(&parent), 0);
+        assert!(option::is_none(&head), 0);
+        assert!(option::is_none(&tail), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify reference removal from `remove()` for free leaf
+    /// generation case 1, descending crit-queue.
+    fun test_remove_free_leaf_1_descending() {
+        // Get descending crit-queue.
+        let critqueue = new<u8>(DESCENDING);
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let  access_key_n_0_4 = insert(&mut critqueue, u_64(b"010"), 4);
+        let  access_key_n_0_9 = insert(&mut critqueue, u_64(b"101"), 9);
+        let  inner_key_2nd = access_key_n_0_9 | ACCESS_KEY_TO_INNER_KEY;
+        let _access_key_n_1_2 = insert(&mut critqueue, u_64(b"101"), 2);
+        let  access_key_n_0_8 = insert(&mut critqueue, u_64(b"000"), 8);
+        let  inner_key_1st = access_key_n_0_8 | ACCESS_KEY_TO_INNER_KEY;
+        // Get leaf keys.
+        let _leaf_key_101 = access_key_n_0_9 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_010 = access_key_n_0_4 & ACCESS_KEY_TO_LEAF_KEY;
+        let  leaf_key_000 = access_key_n_0_8 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute specified removal, asserting its return value.
+        assert!(remove(&mut critqueue, access_key_n_0_8) == 8, 0);
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key_n_0_9, 0);
+        assert!(*option::borrow(&critqueue.root) == inner_key_2nd, 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_0_8), 0);
+        // Assert inner node removed.
+        assert!(!table::contains(&critqueue.inners, inner_key_1st), 0);
+        // Assert leaf freed.
+        let (_, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_000);
+        assert!(option::is_none(&parent), 0);
+        assert!(option::is_none(&head), 0);
+        assert!(option::is_none(&tail), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify reference removal from `remove()` for free leaf
+    /// generation case 2, ascending crit-queue.
+    fun test_remove_free_leaf_2_ascending() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let  access_key_n_0_4 = insert(&mut critqueue, u_64(b"010"), 4);
+        let  access_key_n_0_9 = insert(&mut critqueue, u_64(b"101"), 9);
+        let  inner_key_2nd = access_key_n_0_9 | ACCESS_KEY_TO_INNER_KEY;
+        let  access_key_n_1_2 = insert(&mut critqueue, u_64(b"101"), 2);
+        let  access_key_n_0_8 = insert(&mut critqueue, u_64(b"000"), 8);
+        let  inner_key_1st = access_key_n_0_8 | ACCESS_KEY_TO_INNER_KEY;
+        // Get leaf keys.
+        let  leaf_key_101 = access_key_n_0_9 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_010 = access_key_n_0_4 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_000 = access_key_n_0_8 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute specified removals, asserting return values.
+        assert!(remove(&mut critqueue, access_key_n_0_9) == 9, 0);
+        assert!(remove(&mut critqueue, access_key_n_1_2) == 2, 0);
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key_n_0_8, 0);
+        assert!(*option::borrow(&critqueue.root) == inner_key_1st, 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_0_9), 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_1_2), 0);
+        // Assert inner node removed.
+        assert!(!table::contains(&critqueue.inners, inner_key_2nd), 0);
+        // Assert leaf freed.
+        let (_, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_101);
+        assert!(option::is_none(&parent), 0);
+        assert!(option::is_none(&head), 0);
+        assert!(option::is_none(&tail), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify reference removal from `remove()` for free leaf
+    /// generation case 2, descending crit-queue.
+    fun test_remove_free_leaf_2_descending() {
+        // Get descending crit-queue.
+        let critqueue = new<u8>(DESCENDING);
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let  access_key_n_0_4 = insert(&mut critqueue, u_64(b"010"), 4);
+        let  access_key_n_0_9 = insert(&mut critqueue, u_64(b"101"), 9);
+        let  inner_key_2nd = access_key_n_0_9 | ACCESS_KEY_TO_INNER_KEY;
+        let  access_key_n_1_2 = insert(&mut critqueue, u_64(b"101"), 2);
+        let  access_key_n_0_8 = insert(&mut critqueue, u_64(b"000"), 8);
+        let  inner_key_1st = access_key_n_0_8 | ACCESS_KEY_TO_INNER_KEY;
+        // Get leaf keys.
+        let  leaf_key_101 = access_key_n_0_9 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_010 = access_key_n_0_4 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_000 = access_key_n_0_8 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute specified removals, asserting return values.
+        assert!(remove(&mut critqueue, access_key_n_0_9) == 9, 0);
+        assert!(remove(&mut critqueue, access_key_n_1_2) == 2, 0);
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key_n_0_4, 0);
+        assert!(*option::borrow(&critqueue.root) == inner_key_1st, 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_0_9), 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_1_2), 0);
+        // Assert inner node removed.
+        assert!(!table::contains(&critqueue.inners, inner_key_2nd), 0);
+        // Assert leaf freed.
+        let (_, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key_101);
+        assert!(option::is_none(&parent), 0);
+        assert!(option::is_none(&head), 0);
+        assert!(option::is_none(&tail), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify reference removal from `remove()` for no sub-queue head
+    /// update.
+    fun test_remove_no_subqueue_head_update() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let  access_key_n_0_4 = insert(&mut critqueue, u_64(b"010"), 4);
+        let  access_key_n_0_9 = insert(&mut critqueue, u_64(b"101"), 9);
+        let  inner_key_2nd = access_key_n_0_9 | ACCESS_KEY_TO_INNER_KEY;
+        let  access_key_n_1_2 = insert(&mut critqueue, u_64(b"101"), 2);
+        let  access_key_n_0_8 = insert(&mut critqueue, u_64(b"000"), 8);
+        let _inner_key_1st = access_key_n_0_8 | ACCESS_KEY_TO_INNER_KEY;
+        // Get leaf keys.
+        let _leaf_key_101 = access_key_n_0_9 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_010 = access_key_n_0_4 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_000 = access_key_n_0_8 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute specified removal, asserting its return value.
+        assert!(remove(&mut critqueue, access_key_n_1_2) == 2, 0);
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key_n_0_8, 0);
+        assert!(*option::borrow(&critqueue.root) == inner_key_2nd, 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_1_2), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify removal of root.
+    fun test_remove_root() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Insert sub-queue node and get its access key.
+        let access_key = insert(&mut critqueue, u_64(b"000"), 0);
+        // Get corresponding leaf key.
+        let leaf_key = access_key & ACCESS_KEY_TO_LEAF_KEY;
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key, 0);
+        assert!(*option::borrow(&critqueue.root) == leaf_key, 0);
+        // Assert sub-queue node and leaf created.
+        assert!(table::contains(&critqueue.subqueue_nodes, access_key), 0);
+        assert!(table::contains(&critqueue.leaves, leaf_key), 0);
+        // Execute specified removal, asserting its return value.
+        assert!(remove(&mut critqueue, access_key) == 0, 0);
+        // Assert crit-queue head and root.
+        assert!(option::is_none(&critqueue.head), 0);
+        assert!(option::is_none(&critqueue.root), 0);
+        // Assert sub-queue node removed.
+        assert!(!table::contains(&critqueue.subqueue_nodes, access_key), 0);
+        // Assert leaf freed.
+        let (_, parent, head, tail) =
+            get_leaf_fields_test(&critqueue, leaf_key);
+        assert!(option::is_none(&parent), 0);
+        assert!(option::is_none(&head), 0);
+        assert!(option::is_none(&tail), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify reference removal from `remove()` for sub-queue head
+    /// update but no free leaf, ascending crit-queue
+    fun test_remove_subqueue_head_update_no_free_leaf_ascending() {
+        let critqueue = new<u8>(ASCENDING); // Get ascending crit-queue.
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let  access_key_n_0_4 = insert(&mut critqueue, u_64(b"010"), 4);
+        let  access_key_n_0_9 = insert(&mut critqueue, u_64(b"101"), 9);
+        let  inner_key_2nd = access_key_n_0_9 | ACCESS_KEY_TO_INNER_KEY;
+        let _access_key_n_1_2 = insert(&mut critqueue, u_64(b"101"), 2);
+        let  access_key_n_0_8 = insert(&mut critqueue, u_64(b"000"), 8);
+        let _inner_key_1st = access_key_n_0_8 | ACCESS_KEY_TO_INNER_KEY;
+        // Get leaf keys.
+        let _leaf_key_101 = access_key_n_0_9 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_010 = access_key_n_0_4 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_000 = access_key_n_0_8 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute specified removal, asserting its return value.
+        assert!(remove(&mut critqueue, access_key_n_0_9) == 9, 0);
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key_n_0_8, 0);
+        assert!(*option::borrow(&critqueue.root) == inner_key_2nd, 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_0_9), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
+    }
+
+    #[test]
+    /// Verify reference removal from `remove()` for sub-queue head
+    /// update but no free leaf, descending crit-queue
+    fun test_remove_subqueue_head_update_no_free_leaf_descending() {
+        // Get descending crit-queue.
+        let critqueue = new<u8>(DESCENDING);
+        // Insert sub-queue nodes, storing access keys and generating
+        // inner keys as they are created during insertion sequence.
+        let  access_key_n_0_4 = insert(&mut critqueue, u_64(b"010"), 4);
+        let  access_key_n_0_9 = insert(&mut critqueue, u_64(b"101"), 9);
+        let  inner_key_2nd = access_key_n_0_9 | ACCESS_KEY_TO_INNER_KEY;
+        let  access_key_n_1_2 = insert(&mut critqueue, u_64(b"101"), 2);
+        let  access_key_n_0_8 = insert(&mut critqueue, u_64(b"000"), 8);
+        let _inner_key_1st = access_key_n_0_8 | ACCESS_KEY_TO_INNER_KEY;
+        // Get leaf keys.
+        let _leaf_key_101 = access_key_n_0_9 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_010 = access_key_n_0_4 & ACCESS_KEY_TO_LEAF_KEY;
+        let _leaf_key_000 = access_key_n_0_8 & ACCESS_KEY_TO_LEAF_KEY;
+        // Execute specified removal, asserting its return value.
+        assert!(remove(&mut critqueue, access_key_n_0_9) == 9, 0);
+        // Assert crit-queue head and root.
+        assert!(*option::borrow(&critqueue.head) == access_key_n_1_2, 0);
+        assert!(*option::borrow(&critqueue.root) == inner_key_2nd, 0);
+        assert!( // Assert sub-queue node removed.
+            !table::contains(&critqueue.subqueue_nodes, access_key_n_0_9), 0);
+        drop_critqueue_test(critqueue); // Drop crit-queue.
     }
 
     #[test]

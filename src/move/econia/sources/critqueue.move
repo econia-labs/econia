@@ -750,6 +750,7 @@ module econia::critqueue {
     ///
     /// Dequeuing from an ascending crit-queue yields the insertion
     /// value sequence:
+    ///
     /// * `0`
     /// * `10`
     /// * ...
@@ -765,6 +766,7 @@ module econia::critqueue {
     /// * `99`
     ///
     /// Dequeuing from a descending crit-queue yields:
+    ///
     /// * `9`
     /// * `19`
     /// * ...
@@ -780,6 +782,7 @@ module econia::critqueue {
     /// * `90`
     ///
     /// # Testing
+    ///
     /// * `test_dequeue()`
     public fun dequeue<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
@@ -809,11 +812,13 @@ module econia::critqueue {
     /// `CritQueue`, returning an access key.
     ///
     /// # Parameters
+    ///
     /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
     /// * `insertion_key`: Key to insert.
     /// * `insertion_value`: Value to insert.
     ///
     /// # Returns
+    ///
     /// * `u128`: Access key for given key-value pair.
     ///
     /// # Reference diagrams
@@ -870,7 +875,8 @@ module econia::critqueue {
     /// >               [n_3{8}]   [n_0{4} -> n_1{6}]
     /// >                ^ new sub-queue node
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_insert_ascending()`.
     /// * `test_insert_descending()`.
     public fun insert<V>(
@@ -1036,7 +1042,8 @@ module econia::critqueue {
     /// >     [n_0{8}]   [n_0{4}]
     /// >                 ^ new crit-queue head (descending)
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_remove_no_subqueue_head_update()`.
     /// * `test_remove_subqueue_head_update_no_free_leaf_ascending()`.
     /// * `test_remove_subqueue_head_update_no_free_leaf_descending()`.
@@ -1300,9 +1307,11 @@ module econia::critqueue {
     /// Inner function for `insert()`.
     ///
     /// # Returns
+    ///
     /// * `u128`: Access key of new sub-queue node.
     ///
     /// # Assumptions
+    ///
     /// * `critqueue_ref_mut` indicates a `CritQueue` that does not have
     ///   an allocated leaf with the given `leaf_key`.
     /// * A `SubQueueNode` with the appropriate access key has been
@@ -1372,6 +1381,7 @@ module econia::critqueue {
     /// the root of the tree, whichever comes first.
     ///
     /// # Parameters
+    ///
     /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
     /// * `access_key`: Unique access key of key-value insertion pair
     ///   just inserted, from which is derived the new leaf key
@@ -1379,6 +1389,7 @@ module econia::critqueue {
     ///   new inner key for a new inner node to insert.
     ///
     /// # Assumptions
+    ///
     /// * Given `CritQueue` has a free leaf with `leaf_key`.
     ///
     /// # Diagrams
@@ -1429,7 +1440,8 @@ module econia::critqueue {
     /// >        /   \
     /// >     0100   0101
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_insert_leaf()`
     fun insert_leaf<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
@@ -1491,12 +1503,14 @@ module econia::critqueue {
     /// Inner function for `insert_leaf()`.
     ///
     /// # Parameters
+    ///
     /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
     /// * `new_inner_node_key`: Inner key of new inner node to insert.
     /// * `new_inner_node_bitmask`: Critical bitmask for new inner node.
     /// * `new_leaf_key`: Leaf key of free leaf to insert to the tree.
     ///
     /// # Assumptions
+    ///
     /// * Given `CritQueue` has a free leaf with `new_leaf_key`.
     /// * `new_inner_node_bitmask` is greater than that of root node,
     ///   which has been reached via upward walk in `insert_leaf()`.
@@ -1559,7 +1573,8 @@ module econia::critqueue {
     /// >                     /   \
     /// >                  1001   1011
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_insert_leaf_above_root_node_1()`
     /// * `test_insert_leaf_above_root_node_2()`
     /// * `test_insert_leaf_above_root_node_3()`
@@ -1608,6 +1623,7 @@ module econia::critqueue {
     /// Inner function for `insert_leaf()`.
     ///
     /// # Parameters
+    ///
     /// * `critqueue_ref_mut`: Mutable reference to crit-queue.
     /// * `anchor_node_key`: Key of the inner node to insert below, the
     ///   "anchor node".
@@ -1616,6 +1632,7 @@ module econia::critqueue {
     /// * `new_leaf_key`: Leaf key of free leaf to insert to the tree.
     ///
     /// # Assumptions
+    ///
     /// * Given `CritQueue` has a free leaf with `new_leaf_key`.
     /// * `new_inner_node_bitmask` is less than that of anchor node,
     ///   which has been reached via upward walk in `insert_leaf()`.
@@ -1688,7 +1705,8 @@ module econia::critqueue {
     /// the new inner node's left child is the displaced child and the
     /// new inner node's right child is the new leaf.
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_insert_leaf_below_anchor_node_1()`
     /// * `test_insert_leaf_below_anchor_node_2()`
     fun insert_leaf_below_anchor_node<V>(
@@ -1754,14 +1772,17 @@ module econia::critqueue {
     /// Inner function for `insert()`.
     ///
     /// # Returns
+    ///
     /// * `u128`: Access key of new sub-queue node.
     /// * `bool`: `true` if allocated leaf is a free leaf, else `false`.
     ///
     /// # Aborts
+    ///
     /// * `E_TOO_MANY_INSERTIONS`: Insertion key encoded in `leaf_key`
     ///   has already been inserted the maximum number of times.
     ///
     /// # Assumptions
+    ///
     /// * `critqueue_ref_mut` indicates a `CritQueue` that already
     ///   contains an allocated leaf with the given `leaf_key`.
     /// * `subqueue_node_ref_mut` indicates a `SubQueueNode` with the
@@ -1828,6 +1849,7 @@ module econia::critqueue {
     /// their parent field is simply set to none.
     ///
     /// # Assumptions
+    ///
     /// * Given `CritQueue` has a crit-bit tree with at least one node,
     ///   which is the indicated leaf in the case of a singleton tree.
     ///
@@ -1918,7 +1940,8 @@ module econia::critqueue {
     ///
     /// >     101 <- old sibling
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_remove_free_leaf_inner_sibling()`.
     /// * `test_remove_free_leaf_leaf_sibling_root()`
     fun remove_free_leaf<V>(
@@ -1996,10 +2019,12 @@ module econia::critqueue {
     /// in `remove_free_leaf()`.
     ///
     /// # Parameters
+    ///
     /// * `critqueue_ref_mut`: Mutable reference to given `CritQueue`.
     /// * `access_key`: Access key corresponding to insertion value.
     ///
     /// # Returns
+    ///
     /// * `V`: Insertion value corresponding to `access_key`.
     /// * `Option<Option<u128>>`: The new sub-queue head field indicated
     ///   by the corresponding leaf (`Leaf.head`), if removal resulted
@@ -2055,7 +2080,8 @@ module econia::critqueue {
     /// >     101   111
     /// >     []    [n_0{9}]
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_remove_subqueue_node()`
     fun remove_subqueue_node<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
@@ -2111,11 +2137,13 @@ module econia::critqueue {
     /// parent's critical bitmask.
     ///
     /// # Returns
+    ///
     /// * `u128`: Match leaf key.
     /// * `Option<u128>`: Match parent inner key, if any.
     /// * `Option<u128>`: Match parent's critical bitmask, if any.
     ///
     /// # Assumptions
+    ///
     /// * Given `CritQueue` does not have an empty crit-bit tree.
     ///
     /// # Reference diagrams
@@ -2148,7 +2176,8 @@ module econia::critqueue {
     /// | `100`      | `101`           | `1st`                 |
     /// | `111`      | `111`           | `1st`                 |
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_search()`
     fun search<V>(
         critqueue_ref_mut: &mut CritQueue<V>,
@@ -2195,15 +2224,18 @@ module econia::critqueue {
     /// Traverse from leaf to inorder predecessor or successor.
     ///
     /// # Parameters
+    ///
     /// * `critqueue_ref`: Immutable reference to given `CritQueue`.
     /// * `start_leaf_key`: Leaf key of leaf to traverse from.
     /// * `target`: Either `PREDECESSOR` or `SUCCESSOR`.
     ///
     /// # Returns
+    ///
     /// * `Option<u128>`: Leaf key of either inorder predecessor or
     ///   successor to leaf having `start_leaf_key`, if any.
     ///
     /// # Membership considerations
+    ///
     /// * Aborts if no leaf in crit-queue with given `start_leaf_key`.
     /// * Returns none if `start_leaf_key` indicates a free leaf.
     /// * Returns none if `start_leaf_key` indicates crit-bit root.
@@ -2265,7 +2297,8 @@ module econia::critqueue {
     /// | `0110`    | `3rd`     | `1000`      |
     /// | `1000`    | None      | None        |
     ///
-    /// ## Testing
+    /// # Testing
+    ///
     /// * `test_traverse()`
     fun traverse<V>(
         critqueue_ref: &CritQueue<V>,

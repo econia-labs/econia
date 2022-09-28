@@ -1,7 +1,7 @@
 # Logo Guidelines
 
-Thank you for you interest in Econia!
-If you would like to incorporate the Econia logo in your project, don't forget to use the **_full name logo_** ([found here](https://drive.google.com/drive/folders/1vOKDEwtNCN9QDV3yQxdxRVWnH8RGOZtF?usp=sharing)), as this makes it easier for other developers and users (who may not be familiar with the standalone "E" logo) to understand what you are referencing:
+Thank you for being part of the Econia ecosystem!
+If you are using Econia as a back-end settlement engine and would like to incorporate the Econia logo in your project, please use the **_primary logo_** ([found here](https://www.notion.so/econia-labs/Media-Kit-7141154148d5424b97dc6aeb3b8804de)).
 
 <br>
 

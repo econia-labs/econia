@@ -1060,7 +1060,7 @@ to an inner key via bitwise <code>OR</code>. Generated in Python via
 <code>hex(int('1' + '0' * 63, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY">ACCESS_KEY_TO_INNER_KEY</a>: u128 = 9223372036854775808;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY">ACCESS_KEY_TO_INNER_KEY</a>: u128 = 0x8000000000000000;
 </code></pre>
 
 
@@ -1072,7 +1072,7 @@ to a leaf key via bitwise <code>AND</code>. Generated in Python via
 <code>hex(int('1' * 64 + '0' * 64, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>: u128 = 340282366920938463444927863358058659840;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ACCESS_KEY_TO_LEAF_KEY">ACCESS_KEY_TO_LEAF_KEY</a>: u128 = 0xffffffffffffffff0000000000000000;
 </code></pre>
 
 
@@ -1113,7 +1113,7 @@ When an insertion key has been inserted too many times.
 <code>hex(int('1' * 128, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 0xffffffffffffffffffffffffffffffff;
 </code></pre>
 
 
@@ -1124,7 +1124,7 @@ When an insertion key has been inserted too many times.
 <code>hex(int('1' * 64, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 0xffffffffffffffff;
 </code></pre>
 
 
@@ -1146,7 +1146,7 @@ A <code>u64</code> bitmask with all bits set except 62 and 63, generated
 in Python via <code>hex(int('1' * 62, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_INSERTION_COUNT">MAX_INSERTION_COUNT</a>: u64 = 4611686018427387903;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_INSERTION_COUNT">MAX_INSERTION_COUNT</a>: u64 = 0x3fffffffffffffff;
 </code></pre>
 
 
@@ -1169,7 +1169,7 @@ setting bit 62 high in the case of a descending crit-queue.
 Generated in Python via <code>hex(int('1' * 63, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_INSERTION_COUNT_DESCENDING">NOT_INSERTION_COUNT_DESCENDING</a>: u128 = 9223372036854775807;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NOT_INSERTION_COUNT_DESCENDING">NOT_INSERTION_COUNT_DESCENDING</a>: u128 = 0x7fffffffffffffff;
 </code></pre>
 
 
@@ -1202,7 +1202,7 @@ is thus an inner key. Generated in Python via
 <code>hex(int('1' + '0' * 63, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_INNER">TREE_NODE_INNER</a>: u128 = 9223372036854775808;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_INNER">TREE_NODE_INNER</a>: u128 = 0x8000000000000000;
 </code></pre>
 
 
@@ -1225,7 +1225,7 @@ and is thus a leaf key.
 bit flag, generated in Python via <code>hex(int('1' + '0' * 63, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a>: u128 = 9223372036854775808;
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_TREE_NODE_TYPE">TREE_NODE_TYPE</a>: u128 = 0x8000000000000000;
 </code></pre>
 
 

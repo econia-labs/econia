@@ -2,109 +2,8 @@
 /// registration and tracking, delegated custodian registration.
 module econia::registry {
 
-    // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    use aptos_framework::coin;
-    use aptos_std::type_info;
-    use aptos_std::table;
-    use std::signer::address_of;
-    use std::vector;
-
-    // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    friend econia::user;
-    friend econia::market;
-
-    // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test_only]
-    use econia::assets::{Self, BC, BG, QC, QG};
-
-    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Custodian capability used to manage delegated trading
-    /// permissions, administered to third-party registrants who may
-    /// store it as they wish.
-    struct CustodianCapability has store {
-        /// Serial ID, 1-indexed, generated upon registration as a
-        /// custodian
-        custodian_id: u64
-    }
-
-    /// Type flag for generic asset
-    struct GenericAsset{}
-
-    /// Unique identifier for a market
-    struct MarketInfo has copy, drop, store {
-        /// Account hosting corresponding `OrderBook`
-        host: address,
-        /// Trading pair parameters
-        trading_pair_info: TradingPairInfo
-    }
-
-    /// Container for core registration information
-    struct Registry has key {
-        /// Map from trading pair to order book host address, used for
-        /// duplicate checks on pure-coin trading pairs
-        hosts: table::Table<TradingPairInfo, address>,
-        /// List of all available markets, with each market's serial ID
-        /// defined as its vector index (0-indexed)
-        markets: vector<MarketInfo>,
-        /// Number of registered custodians
-        n_custodians: u64
-    }
-
-    /// Information about a trading pair
-    struct TradingPairInfo has copy, drop, store {
-        /// Base asset type info. When trading an
-        /// `aptos_framework::coin::Coin`, corresponds to the phantom
-        /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
-        /// a non-coin asset indicated by the market host.
-        base_type_info: type_info::TypeInfo,
-        /// Quote asset type info. When trading an
-        /// `aptos_framework::coin::Coin`, corresponds to the phantom
-        /// `CoinType`, for instance `MyCoin` rather than
-        /// `Coin<MyCoin>`. Otherwise corresponds to `GenericAsset`, or
-        /// a non-coin asset indicated by the market host.
-        quote_type_info: type_info::TypeInfo,
-        /// Number of base units exchanged per lot
-        lot_size: u64,
-        /// Number of quote units exchanged per tick
-        tick_size: u64,
-        /// ID of custodian capability required to verify deposits,
-        /// swaps, and withdrawals of assets that are not coins. A
-        /// "market-wide asset transfer custodian ID" that only applies
-        /// to markets having at least one non-coin asset. For a market
-        /// having one coin asset and one generic asset, only applies to
-        /// the generic asset. Marked `PURE_COIN_PAIR` when base and
-        /// quote types are both coins.
-        generic_asset_transfer_custodian_id: u64,
-        /// `PURE_COIN_PAIR` when base and quote types are both coins,
-        /// otherwise the serial ID of the corresponding market. Used to
-        /// disambiguate between asset-agnostic trading pairs having
-        /// identical values for all of the above fields, without which
-        /// such trading pairs would collide as key entries in
-        /// `Registry.hosts`.
-        agnostic_disambiguator: u64,
-    }
-
-    // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When caller is not Econia
-    const E_NOT_ECONIA: u64 = 0;
-    /// When registry already initialized
-    const E_REGISTRY_EXISTS: u64 = 1;
-    /// When registry not already initialized
-    const E_NO_REGISTRY: u64 = 2;
     /// When lot size specified as 0
     const E_LOT_SIZE_0: u64 = 3;
     /// When tick size specified as 0
@@ -134,56 +33,6 @@ module econia::registry {
     const PURE_COIN_PAIR: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    /// Return serial ID of `CustodianCapability`
-    public fun custodian_id(
-        custodian_capability_ref: &CustodianCapability
-    ): u64 {
-        custodian_capability_ref.custodian_id // Return serial ID
-    }
-
-    /// Update the number of registered custodians and issue a
-    /// `CustodianCapability` with the corresponding serial ID. Abort if
-    /// registry is not initialized
-    public fun register_custodian_capability():
-    CustodianCapability
-    acquires Registry {
-        // Assert the registry is already initialized
-        assert!(exists<Registry>(@econia), E_NO_REGISTRY);
-        // Borrow mutable reference to registry
-        let registry_ref_mut = borrow_global_mut<Registry>(@econia);
-        // Set custodian serial ID to the new number of custodians
-        let custodian_id = registry_ref_mut.n_custodians + 1;
-        // Update the registry for the new count
-        registry_ref_mut.n_custodians = custodian_id;
-        // Pack and return corresponding capability
-        CustodianCapability{custodian_id}
-    }
-
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[cmd]
-    /// Move empty registry to the Econia account
-    public entry fun init_registry(
-        account: &signer,
-    ) {
-        // Assert caller is Econia account
-        assert!(address_of(account) == @econia, E_NOT_ECONIA);
-        // Assert registry does not already exist at Econia account
-        assert!(!exists<Registry>(@econia), E_REGISTRY_EXISTS);
-        // Move an empty registry to the Econia Account
-        move_to<Registry>(account, Registry{
-            hosts: table::new(),
-            markets: vector::empty(),
-            n_custodians: 0
-        });
-    }
-
-    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -418,15 +267,6 @@ module econia::registry {
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[test_only]
-    /// Destroy `custodian_capability`
-    public fun destroy_custodian_capability_test(
-        custodian_capability: CustodianCapability
-    ) {
-        // Unpack passed capability
-        CustodianCapability{custodian_id: _} = custodian_capability;
-    }
 
     #[test_only]
     /// Return `CustodianCapability` with `custodian_id`

@@ -1,5 +1,13 @@
 /// Manages registration capabilities and operations.
 ///
+/// # Indexing
+///
+/// Custodian and underwriter capabilities IDs are 1-indexed, since they
+/// are optional: an ID of 0 is thus reserved as a flag for when there
+/// is no associated capability.
+///
+/// For consistency, market IDs are thus 1-indexed as well.
+///
 /// # Functions
 ///
 /// ## Public getters
@@ -20,12 +28,13 @@ module econia::registry {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::account;
-    use aptos_framework::coin::{Coin};
-    use aptos_framework::event::EventHandle;
+    use aptos_framework::coin::{Self, Coin};
+    use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::type_info;
     use econia::incentives;
     use econia::tablist::{Self, Tablist};
-    use std::option::Option;
-    use std::string::String;
+    use std::option::{Self, Option};
+    use std::string::{Self, String};
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -99,7 +108,7 @@ module econia::registry {
         /// Number of quote units exchanged per tick.
         tick_size: u64,
         /// ID of `UnderwriterCapability` required to verify generic
-        /// asset amounts. None when base and quote types are both
+        /// asset amounts. None when base and quote assets are both
         /// coins.
         underwriter_id: Option<u64>,
     }
@@ -115,7 +124,7 @@ module econia::registry {
 
     /// Recognized market info for a given trading pair.
     struct RecognizedMarketInfo has drop, store {
-        /// Market ID of recognized market.
+        /// Market ID of recognized market, 0-indexed.
         market_id: u64,
         /// Number of base units exchanged per lot.
         lot_size: u64,
@@ -139,8 +148,8 @@ module econia::registry {
 
     /// Global registration information.
     struct Registry has key {
-        /// Map from market info to corresponding market ID, enabling
-        /// duplicate checks and iterated indexing.
+        /// Map from market info to corresponding 1-indexed market ID,
+        /// enabling duplicate checks and iterated indexing.
         markets: Tablist<MarketInfo, u64>,
         /// The number of registered custodians.
         n_custodians: u64,
@@ -172,12 +181,40 @@ module econia::registry {
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Base coin type has not been initialized for a pure coin market.
+    const E_BASE_NOT_COIN: u64 = 0;
+    /// Generic base asset descriptor has too few charaters.
+    const E_GENERIC_TOO_FEW_CHARACTERS: u64 = 1;
+    /// Generic base asset descriptor has too many charaters.
+    const E_GENERIC_TOO_MANY_CHARACTERS: u64 = 2;
+    /// Lot size specified as 0.
+    const E_LOT_SIZE_0: u64 = 3;
+    /// Tick size specified as 0.
+    const E_TICK_SIZE_0: u64 = 4;
+    /// Quote asset type has not been initialized as a coin.
+    const E_QUOTE_NOT_COIN: u64 = 5;
+    /// Base and quote asset descriptors are identical.
+    const E_BASE_QUOTE_SAME: u64 = 6;
+    /// Market is already registered.
+    const E_MARKET_REGISTERED: u64 = 7;
+
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Flag for custodian capability.
     const CUSTODIAN: bool = true;
     /// Flag for underwriter capability.
     const UNDERWRITER: bool = false;
+    /// Maximum number of characters permitted in a generic asset name,
+    /// equal to the maximum number of characters permitted in a comment
+    /// line per PEP 8.
+    const MAX_CHARACTERS_GENERIC: u64 = 72;
+    /// Minimum number of characters permitted in a generic asset name,
+    /// equal to the number of spaces in an indentation level per PEP 8.
+    const MIN_CHARACTERS_GENERIC: u64 = 4;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -257,6 +294,73 @@ module econia::registry {
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Wrapped market registration call for a base coin type.
+    ///
+    /// See inner function `register_market_internal()`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_BASE_NOT_COIN`: Base coin type is not initialized.
+    public(friend) fun register_market_base_coin_internal<
+        BaseCoinType,
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        lot_size: u64,
+        tick_size: u64,
+        utility_coins: Coin<UtilityCoinType>
+    ): u64
+    acquires Registry {
+        // Assert base coin type is initialized.
+        assert!(coin::is_coin_initialized<BaseCoinType>(), E_BASE_NOT_COIN);
+        // Add to the registry a corresponding entry, returnig new
+        // market ID.
+        register_market_internal<QuoteCoinType, UtilityCoinType>(
+            type_info::type_name<BaseCoinType>(), lot_size, tick_size,
+            option::none(), utility_coins)
+    }
+
+    /// Wrapped market registration call for a generic base type,
+    /// requiring immutable reference to corresponding
+    /// `UnderwriterCapability` for the market, and `base_type`
+    /// descriptor.
+    ///
+    /// See inner function `register_market_internal()`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_GENERIC_TOO_FEW_CHARACTERS`: Asset descriptor is too short.
+    /// * `E_GENERIC_TOO_MANY_CHARACTERS`: Asset descriptor is too long.
+    public(friend) fun register_market_base_generic_internal<
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        base_type: String,
+        lot_size: u64,
+        tick_size: u64,
+        underwriter_capability_ref: &UnderwriterCapability,
+        utility_coins: Coin<UtilityCoinType>
+    ): u64
+    acquires Registry {
+        // Assert generic base asset string is not too short.
+        assert!(string::length(&base_type) >= MIN_CHARACTERS_GENERIC,
+            E_GENERIC_TOO_FEW_CHARACTERS);
+        // Assert generic base asset string is not too long.
+        assert!(string::length(&base_type) <= MAX_CHARACTERS_GENERIC,
+            E_GENERIC_TOO_MANY_CHARACTERS);
+        // Get underwriter ID.
+        let underwriter_id = get_underwriter_id(underwriter_capability_ref);
+        // Add to the registry a corresponding entry, returnig new
+        // market ID.
+        register_market_internal<QuoteCoinType, UtilityCoinType>(
+            base_type, lot_size, tick_size, option::some(underwriter_id),
+            utility_coins)
+    }
+
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Initialize the Econia registry and recognized markets list upon
@@ -280,6 +384,85 @@ module econia::registry {
             recognized_market_events:
                 account::new_event_handle<RecognizedMarketEvent>(econia)
         });
+    }
+
+    /// Register a market in the global registry.
+    ///
+    /// # Type parameters
+    ///
+    /// * `QuoteCoinType`: The quote coin type for the market.
+    /// * `UtilityCoinType`: The utility coin type.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_type`: The base asset type. Should correspond to a coin
+    ///   type if called by `register_market_base_coin_internal()`, else
+    ///   provided by the market registrant.
+    /// * `lot_size`: Lot size for the market.
+    /// * `tick_size`: Tick size for the market.
+    /// * `underwriter_id`: Optional underwriter ID for a market with a
+    ///   generic base asset.
+    /// * `utility_coins`: Utility coins paid to register a market.
+    ///
+    /// # Emits
+    ///
+    /// * `MarketRegistrationEvent`: Parameters of the market just
+    ///   registered.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_LOT_SIZE_0`: Lot size is 0.
+    /// * `E_TICK_SIZE_0`: Tick size is 0.
+    /// * `E_QUOTE_NOT_COIN`: Tick size is 0.
+    /// * `E_BASE_QUOTE_SAME`: Base and quote type are the same.
+    /// * `E_MARKET_REGISTERED`: Markets map already contains an entry
+    ///   for specified market info.
+    ///
+    /// # Assumptions
+    ///
+    /// * `underwriter_id` has been properly packed and passed by either
+    ///   `register_market_base_coin_internal` or
+    ///   `register_market_base_generic_interal`.
+    fun register_market_internal<
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        base_type: String,
+        lot_size: u64,
+        tick_size: u64,
+        underwriter_id: Option<u64>,
+        utility_coins: Coin<UtilityCoinType>
+    ): u64
+    acquires Registry {
+        // Assert lot size is nonzero.
+        assert!(lot_size > 0, E_LOT_SIZE_0);
+        // Assert tick size is nonzero.
+        assert!(tick_size > 0, E_TICK_SIZE_0);
+        // Assert quote coin type is initialized.
+        assert!(coin::is_coin_initialized<QuoteCoinType>(), E_QUOTE_NOT_COIN);
+        // Get quote type name.
+        let quote_type = type_info::type_name<QuoteCoinType>();
+        // Assert base and quote type names are not the same.
+        assert!(base_type != quote_type, E_BASE_QUOTE_SAME);
+        let market_info = MarketInfo{ // Pack market info.
+            base_type, quote_type, lot_size, tick_size, underwriter_id};
+        // Mutably borrow registry.
+        let registry_ref_mut = borrow_global_mut<Registry>(@econia);
+        // Mutably borrow markets map.
+        let markets_ref_mut = &mut registry_ref_mut.markets;
+        assert!(!tablist::contains(markets_ref_mut, market_info),
+            E_MARKET_REGISTERED); // Assert market not registered.
+        // Get 1-indexed market ID.
+        let market_id = tablist::length(markets_ref_mut) + 1;
+        // Register a market entry.
+        tablist::add(markets_ref_mut, market_info, market_id);
+        // Emit a market registration event.
+        event::emit_event(&mut registry_ref_mut.market_registration_events,
+            MarketRegistrationEvent{market_id, base_type, quote_type,
+                lot_size, tick_size, underwriter_id});
+        incentives::deposit_market_registration_utility_coins<UtilityCoinType>(
+                utility_coins); // Deposit utility coins.
+        market_id // Return market ID.
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

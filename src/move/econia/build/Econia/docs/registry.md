@@ -3,8 +3,45 @@
 
 # Module `0xc0deb00c::registry`
 
+Manages registration operations and capabilities.
 
 
+<a name="@Functions_0"></a>
+
+## Functions
+
+
+
+<a name="@Public_getters_1"></a>
+
+### Public getters
+
+
+* <code><a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>()</code>
+
+
+<a name="@Public_registration_functions_2"></a>
+
+### Public registration functions
+
+
+* <code><a href="registry.md#0xc0deb00c_registry_register_custodian_capability">register_custodian_capability</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_register_underwriter_capability">register_underwriter_capability</a>()</code>
+
+
+<a name="@Complete_docgen_index_3"></a>
+
+## Complete docgen index
+
+
+The below index is automatically generated from source code:
+
+
+-  [Functions](#@Functions_0)
+    -  [Public getters](#@Public_getters_1)
+    -  [Public registration functions](#@Public_registration_functions_2)
+-  [Complete docgen index](#@Complete_docgen_index_3)
 -  [Struct `CustodianCapability`](#0xc0deb00c_registry_CustodianCapability)
 -  [Struct `CapabilityRegistrationEvent`](#0xc0deb00c_registry_CapabilityRegistrationEvent)
 -  [Resource `GenericAsset`](#0xc0deb00c_registry_GenericAsset)
@@ -16,12 +53,20 @@
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Struct `TradingPair`](#0xc0deb00c_registry_TradingPair)
 -  [Struct `UnderwriterCapability`](#0xc0deb00c_registry_UnderwriterCapability)
--  [Constants](#@Constants_0)
--  [Function `use_friend`](#0xc0deb00c_registry_use_friend)
+-  [Constants](#@Constants_4)
+-  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
+    -  [Testing](#@Testing_5)
+-  [Function `get_underwriter_id`](#0xc0deb00c_registry_get_underwriter_id)
+    -  [Testing](#@Testing_6)
+-  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
+    -  [Testing](#@Testing_7)
+-  [Function `register_underwriter_capability`](#0xc0deb00c_registry_register_underwriter_capability)
+    -  [Testing](#@Testing_8)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
+<b>use</b> <a href="">0x1::coin</a>;
 <b>use</b> <a href="">0x1::event</a>;
 <b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::string</a>;
@@ -359,7 +404,7 @@ Recognized markets for specific trading pairs.
  recognized market, if any, for given trading pair.
 </dd>
 <dt>
-<code>recognized_market_event: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="registry.md#0xc0deb00c_registry_RecognizedMarketEvent">registry::RecognizedMarketEvent</a>&gt;</code>
+<code>recognized_market_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="registry.md#0xc0deb00c_registry_RecognizedMarketEvent">registry::RecognizedMarketEvent</a>&gt;</code>
 </dt>
 <dd>
  Event handle for recognized market events.
@@ -476,7 +521,7 @@ it as they wish.
 
 <dl>
 <dt>
-<code>custodian_id: u64</code>
+<code>underwriter_id: u64</code>
 </dt>
 <dd>
  Serial ID, 1-indexed, generated upon registration as an
@@ -487,7 +532,7 @@ it as they wish.
 
 </details>
 
-<a name="@Constants_0"></a>
+<a name="@Constants_4"></a>
 
 ## Constants
 
@@ -512,13 +557,22 @@ Flag for underwriter capability.
 
 
 
-<a name="0xc0deb00c_registry_use_friend"></a>
+<a name="0xc0deb00c_registry_get_custodian_id"></a>
 
-## Function `use_friend`
+## Function `get_custodian_id`
+
+Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a></code>.
 
 
+<a name="@Testing_5"></a>
 
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_use_friend">use_friend</a>()
+### Testing
+
+
+* <code>test_register_capabilities()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>(custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): u64
 </code></pre>
 
 
@@ -527,7 +581,144 @@ Flag for underwriter capability.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_use_friend">use_friend</a>() {<a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">incentives::calculate_max_quote_match</a>(<b>false</b>, 0, 0);}
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>(
+    custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>
+): u64 {
+    custodian_capability_ref.custodian_id
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_get_underwriter_id"></a>
+
+## Function `get_underwriter_id`
+
+Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a></code>.
+
+
+<a name="@Testing_6"></a>
+
+### Testing
+
+
+* <code>test_register_capabilities()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>(underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>(
+    underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a>
+): u64 {
+    underwriter_capability_ref.underwriter_id
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_register_custodian_capability"></a>
+
+## Function `register_custodian_capability`
+
+Return a unique <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a></code>.
+
+Increment the number of registered custodians, then issue a
+capability with the corresponding serial ID. Requires utility
+coins to cover the custodian registration fee.
+
+
+<a name="@Testing_7"></a>
+
+### Testing
+
+
+* <code>test_register_capabilities()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_custodian_capability">register_custodian_capability</a>&lt;UtilityCoinType&gt;(utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;): <a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_custodian_capability">register_custodian_capability</a>&lt;UtilityCoinType&gt;(
+    utility_coins: Coin&lt;UtilityCoinType&gt;
+): <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.
+    <b>let</b> registry_ref_mut = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
+    // Set custodian serial ID <b>to</b> the new number of custodians.
+    <b>let</b> custodian_id = registry_ref_mut.n_custodians + 1;
+    // Update the <a href="registry.md#0xc0deb00c_registry">registry</a> for the new count.
+    registry_ref_mut.n_custodians = custodian_id;
+    <a href="incentives.md#0xc0deb00c_incentives">incentives</a>:: // Deposit provided utility coins.
+        deposit_custodian_registration_utility_coins(utility_coins);
+    // Pack and <b>return</b> corresponding capability.
+    <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a>{custodian_id}
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_register_underwriter_capability"></a>
+
+## Function `register_underwriter_capability`
+
+Return a unique <code><a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a></code>.
+
+Increment the number of registered underwriters, then issue a
+capability with the corresponding serial ID. Requires utility
+coins to cover the underwriter registration fee.
+
+
+<a name="@Testing_8"></a>
+
+### Testing
+
+
+* <code>test_register_capabilities()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_underwriter_capability">register_underwriter_capability</a>&lt;UtilityCoinType&gt;(utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;): <a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_underwriter_capability">register_underwriter_capability</a>&lt;UtilityCoinType&gt;(
+    utility_coins: Coin&lt;UtilityCoinType&gt;
+): <a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a>
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    // Borrow mutable reference <b>to</b> <a href="registry.md#0xc0deb00c_registry">registry</a>.
+    <b>let</b> registry_ref_mut = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
+    // Set underwriter serial ID <b>to</b> the new number of underwriters.
+    <b>let</b> underwriter_id = registry_ref_mut.n_underwriters + 1;
+    // Update the <a href="registry.md#0xc0deb00c_registry">registry</a> for the new count.
+    registry_ref_mut.n_underwriters = underwriter_id;
+    <a href="incentives.md#0xc0deb00c_incentives">incentives</a>:: // Deposit provided utility coins.
+        deposit_underwriter_registration_utility_coins(utility_coins);
+    // Pack and <b>return</b> corresponding capability.
+    <a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a>{underwriter_id}
+}
 </code></pre>
 
 
@@ -538,7 +729,8 @@ Flag for underwriter capability.
 
 ## Function `init_module`
 
-Initialize the Econia registry upon module publication.
+Initialize the Econia registry and recognized markets list upon
+module publication.
 
 
 <pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_module">init_module</a>(econia: &<a href="">signer</a>)
@@ -553,6 +745,7 @@ Initialize the Econia registry upon module publication.
 <pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_module">init_module</a>(
     econia: &<a href="">signer</a>
 ) {
+    // Initialize <a href="registry.md#0xc0deb00c_registry">registry</a>.
     <b>move_to</b>(econia, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
         markets: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>(),
         n_custodians: 0,
@@ -561,6 +754,12 @@ Initialize the Econia registry upon module publication.
             <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketRegistrationEvent">MarketRegistrationEvent</a>&gt;(econia),
         capability_registration_events:
             <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="registry.md#0xc0deb00c_registry_CapabilityRegistrationEvent">CapabilityRegistrationEvent</a>&gt;(econia)
+    });
+    // Initialize recognized markets list.
+    <b>move_to</b>(econia, <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a>{
+        map: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>(),
+        recognized_market_events:
+            <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="registry.md#0xc0deb00c_registry_RecognizedMarketEvent">RecognizedMarketEvent</a>&gt;(econia)
     });
 }
 </code></pre>

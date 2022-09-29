@@ -1889,8 +1889,8 @@ module econia::incentives {
     }
 
     #[test_only]
-    /// Initialize incentives with `UC` coin type.
-    public fun init_incentives_test()
+    /// Initialize incentives with `UC` utility coin type.
+    public fun init_test()
     acquires
         IncentiveParameters
     {
@@ -1963,7 +1963,7 @@ module econia::incentives {
         IncentiveParameters,
         UtilityCoinStore
     {
-        init_incentives_test(); // Initialize incentives.
+        init_test(); // Initialize incentives.
         // Get registration fees.
         let market_registration_fee = get_market_registration_fee();
         let underwriter_registration_fee = get_underwriter_registration_fee();
@@ -1989,7 +1989,7 @@ module econia::incentives {
         IncentiveParameters,
         UtilityCoinStore
     {
-        init_incentives_test(); // Init incentives.
+        init_test(); // Init incentives.
         // Attempt invalid invocation.
         deposit_utility_coins_verified(coin::zero<UC>(), 1);
     }
@@ -2002,7 +2002,7 @@ module econia::incentives {
         IncentiveParameters,
         UtilityCoinStore
     {
-        init_incentives_test(); // Initialize incentives.
+        init_test(); // Initialize incentives.
         // Deposit utility coins.
         deposit_utility_coins(assets::mint_test<UC>(100));
         // Withdraw some utility coins.
@@ -2025,7 +2025,7 @@ module econia::incentives {
         IntegratorFeeStores,
         UtilityCoinStore
     {
-        init_incentives_test(); // Init incentives.
+        init_test(); // Init incentives.
         let (market_id, tier) = (0, 0); // Declare market ID, tier.
         // Register to given tier.
         register_integrator_fee_store<QC, UC>(integrator, market_id, tier,
@@ -2161,7 +2161,7 @@ module econia::incentives {
         IntegratorFeeStores,
         UtilityCoinStore
     {
-        init_incentives_test(); // Init incentives.
+        init_test(); // Init incentives.
         // Declare market IDs.
         let (market_id_0, market_id_1, market_id_2) = (0, 1, 2); // Declare market IDs.
         // Declare integrator fee store tiers.
@@ -2568,7 +2568,7 @@ module econia::incentives {
         IntegratorFeeStores,
         UtilityCoinStore
     {
-        init_incentives_test(); // Init incentives.
+        init_test(); // Init incentives.
         // Declare market ID, tier.
         let (market_id, tier_start, tier_upgrade) = (0, 0, 1);
         // Declare activation fee for start and upgrade tiers.
@@ -2604,7 +2604,7 @@ module econia::incentives {
     acquires
         IncentiveParameters
     {
-        init_incentives_test(); // Initialize incentives for testing.
+        init_test(); // Initialize incentives for testing.
         verify_utility_coin_type<QC>(); // Attempt invalid invocation.
     }
 

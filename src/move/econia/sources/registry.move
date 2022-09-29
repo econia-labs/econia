@@ -1,17 +1,40 @@
+/// Manages registration capabilities and operations.
+///
+/// # Functions
+///
+/// ## Public getters
+///
+/// * `get_custodian_id()`
+/// * `get_underwriter_id()`
+///
+/// ## Public registration functions
+///
+/// * `register_custodian_capability()`
+/// * `register_underwriter_capability()`
+///
+/// # Complete docgen index
+///
+/// The below index is automatically generated from source code:
 module econia::registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::account;
+    use aptos_framework::coin::{Coin};
     use aptos_framework::event::EventHandle;
+    use econia::incentives;
     use econia::tablist::{Self, Tablist};
     use std::option::Option;
     use std::string::String;
 
-    use econia::incentives;
-    fun use_friend() {incentives::calculate_max_quote_match(false, 0, 0);}
-
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    use econia::assets::{Self, UC};
+
+    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -111,7 +134,7 @@ module econia::registry {
         /// recognized market, if any, for given trading pair.
         map: Tablist<TradingPair, RecognizedMarketInfo>,
         /// Event handle for recognized market events.
-        recognized_market_event: EventHandle<RecognizedMarketEvent>
+        recognized_market_events: EventHandle<RecognizedMarketEvent>
     }
 
     /// Global registration information.
@@ -144,7 +167,7 @@ module econia::registry {
     struct UnderwriterCapability has store {
         /// Serial ID, 1-indexed, generated upon registration as an
         /// underwriter.
-        custodian_id: u64
+        underwriter_id: u64
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -158,12 +181,90 @@ module econia::registry {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return serial ID of given `CustodianCapability`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public fun get_custodian_id(
+        custodian_capability_ref: &CustodianCapability
+    ): u64 {
+        custodian_capability_ref.custodian_id
+    }
+
+    /// Return serial ID of given `UnderwriterCapability`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public fun get_underwriter_id(
+        underwriter_capability_ref: &UnderwriterCapability
+    ): u64 {
+        underwriter_capability_ref.underwriter_id
+    }
+
+    /// Return a unique `CustodianCapability`.
+    ///
+    /// Increment the number of registered custodians, then issue a
+    /// capability with the corresponding serial ID. Requires utility
+    /// coins to cover the custodian registration fee.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public fun register_custodian_capability<UtilityCoinType>(
+        utility_coins: Coin<UtilityCoinType>
+    ): CustodianCapability
+    acquires Registry {
+        // Borrow mutable reference to registry.
+        let registry_ref_mut = borrow_global_mut<Registry>(@econia);
+        // Set custodian serial ID to the new number of custodians.
+        let custodian_id = registry_ref_mut.n_custodians + 1;
+        // Update the registry for the new count.
+        registry_ref_mut.n_custodians = custodian_id;
+        incentives:: // Deposit provided utility coins.
+            deposit_custodian_registration_utility_coins(utility_coins);
+        // Pack and return corresponding capability.
+        CustodianCapability{custodian_id}
+    }
+
+    /// Return a unique `UnderwriterCapability`.
+    ///
+    /// Increment the number of registered underwriters, then issue a
+    /// capability with the corresponding serial ID. Requires utility
+    /// coins to cover the underwriter registration fee.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public fun register_underwriter_capability<UtilityCoinType>(
+        utility_coins: Coin<UtilityCoinType>
+    ): UnderwriterCapability
+    acquires Registry {
+        // Borrow mutable reference to registry.
+        let registry_ref_mut = borrow_global_mut<Registry>(@econia);
+        // Set underwriter serial ID to the new number of underwriters.
+        let underwriter_id = registry_ref_mut.n_underwriters + 1;
+        // Update the registry for the new count.
+        registry_ref_mut.n_underwriters = underwriter_id;
+        incentives:: // Deposit provided utility coins.
+            deposit_underwriter_registration_utility_coins(utility_coins);
+        // Pack and return corresponding capability.
+        UnderwriterCapability{underwriter_id}
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Initialize the Econia registry upon module publication.
+    /// Initialize the Econia registry and recognized markets list upon
+    /// module publication.
     fun init_module(
         econia: &signer
     ) {
+        // Initialize registry.
         move_to(econia, Registry{
             markets: tablist::new(),
             n_custodians: 0,
@@ -173,6 +274,12 @@ module econia::registry {
             capability_registration_events:
                 account::new_event_handle<CapabilityRegistrationEvent>(econia)
         });
+        // Initialize recognized markets list.
+        move_to(econia, RecognizedMarkets{
+            map: tablist::new(),
+            recognized_market_events:
+                account::new_event_handle<RecognizedMarketEvent>(econia)
+        });
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -180,14 +287,94 @@ module econia::registry {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Drop the given `CustodianCapability`.
+    public fun drop_custodian_capability_test(
+        custodian_capability: CustodianCapability
+    ) {
+        // Unpack provided capability.
+        let CustodianCapability{custodian_id: _} = custodian_capability;
+    }
+
+    #[test_only]
+    /// Drop the given `UnderwriterCapability`.
+    public fun drop_underwriter_capability_test(
+        underwriter_capability: UnderwriterCapability
+    ) {
+        // Unpack provided capability.
+        let UnderwriterCapability{underwriter_id: _} = underwriter_capability;
+    }
+
+    #[test_only]
     /// Initialize registry for testing.
     public fun init_test() {
         // Get signer for Econia account.
         let econia = account::create_signer_with_capability(
             &account::create_test_signer_cap(@econia));
+        // Create Aptos-style account for Econia.
+        account::create_account_for_test(@econia);
         init_module(&econia); // Init registry.
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify custodian then underwriter capability registration.
+    fun test_register_capabilities()
+    acquires Registry {
+        init_test(); // Init registry and recognized markets list.
+        incentives::init_test(); // Initialize incentives parameters.
+        // Get custodian registration fee.
+        let custodian_registration_fee =
+            incentives::get_custodian_registration_fee();
+        // Get custodian capability.
+        let custodian_capability = register_custodian_capability(
+            assets::mint_test<UC>(custodian_registration_fee));
+        // Assert it has ID 1.
+        assert!(get_custodian_id(&custodian_capability) == 1, 0);
+        // Drop custodian capability.
+        drop_custodian_capability_test(custodian_capability);
+        // Get another custodian capability.
+        custodian_capability = register_custodian_capability(
+            assets::mint_test<UC>(custodian_registration_fee));
+        // Assert it has ID 2.
+        assert!(get_custodian_id(&custodian_capability) == 2, 0);
+        // Drop custodian capability.
+        drop_custodian_capability_test(custodian_capability);
+        // Get another custodian capability.
+        custodian_capability = register_custodian_capability(
+            assets::mint_test<UC>(custodian_registration_fee));
+        // Assert it has ID 3.
+        assert!(get_custodian_id(&custodian_capability) == 3, 0);
+        // Drop custodian capability.
+        drop_custodian_capability_test(custodian_capability);
+        // Get underwriter registration fee.
+        let underwriter_registration_fee =
+            incentives::get_underwriter_registration_fee();
+        // Get underwriter capability.
+        let underwriter_capability = register_underwriter_capability(
+            assets::mint_test<UC>(underwriter_registration_fee));
+        // Assert it has ID 1.
+        assert!(get_underwriter_id(&underwriter_capability) == 1, 0);
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+        // Get another underwriter capability.
+        underwriter_capability = register_underwriter_capability(
+            assets::mint_test<UC>(underwriter_registration_fee));
+        // Assert it has ID 2.
+        assert!(get_underwriter_id(&underwriter_capability) == 2, 0);
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+        // Get another underwriter capability.
+        underwriter_capability = register_underwriter_capability(
+            assets::mint_test<UC>(underwriter_registration_fee));
+        // Assert it has ID 3.
+        assert!(get_underwriter_id(&underwriter_capability) == 3, 0);
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

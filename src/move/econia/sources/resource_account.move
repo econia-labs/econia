@@ -54,6 +54,7 @@ module econia::resource_account {
     /// Initialize the Econia resource account upon module publication.
     ///
     /// # Seed considerations
+    ///
     /// * Resource account creation seed supplied as an empty vector,
     ///   pending the acceptance of `aptos-core` PR #4173. If PR is not
     ///   accepted by version release, will be updated with similar

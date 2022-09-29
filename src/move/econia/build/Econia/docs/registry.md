@@ -18,9 +18,11 @@
 -  [Struct `UnderwriterCapability`](#0xc0deb00c_registry_UnderwriterCapability)
 -  [Constants](#@Constants_0)
 -  [Function `use_friend`](#0xc0deb00c_registry_use_friend)
+-  [Function `init_module`](#0xc0deb00c_registry_init_module)
 
 
-<pre><code><b>use</b> <a href="">0x1::event</a>;
+<pre><code><b>use</b> <a href="">0x1::account</a>;
+<b>use</b> <a href="">0x1::event</a>;
 <b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::string</a>;
 <b>use</b> <a href="incentives.md#0xc0deb00c_incentives">0xc0deb00c::incentives</a>;
@@ -526,6 +528,41 @@ Flag for underwriter capability.
 
 
 <pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_use_friend">use_friend</a>() {<a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">incentives::calculate_max_quote_match</a>(<b>false</b>, 0, 0);}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_init_module"></a>
+
+## Function `init_module`
+
+Initialize the Econia registry upon module publication.
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_module">init_module</a>(econia: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_init_module">init_module</a>(
+    econia: &<a href="">signer</a>
+) {
+    <b>move_to</b>(econia, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
+        markets: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>(),
+        n_custodians: 0,
+        n_underwriters: 0,
+        market_registration_events:
+            <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketRegistrationEvent">MarketRegistrationEvent</a>&gt;(econia),
+        capability_registration_events:
+            <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="registry.md#0xc0deb00c_registry_CapabilityRegistrationEvent">CapabilityRegistrationEvent</a>&gt;(econia)
+    });
+}
 </code></pre>
 
 

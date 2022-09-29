@@ -2,8 +2,9 @@ module econia::registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use aptos_framework::account;
     use aptos_framework::event::EventHandle;
-    use econia::tablist::Tablist;
+    use econia::tablist::{Self, Tablist};
     use std::option::Option;
     use std::string::String;
 
@@ -156,5 +157,37 @@ module econia::registry {
     const UNDERWRITER: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Initialize the Econia registry upon module publication.
+    fun init_module(
+        econia: &signer
+    ) {
+        move_to(econia, Registry{
+            markets: tablist::new(),
+            n_custodians: 0,
+            n_underwriters: 0,
+            market_registration_events:
+                account::new_event_handle<MarketRegistrationEvent>(econia),
+            capability_registration_events:
+                account::new_event_handle<CapabilityRegistrationEvent>(econia)
+        });
+    }
+
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Initialize registry for testing.
+    public fun init_test() {
+        // Get signer for Econia account.
+        let econia = account::create_signer_with_capability(
+            &account::create_test_signer_cap(@econia));
+        init_module(&econia); // Init registry.
+    }
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

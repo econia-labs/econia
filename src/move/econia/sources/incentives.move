@@ -1373,14 +1373,18 @@ module econia::incentives {
         IncentiveParameters
     {
         // Vectorize fee store tier parameters.
-        let tier_0 = vector::singleton(FEE_SHARE_DIVISOR_0);
-        vector::push_back(&mut tier_0, TIER_ACTIVATION_FEE_0);
-        vector::push_back(&mut tier_0, WITHDRAWAL_FEE_0);
-        let tier_1 = vector::singleton(FEE_SHARE_DIVISOR_1);
-        vector::push_back(&mut tier_1, TIER_ACTIVATION_FEE_1);
-        vector::push_back(&mut tier_1, WITHDRAWAL_FEE_1);
-        let integrator_fee_store_tiers = vector::singleton(tier_0);
-        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
+        let integrator_fee_store_tiers = vector[
+            vector[
+                FEE_SHARE_DIVISOR_0,
+                TIER_ACTIVATION_FEE_0,
+                WITHDRAWAL_FEE_0
+            ],
+            vector[
+                FEE_SHARE_DIVISOR_1,
+                TIER_ACTIVATION_FEE_1,
+                WITHDRAWAL_FEE_1
+            ]
+        ];
         // Set incentive parameters for the first time.
         set_incentive_parameters<AptosCoin>(econia,
             MARKET_REGISTRATION_FEE, UNDERWRITER_REGISTRATION_FEE,

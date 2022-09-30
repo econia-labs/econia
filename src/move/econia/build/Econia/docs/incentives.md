@@ -2860,14 +2860,18 @@ Uses hard-coded genesis parameters that can be updated later.
     <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>
 {
     // Vectorize fee store tier parameters.
-    <b>let</b> tier_0 = <a href="_singleton">vector::singleton</a>(<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0">FEE_SHARE_DIVISOR_0</a>);
-    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_0, <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0">TIER_ACTIVATION_FEE_0</a>);
-    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_0, <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>);
-    <b>let</b> tier_1 = <a href="_singleton">vector::singleton</a>(<a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1">FEE_SHARE_DIVISOR_1</a>);
-    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_1, <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>);
-    <a href="_push_back">vector::push_back</a>(&<b>mut</b> tier_1, <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>);
-    <b>let</b> integrator_fee_store_tiers = <a href="_singleton">vector::singleton</a>(tier_0);
-    <a href="_push_back">vector::push_back</a>(&<b>mut</b> integrator_fee_store_tiers, tier_1);
+    <b>let</b> integrator_fee_store_tiers = <a href="">vector</a>[
+        <a href="">vector</a>[
+            <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_0">FEE_SHARE_DIVISOR_0</a>,
+            <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_0">TIER_ACTIVATION_FEE_0</a>,
+            <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_0">WITHDRAWAL_FEE_0</a>
+        ],
+        <a href="">vector</a>[
+            <a href="incentives.md#0xc0deb00c_incentives_FEE_SHARE_DIVISOR_1">FEE_SHARE_DIVISOR_1</a>,
+            <a href="incentives.md#0xc0deb00c_incentives_TIER_ACTIVATION_FEE_1">TIER_ACTIVATION_FEE_1</a>,
+            <a href="incentives.md#0xc0deb00c_incentives_WITHDRAWAL_FEE_1">WITHDRAWAL_FEE_1</a>
+        ]
+    ];
     // Set incentive parameters for the first time.
     <a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>&lt;AptosCoin&gt;(econia,
         <a href="incentives.md#0xc0deb00c_incentives_MARKET_REGISTRATION_FEE">MARKET_REGISTRATION_FEE</a>, <a href="incentives.md#0xc0deb00c_incentives_UNDERWRITER_REGISTRATION_FEE">UNDERWRITER_REGISTRATION_FEE</a>,

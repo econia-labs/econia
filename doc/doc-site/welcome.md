@@ -22,7 +22,12 @@ Then try out the Econia [APIs](api/index.md), and let's see what we can build to
 
 ## Devnet account
 
-As of 2022-09-30, Econia is initialized on the Aptos devnet at account [0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd](https://aptos-explorer.netlify.app/account/0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd).
+As of 2022-09-30, Econia is initialized on the Aptos devnet and testnet at the following accounts:
+
+| Network | Account                                                              |
+|---------|----------------------------------------------------------------------|
+| Devnet  | [0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd] |
+| Testnet | [0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7] |
 
 Note that the Aptos devnet typically resets each Thursday, occasionally with breaking changes.
 Pending the reconciliation of such breaking changes after devnet reset, Econia is typically republished as soon as the necessary patches are implemented.
@@ -33,3 +38,6 @@ The above listing is the most up-to-date listing for the official address, so if
 * [GitHub](https://github.com/econia-labs/econia)
 * [Medium](https://medium.com/econialabs)
 * [Twitter](https://twitter.com/econialabs)
+
+[0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7]: https://aptos-explorer.netlify.app/account/0xb1d4c0de8bc24468608637dfdbff975a0888f8935aa63338a44078eec5c7b6c7
+[0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd]: https://aptos-explorer.netlify.app/account/0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd

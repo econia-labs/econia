@@ -20,7 +20,7 @@ Econia is currently under development, and this is the third major iteration tha
 If you are a builder and you are interested in working with Econia, start by taking a look at the [design overview](overview/index.md), as this provides a technical breakdown that will provide some context for the system design.
 Then try out the Econia [APIs](api/index.md), and let's see what we can build together!
 
-## Devnet account
+## Account listings
 
 As of 2022-09-30, Econia is initialized on the Aptos devnet and testnet at the following accounts:
 

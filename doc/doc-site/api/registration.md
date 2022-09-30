@@ -11,7 +11,7 @@
 ## The registry
 
 Before anyone can trade on Econia, the [`Registry`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_Registry) must first be initialized by the account that published Econia to the Aptos blockchain, via [`init_registry`](../../../src/move/econia/build/Econia/docs/registry.md#0xc0deb00c_registry_init_registry).
-For now this will be taking place on the Aptos devnet (which is reset about once weekly), so monitor the [welcome page listing](../welcome.md#devnet-account) for the most up-to-date Econia devnet account.
+For now this will be taking place on the Aptos devnet (which is reset about once weekly) and the Aptos testnet, so monitor the [welcome page listing](../welcome.md#account-listings) for the most up-to-date Econia devnet and testnet accounts.
 
 ## Custodian capabilities
 

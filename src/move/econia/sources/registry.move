@@ -30,6 +30,7 @@ module econia::registry {
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::table::{Self, Table};
     use aptos_framework::type_info;
     use econia::incentives;
     use econia::tablist::{Self, Tablist};
@@ -41,7 +42,7 @@ module econia::registry {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::assets::{Self, UC};
+    use econia::assets::{Self, BC, QC, UC};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -148,9 +149,12 @@ module econia::registry {
 
     /// Global registration information.
     struct Registry has key {
+        /// Map from 1-indexed market ID to corresponding market info,
+        /// enabling iterated indexing by market ID.
+        market_id_to_info: Tablist<u64, MarketInfo>,
         /// Map from market info to corresponding 1-indexed market ID,
-        /// enabling duplicate checks and iterated indexing.
-        markets: Tablist<MarketInfo, u64>,
+        /// enabling market duplicate checks.
+        market_info_to_id: Table<MarketInfo, u64>,
         /// The number of registered custodians.
         n_custodians: u64,
         /// The number of registered underwriters.
@@ -303,6 +307,10 @@ module econia::registry {
     /// # Aborts
     ///
     /// * `E_BASE_NOT_COIN`: Base coin type is not initialized.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_base_coin_internal_not_coin()`
     public(friend) fun register_market_base_coin_internal<
         BaseCoinType,
         QuoteCoinType,
@@ -333,6 +341,11 @@ module econia::registry {
     ///
     /// * `E_GENERIC_TOO_FEW_CHARACTERS`: Asset descriptor is too short.
     /// * `E_GENERIC_TOO_MANY_CHARACTERS`: Asset descriptor is too long.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_base_generic_internal_too_few()`
+    /// * `test_register_market_base_generic_internal_too_many()`
     public(friend) fun register_market_base_generic_internal<
         QuoteCoinType,
         UtilityCoinType
@@ -370,7 +383,8 @@ module econia::registry {
     ) {
         // Initialize registry.
         move_to(econia, Registry{
-            markets: tablist::new(),
+            market_id_to_info: tablist::new(),
+            market_info_to_id: table::new(),
             n_custodians: 0,
             n_underwriters: 0,
             market_registration_events:
@@ -423,6 +437,14 @@ module econia::registry {
     /// * `underwriter_id` has been properly packed and passed by either
     ///   `register_market_base_coin_internal` or
     ///   `register_market_base_generic_interal`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_internal_lot_size_0()`
+    /// * `test_register_market_internal_market_registered()`
+    /// * `test_register_market_internal_tick_size_0()`
+    /// * `test_register_market_internal_quote_not_coin()`
+    /// * `test_register_market_internal_same_type()`
     fun register_market_internal<
         QuoteCoinType,
         UtilityCoinType
@@ -448,14 +470,19 @@ module econia::registry {
             base_type, quote_type, lot_size, tick_size, underwriter_id};
         // Mutably borrow registry.
         let registry_ref_mut = borrow_global_mut<Registry>(@econia);
-        // Mutably borrow markets map.
-        let markets_ref_mut = &mut registry_ref_mut.markets;
-        assert!(!tablist::contains(markets_ref_mut, market_info),
-            E_MARKET_REGISTERED); // Assert market not registered.
+        // Mutably borrow map from market info to market ID.
+        let info_to_id_ref_mut = &mut registry_ref_mut.market_info_to_id;
+        assert!( // Assert market not registered.
+            !table::contains(info_to_id_ref_mut, market_info),
+            E_MARKET_REGISTERED);
+        // Mutably borrow map from market ID to market info.
+        let id_to_info_ref_mut = &mut registry_ref_mut.market_id_to_info;
         // Get 1-indexed market ID.
-        let market_id = tablist::length(markets_ref_mut) + 1;
-        // Register a market entry.
-        tablist::add(markets_ref_mut, market_info, market_id);
+        let market_id = tablist::length(id_to_info_ref_mut) + 1;
+        // Register a market entry in map from market info to market ID.
+        table::add(info_to_id_ref_mut, market_info, market_id);
+        // Register a market entry in map from market ID to market info.
+        tablist::add(id_to_info_ref_mut, market_id, market_info);
         // Emit a market registration event.
         event::emit_event(&mut registry_ref_mut.market_registration_events,
             MarketRegistrationEvent{market_id, base_type, quote_type,
@@ -488,6 +515,51 @@ module econia::registry {
     }
 
     #[test_only]
+    /// Return `MarketInfo` fields corresponding to given `market_id`,
+    /// aborting if no such registered market.
+    ///
+    /// # Restrictions
+    ///
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   against the registry and thus potential transaction collisions
+    ///   across markets.
+    public fun get_market_info_test(
+        market_id: u64
+    ): (
+        String,
+        String,
+        u64,
+        u64,
+        Option<u64>
+    ) acquires Registry {
+        // Immutably borrow map from market ID to market info.
+        let markets_ref = &borrow_global<Registry>(@econia).market_id_to_info;
+        // Immutably borrow corresponding market info.
+        let market_info_ref = tablist::borrow(markets_ref, market_id);
+        (market_info_ref.base_type, // Return market info fields.
+         market_info_ref.quote_type,
+         market_info_ref.lot_size,
+         market_info_ref.tick_size,
+         market_info_ref.underwriter_id)
+    }
+
+    #[test_only]
+    /// Return an `UnderwriterCapabilty` having given ID, setting it as
+    /// a valid ID in the registry.
+    public fun get_underwriter_capability_test(
+        underwriter_id: u64
+    ): UnderwriterCapability
+    acquires Registry {
+        // If proposed underwriter ID is less than number registered:
+        if (underwriter_id < borrow_global<Registry>(@econia).n_underwriters)
+            // Update registry to have provided ID as number registered.
+            borrow_global_mut<Registry>(@econia).n_underwriters =
+                underwriter_id;
+        // Return corresponding underwriter capability.
+        UnderwriterCapability{underwriter_id}
+    }
+
+    #[test_only]
     /// Initialize registry for testing.
     public fun init_test() {
         // Get signer for Econia account.
@@ -496,6 +568,7 @@ module econia::registry {
         // Create Aptos-style account for Econia.
         account::create_account_for_test(@econia);
         init_module(&econia); // Init registry.
+        incentives::init_test(); // Init incentives
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -506,8 +579,7 @@ module econia::registry {
     /// Verify custodian then underwriter capability registration.
     fun test_register_capabilities()
     acquires Registry {
-        init_test(); // Init registry and recognized markets list.
-        incentives::init_test(); // Initialize incentives parameters.
+        init_test(); // Initialize for testing.
         // Get custodian registration fee.
         let custodian_registration_fee =
             incentives::get_custodian_registration_fee();
@@ -556,6 +628,114 @@ module econia::registry {
         assert!(get_underwriter_id(&underwriter_capability) == 3, 0);
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for non-coin type.
+    fun test_register_market_base_coin_internal_not_coin()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<GenericAsset, QC, UC>(
+            0, 0, assets::mint_test(1));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for too few characters in generic asset
+    /// descriptor.
+    fun test_register_market_base_generic_internal_too_few()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Get underwriter capability.
+        let underwriter_capability = get_underwriter_capability_test(1);
+        // Attempt invalid invocation.
+        register_market_base_generic_internal<QC, UC>(
+            string::utf8(b"123"), 0, 0, &underwriter_capability,
+            assets::mint_test(1));
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for too many characters in generic asset
+    /// descriptor.
+    fun test_register_market_base_generic_internal_too_many()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Get underwriter capability.
+        let underwriter_capability = get_underwriter_capability_test(1);
+        let long_string = // Get 36-character string.
+            string::utf8(b"111111111111111111111111111111111111");
+        string::append(&mut long_string, // Append 37 characters.
+            string::utf8(b"1111111111111111111111111111111111111"));
+        // Attempt invalid invocation.
+        register_market_base_generic_internal<QC, UC>(
+            long_string, 0, 0, &underwriter_capability, assets::mint_test(1));
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for lot size 0.
+    fun test_register_market_internal_lot_size_0()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<BC, QC, UC>(
+            0, 0, assets::mint_test(1));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for market already registered.
+    fun test_register_market_internal_market_registered()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        let market_registration_fee = // Get market registration fee.
+            incentives::get_market_registration_fee();
+        // Register a market.
+        register_market_base_coin_internal<BC, QC, UC>(
+            1, 1, assets::mint_test(market_registration_fee));
+        // Attempt invalid re-registration.
+        register_market_base_coin_internal<BC, QC, UC>(
+            1, 1, assets::mint_test(market_registration_fee));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for tick size 0.
+    fun test_register_market_internal_tick_size_0()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<BC, QC, UC>(
+            1, 0, assets::mint_test(1));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for quote not coin type.
+    fun test_register_market_internal_quote_not_coin()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<BC, GenericAsset, UC>(
+            1, 1, assets::mint_test(1));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for base and quote same coin type.
+    fun test_register_market_internal_same_type()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<QC, QC, UC>(
+            1, 1, assets::mint_test(1));
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

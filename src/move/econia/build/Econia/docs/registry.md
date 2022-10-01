@@ -77,15 +77,18 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_9)
 -  [Function `register_market_base_coin_internal`](#0xc0deb00c_registry_register_market_base_coin_internal)
     -  [Aborts](#@Aborts_10)
+    -  [Testing](#@Testing_11)
 -  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
-    -  [Aborts](#@Aborts_11)
+    -  [Aborts](#@Aborts_12)
+    -  [Testing](#@Testing_13)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
-    -  [Type parameters](#@Type_parameters_12)
-    -  [Parameters](#@Parameters_13)
-    -  [Emits](#@Emits_14)
-    -  [Aborts](#@Aborts_15)
-    -  [Assumptions](#@Assumptions_16)
+    -  [Type parameters](#@Type_parameters_14)
+    -  [Parameters](#@Parameters_15)
+    -  [Emits](#@Emits_16)
+    -  [Aborts](#@Aborts_17)
+    -  [Assumptions](#@Assumptions_18)
+    -  [Testing](#@Testing_19)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -93,6 +96,7 @@ The below index is automatically generated from source code:
 <b>use</b> <a href="">0x1::event</a>;
 <b>use</b> <a href="">0x1::option</a>;
 <b>use</b> <a href="">0x1::string</a>;
+<b>use</b> <a href="">0x1::table</a>;
 <b>use</b> <a href="">0x1::type_info</a>;
 <b>use</b> <a href="incentives.md#0xc0deb00c_incentives">0xc0deb00c::incentives</a>;
 <b>use</b> <a href="tablist.md#0xc0deb00c_tablist">0xc0deb00c::tablist</a>;
@@ -456,11 +460,18 @@ Global registration information.
 
 <dl>
 <dt>
-<code>markets: <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, u64&gt;</code>
+<code>market_id_to_info: <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;u64, <a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>&gt;</code>
+</dt>
+<dd>
+ Map from 1-indexed market ID to corresponding market info,
+ enabling iterated indexing by market ID.
+</dd>
+<dt>
+<code>market_info_to_id: <a href="_Table">table::Table</a>&lt;<a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>, u64&gt;</code>
 </dt>
 <dd>
  Map from market info to corresponding 1-indexed market ID,
- enabling duplicate checks and iterated indexing.
+ enabling market duplicate checks.
 </dd>
 <dt>
 <code>n_custodians: u64</code>
@@ -869,6 +880,14 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 * <code><a href="registry.md#0xc0deb00c_registry_E_BASE_NOT_COIN">E_BASE_NOT_COIN</a></code>: Base coin type is not initialized.
 
 
+<a name="@Testing_11"></a>
+
+### Testing
+
+
+* <code>test_register_market_base_coin_internal_not_coin()</code>
+
+
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_base_coin_internal">register_market_base_coin_internal</a>&lt;BaseCoinType, QuoteCoinType, UtilityCoinType&gt;(lot_size: u64, tick_size: u64, utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;): u64
 </code></pre>
 
@@ -914,13 +933,22 @@ descriptor.
 See inner function <code><a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>()</code>.
 
 
-<a name="@Aborts_11"></a>
+<a name="@Aborts_12"></a>
 
 ### Aborts
 
 
 * <code><a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_FEW_CHARACTERS">E_GENERIC_TOO_FEW_CHARACTERS</a></code>: Asset descriptor is too short.
 * <code><a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS">E_GENERIC_TOO_MANY_CHARACTERS</a></code>: Asset descriptor is too long.
+
+
+<a name="@Testing_13"></a>
+
+### Testing
+
+
+* <code>test_register_market_base_generic_internal_too_few()</code>
+* <code>test_register_market_base_generic_internal_too_many()</code>
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_base_generic_internal">register_market_base_generic_internal</a>&lt;QuoteCoinType, UtilityCoinType&gt;(base_type: <a href="_String">string::String</a>, lot_size: u64, tick_size: u64, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>, utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;): u64
@@ -985,7 +1013,8 @@ module publication.
 ) {
     // Initialize <a href="registry.md#0xc0deb00c_registry">registry</a>.
     <b>move_to</b>(econia, <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>{
-        markets: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>(),
+        market_id_to_info: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>(),
+        market_info_to_id: <a href="_new">table::new</a>(),
         n_custodians: 0,
         n_underwriters: 0,
         market_registration_events:
@@ -1013,7 +1042,7 @@ module publication.
 Register a market in the global registry.
 
 
-<a name="@Type_parameters_12"></a>
+<a name="@Type_parameters_14"></a>
 
 ### Type parameters
 
@@ -1022,7 +1051,7 @@ Register a market in the global registry.
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_15"></a>
 
 ### Parameters
 
@@ -1037,7 +1066,7 @@ generic base asset.
 * <code>utility_coins</code>: Utility coins paid to register a market.
 
 
-<a name="@Emits_14"></a>
+<a name="@Emits_16"></a>
 
 ### Emits
 
@@ -1046,7 +1075,7 @@ generic base asset.
 registered.
 
 
-<a name="@Aborts_15"></a>
+<a name="@Aborts_17"></a>
 
 ### Aborts
 
@@ -1059,7 +1088,7 @@ registered.
 for specified market info.
 
 
-<a name="@Assumptions_16"></a>
+<a name="@Assumptions_18"></a>
 
 ### Assumptions
 
@@ -1067,6 +1096,18 @@ for specified market info.
 * <code>underwriter_id</code> has been properly packed and passed by either
 <code>register_market_base_coin_internal</code> or
 <code>register_market_base_generic_interal</code>.
+
+
+<a name="@Testing_19"></a>
+
+### Testing
+
+
+* <code>test_register_market_internal_lot_size_0()</code>
+* <code>test_register_market_internal_market_registered()</code>
+* <code>test_register_market_internal_tick_size_0()</code>
+* <code>test_register_market_internal_quote_not_coin()</code>
+* <code>test_register_market_internal_same_type()</code>
 
 
 <pre><code><b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;QuoteCoinType, UtilityCoinType&gt;(base_type: <a href="_String">string::String</a>, lot_size: u64, tick_size: u64, underwriter_id: <a href="_Option">option::Option</a>&lt;u64&gt;, utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;): u64
@@ -1103,14 +1144,19 @@ for specified market info.
         base_type, quote_type, lot_size, tick_size, underwriter_id};
     // Mutably borrow <a href="registry.md#0xc0deb00c_registry">registry</a>.
     <b>let</b> registry_ref_mut = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
-    // Mutably borrow markets map.
-    <b>let</b> markets_ref_mut = &<b>mut</b> registry_ref_mut.markets;
-    <b>assert</b>!(!<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(markets_ref_mut, market_info),
-        <a href="registry.md#0xc0deb00c_registry_E_MARKET_REGISTERED">E_MARKET_REGISTERED</a>); // Assert market not registered.
+    // Mutably borrow map from market info <b>to</b> market ID.
+    <b>let</b> info_to_id_ref_mut = &<b>mut</b> registry_ref_mut.market_info_to_id;
+    <b>assert</b>!( // Assert market not registered.
+        !<a href="_contains">table::contains</a>(info_to_id_ref_mut, market_info),
+        <a href="registry.md#0xc0deb00c_registry_E_MARKET_REGISTERED">E_MARKET_REGISTERED</a>);
+    // Mutably borrow map from market ID <b>to</b> market info.
+    <b>let</b> id_to_info_ref_mut = &<b>mut</b> registry_ref_mut.market_id_to_info;
     // Get 1-indexed market ID.
-    <b>let</b> market_id = <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(markets_ref_mut) + 1;
-    // Register a market entry.
-    <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(markets_ref_mut, market_info, market_id);
+    <b>let</b> market_id = <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(id_to_info_ref_mut) + 1;
+    // Register a market entry in map from market info <b>to</b> market ID.
+    <a href="_add">table::add</a>(info_to_id_ref_mut, market_info, market_id);
+    // Register a market entry in map from market ID <b>to</b> market info.
+    <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(id_to_info_ref_mut, market_id, market_info);
     // Emit a market registration <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(&<b>mut</b> registry_ref_mut.market_registration_events,
         <a href="registry.md#0xc0deb00c_registry_MarketRegistrationEvent">MarketRegistrationEvent</a>{market_id, base_type, quote_type,

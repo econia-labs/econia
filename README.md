@@ -122,6 +122,8 @@ To install the `econia` Python package:
     pip install -e src/python
     ```
 
+1. Then [install the Aptos Python SDK from source].
+
 1. Create the secrets directories as needed:
 
     ```zsh
@@ -200,19 +202,20 @@ Sphinx documentation source files are at [`doc/sphinx`].
 
 <!---Alphabetized reference links-->
 
-[`aptos-core` #2142]:                   https://github.com/aptos-labs/aptos-core/issues/2142
-[`cargo cache`]:                        https://github.com/matthiaskrgr/cargo-cache
-[`detox`]:                              https://github.com/whitfin/detox
-[`doc/doc-site/`]:                      doc/doc-site/
-[`doc/sphinx`]:                         doc/sphinx
-[`kondo`]:                              https://github.com/tbillington/kondo
-[`src/jupyter`]:                        src/jupyter
-[`src/move/econia`]:                    src/move/econia
-[`src/move/econia/build/Econia/docs`]:  src/move/econia/build/Econia/docs
-[`src/move/econia/ss.sh`]:              src/move/econia/ss.sh
-[`src/python/econia`]:                  src/python/econia
-[adding a precompiled binary]:          https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode
-[install the `aptos` CLI]:              https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli
-[local Time Machine snapshots]:         https://discussions.apple.com/thread/7676695
-[official Aptos developer setup guide]: https://aptos.dev/guides/getting-started
-[Teach yourself Move on Aptos]:         https://github.com/econia-labs/teach-yourself-move
+[`aptos-core` #2142]:                       https://github.com/aptos-labs/aptos-core/issues/2142
+[`cargo cache`]:                            https://github.com/matthiaskrgr/cargo-cache
+[`detox`]:                                  https://github.com/whitfin/detox
+[`doc/doc-site/`]:                          doc/doc-site/
+[`doc/sphinx`]:                             doc/sphinx
+[`kondo`]:                                  https://github.com/tbillington/kondo
+[`src/jupyter`]:                            src/jupyter
+[`src/move/econia`]:                        src/move/econia
+[`src/move/econia/build/Econia/docs`]:      src/move/econia/build/Econia/docs
+[`src/move/econia/ss.sh`]:                  src/move/econia/ss.sh
+[`src/python/econia`]:                      src/python/econia
+[adding a precompiled binary]:              https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli#install-precompiled-binary-easy-mode
+[install the `aptos` CLI]:                  https://aptos.dev/cli-tools/aptos-cli-tool/install-aptos-cli
+[install the Aptos Python SDK from source]: https://aptos.dev/sdks/python-sdk#install-from-the-source
+[local Time Machine snapshots]:             https://discussions.apple.com/thread/7676695
+[official Aptos developer setup guide]:     https://aptos.dev/guides/getting-started
+[Teach yourself Move on Aptos]:             https://github.com/econia-labs/teach-yourself-move

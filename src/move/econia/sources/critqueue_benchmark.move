@@ -1,6 +1,7 @@
 /// Wrappers for on-chain `CritQueue` benchmarking.
 module econia::critqueue_benchmark {
 
+    use aptos_std::table_with_length::{Self, TableWithLength};
     use econia::critqueue::{Self, CritQueue};
     use std::signer::address_of;
 
@@ -12,19 +13,22 @@ module econia::critqueue_benchmark {
     /// Ascending crit-queue flag.
     const ASCENDING: bool = false;
 
-    /// Stores a `CritQueue`.
+    /// Stores a `CritQueue` in a table, so insertion counts can be
+    /// reset.
     struct CritQueueStore has key {
-        critqueue: CritQueue<u64>
+        map: TableWithLength<u64, CritQueue<u64>>
     }
 
     /// Initialize a `CritQueueStore` under `econia` account.
     fun init_module(
         econia: &signer
     ) {
-        // Get crit-queue.
-        let critqueue = critqueue::new(ASCENDING);
+        let critqueue = critqueue::new(ASCENDING); // Get crit-queue.
+        let map = table_with_length::new();  // Get store map.
+        // Add crit-queue to map.
+        table_with_length::add(&mut map, 1, critqueue);
         // Get crit-queue store.
-        let critqueue_store = CritQueueStore{critqueue};
+        let critqueue_store = CritQueueStore{map};
         // Move crit-queue store to Econia account.
         move_to<CritQueueStore>(econia, critqueue_store);
     }
@@ -37,9 +41,14 @@ module econia::critqueue_benchmark {
     ) acquires CritQueueStore {
         // Assert caller is Econia.
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Mutably borrow crit-queue store map.
+        let critqueue_store_map_ref_mut =
+            &mut borrow_global_mut<CritQueueStore>(@econia).map;
+        let reset_count = table_with_length::length(
+            critqueue_store_map_ref_mut); // Get reset count.
         // Mutably borrow crit-queue.
-        let critqueue_ref_mut =
-            &mut borrow_global_mut<CritQueueStore>(@econia).critqueue;
+        let critqueue_ref_mut = table_with_length::borrow_mut(
+            critqueue_store_map_ref_mut, reset_count);
         // Insert key-value insertion pair.
         critqueue::insert(critqueue_ref_mut, insertion_key, insertion_value);
     }
@@ -53,9 +62,14 @@ module econia::critqueue_benchmark {
     ) acquires CritQueueStore {
         // Assert caller is Econia.
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Mutably borrow crit-queue store map.
+        let critqueue_store_map_ref_mut =
+            &mut borrow_global_mut<CritQueueStore>(@econia).map;
+        let reset_count = table_with_length::length(
+            critqueue_store_map_ref_mut); // Get reset count.
         // Mutably borrow crit-queue.
-        let critqueue_ref_mut =
-            &mut borrow_global_mut<CritQueueStore>(@econia).critqueue;
+        let critqueue_ref_mut = table_with_length::borrow_mut(
+            critqueue_store_map_ref_mut, reset_count);
         assert!( // Assert removed insertion value is as expected.
             critqueue::remove(critqueue_ref_mut, access_key) ==
             insertion_value_expected, E_UNEXPECTED_VALUE);
@@ -69,28 +83,56 @@ module econia::critqueue_benchmark {
     ) acquires CritQueueStore {
         // Assert caller is Econia.
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Mutably borrow crit-queue store map.
+        let critqueue_store_map_ref_mut =
+            &mut borrow_global_mut<CritQueueStore>(@econia).map;
+        let reset_count = table_with_length::length(
+            critqueue_store_map_ref_mut); // Get reset count.
         // Mutably borrow crit-queue.
-        let critqueue_ref_mut =
-            &mut borrow_global_mut<CritQueueStore>(@econia).critqueue;
+        let critqueue_ref_mut = table_with_length::borrow_mut(
+            critqueue_store_map_ref_mut, reset_count);
         assert!( // Assert dequeued insertion value is as expected.
             critqueue::dequeue(critqueue_ref_mut) ==
             insertion_value_expected, E_UNEXPECTED_VALUE);
     }
 
     /// Dequeue all values in given crit-queue.
-    public entry fun empty(
+    public entry fun dequeue_all(
         account: &signer,
     ) acquires CritQueueStore {
         // Assert caller is Econia.
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Mutably borrow crit-queue store map.
+        let critqueue_store_map_ref_mut =
+            &mut borrow_global_mut<CritQueueStore>(@econia).map;
+        let reset_count = table_with_length::length(
+            critqueue_store_map_ref_mut); // Get reset count.
         // Mutably borrow crit-queue.
-        let critqueue_ref_mut =
-            &mut borrow_global_mut<CritQueueStore>(@econia).critqueue;
+        let critqueue_ref_mut = table_with_length::borrow_mut(
+            critqueue_store_map_ref_mut, reset_count);
         // While crit-queue is not empty:
         while (!critqueue::is_empty(critqueue_ref_mut)) {
             // De-queue the head.
             critqueue::dequeue(critqueue_ref_mut);
         };
+    }
+
+    /// Reset with a new crit-queue.
+    public entry fun reset(
+        account: &signer,
+    ) acquires CritQueueStore {
+        // Assert caller is Econia.
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        // Mutably borrow crit-queue store map.
+        let critqueue_store_map_ref_mut =
+            &mut borrow_global_mut<CritQueueStore>(@econia).map;
+        let reset_count = table_with_length::length(
+            critqueue_store_map_ref_mut); // Get reset count.
+        // Get crit-queue.
+        let critqueue = critqueue::new<u64>(ASCENDING);
+        // Add new crit-queue to store map.
+        table_with_length::add(
+            critqueue_store_map_ref_mut, reset_count + 1, critqueue);
     }
 
 }

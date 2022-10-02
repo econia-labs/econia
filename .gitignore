@@ -6,6 +6,9 @@
 *.out
 *.synctex.gz
 
+# System
+*.DS_Store
+
 # Secrets
 .secrets/*
 
@@ -44,3 +47,6 @@ src/move/econia/target/*
 
 # Sphinx
 doc/sphinx/build/*
+
+# Temporary markdown file for prototyping
+temp.md

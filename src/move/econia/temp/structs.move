@@ -3,8 +3,10 @@ module econia::structs {
 
     // critqueue.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When a node has no edge
-    const NO_NODE: u8 = 0xff;
+    /// When a node has no edge.
+    const NO_TREE_NODE: u8 = 0xff;
+    /// When no accessor node indicated.
+    const NO_ACCESSOR_NODE: u64 = 0xffff;
 
     struct Inner has store {
         /// * Bits 0-31 insertion key critical bitmask.
@@ -28,52 +30,36 @@ module econia::structs {
         insertion_key: u64
     }
 
-    struct CritQueue has store {
-        /// Map from insertion key cast as `u64` to `u64` having
-        /// * Bits 0-31 insertion count.
-        /// * Bits 32-40 inner key, if one is active.
-        insertions: Table<u64, u64>,
-        /// Map from lookup key to insertion value. Lookup key has
-        /// * Bits 0-31 insertion key.
-        /// * Bits 32-63 insertion count.
-        insertion_values: Table<64, V>,
+    struct CritQueue<V: drop> has store {
         /// Map from inner key to inner node.
         inners: Table<u8, Inner>,
         /// Map from outer key to outer node.
         outers: Table<u8, Outer>,
         /// Map from accessor key, cast as `u64`, to accessor node.
-        accessors: Table<u64, Accessor>,
-        /// Head lookup key.
-        head: u64,
-        /// Tail lookup key.
-        tail: u64,
-        /// Tree root node key, if any.
-        root: u8,
-        /// Key of first inactive inner node.
-        first_inactive_inner: u8,
-        /// Key of first inactive outer node.
-        first_inactive_outer: u8,
-        /// Key of first inactive accessor node, encoded in a `u64`.
-        first inactive_accessor: u64,
+        accessors: Table<u64, Accessor<V>>,
+        /// * 8 MSBs root node key, if any, then
+        /// * 32 bits insertion key of head, if any, then
+        /// * 16 bits accessor key of head, if any, then
+        /// * 32 bits insertion key of tail, if any, then
+        /// * 16 bits insertion key of tail, if any.
+        edges: u128,
+        /// * 16 MSBs number of accessors allocated, then
+        /// * 16 bits next inactive accessor key, then
+        /// * 8 bits number of inners allocated, then
+        /// * 8 bits next inactive inner key, if any, then
+        /// * 8 bits number of outers allocated, then
+        /// * 8 bits next inactive outer key, if any.
+        allocations: u64,
     }
 
-    struct Accessor<V> has store {
-        /// MSBs of previous accessor.
-        previous_msbs: u8,
-        /// LSBs of previous accessor.
-        previous_lsbs: u8,
-        /// MSBs of next accessor.
-        next_msbs: u8,
-        /// LSBs of next accessor.
-        next_lsbs: u8,
-        /// MSBs of next inactive accessor.
-        next_inactive_msbs: u8,
-        /// LSBs of next inactive accessor.
-        next_inactive_lsbs: u8,
-        /// MSBs of insertion count for corresponding value.
-        insertion_count_msbs: u8,
-        /// LSBs of insertion count for corresponding value.
-        insertion_count_lsbs: u8,
+    struct Accessor<V: drop> has store {
+        /// * 16 MSBs previous active accessor key, if any, then
+        /// * 16 bits next active accessor key, if any, then
+        /// * 8 bits parent outer key, if any, then
+        /// * 16 bits next inactive accessor key, if any.
+        data: u64,
+        /// Insertion value from key-value insertion pair.
+        insertion_value: V
     }
 
     // critqueue.move <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

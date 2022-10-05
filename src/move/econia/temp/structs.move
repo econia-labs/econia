@@ -151,7 +151,47 @@ module econia::structs {
 
     // Insertions
 
+    // With cache
 
+    struct CritQueue<V> has store {
+        // Node ID to node. Node ID set at bit 63.
+        inners: Table<u64, Inner>,
+        // Node ID to node. Node ID unset at bit 63.
+        outers: Table<u64, Outer>,
+        // Tree node ID, if there is one.
+        root: Option<u64>
+        // Root critical bit, if there is one.
+        root_critical_bit: Option<u8>
+        // Head access key.
+        head: Option<u128>,
+        // Tail access key.
+        tail: Option<u128>,
+        // `ASCENDING` or `DESCENDING`.
+        direction: bool,
+        // ID of last deactivated inner node, if any.
+        next_inactive_inner: Option<u64>,
+        // ID of last deactivated outer node, if any.
+        next_inactive_outer: Option<u64>,
+        // Number of insertions.
+        n_inserts: u64,
+        // Node ID, if any, of leading inner node having critical bit at
+        // vector index.
+        leading_inners: vector<Option<u64>>
+    }
+
+    struct Inner has store {
+        critical_bit: u8,
+        left: u64,
+        right: u64,
+        next_inactive: u64
+    }
+
+    struct Outer<V> has store {
+        // Insertion key and optional complement to sequence number.
+        access_key: u128,
+        value: option<V>,
+        next_inactive: u64
+    }
 
     // critqueue.move <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

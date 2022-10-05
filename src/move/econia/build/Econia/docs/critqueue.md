@@ -1053,6 +1053,38 @@ A node in a sub-queue.
 ## Constants
 
 
+<a name="0xc0deb00c_critqueue_HI_128"></a>
+
+<code>u128</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 128, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 64, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_MSB_u128"></a>
+
+Most significant bit number for a <code>u128</code>
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MSB_u128">MSB_u128</a>: u8 = 127;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_ACCESS_KEY_TO_INNER_KEY"></a>
 
 <code>u128</code> bitmask set at bit 63, for converting an access key
@@ -1107,28 +1139,6 @@ When an insertion key has been inserted too many times.
 
 
 
-<a name="0xc0deb00c_critqueue_HI_128"></a>
-
-<code>u128</code> bitmask with all bits set, generated in Python via
-<code>hex(int('1' * 128, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_HI_64"></a>
-
-<code>u64</code> bitmask with all bits set, generated in Python via
-<code>hex(int('1' * 64, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_critqueue_INSERTION_KEY"></a>
 
 Number of bits that insertion key is shifted in a <code>u128</code> key.
@@ -1147,16 +1157,6 @@ in Python via <code>hex(int('1' * 62, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_INSERTION_COUNT">MAX_INSERTION_COUNT</a>: u64 = 4611686018427387903;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_critqueue_MSB_u128"></a>
-
-Most significant bit number for a <code>u128</code>
-
-
-<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MSB_u128">MSB_u128</a>: u8 = 127;
 </code></pre>
 
 

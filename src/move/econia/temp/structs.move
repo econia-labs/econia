@@ -3,6 +3,8 @@ module econia::structs {
 
     // critqueue.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    // Pure-table
+
     /// When a node has no edge.
     const NO_TREE_NODE: u8 = 0xff;
     /// When no accessor node indicated.
@@ -30,6 +32,12 @@ module econia::structs {
         insertion_key: u64
     }
 
+    /// If parent pointers eliminated, worst case insertion writes to
+    /// crit-queue, parent to inner node inserted, inner node inserted,
+    /// outer node inserted, accessor inserted, and has to walk from
+    /// root.
+    /// Best case insertion writes to crit-queue, modified leaf,
+    /// sub-queue tail, and sub-queue, after walking from root.
     struct CritQueue<V: drop> has store {
         /// Map from inner key to inner node.
         inners: Table<u8, Inner>,
@@ -61,6 +69,89 @@ module econia::structs {
         /// Insertion value from key-value insertion pair.
         insertion_value: V
     }
+
+    // Hybrid vector/table
+
+    struct CritQueue<V: drop> has store {
+        inners: vector<Inner>,
+        outers: vector<Outers>
+        head: u64,
+        tail: u64,
+        root: u64,
+        height: u8,
+        direction: bool,
+        band_divisor: u8
+        next_inactive_accessor: option<u64>
+    }
+
+
+    /// 8 bytes.
+    struct Inner has store {
+        /// 8 bits critical bit, 24 bits left child ID, 24 bits right
+        /// child ID.
+        data: u64,
+    }
+
+    /// 16 bytes.
+    struct Outer has store {
+        key: u64,
+        //// 24 bits left child ID, 24 bits right child ID.
+        head_tail: u64
+
+    }
+
+    /// Pure table pure critbit
+    /// Lookup key 128 bits:
+    /// 64-bit insertion key, 64-bit sequence number.
+    /// Insertion writes to crit-queue, the inner node just inserted,
+    /// the outer node just inserted, parent of inner node just
+    /// inserted, and needs to walk from root.
+    /// Dequeuing writes to crit-queue, inner node removed, parent to
+    /// inner node just removed, outer node removed, and needs to walk
+    /// from root.
+    /// If add parent pointers, need to write one more for each
+    /// operation: displaced child or removed leaf sibling.
+    /// Hence parent pointers allow potential O(1) lookup, but make
+    /// insertion and removal more expensive.
+    /// Here, traversal is just adding one or subtracting one to the
+    /// start node
+    struct CritQueue<V> has store {
+        // Node ID to node. Node ID set at bit 63.
+        inners: Table<u64, Inner>,
+        // Node ID to node. Node ID unset at bit 63.
+        outers: Table<u64, Outer>,
+        root: Option<u64> // Node ID
+        // Insertion key concatenated with node ID, for priority
+        // comparison and O(1) node lookup.
+        head: Option<u64>,
+        // Insertion key concatenated with node ID, for priority
+        // comparison and O(1) node lookup.
+        tail: Option<u64,
+        direction: bool,
+        critical_ratio: u64,
+        critical_height: u8,
+        next_inactive_inner: Option<u64>,
+        next_inactive_outer: Option<u64>,
+        sequence_number: u64,
+    }
+
+    struct Inner has store {
+        critical_bit: u8,
+        left: u64,
+        right: u64,
+        next_inactive: u64
+    }
+
+    struct Outer<V> has store {
+        // Insertion key and optional complement to sequence number.
+        access_key: u128,
+        value: option<V>,
+        next_inactive: u64
+    }
+
+    // Insertions
+
+
 
     // critqueue.move <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

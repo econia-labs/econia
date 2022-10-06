@@ -61,11 +61,11 @@
 ///
 /// Here, the inner node marked `2nd` stores the integer 2, the inner
 /// node marked `1st` stores the integer 1, and the inner node marked
-/// `0th` the integer 0. Hence, the sole key in the left subtree of
-/// `2nd` is unset at bit 2, while all the keys in the right subtree of
-/// `2nd` are set at bit 2. And similarly for `0th`, the key of its left
-/// child is unset at bit 0, while the key of its right child is set at
-/// bit 0.
+/// `0th` stores the integer 0. Hence, the sole key in the left
+/// subtree of `2nd` is unset at bit 2, while all the keys in the
+/// right subtree of `2nd` are set at bit 2. And similarly for `0th`,
+/// the key of its left child is unset at bit 0, while the key of its
+/// right child is set at bit 0.
 ///
 /// ## Insertions
 ///
@@ -195,30 +195,30 @@
 /// 4. $k_{0, 0} = \texttt{0b00}$
 /// 5. $k_{0, 3} = \texttt{0b00}$
 ///
-/// ## Access keys
+/// ## Index keys
 ///
 /// The present critqueue implementation involves a critbit tree outer
-/// node for each key-value insertion pair, corresponding to an "access
+/// node for each key-value insertion pair, corresponding to an "index
 /// key" having the following bit structure (`NOT` denotes
 /// bitwise complement):
 ///
-/// | Bit(s) | Ascending critqueue | Descending critqueue  |
-/// |--------|---------------------|-----------------------|
-/// | 64-127 | Insertion key       | Insertion key         |
-/// | 63     | 0                   | 1                     |
-/// | 0-62   | Insertion count     | `NOT` insertion count |
+/// | Bit(s) | Ascending critqueue  | Descending critqueue  |
+/// |--------|----------------------|-----------------------|
+/// | 64-95  | 32-bit insertion key | 32-bit insertion key  |
+/// | 63     | 0                    | 1                     |
+/// | 0-62   | Insertion count      | `NOT` insertion count |
 ///
-/// For an ascending critqueue, access keys can thus be dequeued in
+/// For an ascending critqueue, index keys can thus be dequeued in
 /// ascending lexicographical order via inorder successor iteration
-/// starting at the minimum access key:
+/// starting at the minimum index key:
 ///
-/// | Insertion key | Access key bits 64-127 | Access key bits 0-63 |
-/// |---------------|------------------------|----------------------|
-/// | $k_{0, 0}$    | `000...000`            | `000...000`          |
-/// | $k_{0, 3}$    | `000...000`            | `000...011`          |
-/// | $k_{1, 1}$    | `000...001`            | `000...001`          |
-/// | $k_{1, 2}$    | `000...001`            | `000...010`          |
-/// | $k_{3, 4}$    | `000...011`            | `000...100`          |
+/// | Insertion key | Index key bits 64-95 | Index key bits 0-63 |
+/// |---------------|----------------------|---------------------|
+/// | $k_{0, 0}$    | `000...000`          | `000...000`         |
+/// | $k_{0, 3}$    | `000...000`          | `000...011`         |
+/// | $k_{1, 1}$    | `000...001`          | `000...001`         |
+/// | $k_{1, 2}$    | `000...001`          | `000...010`         |
+/// | $k_{3, 4}$    | `000...011`          | `000...100`         |
 ///
 /// >                                          65th
 /// >                                         /    \           critqueue
@@ -228,18 +228,17 @@
 /// >     critqueue           /   \                   /   \
 /// >          head -> k_{0, 0}   k_{0, 3}     k_{1, 1}   k_{1, 2}
 ///
-/// Conversely, for an descending critqueue, access keys can thus be
+/// Conversely, for a descending critqueue, index keys can thus be
 /// dequeued in descending lexicographical order via inorder predecessor
-/// iteration starting at the maximum access key:
+/// iteration starting at the maximum index key:
 ///
-///
-/// | Insertion key | Access key bits 64-127 | Access key bits 0-63 |
-/// |---------------|----------------------|------------------------|
-/// | $k_{3, 4}$    | `000...011`          | `111...011`            |
-/// | $k_{1, 1}$    | `000...001`          | `111...110`            |
-/// | $k_{1, 2}$    | `000...001`          | `111...101`            |
-/// | $k_{0, 0}$    | `000...000`          | `111...111`            |
-/// | $k_{0, 3}$    | `000...000`          | `111...100`            |
+/// | Insertion key | Index key bits 64-95 | Index key bits 0-63   |
+/// |---------------|----------------------|-----------------------|
+/// | $k_{3, 4}$    | `000...011`          | `111...011`           |
+/// | $k_{1, 1}$    | `000...001`          | `111...110`           |
+/// | $k_{1, 2}$    | `000...001`          | `111...101`           |
+/// | $k_{0, 0}$    | `000...000`          | `111...111`           |
+/// | $k_{0, 3}$    | `000...000`          | `111...100`           |
 ///
 /// >                                          65th
 /// >                                         /    \           critqueue
@@ -249,8 +248,8 @@
 /// >     critqueue           /   \                   /   \
 /// >          tail -> k_{0, 3}   k_{0, 0}     k_{1, 2}   k_{1, 1}
 ///
-/// Since access keys have bit 63 reserved, the maximum permissible
-/// insertion count is thus $2^{62} - 1$.
+/// Since index keys have bit 63 reserved, the maximum permissible
+/// insertion count is thus $2^{63} - 1$.
 ///
 /// ## Dequeue order preservation
 ///
@@ -286,52 +285,24 @@
 /// the stack.
 ///
 /// Each time a new "active" node is allocated and inserted to the tree,
-/// it is assigned a unique node ID, corresponding to the number of
-/// nodes of the given type that have already been allocated. Inner node
-/// IDs are set at bit 63, and outer node IDs are unset at bit 63.
+/// it is assigned a unique 32-bit node ID, corresponding to the number
+/// of nodes of the given type that have already been allocated. Inner
+/// node IDs are set at bit 31, and outer node IDs are unset at bit 31.
 ///
-/// Since node IDs have bit 63 reserved, the maximum permissible number
-/// of node IDs for either type is thus $2^{62} - 1$.
+/// Since 32-bit node IDs have bit 31 reserved, the maximum permissible
+/// number of node IDs for either type is thus $2^{31} - 1$.
 ///
-/// ## Leading edges and nodes
-///
-/// In the present implementation, a "leading edge" is defined as a tree
-/// found in the shortest path from the root to the head.
-///
-/// For example, consider the following tree:
-///
-/// >                    node c -> 3rd
-/// >              edge a -> _____/   \_____ <- edge e
-/// >                      2nd             2nd
-/// >           edge b -> /   \           /   \ <- edge f
-/// >                   1st   0100     1000   1st
-/// >        edge c -> /   \                 /   \ <- edge g
-/// >      node a -> 0th   0010  node b -> 0th   1110
-/// >     edge d -> /   \                 /   \
-/// >            0000   0001           1100   1101
-///
-/// * In an ascending critqueue, `0000` is at the head, with leading
-///   edges a, b, c, and d.
-/// * In a descending critqueue, `1110` is at the head, with leading
-///   edges e, f, and g.
-///
-/// A "leading inner node" is defined as an inner node having a leading
-/// edge, including the root. For example, node c is a leading inner
-/// node for both ascending and descending cases, node a is a leading
-/// inner node for the ascending case only, and node b is a leading
-/// inner node for neither case.
-///
-/// ## Lookup caching
+/// ## Balance regimes
 ///
 /// Critbit trees are self-sorting but not self-rebalancing, such that
 /// worst-case lookup times are $O(k)$, where $k$ is the number of bits
-/// in each outer node key. For example, consider the following
-/// unbalanced critbit tree for an ascending critqueue:
+/// in an outer node key. For example, consider the following unbalanced
+/// critbit tree, generating by inserting `0`, then bitmasks set only at
+/// each successive bit up until $k$:
 ///
-/// >                   127th
-/// >                  /     \
-/// >               126th    100000000000000.....
-/// >             ...
+/// >                 k
+/// >               _/ \_
+/// >             ...   100000000000000.....
 /// >            2nd
 /// >           /   \
 /// >         1st   100
@@ -340,129 +311,149 @@
 /// >     /   \
 /// >     0   1
 ///
-/// Here, searching for the key `1` involves walking from the root,
-/// branching left at each inner node until ariving at `0th`, then
-/// checking the right child, effectively an $O(n)$ operation.
-/// Conventionally, this operation would involve a storage gas per-item
-/// read cost for every leading inner node, as well as one for the
-/// corresponding outer node.
+/// Here, searching for `1` involves walking from the root, branching
+/// left at each inner node until ariving at `0th`, then checking
+/// the right child, effectively an $O(n)$ operation.
 ///
-/// In the present implementation, however, this gas cost is effectively
-/// reduced to $O(1)$ via a vector-based cache of leading inner node
-/// IDs, stored in the base critqueue resource. Here, the search key is
-/// first checked to see if it is unset at the root critical bit (or set
-/// it the case of a descending critqueue), and if it is, the search key
-/// thus shares a leading edge with the head key, so the critical bit
-/// between the head key and the search key is calculated. Once the
-/// critical bit has been determined, the corresponding leading inner
-/// node ID is looked up in the leading inner node ID cache, enabling in
-/// this case, an $O(1)$ global storage lookup for `0th`. Then searching
-/// can proceed as usual, by branching left or right depending on
-/// whether a search key is set or unset at a walked inner node.
+/// In contrast, inserting the natural number sequence `0`, `1`, `10`,
+/// ..., `111` results in a generally-balanced tree where lookups are
+/// $O(log_2(n))$:
 ///
-/// This optimization only applies to search keys sharing at least one
-/// leading edge with the head key, meaning that gas optimizations are
-/// only prioritized for insertion keys near the head of the critqueue.
+/// >                          2nd
+/// >                _________/   \_________
+/// >              1st                     1st
+/// >          ___/   \___             ___/   \___
+/// >        0th         0th         0th         0th
+/// >       /   \       /   \       /   \       /   \
+/// >     000   001   010   011   100   101   110   111
 ///
-/// ## Insertion effects
+/// In the present implementation, with insertion keys limited to 32
+/// bits and insertion counts corresponding to a natural number
+/// sequence, lookups are thus effectively $O(32)$ in the worst case for
+/// index key bits 64-95 (insertion key), and $O(log_2(n_i))$ in the
+/// general case for index key bits 0-63 (insertion count), where $n_i$
+/// is the number of insertions for a given insertion key. Hence for
+/// insertion keys `0`, `1`, `10`, `100`, ... and multiple insertions of
+/// insertion key `1` in an ascending critqueue, the following critbit
+/// tree is generated, having the following index keys at each outer
+/// node:
 ///
-/// During insertion, if a leading edge search yields a critical bit
-/// that is not described in the lookup cache, insertion can take place
-/// directly below the next-highest critical bit. For example, consider
-/// inserting `11` to the following ascending critqueue:
+/// >                     95th
+/// >                    /    \
+/// >                  ...    1000000...000...
+/// >                 66th    ^ bit 95  ^ bit 63
+/// >                /    \
+/// >              65th   100000...
+/// >             /    \     ^ bit 63
+/// >           64th   10000...
+/// >          /    \    ^ bit 63
+/// >     000...     \____________
+/// >     ^ bit 63               1st
+/// >                 __________/   \__________
+/// >               0th                       0th
+/// >              /   \                     /   \
+/// >     1000...000   1000...001   1000...010   1000...011
+/// >      ^ bit 63     ^ bit 63     ^ bit 63     ^ bit 63
 ///
-/// >                127th
-/// >               /     \
-/// >            126th    100000000000000.....
-/// >          ...
-/// >         2nd
-/// >        /   \
-/// >      0th   100
-/// >     /   \
-/// >     0   1
+/// ## Lookup gas
 ///
-/// Here, the search key is unset at the root critical bit, which means
-/// that it shares a leading edge with the head. The critical bit is
-/// then calculated between the head and the search key, in this case
-/// `1st`, but there is no corresponding leading `1st` inner node. Hence
-/// insertion can take place directly below the next-highest leading
-/// inner node, `2nd`, and the new `1st` inner node is added to the
-/// lookup cache.
+/// While critqueue insertion key lookup is theoretically $O(k)$ in the
+/// worst case, this only applies for bitstrings with maximally sparse
+/// prefixes. Here, with each node stored as a separate hash table entry
+/// in global storage, Aptos storage gas is thus assessed as a per-item
+/// read for each node accessed during a search.
 ///
-/// Alternatively, consider inserting `100` to the following ascending
-/// critqueue:
+/// Notably, however, per-item reads cost only one fifth as much as
+/// per-item writes as of the time of this writing, and while $O(k)$
+/// per-item reads could potentially be eliminated via a self-balancing
+/// alternative, e.g. an AVL or red-black tree, the requisite
+/// rebalancing operations would entail per-item write costs that far
+/// outweigh the reduction in $O(k)$-associated lookup gas.
 ///
-/// >                  127th
-/// >                 /     \
-/// >              126th    100000000000000.....
-/// >            ...
-/// >           2nd
-/// >        __/   \__
-/// >      0th       1st
-/// >     /   \     /   \
-/// >     0   1   101   0th
-/// >                  /   \
-/// >                110   111
+/// Hence for the present implementation, insertion keys are limited to
+/// 32 bits to reduce the worst-case $O(k)$ lookup, and are combined
+/// with a natural number insertion counter to generate outer node index
+/// keys.
 ///
-/// Here, the search key is compared with the head, yielding the leading
-/// inner node `2nd`, from which a search can proceed: to `1st`, then to
-/// `101`. Here the critical bit `0th` is determined, so an insertion
-/// walk then returns to the common leading inner node, `2nd`, checks
-/// the next inner node `1st`, then inserts `0th` and `100` below. In
-/// effect, the lookup cache establishes the shared leading inner node
-/// as a local root for insert operations.
+/// ## Access keys
 ///
-/// ## Cache alterations
+/// Upon insertion, index keys (which contain only 96 bits), are
+/// concatenated with the corresponding outer node ID for the outer node
+/// just inserted to the critqueue, yielding a unique "access key" that
+/// can be used for $O(1)$ insertion value lookup by outer node ID:
 ///
-/// Each time a leading inner node is removed, the lookup cache must be
-/// updated to indicate that there is no corresponding node ID for the
-/// given critical bit.
+/// | Bits   | Data          |
+/// |--------|---------------|
+/// | 32-127 | Index key     |
+/// | 0-31   | Outer node ID |
 ///
-/// Additionally, whenever a new head is inserted above the root the
-/// lookup cache must be completely cleared out. For example, consider
-/// the following descending critqueue, where `1st` and `0th` are
-/// leading inner nodes.
-///
-/// >         1st <- root
-/// >        /   \
-/// >     1001   0th
-/// >           /   \
-/// >        1010   1011 <- head
-///
-/// Inserting `1100` yields:
-///
-/// >                    2nd <- new root
-/// >                   /   \
-/// >     old root -> 1st   1100 <- new head
-/// >                /   \
-/// >             1001   0th
-/// >                   /   \
-/// >                1010   1011 <- old head
-///
-/// Here, `100` becomes the new head, with `2nd` as the only leading
-/// inner node. Notably, inserting above the root does not refresh the
-/// lookup cache when the new node does not become the new head. For
-/// example, inserting `0000` yields:
-///
-/// >         3rd <- new root
-/// >        /   \
-/// >     0000   2nd <- old root
-/// >           /   \
-/// >         1st   1100 <- same head
-/// >        /   \
-/// >     1001   0th
-/// >           /   \
-/// >        1010   1011
-///
-/// Here, `3rd` simply gets added to the lookup cache.
-///
-///
-/// Note, however, when removing `1100` in either case, the entire
-/// cache has to be recalculated.
+/// Access keys are returned to callers during insertion, and have the
+/// same lexicographical sorting properites as index keys.
 ///
 /// # Complete docgen index
 ///
 /// The below index is automatically generated from source code:
 module econia::critqueue {
+
+    // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    use aptos_std::table_with_length::{TableWithLength};
+    use std::option::{Option};
+
+    // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// A hybrid between a critbit tree and a queue. See above.
+    struct CritQueue<V> has store {
+        /// `ASCENDING` or `DESCENDING`.
+        sort_order: bool,
+        /// Map from inner node ID to inner node.
+        inners: TableWithLength<u64, Inner>,
+        /// Map from outer node ID to outer node.
+        outers: TableWithLength<u64, Outer<V>>,
+        /// Node ID of root node, if any.
+        root_node_id: Option<u64>,
+        /// Node ID of head node, if any.
+        head_node_id: Option<u64>,
+        /// Insertion key of head node, if any.
+        head_insertion_key: Option<u64>,
+        /// Cumulative insertion count.
+        insertion_count: u64,
+        /// ID of inactive inner node at top of stack, if any.
+        inactive_inner_top: Option<u64>,
+        /// ID of inactive outer node at top of stack, if any.
+        inactive_outer_top: Option<u64>,
+    }
+
+    /// An inner node in a critqueue.
+    ///
+    /// If an active node, `next` field is ignored. If an inactive node,
+    /// all fields except `next` are ignored.
+    struct Inner has store {
+        /// Critical bit number.
+        critical_bit: u8,
+        /// Node ID of left child.
+        left: u64,
+        /// Node ID of right child.
+        right: u64,
+        /// Node ID of next inactive inner node in stack, if any.
+        next: Option<u64>,
+    }
+
+    /// An outer node in a critqueue.
+    ///
+    /// If an active node, `next` field is ignored. If an inactive node,
+    /// all fields except `next` are ignored.
+    struct Outer<V> has store {
+        /// Index key for given key-value insertion pair.
+        index_key: u128,
+        /// Insertion value.
+        value: Option<V>,
+        /// Node ID of next inactive inner node in stack, if any.
+        next: Option<u64>,
+    }
+
+    // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

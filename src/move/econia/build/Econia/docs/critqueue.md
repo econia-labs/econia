@@ -94,11 +94,11 @@ critical bits at the top of the tree. For example, the binary keys
 
 Here, the inner node marked <code>2nd</code> stores the integer 2, the inner
 node marked <code>1st</code> stores the integer 1, and the inner node marked
-<code>0th</code> the integer 0. Hence, the sole key in the left subtree of
-<code>2nd</code> is unset at bit 2, while all the keys in the right subtree of
-<code>2nd</code> are set at bit 2. And similarly for <code>0th</code>, the key of its left
-child is unset at bit 0, while the key of its right child is set at
-bit 0.
+<code>0th</code> stores the integer 0. Hence, the sole key in the left
+subtree of <code>2nd</code> is unset at bit 2, while all the keys in the
+right subtree of <code>2nd</code> are set at bit 2. And similarly for <code>0th</code>,
+the key of its left child is unset at bit 0, while the key of its
+right child is set at bit 0.
 
 
 <a name="@Insertions_7"></a>
@@ -257,33 +257,33 @@ In a descending critqueue, the dequeue sequence would instead be:
 5. $k_{0, 3} = \texttt{0b00}$
 
 
-<a name="@Access_keys_14"></a>
+<a name="@Index_keys_14"></a>
 
-### Access keys
+### Index keys
 
 
 The present critqueue implementation involves a critbit tree outer
-node for each key-value insertion pair, corresponding to an "access
+node for each key-value insertion pair, corresponding to an "index
 key" having the following bit structure (<code>NOT</code> denotes
 bitwise complement):
 
-| Bit(s) | Ascending critqueue | Descending critqueue  |
-|--------|---------------------|-----------------------|
-| 64-127 | Insertion key       | Insertion key         |
-| 63     | 0                   | 1                     |
-| 0-62   | Insertion count     | <code>NOT</code> insertion count |
+| Bit(s) | Ascending critqueue  | Descending critqueue  |
+|--------|----------------------|-----------------------|
+| 64-95  | 32-bit insertion key | 32-bit insertion key  |
+| 63     | 0                    | 1                     |
+| 0-62   | Insertion count      | <code>NOT</code> insertion count |
 
-For an ascending critqueue, access keys can thus be dequeued in
+For an ascending critqueue, index keys can thus be dequeued in
 ascending lexicographical order via inorder successor iteration
-starting at the minimum access key:
+starting at the minimum index key:
 
-| Insertion key | Access key bits 64-127 | Access key bits 0-63 |
-|---------------|------------------------|----------------------|
-| $k_{0, 0}$    | <code>000...000</code>            | <code>000...000</code>          |
-| $k_{0, 3}$    | <code>000...000</code>            | <code>000...011</code>          |
-| $k_{1, 1}$    | <code>000...001</code>            | <code>000...001</code>          |
-| $k_{1, 2}$    | <code>000...001</code>            | <code>000...010</code>          |
-| $k_{3, 4}$    | <code>000...011</code>            | <code>000...100</code>          |
+| Insertion key | Index key bits 64-95 | Index key bits 0-63 |
+|---------------|----------------------|---------------------|
+| $k_{0, 0}$    | <code>000...000</code>          | <code>000...000</code>         |
+| $k_{0, 3}$    | <code>000...000</code>          | <code>000...011</code>         |
+| $k_{1, 1}$    | <code>000...001</code>          | <code>000...001</code>         |
+| $k_{1, 2}$    | <code>000...001</code>          | <code>000...010</code>         |
+| $k_{3, 4}$    | <code>000...011</code>          | <code>000...100</code>         |
 
 >                                          65th
 >                                         /    \           critqueue
@@ -293,18 +293,17 @@ starting at the minimum access key:
 >     critqueue           /   \                   /   \
 >          head -> k_{0, 0}   k_{0, 3}     k_{1, 1}   k_{1, 2}
 
-Conversely, for an descending critqueue, access keys can thus be
+Conversely, for a descending critqueue, index keys can thus be
 dequeued in descending lexicographical order via inorder predecessor
-iteration starting at the maximum access key:
+iteration starting at the maximum index key:
 
-
-| Insertion key | Access key bits 64-127 | Access key bits 0-63 |
-|---------------|----------------------|------------------------|
-| $k_{3, 4}$    | <code>000...011</code>          | <code>111...011</code>            |
-| $k_{1, 1}$    | <code>000...001</code>          | <code>111...110</code>            |
-| $k_{1, 2}$    | <code>000...001</code>          | <code>111...101</code>            |
-| $k_{0, 0}$    | <code>000...000</code>          | <code>111...111</code>            |
-| $k_{0, 3}$    | <code>000...000</code>          | <code>111...100</code>            |
+| Insertion key | Index key bits 64-95 | Index key bits 0-63   |
+|---------------|----------------------|-----------------------|
+| $k_{3, 4}$    | <code>000...011</code>          | <code>111...011</code>           |
+| $k_{1, 1}$    | <code>000...001</code>          | <code>111...110</code>           |
+| $k_{1, 2}$    | <code>000...001</code>          | <code>111...101</code>           |
+| $k_{0, 0}$    | <code>000...000</code>          | <code>111...111</code>           |
+| $k_{0, 3}$    | <code>000...000</code>          | <code>111...100</code>           |
 
 >                                          65th
 >                                         /    \           critqueue
@@ -314,8 +313,8 @@ iteration starting at the maximum access key:
 >     critqueue           /   \                   /   \
 >          tail -> k_{0, 3}   k_{0, 0}     k_{1, 2}   k_{1, 1}
 
-Since access keys have bit 63 reserved, the maximum permissible
-insertion count is thus $2^{62} - 1$.
+Since index keys have bit 63 reserved, the maximum permissible
+insertion count is thus $2^{63} - 1$.
 
 
 <a name="@Dequeue_order_preservation_15"></a>
@@ -359,60 +358,28 @@ nodes are only allocated if there are no inactive nodes to pop off
 the stack.
 
 Each time a new "active" node is allocated and inserted to the tree,
-it is assigned a unique node ID, corresponding to the number of
-nodes of the given type that have already been allocated. Inner node
-IDs are set at bit 63, and outer node IDs are unset at bit 63.
+it is assigned a unique 32-bit node ID, corresponding to the number
+of nodes of the given type that have already been allocated. Inner
+node IDs are set at bit 31, and outer node IDs are unset at bit 31.
 
-Since node IDs have bit 63 reserved, the maximum permissible number
-of node IDs for either type is thus $2^{62} - 1$.
-
-
-<a name="@Leading_edges_and_nodes_17"></a>
-
-### Leading edges and nodes
+Since 32-bit node IDs have bit 31 reserved, the maximum permissible
+number of node IDs for either type is thus $2^{31} - 1$.
 
 
-In the present implementation, a "leading edge" is defined as a tree
-found in the shortest path from the root to the head.
+<a name="@Balance_regimes_17"></a>
 
-For example, consider the following tree:
-
->                    node c -> 3rd
->              edge a -> _____/   \_____ <- edge e
->                      2nd             2nd
->           edge b -> /   \           /   \ <- edge f
->                   1st   0100     1000   1st
->        edge c -> /   \                 /   \ <- edge g
->      node a -> 0th   0010  node b -> 0th   1110
->     edge d -> /   \                 /   \
->            0000   0001           1100   1101
-
-* In an ascending critqueue, <code>0000</code> is at the head, with leading
-edges a, b, c, and d.
-* In a descending critqueue, <code>1110</code> is at the head, with leading
-edges e, f, and g.
-
-A "leading inner node" is defined as an inner node having a leading
-edge, including the root. For example, node c is a leading inner
-node for both ascending and descending cases, node a is a leading
-inner node for the ascending case only, and node b is a leading
-inner node for neither case.
-
-
-<a name="@Lookup_caching_18"></a>
-
-### Lookup caching
+### Balance regimes
 
 
 Critbit trees are self-sorting but not self-rebalancing, such that
 worst-case lookup times are $O(k)$, where $k$ is the number of bits
-in each outer node key. For example, consider the following
-unbalanced critbit tree for an ascending critqueue:
+in an outer node key. For example, consider the following unbalanced
+critbit tree, generating by inserting <code>0</code>, then bitmasks set only at
+each successive bit up until $k$:
 
->                   127th
->                  /     \
->               126th    100000000000000.....
->             ...
+>                 k
+>               _/ \_
+>             ...   100000000000000.....
 >            2nd
 >           /   \
 >         1st   100
@@ -421,136 +388,95 @@ unbalanced critbit tree for an ascending critqueue:
 >     /   \
 >     0   1
 
-Here, searching for the key <code>1</code> involves walking from the root,
-branching left at each inner node until ariving at <code>0th</code>, then
-checking the right child, effectively an $O(n)$ operation.
-Conventionally, this operation would involve a storage gas per-item
-read cost for every leading inner node, as well as one for the
-corresponding outer node.
+Here, searching for <code>1</code> involves walking from the root, branching
+left at each inner node until ariving at <code>0th</code>, then checking
+the right child, effectively an $O(n)$ operation.
 
-In the present implementation, however, this gas cost is effectively
-reduced to $O(1)$ via a vector-based cache of leading inner node
-IDs, stored in the base critqueue resource. Here, the search key is
-first checked to see if it is unset at the root critical bit (or set
-it the case of a descending critqueue), and if it is, the search key
-thus shares a leading edge with the head key, so the critical bit
-between the head key and the search key is calculated. Once the
-critical bit has been determined, the corresponding leading inner
-node ID is looked up in the leading inner node ID cache, enabling in
-this case, an $O(1)$ global storage lookup for <code>0th</code>. Then searching
-can proceed as usual, by branching left or right depending on
-whether a search key is set or unset at a walked inner node.
+In contrast, inserting the natural number sequence <code>0</code>, <code>1</code>, <code>10</code>,
+..., <code>111</code> results in a generally-balanced tree where lookups are
+$O(log_2(n))$:
 
-This optimization only applies to search keys sharing at least one
-leading edge with the head key, meaning that gas optimizations are
-only prioritized for insertion keys near the head of the critqueue.
+>                          2nd
+>                _________/   \_________
+>              1st                     1st
+>          ___/   \___             ___/   \___
+>        0th         0th         0th         0th
+>       /   \       /   \       /   \       /   \
+>     000   001   010   011   100   101   110   111
 
+In the present implementation, with insertion keys limited to 32
+bits and insertion counts corresponding to a natural number
+sequence, lookups are thus effectively $O(32)$ in the worst case for
+index key bits 64-95 (insertion key), and $O(log_2(n_i))$ in the
+general case for index key bits 0-63 (insertion count), where $n_i$
+is the number of insertions for a given insertion key. Hence for
+insertion keys <code>0</code>, <code>1</code>, <code>10</code>, <code>100</code>, ... and multiple insertions of
+insertion key <code>1</code> in an ascending critqueue, the following critbit
+tree is generated, having the following index keys at each outer
+node:
 
-<a name="@Insertion_effects_19"></a>
-
-### Insertion effects
-
-
-During insertion, if a leading edge search yields a critical bit
-that is not described in the lookup cache, insertion can take place
-directly below the next-highest critical bit. For example, consider
-inserting <code>11</code> to the following ascending critqueue:
-
->                127th
->               /     \
->            126th    100000000000000.....
->          ...
->         2nd
->        /   \
->      0th   100
->     /   \
->     0   1
-
-Here, the search key is unset at the root critical bit, which means
-that it shares a leading edge with the head. The critical bit is
-then calculated between the head and the search key, in this case
-<code>1st</code>, but there is no corresponding leading <code>1st</code> inner node. Hence
-insertion can take place directly below the next-highest leading
-inner node, <code>2nd</code>, and the new <code>1st</code> inner node is added to the
-lookup cache.
-
-Alternatively, consider inserting <code>100</code> to the following ascending
-critqueue:
-
->                  127th
->                 /     \
->              126th    100000000000000.....
->            ...
->           2nd
->        __/   \__
->      0th       1st
->     /   \     /   \
->     0   1   101   0th
->                  /   \
->                110   111
-
-Here, the search key is compared with the head, yielding the leading
-inner node <code>2nd</code>, from which a search can proceed: to <code>1st</code>, then to
-<code>101</code>. Here the critical bit <code>0th</code> is determined, so an insertion
-walk then returns to the common leading inner node, <code>2nd</code>, checks
-the next inner node <code>1st</code>, then inserts <code>0th</code> and <code>100</code> below. In
-effect, the lookup cache establishes the shared leading inner node
-as a local root for insert operations.
+>                     95th
+>                    /    \
+>                  ...    1000000...000...
+>                 66th    ^ bit 95  ^ bit 63
+>                /    \
+>              65th   100000...
+>             /    \     ^ bit 63
+>           64th   10000...
+>          /    \    ^ bit 63
+>     000...     \____________
+>     ^ bit 63               1st
+>                 __________/   \__________
+>               0th                       0th
+>              /   \                     /   \
+>     1000...000   1000...001   1000...010   1000...011
+>      ^ bit 63     ^ bit 63     ^ bit 63     ^ bit 63
 
 
-<a name="@Cache_alterations_20"></a>
+<a name="@Lookup_gas_18"></a>
 
-### Cache alterations
-
-
-Each time a leading inner node is removed, the lookup cache must be
-updated to indicate that there is no corresponding node ID for the
-given critical bit.
-
-Additionally, whenever a new head is inserted above the root the
-lookup cache must be completely cleared out. For example, consider
-the following descending critqueue, where <code>1st</code> and <code>0th</code> are
-leading inner nodes.
-
->         1st <- root
->        /   \
->     1001   0th
->           /   \
->        1010   1011 <- head
-
-Inserting <code>1100</code> yields:
-
->                    2nd <- new root
->                   /   \
->     old root -> 1st   1100 <- new head
->                /   \
->             1001   0th
->                   /   \
->                1010   1011 <- old head
-
-Here, <code>100</code> becomes the new head, with <code>2nd</code> as the only leading
-inner node. Notably, inserting above the root does not refresh the
-lookup cache when the new node does not become the new head. For
-example, inserting <code>0000</code> yields:
-
->         3rd <- new root
->        /   \
->     0000   2nd <- old root
->           /   \
->         1st   1100 <- same head
->        /   \
->     1001   0th
->           /   \
->        1010   1011
-
-Here, <code>3rd</code> simply gets added to the lookup cache.
+### Lookup gas
 
 
-Note, however, when removing <code>1100</code> in either case, the entire
-cache has to be recalculated.
+While critqueue insertion key lookup is theoretically $O(k)$ in the
+worst case, this only applies for bitstrings with maximally sparse
+prefixes. Here, with each node stored as a separate hash table entry
+in global storage, Aptos storage gas is thus assessed as a per-item
+read for each node accessed during a search.
+
+Notably, however, per-item reads cost only one fifth as much as
+per-item writes as of the time of this writing, and while $O(k)$
+per-item reads could potentially be eliminated via a self-balancing
+alternative, e.g. an AVL or red-black tree, the requisite
+rebalancing operations would entail per-item write costs that far
+outweigh the reduction in $O(k)$-associated lookup gas.
+
+Hence for the present implementation, insertion keys are limited to
+32 bits to reduce the worst-case $O(k)$ lookup, and are combined
+with a natural number insertion counter to generate outer node index
+keys.
 
 
-<a name="@Complete_docgen_index_21"></a>
+<a name="@Access_keys_19"></a>
+
+### Access keys
+
+
+Upon insertion, index keys (which contain only 96 bits), are
+concatenated with the corresponding outer node ID for the outer node
+just inserted to the critqueue, yielding a unique "access key" that
+can be used for $O(1)$ insertion value lookup by outer node ID:
+
+| Bits   | Data          |
+|--------|---------------|
+| 32-127 | Index key     |
+| 0-31   | Outer node ID |
+
+Access keys are returned to callers during insertion, and have the
+same lexicographical sorting properites as index keys.
+
+
+<a name="@Complete_docgen_index_20"></a>
 
 ## Complete docgen index
 
@@ -572,14 +498,188 @@ The below index is automatically generated from source code:
 -  [Critqueues](#@Critqueues_11)
     -  [Key storage multiplicity](#@Key_storage_multiplicity_12)
     -  [Sorting order](#@Sorting_order_13)
-    -  [Access keys](#@Access_keys_14)
+    -  [Index keys](#@Index_keys_14)
     -  [Dequeue order preservation](#@Dequeue_order_preservation_15)
     -  [Node status and ID](#@Node_status_and_ID_16)
-    -  [Leading edges and nodes](#@Leading_edges_and_nodes_17)
-    -  [Lookup caching](#@Lookup_caching_18)
-    -  [Insertion effects](#@Insertion_effects_19)
-    -  [Cache alterations](#@Cache_alterations_20)
--  [Complete docgen index](#@Complete_docgen_index_21)
+    -  [Balance regimes](#@Balance_regimes_17)
+    -  [Lookup gas](#@Lookup_gas_18)
+    -  [Access keys](#@Access_keys_19)
+-  [Complete docgen index](#@Complete_docgen_index_20)
+-  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
+-  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
+-  [Struct `Outer`](#0xc0deb00c_critqueue_Outer)
 
 
-<pre><code></code></pre>
+<pre><code><b>use</b> <a href="">0x1::option</a>;
+<b>use</b> <a href="">0x1::table_with_length</a>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_CritQueue"></a>
+
+## Struct `CritQueue`
+
+A hybrid between a critbit tree and a queue. See above.
+
+
+<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt; <b>has</b> store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>sort_order: bool</code>
+</dt>
+<dd>
+ <code>ASCENDING</code> or <code>DESCENDING</code>.
+</dd>
+<dt>
+<code>inners: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>&gt;</code>
+</dt>
+<dd>
+ Map from inner node ID to inner node.
+</dd>
+<dt>
+<code>outers: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="critqueue.md#0xc0deb00c_critqueue_Outer">critqueue::Outer</a>&lt;V&gt;&gt;</code>
+</dt>
+<dd>
+ Map from outer node ID to outer node.
+</dd>
+<dt>
+<code>root_node_id: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ Node ID of root node, if any.
+</dd>
+<dt>
+<code>head_node_id: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ Node ID of head node, if any.
+</dd>
+<dt>
+<code>head_insertion_key: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ Insertion key of head node, if any.
+</dd>
+<dt>
+<code>insertion_count: u64</code>
+</dt>
+<dd>
+ Cumulative insertion count.
+</dd>
+<dt>
+<code>inactive_inner_top: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ ID of inactive inner node at top of stack, if any.
+</dd>
+<dt>
+<code>inactive_outer_top: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ ID of inactive outer node at top of stack, if any.
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_Inner"></a>
+
+## Struct `Inner`
+
+An inner node in a critqueue.
+
+If an active node, <code>next</code> field is ignored. If an inactive node,
+all fields except <code>next</code> are ignored.
+
+
+<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a> <b>has</b> store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>critical_bit: u8</code>
+</dt>
+<dd>
+ Critical bit number.
+</dd>
+<dt>
+<code>left: u64</code>
+</dt>
+<dd>
+ Node ID of left child.
+</dd>
+<dt>
+<code>right: u64</code>
+</dt>
+<dd>
+ Node ID of right child.
+</dd>
+<dt>
+<code>next: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ Node ID of next inactive inner node in stack, if any.
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_Outer"></a>
+
+## Struct `Outer`
+
+An outer node in a critqueue.
+
+If an active node, <code>next</code> field is ignored. If an inactive node,
+all fields except <code>next</code> are ignored.
+
+
+<pre><code><b>struct</b> <a href="critqueue.md#0xc0deb00c_critqueue_Outer">Outer</a>&lt;V&gt; <b>has</b> store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>index_key: u128</code>
+</dt>
+<dd>
+ Index key for given key-value insertion pair.
+</dd>
+<dt>
+<code>value: <a href="_Option">option::Option</a>&lt;V&gt;</code>
+</dt>
+<dd>
+ Insertion value.
+</dd>
+<dt>
+<code>next: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ Node ID of next inactive inner node in stack, if any.
+</dd>
+</dl>
+
+
+</details>

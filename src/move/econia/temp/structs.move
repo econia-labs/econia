@@ -155,9 +155,9 @@ module econia::structs {
 
     struct CritQueue<V> has store {
         // Node ID to node. Node ID set at bit 63.
-        inners: Table<u64, Inner>,
+        inners: TableWithLength<u64, Inner>,
         // Node ID to node. Node ID unset at bit 63.
-        outers: Table<u64, Outer>,
+        outers: TableWithLength<u64, Outer>,
         // Tree node ID, if there is one.
         root: Option<u64>
         // Root critical bit, if there is one.
@@ -167,13 +167,13 @@ module econia::structs {
         // Tail access key.
         tail: Option<u128>,
         // `ASCENDING` or `DESCENDING`.
-        direction: bool,
+        sort_order: bool,
         // ID of last deactivated inner node, if any.
         next_inactive_inner: Option<u64>,
         // ID of last deactivated outer node, if any.
         next_inactive_outer: Option<u64>,
         // Number of insertions.
-        n_inserts: u64,
+        insertion_count: u64,
         // Node ID, if any, of leading inner node having critical bit at
         // vector index.
         leading_inners: vector<Option<u64>>

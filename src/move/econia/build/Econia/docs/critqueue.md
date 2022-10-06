@@ -363,7 +363,7 @@ of nodes of the given type that have already been allocated. Inner
 node IDs are set at bit 31, and outer node IDs are unset at bit 31.
 
 Since 32-bit node IDs have bit 31 reserved, the maximum permissible
-number of node IDs for either type is thus $2^{31} - 1$.
+number of node IDs for either type is thus $2^{31}$.
 
 
 <a name="@Balance_regimes_17"></a>
@@ -509,6 +509,14 @@ The below index is automatically generated from source code:
 -  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Outer`](#0xc0deb00c_critqueue_Outer)
 -  [Constants](#@Constants_21)
+-  [Function `new`](#0xc0deb00c_critqueue_new)
+    -  [Parameters](#@Parameters_22)
+    -  [Returns](#@Returns_23)
+    -  [Aborts](#@Aborts_24)
+    -  [Testing](#@Testing_25)
+-  [Function `verify_new_node_count`](#0xc0deb00c_critqueue_verify_new_node_count)
+    -  [Aborts](#@Aborts_26)
+    -  [Testing](#@Testing_27)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -538,7 +546,25 @@ A hybrid between a critbit tree and a queue. See above.
 <code>sort_order: bool</code>
 </dt>
 <dd>
- <code>ASCENDING</code> or <code>DESCENDING</code>.
+ <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
+</dd>
+<dt>
+<code>root_node_id: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
+</dt>
+<dd>
+ Node ID of root node, if any.
+</dd>
+<dt>
+<code>head_access_key: <a href="_Option">option::Option</a>&lt;u128&gt;</code>
+</dt>
+<dd>
+ Access key of head node, if any.
+</dd>
+<dt>
+<code>insertion_count: u64</code>
+</dt>
+<dd>
+ Cumulative insertion count.
 </dd>
 <dt>
 <code>inners: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">critqueue::Inner</a>&gt;</code>
@@ -551,30 +577,6 @@ A hybrid between a critbit tree and a queue. See above.
 </dt>
 <dd>
  Map from outer node ID to outer node.
-</dd>
-<dt>
-<code>root_node_id: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
-</dt>
-<dd>
- Node ID of root node, if any.
-</dd>
-<dt>
-<code>head_node_id: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
-</dt>
-<dd>
- Node ID of head node, if any.
-</dd>
-<dt>
-<code>head_insertion_key: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
-</dt>
-<dd>
- Insertion key of head node, if any.
-</dd>
-<dt>
-<code>insertion_count: u64</code>
-</dt>
-<dd>
- Cumulative insertion count.
 </dd>
 <dt>
 <code>inactive_inner_top: <a href="_Option">option::Option</a>&lt;u64&gt;</code>
@@ -690,6 +692,36 @@ all fields except <code>next</code> are ignored.
 ## Constants
 
 
+<a name="0xc0deb00c_critqueue_ASCENDING"></a>
+
+Ascending critqueue flag.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_DESCENDING"></a>
+
+Descending critqueue flag.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_E_TOO_MANY_NODES"></a>
+
+Specified node count is too high.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_HI_128"></a>
 
 <code>u128</code> bitmask with all bits set, generated in Python via
@@ -698,3 +730,179 @@ all fields except <code>next</code> are ignored.
 
 <pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
 </code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 64, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_MAX_NODE_COUNT"></a>
+
+<code>u64</code> bitmask set at all bits except bit 31, generated in Python
+via <code>hex(int('1' * 31, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a>: u64 = 2147483647;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_new"></a>
+
+## Function `new`
+
+Return a new critqueue, optionally allocating inactive nodes.
+
+Inserting the root outer node requires a single allocated outer
+node, while all other insertions require an outer and an inner
+node. Hence for a nonzero number of outer nodes, the number of
+inner nodes in the tree is one less than the number of outer
+nodes.
+
+
+<a name="@Parameters_22"></a>
+
+### Parameters
+
+
+* <code>sort_order</code>: <code><a href="critqueue.md#0xc0deb00c_critqueue_ASCENDING">ASCENDING</a></code> or <code><a href="critqueue.md#0xc0deb00c_critqueue_DESCENDING">DESCENDING</a></code>.
+* <code>n_inactive_outer_nodes</code>: The number of inactive outer nodes
+to allocate.
+
+
+<a name="@Returns_23"></a>
+
+### Returns
+
+
+* <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;</code>: A new critqueue.
+
+
+<a name="@Aborts_24"></a>
+
+### Aborts
+
+
+* <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: If <code>n_inactive_outer_nodes</code> exceeds
+<code><a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a></code>.
+
+
+<a name="@Testing_25"></a>
+
+### Testing
+
+
+* <code>test_new()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(sort_order: bool, n_inactive_outer_nodes: u64): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_new">new</a>&lt;V: store&gt;(
+    sort_order: bool,
+    n_inactive_outer_nodes: u64
+): <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt; {
+    // Assert not trying <b>to</b> allocate too many nodes.
+    <a href="critqueue.md#0xc0deb00c_critqueue_verify_new_node_count">verify_new_node_count</a>(n_inactive_outer_nodes);
+    <b>let</b> <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a> = <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>{ // Declare empty <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a>.
+        sort_order,
+        root_node_id: <a href="_none">option::none</a>(),
+        head_access_key: <a href="_none">option::none</a>(),
+        insertion_count: 0,
+        inners: <a href="_new">table_with_length::new</a>(),
+        outers: <a href="_new">table_with_length::new</a>(),
+        inactive_inner_top: <b>if</b> (n_inactive_outer_nodes &gt; 1)
+            <a href="_some">option::some</a>(n_inactive_outer_nodes - 2) <b>else</b> <a href="_none">option::none</a>(),
+        inactive_outer_top: <b>if</b> (n_inactive_outer_nodes &gt; 0)
+            <a href="_some">option::some</a>(n_inactive_outer_nodes - 1) <b>else</b> <a href="_none">option::none</a>()
+    };
+    // If need <b>to</b> allocate at least one outer node:
+    <b>if</b> (n_inactive_outer_nodes &gt; 0) {
+        <b>let</b> i = 0; // Declare <b>loop</b> counter.
+        // While nodes <b>to</b> allocate:
+        <b>while</b> (i &lt; n_inactive_outer_nodes) {
+            <b>if</b> (i &gt; 0) { // If not on the first <b>loop</b> iteration:
+                // Next inactive inner node is none <b>if</b> on second
+                // <b>loop</b> iteration, otherwise is <b>loop</b> count minus 2.
+                <b>let</b> next = <b>if</b> (i == 1) <a href="_none">option::none</a>() <b>else</b>
+                    <a href="_some">option::some</a>(i - 2);
+                // Push inactive inner node onto stack.
+                <a href="_add">table_with_length::add</a>(&<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a>.inners, i - 1, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{
+                    critical_bit: 0, left: 0, right: 0, next});
+            };
+            // Next inactive outer node is none <b>if</b> on first <b>loop</b>
+            // iteration, otherwise is <b>loop</b> count minus 1.
+            <b>let</b> next = <b>if</b> (i == 0) <a href="_none">option::none</a>() <b>else</b>
+                <a href="_some">option::some</a>(i - 1);
+            // Push inactive outer node onto stack.
+            <a href="_add">table_with_length::add</a>(&<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a>.outers, i, <a href="critqueue.md#0xc0deb00c_critqueue_Outer">Outer</a>&lt;V&gt;{
+                index_key: 0, value: <a href="_none">option::none</a>(), next});
+            i = i + 1; // Increment <b>loop</b> counter.
+        }
+    };
+    <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a> // Return <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a>.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_verify_new_node_count"></a>
+
+## Function `verify_new_node_count`
+
+Verify proposed new node count is not too high.
+
+
+<a name="@Aborts_26"></a>
+
+### Aborts
+
+
+* <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: If <code>n_nodes</code> exceeds <code><a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a></code>.
+
+
+<a name="@Testing_27"></a>
+
+### Testing
+
+
+* <code>test_verify_new_node_count_fail()</code>
+* <code>test_verify_new_node_count_pass()</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_verify_new_node_count">verify_new_node_count</a>(n_nodes: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_verify_new_node_count">verify_new_node_count</a>(
+    n_nodes: u64,
+) {
+    // Assert proposed node count is less than or equal <b>to</b> max.
+    <b>assert</b>!(n_nodes &lt;= <a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a>, <a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>);
+}
+</code></pre>
+
+
+
+</details>

@@ -290,7 +290,7 @@
 /// node IDs are set at bit 31, and outer node IDs are unset at bit 31.
 ///
 /// Since 32-bit node IDs have bit 31 reserved, the maximum permissible
-/// number of node IDs for either type is thus $2^{31} - 1$.
+/// number of node IDs for either type is thus $2^{31}$.
 ///
 /// ## Balance regimes
 ///
@@ -397,8 +397,8 @@ module econia::critqueue {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use aptos_std::table_with_length::{TableWithLength};
-    use std::option::{Option};
+    use aptos_std::table_with_length::{Self, TableWithLength};
+    use std::option::{Self, Option};
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -415,18 +415,16 @@ module econia::critqueue {
     struct CritQueue<V> has store {
         /// `ASCENDING` or `DESCENDING`.
         sort_order: bool,
+        /// Node ID of root node, if any.
+        root_node_id: Option<u64>,
+        /// Access key of head node, if any.
+        head_access_key: Option<u128>,
+        /// Cumulative insertion count.
+        insertion_count: u64,
         /// Map from inner node ID to inner node.
         inners: TableWithLength<u64, Inner>,
         /// Map from outer node ID to outer node.
         outers: TableWithLength<u64, Outer<V>>,
-        /// Node ID of root node, if any.
-        root_node_id: Option<u64>,
-        /// Node ID of head node, if any.
-        head_node_id: Option<u64>,
-        /// Insertion key of head node, if any.
-        head_insertion_key: Option<u64>,
-        /// Cumulative insertion count.
-        insertion_count: u64,
         /// ID of inactive inner node at top of stack, if any.
         inactive_inner_top: Option<u64>,
         /// ID of inactive outer node at top of stack, if any.
@@ -463,13 +461,126 @@ module econia::critqueue {
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Specified node count is too high.
+    const E_TOO_MANY_NODES: u64 = 0;
+
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Ascending critqueue flag.
+    const ASCENDING: bool = true;
+    /// Descending critqueue flag.
+    const DESCENDING: bool = false;
+    /// `u64` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 64, 2))`.
+    const HI_64: u64 = 0xffffffffffffffff;
     /// `u128` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 128, 2))`.
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
+    /// `u64` bitmask set at all bits except bit 31, generated in Python
+    /// via `hex(int('1' * 31, 2))`.
+    const MAX_NODE_COUNT: u64 = 0x7fffffff;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return a new critqueue, optionally allocating inactive nodes.
+    ///
+    /// Inserting the root outer node requires a single allocated outer
+    /// node, while all other insertions require an outer and an inner
+    /// node. Hence for a nonzero number of outer nodes, the number of
+    /// inner nodes in the tree is one less than the number of outer
+    /// nodes.
+    ///
+    /// # Parameters
+    ///
+    /// * `sort_order`: `ASCENDING` or `DESCENDING`.
+    /// * `n_inactive_outer_nodes`: The number of inactive outer nodes
+    ///   to allocate.
+    ///
+    /// # Returns
+    ///
+    /// * `CritQueue<V>`: A new critqueue.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_TOO_MANY_NODES`: If `n_inactive_outer_nodes` exceeds
+    ///   `MAX_NODE_COUNT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_new()`
+    public fun new<V: store>(
+        sort_order: bool,
+        n_inactive_outer_nodes: u64
+    ): CritQueue<V> {
+        // Assert not trying to allocate too many nodes.
+        verify_new_node_count(n_inactive_outer_nodes);
+        let critqueue = CritQueue{ // Declare empty critqueue.
+            sort_order,
+            root_node_id: option::none(),
+            head_access_key: option::none(),
+            insertion_count: 0,
+            inners: table_with_length::new(),
+            outers: table_with_length::new(),
+            inactive_inner_top: if (n_inactive_outer_nodes > 1)
+                option::some(n_inactive_outer_nodes - 2) else option::none(),
+            inactive_outer_top: if (n_inactive_outer_nodes > 0)
+                option::some(n_inactive_outer_nodes - 1) else option::none()
+        };
+        // If need to allocate at least one outer node:
+        if (n_inactive_outer_nodes > 0) {
+            let i = 0; // Declare loop counter.
+            // While nodes to allocate:
+            while (i < n_inactive_outer_nodes) {
+                if (i > 0) { // If not on the first loop iteration:
+                    // Next inactive inner node is none if on second
+                    // loop iteration, otherwise is loop count minus 2.
+                    let next = if (i == 1) option::none() else
+                        option::some(i - 2);
+                    // Push inactive inner node onto stack.
+                    table_with_length::add(&mut critqueue.inners, i - 1, Inner{
+                        critical_bit: 0, left: 0, right: 0, next});
+                };
+                // Next inactive outer node is none if on first loop
+                // iteration, otherwise is loop count minus 1.
+                let next = if (i == 0) option::none() else
+                    option::some(i - 1);
+                // Push inactive outer node onto stack.
+                table_with_length::add(&mut critqueue.outers, i, Outer<V>{
+                    index_key: 0, value: option::none(), next});
+                i = i + 1; // Increment loop counter.
+            }
+        };
+        critqueue // Return critqueue.
+    }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Verify proposed new node count is not too high.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_TOO_MANY_NODES`: If `n_nodes` exceeds `MAX_NODE_COUNT`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_verify_new_node_count_fail()`
+    /// * `test_verify_new_node_count_pass()`
+    fun verify_new_node_count(
+        n_nodes: u64,
+    ) {
+        // Assert proposed node count is less than or equal to max.
+        assert!(n_nodes <= MAX_NODE_COUNT, E_TOO_MANY_NODES);
+    }
+
+    // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -537,11 +648,113 @@ module econia::critqueue {
     /// * `test_u_128_64()`
     public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
 
+    #[test_only]
+    /// Wrapper for `u_128_by_32()`, accepting only two inputs, with
+    /// casted return to `u64`.
+    public fun u_64_by_32(
+        a: vector<u8>,
+        b: vector<u8>
+    ): u64 {
+        // Get u128 for given inputs, cast to u64.
+        (u_128_by_32(a, b, b"", b"") as u64)
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    #[test]
+    /// Verify successful initialization for both sort orders and all
+    /// allocation counts from 0 to 4 inclusive.
+    fun test_new(): (
+        CritQueue<u8>,
+        CritQueue<u8>,
+        CritQueue<u8>,
+        CritQueue<u8>,
+        CritQueue<u8>
+    ) {
+        let critqueue = new(ASCENDING, 0); // Get ascending critqueue.
+        // Verify fields.
+        assert!(critqueue.sort_order == ASCENDING, 0);
+        assert!(option::is_none(&critqueue.root_node_id), 0);
+        assert!(option::is_none(&critqueue.head_access_key), 0);
+        assert!(critqueue.insertion_count == 0, 0);
+        assert!(table_with_length::length(&critqueue.inners) == 0, 0);
+        assert!(table_with_length::length(&critqueue.outers) == 0, 0);
+        assert!(option::is_none(&critqueue.inactive_inner_top), 0);
+        assert!(option::is_none(&critqueue.inactive_outer_top), 0);
+        let critqueue_0 = critqueue; // Move critqueue.
+        critqueue = new(DESCENDING, 1); // Get descending critqueue.
+        // Verify fields.
+        assert!(critqueue.sort_order == DESCENDING, 0);
+        assert!(table_with_length::length(&critqueue.inners) == 0, 0);
+        assert!(table_with_length::length(&critqueue.outers) == 1, 0);
+        assert!(option::is_none(&critqueue.inactive_inner_top), 0);
+        assert!(*option::borrow(&critqueue.inactive_outer_top) == 0, 0);
+        // Verify outer node stack next field chain.
+        let outer_node_ref = table_with_length::borrow(&critqueue.outers, 0);
+        assert!(option::is_none(&outer_node_ref.next), 0);
+        let critqueue_1 = critqueue; // Move critqueue.
+        critqueue = new(ASCENDING, 2); // Get ascending critqueue.
+        // Verify fields.
+        assert!(table_with_length::length(&critqueue.inners) == 1, 0);
+        assert!(table_with_length::length(&critqueue.outers) == 2, 0);
+        assert!(*option::borrow(&critqueue.inactive_inner_top) == 0, 0);
+        assert!(*option::borrow(&critqueue.inactive_outer_top) == 1, 0);
+        // Verify inner node stack next field chain.
+        let inner_node_ref = table_with_length::borrow(&critqueue.inners, 0);
+        assert!(option::is_none(&inner_node_ref.next), 0);
+        // Verify outer node stack next field chain.
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 1);
+        assert!(*option::borrow(&outer_node_ref.next) == 0, 0);
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 0);
+        assert!(option::is_none(&outer_node_ref.next), 0);
+        let critqueue_2 = critqueue; // Move critqueue.
+        critqueue = new(ASCENDING, 3); // Get ascending critqueue.
+        // Verify fields.
+        assert!(table_with_length::length(&critqueue.inners) == 2, 0);
+        assert!(table_with_length::length(&critqueue.outers) == 3, 0);
+        assert!(*option::borrow(&critqueue.inactive_inner_top) == 1, 0);
+        assert!(*option::borrow(&critqueue.inactive_outer_top) == 2, 0);
+        // Verify inner node stack next field chain.
+        inner_node_ref = table_with_length::borrow(&critqueue.inners, 1);
+        assert!(*option::borrow(&inner_node_ref.next) == 0, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners, 0);
+        assert!(option::is_none(&inner_node_ref.next), 0);
+        // Verify outer node stack next field chain.
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 2);
+        assert!(*option::borrow(&outer_node_ref.next) == 1, 0);
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 1);
+        assert!(*option::borrow(&outer_node_ref.next) == 0, 0);
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 0);
+        assert!(option::is_none(&outer_node_ref.next), 0);
+        let critqueue_3 = critqueue; // Move critqueue.
+        critqueue = new(ASCENDING, 4); // Get ascending critqueue.
+        // Verify fields.
+        assert!(table_with_length::length(&critqueue.inners) == 3, 0);
+        assert!(table_with_length::length(&critqueue.outers) == 4, 0);
+        assert!(*option::borrow(&critqueue.inactive_inner_top) == 2, 0);
+        assert!(*option::borrow(&critqueue.inactive_outer_top) == 3, 0);
+        // Verify inner node stack next field chain.
+        inner_node_ref = table_with_length::borrow(&critqueue.inners, 2);
+        assert!(*option::borrow(&inner_node_ref.next) == 1, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners, 1);
+        assert!(*option::borrow(&inner_node_ref.next) == 0, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners, 0);
+        assert!(option::is_none(&inner_node_ref.next), 0);
+        // Verify outer node stack next field chain.
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 3);
+        assert!(*option::borrow(&outer_node_ref.next) == 2, 0);
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 2);
+        assert!(*option::borrow(&outer_node_ref.next) == 1, 0);
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 1);
+        assert!(*option::borrow(&outer_node_ref.next) == 0, 0);
+        outer_node_ref = table_with_length::borrow(&critqueue.outers, 0);
+        assert!(option::is_none(&outer_node_ref.next), 0);
+        let critqueue_4 = critqueue; // Move critqueue.
+        // Return critqueues.
+        (critqueue_0, critqueue_1, critqueue_2, critqueue_3, critqueue_4)
+    }
 
     #[test]
     /// Verify successful return values
@@ -577,11 +790,42 @@ module econia::critqueue {
         assert!(u_64(b"10101010") == 170, 0);
         assert!(u_64(b"00000001") == 1, 0);
         assert!(u_64(b"11111111") == 255, 0);
+        assert!(u_64_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111"
+        ) == HI_64, 0);
+        assert!(u_64_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111110"
+        ) == HI_64 - 1, 0);
     }
 
     #[test]
     #[expected_failure(abort_code = 100)]
     /// Verify failure for non-binary-representative byte string.
     fun test_u_128_failure() {u_128(b"2");}
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for too many nodes.
+    fun test_verify_new_node_count_fail() {
+        // Attempt invalid invocation for one too many nodes.
+        verify_new_node_count(u_64_by_32(
+            b"00000000000000000000000000000000",
+            b"10000000000000000000000000000000"
+        ));
+    }
+
+    #[test]
+    /// Verify maximum node count allocation.
+    fun test_verify_new_node_count_pass() {
+        // Attempt valid invocation for max number of nodes.
+        verify_new_node_count(u_64_by_32(
+            b"00000000000000000000000000000000",
+            b"01111111111111111111111111111111"
+        ));
+    }
+
+    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

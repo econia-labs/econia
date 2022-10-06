@@ -402,6 +402,13 @@ module econia::critqueue {
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    use std::vector;
+
+    // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// A hybrid between a critbit tree and a queue. See above.
@@ -455,5 +462,126 @@ module econia::critqueue {
     }
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// `u128` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 128, 2))`.
+    const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
+
+    // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// When a char in a bytestring is neither 0 nor 1.
+    const E_BIT_NOT_0_OR_1: u64 = 100;
+
+    // Test-only error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return a `u128` corresponding to provided byte string `s`. The
+    /// byte should only contain only "0"s and "1"s, up to 128
+    /// characters max (e.g. `b"100101...10101010"`).
+    ///
+    /// # Testing
+    ///
+    /// * `test_u_128_64()`
+    /// * `test_u_128_failure()`
+    public fun u_128(
+        s: vector<u8>
+    ): u128 {
+        let n = vector::length<u8>(&s); // Get number of bits.
+        let r = 0; // Initialize result to 0.
+        let i = 0; // Start loop at least significant bit.
+        while (i < n) { // While there are bits left to review.
+            // Get bit under review.
+            let b = *vector::borrow<u8>(&s, n - 1 - i);
+            if (b == 0x31) { // If the bit is 1 (0x31 in ASCII):
+                // OR result with the correspondingly leftshifted bit.
+                r = r | 1 << (i as u8);
+            // Otherwise, assert bit is marked 0 (0x30 in ASCII).
+            } else assert!(b == 0x30, E_BIT_NOT_0_OR_1);
+            i = i + 1; // Proceed to next-least-significant bit.
+        };
+        r // Return result.
+    }
+
+    #[test_only]
+    /// Return `u128` corresponding to concatenated result of `a`, `b`,
+    /// `c`, and `d`. Useful for line-wrapping long byte strings, and
+    /// inspection via 32-bit sections.
+    ///
+    /// # Testing
+    ///
+    /// * `test_u_128_64()`
+    public fun u_128_by_32(
+        a: vector<u8>,
+        b: vector<u8>,
+        c: vector<u8>,
+        d: vector<u8>,
+    ): u128 {
+        vector::append<u8>(&mut c, d); // Append d onto c.
+        vector::append<u8>(&mut b, c); // Append c onto b.
+        vector::append<u8>(&mut a, b); // Append b onto a.
+        u_128(a) // Return u128 equivalent of concatenated bytestring.
+    }
+
+    #[test_only]
+    /// Wrapper for `u_128()`, casting return to `u64`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_u_128_64()`
+    public fun u_64(s: vector<u8>): u64 {(u_128(s) as u64)}
+
+    // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    #[test]
+    /// Verify successful return values
+    fun test_u_128_64() {
+        assert!(u_128(b"0") == 0, 0);
+        assert!(u_128(b"1") == 1, 0);
+        assert!(u_128(b"00") == 0, 0);
+        assert!(u_128(b"01") == 1, 0);
+        assert!(u_128(b"10") == 2, 0);
+        assert!(u_128(b"11") == 3, 0);
+        assert!(u_128(b"10101010") == 170, 0);
+        assert!(u_128(b"00000001") == 1, 0);
+        assert!(u_128(b"11111111") == 255, 0);
+        assert!(u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111"
+        ) == HI_128, 0);
+        assert!(u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111110"
+        ) == HI_128 - 1, 0);
+        assert!(u_64(b"0") == 0, 0);
+        assert!(u_64(b"0") == 0, 0);
+        assert!(u_64(b"1") == 1, 0);
+        assert!(u_64(b"00") == 0, 0);
+        assert!(u_64(b"01") == 1, 0);
+        assert!(u_64(b"10") == 2, 0);
+        assert!(u_64(b"11") == 3, 0);
+        assert!(u_64(b"10101010") == 170, 0);
+        assert!(u_64(b"00000001") == 1, 0);
+        assert!(u_64(b"11111111") == 255, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 100)]
+    /// Verify failure for non-binary-representative byte string.
+    fun test_u_128_failure() {u_128(b"2");}
 
 }

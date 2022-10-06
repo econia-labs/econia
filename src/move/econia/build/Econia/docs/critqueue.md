@@ -508,6 +508,7 @@ The below index is automatically generated from source code:
 -  [Struct `CritQueue`](#0xc0deb00c_critqueue_CritQueue)
 -  [Struct `Inner`](#0xc0deb00c_critqueue_Inner)
 -  [Struct `Outer`](#0xc0deb00c_critqueue_Outer)
+-  [Constants](#@Constants_21)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -683,3 +684,17 @@ all fields except <code>next</code> are ignored.
 
 
 </details>
+
+<a name="@Constants_21"></a>
+
+## Constants
+
+
+<a name="0xc0deb00c_critqueue_HI_128"></a>
+
+<code>u128</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 128, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
+</code></pre>

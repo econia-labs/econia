@@ -490,6 +490,8 @@ module econia::critqueue {
     const MAX_NODE_COUNT: u64 = 0x7fffffff;
     /// Most significant bit number in a 96-bit index key.
     const MSB_INDEX_KEY: u8 = 95;
+    /// Number of bits in a node ID.
+    const N_BITS_NODE_ID: u8 = 32;
     /// `u64` bitmask set at bit 31 (the node type bit flag), generated
     /// in Python via `hex(int('1' + '0' * 31, 2))`.
     const NODE_TYPE: u64 = 0x80000000;
@@ -520,11 +522,6 @@ module econia::critqueue {
     /// # Returns
     ///
     /// * `CritQueue<V>`: A new critqueue.
-    ///
-    /// # Aborts
-    ///
-    /// * `E_TOO_MANY_NODES`: If `n_inactive_outer_nodes` exceeds
-    ///   `MAX_NODE_COUNT`.
     ///
     /// # Testing
     ///
@@ -735,6 +732,64 @@ module econia::critqueue {
         }
     }
 
+    /// Activate an outer node with given fields, returning access key.
+    ///
+    /// If inactive outer node stack is empty, allocate a new outer node
+    /// in global storage. Otherwise pop an inactive node off the stack
+    /// and activate it.
+    ///
+    /// # Parameters
+    ///
+    /// * `critqueue_ref_mut`: Mutable reference to critqueue to
+    ///   activate within.
+    /// * `index_key`: Index key corresponding to key-value insertion
+    ///   pair.
+    /// * `value`: Insertion value from key-value insertion pair.
+    ///
+    /// # Returns
+    ///
+    /// * `u128`: Access key for activated node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_outer_node()`
+    fun activate_outer_node<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        index_key: u128,
+        value: V
+    ): (
+        u128
+    ) {
+        let node_id; // Declare outer node ID.
+        // If inactive outer node stack is empty:
+        if (option::is_none(&critqueue_ref_mut.inactive_outer_top)) {
+            // Get numer of allocated outer nodes.
+            let n_nodes = table_with_length::length(&critqueue_ref_mut.outers);
+            // Verify new number of nodes.
+            verify_new_node_count(n_nodes + 1);
+            node_id = n_nodes; // Get 0-indexed outer node ID.
+            // Mutably borrow outer nodes table.
+            let outers_ref_mut = &mut critqueue_ref_mut.outers;
+            // Allocate a new outer node with given fields.
+            table_with_length::add(outers_ref_mut, node_id, Outer{
+                index_key, value: option::some(value), next: option::none()});
+        } else { // If can pop inactive node off stack:
+            // Get node ID of inactive node at top of stack.
+            node_id = *option::borrow(&critqueue_ref_mut.inactive_outer_top);
+            // Mutably borrow inactive node at top of stack.
+            let node_ref_mut = table_with_length::borrow_mut(
+                &mut critqueue_ref_mut.outers, node_id);
+            // Set top of stack to be next node indicated by stack top.
+            critqueue_ref_mut.inactive_outer_top = node_ref_mut.next;
+            // Set index key for activated node.
+            node_ref_mut.index_key = index_key;
+            // Set insertion value for activated node.
+            option::fill(&mut node_ref_mut.value, value);
+        };
+        // Return access key derived from index key and node ID.
+        (index_key << N_BITS_NODE_ID) | (node_id as u128)
+    }
+
     /// Verify proposed new node count is not too high.
     ///
     /// # Aborts
@@ -763,6 +818,25 @@ module econia::critqueue {
     // Test-only error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return fields for outer node having given node ID in given
+    /// critqueue.
+    fun get_outer_node_fields_test<V: copy>(
+        critqueue_ref: &CritQueue<V>,
+        node_id: u64
+    ): (
+        u128,
+        Option<V>,
+        Option<u64>
+    ) {
+        // Immutably borrow outer nodes table.
+        let outers_ref = &critqueue_ref.outers;
+        // Immutably borrow node.
+        let node_ref = table_with_length::borrow(outers_ref, node_id);
+        // Return fields.
+        (node_ref.index_key, node_ref.value, node_ref.next)
+    }
 
     #[test_only]
     /// Return a `u128` corresponding to provided byte string `s`. The
@@ -834,6 +908,89 @@ module econia::critqueue {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify activating inner node at top of stack, bottom of stack,
+    /// and when no stack.
+    fun test_activate_outer_node():
+    CritQueue<u8> {
+        // Get critqueue with 2 allocated outer nodes.
+        let critqueue = new(ASCENDING, 2);
+        // Declare index key.
+        let index_key = u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"11111111111111111111111111111111",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000"
+        );
+        // Declare insertion value.
+        let insertion_value = 123;
+        let access_key = activate_outer_node( // Activate outer node.
+            &mut critqueue, index_key, insertion_value);
+        // Assert access key.
+        assert!(access_key == u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001"
+        ), 0);
+        // Assert activated node's fields.
+        let (index_key_activated, value, _) = get_outer_node_fields_test(
+            &critqueue, 1);
+        assert!(index_key_activated == index_key, 0);
+        assert!(*option::borrow(&value) == insertion_value, 0);
+        // Assert stack top update.
+        assert!(*option::borrow(&critqueue.inactive_outer_top) == 0, 0);
+        // Declare index key.
+        index_key = u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"11111111111111111111111111111111",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001"
+        );
+        // Declare insertion value.
+        insertion_value = 234;
+        access_key = activate_outer_node( // Activate outer node.
+            &mut critqueue, index_key, insertion_value);
+        // Assert access key.
+        assert!(access_key == u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000001",
+            b"00000000000000000000000000000000"
+        ), 0);
+        // Assert activated node's fields.
+        (index_key_activated, value, _) = get_outer_node_fields_test(
+            &critqueue, 0);
+        assert!(index_key_activated == index_key, 0);
+        assert!(*option::borrow(&value) == insertion_value, 0);
+        // Assert stack top update.
+        assert!(option::is_none(&critqueue.inactive_outer_top), 0);
+        // Declare index key.
+        index_key = u_128_by_32(
+            b"00000000000000000000000000000000",
+            b"11111111111111111111111111111111",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010"
+        );
+        // Declare insertion value.
+        insertion_value = 210;
+        access_key = activate_outer_node( // Activate outer node.
+            &mut critqueue, index_key, insertion_value);
+        // Assert access key.
+        assert!(access_key == u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"00000000000000000000000000000000",
+            b"00000000000000000000000000000010",
+            b"00000000000000000000000000000010"
+        ), 0);
+        // Assert activated node's fields.
+        (index_key_activated, value, _) = get_outer_node_fields_test(
+            &critqueue, 2);
+        assert!(index_key_activated == index_key, 0);
+        assert!(*option::borrow(&value) == insertion_value, 0);
+        critqueue // Return critqueue.
+    }
 
     #[test]
     /// Verify successful calculation of critical bit at all positions.

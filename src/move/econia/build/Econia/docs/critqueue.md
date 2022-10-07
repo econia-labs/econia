@@ -517,15 +517,18 @@ The below index is automatically generated from source code:
 -  [Function `new`](#0xc0deb00c_critqueue_new)
     -  [Parameters](#@Parameters_22)
     -  [Returns](#@Returns_23)
-    -  [Aborts](#@Aborts_24)
-    -  [Testing](#@Testing_25)
+    -  [Testing](#@Testing_24)
 -  [Function `get_critical_bit`](#0xc0deb00c_critqueue_get_critical_bit)
-    -  [<code>XOR</code>/<code>AND</code> method](#@<code>XOR</code>/<code>AND</code>_method_26)
-    -  [Binary search method](#@Binary_search_method_27)
-    -  [Testing](#@Testing_28)
--  [Function `verify_new_node_count`](#0xc0deb00c_critqueue_verify_new_node_count)
-    -  [Aborts](#@Aborts_29)
+    -  [<code>XOR</code>/<code>AND</code> method](#@<code>XOR</code>/<code>AND</code>_method_25)
+    -  [Binary search method](#@Binary_search_method_26)
+    -  [Testing](#@Testing_27)
+-  [Function `activate_outer_node`](#0xc0deb00c_critqueue_activate_outer_node)
+    -  [Parameters](#@Parameters_28)
+    -  [Returns](#@Returns_29)
     -  [Testing](#@Testing_30)
+-  [Function `verify_new_node_count`](#0xc0deb00c_critqueue_verify_new_node_count)
+    -  [Aborts](#@Aborts_31)
+    -  [Testing](#@Testing_32)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -798,6 +801,16 @@ be used to generate an inner node ID via bitwise <code>OR</code> the node's
 
 
 
+<a name="0xc0deb00c_critqueue_N_BITS_NODE_ID"></a>
+
+Number of bits in a node ID.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_N_BITS_NODE_ID">N_BITS_NODE_ID</a>: u8 = 32;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_new"></a>
 
 ## Function `new`
@@ -829,16 +842,7 @@ to allocate.
 * <code><a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;</code>: A new critqueue.
 
 
-<a name="@Aborts_24"></a>
-
-### Aborts
-
-
-* <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: If <code>n_inactive_outer_nodes</code> exceeds
-<code><a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a></code>.
-
-
-<a name="@Testing_25"></a>
+<a name="@Testing_24"></a>
 
 ### Testing
 
@@ -915,7 +919,7 @@ Return the number of the most significant bit at which two
 unequal index key bitstrings, <code>s1</code> and <code>s2</code>, vary.
 
 
-<a name="@<code>XOR</code>/<code>AND</code>_method_26"></a>
+<a name="@<code>XOR</code>/<code>AND</code>_method_25"></a>
 
 ### <code>XOR</code>/<code>AND</code> method
 
@@ -984,7 +988,7 @@ identified the varying byte between the two strings, thus
 limiting <code>x & (x - 1)</code> operations to at most 7 iterations.
 
 
-<a name="@Binary_search_method_27"></a>
+<a name="@Binary_search_method_26"></a>
 
 ### Binary search method
 
@@ -1055,7 +1059,7 @@ the critical bit, rather than just a bitmask with bit <code>c</code> set,
 as he proposes, which can also be easily generated via <code>1 &lt;&lt; c</code>.
 
 
-<a name="@Testing_28"></a>
+<a name="@Testing_27"></a>
 
 ### Testing
 
@@ -1093,6 +1097,96 @@ as he proposes, which can also be easily generated via <code>1 &lt;&lt; c</code>
 
 </details>
 
+<a name="0xc0deb00c_critqueue_activate_outer_node"></a>
+
+## Function `activate_outer_node`
+
+Activate an outer node with given fields, returning access key.
+
+If inactive outer node stack is empty, allocate a new outer node
+in global storage. Otherwise pop an inactive node off the stack
+and activate it.
+
+
+<a name="@Parameters_28"></a>
+
+### Parameters
+
+
+* <code>critqueue_ref_mut</code>: Mutable reference to critqueue to
+activate within.
+* <code>index_key</code>: Index key corresponding to key-value insertion
+pair.
+* <code>value</code>: Insertion value from key-value insertion pair.
+
+
+<a name="@Returns_29"></a>
+
+### Returns
+
+
+* <code>u128</code>: Access key for activated node.
+
+
+<a name="@Testing_30"></a>
+
+### Testing
+
+
+* <code>test_activate_outer_node()</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_activate_outer_node">activate_outer_node</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, index_key: u128, value: V): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_activate_outer_node">activate_outer_node</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    index_key: u128,
+    value: V
+): (
+    u128
+) {
+    <b>let</b> node_id; // Declare outer node ID.
+    // If inactive outer node stack is empty:
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref_mut.inactive_outer_top)) {
+        // Get numer of allocated outer nodes.
+        <b>let</b> n_nodes = <a href="_length">table_with_length::length</a>(&critqueue_ref_mut.outers);
+        // Verify new number of nodes.
+        <a href="critqueue.md#0xc0deb00c_critqueue_verify_new_node_count">verify_new_node_count</a>(n_nodes + 1);
+        node_id = n_nodes; // Get 0-indexed outer node ID.
+        // Mutably borrow outer nodes <a href="">table</a>.
+        <b>let</b> outers_ref_mut = &<b>mut</b> critqueue_ref_mut.outers;
+        // Allocate a new outer node <b>with</b> given fields.
+        <a href="_add">table_with_length::add</a>(outers_ref_mut, node_id, <a href="critqueue.md#0xc0deb00c_critqueue_Outer">Outer</a>{
+            index_key, value: <a href="_some">option::some</a>(value), next: <a href="_none">option::none</a>()});
+    } <b>else</b> { // If can pop inactive node off stack:
+        // Get node ID of inactive node at top of stack.
+        node_id = *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.inactive_outer_top);
+        // Mutably borrow inactive node at top of stack.
+        <b>let</b> node_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
+            &<b>mut</b> critqueue_ref_mut.outers, node_id);
+        // Set top of stack <b>to</b> be next node indicated by stack top.
+        critqueue_ref_mut.inactive_outer_top = node_ref_mut.next;
+        // Set index key for activated node.
+        node_ref_mut.index_key = index_key;
+        // Set insertion value for activated node.
+        <a href="_fill">option::fill</a>(&<b>mut</b> node_ref_mut.value, value);
+    };
+    // Return access key derived from index key and node ID.
+    (index_key &lt;&lt; <a href="critqueue.md#0xc0deb00c_critqueue_N_BITS_NODE_ID">N_BITS_NODE_ID</a>) | (node_id <b>as</b> u128)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_critqueue_verify_new_node_count"></a>
 
 ## Function `verify_new_node_count`
@@ -1100,7 +1194,7 @@ as he proposes, which can also be easily generated via <code>1 &lt;&lt; c</code>
 Verify proposed new node count is not too high.
 
 
-<a name="@Aborts_29"></a>
+<a name="@Aborts_31"></a>
 
 ### Aborts
 
@@ -1108,7 +1202,7 @@ Verify proposed new node count is not too high.
 * <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: If <code>n_nodes</code> exceeds <code><a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a></code>.
 
 
-<a name="@Testing_30"></a>
+<a name="@Testing_32"></a>
 
 ### Testing
 

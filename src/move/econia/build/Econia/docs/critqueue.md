@@ -525,14 +525,15 @@ The below index is automatically generated from source code:
 -  [Function `activate_inner_node`](#0xc0deb00c_critqueue_activate_inner_node)
     -  [Parameters](#@Parameters_28)
     -  [Returns](#@Returns_29)
-    -  [Testing](#@Testing_30)
+    -  [Node counts](#@Node_counts_30)
+    -  [Testing](#@Testing_31)
 -  [Function `activate_outer_node`](#0xc0deb00c_critqueue_activate_outer_node)
-    -  [Parameters](#@Parameters_31)
-    -  [Returns](#@Returns_32)
-    -  [Testing](#@Testing_33)
+    -  [Parameters](#@Parameters_32)
+    -  [Returns](#@Returns_33)
+    -  [Testing](#@Testing_34)
 -  [Function `verify_new_node_count`](#0xc0deb00c_critqueue_verify_new_node_count)
-    -  [Aborts](#@Aborts_34)
-    -  [Testing](#@Testing_35)
+    -  [Aborts](#@Aborts_35)
+    -  [Testing](#@Testing_36)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1132,7 +1133,21 @@ activate within.
 * <code>u64</code>: Node ID of activated node.
 
 
-<a name="@Testing_30"></a>
+<a name="@Node_counts_30"></a>
+
+### Node counts
+
+
+The number of allocated inner nodes should always be less than
+or equal to the number of allocated outer nodes, and since
+<code><a href="critqueue.md#0xc0deb00c_critqueue_activate_outer_node">activate_outer_node</a>()</code> is called before <code><a href="critqueue.md#0xc0deb00c_critqueue_activate_inner_node">activate_inner_node</a>()</code>
+during <code>insert()</code>, there is no need for an additional node count
+check in <code><a href="critqueue.md#0xc0deb00c_critqueue_activate_inner_node">activate_inner_node</a>()</code>, since
+<code><a href="critqueue.md#0xc0deb00c_critqueue_verify_new_node_count">verify_new_node_count</a>()</code> will have already been called by
+<code><a href="critqueue.md#0xc0deb00c_critqueue_activate_outer_node">activate_outer_node</a>()</code>.
+
+
+<a name="@Testing_31"></a>
 
 ### Testing
 
@@ -1160,8 +1175,6 @@ activate within.
     <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref_mut.inactive_inner_top)) {
         // Get numer of allocated inner nodes.
         <b>let</b> n_nodes = <a href="_length">table_with_length::length</a>(&critqueue_ref_mut.inners);
-        // Verify new number of nodes.
-        <a href="critqueue.md#0xc0deb00c_critqueue_verify_new_node_count">verify_new_node_count</a>(n_nodes + 1);
         // Get 0-indexed inner node ID, set at node type flag bit.
         node_id = n_nodes | <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE_INNER">NODE_TYPE_INNER</a>;
         // Mutably borrow inner nodes <a href="">table</a>.
@@ -1203,7 +1216,7 @@ in global storage. Otherwise pop an inactive node off the stack
 and activate it.
 
 
-<a name="@Parameters_31"></a>
+<a name="@Parameters_32"></a>
 
 ### Parameters
 
@@ -1215,7 +1228,7 @@ pair.
 * <code>value</code>: Insertion value from key-value insertion pair.
 
 
-<a name="@Returns_32"></a>
+<a name="@Returns_33"></a>
 
 ### Returns
 
@@ -1223,7 +1236,7 @@ pair.
 * <code>u128</code>: Access key for activated node.
 
 
-<a name="@Testing_33"></a>
+<a name="@Testing_34"></a>
 
 ### Testing
 
@@ -1287,7 +1300,7 @@ pair.
 Verify proposed new node count is not too high.
 
 
-<a name="@Aborts_34"></a>
+<a name="@Aborts_35"></a>
 
 ### Aborts
 
@@ -1295,7 +1308,7 @@ Verify proposed new node count is not too high.
 * <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: If <code>n_nodes</code> exceeds <code><a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a></code>.
 
 
-<a name="@Testing_35"></a>
+<a name="@Testing_36"></a>
 
 ### Testing
 

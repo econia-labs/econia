@@ -750,6 +750,16 @@ module econia::critqueue {
     ///
     /// * `u64`: Node ID of activated node.
     ///
+    /// # Node counts
+    ///
+    /// The number of allocated inner nodes should always be less than
+    /// or equal to the number of allocated outer nodes, and since
+    /// `activate_outer_node()` is called before `activate_inner_node()`
+    /// during `insert()`, there is no need for an additional node count
+    /// check in `activate_inner_node()`, since
+    /// `verify_new_node_count()` will have already been called by
+    /// `activate_outer_node()`.
+    ///
     /// # Testing
     ///
     /// * `test_activate_inner_node()`
@@ -764,8 +774,6 @@ module econia::critqueue {
         if (option::is_none(&critqueue_ref_mut.inactive_inner_top)) {
             // Get numer of allocated inner nodes.
             let n_nodes = table_with_length::length(&critqueue_ref_mut.inners);
-            // Verify new number of nodes.
-            verify_new_node_count(n_nodes + 1);
             // Get 0-indexed inner node ID, set at node type flag bit.
             node_id = n_nodes | NODE_TYPE_INNER;
             // Mutably borrow inner nodes table.

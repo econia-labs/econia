@@ -284,10 +284,15 @@
 /// nodes are only allocated if there are no inactive nodes to pop off
 /// the stack.
 ///
-/// Each time a new "active" node is allocated and inserted to the tree,
-/// it is assigned a unique 32-bit node ID, corresponding to the number
-/// of nodes of the given type that have already been allocated. Inner
-/// node IDs are set at bit 31, and outer node IDs are unset at bit 31.
+/// Each time a new node is allocated, it is assigned a unique 32-bit
+/// node ID, where bits 0-30 indicate the number of nodes of the given
+/// type that have already been allocated. Node 31 is then set in the
+/// case of an inner node, but left unset in the case of an outer node:
+///
+/// | Bit(s) | Inner node ID       | Outer node ID       |
+/// |--------|---------------------|---------------------|
+/// | 31     | 1                   | 0                   |
+/// | 0-30   | 0-indexed serial ID | 0-indexed serial ID |
 ///
 /// Since 32-bit node IDs have bit 31 reserved, the maximum permissible
 /// number of node IDs for either type is thus $2^{31}$.
@@ -483,6 +488,14 @@ module econia::critqueue {
     /// `u64` bitmask set at all bits except bit 31, generated in Python
     /// via `hex(int('1' * 31, 2))`.
     const MAX_NODE_COUNT: u64 = 0x7fffffff;
+    /// `u64` bitmask set at bit 31 (the node type bit flag), generated
+    /// in Python via `hex(int('1' + '0' * 31, 2))`.
+    const NODE_TYPE: u64 = 0x80000000;
+    /// Result of node ID bitwise `AND` `NODE_TYPE` for an inner node,
+    /// Generated in Python via `hex(int('1' + '0' * 31, 2))`. Can also
+    /// be used to generate an inner node ID via bitwise `OR` the node's
+    /// 0-indexed serial ID.
+    const NODE_TYPE_INNER: u64 = 0x80000000;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -528,7 +541,8 @@ module econia::critqueue {
             inners: table_with_length::new(),
             outers: table_with_length::new(),
             inactive_inner_top: if (n_inactive_outer_nodes > 1)
-                option::some(n_inactive_outer_nodes - 2) else option::none(),
+                option::some((n_inactive_outer_nodes - 2) | NODE_TYPE_INNER)
+                else option::none(),
             inactive_outer_top: if (n_inactive_outer_nodes > 0)
                 option::some(n_inactive_outer_nodes - 1) else option::none()
         };
@@ -541,10 +555,11 @@ module econia::critqueue {
                     // Next inactive inner node is none if on second
                     // loop iteration, otherwise is loop count minus 2.
                     let next = if (i == 1) option::none() else
-                        option::some(i - 2);
+                        option::some((i - 2) | NODE_TYPE_INNER);
                     // Push inactive inner node onto stack.
-                    table_with_length::add(&mut critqueue.inners, i - 1, Inner{
-                        critical_bit: 0, left: 0, right: 0, next});
+                    table_with_length::add(
+                        &mut critqueue.inners, (i - 1) | NODE_TYPE_INNER,
+                        Inner{critical_bit: 0, left: 0, right: 0, next});
                 };
                 // Next inactive outer node is none if on first loop
                 // iteration, otherwise is loop count minus 1.
@@ -699,10 +714,12 @@ module econia::critqueue {
         // Verify fields.
         assert!(table_with_length::length(&critqueue.inners) == 1, 0);
         assert!(table_with_length::length(&critqueue.outers) == 2, 0);
-        assert!(*option::borrow(&critqueue.inactive_inner_top) == 0, 0);
+        assert!(*option::borrow(&critqueue.inactive_inner_top) ==
+            0 | NODE_TYPE_INNER, 0);
         assert!(*option::borrow(&critqueue.inactive_outer_top) == 1, 0);
         // Verify inner node stack next field chain.
-        let inner_node_ref = table_with_length::borrow(&critqueue.inners, 0);
+        let inner_node_ref = table_with_length::borrow(&critqueue.inners,
+            0 | NODE_TYPE_INNER);
         assert!(option::is_none(&inner_node_ref.next), 0);
         // Verify outer node stack next field chain.
         outer_node_ref = table_with_length::borrow(&critqueue.outers, 1);
@@ -714,12 +731,16 @@ module econia::critqueue {
         // Verify fields.
         assert!(table_with_length::length(&critqueue.inners) == 2, 0);
         assert!(table_with_length::length(&critqueue.outers) == 3, 0);
-        assert!(*option::borrow(&critqueue.inactive_inner_top) == 1, 0);
+        assert!(*option::borrow(&critqueue.inactive_inner_top) ==
+            1 | NODE_TYPE_INNER, 0);
         assert!(*option::borrow(&critqueue.inactive_outer_top) == 2, 0);
         // Verify inner node stack next field chain.
-        inner_node_ref = table_with_length::borrow(&critqueue.inners, 1);
-        assert!(*option::borrow(&inner_node_ref.next) == 0, 0);
-        inner_node_ref = table_with_length::borrow(&critqueue.inners, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners,
+            1 | NODE_TYPE_INNER);
+        assert!(*option::borrow(&inner_node_ref.next) ==
+            0 | NODE_TYPE_INNER, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners,
+            0 | NODE_TYPE_INNER);
         assert!(option::is_none(&inner_node_ref.next), 0);
         // Verify outer node stack next field chain.
         outer_node_ref = table_with_length::borrow(&critqueue.outers, 2);
@@ -733,14 +754,20 @@ module econia::critqueue {
         // Verify fields.
         assert!(table_with_length::length(&critqueue.inners) == 3, 0);
         assert!(table_with_length::length(&critqueue.outers) == 4, 0);
-        assert!(*option::borrow(&critqueue.inactive_inner_top) == 2, 0);
+        assert!(*option::borrow(&critqueue.inactive_inner_top) ==
+            2 | NODE_TYPE_INNER, 0);
         assert!(*option::borrow(&critqueue.inactive_outer_top) == 3, 0);
         // Verify inner node stack next field chain.
-        inner_node_ref = table_with_length::borrow(&critqueue.inners, 2);
-        assert!(*option::borrow(&inner_node_ref.next) == 1, 0);
-        inner_node_ref = table_with_length::borrow(&critqueue.inners, 1);
-        assert!(*option::borrow(&inner_node_ref.next) == 0, 0);
-        inner_node_ref = table_with_length::borrow(&critqueue.inners, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners,
+            2 | NODE_TYPE_INNER);
+        assert!(*option::borrow(&inner_node_ref.next) ==
+            1 | NODE_TYPE_INNER, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners,
+            1 | NODE_TYPE_INNER);
+        assert!(*option::borrow(&inner_node_ref.next) ==
+            0 | NODE_TYPE_INNER, 0);
+        inner_node_ref = table_with_length::borrow(&critqueue.inners,
+            0 | NODE_TYPE_INNER);
         assert!(option::is_none(&inner_node_ref.next), 0);
         // Verify outer node stack next field chain.
         outer_node_ref = table_with_length::borrow(&critqueue.outers, 3);

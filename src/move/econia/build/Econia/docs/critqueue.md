@@ -357,10 +357,15 @@ and pushed onto a stack of inactive nodes. During insertion, new
 nodes are only allocated if there are no inactive nodes to pop off
 the stack.
 
-Each time a new "active" node is allocated and inserted to the tree,
-it is assigned a unique 32-bit node ID, corresponding to the number
-of nodes of the given type that have already been allocated. Inner
-node IDs are set at bit 31, and outer node IDs are unset at bit 31.
+Each time a new node is allocated, it is assigned a unique 32-bit
+node ID, where bits 0-30 indicate the number of nodes of the given
+type that have already been allocated. Node 31 is then set in the
+case of an inner node, but left unset in the case of an outer node:
+
+| Bit(s) | Inner node ID       | Outer node ID       |
+|--------|---------------------|---------------------|
+| 31     | 1                   | 0                   |
+| 0-30   | 0-indexed serial ID | 0-indexed serial ID |
 
 Since 32-bit node IDs have bit 31 reserved, the maximum permissible
 number of node IDs for either type is thus $2^{31}$.
@@ -755,6 +760,30 @@ via <code>hex(int('1' * 31, 2))</code>.
 
 
 
+<a name="0xc0deb00c_critqueue_NODE_TYPE"></a>
+
+<code>u64</code> bitmask set at bit 31 (the node type bit flag), generated
+in Python via <code>hex(int('1' + '0' * 31, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a>: u64 = 2147483648;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_critqueue_NODE_TYPE_INNER"></a>
+
+Result of node ID bitwise <code>AND</code> <code><a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE">NODE_TYPE</a></code> for an inner node,
+Generated in Python via <code>hex(int('1' + '0' * 31, 2))</code>. Can also
+be used to generate an inner node ID via bitwise <code>OR</code> the node's
+0-indexed serial ID.
+
+
+<pre><code><b>const</b> <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE_INNER">NODE_TYPE_INNER</a>: u64 = 2147483648;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_critqueue_new"></a>
 
 ## Function `new`
@@ -826,7 +855,8 @@ to allocate.
         inners: <a href="_new">table_with_length::new</a>(),
         outers: <a href="_new">table_with_length::new</a>(),
         inactive_inner_top: <b>if</b> (n_inactive_outer_nodes &gt; 1)
-            <a href="_some">option::some</a>(n_inactive_outer_nodes - 2) <b>else</b> <a href="_none">option::none</a>(),
+            <a href="_some">option::some</a>((n_inactive_outer_nodes - 2) | <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE_INNER">NODE_TYPE_INNER</a>)
+            <b>else</b> <a href="_none">option::none</a>(),
         inactive_outer_top: <b>if</b> (n_inactive_outer_nodes &gt; 0)
             <a href="_some">option::some</a>(n_inactive_outer_nodes - 1) <b>else</b> <a href="_none">option::none</a>()
     };
@@ -839,10 +869,11 @@ to allocate.
                 // Next inactive inner node is none <b>if</b> on second
                 // <b>loop</b> iteration, otherwise is <b>loop</b> count minus 2.
                 <b>let</b> next = <b>if</b> (i == 1) <a href="_none">option::none</a>() <b>else</b>
-                    <a href="_some">option::some</a>(i - 2);
+                    <a href="_some">option::some</a>((i - 2) | <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE_INNER">NODE_TYPE_INNER</a>);
                 // Push inactive inner node onto stack.
-                <a href="_add">table_with_length::add</a>(&<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a>.inners, i - 1, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{
-                    critical_bit: 0, left: 0, right: 0, next});
+                <a href="_add">table_with_length::add</a>(
+                    &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue">critqueue</a>.inners, (i - 1) | <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE_INNER">NODE_TYPE_INNER</a>,
+                    <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{critical_bit: 0, left: 0, right: 0, next});
             };
             // Next inactive outer node is none <b>if</b> on first <b>loop</b>
             // iteration, otherwise is <b>loop</b> count minus 1.

@@ -732,6 +732,65 @@ module econia::critqueue {
         }
     }
 
+    /// Activate an inner node with given fields, returning node ID.
+    ///
+    /// If inactive inner node stack is empty, allocate a new inner node
+    /// in global storage. Otherwise pop an inactive node off the stack
+    /// and activate it.
+    ///
+    /// # Parameters
+    ///
+    /// * `critqueue_ref_mut`: Mutable reference to critqueue to
+    ///   activate within.
+    /// * `critical_bit`: Critical bit field for new inner node.
+    /// * `left`: Left child node ID.
+    /// * `right`: Right child node ID.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Node ID of activated node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_inner_node()`
+    fun activate_inner_node<V>(
+        critqueue_ref_mut: &mut CritQueue<V>,
+        critical_bit: u8,
+        left: u64,
+        right: u64
+    ): u64 {
+        let node_id; // Declare inner node ID.
+        // If inactive inner node stack is empty:
+        if (option::is_none(&critqueue_ref_mut.inactive_inner_top)) {
+            // Get numer of allocated inner nodes.
+            let n_nodes = table_with_length::length(&critqueue_ref_mut.inners);
+            // Verify new number of nodes.
+            verify_new_node_count(n_nodes + 1);
+            // Get 0-indexed inner node ID, set at node type flag bit.
+            node_id = n_nodes | NODE_TYPE_INNER;
+            // Mutably borrow inner nodes table.
+            let inners_ref_mut = &mut critqueue_ref_mut.inners;
+            // Allocate a new inner node with given fields.
+            table_with_length::add(inners_ref_mut, node_id, Inner{
+                critical_bit, left, right, next: option::none()});
+        } else { // If can pop inactive node off stack:
+            // Get node ID of inactive node at top of stack.
+            node_id = *option::borrow(&critqueue_ref_mut.inactive_inner_top);
+            // Mutably borrow inactive node at top of stack.
+            let node_ref_mut = table_with_length::borrow_mut(
+                &mut critqueue_ref_mut.inners, node_id);
+            // Set top of stack to be next node indicated by stack top.
+            critqueue_ref_mut.inactive_inner_top = node_ref_mut.next;
+            // Set critical bit for activated node.
+            node_ref_mut.critical_bit = critical_bit;
+            // Set left child field for activated node.
+            node_ref_mut.left = left;
+            // Set right child field for activated node.
+            node_ref_mut.right = right;
+        };
+        node_id // Return node ID of activated inner node.
+    }
+
     /// Activate an outer node with given fields, returning access key.
     ///
     /// If inactive outer node stack is empty, allocate a new outer node
@@ -757,9 +816,7 @@ module econia::critqueue {
         critqueue_ref_mut: &mut CritQueue<V>,
         index_key: u128,
         value: V
-    ): (
-        u128
-    ) {
+    ): u128 {
         let node_id; // Declare outer node ID.
         // If inactive outer node stack is empty:
         if (option::is_none(&critqueue_ref_mut.inactive_outer_top)) {
@@ -818,6 +875,26 @@ module econia::critqueue {
     // Test-only error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return fields for inner node having given node ID in given
+    /// critqueue.
+    fun get_inner_node_fields_test<V: copy>(
+        critqueue_ref: &CritQueue<V>,
+        node_id: u64
+    ): (
+        u8,
+        u64,
+        u64,
+        Option<u64>
+    ) {
+        // Immutably borrow inner nodes table.
+        let inners_ref = &critqueue_ref.inners;
+        // Immutably borrow node.
+        let node_ref = table_with_length::borrow(inners_ref, node_id);
+        // Return fields.
+        (node_ref.critical_bit, node_ref.left, node_ref.right, node_ref.next)
+    }
 
     #[test_only]
     /// Return fields for outer node having given node ID in given
@@ -911,6 +988,67 @@ module econia::critqueue {
 
     #[test]
     /// Verify activating inner node at top of stack, bottom of stack,
+    /// and when no stack.
+    fun test_activate_inner_node():
+    CritQueue<u8> {
+        // Get critqueue with 3 allocated outer nodes, and thus 2
+        // allocated inner nodes.
+        let critqueue = new(ASCENDING, 3);
+        // Declare inner node fields.
+        let (critical_bit, left, right) = (1, 2, 3);
+        let node_id = activate_inner_node( // Activate outer node.
+            &mut critqueue, critical_bit, left, right);
+        // Assert node ID.
+        assert!(node_id == u_64_by_32(
+            b"00000000000000000000000000000000",
+            b"10000000000000000000000000000001"
+        ), 0);
+        // Assert activated node's fields.
+        let (critical_bit_activated, left_activated, right_activated, _) =
+            get_inner_node_fields_test(&critqueue, node_id);
+        assert!(critical_bit_activated == critical_bit, 0);
+        assert!(left_activated == left, 0);
+        assert!(right_activated == right, 0);
+        // Assert stack top update.
+        assert!(*option::borrow(&critqueue.inactive_inner_top) ==
+            0 | NODE_TYPE_INNER, 0);
+        // Declare inner node fields.
+        (critical_bit, left, right) = (4, 5, 6);
+        node_id = activate_inner_node( // Activate outer node.
+            &mut critqueue, critical_bit, left, right);
+        // Assert node ID.
+        assert!(node_id == u_64_by_32(
+            b"00000000000000000000000000000000",
+            b"10000000000000000000000000000000"
+        ), 0);
+        // Assert activated node's fields.
+        (critical_bit_activated, left_activated, right_activated, _) =
+            get_inner_node_fields_test(&critqueue, node_id);
+        assert!(critical_bit_activated == critical_bit, 0);
+        assert!(left_activated == left, 0);
+        assert!(right_activated == right, 0);
+        // Assert stack top update.
+        assert!(option::is_none(&critqueue.inactive_inner_top), 0);
+        // Declare inner node fields.
+        (critical_bit, left, right) = (7, 8, 9);
+        node_id = activate_inner_node( // Activate outer node.
+            &mut critqueue, critical_bit, left, right);
+        // Assert node ID.
+        assert!(node_id == u_64_by_32(
+            b"00000000000000000000000000000000",
+            b"10000000000000000000000000000010"
+        ), 0);
+        // Assert activated node's fields.
+        (critical_bit_activated, left_activated, right_activated, _) =
+            get_inner_node_fields_test(&critqueue, node_id);
+        assert!(critical_bit_activated == critical_bit, 0);
+        assert!(left_activated == left, 0);
+        assert!(right_activated == right, 0);
+        critqueue // Return critqueue.
+    }
+
+    #[test]
+    /// Verify activating outer node at top of stack, bottom of stack,
     /// and when no stack.
     fun test_activate_outer_node():
     CritQueue<u8> {

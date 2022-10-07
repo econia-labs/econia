@@ -522,13 +522,17 @@ The below index is automatically generated from source code:
     -  [<code>XOR</code>/<code>AND</code> method](#@<code>XOR</code>/<code>AND</code>_method_25)
     -  [Binary search method](#@Binary_search_method_26)
     -  [Testing](#@Testing_27)
--  [Function `activate_outer_node`](#0xc0deb00c_critqueue_activate_outer_node)
+-  [Function `activate_inner_node`](#0xc0deb00c_critqueue_activate_inner_node)
     -  [Parameters](#@Parameters_28)
     -  [Returns](#@Returns_29)
     -  [Testing](#@Testing_30)
+-  [Function `activate_outer_node`](#0xc0deb00c_critqueue_activate_outer_node)
+    -  [Parameters](#@Parameters_31)
+    -  [Returns](#@Returns_32)
+    -  [Testing](#@Testing_33)
 -  [Function `verify_new_node_count`](#0xc0deb00c_critqueue_verify_new_node_count)
-    -  [Aborts](#@Aborts_31)
-    -  [Testing](#@Testing_32)
+    -  [Aborts](#@Aborts_34)
+    -  [Testing](#@Testing_35)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1097,13 +1101,13 @@ as he proposes, which can also be easily generated via <code>1 &lt;&lt; c</code>
 
 </details>
 
-<a name="0xc0deb00c_critqueue_activate_outer_node"></a>
+<a name="0xc0deb00c_critqueue_activate_inner_node"></a>
 
-## Function `activate_outer_node`
+## Function `activate_inner_node`
 
-Activate an outer node with given fields, returning access key.
+Activate an inner node with given fields, returning node ID.
 
-If inactive outer node stack is empty, allocate a new outer node
+If inactive inner node stack is empty, allocate a new inner node
 in global storage. Otherwise pop an inactive node off the stack
 and activate it.
 
@@ -1115,9 +1119,9 @@ and activate it.
 
 * <code>critqueue_ref_mut</code>: Mutable reference to critqueue to
 activate within.
-* <code>index_key</code>: Index key corresponding to key-value insertion
-pair.
-* <code>value</code>: Insertion value from key-value insertion pair.
+* <code>critical_bit</code>: Critical bit field for new inner node.
+* <code>left</code>: Left child node ID.
+* <code>right</code>: Right child node ID.
 
 
 <a name="@Returns_29"></a>
@@ -1125,10 +1129,101 @@ pair.
 ### Returns
 
 
-* <code>u128</code>: Access key for activated node.
+* <code>u64</code>: Node ID of activated node.
 
 
 <a name="@Testing_30"></a>
+
+### Testing
+
+
+* <code>test_activate_inner_node()</code>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_activate_inner_node">activate_inner_node</a>&lt;V&gt;(critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">critqueue::CritQueue</a>&lt;V&gt;, critical_bit: u8, left: u64, right: u64): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="critqueue.md#0xc0deb00c_critqueue_activate_inner_node">activate_inner_node</a>&lt;V&gt;(
+    critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
+    critical_bit: u8,
+    left: u64,
+    right: u64
+): u64 {
+    <b>let</b> node_id; // Declare inner node ID.
+    // If inactive inner node stack is empty:
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref_mut.inactive_inner_top)) {
+        // Get numer of allocated inner nodes.
+        <b>let</b> n_nodes = <a href="_length">table_with_length::length</a>(&critqueue_ref_mut.inners);
+        // Verify new number of nodes.
+        <a href="critqueue.md#0xc0deb00c_critqueue_verify_new_node_count">verify_new_node_count</a>(n_nodes + 1);
+        // Get 0-indexed inner node ID, set at node type flag bit.
+        node_id = n_nodes | <a href="critqueue.md#0xc0deb00c_critqueue_NODE_TYPE_INNER">NODE_TYPE_INNER</a>;
+        // Mutably borrow inner nodes <a href="">table</a>.
+        <b>let</b> inners_ref_mut = &<b>mut</b> critqueue_ref_mut.inners;
+        // Allocate a new inner node <b>with</b> given fields.
+        <a href="_add">table_with_length::add</a>(inners_ref_mut, node_id, <a href="critqueue.md#0xc0deb00c_critqueue_Inner">Inner</a>{
+            critical_bit, left, right, next: <a href="_none">option::none</a>()});
+    } <b>else</b> { // If can pop inactive node off stack:
+        // Get node ID of inactive node at top of stack.
+        node_id = *<a href="_borrow">option::borrow</a>(&critqueue_ref_mut.inactive_inner_top);
+        // Mutably borrow inactive node at top of stack.
+        <b>let</b> node_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
+            &<b>mut</b> critqueue_ref_mut.inners, node_id);
+        // Set top of stack <b>to</b> be next node indicated by stack top.
+        critqueue_ref_mut.inactive_inner_top = node_ref_mut.next;
+        // Set critical bit for activated node.
+        node_ref_mut.critical_bit = critical_bit;
+        // Set left child field for activated node.
+        node_ref_mut.left = left;
+        // Set right child field for activated node.
+        node_ref_mut.right = right;
+    };
+    node_id // Return node ID of activated inner node.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_critqueue_activate_outer_node"></a>
+
+## Function `activate_outer_node`
+
+Activate an outer node with given fields, returning access key.
+
+If inactive outer node stack is empty, allocate a new outer node
+in global storage. Otherwise pop an inactive node off the stack
+and activate it.
+
+
+<a name="@Parameters_31"></a>
+
+### Parameters
+
+
+* <code>critqueue_ref_mut</code>: Mutable reference to critqueue to
+activate within.
+* <code>index_key</code>: Index key corresponding to key-value insertion
+pair.
+* <code>value</code>: Insertion value from key-value insertion pair.
+
+
+<a name="@Returns_32"></a>
+
+### Returns
+
+
+* <code>u128</code>: Access key for activated node.
+
+
+<a name="@Testing_33"></a>
 
 ### Testing
 
@@ -1149,9 +1244,7 @@ pair.
     critqueue_ref_mut: &<b>mut</b> <a href="critqueue.md#0xc0deb00c_critqueue_CritQueue">CritQueue</a>&lt;V&gt;,
     index_key: u128,
     value: V
-): (
-    u128
-) {
+): u128 {
     <b>let</b> node_id; // Declare outer node ID.
     // If inactive outer node stack is empty:
     <b>if</b> (<a href="_is_none">option::is_none</a>(&critqueue_ref_mut.inactive_outer_top)) {
@@ -1194,7 +1287,7 @@ pair.
 Verify proposed new node count is not too high.
 
 
-<a name="@Aborts_31"></a>
+<a name="@Aborts_34"></a>
 
 ### Aborts
 
@@ -1202,7 +1295,7 @@ Verify proposed new node count is not too high.
 * <code><a href="critqueue.md#0xc0deb00c_critqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: If <code>n_nodes</code> exceeds <code><a href="critqueue.md#0xc0deb00c_critqueue_MAX_NODE_COUNT">MAX_NODE_COUNT</a></code>.
 
 
-<a name="@Testing_32"></a>
+<a name="@Testing_35"></a>
 
 ### Testing
 

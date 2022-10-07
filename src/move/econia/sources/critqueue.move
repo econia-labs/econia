@@ -488,6 +488,8 @@ module econia::critqueue {
     /// `u64` bitmask set at all bits except bit 31, generated in Python
     /// via `hex(int('1' * 31, 2))`.
     const MAX_NODE_COUNT: u64 = 0x7fffffff;
+    /// Most significant bit number in a 96-bit index key.
+    const MSB_INDEX_KEY: u8 = 95;
     /// `u64` bitmask set at bit 31 (the node type bit flag), generated
     /// in Python via `hex(int('1' + '0' * 31, 2))`.
     const NODE_TYPE: u64 = 0x80000000;
@@ -577,6 +579,161 @@ module econia::critqueue {
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return the number of the most significant bit at which two
+    /// unequal index key bitstrings, `s1` and `s2`, vary.
+    ///
+    /// # `XOR`/`AND` method
+    ///
+    /// First, a bitwise `XOR` is used to flag all differing bits:
+    ///
+    /// >              s1: 11110001
+    /// >              s2: 11011100
+    /// >     x = s1 ^ s2: 00101101
+    /// >                    ^ critical bit = 5
+    ///
+    /// Here, the critical bit is equivalent to the bit number of the
+    /// most significant set bit in the bitwise `XOR` result
+    /// `x = s1 ^ s2`. At this point, [Langley 2008] notes that `x`
+    /// bitwise `AND` `x - 1` will be nonzero so long as `x` contains
+    /// at least some bits set which are of lesser significance than the
+    /// critical bit:
+    ///
+    /// >                   x: 00101101
+    /// >               x - 1: 00101100
+    /// >     x = x & (x - 1): 00101100
+    ///
+    /// Thus he suggests repeating `x & (x - 1)` while the new result
+    /// `x = x & (x - 1)` is not equal to zero, because such a loop will
+    /// eventually reduce `x` to a power of two (excepting the trivial
+    /// case where `x` starts as all 0 except bit 0 set, for which the
+    /// loop never enters past the initial conditional check). Per this
+    /// method, using the new `x` value for the current example, the
+    /// second iteration proceeds as follows:
+    ///
+    /// >                   x: 00101100
+    /// >               x - 1: 00101011
+    /// >     x = x & (x - 1): 00101000
+    ///
+    /// The third iteration:
+    ///
+    /// >                   x: 00101000
+    /// >               x - 1: 00100111
+    /// >     x = x & (x - 1): 00100000
+    //
+    /// Now, `x & x - 1` will equal zero and the loop will not begin a
+    /// fourth iteration:
+    ///
+    /// >                 x: 00100000
+    /// >             x - 1: 00011111
+    /// >     x AND (x - 1): 00000000
+    ///
+    /// Thus after three iterations a corresponding critical bitmask
+    /// has been determined. However, in the case where the two input
+    /// strings vary at all bits of lesser significance than the
+    /// critical bit, there may be required as many as `k - 1`
+    /// iterations, where `k` is the number of bits in each string under
+    /// comparison. For instance, consider the case of the two 8-bit
+    /// strings `s1` and `s2` as follows:
+    ///
+    /// >                  s1: 10101010
+    /// >                  s2: 01010101
+    /// >         x = s1 ^ s2: 11111111
+    /// >                      ^ critical bit = 7
+    /// >     x = x & (x - 1): 11111110 [iteration 1]
+    /// >     x = x & (x - 1): 11111100 [iteration 2]
+    /// >     x = x & (x - 1): 11111000 [iteration 3]
+    /// >     ...
+    ///
+    /// Notably, this method is only suggested after already having
+    /// identified the varying byte between the two strings, thus
+    /// limiting `x & (x - 1)` operations to at most 7 iterations.
+    ///
+    /// # Binary search method
+    ///
+    /// For the present implementation, unlike in [Langley 2008],
+    /// strings are not partitioned into a multi-byte array, rather,
+    /// they are stored as 96-bit integers, so a binary search is
+    /// instead proposed. Here, the same `x = s1 ^ s2` operation is
+    /// first used to identify all differing bits, before iterating on
+    /// an upper (`u`) and lower bound (`l`) for the critical bit
+    /// number:
+    ///
+    /// >              s1: 10101010
+    /// >              s2: 01010101
+    /// >     x = s1 ^ s2: 11111111
+    /// >            u = 7 ^      ^ l = 0
+    ///
+    /// The upper bound `u` is initialized to the length of the
+    /// bitstring (7 in the present example, but 95 in the case of a
+    /// 96-bit index key), and the lower bound `l` is initialized to 0.
+    /// Next the midpoint `m` is calculated as the average of `u` and
+    /// `l`, in this case `m = (7 + 0) / 2 = 3`, per truncating integer
+    /// division. Finally, the shifted compare value `s = x >> m` is
+    /// calculated, with the result having three potential outcomes:
+    ///
+    /// | Shift result | Outcome                              |
+    /// |--------------|--------------------------------------|
+    /// | `s == 1`     | The critical bit `c` is equal to `m` |
+    /// | `s == 0`     | `c < m`, so set `u` to `m - 1`       |
+    /// | `s > 1`      | `c > m`, so set `l` to `m + 1`       |
+    ///
+    /// Hence, continuing the current example:
+    ///
+    /// >              x: 11111111
+    /// >     s = x >> m: 00011111
+    ///
+    /// `s > 1`, so `l = m + 1 = 4`, and the search window has shrunk:
+    ///
+    /// >     x = s1 ^ s2: 11111111
+    /// >            u = 7 ^  ^ l = 4
+    ///
+    /// Updating the midpoint yields `m = (7 + 4) / 2 = 5`:
+    ///
+    /// >              x: 11111111
+    /// >     s = x >> m: 00000111
+    ///
+    /// Again `s > 1`, so update `l = m + 1 = 6`, and the window
+    /// shrinks again:
+    ///
+    /// >     x = s1 ^ s2: 11111111
+    /// >            u = 7 ^^ l = 6
+    /// >      s = x >> m: 00000011
+    ///
+    /// Again `s > 1`, so update `l = m + 1 = 7`, the final iteration:
+    ///
+    /// >     x = s1 ^ s2: 11111111
+    /// >            u = 7 ^ l = 7
+    /// >      s = x >> m: 00000001
+    ///
+    /// Notably this search has converged after only 3 iterations, as
+    /// opposed to 7 for the linear search proposed above, and in
+    /// general such a search converges after $log_2(k)$ iterations at
+    /// most, where $k$ is the number of bits in each of the strings
+    /// `s1` and `s2` under comparison. Hence this search method
+    /// improves the $O(k)$ search proposed by [Langley 2008] to
+    /// $O(log_2(k))$, and moreover, determines the actual number of
+    /// the critical bit, rather than just a bitmask with bit `c` set,
+    /// as he proposes, which can also be easily generated via `1 << c`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_critical_bit()`
+    fun get_critical_bit(
+        s1: u128,
+        s2: u128,
+    ): u8 {
+        let x = s1 ^ s2; // XOR result marked 1 at bits that differ.
+        let l = 0; // Lower bound on critical bit search.
+        let u = MSB_INDEX_KEY; // Upper bound on critical bit search.
+        loop { // Begin binary search.
+            let m = (l + u) / 2; // Calculate midpoint of search window.
+            let s = x >> m; // Calculate midpoint shift of XOR result.
+            if (s == 1) return m; // If shift equals 1, c = m.
+            // Update search bounds.
+            if (s > 1) l = m + 1 else u = m - 1;
+        }
+    }
 
     /// Verify proposed new node count is not too high.
     ///
@@ -677,6 +834,17 @@ module econia::critqueue {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify successful calculation of critical bit at all positions.
+    fun test_get_critical_bit() {
+        let b = 0; // Start loop for bit 0.
+        while (b <= MSB_INDEX_KEY) { // Loop over all bit numbers.
+            // Compare 0 versus a bitmask that is only set at bit b.
+            assert!(get_critical_bit(0, 1 << b) == b, (b as u64));
+            b = b + 1; // Increment bit counter.
+        };
+    }
 
     #[test]
     /// Verify successful initialization for both sort orders and all

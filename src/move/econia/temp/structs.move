@@ -3,6 +3,46 @@ module econia::structs {
 
     // critqueue.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    struct Inner <V> has store {
+        critical_bit: u8,
+        left_inner: u64, // Ignore if left_outer is some.
+        right_inner: u64, // Ignore if right_outer is some.
+        left_outer: Option<Outer>,
+        right_outer: Option<Outer>,
+        next: Option<u64>
+    }
+
+    struct Outer<V> has store {
+        /// Index key for given key-value insertion pair.
+        index_key: u128,
+        /// Insertion value.
+        value: V,
+    }
+
+    /// A hybrid between a critbit tree and a queue. See above.
+    struct CritQueue<V> has store {
+        /// `ASCENDING` or `DESCENDING`.
+        sort_order: bool,
+        /// Node ID of root node, if any.
+        root_node_id: Option<u64>,
+        /// Index key of head node, if any.
+        head_index_key: Option<u128>,
+        /// Cumulative insertion count.
+        insertion_count: u64,
+        /// Map from node ID to inner node.
+        nodes: TableWithLength<u64, Inner>,
+        /// ID of inactive inner node at top of stack, if any.
+        stack_top: Option<u64>,
+    }
+
+
+    // Could just get rid of access key and lookup O(log(n))
+    // This cuts down per-item writes to two for an insertion?
+    // Load les constants to check node type.
+    // Also not need to check max on node counts, since node count is
+    // not guaranteed.
+    // Have to traverse from root anyways when dequeuing.
+
     // Pure-table
 
     /// When a node has no edge.

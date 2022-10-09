@@ -493,13 +493,12 @@ to allocate.
     bits = bits
         | ((n_inactive_tree_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a>)
         | ((n_inactive_list_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>);
-    <b>let</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a> = <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>{ // Declare empty AVL queue.
-        bits,
-        root_lsbs: 0,
-        tree_nodes: <a href="_new">table_with_length::new</a>(),
-        list_nodes: <a href="_new">table_with_length::new</a>(),
-        values: <a href="_new">table::new</a>(),
-    };
+    // Declare empty AVL queue.
+    <b>let</b> avlq = <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>{bits,
+                        root_lsbs: 0,
+                        tree_nodes: <a href="_new">table_with_length::new</a>(),
+                        list_nodes: <a href="_new">table_with_length::new</a>(),
+                        values: <a href="_new">table::new</a>()};
     // If need <b>to</b> allocate at least one tree node:
     <b>if</b> (n_inactive_tree_nodes &gt; 0) {
         <b>let</b> i = 0; // Declare <b>loop</b> counter.
@@ -509,8 +508,8 @@ to allocate.
             // ID derived from counter, indicating next inactive
             // node in stack <b>has</b> ID of last allocated node (or null
             // in the case of the first <b>loop</b> iteration).
-            <a href="_add">table_with_length::add</a>(&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.tree_nodes, i + 1,
-                                   <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>{bits: (i <b>as</b> u128)});
+            <a href="_add">table_with_length::add</a>(
+                &<b>mut</b> avlq.tree_nodes, i + 1, <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>{bits: (i <b>as</b> u128)});
             i = i + 1; // Increment <b>loop</b> counter.
         };
     };
@@ -523,18 +522,17 @@ to allocate.
             // ID derived from counter, indicating next inactive
             // node in stack <b>has</b> ID of last allocated node (or null
             // in the case of the first <b>loop</b> iteration).
-            <a href="_add">table_with_length::add</a>(
-                &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.list_nodes, i + 1, <a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>{
-                    last_msbs: 0,
-                    last_lsbs: 0,
-                    next_msbs: (i &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
-                    next_lsbs: (i & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8)});
+            <a href="_add">table_with_length::add</a>(&<b>mut</b> avlq.list_nodes, i + 1, <a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>{
+                last_msbs: 0,
+                last_lsbs: 0,
+                next_msbs: (i &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
+                next_lsbs: (i & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8)});
             // Allocate optional insertion value entry.
-            <a href="_add">table::add</a>(&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.values, i + 1, <a href="_none">option::none</a>());
+            <a href="_add">table::add</a>(&<b>mut</b> avlq.values, i + 1, <a href="_none">option::none</a>());
             i = i + 1; // Increment <b>loop</b> counter.
         };
     };
-    <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a> // Return AVL queue.
+    avlq // Return AVL queue.
 }
 </code></pre>
 
@@ -557,7 +555,7 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 * <code>test_is_ascending()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending">is_ascending</a>&lt;V&gt;(avl_queue_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending">is_ascending</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;): bool
 </code></pre>
 
 
@@ -567,9 +565,9 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending">is_ascending</a>&lt;V&gt;(
-    avl_queue_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
+    avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
 ): bool {
-    avl_queue_ref.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a> == <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>
+    avlq_ref.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a> == <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>
 }
 </code></pre>
 

@@ -224,13 +224,12 @@ module econia::avl_queue {
         bits = bits
             | ((n_inactive_tree_nodes as u128) << AVLQ_BITS_TREE_TOP_SHIFT)
             | ((n_inactive_list_nodes as u128) << AVLQ_BITS_LIST_TOP_SHIFT);
-        let avl_queue = AVLqueue{ // Declare empty AVL queue.
-            bits,
-            root_lsbs: 0,
-            tree_nodes: table_with_length::new(),
-            list_nodes: table_with_length::new(),
-            values: table::new(),
-        };
+        // Declare empty AVL queue.
+        let avlq = AVLqueue{bits,
+                            root_lsbs: 0,
+                            tree_nodes: table_with_length::new(),
+                            list_nodes: table_with_length::new(),
+                            values: table::new()};
         // If need to allocate at least one tree node:
         if (n_inactive_tree_nodes > 0) {
             let i = 0; // Declare loop counter.
@@ -240,8 +239,8 @@ module econia::avl_queue {
                 // ID derived from counter, indicating next inactive
                 // node in stack has ID of last allocated node (or null
                 // in the case of the first loop iteration).
-                table_with_length::add(&mut avl_queue.tree_nodes, i + 1,
-                                       TreeNode{bits: (i as u128)});
+                table_with_length::add(
+                    &mut avlq.tree_nodes, i + 1, TreeNode{bits: (i as u128)});
                 i = i + 1; // Increment loop counter.
             };
         };
@@ -254,18 +253,17 @@ module econia::avl_queue {
                 // ID derived from counter, indicating next inactive
                 // node in stack has ID of last allocated node (or null
                 // in the case of the first loop iteration).
-                table_with_length::add(
-                    &mut avl_queue.list_nodes, i + 1, ListNode{
-                        last_msbs: 0,
-                        last_lsbs: 0,
-                        next_msbs: (i >> BITS_PER_BYTE as u8),
-                        next_lsbs: (i & LEAST_SIGNIFICANT_BYTE as u8)});
+                table_with_length::add(&mut avlq.list_nodes, i + 1, ListNode{
+                    last_msbs: 0,
+                    last_lsbs: 0,
+                    next_msbs: (i >> BITS_PER_BYTE as u8),
+                    next_lsbs: (i & LEAST_SIGNIFICANT_BYTE as u8)});
                 // Allocate optional insertion value entry.
-                table::add(&mut avl_queue.values, i + 1, option::none());
+                table::add(&mut avlq.values, i + 1, option::none());
                 i = i + 1; // Increment loop counter.
             };
         };
-        avl_queue // Return AVL queue.
+        avlq // Return AVL queue.
     }
 
     /// Return `true` if given AVL queue has ascending sort order.
@@ -274,9 +272,9 @@ module econia::avl_queue {
     ///
     /// * `test_is_ascending()`
     public fun is_ascending<V>(
-        avl_queue_ref: &AVLqueue<V>
+        avlq_ref: &AVLqueue<V>
     ): bool {
-        avl_queue_ref.bits & AVLQ_BITS_ASCENDING == AVLQ_BITS_ASCENDING
+        avlq_ref.bits & AVLQ_BITS_ASCENDING == AVLQ_BITS_ASCENDING
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -315,28 +313,28 @@ module econia::avl_queue {
     #[test_only]
     /// Immutably borrow list node having given node ID.
     fun borrow_list_node_test<V>(
-        avl_queue_ref: &AVLqueue<V>,
+        avlq_ref: &AVLqueue<V>,
         node_id: u64
     ): &ListNode {
-        table_with_length::borrow(&avl_queue_ref.list_nodes, node_id)
+        table_with_length::borrow(&avlq_ref.list_nodes, node_id)
     }
 
     #[test_only]
     /// Immutably borrow tree node having given node ID.
     fun borrow_tree_node_test<V>(
-        avl_queue_ref: &AVLqueue<V>,
+        avlq_ref: &AVLqueue<V>,
         node_id: u64
     ): &TreeNode {
-        table_with_length::borrow(&avl_queue_ref.tree_nodes, node_id)
+        table_with_length::borrow(&avlq_ref.tree_nodes, node_id)
     }
 
     #[test_only]
     /// Immutably borrow value option having given node ID.
     fun borrow_value_option_test<V>(
-        avl_queue_ref: &AVLqueue<V>,
+        avlq_ref: &AVLqueue<V>,
         node_id: u64
     ): &Option<V> {
-        table::borrow(&avl_queue_ref.values, node_id)
+        table::borrow(&avlq_ref.values, node_id)
     }
 
     #[test_only]
@@ -347,9 +345,9 @@ module econia::avl_queue {
     ///
     /// * `test_get_list_top_test()`
     fun get_list_top_test<V>(
-        avl_queue_ref: &AVLqueue<V>
+        avlq_ref: &AVLqueue<V>
     ): u64 {
-        (avl_queue_ref.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) & NODE_ID_LSBS
+        (avlq_ref.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) & NODE_ID_LSBS
     }
 
     #[test_only]
@@ -360,9 +358,9 @@ module econia::avl_queue {
     ///
     /// * `test_get_tree_top_test()`
     fun get_tree_top_test<V>(
-        avl_queue_ref: &AVLqueue<V>
+        avlq_ref: &AVLqueue<V>
     ): u64 {
-        (avl_queue_ref.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) & NODE_ID_LSBS
+        (avlq_ref.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) & NODE_ID_LSBS
     }
 
 
@@ -483,7 +481,7 @@ module econia::avl_queue {
     /// Verify successful extraction.
     fun test_get_list_top_test():
     AVLqueue<u8> {
-        let avl_queue = AVLqueue{ // Create empty AVL queue.
+        let avlq = AVLqueue{ // Create empty AVL queue.
             bits: u_128_by_32(
                 b"11111111111111111010101010101101",
                 //                ^ bit 111    ^ bit 98
@@ -496,8 +494,8 @@ module econia::avl_queue {
             values: table::new(),
         };
         // Assert list top.
-        assert!(get_list_top_test(&avl_queue) == u_64(b"10101010101011"), 0);
-        avl_queue // Return AVL queue.
+        assert!(get_list_top_test(&avlq) == u_64(b"10101010101011"), 0);
+        avlq // Return AVL queue.
     }
 
     #[test]
@@ -518,7 +516,7 @@ module econia::avl_queue {
     /// Verify successful extraction.
     fun test_get_tree_top_test():
     AVLqueue<u8> {
-        let avl_queue = AVLqueue{ // Create empty AVL queue.
+        let avlq = AVLqueue{ // Create empty AVL queue.
             bits: u_128_by_32(
                 b"11101010101010110111111111111111",
                 //  ^ bit 125    ^ bit 112
@@ -531,8 +529,8 @@ module econia::avl_queue {
             values: table::new(),
         };
         // Assert tree top.
-        assert!(get_tree_top_test(&avl_queue) == u_64(b"10101010101011"), 0);
-        avl_queue // Return AVL queue.
+        assert!(get_tree_top_test(&avlq) == u_64(b"10101010101011"), 0);
+        avlq // Return AVL queue.
     }
 
     #[test]
@@ -542,17 +540,17 @@ module econia::avl_queue {
         AVLqueue<u8>
     ) {
         // Init ascending AVL queue.
-        let avl_queue_ascending = new(ASCENDING, 0, 0);
+        let avlq_ascending = new(ASCENDING, 0, 0);
         // Assert flagged ascending.
-        assert!(is_ascending(&avl_queue_ascending), 0);
+        assert!(is_ascending(&avlq_ascending), 0);
         // Assert null stack tops.
-        assert!(get_list_top_test(&avl_queue_ascending) == NIL, 0);
-        assert!(get_tree_top_test(&avl_queue_ascending) == NIL, 0);
+        assert!(get_list_top_test(&avlq_ascending) == NIL, 0);
+        assert!(get_tree_top_test(&avlq_ascending) == NIL, 0);
         // Init descending AVL queue.
-        let avl_queue_descending = new(DESCENDING, 0, 0);
+        let avlq_descending = new(DESCENDING, 0, 0);
         // Assert flagged descending.
-        assert!(!is_ascending(&avl_queue_descending), 0);
-        (avl_queue_ascending, avl_queue_descending) // Return both.
+        assert!(!is_ascending(&avlq_descending), 0);
+        (avlq_ascending, avlq_descending) // Return both.
     }
 
     #[test]
@@ -585,7 +583,7 @@ module econia::avl_queue {
     /// Verify successful check.
     fun test_is_ascending():
     AVLqueue<u8> {
-        let avl_queue = AVLqueue{ // Create empty AVL queue.
+        let avlq = AVLqueue{ // Create empty AVL queue.
             bits: 0,
             root_lsbs: 0,
             tree_nodes: table_with_length::new(),
@@ -593,9 +591,9 @@ module econia::avl_queue {
             values: table::new(),
         };
         // Assert flagged descending.
-        assert!(!is_ascending(&avl_queue), 0);
+        assert!(!is_ascending(&avlq), 0);
         // Flag as ascending.
-        avl_queue.bits = u_128_by_32(
+        avlq.bits = u_128_by_32(
             b"01000000000000000000000000000000",
             // ^ bit 126
             b"00000000000000000000000000000000",
@@ -603,8 +601,8 @@ module econia::avl_queue {
             b"00000000000000000000000000000000"
         );
         // Assert flagged descending.
-        assert!(is_ascending(&avl_queue), 0);
-        avl_queue // Return AVL queue.
+        assert!(is_ascending(&avlq), 0);
+        avlq // Return AVL queue.
     }
 
     #[test]

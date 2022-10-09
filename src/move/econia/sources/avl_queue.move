@@ -95,11 +95,11 @@ module econia::avl_queue {
     ///
     /// Balance factor bits:
     ///
-    /// | Bit(s) | Balance factor |
-    /// |--------|----------------|
-    /// | `0b11` | -1             |
-    /// | `0b00` | 0              |
-    /// | `0b01` | 1              |
+    /// | Bit(s) | Balance factor             |
+    /// |--------|----------------------------|
+    /// | `0b10` | -1  (left subtree taller)  |
+    /// | `0b00` | 0                          |
+    /// | `0b01` | +1  (right subtree taller) |
     ///
     /// All fields except next inactive node ID are ignored when the
     /// node is in the inactive nodes stack.

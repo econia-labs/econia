@@ -166,11 +166,11 @@ All fields stored compactly in <code>bits</code> as follows:
 
 Balance factor bits:
 
-| Bit(s) | Balance factor |
-|--------|----------------|
-| <code>0b11</code> | -1             |
-| <code>0b00</code> | 0              |
-| <code>0b01</code> | 1              |
+| Bit(s) | Balance factor             |
+|--------|----------------------------|
+| <code>0b10</code> | -1  (left subtree taller)  |
+| <code>0b00</code> | 0                          |
+| <code>0b01</code> | +1  (right subtree taller) |
 
 All fields except next inactive node ID are ignored when the
 node is in the inactive nodes stack.

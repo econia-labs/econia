@@ -1,7 +1,7 @@
 
-<a name="0xc0deb00c_avlqueue"></a>
+<a name="0xc0deb00c_avl_queue"></a>
 
-# Module `0xc0deb00c::avlqueue`
+# Module `0xc0deb00c::avl_queue`
 
 AVL queue: a hybrid between an AVL tree and a queue.
 
@@ -59,14 +59,14 @@ The below index is automatically generated from source code:
 -  [Node IDs](#@Node_IDs_1)
 -  [Access keys](#@Access_keys_2)
 -  [Complete docgen index](#@Complete_docgen_index_3)
--  [Struct `AVLqueue`](#0xc0deb00c_avlqueue_AVLqueue)
--  [Struct `TreeNode`](#0xc0deb00c_avlqueue_TreeNode)
--  [Struct `ListNode`](#0xc0deb00c_avlqueue_ListNode)
+-  [Struct `AVLqueue`](#0xc0deb00c_avl_queue_AVLqueue)
+-  [Struct `TreeNode`](#0xc0deb00c_avl_queue_TreeNode)
+-  [Struct `ListNode`](#0xc0deb00c_avl_queue_ListNode)
 -  [Constants](#@Constants_4)
--  [Function `new`](#0xc0deb00c_avlqueue_new)
+-  [Function `new`](#0xc0deb00c_avl_queue_new)
     -  [Parameters](#@Parameters_5)
     -  [Returns](#@Returns_6)
--  [Function `verify_node_count`](#0xc0deb00c_avlqueue_verify_node_count)
+-  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
     -  [Aborts](#@Aborts_7)
     -  [Testing](#@Testing_8)
 
@@ -78,7 +78,7 @@ The below index is automatically generated from source code:
 
 
 
-<a name="0xc0deb00c_avlqueue_AVLqueue"></a>
+<a name="0xc0deb00c_avl_queue_AVLqueue"></a>
 
 ## Struct `AVLqueue`
 
@@ -100,7 +100,7 @@ Most non-table fields stored compactly in <code>bits</code> as follows:
 Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
 
 
-<pre><code><b>struct</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>&lt;V: store&gt; <b>has</b> store
+<pre><code><b>struct</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V: store&gt; <b>has</b> store
 </code></pre>
 
 
@@ -123,13 +123,13 @@ Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
 
 </dd>
 <dt>
-<code>tree_nodes: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="avlqueue.md#0xc0deb00c_avlqueue_TreeNode">avlqueue::TreeNode</a>&gt;</code>
+<code>tree_nodes: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">avl_queue::TreeNode</a>&gt;</code>
 </dt>
 <dd>
  Map from tree node ID to tree node.
 </dd>
 <dt>
-<code>list_nodes: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="avlqueue.md#0xc0deb00c_avlqueue_ListNode">avlqueue::ListNode</a>&gt;</code>
+<code>list_nodes: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">avl_queue::ListNode</a>&gt;</code>
 </dt>
 <dd>
  Map from list node ID to list node.
@@ -145,7 +145,7 @@ Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
 
 </details>
 
-<a name="0xc0deb00c_avlqueue_TreeNode"></a>
+<a name="0xc0deb00c_avl_queue_TreeNode"></a>
 
 ## Struct `TreeNode`
 
@@ -170,7 +170,7 @@ All fields except next inactive node ID are ignored when the
 node is in the inactive nodes stack.
 
 
-<pre><code><b>struct</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_TreeNode">TreeNode</a> <b>has</b> store
+<pre><code><b>struct</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a> <b>has</b> store
 </code></pre>
 
 
@@ -191,7 +191,7 @@ node is in the inactive nodes stack.
 
 </details>
 
-<a name="0xc0deb00c_avlqueue_ListNode"></a>
+<a name="0xc0deb00c_avl_queue_ListNode"></a>
 
 ## Struct `ListNode`
 
@@ -216,7 +216,7 @@ If list node is in the inactive list node stack, next node ID
 indicates next inactive node in the stack.
 
 
-<pre><code><b>struct</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_ListNode">ListNode</a> <b>has</b> store
+<pre><code><b>struct</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a> <b>has</b> store
 </code></pre>
 
 
@@ -260,158 +260,158 @@ indicates next inactive node in the stack.
 ## Constants
 
 
-<a name="0xc0deb00c_avlqueue_ASCENDING"></a>
+<a name="0xc0deb00c_avl_queue_ASCENDING"></a>
 
 Ascending AVL queue flag.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_ASCENDING">ASCENDING</a>: bool = <b>true</b>;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_ASCENDING">ASCENDING</a>: bool = <b>true</b>;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_AVLQ_BITS_ASCENDING"></a>
+<a name="0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING"></a>
 
-Bitmask set at bit 126, the result of <code><a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>.bits</code> bitwise
+Bitmask set at bit 126, the result of <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code> bitwise
 <code>AND</code> <code>AVL_QUEUE_BITS_SORT_ORDER</code> for an ascending AVL queue.
 Generated in Python via <code>hex(int('1' + '0' * 126, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>: u128 = 85070591730234615865843651857942052864;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>: u128 = 85070591730234615865843651857942052864;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_AVLQ_BITS_DESCENDING"></a>
+<a name="0xc0deb00c_avl_queue_AVLQ_BITS_DESCENDING"></a>
 
-The result of <code><a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>.bits</code> bitwise <code>AND</code>
+The result of <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code> bitwise <code>AND</code>
 <code>AVL_QUEUE_BITS_SORT_ORDER</code> for a descending AVL queue.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_DESCENDING">AVLQ_BITS_DESCENDING</a>: u128 = 0;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_DESCENDING">AVLQ_BITS_DESCENDING</a>: u128 = 0;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_AVLQ_BITS_LIST_TOP_SHIFT"></a>
+<a name="0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT"></a>
 
 Number of bits the inactive list node stack top node ID is
-shifted in <code><a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>.bits</code>.
+shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>: u8 = 98;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>: u8 = 98;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_AVLQ_BITS_SORT_ORDER"></a>
+<a name="0xc0deb00c_avl_queue_AVLQ_BITS_SORT_ORDER"></a>
 
 Bitmask set at bit 126, the sort order bit flag in
-<code><a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>.bits</code>. Generated in Python via
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>. Generated in Python via
 <code>hex(int('1' + '0' * 126, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_SORT_ORDER">AVLQ_BITS_SORT_ORDER</a>: u128 = 85070591730234615865843651857942052864;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_SORT_ORDER">AVLQ_BITS_SORT_ORDER</a>: u128 = 85070591730234615865843651857942052864;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_AVLQ_BITS_TREE_TOP_SHIFT"></a>
+<a name="0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT"></a>
 
 Number of bits the inactive tree node stack top node ID is
-shifted in <code><a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>.bits</code>.
+shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a>: u8 = 112;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a>: u8 = 112;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_BITS_PER_BYTE"></a>
+<a name="0xc0deb00c_avl_queue_BITS_PER_BYTE"></a>
 
 Number of bits in a byte.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_BITS_PER_BYTE">BITS_PER_BYTE</a>: u8 = 8;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>: u8 = 8;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_DESCENDING"></a>
+<a name="0xc0deb00c_avl_queue_DESCENDING"></a>
 
 Descending AVL queue flag.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_DESCENDING">DESCENDING</a>: bool = <b>false</b>;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_DESCENDING">DESCENDING</a>: bool = <b>false</b>;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_E_TOO_MANY_NODES"></a>
+<a name="0xc0deb00c_avl_queue_E_TOO_MANY_NODES"></a>
 
 Number of allocated nodes is too high.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>: u64 = 0;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>: u64 = 0;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_HI_128"></a>
+<a name="0xc0deb00c_avl_queue_HI_128"></a>
 
 <code>u128</code> bitmask with all bits set, generated in Python via
 <code>hex(int('1' * 128, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a>: u128 = 340282366920938463463374607431768211455;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_HI_64"></a>
+<a name="0xc0deb00c_avl_queue_HI_64"></a>
 
 <code>u64</code> bitmask with all bits set, generated in Python via
 <code>hex(int('1' * 64, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_HI_64">HI_64</a>: u64 = 18446744073709551615;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_64">HI_64</a>: u64 = 18446744073709551615;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_LEAST_SIGNIFICANT_BYTE"></a>
+<a name="0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE"></a>
 
 Set at bits 0-7, yielding most significant byte after bitwise
 <code>AND</code>. Generated in Python via <code>hex(int('1' * 8, 2))</code>
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a>: u64 = 255;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a>: u64 = 255;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_NODE_ID_NULL"></a>
+<a name="0xc0deb00c_avl_queue_NODE_ID_NULL"></a>
 
 Flag for null node ID.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_NODE_ID_NULL">NODE_ID_NULL</a>: u64 = 0;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_NULL">NODE_ID_NULL</a>: u64 = 0;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_N_NODES_MAX"></a>
+<a name="0xc0deb00c_avl_queue_N_NODES_MAX"></a>
 
 $2^{14} - 1$, the maximum number of nodes that can be allocated
 for either node type.
 
 
-<pre><code><b>const</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_N_NODES_MAX">N_NODES_MAX</a>: u64 = 16383;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>: u64 = 16383;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avlqueue_new"></a>
+<a name="0xc0deb00c_avl_queue_new"></a>
 
 ## Function `new`
 
@@ -423,7 +423,7 @@ Return a new AVL queue, optionally allocating inactive nodes.
 ### Parameters
 
 
-* <code>sort_order</code>: <code><a href="avlqueue.md#0xc0deb00c_avlqueue_ASCENDING">ASCENDING</a></code> or <code><a href="avlqueue.md#0xc0deb00c_avlqueue_DESCENDING">DESCENDING</a></code>.
+* <code>sort_order</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ASCENDING">ASCENDING</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_DESCENDING">DESCENDING</a></code>.
 * <code>n_inactive_tree_nodes</code>: The number of inactive tree nodes
 to allocate.
 * <code>n_inactive_list_nodes</code>: The number of inactive list nodes
@@ -435,10 +435,10 @@ to allocate.
 ### Returns
 
 
-* <code><a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>&lt;V&gt;</code>: A new AVL queue.
+* <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;</code>: A new AVL queue.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_new">new</a>&lt;V: store&gt;(sort_order: bool, n_inactive_tree_nodes: u64, n_inactive_list_nodes: u64): <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">avlqueue::AVLqueue</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_new">new</a>&lt;V: store&gt;(sort_order: bool, n_inactive_tree_nodes: u64, n_inactive_list_nodes: u64): <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;
 </code></pre>
 
 
@@ -447,23 +447,23 @@ to allocate.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_new">new</a>&lt;V: store&gt;(
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_new">new</a>&lt;V: store&gt;(
     sort_order: bool,
     n_inactive_tree_nodes: u64,
     n_inactive_list_nodes: u64,
-): <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>&lt;V&gt; {
+): <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt; {
     // Assert not trying <b>to</b> allocate too many tree nodes.
-    <a href="avlqueue.md#0xc0deb00c_avlqueue_verify_node_count">verify_node_count</a>(n_inactive_tree_nodes);
+    <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(n_inactive_tree_nodes);
     // Assert not trying <b>to</b> allocate too many list nodes.
-    <a href="avlqueue.md#0xc0deb00c_avlqueue_verify_node_count">verify_node_count</a>(n_inactive_list_nodes);
+    <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(n_inactive_list_nodes);
     // Initialize bits field based on sort order.
-    <b>let</b> bits = <b>if</b> (sort_order == <a href="avlqueue.md#0xc0deb00c_avlqueue_ASCENDING">ASCENDING</a>) <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a> <b>else</b>
-        <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_DESCENDING">AVLQ_BITS_DESCENDING</a>;
+    <b>let</b> bits = <b>if</b> (sort_order == <a href="avl_queue.md#0xc0deb00c_avl_queue_ASCENDING">ASCENDING</a>) <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a> <b>else</b>
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_DESCENDING">AVLQ_BITS_DESCENDING</a>;
     // Mask in 1-indexed node ID at top of each inactive node stack.
     bits = bits
-        | (n_inactive_tree_nodes &lt;&lt; <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a> <b>as</b> u128)
-        | (n_inactive_list_nodes &lt;&lt; <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a> <b>as</b> u128);
-    <b>let</b> avl_queue = <a href="avlqueue.md#0xc0deb00c_avlqueue_AVLqueue">AVLqueue</a>{ // Declare empty AVL queue.
+        | (n_inactive_tree_nodes &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a> <b>as</b> u128)
+        | (n_inactive_list_nodes &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a> <b>as</b> u128);
+    <b>let</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a> = <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>{ // Declare empty AVL queue.
         bits,
         root_lsbs: 0,
         tree_nodes: <a href="_new">table_with_length::new</a>(),
@@ -479,8 +479,8 @@ to allocate.
             // ID derived from counter, indicating next inactive
             // node in stack <b>has</b> ID of last allocated node (or null
             // in the case of the first <b>loop</b> iteration).
-            <a href="_add">table_with_length::add</a>(&<b>mut</b> avl_queue.tree_nodes, i + 1,
-                                   <a href="avlqueue.md#0xc0deb00c_avlqueue_TreeNode">TreeNode</a>{bits: (i <b>as</b> u128)});
+            <a href="_add">table_with_length::add</a>(&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.tree_nodes, i + 1,
+                                   <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>{bits: (i <b>as</b> u128)});
             i = i + 1; // Increment <b>loop</b> counter.
         };
     };
@@ -494,17 +494,17 @@ to allocate.
             // node in stack <b>has</b> ID of last allocated node (or null
             // in the case of the first <b>loop</b> iteration).
             <a href="_add">table_with_length::add</a>(
-                &<b>mut</b> avl_queue.list_nodes, i + 1, <a href="avlqueue.md#0xc0deb00c_avlqueue_ListNode">ListNode</a>{
+                &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.list_nodes, i + 1, <a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>{
                     last_msbs: 0,
                     last_lsbs: 0,
-                    next_msbs: (i &gt;&gt; <a href="avlqueue.md#0xc0deb00c_avlqueue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
-                    next_lsbs: (i & <a href="avlqueue.md#0xc0deb00c_avlqueue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8)});
+                    next_msbs: (i &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
+                    next_lsbs: (i & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8)});
             <a href="_add">table::add</a>( // Allocate optional insertion value.
-                &<b>mut</b> avl_queue.insertion_values, i + 1, <a href="_none">option::none</a>());
+                &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.insertion_values, i + 1, <a href="_none">option::none</a>());
             i = i + 1; // Increment <b>loop</b> counter.
         };
     };
-    avl_queue // Return AVL queue.
+    <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a> // Return AVL queue.
 }
 </code></pre>
 
@@ -512,7 +512,7 @@ to allocate.
 
 </details>
 
-<a name="0xc0deb00c_avlqueue_verify_node_count"></a>
+<a name="0xc0deb00c_avl_queue_verify_node_count"></a>
 
 ## Function `verify_node_count`
 
@@ -524,7 +524,7 @@ Verify node count is not too high.
 ### Aborts
 
 
-* <code><a href="avlqueue.md#0xc0deb00c_avlqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avlqueue.md#0xc0deb00c_avlqueue_N_NODES_MAX">N_NODES_MAX</a></code>.
+* <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
 <a name="@Testing_8"></a>
@@ -536,7 +536,7 @@ Verify node count is not too high.
 * <code>test_verify_node_count_pass()</code>
 
 
-<pre><code><b>fun</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_verify_node_count">verify_node_count</a>(n_nodes: u64)
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(n_nodes: u64)
 </code></pre>
 
 
@@ -545,11 +545,11 @@ Verify node count is not too high.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="avlqueue.md#0xc0deb00c_avlqueue_verify_node_count">verify_node_count</a>(
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(
     n_nodes: u64,
 ) {
     // Assert node count is less than or equal <b>to</b> max amount.
-    <b>assert</b>!(n_nodes &lt;= <a href="avlqueue.md#0xc0deb00c_avlqueue_N_NODES_MAX">N_NODES_MAX</a>, <a href="avlqueue.md#0xc0deb00c_avlqueue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>);
+    <b>assert</b>!(n_nodes &lt;= <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>);
 }
 </code></pre>
 

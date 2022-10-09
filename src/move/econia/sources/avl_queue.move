@@ -32,7 +32,7 @@
 /// # Complete docgen index
 ///
 /// The below index is automatically generated from source code:
-module econia::avlqueue {
+module econia::avl_queue {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

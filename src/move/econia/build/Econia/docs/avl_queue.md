@@ -66,9 +66,11 @@ The below index is automatically generated from source code:
 -  [Function `new`](#0xc0deb00c_avl_queue_new)
     -  [Parameters](#@Parameters_5)
     -  [Returns](#@Returns_6)
+-  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
+    -  [Testing](#@Testing_7)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_7)
-    -  [Testing](#@Testing_8)
+    -  [Aborts](#@Aborts_8)
+    -  [Testing](#@Testing_9)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -100,7 +102,7 @@ Most non-table fields stored compactly in <code>bits</code> as follows:
 Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
 
 
-<pre><code><b>struct</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V: store&gt; <b>has</b> store
+<pre><code><b>struct</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt; <b>has</b> store
 </code></pre>
 
 
@@ -135,7 +137,7 @@ Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
  Map from list node ID to list node.
 </dd>
 <dt>
-<code>insertion_values: <a href="_Table">table::Table</a>&lt;u64, <a href="_Option">option::Option</a>&lt;V&gt;&gt;</code>
+<code>values: <a href="_Table">table::Table</a>&lt;u64, <a href="_Option">option::Option</a>&lt;V&gt;&gt;</code>
 </dt>
 <dd>
  Map from list node ID to optional insertion value.
@@ -396,6 +398,18 @@ Set at bits 0-7, yielding most significant byte after bitwise
 
 
 
+<a name="0xc0deb00c_avl_queue_NODE_ID_LSBS"></a>
+
+Set at bits 0-13, for <code>AND</code> masking off all bits other than node
+ID contained in least-significant bits. Generated in Python via
+<code>hex(int('1' * 14, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_LSBS">NODE_ID_LSBS</a>: u64 = 16383;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_NODE_ID_NULL"></a>
 
 Flag for null node ID.
@@ -474,7 +488,7 @@ to allocate.
         root_lsbs: 0,
         tree_nodes: <a href="_new">table_with_length::new</a>(),
         list_nodes: <a href="_new">table_with_length::new</a>(),
-        insertion_values: <a href="_new">table::new</a>(),
+        values: <a href="_new">table::new</a>(),
     };
     // If need <b>to</b> allocate at least one tree node:
     <b>if</b> (n_inactive_tree_nodes &gt; 0) {
@@ -505,12 +519,47 @@ to allocate.
                     last_lsbs: 0,
                     next_msbs: (i &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
                     next_lsbs: (i & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8)});
-            <a href="_add">table::add</a>( // Allocate optional insertion value.
-                &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.insertion_values, i + 1, <a href="_none">option::none</a>());
+            // Allocate optional insertion value entry.
+            <a href="_add">table::add</a>(&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a>.values, i + 1, <a href="_none">option::none</a>());
             i = i + 1; // Increment <b>loop</b> counter.
         };
     };
     <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a> // Return AVL queue.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_is_ascending"></a>
+
+## Function `is_ascending`
+
+Return <code><b>true</b></code> if given AVL queue has ascending sort order.
+
+
+<a name="@Testing_7"></a>
+
+### Testing
+
+
+* <code>test_is_ascending()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending">is_ascending</a>&lt;V&gt;(avl_queue_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending">is_ascending</a>&lt;V&gt;(
+    avl_queue_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
+): bool {
+    avl_queue_ref.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a> == <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>
 }
 </code></pre>
 
@@ -525,7 +574,7 @@ to allocate.
 Verify node count is not too high.
 
 
-<a name="@Aborts_7"></a>
+<a name="@Aborts_8"></a>
 
 ### Aborts
 
@@ -533,7 +582,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_8"></a>
+<a name="@Testing_9"></a>
 
 ### Testing
 

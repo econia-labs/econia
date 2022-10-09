@@ -153,6 +153,10 @@ module econia::avl_queue {
     /// The result of `AVLqueue.bits` bitwise `AND`
     /// `AVL_QUEUE_BITS_SORT_ORDER` for a descending AVL queue.
     const AVLQ_BITS_DESCENDING: u128 = 0;
+    /// Bitmask only unset at list top bits in `AVLqueue.bits`, for
+    /// bitwise `AND` to clear out the value. Generated in Python via
+    /// `hex(int('1' * 14, 2) <<  98 ^ int('1' * 128, 2))`.
+    const AVLQ_BITS_LIST_TOP_CLEAR: u128 = 0xffff0003ffffffffffffffffffffffff;
     /// Number of bits the inactive list node stack top node ID is
     /// shifted in `AVLqueue.bits`.
     const AVLQ_BITS_LIST_TOP_SHIFT: u8 = 98;
@@ -185,6 +189,10 @@ module econia::avl_queue {
     /// $2^{14} - 1$, the maximum number of nodes that can be allocated
     /// for either node type.
     const N_NODES_MAX: u64 = 16383;
+    /// Set at bit 14, for `AND` masking off all bits other than flag
+    /// for if node ID indicated in a `ListNode` is a tree node ID.
+    /// Generated in Python via `hex(int('1' + '0' * 14, 2))`.
+    const IS_TREE_NODE_ID: u64 = 0x4000;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -274,12 +282,112 @@ module econia::avl_queue {
     public fun is_ascending<V>(
         avlq_ref: &AVLqueue<V>
     ): bool {
-        avlq_ref.bits & AVLQ_BITS_ASCENDING == AVLQ_BITS_ASCENDING
+        avlq_ref.bits & AVLQ_BITS_SORT_ORDER == AVLQ_BITS_ASCENDING
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Activate a list node and return its node ID.
+    ///
+    /// If inactive list node stack is empty, allocate a new list node,
+    /// otherwise pop one off the inactive stack.
+    ///
+    /// If activated list node will be the only list node in a doubly
+    /// linked list, then it will have to indicate for next and last
+    /// node IDs a tree node, which will also have to be activated via
+    /// `activate_tree_node()`. Hence error checking for the number of
+    /// allocated tree nodes is performed here first, and is not
+    /// re-performed in `activate_tree_node()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `solo`: If `true`, is only list node in corresponding doubly
+    ///   linked list.
+    /// * `last`: `ListNode.last_msbs` concatenated with
+    ///   `ListNode.last_lsbs`. Overwritten if `solo` is `true`.
+    /// * `next`: `ListNode.next_msbs` concatenated with
+    ///   `ListNode.next_lsbs`. Overwritten if `solo` is `true`.
+    /// * `value`: Insertion value for list node to activate.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Node ID of activated list node.
+    fun activate_list_node<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        solo: bool,
+        last: u64,
+        next: u64,
+        value: V
+    ): u64 {
+        // If only list node in doubly linked list, will need to
+        // activate tree node holding list:
+        if (solo) {
+            let tree_node_id = // Get top of inactive tree nodes stack.
+                (avlq_ref_mut.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) &
+                NODE_ID_LSBS;
+            // If will need to allocate a new tree node:
+            if (tree_node_id == NIL) {
+                tree_node_id = // Get new 1-indexed tree node ID.
+                    table_with_length::length(&avlq_ref_mut.tree_nodes) + 1;
+                // Verify tree nodes not over-allocated.
+                verify_node_count(tree_node_id);
+            };
+            // Set last node ID as flagged tree node ID.
+            last = tree_node_id & IS_TREE_NODE_ID;
+            // Set next node ID as flagged tree node ID.
+            next = tree_node_id & IS_TREE_NODE_ID;
+        }; // Last and next arguments now overwritten if solo.
+        // Mutably borrow insertion values table.
+        let values_ref_mut = &mut avlq_ref_mut.values;
+        // Split last and next arguments into byte fields.
+        let (last_msbs, last_lsbs, next_msbs, next_lsbs) = (
+            (last >> BITS_PER_BYTE as u8),
+            (last & LEAST_SIGNIFICANT_BYTE as u8),
+            (next >> BITS_PER_BYTE as u8),
+            (next & LEAST_SIGNIFICANT_BYTE as u8));
+        let list_node_id =  // Get top of inactive list nodes stack.
+            (avlq_ref_mut.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) &
+            NODE_ID_LSBS;
+        // If will need to allocate a new list node:
+        if (list_node_id == NIL) {
+            list_node_id = // Get new 1-indexed list node ID.
+                table_with_length::length(&avlq_ref_mut.list_nodes) + 1;
+            // Verify list nodes not over-allocated.
+            verify_node_count(list_node_id);
+            // Mutably borrow list nodes table.
+            let list_nodes_ref_mut = &mut avlq_ref_mut.list_nodes;
+            // Allocate a new list node with given fields.
+            table_with_length::add(list_nodes_ref_mut, list_node_id, ListNode{
+                last_msbs, last_lsbs, next_msbs, next_lsbs});
+            // Allocate a new list node value option.
+            table::add(values_ref_mut, list_node_id, option::some(value));
+        } else { // If can pop inactive node off stack:
+            // Mutably borrow list nodes table.
+            let list_nodes_ref_mut = &mut avlq_ref_mut.list_nodes;
+            // Mutably borrow inactive node at top of stack.
+            let node_ref_mut = table_with_length::borrow_mut(
+                list_nodes_ref_mut, list_node_id);
+            let new_list_stack_top = // Get new list stack top node ID.
+                ((node_ref_mut.next_msbs as u128) << BITS_PER_BYTE) |
+                 (node_ref_mut.next_lsbs as u128);
+            // Clear out stack top bits and mask in new stack top.
+            avlq_ref_mut.bits = avlq_ref_mut.bits & AVLQ_BITS_LIST_TOP_CLEAR |
+                (new_list_stack_top << AVLQ_BITS_LIST_TOP_SHIFT);
+            node_ref_mut.last_msbs = last_msbs; // Reassign last MSBs.
+            node_ref_mut.last_lsbs = last_lsbs; // Reassign last LSBs.
+            node_ref_mut.next_msbs = next_msbs; // Reassign next MSBs.
+            node_ref_mut.next_lsbs = next_lsbs; // Reassign next LSBs.
+            // Mutably borrow empty value option for node ID.
+            let value_option_ref_mut =
+                table::borrow_mut(values_ref_mut, list_node_id);
+            // Fill the empty value option with the insertion value.
+            option::fill(value_option_ref_mut, value);
+        };
+        list_node_id // Return activated list node ID.
+    }
 
     /// Verify node count is not too high.
     ///

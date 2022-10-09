@@ -69,9 +69,12 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_7)
 -  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
     -  [Testing](#@Testing_8)
+-  [Function `activate_list_node`](#0xc0deb00c_avl_queue_activate_list_node)
+    -  [Parameters](#@Parameters_9)
+    -  [Returns](#@Returns_10)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_9)
-    -  [Testing](#@Testing_10)
+    -  [Aborts](#@Aborts_11)
+    -  [Testing](#@Testing_12)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -302,6 +305,18 @@ The result of <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueu
 
 
 
+<a name="0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_CLEAR"></a>
+
+Bitmask only unset at list top bits in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>, for
+bitwise <code>AND</code> to clear out the value. Generated in Python via
+<code>hex(int('1' * 14, 2) &lt;&lt;  98 ^ int('1' * 128, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_CLEAR">AVLQ_BITS_LIST_TOP_CLEAR</a>: u128 = 340277174940992578692803427309614792703;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT"></a>
 
 Number of bits the inactive list node stack top node ID is
@@ -384,6 +399,18 @@ Number of allocated nodes is too high.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_IS_TREE_NODE_ID"></a>
+
+Set at bit 14, for <code>AND</code> masking off all bits other than flag
+for if node ID indicated in a <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a></code> is a tree node ID.
+Generated in Python via <code>hex(int('1' + '0' * 14, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE_ID">IS_TREE_NODE_ID</a>: u64 = 16384;
 </code></pre>
 
 
@@ -567,7 +594,135 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending">is_ascending</a>&lt;V&gt;(
     avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
 ): bool {
-    avlq_ref.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a> == <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>
+    avlq_ref.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_SORT_ORDER">AVLQ_BITS_SORT_ORDER</a> == <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_activate_list_node"></a>
+
+## Function `activate_list_node`
+
+Activate a list node and return its node ID.
+
+If inactive list node stack is empty, allocate a new list node,
+otherwise pop one off the inactive stack.
+
+If activated list node will be the only list node in a doubly
+linked list, then it will have to indicate for next and last
+node IDs a tree node, which will also have to be activated via
+<code>activate_tree_node()</code>. Hence error checking for the number of
+allocated tree nodes is performed here first, and is not
+re-performed in <code>activate_tree_node()</code>.
+
+
+<a name="@Parameters_9"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>solo</code>: If <code><b>true</b></code>, is only list node in corresponding doubly
+linked list.
+* <code>last</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>.last_msbs</code> concatenated with
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>.last_lsbs</code>. Overwritten if <code>solo</code> is <code><b>true</b></code>.
+* <code>next</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>.next_msbs</code> concatenated with
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>.next_lsbs</code>. Overwritten if <code>solo</code> is <code><b>true</b></code>.
+* <code>value</code>: Insertion value for list node to activate.
+
+
+<a name="@Returns_10"></a>
+
+### Returns
+
+
+* <code>u64</code>: Node ID of activated list node.
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, solo: bool, last: u64, next: u64, value: V): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    solo: bool,
+    last: u64,
+    next: u64,
+    value: V
+): u64 {
+    // If only list node in doubly linked list, will need <b>to</b>
+    // activate tree node holding list:
+    <b>if</b> (solo) {
+        <b>let</b> tree_node_id = // Get top of inactive tree nodes stack.
+            (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a> <b>as</b> u64) &
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_LSBS">NODE_ID_LSBS</a>;
+        // If will need <b>to</b> allocate a new tree node:
+        <b>if</b> (tree_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
+            tree_node_id = // Get new 1-indexed tree node ID.
+                <a href="_length">table_with_length::length</a>(&avlq_ref_mut.tree_nodes) + 1;
+            // Verify tree nodes not over-allocated.
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(tree_node_id);
+        };
+        // Set last node ID <b>as</b> flagged tree node ID.
+        last = tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE_ID">IS_TREE_NODE_ID</a>;
+        // Set next node ID <b>as</b> flagged tree node ID.
+        next = tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE_ID">IS_TREE_NODE_ID</a>;
+    }; // Last and next arguments now overwritten <b>if</b> solo.
+    // Mutably borrow insertion values <a href="">table</a>.
+    <b>let</b> values_ref_mut = &<b>mut</b> avlq_ref_mut.values;
+    // Split last and next arguments into byte fields.
+    <b>let</b> (last_msbs, last_lsbs, next_msbs, next_lsbs) = (
+        (last &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
+        (last & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8),
+        (next &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
+        (next & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8));
+    <b>let</b> list_node_id =  // Get top of inactive list nodes stack.
+        (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a> <b>as</b> u64) &
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_LSBS">NODE_ID_LSBS</a>;
+    // If will need <b>to</b> allocate a new list node:
+    <b>if</b> (list_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
+        list_node_id = // Get new 1-indexed list node ID.
+            <a href="_length">table_with_length::length</a>(&avlq_ref_mut.list_nodes) + 1;
+        // Verify list nodes not over-allocated.
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(list_node_id);
+        // Mutably borrow list nodes <a href="">table</a>.
+        <b>let</b> list_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.list_nodes;
+        // Allocate a new list node <b>with</b> given fields.
+        <a href="_add">table_with_length::add</a>(list_nodes_ref_mut, list_node_id, <a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>{
+            last_msbs, last_lsbs, next_msbs, next_lsbs});
+        // Allocate a new list node value <a href="">option</a>.
+        <a href="_add">table::add</a>(values_ref_mut, list_node_id, <a href="_some">option::some</a>(value));
+    } <b>else</b> { // If can pop inactive node off stack:
+        // Mutably borrow list nodes <a href="">table</a>.
+        <b>let</b> list_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.list_nodes;
+        // Mutably borrow inactive node at top of stack.
+        <b>let</b> node_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
+            list_nodes_ref_mut, list_node_id);
+        <b>let</b> new_list_stack_top = // Get new list stack top node ID.
+            ((node_ref_mut.next_msbs <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>) |
+             (node_ref_mut.next_lsbs <b>as</b> u128);
+        // Clear out stack top bits and mask in new stack top.
+        avlq_ref_mut.bits = avlq_ref_mut.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_CLEAR">AVLQ_BITS_LIST_TOP_CLEAR</a> |
+            (new_list_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>);
+        node_ref_mut.last_msbs = last_msbs; // Reassign last MSBs.
+        node_ref_mut.last_lsbs = last_lsbs; // Reassign last LSBs.
+        node_ref_mut.next_msbs = next_msbs; // Reassign next MSBs.
+        node_ref_mut.next_lsbs = next_lsbs; // Reassign next LSBs.
+        // Mutably borrow empty value <a href="">option</a> for node ID.
+        <b>let</b> value_option_ref_mut =
+            <a href="_borrow_mut">table::borrow_mut</a>(values_ref_mut, list_node_id);
+        // Fill the empty value <a href="">option</a> <b>with</b> the insertion value.
+        <a href="_fill">option::fill</a>(value_option_ref_mut, value);
+    };
+    list_node_id // Return activated list node ID.
 }
 </code></pre>
 
@@ -582,7 +737,7 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 Verify node count is not too high.
 
 
-<a name="@Aborts_9"></a>
+<a name="@Aborts_11"></a>
 
 ### Aborts
 
@@ -590,7 +745,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_10"></a>
+<a name="@Testing_12"></a>
 
 ### Testing
 

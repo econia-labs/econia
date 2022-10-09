@@ -155,16 +155,22 @@ All fields stored compactly in <code>bits</code> as follows:
 
 | Bit(s) | Data                                 |
 |--------|--------------------------------------|
-| 87-118 | Insertion key                        |
-| 86     | If set, balance factor is 1          |
-| 85     | If set, balance factor is 0          |
-| 84     | If set, balance factor is -1         |
+| 86-117 | Insertion key                        |
+| 84-85  | Balance factor (see below)           |
 | 70-83  | Parent node ID                       |
 | 56-69  | Left child node ID                   |
 | 42-55  | Right child node ID                  |
 | 28-41  | List head node ID                    |
 | 14-27  | List tail node ID                    |
 | 0-13   | Next inactive node ID, when in stack |
+
+Balance factor bits:
+
+| Bit(s) | Balance factor |
+|--------|----------------|
+| <code>0b11</code> | -1             |
+| <code>0b00</code> | 0              |
+| <code>0b01</code> | 1              |
 
 All fields except next inactive node ID are ignored when the
 node is in the inactive nodes stack.

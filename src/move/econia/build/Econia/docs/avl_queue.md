@@ -66,11 +66,12 @@ The below index is automatically generated from source code:
 -  [Function `new`](#0xc0deb00c_avl_queue_new)
     -  [Parameters](#@Parameters_5)
     -  [Returns](#@Returns_6)
--  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
     -  [Testing](#@Testing_7)
+-  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
+    -  [Testing](#@Testing_8)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_8)
-    -  [Testing](#@Testing_9)
+    -  [Aborts](#@Aborts_9)
+    -  [Testing](#@Testing_10)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -88,16 +89,16 @@ A hybrid between an AVL tree and a queue. See above.
 
 Most non-table fields stored compactly in <code>bits</code> as follows:
 
-| Bit(s)  | Data                                         |
-|---------|----------------------------------------------|
-| 126     | If set, ascending AVL queue, else descending |
-| 112-125 | Tree node ID at top of inactive stack        |
-| 98-111  | List node ID at top of inactive stack        |
-| 84-97   | AVL queue head list node ID                  |
-| 52-83   | AVL queue head insertion key                 |
-| 38-51   | AVL queue tail list node ID                  |
-| 6-37    | AVL queue tail insertion key                 |
-| 0-5     | Bits 8-13 of tree root node ID               |
+| Bit(s)  | Data                                               |
+|---------|----------------------------------------------------|
+| 126     | If set, ascending AVL queue, else descending       |
+| 112-125 | Tree node ID at top of inactive stack              |
+| 98-111  | List node ID at top of inactive stack              |
+| 84-97   | AVL queue head list node ID                        |
+| 52-83   | AVL queue head insertion key (if node ID not null) |
+| 38-51   | AVL queue tail list node ID                        |
+| 6-37    | AVL queue tail insertion key (if node ID not null) |
+| 0-5     | Bits 8-13 of tree root node ID                     |
 
 Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
 
@@ -390,10 +391,20 @@ Number of allocated nodes is too high.
 <a name="0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE"></a>
 
 Set at bits 0-7, yielding most significant byte after bitwise
-<code>AND</code>. Generated in Python via <code>hex(int('1' * 8, 2))</code>
+<code>AND</code>. Generated in Python via <code>hex(int('1' * 8, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a>: u64 = 255;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_NIL"></a>
+
+Flag for null node ID.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>: u64 = 0;
 </code></pre>
 
 
@@ -406,16 +417,6 @@ ID contained in least-significant bits. Generated in Python via
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_LSBS">NODE_ID_LSBS</a>: u64 = 16383;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_avl_queue_NODE_ID_NULL"></a>
-
-Flag for null node ID.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_NULL">NODE_ID_NULL</a>: u64 = 0;
 </code></pre>
 
 
@@ -458,6 +459,15 @@ to allocate.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;</code>: A new AVL queue.
 
 
+<a name="@Testing_7"></a>
+
+### Testing
+
+
+* <code>test_new_no_nodes()</code>
+* <code>test_new_some_nodes()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_new">new</a>&lt;V: store&gt;(sort_order: bool, n_inactive_tree_nodes: u64, n_inactive_list_nodes: u64): <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;
 </code></pre>
 
@@ -481,8 +491,8 @@ to allocate.
         <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_DESCENDING">AVLQ_BITS_DESCENDING</a>;
     // Mask in 1-indexed node ID at top of each inactive node stack.
     bits = bits
-        | (n_inactive_tree_nodes &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a> <b>as</b> u128)
-        | (n_inactive_list_nodes &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a> <b>as</b> u128);
+        | ((n_inactive_tree_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a>)
+        | ((n_inactive_list_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>);
     <b>let</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">avl_queue</a> = <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>{ // Declare empty AVL queue.
         bits,
         root_lsbs: 0,
@@ -539,7 +549,7 @@ to allocate.
 Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 
 
-<a name="@Testing_7"></a>
+<a name="@Testing_8"></a>
 
 ### Testing
 
@@ -574,7 +584,7 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 Verify node count is not too high.
 
 
-<a name="@Aborts_8"></a>
+<a name="@Aborts_9"></a>
 
 ### Aborts
 
@@ -582,7 +592,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_9"></a>
+<a name="@Testing_10"></a>
 
 ### Testing
 

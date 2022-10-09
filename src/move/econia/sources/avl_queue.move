@@ -55,16 +55,16 @@ module econia::avl_queue {
     ///
     /// Most non-table fields stored compactly in `bits` as follows:
     ///
-    /// | Bit(s)  | Data                                         |
-    /// |---------|----------------------------------------------|
-    /// | 126     | If set, ascending AVL queue, else descending |
-    /// | 112-125 | Tree node ID at top of inactive stack        |
-    /// | 98-111  | List node ID at top of inactive stack        |
-    /// | 84-97   | AVL queue head list node ID                  |
-    /// | 52-83   | AVL queue head insertion key                 |
-    /// | 38-51   | AVL queue tail list node ID                  |
-    /// | 6-37    | AVL queue tail insertion key                 |
-    /// | 0-5     | Bits 8-13 of tree root node ID               |
+    /// | Bit(s)  | Data                                               |
+    /// |---------|----------------------------------------------------|
+    /// | 126     | If set, ascending AVL queue, else descending       |
+    /// | 112-125 | Tree node ID at top of inactive stack              |
+    /// | 98-111  | List node ID at top of inactive stack              |
+    /// | 84-97   | AVL queue head list node ID                        |
+    /// | 52-83   | AVL queue head insertion key (if node ID not null) |
+    /// | 38-51   | AVL queue tail list node ID                        |
+    /// | 6-37    | AVL queue tail insertion key (if node ID not null) |
+    /// | 0-5     | Bits 8-13 of tree root node ID                     |
     ///
     /// Bits 0-7 of the tree root node ID are stored in `root_lsbs`.
     struct AVLqueue<V> has store {
@@ -174,10 +174,10 @@ module econia::avl_queue {
     /// `hex(int('1' * 128, 2))`.
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
     /// Set at bits 0-7, yielding most significant byte after bitwise
-    /// `AND`. Generated in Python via `hex(int('1' * 8, 2))`
+    /// `AND`. Generated in Python via `hex(int('1' * 8, 2))`.
     const LEAST_SIGNIFICANT_BYTE: u64 = 0xff;
     /// Flag for null node ID.
-    const NODE_ID_NULL: u64 = 0;
+    const NIL: u64 = 0;
     /// Set at bits 0-13, for `AND` masking off all bits other than node
     /// ID contained in least-significant bits. Generated in Python via
     /// `hex(int('1' * 14, 2))`.
@@ -203,6 +203,11 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `AVLqueue<V>`: A new AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_new_no_nodes()`
+    /// * `test_new_some_nodes()`
     public fun new<V: store>(
         sort_order: bool,
         n_inactive_tree_nodes: u64,
@@ -217,8 +222,8 @@ module econia::avl_queue {
             AVLQ_BITS_DESCENDING;
         // Mask in 1-indexed node ID at top of each inactive node stack.
         bits = bits
-            | (n_inactive_tree_nodes << AVLQ_BITS_TREE_TOP_SHIFT as u128)
-            | (n_inactive_list_nodes << AVLQ_BITS_LIST_TOP_SHIFT as u128);
+            | ((n_inactive_tree_nodes as u128) << AVLQ_BITS_TREE_TOP_SHIFT)
+            | ((n_inactive_list_nodes as u128) << AVLQ_BITS_LIST_TOP_SHIFT);
         let avl_queue = AVLqueue{ // Declare empty AVL queue.
             bits,
             root_lsbs: 0,
@@ -528,6 +533,52 @@ module econia::avl_queue {
         // Assert tree top.
         assert!(get_tree_top_test(&avl_queue) == u_64(b"10101010101011"), 0);
         avl_queue // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify successful initialization for no node allocations.
+    fun test_new_no_nodes(): (
+        AVLqueue<u8>,
+        AVLqueue<u8>
+    ) {
+        // Init ascending AVL queue.
+        let avl_queue_ascending = new(ASCENDING, 0, 0);
+        // Assert flagged ascending.
+        assert!(is_ascending(&avl_queue_ascending), 0);
+        // Assert null stack tops.
+        assert!(get_list_top_test(&avl_queue_ascending) == NIL, 0);
+        assert!(get_tree_top_test(&avl_queue_ascending) == NIL, 0);
+        // Init descending AVL queue.
+        let avl_queue_descending = new(DESCENDING, 0, 0);
+        // Assert flagged descending.
+        assert!(!is_ascending(&avl_queue_descending), 0);
+        (avl_queue_ascending, avl_queue_descending) // Return both.
+    }
+
+    #[test]
+    /// Verify successful initialization for allocating tree nodes.
+    fun test_new_some_nodes(): (
+        AVLqueue<u8>
+    ) {
+        // Init ascending AVL queue with two nodes each.
+        let avlq = new(ASCENDING, 3, 2);
+        // Assert table lengths.
+        assert!(table_with_length::length(&avlq.tree_nodes) == 3, 0);
+        assert!(table_with_length::length(&avlq.list_nodes) == 2, 0);
+        // Assert stack tops.
+        assert!(get_tree_top_test(&avlq) == 3, 0);
+        assert!(get_list_top_test(&avlq) == 2, 0);
+        // Assert inactive tree node stack next chain.
+        assert!(get_tree_next_test(borrow_tree_node_test(&avlq, 3)) == 2, 0);
+        assert!(get_tree_next_test(borrow_tree_node_test(&avlq, 2)) == 1, 0);
+        assert!(get_tree_next_test(borrow_tree_node_test(&avlq, 1)) == NIL, 0);
+        // Assert inactive list node stack next chain.
+        assert!(get_list_next_test(borrow_list_node_test(&avlq, 2)) == 1, 0);
+        assert!(get_list_next_test(borrow_list_node_test(&avlq, 1)) == NIL, 0);
+        // Assert value options initialize to none.
+        assert!(option::is_none(borrow_value_option_test(&avlq, 2)), 0);
+        assert!(option::is_none(borrow_value_option_test(&avlq, 1)), 0);
+        avlq // Return AVL queue.
     }
 
     #[test]

@@ -72,9 +72,10 @@ The below index is automatically generated from source code:
 -  [Function `activate_list_node`](#0xc0deb00c_avl_queue_activate_list_node)
     -  [Parameters](#@Parameters_9)
     -  [Returns](#@Returns_10)
+    -  [Testing](#@Testing_11)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_11)
-    -  [Testing](#@Testing_12)
+    -  [Aborts](#@Aborts_12)
+    -  [Testing](#@Testing_13)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -403,14 +404,15 @@ Number of allocated nodes is too high.
 
 
 
-<a name="0xc0deb00c_avl_queue_IS_TREE_NODE_ID"></a>
+<a name="0xc0deb00c_avl_queue_IS_TREE_NODE"></a>
 
 Set at bit 14, for <code>AND</code> masking off all bits other than flag
-for if node ID indicated in a <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a></code> is a tree node ID.
-Generated in Python via <code>hex(int('1' + '0' * 14, 2))</code>.
+bit for if node ID indicated in a <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a></code> is a tree node ID.
+Also for <code>OR</code> setting the flag bit. Generated in Python via
+<code>hex(int('1' + '0' * 14, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE_ID">IS_TREE_NODE_ID</a>: u64 = 16384;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE">IS_TREE_NODE</a>: u64 = 16384;
 </code></pre>
 
 
@@ -642,6 +644,16 @@ linked list.
 * <code>u64</code>: Node ID of activated list node.
 
 
+<a name="@Testing_11"></a>
+
+### Testing
+
+
+* <code>test_activate_list_node_not_solo()</code>
+* <code>test_activate_list_node_solo_empty_empty()</code>
+* <code>test_activate_list_node_solo_stacked_stacked()</code>
+
+
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, solo: bool, last: u64, next: u64, value: V): u64
 </code></pre>
 
@@ -659,7 +671,7 @@ linked list.
     value: V
 ): u64 {
     // If only list node in doubly linked list, will need <b>to</b>
-    // activate tree node holding list:
+    // activate tree node having given list:
     <b>if</b> (solo) {
         <b>let</b> tree_node_id = // Get top of inactive tree nodes stack.
             (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a> <b>as</b> u64) &
@@ -672,9 +684,9 @@ linked list.
             <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(tree_node_id);
         };
         // Set last node ID <b>as</b> flagged tree node ID.
-        last = tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE_ID">IS_TREE_NODE_ID</a>;
+        last = tree_node_id | <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE">IS_TREE_NODE</a>;
         // Set next node ID <b>as</b> flagged tree node ID.
-        next = tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE_ID">IS_TREE_NODE_ID</a>;
+        next = tree_node_id | <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE">IS_TREE_NODE</a>;
     }; // Last and next arguments now overwritten <b>if</b> solo.
     // Mutably borrow insertion values <a href="">table</a>.
     <b>let</b> values_ref_mut = &<b>mut</b> avlq_ref_mut.values;
@@ -737,7 +749,7 @@ linked list.
 Verify node count is not too high.
 
 
-<a name="@Aborts_11"></a>
+<a name="@Aborts_12"></a>
 
 ### Aborts
 
@@ -745,7 +757,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_12"></a>
+<a name="@Testing_13"></a>
 
 ### Testing
 

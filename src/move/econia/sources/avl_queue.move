@@ -190,9 +190,10 @@ module econia::avl_queue {
     /// for either node type.
     const N_NODES_MAX: u64 = 16383;
     /// Set at bit 14, for `AND` masking off all bits other than flag
-    /// for if node ID indicated in a `ListNode` is a tree node ID.
-    /// Generated in Python via `hex(int('1' + '0' * 14, 2))`.
-    const IS_TREE_NODE_ID: u64 = 0x4000;
+    /// bit for if node ID indicated in a `ListNode` is a tree node ID.
+    /// Also for `OR` setting the flag bit. Generated in Python via
+    /// `hex(int('1' + '0' * 14, 2))`.
+    const IS_TREE_NODE: u64 = 0x4000;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -315,6 +316,12 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `u64`: Node ID of activated list node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_list_node_not_solo()`
+    /// * `test_activate_list_node_solo_empty_empty()`
+    /// * `test_activate_list_node_solo_stacked_stacked()`
     fun activate_list_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         solo: bool,
@@ -323,7 +330,7 @@ module econia::avl_queue {
         value: V
     ): u64 {
         // If only list node in doubly linked list, will need to
-        // activate tree node holding list:
+        // activate tree node having given list:
         if (solo) {
             let tree_node_id = // Get top of inactive tree nodes stack.
                 (avlq_ref_mut.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) &
@@ -336,9 +343,9 @@ module econia::avl_queue {
                 verify_node_count(tree_node_id);
             };
             // Set last node ID as flagged tree node ID.
-            last = tree_node_id & IS_TREE_NODE_ID;
+            last = tree_node_id | IS_TREE_NODE;
             // Set next node ID as flagged tree node ID.
-            next = tree_node_id & IS_TREE_NODE_ID;
+            next = tree_node_id | IS_TREE_NODE;
         }; // Last and next arguments now overwritten if solo.
         // Mutably borrow insertion values table.
         let values_ref_mut = &mut avlq_ref_mut.values;
@@ -471,19 +478,44 @@ module econia::avl_queue {
         (avlq_ref.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) & NODE_ID_LSBS
     }
 
+    #[test_only]
+    /// Return node ID of last node and if last node is a tree node,
+    /// for given list node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_list_last_test()`
+    fun get_list_last_test(
+        list_node_ref: &ListNode
+    ): (
+        u64,
+        bool
+    ) {
+        // Get virtual last field.
+        let last_field = ((list_node_ref.last_msbs as u64) << BITS_PER_BYTE |
+            (list_node_ref.last_lsbs as u64));
+        // Return node ID, and flag for if last node is a tree node.
+        (last_field & NODE_ID_LSBS, last_field & IS_TREE_NODE == IS_TREE_NODE)
+    }
 
     #[test_only]
-    /// Return node ID of next node (which may be a list node ID or a
-    /// tree node ID), indicated by given list node.
+    /// Return node ID of next node and if next node is a tree node,
+    /// for given list node.
     ///
     /// # Testing
     ///
     /// * `test_get_list_next_test()`
     fun get_list_next_test(
         list_node_ref: &ListNode
-    ): u64 {
-        ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE |
-            (list_node_ref.next_lsbs as u64)) & NODE_ID_LSBS
+    ): (
+        u64,
+        bool
+    ) {
+        // Get virtual next field.
+        let next_field = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE |
+            (list_node_ref.next_lsbs as u64));
+        // Return node ID, and flag for if next node is a tree node.
+        (next_field & NODE_ID_LSBS, next_field & IS_TREE_NODE == IS_TREE_NODE)
     }
 
     #[test_only]
@@ -497,6 +529,18 @@ module econia::avl_queue {
         tree_node_ref: &TreeNode
     ): u64 {
         ((tree_node_ref.bits & (HI_64 as u128) as u64) & NODE_ID_LSBS)
+    }
+
+    #[test_only]
+    /// Return copy of value for given node ID.
+    fun get_value_test<V: copy>(
+        avlq_ref: &AVLqueue<V>,
+        node_id: u64
+    ): V {
+        // Borrow value option.
+        let value_option_ref = borrow_value_option_test(avlq_ref, node_id);
+        // Return copy of value.
+        *option::borrow(value_option_ref)
     }
 
     #[test_only]
@@ -571,6 +615,140 @@ module econia::avl_queue {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
+    /// Verify state updates for:
+    ///
+    /// * List node that is not solo.
+    /// * Empty inactive tree node stack.
+    /// * Empty inactive list node stack.
+    fun test_activate_list_node_not_solo():
+    AVLqueue<u8> {
+        let list_node_id = 1; // Declare new list node ID.
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        let solo = false; // Declare list node that is not solo.
+        let last = 321; // Declare virtual last field.
+        // Declare virtual next field.
+        let next_tree_node_id = 456;
+        let next = next_tree_node_id | IS_TREE_NODE;
+        let value = 123; // Declare insertion value.
+        // Activate list node for given arguments.
+        activate_list_node(&mut avlq, solo, last, next, value);
+        // Assert inactive tree and list node stack tops.
+        assert!(get_tree_top_test(&mut avlq) == NIL, 0);
+        assert!(get_list_top_test(&mut avlq) == NIL, 0);
+        // Immutably borrow list node.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        // Assert last node ID indicates passed in argument.
+        let (node_id, is_tree_node) = get_list_last_test(list_node_ref);
+        assert!(node_id == last, 0);
+        assert!(!is_tree_node, 0);
+        // Assert next node ID indicates passed in argument.
+        (node_id, is_tree_node) = get_list_next_test(list_node_ref);
+        assert!(node_id == next_tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        // Assert insertion value.
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for:
+    ///
+    /// * Solo list node.
+    /// * Empty inactive tree node stack.
+    /// * Empty inactive list node stack.
+    fun test_activate_list_node_solo_empty_empty():
+    AVLqueue<u8> {
+        let tree_node_id = 1; // Declare new tree node ID.
+        let list_node_id = 1; // Declare new list node ID.
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        let solo = true; // Declare solo list node.
+        let last = NIL; // Declare overwritten virtual last field.
+        let next = NIL; // Declare overwritten virtual next field.
+        let value = 123; // Declare insertion value.
+        // Activate list node for given arguments.
+        activate_list_node(&mut avlq, solo, last, next, value);
+        // Assert inactive tree and list node stack tops.
+        assert!(get_tree_top_test(&mut avlq) == NIL, 0);
+        assert!(get_list_top_test(&mut avlq) == NIL, 0);
+        // Immutably borrow list node.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        // Assert last node ID indicates new tree node.
+        let (node_id, is_tree_node) = get_list_last_test(list_node_ref);
+        assert!(node_id == tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        // Assert next node ID indicates new tree node.
+        (node_id, is_tree_node) = get_list_next_test(list_node_ref);
+        assert!(node_id == tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        // Assert insertion value.
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for:
+    ///
+    /// * Solo list node.
+    /// * Non-empty inactive tree node stack.
+    /// * Non-empty inactive list node stack.
+    fun test_activate_list_node_solo_stacked_stacked():
+    AVLqueue<u8> {
+        let tree_node_id = 1234; // Declare new tree node ID.
+        let list_node_id = 5678; // Declare new list node ID.
+        // Init AVL queue.
+        let avlq = new(ASCENDING, tree_node_id, list_node_id);
+        let solo = true; // Declare solo list node.
+        let last = NIL; // Declare overwritten virtual last field.
+        let next = NIL; // Declare overwritten virtual next field.
+        let value = 123; // Declare insertion value.
+        // Activate list node for given arguments.
+        activate_list_node(&mut avlq, solo, last, next, value);
+        // Assert inactive tree and list node stack tops.
+        assert!(get_tree_top_test(&mut avlq) == tree_node_id, 0);
+        assert!(get_list_top_test(&mut avlq) == list_node_id - 1, 0);
+        // Immutably borrow list node.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        // Assert last node ID indicates new tree node.
+        let (node_id, is_tree_node) = get_list_last_test(list_node_ref);
+        assert!(node_id == tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        // Assert next node ID indicates new tree node.
+        (node_id, is_tree_node) = get_list_next_test(list_node_ref);
+        assert!(node_id == tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        // Assert insertion value.
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify successful extraction.
+    fun test_get_list_last_test() {
+        // Declare list node.
+        let list_node = ListNode{
+            last_msbs: (u_64(b"00101010") as u8),
+            last_lsbs: (u_64(b"10101011") as u8),
+            next_msbs: 0,
+            next_lsbs: 0};
+        // Get last node info.
+        let (node_id, is_tree_node) = get_list_last_test(&list_node);
+        // Assert last node ID.
+        assert!(node_id == u_64(b"10101010101011"), 0);
+        // Assert not marked as tree node.
+        assert!(!is_tree_node, 0);
+        // Flag as tree node.
+        list_node.last_msbs = (u_64(b"01101010") as u8);
+        // Get last node info.
+        (node_id, is_tree_node) = get_list_last_test(&list_node);
+        // Assert last node ID unchanged.
+        assert!(node_id == u_64(b"10101010101011"), 0);
+        // Assert marked as tree node.
+        assert!(is_tree_node, 0);
+        ListNode{last_msbs: _, last_lsbs: _, next_msbs: _, next_lsbs: _} =
+            list_node; // Unpack list node.
+    }
+
+    #[test]
     /// Verify successful extraction.
     fun test_get_list_next_test() {
         // Declare list node.
@@ -579,8 +757,20 @@ module econia::avl_queue {
             last_lsbs: 0,
             next_msbs: (u_64(b"00101010") as u8),
             next_lsbs: (u_64(b"10101011") as u8)};
-        assert!( // Assert next node ID.
-            get_list_next_test(&list_node) == u_64(b"10101010101011"), 0);
+        // Get next node info.
+        let (node_id, is_tree_node) = get_list_next_test(&list_node);
+        // Assert next node ID.
+        assert!(node_id == u_64(b"10101010101011"), 0);
+        // Assert not marked as tree node.
+        assert!(!is_tree_node, 0);
+        // Flag as tree node.
+        list_node.next_msbs = (u_64(b"01101010") as u8);
+        // Get next node info.
+        (node_id, is_tree_node) = get_list_next_test(&list_node);
+        // Assert next node ID unchanged.
+        assert!(node_id == u_64(b"10101010101011"), 0);
+        // Assert marked as tree node.
+        assert!(is_tree_node, 0);
         ListNode{last_msbs: _, last_lsbs: _, next_msbs: _, next_lsbs: _} =
             list_node; // Unpack list node.
     }
@@ -679,8 +869,14 @@ module econia::avl_queue {
         assert!(get_tree_next_test(borrow_tree_node_test(&avlq, 2)) == 1, 0);
         assert!(get_tree_next_test(borrow_tree_node_test(&avlq, 1)) == NIL, 0);
         // Assert inactive list node stack next chain.
-        assert!(get_list_next_test(borrow_list_node_test(&avlq, 2)) == 1, 0);
-        assert!(get_list_next_test(borrow_list_node_test(&avlq, 1)) == NIL, 0);
+        let (node_id, is_tree_node) =
+            get_list_next_test(borrow_list_node_test(&avlq, 2));
+        assert!(node_id == 1, 0);
+        assert!(!is_tree_node, 0);
+        (node_id, is_tree_node) =
+            get_list_next_test(borrow_list_node_test(&avlq, 1));
+        assert!(node_id == NIL, 0);
+        assert!(!is_tree_node, 0);
         // Assert value options initialize to none.
         assert!(option::is_none(borrow_value_option_test(&avlq, 2)), 0);
         assert!(option::is_none(borrow_value_option_test(&avlq, 1)), 0);

@@ -177,15 +177,20 @@ module econia::avl_queue {
     /// `u128` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 128, 2))`.
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
-    /// Set at bits 0-7, yielding most significant byte after bitwise
-    /// `AND`. Generated in Python via `hex(int('1' * 8, 2))`.
-    const LEAST_SIGNIFICANT_BYTE: u64 = 0xff;
+    /// All bits set in integer of width required to encode balance
+    /// factor. Generated in Python via `hex(int('1' * 2, 2))`.
+    const HI_BALANCE_FACTOR: u64 = 0x3;
+    /// All bits set in integer of width required to encode a byte.
+    /// Generated in Python via `hex(int('1' * 8, 2))`.
+    const HI_BYTE: u64 = 0xff;
+    /// All bits set in integer of width required to encode insertion
+    /// key. Generated in Python via `hex(int('1' * 32, 2))`.
+    const HI_INSERTION_KEY: u64 = 0xffffffff;
+    /// All bits set in integer of width required to encode node ID.
+    /// Generated in Python via `hex(int('1' * 14, 2))`.
+    const HI_NODE_ID: u64 = 0x3fff;
     /// Flag for null node ID.
     const NIL: u64 = 0;
-    /// Set at bits 0-13, for `AND` masking off all bits other than node
-    /// ID contained in least-significant bits. Generated in Python via
-    /// `hex(int('1' * 14, 2))`.
-    const NODE_ID_LSBS: u64 = 0x3fff;
     /// $2^{14} - 1$, the maximum number of nodes that can be allocated
     /// for either node type.
     const N_NODES_MAX: u64 = 16383;
@@ -194,6 +199,10 @@ module econia::avl_queue {
     /// Also for `OR` setting the flag bit. Generated in Python via
     /// `hex(int('1' + '0' * 14, 2))`.
     const IS_TREE_NODE: u64 = 0x4000;
+    /// Number of bits balance factor is shifted in `TreeNode.bits`.
+    const SHIFT_BALANCE_FACTOR: u8 = 84;
+    /// Number of bits insertion key is shifted in `TreeNode.bits`.
+    const SHIFT_INSERTION_KEY: u8 = 86;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -266,7 +275,7 @@ module econia::avl_queue {
                     last_msbs: 0,
                     last_lsbs: 0,
                     next_msbs: (i >> BITS_PER_BYTE as u8),
-                    next_lsbs: (i & LEAST_SIGNIFICANT_BYTE as u8)});
+                    next_lsbs: (i & HI_BYTE as u8)});
                 // Allocate optional insertion value entry.
                 table::add(&mut avlq.values, i + 1, option::none());
                 i = i + 1; // Increment loop counter.
@@ -334,7 +343,7 @@ module econia::avl_queue {
         if (solo) {
             let tree_node_id = // Get top of inactive tree nodes stack.
                 (avlq_ref_mut.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) &
-                NODE_ID_LSBS;
+                HI_NODE_ID;
             // If will need to allocate a new tree node:
             if (tree_node_id == NIL) {
                 tree_node_id = // Get new 1-indexed tree node ID.
@@ -351,13 +360,11 @@ module econia::avl_queue {
         let values_ref_mut = &mut avlq_ref_mut.values;
         // Split last and next arguments into byte fields.
         let (last_msbs, last_lsbs, next_msbs, next_lsbs) = (
-            (last >> BITS_PER_BYTE as u8),
-            (last & LEAST_SIGNIFICANT_BYTE as u8),
-            (next >> BITS_PER_BYTE as u8),
-            (next & LEAST_SIGNIFICANT_BYTE as u8));
+            (last >> BITS_PER_BYTE as u8), (last & HI_BYTE as u8),
+            (next >> BITS_PER_BYTE as u8), (next & HI_BYTE as u8));
         let list_node_id =  // Get top of inactive list nodes stack.
             (avlq_ref_mut.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) &
-            NODE_ID_LSBS;
+            HI_NODE_ID;
         // If will need to allocate a new list node:
         if (list_node_id == NIL) {
             list_node_id = // Get new 1-indexed list node ID.
@@ -469,7 +476,7 @@ module econia::avl_queue {
         let last_field = ((list_node_ref.last_msbs as u64) << BITS_PER_BYTE |
             (list_node_ref.last_lsbs as u64));
         // Return node ID, and flag for if last node is a tree node.
-        (last_field & NODE_ID_LSBS, last_field & IS_TREE_NODE == IS_TREE_NODE)
+        (last_field & HI_NODE_ID, last_field & IS_TREE_NODE == IS_TREE_NODE)
     }
 
     #[test_only]
@@ -489,7 +496,7 @@ module econia::avl_queue {
         let next_field = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE |
             (list_node_ref.next_lsbs as u64));
         // Return node ID, and flag for if next node is a tree node.
-        (next_field & NODE_ID_LSBS, next_field & IS_TREE_NODE == IS_TREE_NODE)
+        (next_field & HI_NODE_ID, next_field & IS_TREE_NODE == IS_TREE_NODE)
     }
 
     #[test_only]
@@ -502,7 +509,21 @@ module econia::avl_queue {
     fun get_list_top_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
-        (avlq_ref.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) & NODE_ID_LSBS
+        (avlq_ref.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) & HI_NODE_ID
+    }
+
+
+    #[test_only]
+    /// Return insertion key indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_tree_next_test()`
+    fun get_tree_key_test(
+        tree_node_ref: &TreeNode
+    ): u64 {
+        (tree_node_ref.bits >> SHIFT_INSERTION_KEY as u64) &
+            HI_INSERTION_KEY
     }
 
     #[test_only]
@@ -515,7 +536,7 @@ module econia::avl_queue {
     fun get_tree_next_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        ((tree_node_ref.bits & (HI_64 as u128) as u64) & NODE_ID_LSBS)
+        ((tree_node_ref.bits & (HI_64 as u128) as u64) & HI_NODE_ID)
     }
 
     #[test_only]
@@ -528,7 +549,7 @@ module econia::avl_queue {
     fun get_tree_top_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
-        (avlq_ref.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) & NODE_ID_LSBS
+        (avlq_ref.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) & HI_NODE_ID
     }
 
     #[test_only]
@@ -794,6 +815,22 @@ module econia::avl_queue {
         // Assert list top.
         assert!(get_list_top_test(&avlq) == u_64(b"10101010101011"), 0);
         avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify successful extraction.
+    fun test_get_tree_key_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111000000000000000000000",
+            //          ^ bit 117
+            b"00000000010111111111111111111111",
+            //         ^ bit 86
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111")};
+        // Assert insertion key
+        assert!(get_tree_key_test(&tree_node) ==
+            u_64(b"10000000000000000000000000000001"), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
     #[test]

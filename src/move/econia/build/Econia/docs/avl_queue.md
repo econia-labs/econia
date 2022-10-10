@@ -404,6 +404,50 @@ Number of allocated nodes is too high.
 
 
 
+<a name="0xc0deb00c_avl_queue_HI_BALANCE_FACTOR"></a>
+
+All bits set in integer of width required to encode balance
+factor. Generated in Python via <code>hex(int('1' * 2, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BALANCE_FACTOR">HI_BALANCE_FACTOR</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_HI_BYTE"></a>
+
+All bits set in integer of width required to encode a byte.
+Generated in Python via <code>hex(int('1' * 8, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a>: u64 = 255;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_HI_INSERTION_KEY"></a>
+
+All bits set in integer of width required to encode insertion
+key. Generated in Python via <code>hex(int('1' * 32, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_INSERTION_KEY">HI_INSERTION_KEY</a>: u64 = 4294967295;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_HI_NODE_ID"></a>
+
+All bits set in integer of width required to encode node ID.
+Generated in Python via <code>hex(int('1' * 14, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>: u64 = 16383;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_IS_TREE_NODE"></a>
 
 Set at bit 14, for <code>AND</code> masking off all bits other than flag
@@ -413,17 +457,6 @@ Also for <code>OR</code> setting the flag bit. Generated in Python via
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE">IS_TREE_NODE</a>: u64 = 16384;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE"></a>
-
-Set at bits 0-7, yielding most significant byte after bitwise
-<code>AND</code>. Generated in Python via <code>hex(int('1' * 8, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a>: u64 = 255;
 </code></pre>
 
 
@@ -438,18 +471,6 @@ Flag for null node ID.
 
 
 
-<a name="0xc0deb00c_avl_queue_NODE_ID_LSBS"></a>
-
-Set at bits 0-13, for <code>AND</code> masking off all bits other than node
-ID contained in least-significant bits. Generated in Python via
-<code>hex(int('1' * 14, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_LSBS">NODE_ID_LSBS</a>: u64 = 16383;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_avl_queue_N_NODES_MAX"></a>
 
 $2^{14} - 1$, the maximum number of nodes that can be allocated
@@ -457,6 +478,26 @@ for either node type.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>: u64 = 16383;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_BALANCE_FACTOR"></a>
+
+Number of bits balance factor is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_BALANCE_FACTOR">SHIFT_BALANCE_FACTOR</a>: u8 = 84;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY"></a>
+
+Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a>: u8 = 86;
 </code></pre>
 
 
@@ -555,7 +596,7 @@ to allocate.
                 last_msbs: 0,
                 last_lsbs: 0,
                 next_msbs: (i &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
-                next_lsbs: (i & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8)});
+                next_lsbs: (i & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8)});
             // Allocate optional insertion value entry.
             <a href="_add">table::add</a>(&<b>mut</b> avlq.values, i + 1, <a href="_none">option::none</a>());
             i = i + 1; // Increment <b>loop</b> counter.
@@ -675,7 +716,7 @@ linked list.
     <b>if</b> (solo) {
         <b>let</b> tree_node_id = // Get top of inactive tree nodes stack.
             (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a> <b>as</b> u64) &
-            <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_LSBS">NODE_ID_LSBS</a>;
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>;
         // If will need <b>to</b> allocate a new tree node:
         <b>if</b> (tree_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
             tree_node_id = // Get new 1-indexed tree node ID.
@@ -692,13 +733,11 @@ linked list.
     <b>let</b> values_ref_mut = &<b>mut</b> avlq_ref_mut.values;
     // Split last and next arguments into byte fields.
     <b>let</b> (last_msbs, last_lsbs, next_msbs, next_lsbs) = (
-        (last &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
-        (last & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8),
-        (next &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8),
-        (next & <a href="avl_queue.md#0xc0deb00c_avl_queue_LEAST_SIGNIFICANT_BYTE">LEAST_SIGNIFICANT_BYTE</a> <b>as</b> u8));
+        (last &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8), (last & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8),
+        (next &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8), (next & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8));
     <b>let</b> list_node_id =  // Get top of inactive list nodes stack.
         (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a> <b>as</b> u64) &
-        <a href="avl_queue.md#0xc0deb00c_avl_queue_NODE_ID_LSBS">NODE_ID_LSBS</a>;
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>;
     // If will need <b>to</b> allocate a new list node:
     <b>if</b> (list_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
         list_node_id = // Get new 1-indexed list node ID.

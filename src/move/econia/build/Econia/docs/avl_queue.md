@@ -73,9 +73,10 @@ The below index is automatically generated from source code:
     -  [Parameters](#@Parameters_9)
     -  [Returns](#@Returns_10)
     -  [Testing](#@Testing_11)
+    -  [Assumptions](#@Assumptions_12)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_12)
-    -  [Testing](#@Testing_13)
+    -  [Aborts](#@Aborts_13)
+    -  [Testing](#@Testing_14)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -283,81 +284,32 @@ Ascending AVL queue flag.
 
 
 
-<a name="0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING"></a>
-
-Bitmask set at bit 126, the result of <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code> bitwise
-<code>AND</code> <code>AVL_QUEUE_BITS_SORT_ORDER</code> for an ascending AVL queue.
-Generated in Python via <code>hex(int('1' + '0' * 126, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>: u128 = 85070591730234615865843651857942052864;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_avl_queue_AVLQ_BITS_DESCENDING"></a>
-
-The result of <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code> bitwise <code>AND</code>
-<code>AVL_QUEUE_BITS_SORT_ORDER</code> for a descending AVL queue.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_DESCENDING">AVLQ_BITS_DESCENDING</a>: u128 = 0;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_CLEAR"></a>
-
-Bitmask only unset at list top bits in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>, for
-bitwise <code>AND</code> to clear out the value. Generated in Python via
-<code>hex(int('1' * 14, 2) &lt;&lt;  98 ^ int('1' * 128, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_CLEAR">AVLQ_BITS_LIST_TOP_CLEAR</a>: u128 = 340277174940992578692803427309614792703;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT"></a>
-
-Number of bits the inactive list node stack top node ID is
-shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>: u8 = 98;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_avl_queue_AVLQ_BITS_SORT_ORDER"></a>
-
-Bitmask set at bit 126, the sort order bit flag in
-<code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>. Generated in Python via
-<code>hex(int('1' + '0' * 126, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_SORT_ORDER">AVLQ_BITS_SORT_ORDER</a>: u128 = 85070591730234615865843651857942052864;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT"></a>
-
-Number of bits the inactive tree node stack top node ID is
-shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a>: u8 = 112;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_avl_queue_BITS_PER_BYTE"></a>
 
 Number of bits in a byte.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>: u8 = 8;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_BIT_FLAG_ASCENDING"></a>
+
+Bit flag denoting ascending AVL queue.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_ASCENDING">BIT_FLAG_ASCENDING</a>: u8 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_BIT_FLAG_TREE_NODE"></a>
+
+Bit flag denoting a tree node.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_TREE_NODE">BIT_FLAG_TREE_NODE</a>: u8 = 1;
 </code></pre>
 
 
@@ -448,22 +400,9 @@ Generated in Python via <code>hex(int('1' * 14, 2))</code>.
 
 
 
-<a name="0xc0deb00c_avl_queue_IS_TREE_NODE"></a>
-
-Set at bit 14, for <code>AND</code> masking off all bits other than flag
-bit for if node ID indicated in a <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a></code> is a tree node ID.
-Also for <code>OR</code> setting the flag bit. Generated in Python via
-<code>hex(int('1' + '0' * 14, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE">IS_TREE_NODE</a>: u64 = 16384;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_avl_queue_NIL"></a>
 
-Flag for null node ID.
+Flag for null value when null defined as 0.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>: u64 = 0;
@@ -498,6 +437,49 @@ Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a>: u8 = 86;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP"></a>
+
+Number of bits inactive list node stack top is shifted in
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>: u8 = 98;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_NODE_TYPE"></a>
+
+Number of bits node type bit flag is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a></code>
+virtual last and next fields.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_NODE_TYPE">SHIFT_NODE_TYPE</a>: u8 = 14;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_SORT_ORDER"></a>
+
+Number of bits sort order is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_SORT_ORDER">SHIFT_SORT_ORDER</a>: u8 = 126;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP"></a>
+
+Number of bits inactive tree node stack top is shifted in
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>: u8 = 112;
 </code></pre>
 
 
@@ -557,12 +539,11 @@ to allocate.
     // Assert not trying <b>to</b> allocate too many list nodes.
     <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(n_inactive_list_nodes);
     // Initialize bits field based on sort order.
-    <b>let</b> bits = <b>if</b> (sort_order == <a href="avl_queue.md#0xc0deb00c_avl_queue_ASCENDING">ASCENDING</a>) <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a> <b>else</b>
-        <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_DESCENDING">AVLQ_BITS_DESCENDING</a>;
+    <b>let</b> bits = <b>if</b> (sort_order == <a href="avl_queue.md#0xc0deb00c_avl_queue_DESCENDING">DESCENDING</a>) (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u128) <b>else</b>
+        ((<a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_ASCENDING">BIT_FLAG_ASCENDING</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_SORT_ORDER">SHIFT_SORT_ORDER</a>);
     // Mask in 1-indexed node ID at top of each inactive node stack.
-    bits = bits
-        | ((n_inactive_tree_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a>)
-        | ((n_inactive_list_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>);
+    bits = bits | ((n_inactive_tree_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>)
+        | ((n_inactive_list_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>);
     // Declare empty AVL queue.
     <b>let</b> avlq = <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>{bits,
                         root_lsbs: 0,
@@ -637,7 +618,8 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_is_ascending">is_ascending</a>&lt;V&gt;(
     avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
 ): bool {
-    avlq_ref.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_SORT_ORDER">AVLQ_BITS_SORT_ORDER</a> == <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_ASCENDING">AVLQ_BITS_ASCENDING</a>
+    avlq_ref.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_SORT_ORDER">SHIFT_SORT_ORDER</a> & (<a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_ASCENDING">BIT_FLAG_ASCENDING</a> <b>as</b> u128) ==
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_ASCENDING">BIT_FLAG_ASCENDING</a> <b>as</b> u128)
 }
 </code></pre>
 
@@ -695,6 +677,14 @@ linked list.
 * <code>test_activate_list_node_solo_stacked_stacked()</code>
 
 
+<a name="@Assumptions_12"></a>
+
+### Assumptions
+
+
+* <code>last</code> and <code>next</code> are not set at any bits above 14.
+
+
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, solo: bool, last: u64, next: u64, value: V): u64
 </code></pre>
 
@@ -714,9 +704,9 @@ linked list.
     // If only list node in doubly linked list, will need <b>to</b>
     // activate tree node having given list:
     <b>if</b> (solo) {
-        <b>let</b> tree_node_id = // Get top of inactive tree nodes stack.
-            (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_TREE_TOP_SHIFT">AVLQ_BITS_TREE_TOP_SHIFT</a> <b>as</b> u64) &
-            <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>;
+        // Get top of inactive tree nodes stack.
+        <b>let</b> tree_node_id = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &
+            (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) <b>as</b> u64);
         // If will need <b>to</b> allocate a new tree node:
         <b>if</b> (tree_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
             tree_node_id = // Get new 1-indexed tree node ID.
@@ -724,10 +714,12 @@ linked list.
             // Verify tree nodes not over-allocated.
             <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(tree_node_id);
         };
+        // Declare bitmask for flagging a tree node.
+        <b>let</b> is_tree_node = (<a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_TREE_NODE">BIT_FLAG_TREE_NODE</a> <b>as</b> u64) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_NODE_TYPE">SHIFT_NODE_TYPE</a>;
         // Set last node ID <b>as</b> flagged tree node ID.
-        last = tree_node_id | <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE">IS_TREE_NODE</a>;
+        last = tree_node_id | is_tree_node;
         // Set next node ID <b>as</b> flagged tree node ID.
-        next = tree_node_id | <a href="avl_queue.md#0xc0deb00c_avl_queue_IS_TREE_NODE">IS_TREE_NODE</a>;
+        next = tree_node_id | is_tree_node;
     }; // Last and next arguments now overwritten <b>if</b> solo.
     // Mutably borrow insertion values <a href="">table</a>.
     <b>let</b> values_ref_mut = &<b>mut</b> avlq_ref_mut.values;
@@ -735,9 +727,9 @@ linked list.
     <b>let</b> (last_msbs, last_lsbs, next_msbs, next_lsbs) = (
         (last &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8), (last & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8),
         (next &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u8), (next & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8));
-    <b>let</b> list_node_id =  // Get top of inactive list nodes stack.
-        (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a> <b>as</b> u64) &
-        <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>;
+    // Get top of inactive list nodes stack.
+    <b>let</b> list_node_id = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &
+        (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>) <b>as</b> u64);
     // If will need <b>to</b> allocate a new list node:
     <b>if</b> (list_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
         list_node_id = // Get new 1-indexed list node ID.
@@ -760,9 +752,12 @@ linked list.
         <b>let</b> new_list_stack_top = // Get new list stack top node ID.
             ((node_ref_mut.next_msbs <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>) |
              (node_ref_mut.next_lsbs <b>as</b> u128);
-        // Clear out stack top bits and mask in new stack top.
-        avlq_ref_mut.bits = avlq_ref_mut.bits & <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_CLEAR">AVLQ_BITS_LIST_TOP_CLEAR</a> |
-            (new_list_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLQ_BITS_LIST_TOP_SHIFT">AVLQ_BITS_LIST_TOP_SHIFT</a>);
+        // Reassign inactive list node stack top bits:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out all bits via mask unset at relevant bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>)) |
+            // Mask in the new stack top bits.
+            (new_list_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>);
         node_ref_mut.last_msbs = last_msbs; // Reassign last MSBs.
         node_ref_mut.last_lsbs = last_lsbs; // Reassign last LSBs.
         node_ref_mut.next_msbs = next_msbs; // Reassign next MSBs.
@@ -788,7 +783,7 @@ linked list.
 Verify node count is not too high.
 
 
-<a name="@Aborts_12"></a>
+<a name="@Aborts_13"></a>
 
 ### Aborts
 
@@ -796,7 +791,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_13"></a>
+<a name="@Testing_14"></a>
 
 ### Testing
 

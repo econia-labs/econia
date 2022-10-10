@@ -453,32 +453,6 @@ module econia::avl_queue {
     }
 
     #[test_only]
-    /// Return node ID at top of inactive list node stack indicated by
-    /// given AVL queue.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_list_top_test()`
-    fun get_list_top_test<V>(
-        avlq_ref: &AVLqueue<V>
-    ): u64 {
-        (avlq_ref.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) & NODE_ID_LSBS
-    }
-
-    #[test_only]
-    /// Return node ID at top of inactive tree node stack indicated by
-    /// given AVL queue.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_tree_top_test()`
-    fun get_tree_top_test<V>(
-        avlq_ref: &AVLqueue<V>
-    ): u64 {
-        (avlq_ref.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) & NODE_ID_LSBS
-    }
-
-    #[test_only]
     /// Return node ID of last node and if last node is a tree node,
     /// for given list node.
     ///
@@ -519,6 +493,19 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Return node ID at top of inactive list node stack indicated by
+    /// given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_list_top_test()`
+    fun get_list_top_test<V>(
+        avlq_ref: &AVLqueue<V>
+    ): u64 {
+        (avlq_ref.bits >> AVLQ_BITS_LIST_TOP_SHIFT as u64) & NODE_ID_LSBS
+    }
+
+    #[test_only]
     /// Return node ID of next inactive tree node in stack, indicated
     /// by given tree node.
     ///
@@ -529,6 +516,19 @@ module econia::avl_queue {
         tree_node_ref: &TreeNode
     ): u64 {
         ((tree_node_ref.bits & (HI_64 as u128) as u64) & NODE_ID_LSBS)
+    }
+
+    #[test_only]
+    /// Return node ID at top of inactive tree node stack indicated by
+    /// given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_tree_top_test()`
+    fun get_tree_top_test<V>(
+        avlq_ref: &AVLqueue<V>
+    ): u64 {
+        (avlq_ref.bits >> AVLQ_BITS_TREE_TOP_SHIFT as u64) & NODE_ID_LSBS
     }
 
     #[test_only]

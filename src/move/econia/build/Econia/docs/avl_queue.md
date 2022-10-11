@@ -81,9 +81,15 @@ The below index is automatically generated from source code:
     -  [Parameters](#@Parameters_13)
     -  [Assumptions](#@Assumptions_14)
     -  [Testing](#@Testing_15)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_16)
+    -  [Returns](#@Returns_17)
+    -  [Assumptions](#@Assumptions_18)
+    -  [Reference diagram](#@Reference_diagram_19)
+    -  [Testing](#@Testing_20)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_16)
-    -  [Testing](#@Testing_17)
+    -  [Aborts](#@Aborts_21)
+    -  [Testing](#@Testing_22)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -443,6 +449,16 @@ Generated in Python via <code>hex(int('1' * 15, 2))</code>.
 
 
 
+<a name="0xc0deb00c_avl_queue_LEFT"></a>
+
+Flag for left direction.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_NIL"></a>
 
 Flag for null value when null defined as 0.
@@ -460,6 +476,16 @@ for either node type.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>: u64 = 32767;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_RIGHT"></a>
+
+Flag for right direction.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -974,6 +1000,133 @@ fields are not set at any bits above 13.
 
 </details>
 
+<a name="0xc0deb00c_avl_queue_search"></a>
+
+## Function `search`
+
+Search in AVL queue for closest match to seed key.
+
+Get node ID of root note, then start walking down nodes,
+branching left whenever the seed key is less than a node's key,
+right whenever the seed key is greater than a node's key, and
+returning when the seed key equals a node's key. Also return if
+there is no child to branch to on a given side.
+
+The "match" node is the node last walked before returning.
+
+
+<a name="@Parameters_16"></a>
+
+### Parameters
+
+
+* <code>avlq_ref</code>: Immutable reference to AVL queue.
+* <code>root_node_id</code>: Root tree node ID.
+* <code>seed_key</code>: Seed key to search for.
+
+
+<a name="@Returns_17"></a>
+
+### Returns
+
+
+* <code>u64</code>: Node ID of match node.
+* <code>&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a></code>: Mutable reference to match node.
+* <code>Option&lt;bool&gt;</code>: None if match key equals seed key, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
+seed key is less than match key but match node has no left
+child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if seed key is greater than match key but match
+node has no right child.
+
+
+<a name="@Assumptions_18"></a>
+
+### Assumptions
+
+
+* AVL queue is not empty, and <code>root_node_id</code> properly indicates
+the root node.
+* Seed key fits in 32 bits.
+
+
+<a name="@Reference_diagram_19"></a>
+
+### Reference diagram
+
+
+>               4 <- ID 1
+>              / \
+>     ID 5 -> 2   8 <- ID 2
+>                / \
+>       ID 4 -> 6   10 <- ID 3
+
+| Seed key | Match key | Node ID | Side  |
+|----------|-----------|---------|-------|
+| 2        | 2         | 5       | None  |
+| 7        | 6         | 4       | Right |
+| 9        | 10        | 3       | Left  |
+| 4        | 4         | 1       | None  |
+
+
+<a name="@Testing_20"></a>
+
+### Testing
+
+
+* <code>test_search()</code>.
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, root_node_id: u64, seed_key: u64): (u64, &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">avl_queue::TreeNode</a>, <a href="_Option">option::Option</a>&lt;bool&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    root_node_id: u64,
+    seed_key: u64
+): (
+    u64,
+    &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>,
+    Option&lt;bool&gt;
+) {
+    // Mutably borrow tree nodes <a href="">table</a>.
+    <b>let</b> nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
+    // Begin walk at root node ID.
+    <b>let</b> node_id = root_node_id;
+    <b>loop</b> { // Begin walking down tree nodes:
+        <b>let</b> node_ref_mut = // Mutably borrow node having given ID.
+            <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, node_id);
+        // Get insertion key encoded in search node's bits.
+        <b>let</b> node_key = (node_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a> &
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_INSERTION_KEY">HI_INSERTION_KEY</a> <b>as</b> u128) <b>as</b> u64);
+        // If search key equals seed key, <b>return</b> node's ID, mutable
+        // reference <b>to</b> it, and empty <a href="">option</a>.
+        <b>if</b> (seed_key == node_key) <b>return</b>
+            (node_id, node_ref_mut, <a href="_none">option::none</a>());
+        // Get bitshift for child node ID and side based on
+        // inequality comparison between seed key and node key.
+        <b>let</b> (child_shift, child_side) = <b>if</b> (seed_key &lt; node_key)
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>) <b>else</b> (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a>);
+        <b>let</b> child_id = (node_ref_mut.bits &gt;&gt; child_shift &
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64); // Get child node ID.
+        // If no child on given side, <b>return</b> match node's ID,
+        // mutable reference <b>to</b> it, and <a href="">option</a> <b>with</b> given side.
+        <b>if</b> (child_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) <b>return</b>
+            (node_id, node_ref_mut, <a href="_some">option::some</a>(child_side));
+        // Otherwise <b>continue</b> walk at given child.
+        node_id = child_id;
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_avl_queue_verify_node_count"></a>
 
 ## Function `verify_node_count`
@@ -981,7 +1134,7 @@ fields are not set at any bits above 13.
 Verify node count is not too high.
 
 
-<a name="@Aborts_16"></a>
+<a name="@Aborts_21"></a>
 
 ### Aborts
 
@@ -989,7 +1142,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_17"></a>
+<a name="@Testing_22"></a>
 
 ### Testing
 

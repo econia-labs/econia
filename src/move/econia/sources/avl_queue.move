@@ -184,11 +184,15 @@ module econia::avl_queue {
     /// All bits set in integer of width required to encode node ID.
     /// Generated in Python via `hex(int('1' * 15, 2))`.
     const HI_NODE_ID: u64 = 0x7fff;
+    /// Flag for left direction.
+    const LEFT: bool = true;
     /// Flag for null value when null defined as 0.
     const NIL: u8 = 0;
     /// $2^{15} - 1$, the maximum number of nodes that can be allocated
     /// for either node type.
     const N_NODES_MAX: u64 = 32767;
+    /// Flag for right direction.
+    const RIGHT: bool = false;
     /// Number of bits sort order is shifted in `AVLqueue.bits`.
     const SHIFT_SORT_ORDER: u8 = 124;
     /// Number of bits balance factor is shifted in `TreeNode.bits`.
@@ -494,6 +498,93 @@ module econia::avl_queue {
             node_ref_mut.bits = bits; // Reassign activated node bits.
         };
         tree_node_id // Return activated tree node ID.
+    }
+
+    /// Search in AVL queue for closest match to seed key.
+    ///
+    /// Get node ID of root note, then start walking down nodes,
+    /// branching left whenever the seed key is less than a node's key,
+    /// right whenever the seed key is greater than a node's key, and
+    /// returning when the seed key equals a node's key. Also return if
+    /// there is no child to branch to on a given side.
+    ///
+    /// The "match" node is the node last walked before returning.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref`: Immutable reference to AVL queue.
+    /// * `root_node_id`: Root tree node ID.
+    /// * `seed_key`: Seed key to search for.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Node ID of match node.
+    /// * `&mut TreeNode`: Mutable reference to match node.
+    /// * `Option<bool>`: None if match key equals seed key, `LEFT` if
+    ///   seed key is less than match key but match node has no left
+    ///   child, `RIGHT` if seed key is greater than match key but match
+    ///   node has no right child.
+    ///
+    /// # Assumptions
+    ///
+    /// * AVL queue is not empty, and `root_node_id` properly indicates
+    ///   the root node.
+    /// * Seed key fits in 32 bits.
+    ///
+    /// # Reference diagram
+    ///
+    /// >               4 <- ID 1
+    /// >              / \
+    /// >     ID 5 -> 2   8 <- ID 2
+    /// >                / \
+    /// >       ID 4 -> 6   10 <- ID 3
+    ///
+    /// | Seed key | Match key | Node ID | Side  |
+    /// |----------|-----------|---------|-------|
+    /// | 2        | 2         | 5       | None  |
+    /// | 7        | 6         | 4       | Right |
+    /// | 9        | 10        | 3       | Left  |
+    /// | 4        | 4         | 1       | None  |
+    ///
+    /// # Testing
+    ///
+    /// * `test_search()`.
+    fun search<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        root_node_id: u64,
+        seed_key: u64
+    ): (
+        u64,
+        &mut TreeNode,
+        Option<bool>
+    ) {
+        // Mutably borrow tree nodes table.
+        let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        // Begin walk at root node ID.
+        let node_id = root_node_id;
+        loop { // Begin walking down tree nodes:
+            let node_ref_mut = // Mutably borrow node having given ID.
+                table_with_length::borrow_mut(nodes_ref_mut, node_id);
+            // Get insertion key encoded in search node's bits.
+            let node_key = (node_ref_mut.bits >> SHIFT_INSERTION_KEY &
+                (HI_INSERTION_KEY as u128) as u64);
+            // If search key equals seed key, return node's ID, mutable
+            // reference to it, and empty option.
+            if (seed_key == node_key) return
+                (node_id, node_ref_mut, option::none());
+            // Get bitshift for child node ID and side based on
+            // inequality comparison between seed key and node key.
+            let (child_shift, child_side) = if (seed_key < node_key)
+                (SHIFT_CHILD_LEFT, LEFT) else (SHIFT_CHILD_RIGHT, RIGHT);
+            let child_id = (node_ref_mut.bits >> child_shift &
+                (HI_NODE_ID as u128) as u64); // Get child node ID.
+            // If no child on given side, return match node's ID,
+            // mutable reference to it, and option with given side.
+            if (child_id == (NIL as u64)) return
+                (node_id, node_ref_mut, option::some(child_side));
+            // Otherwise continue walk at given child.
+            node_id = child_id;
+        }
     }
 
     /// Verify node count is not too high.
@@ -1278,9 +1369,8 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful initialization for allocating tree nodes.
-    fun test_new_some_nodes_loop(): (
-        AVLqueue<u8>
-    ) {
+    fun test_new_some_nodes_loop():
+    AVLqueue<u8> {
         // Declare number of tree and list nodes to allocate.
         let (n_tree_nodes, n_list_nodes) = (1234, 321);
         // Init ascending AVL queue accordingly.
@@ -1311,6 +1401,53 @@ module econia::avl_queue {
             assert!(option::is_none(borrow_value_option_test(&avlq, i)), 0);
             i = i - 1; // Decrement loop counter.
         };
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify returns for reference diagram in `search()`.
+    fun test_search():
+    AVLqueue<u8> {
+        // Init ascending AVL queue.
+        let avlq = new(ASCENDING, 0, 0);
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
+        // Manually insert nodes from reference diagram.
+        table_with_length::add(tree_nodes_ref_mut, 1, TreeNode{bits:
+            (4  as u128) << SHIFT_INSERTION_KEY |
+            (5  as u128) << SHIFT_CHILD_LEFT |
+            (2  as u128) << SHIFT_CHILD_RIGHT});
+        table_with_length::add(tree_nodes_ref_mut, 2, TreeNode{bits:
+            (8  as u128) << SHIFT_INSERTION_KEY |
+            (1  as u128) << SHIFT_PARENT |
+            (4  as u128) << SHIFT_CHILD_LEFT |
+            (3  as u128) << SHIFT_CHILD_RIGHT});
+        table_with_length::add(tree_nodes_ref_mut, 3, TreeNode{bits:
+            (10 as u128) << SHIFT_INSERTION_KEY |
+            (2  as u128) << SHIFT_PARENT});
+        table_with_length::add(tree_nodes_ref_mut, 4, TreeNode{bits:
+            (6  as u128) << SHIFT_INSERTION_KEY |
+            (2  as u128) << SHIFT_PARENT});
+        table_with_length::add(tree_nodes_ref_mut, 5, TreeNode{bits:
+            (2  as u128) << SHIFT_INSERTION_KEY |
+            (1  as u128) << SHIFT_PARENT});
+        // Assert returns in order from reference table.
+        let (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 2);
+        assert!(get_insertion_key_test(node_ref_mut) == 2, 0);
+        assert!(node_id == 5, 0);
+        assert!(option::is_none(&side_option), 0);
+        (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 7);
+        assert!(get_insertion_key_test(node_ref_mut) == 6, 0);
+        assert!(node_id == 4, 0);
+        assert!(*option::borrow(&side_option) == RIGHT, 0);
+        (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 9);
+        assert!(get_insertion_key_test(node_ref_mut) == 10, 0);
+        assert!(node_id == 3, 0);
+        assert!(*option::borrow(&side_option) == LEFT, 0);
+        (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 4);
+        assert!(get_insertion_key_test(node_ref_mut) == 4, 0);
+        assert!(node_id == 1, 0);
+        assert!(option::is_none(&side_option), 0);
         avlq // Return AVL queue.
     }
 

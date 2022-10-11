@@ -448,7 +448,7 @@ Generated in Python via <code>hex(int('1' * 15, 2))</code>.
 Flag for null value when null defined as 0.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>: u64 = 0;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>: u8 = 0;
 </code></pre>
 
 
@@ -641,8 +641,8 @@ to allocate.
         | ((n_inactive_list_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>);
     // Declare empty AVL queue.
     <b>let</b> avlq = <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>{bits,
-                        root_msbs: (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u8),
-                        root_lsbs: (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u8),
+                        root_msbs: <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>,
+                        root_lsbs: <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>,
                         tree_nodes: <a href="_new">table_with_length::new</a>(),
                         list_nodes: <a href="_new">table_with_length::new</a>(),
                         values: <a href="_new">table::new</a>()};
@@ -804,7 +804,7 @@ linked list.
         <b>let</b> tree_node_id = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &
             (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) <b>as</b> u64);
         // If will need <b>to</b> allocate a new tree node:
-        <b>if</b> (tree_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
+        <b>if</b> (tree_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
             tree_node_id = // Get new 1-indexed tree node ID.
                 <a href="_length">table_with_length::length</a>(&avlq_ref_mut.tree_nodes) + 1;
             // Verify tree nodes not over-allocated.
@@ -827,7 +827,7 @@ linked list.
     <b>let</b> list_node_id = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &
         (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>) <b>as</b> u64);
     // If will need <b>to</b> allocate a new list node:
-    <b>if</b> (list_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) {
+    <b>if</b> (list_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
         list_node_id = // Get new 1-indexed list node ID.
             <a href="_length">table_with_length::length</a>(&avlq_ref_mut.list_nodes) + 1;
         // Verify list nodes not over-allocated.
@@ -942,7 +942,8 @@ fields are not set at any bits above 13.
     // Get top of inactive tree nodes stack.
     <b>let</b> tree_node_id = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &
         (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) <b>as</b> u64);
-    <b>if</b> (tree_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) { // If need <b>to</b> allocate new tree node:
+    // If need <b>to</b> allocate new tree node:
+    <b>if</b> (tree_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
         tree_node_id = // Get new 1-indexed tree node ID.
             <a href="_length">table_with_length::length</a>(&avlq_ref_mut.tree_nodes) + 1;
         // Mutably borrow tree nodes <a href="">table</a>.

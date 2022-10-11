@@ -77,17 +77,18 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_13)
 -  [Function `activate_tree_node`](#0xc0deb00c_avl_queue_activate_tree_node)
     -  [Parameters](#@Parameters_14)
-    -  [Assumptions](#@Assumptions_15)
-    -  [Testing](#@Testing_16)
+    -  [Returns](#@Returns_15)
+    -  [Assumptions](#@Assumptions_16)
+    -  [Testing](#@Testing_17)
 -  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_17)
-    -  [Returns](#@Returns_18)
-    -  [Assumptions](#@Assumptions_19)
-    -  [Reference diagram](#@Reference_diagram_20)
-    -  [Testing](#@Testing_21)
+    -  [Parameters](#@Parameters_18)
+    -  [Returns](#@Returns_19)
+    -  [Assumptions](#@Assumptions_20)
+    -  [Reference diagram](#@Reference_diagram_21)
+    -  [Testing](#@Testing_22)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_22)
-    -  [Testing](#@Testing_23)
+    -  [Aborts](#@Aborts_23)
+    -  [Testing](#@Testing_24)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -987,7 +988,15 @@ solo list node in an AVL tree leaf.
 linked list.
 
 
-<a name="@Assumptions_15"></a>
+<a name="@Returns_15"></a>
+
+### Returns
+
+
+* <code>u64</code>: Node ID of activated tree node.
+
+
+<a name="@Assumptions_16"></a>
 
 ### Assumptions
 
@@ -1000,7 +1009,7 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activat
 fields are not set at any bits above 13.
 
 
-<a name="@Testing_16"></a>
+<a name="@Testing_17"></a>
 
 ### Testing
 
@@ -1079,7 +1088,7 @@ there is no child to branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_17"></a>
+<a name="@Parameters_18"></a>
 
 ### Parameters
 
@@ -1089,7 +1098,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_18"></a>
+<a name="@Returns_19"></a>
 
 ### Returns
 
@@ -1102,7 +1111,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_19"></a>
+<a name="@Assumptions_20"></a>
 
 ### Assumptions
 
@@ -1112,7 +1121,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_20"></a>
+<a name="@Reference_diagram_21"></a>
 
 ### Reference diagram
 
@@ -1131,7 +1140,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_21"></a>
+<a name="@Testing_22"></a>
 
 ### Testing
 
@@ -1198,7 +1207,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_22"></a>
+<a name="@Aborts_23"></a>
 
 ### Aborts
 
@@ -1206,7 +1215,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_23"></a>
+<a name="@Testing_24"></a>
 
 ### Testing
 

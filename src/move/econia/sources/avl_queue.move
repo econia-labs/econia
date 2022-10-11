@@ -484,6 +484,10 @@ module econia::avl_queue {
     /// * `head_tail`: Node ID of sole list node in tree node's doubly
     ///   linked list.
     ///
+    /// # Returns
+    ///
+    /// * `u64`: Node ID of activated tree node.
+    ///
     /// # Assumptions
     ///
     /// * Node is a leaf in the AVL tree and has a single list node in

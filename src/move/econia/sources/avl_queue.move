@@ -336,15 +336,15 @@ module econia::avl_queue {
     ///
     /// * `u64`: Node ID of activated list node.
     ///
+    /// # Assumptions
+    ///
+    /// * `last` and `next` are not set at any bits above 14.
+    ///
     /// # Testing
     ///
     /// * `test_activate_list_node_not_solo()`
     /// * `test_activate_list_node_solo_empty_empty()`
     /// * `test_activate_list_node_solo_stacked_stacked()`
-    ///
-    /// # Assumptions
-    ///
-    /// * `last` and `next` are not set at any bits above 14.
     fun activate_list_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         solo: bool,
@@ -420,6 +420,75 @@ module econia::avl_queue {
             option::fill(value_option_ref_mut, value);
         };
         list_node_id // Return activated list node ID.
+    }
+
+    /// Activate a tree node and return its node ID.
+    ///
+    /// If inactive tree node stack is empty, allocate a new tree node,
+    /// otherwise pop one off the inactive stack.
+    ///
+    /// Should only be called when `activate_list_node()` activates a
+    /// solo list node in an AVL tree leaf.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `key`: Insertion key for activation node.
+    /// * `parent`: Node ID of parent to actvation node.
+    /// * `head_tail`: Node ID of sole list node in tree node's doubly
+    ///   linked list.
+    ///
+    /// # Assumptions
+    ///
+    /// * Node is a leaf in the AVL tree and has a single list node in
+    ///   its doubly linked list.
+    /// * The number of allocated tree nodes has already been checked
+    ///   via `activate_list_node()`.
+    /// * `key` is not set at any bits above 31, and both other `u64`
+    ///   fields are not set at any bits above 13.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_tree_node_empty()`.
+    /// * `test_activate_tree_node_stacked()`.
+    fun activate_tree_node<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        key: u64,
+        parent: u64,
+        solo_node_id: u64
+    ): u64 {
+        // Pack field bits.
+        let bits = (key as u128) << SHIFT_INSERTION_KEY |
+            (parent as u128) << SHIFT_PARENT |
+            (solo_node_id as u128) << SHIFT_LIST_HEAD |
+            (solo_node_id as u128) << SHIFT_LIST_TAIL;
+        // Get top of inactive tree nodes stack.
+        let tree_node_id = ((HI_NODE_ID as u128) &
+            (avlq_ref_mut.bits >> SHIFT_TREE_STACK_TOP) as u64);
+        if (tree_node_id == NIL) { // If need to allocate new tree node:
+            tree_node_id = // Get new 1-indexed tree node ID.
+                table_with_length::length(&avlq_ref_mut.tree_nodes) + 1;
+            // Mutably borrow tree nodes table.
+            let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+            table_with_length::add( // Allocate new packed tree node.
+                tree_nodes_ref_mut, tree_node_id, TreeNode{bits})
+        } else { // If can pop inactive node off stack:
+            // Mutably borrow tree nodes table.
+            let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+            // Mutably borrow inactive node at top of stack.
+            let node_ref_mut = table_with_length::borrow_mut(
+                tree_nodes_ref_mut, tree_node_id);
+            // Get new inactive tree nodes stack top node ID.
+            let new_tree_stack_top = node_ref_mut.bits & (HI_NODE_ID as u128);
+            // Reassign inactive tree node stack top bits:
+            avlq_ref_mut.bits = avlq_ref_mut.bits &
+                // Clear out all bits via mask unset at relevant bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_TREE_STACK_TOP)) |
+                // Mask in the new stack top bits.
+                (new_tree_stack_top << SHIFT_TREE_STACK_TOP);
+            node_ref_mut.bits = bits; // Reassign activated node bits.
+        };
+        tree_node_id // Return activated tree node ID.
     }
 
     /// Verify node count is not too high.
@@ -835,6 +904,76 @@ module econia::avl_queue {
         assert!(is_tree_node, 0);
         // Assert insertion value.
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for empty inactive nodes stack.
+    fun test_activate_tree_node_empty():
+    AVLqueue<u8> {
+        let tree_node_id = 1; // Declare tree node ID.
+        let avlq = new(ASCENDING, NIL, NIL); // Init AVL queue.
+        // Declare fields.
+        let key = HI_INSERTION_KEY;
+        let parent = HI_NODE_ID;
+        let solo_node_id = HI_NODE_ID - 2;
+        // Activate tree node, storing its node ID.
+        let activated_node_id =
+            activate_tree_node(&mut avlq, key, parent, solo_node_id);
+        // Assert node ID.
+        assert!(activated_node_id == tree_node_id, 0);
+        // Assert inactive tree node stack top.
+        assert!(get_tree_top_test(&mut avlq) == NIL, 0);
+        // Immutably borrow tree nodes table.
+        let tree_nodes_ref = &avlq.tree_nodes;
+        // Assert number of allocated nodes.
+        assert!(table_with_length::length(tree_nodes_ref) == tree_node_id, 0);
+        // Immutably borrow tree node.
+        let tree_node_ref = borrow_tree_node_test(&avlq, tree_node_id);
+        // Assert packed fields.
+        assert!(get_insertion_key_test(tree_node_ref) == key, 0);
+        assert!(get_balance_factor_test(tree_node_ref) == BALANCE_FACTOR_0, 0);
+        assert!(get_parent_test(tree_node_ref) == parent, 0);
+        assert!(get_child_left_test(tree_node_ref) == NIL, 0);
+        assert!(get_child_right_test(tree_node_ref) == NIL, 0);
+        assert!(get_list_head_test(tree_node_ref) == solo_node_id, 0);
+        assert!(get_list_tail_test(tree_node_ref) == solo_node_id, 0);
+        assert!(get_tree_next_test(tree_node_ref) == NIL, 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for full inactive nodes stack.
+    fun test_activate_tree_node_stacked():
+    AVLqueue<u8> {
+        let tree_node_id = 123; // Declare tree node ID.
+        let avlq = new(ASCENDING, tree_node_id, NIL); // Init AVL queue.
+        // Declare fields.
+        let key = 456;
+        let parent = 789;
+        let solo_node_id = 321;
+        // Activate tree node, storing its node ID.
+        let activated_node_id =
+            activate_tree_node(&mut avlq, key, parent, solo_node_id);
+        // Assert node ID.
+        assert!(activated_node_id == tree_node_id, 0);
+        // Assert inactive tree node stack top.
+        assert!(get_tree_top_test(&mut avlq) == tree_node_id - 1, 0);
+        // Immutably borrow tree nodes table.
+        let tree_nodes_ref = &avlq.tree_nodes;
+        // Assert number of allocated nodes.
+        assert!(table_with_length::length(tree_nodes_ref) == tree_node_id, 0);
+        // Immutably borrow tree node.
+        let tree_node_ref = borrow_tree_node_test(&avlq, tree_node_id);
+        // Assert packed fields.
+        assert!(get_insertion_key_test(tree_node_ref) == key, 0);
+        assert!(get_balance_factor_test(tree_node_ref) == BALANCE_FACTOR_0, 0);
+        assert!(get_parent_test(tree_node_ref) == parent, 0);
+        assert!(get_child_left_test(tree_node_ref) == NIL, 0);
+        assert!(get_child_right_test(tree_node_ref) == NIL, 0);
+        assert!(get_list_head_test(tree_node_ref) == solo_node_id, 0);
+        assert!(get_list_tail_test(tree_node_ref) == solo_node_id, 0);
+        assert!(get_tree_next_test(tree_node_ref) == NIL, 0);
         avlq // Return AVL queue.
     }
 

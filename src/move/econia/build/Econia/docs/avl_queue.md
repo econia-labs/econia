@@ -72,11 +72,15 @@ The below index is automatically generated from source code:
 -  [Function `activate_list_node`](#0xc0deb00c_avl_queue_activate_list_node)
     -  [Parameters](#@Parameters_9)
     -  [Returns](#@Returns_10)
-    -  [Testing](#@Testing_11)
-    -  [Assumptions](#@Assumptions_12)
+    -  [Assumptions](#@Assumptions_11)
+    -  [Testing](#@Testing_12)
+-  [Function `activate_tree_node`](#0xc0deb00c_avl_queue_activate_tree_node)
+    -  [Parameters](#@Parameters_13)
+    -  [Assumptions](#@Assumptions_14)
+    -  [Testing](#@Testing_15)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_13)
-    -  [Testing](#@Testing_14)
+    -  [Aborts](#@Aborts_16)
+    -  [Testing](#@Testing_17)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -724,9 +728,9 @@ otherwise pop one off the inactive stack.
 If activated list node will be the only list node in a doubly
 linked list, then it will have to indicate for next and last
 node IDs a tree node, which will also have to be activated via
-<code>activate_tree_node()</code>. Hence error checking for the number of
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>. Hence error checking for the number of
 allocated tree nodes is performed here first, and is not
-re-performed in <code>activate_tree_node()</code>.
+re-performed in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>.
 
 
 <a name="@Parameters_9"></a>
@@ -752,7 +756,15 @@ linked list.
 * <code>u64</code>: Node ID of activated list node.
 
 
-<a name="@Testing_11"></a>
+<a name="@Assumptions_11"></a>
+
+### Assumptions
+
+
+* <code>last</code> and <code>next</code> are not set at any bits above 14.
+
+
+<a name="@Testing_12"></a>
 
 ### Testing
 
@@ -760,14 +772,6 @@ linked list.
 * <code>test_activate_list_node_not_solo()</code>
 * <code>test_activate_list_node_solo_empty_empty()</code>
 * <code>test_activate_list_node_solo_stacked_stacked()</code>
-
-
-<a name="@Assumptions_12"></a>
-
-### Assumptions
-
-
-* <code>last</code> and <code>next</code> are not set at any bits above 14.
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, solo: bool, last: u64, next: u64, value: V): u64
@@ -861,6 +865,107 @@ linked list.
 
 </details>
 
+<a name="0xc0deb00c_avl_queue_activate_tree_node"></a>
+
+## Function `activate_tree_node`
+
+Activate a tree node and return its node ID.
+
+If inactive tree node stack is empty, allocate a new tree node,
+otherwise pop one off the inactive stack.
+
+Should only be called when <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>()</code> activates a
+solo list node in an AVL tree leaf.
+
+
+<a name="@Parameters_13"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>key</code>: Insertion key for activation node.
+* <code>parent</code>: Node ID of parent to actvation node.
+* <code>head_tail</code>: Node ID of sole list node in tree node's doubly
+linked list.
+
+
+<a name="@Assumptions_14"></a>
+
+### Assumptions
+
+
+* Node is a leaf in the AVL tree and has a single list node in
+its doubly linked list.
+* The number of allocated tree nodes has already been checked
+via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>()</code>.
+* <code>key</code> is not set at any bits above 31, and both other <code>u64</code>
+fields are not set at any bits above 13.
+
+
+<a name="@Testing_15"></a>
+
+### Testing
+
+
+* <code>test_activate_tree_node_empty()</code>.
+* <code>test_activate_tree_node_stacked()</code>.
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, key: u64, parent: u64, solo_node_id: u64): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    key: u64,
+    parent: u64,
+    solo_node_id: u64
+): u64 {
+    // Pack field bits.
+    <b>let</b> bits = (key <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a> |
+        (parent <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a> |
+        (solo_node_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a> |
+        (solo_node_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>;
+    // Get top of inactive tree nodes stack.
+    <b>let</b> tree_node_id = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &
+        (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) <b>as</b> u64);
+    <b>if</b> (tree_node_id == <a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a>) { // If need <b>to</b> allocate new tree node:
+        tree_node_id = // Get new 1-indexed tree node ID.
+            <a href="_length">table_with_length::length</a>(&avlq_ref_mut.tree_nodes) + 1;
+        // Mutably borrow tree nodes <a href="">table</a>.
+        <b>let</b> tree_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
+        <a href="_add">table_with_length::add</a>( // Allocate new packed tree node.
+            tree_nodes_ref_mut, tree_node_id, <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>{bits})
+    } <b>else</b> { // If can pop inactive node off stack:
+        // Mutably borrow tree nodes <a href="">table</a>.
+        <b>let</b> tree_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
+        // Mutably borrow inactive node at top of stack.
+        <b>let</b> node_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
+            tree_nodes_ref_mut, tree_node_id);
+        // Get new inactive tree nodes stack top node ID.
+        <b>let</b> new_tree_stack_top = node_ref_mut.bits & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128);
+        // Reassign inactive tree node stack top bits:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out all bits via mask unset at relevant bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>)) |
+            // Mask in the new stack top bits.
+            (new_tree_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>);
+        node_ref_mut.bits = bits; // Reassign activated node bits.
+    };
+    tree_node_id // Return activated tree node ID.
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_avl_queue_verify_node_count"></a>
 
 ## Function `verify_node_count`
@@ -868,7 +973,7 @@ linked list.
 Verify node count is not too high.
 
 
-<a name="@Aborts_13"></a>
+<a name="@Aborts_16"></a>
 
 ### Aborts
 
@@ -876,7 +981,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_14"></a>
+<a name="@Testing_17"></a>
 
 ### Testing
 

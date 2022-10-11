@@ -146,6 +146,15 @@ module econia::avl_queue {
 
     /// Ascending AVL queue flag.
     const ASCENDING: bool = true;
+    /// Balance factor bits in `TreeNode.bits` indicating balance factor
+    /// of 0.
+    const BALANCE_FACTOR_0: u8 = 0;
+    /// Balance factor bits in `TreeNode.bits` indicating balance factor
+    /// of -1. Generated in Python via `hex(int('10', 2))`.
+    const BALANCE_FACTOR_NEG_1: u8 = 0x2;
+    /// Balance factor bits in `TreeNode.bits` indicating balance factor
+    /// of 1.
+    const BALANCE_FACTOR_POS_1: u8 = 1;
     /// Bit flag denoting ascending AVL queue.
     const BIT_FLAG_ASCENDING: u8 = 1;
     /// Bit flag denoting a tree node.
@@ -181,6 +190,11 @@ module econia::avl_queue {
     const SHIFT_SORT_ORDER: u8 = 126;
     /// Number of bits balance factor is shifted in `TreeNode.bits`.
     const SHIFT_BALANCE_FACTOR: u8 = 84;
+    /// Number of bits left child node ID is shifted in `TreeNode.bits`.
+    const SHIFT_CHILD_LEFT: u8 = 56;
+    /// Number of bits right child node ID is shifted in
+    /// `TreeNode.bits`.
+    const SHIFT_CHILD_RIGHT: u8 = 42;
     /// Number of bits insertion key is shifted in `TreeNode.bits`.
     const SHIFT_INSERTION_KEY: u8 = 86;
     /// Number of bits inactive list node stack top is shifted in
@@ -189,6 +203,8 @@ module econia::avl_queue {
     /// Number of bits node type bit flag is shifted in `ListNode`
     /// virtual last and next fields.
     const SHIFT_NODE_TYPE: u8 = 14;
+    /// Number of bits parent node ID is shifted in `AVLqueue.bits`.
+    const SHIFT_PARENT: u8 = 70;
     /// Number of bits inactive tree node stack top is shifted in
     /// `AVLqueue.bits`.
     const SHIFT_TREE_STACK_TOP: u8 = 112;
@@ -459,6 +475,56 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Return balance factor indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_balance_factor_test()`
+    fun get_balance_factor_test(
+        tree_node_ref: &TreeNode
+    ): u8 {
+        (tree_node_ref.bits >> SHIFT_BALANCE_FACTOR &
+            (HI_BALANCE_FACTOR as u128) as u8)
+    }
+
+    #[test_only]
+    /// Return left child node ID indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_child_left_test()`
+    fun get_child_left_test(
+        tree_node_ref: &TreeNode
+    ): u64 {
+        (tree_node_ref.bits >> SHIFT_CHILD_LEFT & (HI_NODE_ID as u128) as u64)
+    }
+
+    #[test_only]
+    /// Return right child node ID indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_child_right_test()`
+    fun get_child_right_test(
+        tree_node_ref: &TreeNode
+    ): u64 {
+        (tree_node_ref.bits >> SHIFT_CHILD_RIGHT & (HI_NODE_ID as u128) as u64)
+    }
+
+    #[test_only]
+    /// Return insertion key indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_insertion_key_test()`
+    fun get_insertion_key_test(
+        tree_node_ref: &TreeNode
+    ): u64 {
+        ((tree_node_ref.bits >> SHIFT_INSERTION_KEY) &
+            (HI_INSERTION_KEY as u128) as u64)
+    }
+
+    #[test_only]
     /// Return node ID of last node and if last node is a tree node,
     /// for given list node.
     ///
@@ -515,20 +581,6 @@ module econia::avl_queue {
         ((avlq_ref.bits >> SHIFT_LIST_STACK_TOP) & (HI_NODE_ID as u128) as u64)
     }
 
-
-    #[test_only]
-    /// Return insertion key indicated by given tree node.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_tree_next_test()`
-    fun get_tree_key_test(
-        tree_node_ref: &TreeNode
-    ): u64 {
-        ((tree_node_ref.bits >> SHIFT_INSERTION_KEY) &
-            (HI_INSERTION_KEY as u128) as u64)
-    }
-
     #[test_only]
     /// Return node ID of next inactive tree node in stack, indicated
     /// by given tree node.
@@ -553,6 +605,18 @@ module econia::avl_queue {
         avlq_ref: &AVLqueue<V>
     ): u64 {
         ((avlq_ref.bits >> SHIFT_TREE_STACK_TOP) & (HI_NODE_ID as u128) as u64)
+    }
+
+    #[test_only]
+    /// Return parent node ID indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_parent_test()`
+    fun get_parent_test(
+        tree_node_ref: &TreeNode
+    ): u64 {
+        (tree_node_ref.bits >> SHIFT_PARENT & (HI_NODE_ID as u128) as u64)
     }
 
     #[test_only]
@@ -748,6 +812,86 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful extraction.
+    fun test_get_balance_factor_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111111111111111111111111",
+            b"11111111111011111111111111111111",
+            //          ^^ bits 84 and 85
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111")};
+        // Assert balance factor.
+        assert!(get_balance_factor_test(&tree_node) ==
+            BALANCE_FACTOR_NEG_1, 0);
+        // Update balance factor.
+        tree_node.bits = u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111110011111111111111111111",
+            //          ^^ bits 84 and 85
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111");
+        // Assert balance factor.
+        assert!(get_balance_factor_test(&tree_node) ==
+            BALANCE_FACTOR_0, 0);
+        // Update balance factor.
+        tree_node.bits = u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111110111111111111111111111",
+            //          ^^ bits 84 and 85
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111");
+        // Assert balance factor.
+        assert!(get_balance_factor_test(&tree_node) ==
+            BALANCE_FACTOR_POS_1, 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
+    fun test_get_child_left_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111100000",
+            //                          ^ bit 69
+            b"00000001011111111111111111111111",
+            //       ^ bit 56
+            b"11111111111111111111111111111111")};
+        // Assert left child node ID.
+        assert!(get_child_left_test(&tree_node) == u_64(b"10000000000001"), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
+    fun test_get_child_right_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111100000000000010111111111",
+            //        ^ bit 55     ^ bit 42
+            b"11111111111111111111111111111111")};
+        assert!( // Assert right child node ID.
+            get_child_right_test(&tree_node) == u_64(b"10000000000001"), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
+    fun test_get_insertion_key_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111000000000000000000000",
+            //          ^ bit 117
+            b"00000000010111111111111111111111",
+            //         ^ bit 86
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111")};
+        // Assert insertion key
+        assert!(get_insertion_key_test(&tree_node) ==
+            u_64(b"10000000000000000000000000000001"), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
     fun test_get_list_last_test() {
         // Declare list node.
         let list_node = ListNode{
@@ -823,17 +967,15 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful extraction.
-    fun test_get_tree_key_test() {
+    fun test_get_parent_test() {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
-            b"11111111111000000000000000000000",
-            //          ^ bit 117
-            b"00000000010111111111111111111111",
-            //         ^ bit 86
+            b"11111111111111111111111111111111",
+            b"11111111111110000000000001011111",
+            //            ^ bit 83     ^ bit 70
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111")};
-        // Assert insertion key
-        assert!(get_tree_key_test(&tree_node) ==
-            u_64(b"10000000000000000000000000000001"), 0);
+        // Assert parent node ID.
+        assert!(get_parent_test(&tree_node) == u_64(b"10000000000001"), 0);
         let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 

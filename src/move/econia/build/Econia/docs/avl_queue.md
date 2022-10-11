@@ -284,6 +284,39 @@ Ascending AVL queue flag.
 
 
 
+<a name="0xc0deb00c_avl_queue_BALANCE_FACTOR_0"></a>
+
+Balance factor bits in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code> indicating balance factor
+of 0.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_BALANCE_FACTOR_0">BALANCE_FACTOR_0</a>: u8 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_BALANCE_FACTOR_NEG_1"></a>
+
+Balance factor bits in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code> indicating balance factor
+of -1. Generated in Python via <code>hex(int('10', 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_BALANCE_FACTOR_NEG_1">BALANCE_FACTOR_NEG_1</a>: u8 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_BALANCE_FACTOR_POS_1"></a>
+
+Balance factor bits in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code> indicating balance factor
+of 1.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_BALANCE_FACTOR_POS_1">BALANCE_FACTOR_POS_1</a>: u8 = 1;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_BITS_PER_BYTE"></a>
 
 Number of bits in a byte.
@@ -431,6 +464,27 @@ Number of bits balance factor is shifted in <code><a href="avl_queue.md#0xc0deb0
 
 
 
+<a name="0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT"></a>
+
+Number of bits left child node ID is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>: u8 = 56;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT"></a>
+
+Number of bits right child node ID is shifted in
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>: u8 = 42;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY"></a>
 
 Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
@@ -459,6 +513,16 @@ virtual last and next fields.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_NODE_TYPE">SHIFT_NODE_TYPE</a>: u8 = 14;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_PARENT"></a>
+
+Number of bits parent node ID is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>: u8 = 70;
 </code></pre>
 
 

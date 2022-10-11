@@ -215,6 +215,7 @@ module econia::avl_queue {
     ///
     /// * `test_new_no_nodes()`
     /// * `test_new_some_nodes()`
+    /// * `test_new_some_nodes_loop()`
     public fun new<V: store>(
         sort_order: bool,
         n_inactive_tree_nodes: u64,
@@ -920,6 +921,44 @@ module econia::avl_queue {
         // Assert value options initialize to none.
         assert!(option::is_none(borrow_value_option_test(&avlq, 2)), 0);
         assert!(option::is_none(borrow_value_option_test(&avlq, 1)), 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify successful initialization for allocating tree nodes.
+    fun test_new_some_nodes_loop(): (
+        AVLqueue<u8>
+    ) {
+        // Declare number of tree and list nodes to allocate.
+        let (n_tree_nodes, n_list_nodes) = (1234, 321);
+        // Init ascending AVL queue accordingly.
+        let avlq = new(ASCENDING, n_tree_nodes, n_list_nodes);
+        // Assert table lengths.
+        assert!(table_with_length::length(&avlq.tree_nodes) ==
+            n_tree_nodes, 0);
+        assert!(table_with_length::length(&avlq.list_nodes) ==
+            n_list_nodes, 0);
+        // Assert stack tops.
+        assert!(get_tree_top_test(&avlq) == n_tree_nodes, 0);
+        assert!(get_list_top_test(&avlq) == n_list_nodes, 0);
+        let i = n_tree_nodes; // Declare loop counter.
+        while (i > NIL) { // Loop over all tree nodes in stack:
+            // Assert next indicated tree node in stack.
+            assert!(get_tree_next_test(borrow_tree_node_test(&avlq, i)) ==
+                i - 1, 0);
+            i = i - 1; // Decrement loop counter.
+        };
+        i = n_list_nodes; // Re-declare loop counter.
+        while (i > NIL) { // Loop over all list nodes in stack:
+            // Assert next indicated list node in stack.
+            let (node_id, is_tree_node) =
+                get_list_next_test(borrow_list_node_test(&avlq, i));
+            assert!(node_id == i - 1, 0);
+            assert!(!is_tree_node, 0);
+            // Assert value option initializes to none.
+            assert!(option::is_none(borrow_value_option_test(&avlq, i)), 0);
+            i = i - 1; // Decrement loop counter.
+        };
         avlq // Return AVL queue.
     }
 

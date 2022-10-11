@@ -518,6 +518,7 @@ to allocate.
 
 * <code>test_new_no_nodes()</code>
 * <code>test_new_some_nodes()</code>
+* <code>test_new_some_nodes_loop()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_new">new</a>&lt;V: store&gt;(sort_order: bool, n_inactive_tree_nodes: u64, n_inactive_list_nodes: u64): <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;

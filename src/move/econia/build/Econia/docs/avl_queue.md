@@ -1104,7 +1104,6 @@ The "match" node is the node last walked before returning.
 
 
 * <code>u64</code>: Node ID of match node.
-* <code>&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a></code>: Mutable reference to match node.
 * <code>Option&lt;bool&gt;</code>: None if match key equals seed key, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
 seed key is less than match key but match node has no left
 child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if seed key is greater than match key but match
@@ -1148,7 +1147,7 @@ the root node.
 * <code>test_search()</code>.
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, root_node_id: u64, seed_key: u64): (u64, &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">avl_queue::TreeNode</a>, <a href="_Option">option::Option</a>&lt;bool&gt;)
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, root_node_id: u64, seed_key: u64): (u64, <a href="_Option">option::Option</a>&lt;bool&gt;)
 </code></pre>
 
 
@@ -1158,38 +1157,36 @@ the root node.
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(
-    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
     root_node_id: u64,
     seed_key: u64
 ): (
     u64,
-    &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>,
     Option&lt;bool&gt;
 ) {
     // Mutably borrow tree nodes <a href="">table</a>.
-    <b>let</b> nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
+    <b>let</b> nodes_ref = &avlq_ref.tree_nodes;
     // Begin walk at root node ID.
     <b>let</b> node_id = root_node_id;
     <b>loop</b> { // Begin walking down tree nodes:
-        <b>let</b> node_ref_mut = // Mutably borrow node having given ID.
-            <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, node_id);
+        <b>let</b> node_ref = // Mutably borrow node having given ID.
+            <a href="_borrow">table_with_length::borrow</a>(nodes_ref, node_id);
         // Get insertion key encoded in search node's bits.
-        <b>let</b> node_key = (node_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a> &
+        <b>let</b> node_key = (node_ref.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a> &
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_INSERTION_KEY">HI_INSERTION_KEY</a> <b>as</b> u128) <b>as</b> u64);
-        // If search key equals seed key, <b>return</b> node's ID, mutable
-        // reference <b>to</b> it, and empty <a href="">option</a>.
-        <b>if</b> (seed_key == node_key) <b>return</b>
-            (node_id, node_ref_mut, <a href="_none">option::none</a>());
+        // If search key equals seed key, <b>return</b> node's ID and
+        // empty <a href="">option</a>.
+        <b>if</b> (seed_key == node_key) <b>return</b> (node_id, <a href="_none">option::none</a>());
         // Get bitshift for child node ID and side based on
         // inequality comparison between seed key and node key.
         <b>let</b> (child_shift, child_side) = <b>if</b> (seed_key &lt; node_key)
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>) <b>else</b> (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a>);
-        <b>let</b> child_id = (node_ref_mut.bits &gt;&gt; child_shift &
+        <b>let</b> child_id = (node_ref.bits &gt;&gt; child_shift &
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64); // Get child node ID.
-        // If no child on given side, <b>return</b> match node's ID,
-        // mutable reference <b>to</b> it, and <a href="">option</a> <b>with</b> given side.
+        // If no child on given side, <b>return</b> match node's ID
+        // and <a href="">option</a> <b>with</b> given side.
         <b>if</b> (child_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) <b>return</b>
-            (node_id, node_ref_mut, <a href="_some">option::some</a>(child_side));
+            (node_id, <a href="_some">option::some</a>(child_side));
         // Otherwise <b>continue</b> walk at given child.
         node_id = child_id;
     }

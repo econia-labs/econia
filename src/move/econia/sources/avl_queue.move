@@ -561,7 +561,6 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `u64`: Node ID of match node.
-    /// * `&mut TreeNode`: Mutable reference to match node.
     /// * `Option<bool>`: None if match key equals seed key, `LEFT` if
     ///   seed key is less than match key but match node has no left
     ///   child, `RIGHT` if seed key is greater than match key but match
@@ -592,38 +591,36 @@ module econia::avl_queue {
     ///
     /// * `test_search()`.
     fun search<V>(
-        avlq_ref_mut: &mut AVLqueue<V>,
+        avlq_ref: &AVLqueue<V>,
         root_node_id: u64,
         seed_key: u64
     ): (
         u64,
-        &mut TreeNode,
         Option<bool>
     ) {
         // Mutably borrow tree nodes table.
-        let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        let nodes_ref = &avlq_ref.tree_nodes;
         // Begin walk at root node ID.
         let node_id = root_node_id;
         loop { // Begin walking down tree nodes:
-            let node_ref_mut = // Mutably borrow node having given ID.
-                table_with_length::borrow_mut(nodes_ref_mut, node_id);
+            let node_ref = // Mutably borrow node having given ID.
+                table_with_length::borrow(nodes_ref, node_id);
             // Get insertion key encoded in search node's bits.
-            let node_key = (node_ref_mut.bits >> SHIFT_INSERTION_KEY &
+            let node_key = (node_ref.bits >> SHIFT_INSERTION_KEY &
                 (HI_INSERTION_KEY as u128) as u64);
-            // If search key equals seed key, return node's ID, mutable
-            // reference to it, and empty option.
-            if (seed_key == node_key) return
-                (node_id, node_ref_mut, option::none());
+            // If search key equals seed key, return node's ID and
+            // empty option.
+            if (seed_key == node_key) return (node_id, option::none());
             // Get bitshift for child node ID and side based on
             // inequality comparison between seed key and node key.
             let (child_shift, child_side) = if (seed_key < node_key)
                 (SHIFT_CHILD_LEFT, LEFT) else (SHIFT_CHILD_RIGHT, RIGHT);
-            let child_id = (node_ref_mut.bits >> child_shift &
+            let child_id = (node_ref.bits >> child_shift &
                 (HI_NODE_ID as u128) as u64); // Get child node ID.
-            // If no child on given side, return match node's ID,
-            // mutable reference to it, and option with given side.
+            // If no child on given side, return match node's ID
+            // and option with given side.
             if (child_id == (NIL as u64)) return
-                (node_id, node_ref_mut, option::some(child_side));
+                (node_id, option::some(child_side));
             // Otherwise continue walk at given child.
             node_id = child_id;
         }
@@ -1475,20 +1472,24 @@ module econia::avl_queue {
             (2  as u128) << SHIFT_INSERTION_KEY |
             (1  as u128) << SHIFT_PARENT});
         // Assert returns in order from reference table.
-        let (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 2);
-        assert!(get_insertion_key_test(node_ref_mut) == 2, 0);
+        let (node_id, side_option) = search(&mut avlq, 1, 2);
+        let node_ref = borrow_tree_node_test(&avlq, node_id);
+        assert!(get_insertion_key_test(node_ref) == 2, 0);
         assert!(node_id == 5, 0);
         assert!(option::is_none(&side_option), 0);
-        (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 7);
-        assert!(get_insertion_key_test(node_ref_mut) == 6, 0);
+        (node_id, side_option) = search(&mut avlq, 1, 7);
+        node_ref = borrow_tree_node_test(&avlq, node_id);
+        assert!(get_insertion_key_test(node_ref) == 6, 0);
         assert!(node_id == 4, 0);
         assert!(*option::borrow(&side_option) == RIGHT, 0);
-        (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 9);
-        assert!(get_insertion_key_test(node_ref_mut) == 10, 0);
+        (node_id, side_option) = search(&mut avlq, 1, 9);
+        node_ref = borrow_tree_node_test(&avlq, node_id);
+        assert!(get_insertion_key_test(node_ref) == 10, 0);
         assert!(node_id == 3, 0);
         assert!(*option::borrow(&side_option) == LEFT, 0);
-        (node_id, node_ref_mut, side_option) = search(&mut avlq, 1, 4);
-        assert!(get_insertion_key_test(node_ref_mut) == 4, 0);
+        (node_id, side_option) = search(&mut avlq, 1, 4);
+        node_ref = borrow_tree_node_test(&avlq, node_id);
+        assert!(get_insertion_key_test(node_ref) == 4, 0);
         assert!(node_id == 1, 0);
         assert!(option::is_none(&side_option), 0);
         avlq // Return AVL queue.

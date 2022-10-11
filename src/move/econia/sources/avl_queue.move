@@ -18,7 +18,7 @@
 /// Tree nodes and list nodes are each assigned a 1-indexed 14-bit
 /// serial ID known as a node ID. Node ID 0 is reserved for null, such
 /// that the maximum number of allocated nodes for each node type is
-/// thus $2^{14} - 1$.
+/// thus $2^{14} - 1 = 16383$.
 ///
 /// # Access keys
 ///
@@ -94,27 +94,50 @@ module econia::avl_queue {
     /// | 14-27  | List tail node ID                    |
     /// | 0-13   | Next inactive node ID, when in stack |
     ///
+    /// All fields except next inactive node ID are ignored when the
+    /// node is in the inactive nodes stack.
+    ///
+    /// # Height
+    ///
     /// Left or right height denotes the height of the node's left
     /// or right subtree, respectively, plus one. Subtree height is
     /// adjusted by one to avoid negative numbers, with the resultant
     /// value denoting the height of a tree rooted at the given node,
     /// accounting only for height to the given side:
     ///
-    /// >                 2
-    /// >                / \
-    /// >               1   3
-    /// >                    \
-    /// >                     4
+    /// >       2
+    /// >      / \
+    /// >     1   3
+    /// >          \
+    /// >           4
     ///
-    /// | Key | Height to left | Height to right |
-    /// |-----|----------------|-----------------|
-    /// | 1   | 0              | 0               |
-    /// | 2   | 1              | 2               |
-    /// | 3   | 0              | 1               |
-    /// | 4   | 0              | 0               |
+    /// | Key | Left height | Right height |
+    /// |-----|-------------|--------------|
+    /// | 1   | 0           | 0            |
+    /// | 2   | 1           | 2            |
+    /// | 3   | 0           | 1            |
+    /// | 4   | 0           | 0            |
     ///
-    /// All fields except next inactive node ID are ignored when the
-    /// node is in the inactive nodes stack.
+    /// For a tree of size $n \geq 1$, an AVL tree's height is at most
+    ///
+    /// $$h \leq c \log_2(n + d) + b$$
+    ///
+    /// where
+    ///
+    /// * $\varphi = \frac{1 + \sqrt{5}}{2} \approx 1.618$ (the golden
+    ///   ratio),
+    /// * $c = \frac{1}{\log_2 \varphi} \approx 1.440$ ,
+    /// * $b = \frac{c}{2} \log_2 5 - 2 \approx -0.328$ , and
+    /// * $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
+    ///
+    /// With a maximum node count of $n_{max} = 2^{14} - 1 = 13683$, the
+    /// maximum height of an AVL tree in the present implementation is
+    /// thus
+    ///
+    /// $$h_{max} = \lfloor c \log_2(n_{max} + d) + b \rfloor = 19$$
+    ///
+    /// such that left height and right height can always be encoded in
+    /// $\lceil \log_2 19 \rceil = 5$ bits each.
     struct TreeNode has store {
         bits: u128
     }
@@ -187,6 +210,9 @@ module econia::avl_queue {
     /// All bits set in integer of width required to encode a byte.
     /// Generated in Python via `hex(int('1' * 8, 2))`.
     const HI_BYTE: u64 = 0xff;
+    /// All bits set in integer of width required to encode left or
+    /// right height. Generated in Python via `hex(int('1' * 5, 2))`.
+    const HI_HEIGHT: u8 = 0x1f;
     /// All bits set in integer of width required to encode insertion
     /// key. Generated in Python via `hex(int('1' * 32, 2))`.
     const HI_INSERTION_KEY: u64 = 0xffffffff;
@@ -211,6 +237,10 @@ module econia::avl_queue {
     /// Number of bits right child node ID is shifted in
     /// `TreeNode.bits`.
     const SHIFT_CHILD_RIGHT: u8 = 42;
+    /// Number of bits left height is shifted in `TreeNode.bits`.
+    const SHIFT_HEIGHT_LEFT: u8 = 89;
+    /// Number of bits right height is shifted in `TreeNode.bits`.
+    const SHIFT_HEIGHT_RIGHT: u8 = 84;
     /// Number of bits insertion key is shifted in `TreeNode.bits`.
     const SHIFT_INSERTION_KEY: u8 = 94;
     /// Number of bits inactive list node stack top is shifted in
@@ -676,6 +706,32 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Return left height indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_height_left_test()`
+    fun get_height_left_test(
+        tree_node_ref: &TreeNode
+    ): u8 {
+        ((tree_node_ref.bits >> SHIFT_HEIGHT_LEFT) &
+            (HI_HEIGHT as u128) as u8)
+    }
+
+    #[test_only]
+    /// Return right height indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_height_right_test()`
+    fun get_height_right_test(
+        tree_node_ref: &TreeNode
+    ): u8 {
+        ((tree_node_ref.bits >> SHIFT_HEIGHT_RIGHT) &
+            (HI_HEIGHT as u128) as u8)
+    }
+
+    #[test_only]
     /// Return insertion key indicated by given tree node.
     ///
     /// # Testing
@@ -1097,6 +1153,34 @@ module econia::avl_queue {
             b"11111111111111111111111111111111")};
         assert!( // Assert right child node ID.
             get_child_right_test(&tree_node) == u_64(b"10000000000001"), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
+    fun test_get_height_left_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111111111111111111111111",
+            b"11100011111111111111111111111111",
+            //  ^   ^ bits 89-93
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111")};
+        // Assert left height.
+        assert!(get_height_left_test(&tree_node) == (u_64(b"10001") as u8), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
+    fun test_get_height_right_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111111111111111111111111",
+            b"11111111000111111111111111111111",
+            //       ^   ^ bits 84-88
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111")};
+        assert!( // Assert right height.
+            get_height_right_test(&tree_node) == (u_64(b"10001") as u8), 0);
         let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 

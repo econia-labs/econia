@@ -31,7 +31,7 @@ https://en.wikipedia.org/wiki/AVL_tree
 Tree nodes and list nodes are each assigned a 1-indexed 14-bit
 serial ID known as a node ID. Node ID 0 is reserved for null, such
 that the maximum number of allocated nodes for each node type is
-thus $2^{14} - 1$.
+thus $2^{14} - 1 = 16383$.
 
 
 <a name="@Access_keys_2"></a>
@@ -61,32 +61,33 @@ The below index is automatically generated from source code:
 -  [Complete docgen index](#@Complete_docgen_index_3)
 -  [Struct `AVLqueue`](#0xc0deb00c_avl_queue_AVLqueue)
 -  [Struct `TreeNode`](#0xc0deb00c_avl_queue_TreeNode)
+    -  [Height](#@Height_4)
 -  [Struct `ListNode`](#0xc0deb00c_avl_queue_ListNode)
--  [Constants](#@Constants_4)
+-  [Constants](#@Constants_5)
 -  [Function `new`](#0xc0deb00c_avl_queue_new)
-    -  [Parameters](#@Parameters_5)
-    -  [Returns](#@Returns_6)
-    -  [Testing](#@Testing_7)
--  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
+    -  [Parameters](#@Parameters_6)
+    -  [Returns](#@Returns_7)
     -  [Testing](#@Testing_8)
+-  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
+    -  [Testing](#@Testing_9)
 -  [Function `activate_list_node`](#0xc0deb00c_avl_queue_activate_list_node)
-    -  [Parameters](#@Parameters_9)
-    -  [Returns](#@Returns_10)
-    -  [Assumptions](#@Assumptions_11)
-    -  [Testing](#@Testing_12)
+    -  [Parameters](#@Parameters_10)
+    -  [Returns](#@Returns_11)
+    -  [Assumptions](#@Assumptions_12)
+    -  [Testing](#@Testing_13)
 -  [Function `activate_tree_node`](#0xc0deb00c_avl_queue_activate_tree_node)
-    -  [Parameters](#@Parameters_13)
-    -  [Assumptions](#@Assumptions_14)
-    -  [Testing](#@Testing_15)
+    -  [Parameters](#@Parameters_14)
+    -  [Assumptions](#@Assumptions_15)
+    -  [Testing](#@Testing_16)
 -  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_16)
-    -  [Returns](#@Returns_17)
-    -  [Assumptions](#@Assumptions_18)
-    -  [Reference diagram](#@Reference_diagram_19)
-    -  [Testing](#@Testing_20)
+    -  [Parameters](#@Parameters_17)
+    -  [Returns](#@Returns_18)
+    -  [Assumptions](#@Assumptions_19)
+    -  [Reference diagram](#@Reference_diagram_20)
+    -  [Testing](#@Testing_21)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_21)
-    -  [Testing](#@Testing_22)
+    -  [Aborts](#@Aborts_22)
+    -  [Testing](#@Testing_23)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -183,27 +184,54 @@ All fields stored compactly in <code>bits</code> as follows:
 | 14-27  | List tail node ID                    |
 | 0-13   | Next inactive node ID, when in stack |
 
+All fields except next inactive node ID are ignored when the
+node is in the inactive nodes stack.
+
+
+<a name="@Height_4"></a>
+
+### Height
+
+
 Left or right height denotes the height of the node's left
 or right subtree, respectively, plus one. Subtree height is
 adjusted by one to avoid negative numbers, with the resultant
 value denoting the height of a tree rooted at the given node,
 accounting only for height to the given side:
 
->                 2
->                / \
->               1   3
->                    \
->                     4
+>       2
+>      / \
+>     1   3
+>          \
+>           4
 
-| Key | Height to left | Height to right |
-|-----|----------------|-----------------|
-| 1   | 0              | 0               |
-| 2   | 1              | 2               |
-| 3   | 0              | 1               |
-| 4   | 0              | 0               |
+| Key | Left height | Right height |
+|-----|-------------|--------------|
+| 1   | 0           | 0            |
+| 2   | 1           | 2            |
+| 3   | 0           | 1            |
+| 4   | 0           | 0            |
 
-All fields except next inactive node ID are ignored when the
-node is in the inactive nodes stack.
+For a tree of size $n \geq 1$, an AVL tree's height is at most
+
+$$h \leq c \log_2(n + d) + b$$
+
+where
+
+* $\varphi = \frac{1 + \sqrt{5}}{2} \approx 1.618$ (the golden
+ratio),
+* $c = \frac{1}{\log_2 \varphi} \approx 1.440$ ,
+* $b = \frac{c}{2} \log_2 5 - 2 \approx -0.328$ , and
+* $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
+
+With a maximum node count of $n_{max} = 2^{14} - 1 = 13683$, the
+maximum height of an AVL tree in the present implementation is
+thus
+
+$$h_{max} = \lfloor c \log_2(n_{max} + d) + b \rfloor = 19$$
+
+such that left height and right height can always be encoded in
+$\lceil \log_2 19 \rceil = 5$ bits each.
 
 
 <pre><code><b>struct</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a> <b>has</b> store
@@ -291,7 +319,7 @@ indicates next inactive node in the stack.
 
 </details>
 
-<a name="@Constants_4"></a>
+<a name="@Constants_5"></a>
 
 ## Constants
 
@@ -433,6 +461,17 @@ Generated in Python via <code>hex(int('1' * 8, 2))</code>.
 
 
 
+<a name="0xc0deb00c_avl_queue_HI_HEIGHT"></a>
+
+All bits set in integer of width required to encode left or
+right height. Generated in Python via <code>hex(int('1' * 5, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>: u8 = 31;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_HI_INSERTION_KEY"></a>
 
 All bits set in integer of width required to encode insertion
@@ -527,6 +566,26 @@ Number of bits right child node ID is shifted in
 
 
 
+<a name="0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT"></a>
+
+Number of bits left height is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>: u8 = 89;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT"></a>
+
+Number of bits right height is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>: u8 = 84;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY"></a>
 
 Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
@@ -617,7 +676,7 @@ Number of bits inactive tree node stack top is shifted in
 Return a new AVL queue, optionally allocating inactive nodes.
 
 
-<a name="@Parameters_5"></a>
+<a name="@Parameters_6"></a>
 
 ### Parameters
 
@@ -629,7 +688,7 @@ to allocate.
 to allocate.
 
 
-<a name="@Returns_6"></a>
+<a name="@Returns_7"></a>
 
 ### Returns
 
@@ -637,7 +696,7 @@ to allocate.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;</code>: A new AVL queue.
 
 
-<a name="@Testing_7"></a>
+<a name="@Testing_8"></a>
 
 ### Testing
 
@@ -725,7 +784,7 @@ to allocate.
 Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 
 
-<a name="@Testing_8"></a>
+<a name="@Testing_9"></a>
 
 ### Testing
 
@@ -771,7 +830,7 @@ allocated tree nodes is performed here first, and is not
 re-performed in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>.
 
 
-<a name="@Parameters_9"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -786,7 +845,7 @@ linked list.
 * <code>value</code>: Insertion value for list node to activate.
 
 
-<a name="@Returns_10"></a>
+<a name="@Returns_11"></a>
 
 ### Returns
 
@@ -794,7 +853,7 @@ linked list.
 * <code>u64</code>: Node ID of activated list node.
 
 
-<a name="@Assumptions_11"></a>
+<a name="@Assumptions_12"></a>
 
 ### Assumptions
 
@@ -802,7 +861,7 @@ linked list.
 * <code>last</code> and <code>next</code> are not set at any bits above 14.
 
 
-<a name="@Testing_12"></a>
+<a name="@Testing_13"></a>
 
 ### Testing
 
@@ -916,7 +975,7 @@ Should only be called when <code><a href="avl_queue.md#0xc0deb00c_avl_queue_acti
 solo list node in an AVL tree leaf.
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_14"></a>
 
 ### Parameters
 
@@ -928,7 +987,7 @@ solo list node in an AVL tree leaf.
 linked list.
 
 
-<a name="@Assumptions_14"></a>
+<a name="@Assumptions_15"></a>
 
 ### Assumptions
 
@@ -941,7 +1000,7 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activat
 fields are not set at any bits above 13.
 
 
-<a name="@Testing_15"></a>
+<a name="@Testing_16"></a>
 
 ### Testing
 
@@ -1020,7 +1079,7 @@ there is no child to branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1030,7 +1089,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_17"></a>
+<a name="@Returns_18"></a>
 
 ### Returns
 
@@ -1043,7 +1102,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_18"></a>
+<a name="@Assumptions_19"></a>
 
 ### Assumptions
 
@@ -1053,7 +1112,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_19"></a>
+<a name="@Reference_diagram_20"></a>
 
 ### Reference diagram
 
@@ -1072,7 +1131,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_20"></a>
+<a name="@Testing_21"></a>
 
 ### Testing
 
@@ -1139,7 +1198,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_21"></a>
+<a name="@Aborts_22"></a>
 
 ### Aborts
 
@@ -1147,7 +1206,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_22"></a>
+<a name="@Testing_23"></a>
 
 ### Testing
 

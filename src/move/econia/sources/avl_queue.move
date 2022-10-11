@@ -203,6 +203,10 @@ module econia::avl_queue {
     /// Number of bits node type bit flag is shifted in `ListNode`
     /// virtual last and next fields.
     const SHIFT_NODE_TYPE: u8 = 14;
+    /// Number of bits list head node ID is shited in `TreeNode.bits`.
+    const SHIFT_LIST_HEAD: u8 = 28;
+    /// Number of bits list tail node ID is shited in `TreeNode.bits`.
+    const SHIFT_LIST_TAIL: u8 = 14;
     /// Number of bits parent node ID is shifted in `AVLqueue.bits`.
     const SHIFT_PARENT: u8 = 70;
     /// Number of bits inactive tree node stack top is shifted in
@@ -525,6 +529,18 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Return list head node ID indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_list_head_test()`
+    fun get_list_head_test(
+        tree_node_ref: &TreeNode
+    ): u64 {
+        (tree_node_ref.bits >> SHIFT_LIST_HEAD & (HI_NODE_ID as u128) as u64)
+    }
+
+    #[test_only]
     /// Return node ID of last node and if last node is a tree node,
     /// for given list node.
     ///
@@ -566,6 +582,18 @@ module econia::avl_queue {
             (BIT_FLAG_TREE_NODE as u64) as u8); // Get tree node flag.
         // Return node ID, and if next node is a tree node.
         (next_field & HI_NODE_ID, tree_node_flag == BIT_FLAG_TREE_NODE)
+    }
+
+    #[test_only]
+    /// Return list tail node ID indicated by given tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_list_tail_test()`
+    fun get_list_tail_test(
+        tree_node_ref: &TreeNode
+    ): u64 {
+        (tree_node_ref.bits >> SHIFT_LIST_TAIL & (HI_NODE_ID as u128) as u64)
     }
 
     #[test_only]
@@ -892,25 +920,40 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful extraction.
+    fun test_get_list_head_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111000000000",
+            //                      ^ bit 41
+            b"00010111111111111111111111111111")};
+            //   ^ bit 28
+        // Assert list head node ID.
+        assert!(get_list_head_test(&tree_node) == u_64(b"10000000000001"), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
     fun test_get_list_last_test() {
         // Declare list node.
         let list_node = ListNode{
-            last_msbs: (u_64(b"00101010") as u8),
-            last_lsbs: (u_64(b"10101011") as u8),
+            last_msbs: (u_64(b"00100000") as u8),
+            last_lsbs: (u_64(b"00000001") as u8),
             next_msbs: 0,
             next_lsbs: 0};
         // Get last node info.
         let (node_id, is_tree_node) = get_list_last_test(&list_node);
         // Assert last node ID.
-        assert!(node_id == u_64(b"10101010101011"), 0);
+        assert!(node_id == u_64(b"10000000000001"), 0);
         // Assert not marked as tree node.
         assert!(!is_tree_node, 0);
         // Flag as tree node.
-        list_node.last_msbs = (u_64(b"01101010") as u8);
+        list_node.last_msbs = (u_64(b"01100000") as u8);
         // Get last node info.
         (node_id, is_tree_node) = get_list_last_test(&list_node);
         // Assert last node ID unchanged.
-        assert!(node_id == u_64(b"10101010101011"), 0);
+        assert!(node_id == u_64(b"10000000000001"), 0);
         // Assert marked as tree node.
         assert!(is_tree_node, 0);
         ListNode{last_msbs: _, last_lsbs: _, next_msbs: _, next_lsbs: _} =
@@ -924,20 +967,20 @@ module econia::avl_queue {
         let list_node = ListNode{
             last_msbs: 0,
             last_lsbs: 0,
-            next_msbs: (u_64(b"00101010") as u8),
-            next_lsbs: (u_64(b"10101011") as u8)};
+            next_msbs: (u_64(b"00100000") as u8),
+            next_lsbs: (u_64(b"00000001") as u8)};
         // Get next node info.
         let (node_id, is_tree_node) = get_list_next_test(&list_node);
         // Assert next node ID.
-        assert!(node_id == u_64(b"10101010101011"), 0);
+        assert!(node_id == u_64(b"10000000000001"), 0);
         // Assert not marked as tree node.
         assert!(!is_tree_node, 0);
         // Flag as tree node.
-        list_node.next_msbs = (u_64(b"01101010") as u8);
+        list_node.next_msbs = (u_64(b"01100000") as u8);
         // Get next node info.
         (node_id, is_tree_node) = get_list_next_test(&list_node);
         // Assert next node ID unchanged.
-        assert!(node_id == u_64(b"10101010101011"), 0);
+        assert!(node_id == u_64(b"10000000000001"), 0);
         // Assert marked as tree node.
         assert!(is_tree_node, 0);
         ListNode{last_msbs: _, last_lsbs: _, next_msbs: _, next_lsbs: _} =
@@ -946,11 +989,25 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful extraction.
+    fun test_get_list_tail_test() {
+        let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111000000000000101111111111111")};
+            //    ^ bit 27     ^ bit 14
+        // Assert list tail node ID.
+        assert!(get_list_tail_test(&tree_node) == u_64(b"10000000000001"), 0);
+        let TreeNode{bits: _} = tree_node; // Unpack tree node.
+    }
+
+    #[test]
+    /// Verify successful extraction.
     fun test_get_list_top_test():
     AVLqueue<u8> {
         let avlq = AVLqueue{ // Create empty AVL queue.
             bits: u_128_by_32(
-                b"11111111111111111010101010101101",
+                b"11111111111111111000000000000101",
                 //                ^ bit 111    ^ bit 98
                 b"11111111111111111111111111111111",
                 b"11111111111111111111111111111111",
@@ -961,7 +1018,7 @@ module econia::avl_queue {
             values: table::new(),
         };
         // Assert list top.
-        assert!(get_list_top_test(&avlq) == u_64(b"10101010101011"), 0);
+        assert!(get_list_top_test(&avlq) == u_64(b"10000000000001"), 0);
         avlq // Return AVL queue.
     }
 
@@ -987,9 +1044,9 @@ module econia::avl_queue {
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
-            b"11111111111111100010101010101011")};
+            b"11111111111111111110000000000001")};
         assert!( // Assert next node ID.
-            get_tree_next_test(&tree_node) == u_64(b"10101010101011"), 0);
+            get_tree_next_test(&tree_node) == u_64(b"10000000000001"), 0);
         TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
@@ -999,7 +1056,7 @@ module econia::avl_queue {
     AVLqueue<u8> {
         let avlq = AVLqueue{ // Create empty AVL queue.
             bits: u_128_by_32(
-                b"11101010101010110111111111111111",
+                b"11100000000000010111111111111111",
                 //  ^ bit 125    ^ bit 112
                 b"11111111111111111111111111111111",
                 b"11111111111111111111111111111111",
@@ -1010,7 +1067,7 @@ module econia::avl_queue {
             values: table::new(),
         };
         // Assert tree top.
-        assert!(get_tree_top_test(&avlq) == u_64(b"10101010101011"), 0);
+        assert!(get_tree_top_test(&avlq) == u_64(b"10000000000001"), 0);
         avlq // Return AVL queue.
     }
 

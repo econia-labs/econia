@@ -495,6 +495,16 @@ Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00
 
 
 
+<a name="0xc0deb00c_avl_queue_SHIFT_LIST_HEAD"></a>
+
+Number of bits list head node ID is shited in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a>: u8 = 28;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP"></a>
 
 Number of bits inactive list node stack top is shifted in
@@ -502,6 +512,16 @@ Number of bits inactive list node stack top is shifted in
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>: u8 = 98;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SHIFT_LIST_TAIL"></a>
+
+Number of bits list tail node ID is shited in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>: u8 = 14;
 </code></pre>
 
 

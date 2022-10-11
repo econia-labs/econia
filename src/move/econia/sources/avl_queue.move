@@ -15,17 +15,20 @@
 ///
 /// # Node IDs
 ///
-/// Tree nodes and list nodes are each assigned a 1-indexed 14-bit
+/// Tree nodes and list nodes are each assigned a 1-indexed 15-bit
 /// serial ID known as a node ID. Node ID 0 is reserved for null, such
 /// that the maximum number of allocated nodes for each node type is
-/// thus $2^{14} - 1$.
+/// thus $2^{15} - 1$.
+///
+/// 15-bit node IDs are used rather than 16-bit node IDs so that a node
+/// ID and a bit flag can be stored in 16 bits.
 ///
 /// # Access keys
 ///
 /// | Bit(s) | Data                                         |
 /// |--------|----------------------------------------------|
-/// | 47-60  | Tree node ID                                 |
-/// | 33-46  | List node ID                                 |
+/// | 48-62  | Tree node ID                                 |
+/// | 33-47  | List node ID                                 |
 /// | 32     | If set, ascending AVL queue, else descending |
 /// | 0-31   | Insertion key                                |
 ///
@@ -57,18 +60,18 @@ module econia::avl_queue {
     ///
     /// | Bit(s)  | Data                                               |
     /// |---------|----------------------------------------------------|
-    /// | 126     | If set, ascending AVL queue, else descending       |
-    /// | 112-125 | Tree node ID at top of inactive stack              |
-    /// | 98-111  | List node ID at top of inactive stack              |
-    /// | 84-97   | AVL queue head list node ID                        |
-    /// | 52-83   | AVL queue head insertion key (if node ID not null) |
-    /// | 38-51   | AVL queue tail list node ID                        |
-    /// | 6-37    | AVL queue tail insertion key (if node ID not null) |
-    /// | 0-5     | Bits 8-13 of tree root node ID                     |
-    ///
-    /// Bits 0-7 of the tree root node ID are stored in `root_lsbs`.
+    /// | 124     | If set, ascending AVL queue, else descending       |
+    /// | 109-123 | Tree node ID at top of inactive stack              |
+    /// | 94-108  | List node ID at top of inactive stack              |
+    /// | 79-93   | AVL queue head list node ID                        |
+    /// | 47-78   | AVL queue head insertion key (if node ID not null) |
+    /// | 32-46   | AVL queue tail list node ID                        |
+    /// | 0-31    | AVL queue tail insertion key (if node ID not null) |
     struct AVLqueue<V> has store {
         bits: u128,
+        /// Bits 8-14 of tree root node ID.
+        root_msbs: u8,
+        /// Bits 0-7 of tree root node ID.
         root_lsbs: u8,
         /// Map from tree node ID to tree node.
         tree_nodes: TableWithLength<u64, TreeNode>,
@@ -84,14 +87,14 @@ module econia::avl_queue {
     ///
     /// | Bit(s) | Data                                 |
     /// |--------|--------------------------------------|
-    /// | 86-117 | Insertion key                        |
-    /// | 84-85  | Balance factor (see below)           |
-    /// | 70-83  | Parent node ID                       |
-    /// | 56-69  | Left child node ID                   |
-    /// | 42-55  | Right child node ID                  |
-    /// | 28-41  | List head node ID                    |
-    /// | 14-27  | List tail node ID                    |
-    /// | 0-13   | Next inactive node ID, when in stack |
+    /// | 92-123 | Insertion key                        |
+    /// | 90-91  | Balance factor (see below)           |
+    /// | 75-89  | Parent node ID                       |
+    /// | 60-74  | Left child node ID                   |
+    /// | 45-59  | Right child node ID                  |
+    /// | 30-44  | List head node ID                    |
+    /// | 15-29  | List tail node ID                    |
+    /// | 0-14   | Next inactive node ID, when in stack |
     ///
     /// Balance factor bits:
     ///
@@ -114,14 +117,14 @@ module econia::avl_queue {
     /// `next_msbs`), and one for least-significant bits (`last_lsbs`,
     /// `next_lsbs`).
     ///
-    /// When set at bit 14, the 16-bit concatenated result of `_msbs`
+    /// When set at bit 15, the 16-bit concatenated result of `_msbs`
     /// and `_lsbs` fields, in either case, refers to a tree node ID: If
     /// `last_msbs` and `last_lsbs` indicate a tree node ID, then the
     /// list node is the head of the list at the given tree node. If
     /// `next_msbs` and `next_lsbs` indicate a tree node ID, then the
     /// list node is the tail of the list at the given tree node.
     ///
-    /// If not set at bit 14, the corresponding node ID is either the
+    /// If not set at bit 15, the corresponding node ID is either the
     /// last or the next list node in the doubly linked list.
     ///
     /// If list node is in the inactive list node stack, next node ID
@@ -179,39 +182,39 @@ module econia::avl_queue {
     /// key. Generated in Python via `hex(int('1' * 32, 2))`.
     const HI_INSERTION_KEY: u64 = 0xffffffff;
     /// All bits set in integer of width required to encode node ID.
-    /// Generated in Python via `hex(int('1' * 14, 2))`.
-    const HI_NODE_ID: u64 = 0x3fff;
+    /// Generated in Python via `hex(int('1' * 15, 2))`.
+    const HI_NODE_ID: u64 = 0x7fff;
     /// Flag for null value when null defined as 0.
     const NIL: u64 = 0;
-    /// $2^{14} - 1$, the maximum number of nodes that can be allocated
+    /// $2^{15} - 1$, the maximum number of nodes that can be allocated
     /// for either node type.
-    const N_NODES_MAX: u64 = 16383;
+    const N_NODES_MAX: u64 = 32767;
     /// Number of bits sort order is shifted in `AVLqueue.bits`.
-    const SHIFT_SORT_ORDER: u8 = 126;
+    const SHIFT_SORT_ORDER: u8 = 124;
     /// Number of bits balance factor is shifted in `TreeNode.bits`.
-    const SHIFT_BALANCE_FACTOR: u8 = 84;
+    const SHIFT_BALANCE_FACTOR: u8 = 90;
     /// Number of bits left child node ID is shifted in `TreeNode.bits`.
-    const SHIFT_CHILD_LEFT: u8 = 56;
+    const SHIFT_CHILD_LEFT: u8 = 60;
     /// Number of bits right child node ID is shifted in
     /// `TreeNode.bits`.
-    const SHIFT_CHILD_RIGHT: u8 = 42;
+    const SHIFT_CHILD_RIGHT: u8 = 45;
     /// Number of bits insertion key is shifted in `TreeNode.bits`.
-    const SHIFT_INSERTION_KEY: u8 = 86;
+    const SHIFT_INSERTION_KEY: u8 = 92;
     /// Number of bits inactive list node stack top is shifted in
     /// `AVLqueue.bits`.
-    const SHIFT_LIST_STACK_TOP: u8 = 98;
+    const SHIFT_LIST_STACK_TOP: u8 = 94;
     /// Number of bits node type bit flag is shifted in `ListNode`
     /// virtual last and next fields.
-    const SHIFT_NODE_TYPE: u8 = 14;
+    const SHIFT_NODE_TYPE: u8 = 15;
     /// Number of bits list head node ID is shited in `TreeNode.bits`.
-    const SHIFT_LIST_HEAD: u8 = 28;
+    const SHIFT_LIST_HEAD: u8 = 30;
     /// Number of bits list tail node ID is shited in `TreeNode.bits`.
-    const SHIFT_LIST_TAIL: u8 = 14;
+    const SHIFT_LIST_TAIL: u8 = 15;
     /// Number of bits parent node ID is shifted in `AVLqueue.bits`.
-    const SHIFT_PARENT: u8 = 70;
+    const SHIFT_PARENT: u8 = 75;
     /// Number of bits inactive tree node stack top is shifted in
     /// `AVLqueue.bits`.
-    const SHIFT_TREE_STACK_TOP: u8 = 112;
+    const SHIFT_TREE_STACK_TOP: u8 = 109;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -253,7 +256,8 @@ module econia::avl_queue {
             | ((n_inactive_list_nodes as u128) << SHIFT_LIST_STACK_TOP);
         // Declare empty AVL queue.
         let avlq = AVLqueue{bits,
-                            root_lsbs: 0,
+                            root_msbs: (NIL as u8),
+                            root_lsbs: (NIL as u8),
                             tree_nodes: table_with_length::new(),
                             list_nodes: table_with_length::new(),
                             values: table::new()};
@@ -982,8 +986,8 @@ module econia::avl_queue {
     fun test_get_balance_factor_test() {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
             b"11111111111111111111111111111111",
-            b"11111111111011111111111111111111",
-            //          ^^ bits 84 and 85
+            b"11111011111111111111111111111111",
+            //    ^^ bits 90 and 91
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111")};
         // Assert balance factor.
@@ -992,8 +996,8 @@ module econia::avl_queue {
         // Update balance factor.
         tree_node.bits = u_128_by_32(
             b"11111111111111111111111111111111",
-            b"11111111110011111111111111111111",
-            //          ^^ bits 84 and 85
+            b"11110011111111111111111111111111",
+            //    ^^ bits 90 and 91
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111");
         // Assert balance factor.
@@ -1002,8 +1006,8 @@ module econia::avl_queue {
         // Update balance factor.
         tree_node.bits = u_128_by_32(
             b"11111111111111111111111111111111",
-            b"11111111110111111111111111111111",
-            //          ^^ bits 84 and 85
+            b"11110111111111111111111111111111",
+            //    ^^ bits 90 and 91
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111");
         // Assert balance factor.
@@ -1017,13 +1021,13 @@ module econia::avl_queue {
     fun test_get_child_left_test() {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
             b"11111111111111111111111111111111",
-            b"11111111111111111111111111100000",
-            //                          ^ bit 69
-            b"00000001011111111111111111111111",
-            //       ^ bit 56
+            b"11111111111111111111110000000000",
+            //                     ^ bit 74
+            b"00011111111111111111111111111111",
+            //   ^ bit 60
             b"11111111111111111111111111111111")};
-        // Assert left child node ID.
-        assert!(get_child_left_test(&tree_node) == u_64(b"10000000000001"), 0);
+        assert!( // Assert left child node ID.
+            get_child_left_test(&tree_node) == u_64(b"100000000000001"), 0);
         let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
@@ -1033,11 +1037,11 @@ module econia::avl_queue {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
-            b"11111111100000000000010111111111",
-            //        ^ bit 55     ^ bit 42
+            b"11111000000000000011111111111111",
+            //    ^ bit 59      ^ bit 45
             b"11111111111111111111111111111111")};
         assert!( // Assert right child node ID.
-            get_child_right_test(&tree_node) == u_64(b"10000000000001"), 0);
+            get_child_right_test(&tree_node) == u_64(b"100000000000001"), 0);
         let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
@@ -1045,10 +1049,10 @@ module econia::avl_queue {
     /// Verify successful extraction.
     fun test_get_insertion_key_test() {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
-            b"11111111111000000000000000000000",
-            //          ^ bit 117
-            b"00000000010111111111111111111111",
-            //         ^ bit 86
+            b"11111000000000000000000000000000",
+            //    ^ bit 123
+            b"00011111111111111111111111111111",
+            //   ^ bit 92
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111")};
         // Assert insertion key
@@ -1063,12 +1067,12 @@ module econia::avl_queue {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
-            b"11111111111111111111111000000000",
-            //                      ^ bit 41
-            b"00010111111111111111111111111111")};
-            //   ^ bit 28
+            b"11111111111111111111000000000000",
+            //                   ^ bit 44
+            b"01111111111111111111111111111111")};
+            // ^ bit 30
         // Assert list head node ID.
-        assert!(get_list_head_test(&tree_node) == u_64(b"10000000000001"), 0);
+        assert!(get_list_head_test(&tree_node) == u_64(b"100000000000001"), 0);
         let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
@@ -1077,22 +1081,22 @@ module econia::avl_queue {
     fun test_get_list_last_test() {
         // Declare list node.
         let list_node = ListNode{
-            last_msbs: (u_64(b"00100000") as u8),
+            last_msbs: (u_64(b"01000000") as u8),
             last_lsbs: (u_64(b"00000001") as u8),
             next_msbs: 0,
             next_lsbs: 0};
         // Get last node info.
         let (node_id, is_tree_node) = get_list_last_test(&list_node);
         // Assert last node ID.
-        assert!(node_id == u_64(b"10000000000001"), 0);
+        assert!(node_id == u_64(b"100000000000001"), 0);
         // Assert not marked as tree node.
         assert!(!is_tree_node, 0);
         // Flag as tree node.
-        list_node.last_msbs = (u_64(b"01100000") as u8);
+        list_node.last_msbs = (u_64(b"11000000") as u8);
         // Get last node info.
         (node_id, is_tree_node) = get_list_last_test(&list_node);
         // Assert last node ID unchanged.
-        assert!(node_id == u_64(b"10000000000001"), 0);
+        assert!(node_id == u_64(b"100000000000001"), 0);
         // Assert marked as tree node.
         assert!(is_tree_node, 0);
         ListNode{last_msbs: _, last_lsbs: _, next_msbs: _, next_lsbs: _} =
@@ -1106,20 +1110,20 @@ module econia::avl_queue {
         let list_node = ListNode{
             last_msbs: 0,
             last_lsbs: 0,
-            next_msbs: (u_64(b"00100000") as u8),
+            next_msbs: (u_64(b"01000000") as u8),
             next_lsbs: (u_64(b"00000001") as u8)};
         // Get next node info.
         let (node_id, is_tree_node) = get_list_next_test(&list_node);
         // Assert next node ID.
-        assert!(node_id == u_64(b"10000000000001"), 0);
+        assert!(node_id == u_64(b"100000000000001"), 0);
         // Assert not marked as tree node.
         assert!(!is_tree_node, 0);
         // Flag as tree node.
-        list_node.next_msbs = (u_64(b"01100000") as u8);
+        list_node.next_msbs = (u_64(b"11000000") as u8);
         // Get next node info.
         (node_id, is_tree_node) = get_list_next_test(&list_node);
         // Assert next node ID unchanged.
-        assert!(node_id == u_64(b"10000000000001"), 0);
+        assert!(node_id == u_64(b"100000000000001"), 0);
         // Assert marked as tree node.
         assert!(is_tree_node, 0);
         ListNode{last_msbs: _, last_lsbs: _, next_msbs: _, next_lsbs: _} =
@@ -1133,10 +1137,10 @@ module econia::avl_queue {
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
-            b"11111000000000000101111111111111")};
-            //    ^ bit 27     ^ bit 14
+            b"11100000000000001111111111111111")};
+            //  ^ bit 29      ^ bit 15
         // Assert list tail node ID.
-        assert!(get_list_tail_test(&tree_node) == u_64(b"10000000000001"), 0);
+        assert!(get_list_tail_test(&tree_node) == u_64(b"100000000000001"), 0);
         let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
@@ -1146,18 +1150,20 @@ module econia::avl_queue {
     AVLqueue<u8> {
         let avlq = AVLqueue{ // Create empty AVL queue.
             bits: u_128_by_32(
-                b"11111111111111111000000000000101",
-                //                ^ bit 111    ^ bit 98
-                b"11111111111111111111111111111111",
+                b"11111111111111111111000000000000",
+                //                   ^ bit 108
+                b"01111111111111111111111111111111",
+                // ^ bit 94
                 b"11111111111111111111111111111111",
                 b"11111111111111111111111111111111"),
-            root_lsbs: 0,
+            root_msbs: (NIL as u8),
+            root_lsbs: (NIL as u8),
             tree_nodes: table_with_length::new(),
             list_nodes: table_with_length::new(),
             values: table::new(),
         };
         // Assert list top.
-        assert!(get_list_top_test(&avlq) == u_64(b"10000000000001"), 0);
+        assert!(get_list_top_test(&avlq) == u_64(b"100000000000001"), 0);
         avlq // Return AVL queue.
     }
 
@@ -1166,12 +1172,12 @@ module econia::avl_queue {
     fun test_get_parent_test() {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
             b"11111111111111111111111111111111",
-            b"11111111111110000000000001011111",
-            //            ^ bit 83     ^ bit 70
+            b"11111110000000000000111111111111",
+            //      ^ bit 89      ^ bit 75
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111")};
         // Assert parent node ID.
-        assert!(get_parent_test(&tree_node) == u_64(b"10000000000001"), 0);
+        assert!(get_parent_test(&tree_node) == u_64(b"100000000000001"), 0);
         let TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
@@ -1183,9 +1189,9 @@ module econia::avl_queue {
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
-            b"11111111111111111110000000000001")};
+            b"11111111111111111100000000000001")};
         assert!( // Assert next node ID.
-            get_tree_next_test(&tree_node) == u_64(b"10000000000001"), 0);
+            get_tree_next_test(&tree_node) == u_64(b"100000000000001"), 0);
         TreeNode{bits: _} = tree_node; // Unpack tree node.
     }
 
@@ -1195,18 +1201,19 @@ module econia::avl_queue {
     AVLqueue<u8> {
         let avlq = AVLqueue{ // Create empty AVL queue.
             bits: u_128_by_32(
-                b"11100000000000010111111111111111",
-                //  ^ bit 125    ^ bit 112
+                b"11111000000000000011111111111111",
+                //    ^ bit 123     ^ bit 109
                 b"11111111111111111111111111111111",
                 b"11111111111111111111111111111111",
                 b"11111111111111111111111111111111"),
-            root_lsbs: 0,
+            root_msbs: (NIL as u8),
+            root_lsbs: (NIL as u8),
             tree_nodes: table_with_length::new(),
             list_nodes: table_with_length::new(),
             values: table::new(),
         };
         // Assert tree top.
-        assert!(get_tree_top_test(&avlq) == u_64(b"10000000000001"), 0);
+        assert!(get_tree_top_test(&avlq) == u_64(b"100000000000001"), 0);
         avlq // Return AVL queue.
     }
 
@@ -1305,8 +1312,9 @@ module econia::avl_queue {
     fun test_is_ascending():
     AVLqueue<u8> {
         let avlq = AVLqueue{ // Create empty AVL queue.
-            bits: 0,
-            root_lsbs: 0,
+            bits: (NIL as u128),
+            root_msbs: (NIL as u8),
+            root_lsbs: (NIL as u8),
             tree_nodes: table_with_length::new(),
             list_nodes: table_with_length::new(),
             values: table::new(),
@@ -1315,8 +1323,8 @@ module econia::avl_queue {
         assert!(!is_ascending(&avlq), 0);
         // Flag as ascending.
         avlq.bits = u_128_by_32(
-            b"01000000000000000000000000000000",
-            // ^ bit 126
+            b"00010000000000000000000000000000",
+            //   ^ bit 124
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000",
             b"00000000000000000000000000000000"
@@ -1380,14 +1388,14 @@ module econia::avl_queue {
     /// Verify failure for too many nodes.
     fun test_verify_node_count_fail() {
         // Attempt invalid invocation for one too many nodes.
-        verify_node_count(u_64(b"100000000000000"));
+        verify_node_count(u_64(b"1000000000000000"));
     }
 
     #[test]
     /// Verify maximum node count passes check.
     fun test_verify_new_node_id_pass() {
         // Attempt valid invocation for max node count.
-        verify_node_count(u_64(b"11111111111111"));
+        verify_node_count(u_64(b"111111111111111"));
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

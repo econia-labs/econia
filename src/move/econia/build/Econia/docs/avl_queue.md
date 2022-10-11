@@ -28,10 +28,13 @@ https://en.wikipedia.org/wiki/AVL_tree
 ## Node IDs
 
 
-Tree nodes and list nodes are each assigned a 1-indexed 14-bit
+Tree nodes and list nodes are each assigned a 1-indexed 15-bit
 serial ID known as a node ID. Node ID 0 is reserved for null, such
 that the maximum number of allocated nodes for each node type is
-thus $2^{14} - 1$.
+thus $2^{15} - 1$.
+
+15-bit node IDs are used rather than 16-bit node IDs so that a node
+ID and a bit flag can be stored in 16 bits.
 
 
 <a name="@Access_keys_2"></a>
@@ -41,8 +44,8 @@ thus $2^{14} - 1$.
 
 | Bit(s) | Data                                         |
 |--------|----------------------------------------------|
-| 47-60  | Tree node ID                                 |
-| 33-46  | List node ID                                 |
+| 48-62  | Tree node ID                                 |
+| 33-47  | List node ID                                 |
 | 32     | If set, ascending AVL queue, else descending |
 | 0-31   | Insertion key                                |
 
@@ -100,16 +103,13 @@ Most non-table fields stored compactly in <code>bits</code> as follows:
 
 | Bit(s)  | Data                                               |
 |---------|----------------------------------------------------|
-| 126     | If set, ascending AVL queue, else descending       |
-| 112-125 | Tree node ID at top of inactive stack              |
-| 98-111  | List node ID at top of inactive stack              |
-| 84-97   | AVL queue head list node ID                        |
-| 52-83   | AVL queue head insertion key (if node ID not null) |
-| 38-51   | AVL queue tail list node ID                        |
-| 6-37    | AVL queue tail insertion key (if node ID not null) |
-| 0-5     | Bits 8-13 of tree root node ID                     |
-
-Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
+| 124     | If set, ascending AVL queue, else descending       |
+| 109-123 | Tree node ID at top of inactive stack              |
+| 94-108  | List node ID at top of inactive stack              |
+| 79-93   | AVL queue head list node ID                        |
+| 47-78   | AVL queue head insertion key (if node ID not null) |
+| 32-46   | AVL queue tail list node ID                        |
+| 0-31    | AVL queue tail insertion key (if node ID not null) |
 
 
 <pre><code><b>struct</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt; <b>has</b> store
@@ -129,10 +129,16 @@ Bits 0-7 of the tree root node ID are stored in <code>root_lsbs</code>.
 
 </dd>
 <dt>
+<code>root_msbs: u8</code>
+</dt>
+<dd>
+ Bits 8-14 of tree root node ID.
+</dd>
+<dt>
 <code>root_lsbs: u8</code>
 </dt>
 <dd>
-
+ Bits 0-7 of tree root node ID.
 </dd>
 <dt>
 <code>tree_nodes: <a href="_TableWithLength">table_with_length::TableWithLength</a>&lt;u64, <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">avl_queue::TreeNode</a>&gt;</code>
@@ -167,14 +173,14 @@ All fields stored compactly in <code>bits</code> as follows:
 
 | Bit(s) | Data                                 |
 |--------|--------------------------------------|
-| 86-117 | Insertion key                        |
-| 84-85  | Balance factor (see below)           |
-| 70-83  | Parent node ID                       |
-| 56-69  | Left child node ID                   |
-| 42-55  | Right child node ID                  |
-| 28-41  | List head node ID                    |
-| 14-27  | List tail node ID                    |
-| 0-13   | Next inactive node ID, when in stack |
+| 92-123 | Insertion key                        |
+| 90-91  | Balance factor (see below)           |
+| 75-89  | Parent node ID                       |
+| 60-74  | Left child node ID                   |
+| 45-59  | Right child node ID                  |
+| 30-44  | List head node ID                    |
+| 15-29  | List tail node ID                    |
+| 0-14   | Next inactive node ID, when in stack |
 
 Balance factor bits:
 
@@ -220,14 +226,14 @@ For compact storage, last and next values are split into two
 <code>next_msbs</code>), and one for least-significant bits (<code>last_lsbs</code>,
 <code>next_lsbs</code>).
 
-When set at bit 14, the 16-bit concatenated result of <code>_msbs</code>
+When set at bit 15, the 16-bit concatenated result of <code>_msbs</code>
 and <code>_lsbs</code> fields, in either case, refers to a tree node ID: If
 <code>last_msbs</code> and <code>last_lsbs</code> indicate a tree node ID, then the
 list node is the head of the list at the given tree node. If
 <code>next_msbs</code> and <code>next_lsbs</code> indicate a tree node ID, then the
 list node is the tail of the list at the given tree node.
 
-If not set at bit 14, the corresponding node ID is either the
+If not set at bit 15, the corresponding node ID is either the
 last or the next list node in the doubly linked list.
 
 If list node is in the inactive list node stack, next node ID
@@ -429,10 +435,10 @@ key. Generated in Python via <code>hex(int('1' * 32, 2))</code>.
 <a name="0xc0deb00c_avl_queue_HI_NODE_ID"></a>
 
 All bits set in integer of width required to encode node ID.
-Generated in Python via <code>hex(int('1' * 14, 2))</code>.
+Generated in Python via <code>hex(int('1' * 15, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>: u64 = 16383;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>: u64 = 32767;
 </code></pre>
 
 
@@ -449,11 +455,11 @@ Flag for null value when null defined as 0.
 
 <a name="0xc0deb00c_avl_queue_N_NODES_MAX"></a>
 
-$2^{14} - 1$, the maximum number of nodes that can be allocated
+$2^{15} - 1$, the maximum number of nodes that can be allocated
 for either node type.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>: u64 = 16383;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>: u64 = 32767;
 </code></pre>
 
 
@@ -463,7 +469,7 @@ for either node type.
 Number of bits balance factor is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_BALANCE_FACTOR">SHIFT_BALANCE_FACTOR</a>: u8 = 84;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_BALANCE_FACTOR">SHIFT_BALANCE_FACTOR</a>: u8 = 90;
 </code></pre>
 
 
@@ -473,7 +479,7 @@ Number of bits balance factor is shifted in <code><a href="avl_queue.md#0xc0deb0
 Number of bits left child node ID is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>: u8 = 56;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>: u8 = 60;
 </code></pre>
 
 
@@ -484,7 +490,7 @@ Number of bits right child node ID is shifted in
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>: u8 = 42;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>: u8 = 45;
 </code></pre>
 
 
@@ -494,7 +500,7 @@ Number of bits right child node ID is shifted in
 Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a>: u8 = 86;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a>: u8 = 92;
 </code></pre>
 
 
@@ -504,7 +510,7 @@ Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00
 Number of bits list head node ID is shited in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a>: u8 = 28;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a>: u8 = 30;
 </code></pre>
 
 
@@ -515,7 +521,7 @@ Number of bits inactive list node stack top is shifted in
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>: u8 = 98;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>: u8 = 94;
 </code></pre>
 
 
@@ -525,7 +531,7 @@ Number of bits inactive list node stack top is shifted in
 Number of bits list tail node ID is shited in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>: u8 = 14;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>: u8 = 15;
 </code></pre>
 
 
@@ -536,7 +542,7 @@ Number of bits node type bit flag is shifted in <code><a href="avl_queue.md#0xc0
 virtual last and next fields.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_NODE_TYPE">SHIFT_NODE_TYPE</a>: u8 = 14;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_NODE_TYPE">SHIFT_NODE_TYPE</a>: u8 = 15;
 </code></pre>
 
 
@@ -546,7 +552,7 @@ virtual last and next fields.
 Number of bits parent node ID is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>: u8 = 70;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>: u8 = 75;
 </code></pre>
 
 
@@ -556,7 +562,7 @@ Number of bits parent node ID is shifted in <code><a href="avl_queue.md#0xc0deb0
 Number of bits sort order is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_SORT_ORDER">SHIFT_SORT_ORDER</a>: u8 = 126;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_SORT_ORDER">SHIFT_SORT_ORDER</a>: u8 = 124;
 </code></pre>
 
 
@@ -567,7 +573,7 @@ Number of bits inactive tree node stack top is shifted in
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>.bits</code>.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>: u8 = 112;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>: u8 = 109;
 </code></pre>
 
 
@@ -635,7 +641,8 @@ to allocate.
         | ((n_inactive_list_nodes <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>);
     // Declare empty AVL queue.
     <b>let</b> avlq = <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>{bits,
-                        root_lsbs: 0,
+                        root_msbs: (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u8),
+                        root_lsbs: (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u8),
                         tree_nodes: <a href="_new">table_with_length::new</a>(),
                         list_nodes: <a href="_new">table_with_length::new</a>(),
                         values: <a href="_new">table::new</a>()};

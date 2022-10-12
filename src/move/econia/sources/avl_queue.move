@@ -574,9 +574,13 @@ module econia::avl_queue {
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
     /// * `key`: Insertion key for activation node.
-    /// * `parent`: Node ID of parent to actvation node.
+    /// * `parent`: Node ID of parent to actvation node, `NIL` when
+    ///   activation node is to become root.
     /// * `head_tail`: Node ID of sole list node in tree node's doubly
     ///   linked list.
+    /// * `new_leaf_side`: None if activation node is root, `LEFT` if
+    ///   activation node is left child of parent, and `RIGHT` if
+    ///   activation node is right child of its parent.
     ///
     /// # Returns
     ///
@@ -587,7 +591,7 @@ module econia::avl_queue {
     /// * Node is a leaf in the AVL tree and has a single list node in
     ///   its doubly linked list.
     /// * The number of allocated tree nodes has already been checked
-    ///   via `activate_list_node()`.
+    ///   via `activate_list_node_get_last_next()`.
     /// * `key` is not set at any bits above 31, and both other `u64`
     ///   fields are not set at any bits above 13.
     ///
@@ -599,7 +603,8 @@ module econia::avl_queue {
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64,
         parent: u64,
-        solo_node_id: u64
+        solo_node_id: u64,
+        new_leaf_side: Option<bool>
     ): u64 {
         // Pack field bits.
         let bits = (key as u128) << SHIFT_INSERTION_KEY |
@@ -631,7 +636,35 @@ module econia::avl_queue {
                 (new_tree_stack_top << SHIFT_TREE_STACK_TOP);
             node_ref_mut.bits = bits; // Reassign activated node bits.
         };
-        tree_node_id // Return activated tree node ID.
+        if (option::is_none(&new_leaf_side)) { // If activating root:
+            // Set root LSBs.
+            avlq_ref_mut.root_lsbs = (tree_node_id & HI_BYTE as u8);
+            // Reassign root MSBs:
+            avlq_ref_mut.bits = avlq_ref_mut.bits &
+                // Clear out all bits via mask unset at relevant bits.
+                (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE as u128))) |
+                // Mask in the new root MSBs.
+                (tree_node_id >> BITS_PER_BYTE as u128)
+        } else { // If activating child to existing node:
+            // Mutably borrow parent.
+            let parent_ref_mut = table_with_length::borrow_mut(
+                tree_nodes_ref_mut, parent);
+            // Determine if activating left child.
+            let left_child = *option::borrow(&new_leaf_side) == LEFT;
+            // Get child node ID and height field shift amounts.
+            let (child_shift, height_shift) = if (left_child)
+                (SHIFT_CHILD_LEFT , SHIFT_HEIGHT_LEFT ) else
+                (SHIFT_CHILD_RIGHT, SHIFT_HEIGHT_RIGHT);
+            // Reassign both bit fields:
+            parent_ref_mut.bits = parent_ref_mut.bits &
+                // Clear out all bits via mask unset at relevant bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << child_shift)) &
+                (HI_128 ^ ((HI_HEIGHT as u128) << height_shift)) |
+                // Mask in new field bits, with height of 1 for side.
+                (tree_node_id << child_shift as u128) |
+                (1 << height_shift as u128);
+        };
+        tree_node_id // Return activated tree node ID, and parent?
     }
 
     /// Search in AVL queue for closest match to seed key.
@@ -1237,6 +1270,7 @@ module econia::avl_queue {
         avlq // Return AVL queue.
     }
 
+/*
     #[test]
     /// Verify state updates for empty inactive nodes stack.
     fun test_activate_tree_node_empty():
@@ -1306,6 +1340,7 @@ module econia::avl_queue {
         assert!(get_tree_next_test(tree_node_ref) == (NIL as u64), 0);
         avlq // Return AVL queue.
     }
+*/
 
     #[test]
     /// Verify successful extraction.

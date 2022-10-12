@@ -573,14 +573,14 @@ module econia::avl_queue {
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `key`: Insertion key for activation node.
-    /// * `parent`: Node ID of parent to actvation node, `NIL` when
-    ///   activation node is to become root.
-    /// * `head_tail`: Node ID of sole list node in tree node's doubly
-    ///   linked list.
-    /// * `new_leaf_side`: None if activation node is root, `LEFT` if
-    ///   activation node is left child of parent, and `RIGHT` if
-    ///   activation node is right child of its parent.
+    /// * `key`: Insertion key for activated node.
+    /// * `parent`: Node ID of parent to actvated node, `NIL` when
+    ///   activated node is to become root.
+    /// * `solo_node_id`: Node ID of sole list node in tree node's
+    ///   doubly linked list.
+    /// * `new_leaf_side`: None if activated node is root, `LEFT` if
+    ///   activated node is left child of its parent, and `RIGHT` if
+    ///   activated node is right child of its parent.
     ///
     /// # Returns
     ///
@@ -636,6 +636,31 @@ module econia::avl_queue {
                 (new_tree_stack_top << SHIFT_TREE_STACK_TOP);
             node_ref_mut.bits = bits; // Reassign activated node bits.
         };
+        activate_tree_node_update_parent( // Update parent fields.
+            avlq_ref_mut, tree_node_id, parent, new_leaf_side);
+        tree_node_id // Return activated tree node ID.
+    }
+
+    /// Update the parent to a tree node just activated.
+    ///
+    /// Inner function for `activate_tree_node()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `tree_node_id`: Node ID of tree node just activated in
+    ///   `activate_tree_node()`.
+    /// * `parent`: Node ID of parent to actvation node, `NIL` when
+    ///   activated node is root.
+    /// * `new_leaf_side`: None if activated node is root, `LEFT` if
+    ///   activated node is left child of its parent, and `RIGHT` if
+    ///   activated node is right child of its parent.
+    fun activate_tree_node_update_parent<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        tree_node_id: u64,
+        parent: u64,
+        new_leaf_side: Option<bool>
+    ) {
         if (option::is_none(&new_leaf_side)) { // If activating root:
             // Set root LSBs.
             avlq_ref_mut.root_lsbs = (tree_node_id & HI_BYTE as u8);
@@ -646,6 +671,8 @@ module econia::avl_queue {
                 // Mask in the new root MSBs.
                 (tree_node_id >> BITS_PER_BYTE as u128)
         } else { // If activating child to existing node:
+            // Mutably borrow tree nodes table.
+            let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
             // Mutably borrow parent.
             let parent_ref_mut = table_with_length::borrow_mut(
                 tree_nodes_ref_mut, parent);
@@ -664,7 +691,6 @@ module econia::avl_queue {
                 (tree_node_id << child_shift as u128) |
                 (1 << height_shift as u128);
         };
-        tree_node_id // Return activated tree node ID, and parent?
     }
 
     /// Search in AVL queue for closest match to seed key.

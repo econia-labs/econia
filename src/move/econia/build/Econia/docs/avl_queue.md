@@ -87,15 +87,17 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_20)
     -  [Assumptions](#@Assumptions_21)
     -  [Testing](#@Testing_22)
--  [Function `search`](#0xc0deb00c_avl_queue_search)
+-  [Function `activate_tree_node_update_parent`](#0xc0deb00c_avl_queue_activate_tree_node_update_parent)
     -  [Parameters](#@Parameters_23)
-    -  [Returns](#@Returns_24)
-    -  [Assumptions](#@Assumptions_25)
-    -  [Reference diagram](#@Reference_diagram_26)
-    -  [Testing](#@Testing_27)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_24)
+    -  [Returns](#@Returns_25)
+    -  [Assumptions](#@Assumptions_26)
+    -  [Reference diagram](#@Reference_diagram_27)
+    -  [Testing](#@Testing_28)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_28)
-    -  [Testing](#@Testing_29)
+    -  [Aborts](#@Aborts_29)
+    -  [Testing](#@Testing_30)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1143,14 +1145,14 @@ of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_acti
 
 
 * <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
-* <code>key</code>: Insertion key for activation node.
-* <code>parent</code>: Node ID of parent to actvation node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> when
-activation node is to become root.
-* <code>head_tail</code>: Node ID of sole list node in tree node's doubly
-linked list.
-* <code>new_leaf_side</code>: None if activation node is root, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
-activation node is left child of parent, and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if
-activation node is right child of its parent.
+* <code>key</code>: Insertion key for activated node.
+* <code>parent</code>: Node ID of parent to actvated node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> when
+activated node is to become root.
+* <code>solo_node_id</code>: Node ID of sole list node in tree node's
+doubly linked list.
+* <code>new_leaf_side</code>: None if activated node is root, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
+activated node is left child of its parent, and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if
+activated node is right child of its parent.
 
 
 <a name="@Returns_20"></a>
@@ -1229,6 +1231,55 @@ fields are not set at any bits above 13.
             (new_tree_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>);
         node_ref_mut.bits = bits; // Reassign activated node bits.
     };
+    <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>( // Update parent fields.
+        avlq_ref_mut, tree_node_id, parent, new_leaf_side);
+    tree_node_id // Return activated tree node ID.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_activate_tree_node_update_parent"></a>
+
+## Function `activate_tree_node_update_parent`
+
+Update the parent to a tree node just activated.
+
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>.
+
+
+<a name="@Parameters_23"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>tree_node_id</code>: Node ID of tree node just activated in
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>.
+* <code>parent</code>: Node ID of parent to actvation node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> when
+activated node is root.
+* <code>new_leaf_side</code>: None if activated node is root, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
+activated node is left child of its parent, and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if
+activated node is right child of its parent.
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, tree_node_id: u64, parent: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    tree_node_id: u64,
+    parent: u64,
+    new_leaf_side: Option&lt;bool&gt;
+) {
     <b>if</b> (<a href="_is_none">option::is_none</a>(&new_leaf_side)) { // If activating root:
         // Set root LSBs.
         avlq_ref_mut.root_lsbs = (tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8);
@@ -1239,6 +1290,8 @@ fields are not set at any bits above 13.
             // Mask in the new root MSBs.
             (tree_node_id &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u128)
     } <b>else</b> { // If activating child <b>to</b> existing node:
+        // Mutably borrow tree nodes <a href="">table</a>.
+        <b>let</b> tree_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
         // Mutably borrow parent.
         <b>let</b> parent_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
             tree_nodes_ref_mut, parent);
@@ -1257,7 +1310,6 @@ fields are not set at any bits above 13.
             (tree_node_id &lt;&lt; child_shift <b>as</b> u128) |
             (1 &lt;&lt; height_shift <b>as</b> u128);
     };
-    tree_node_id // Return activated tree node ID, and parent?
 }
 </code></pre>
 
@@ -1281,7 +1333,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_23"></a>
+<a name="@Parameters_24"></a>
 
 ### Parameters
 
@@ -1290,7 +1342,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_24"></a>
+<a name="@Returns_25"></a>
 
 ### Returns
 
@@ -1302,7 +1354,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_25"></a>
+<a name="@Assumptions_26"></a>
 
 ### Assumptions
 
@@ -1312,7 +1364,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_26"></a>
+<a name="@Reference_diagram_27"></a>
 
 ### Reference diagram
 
@@ -1331,7 +1383,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_27"></a>
+<a name="@Testing_28"></a>
 
 ### Testing
 
@@ -1399,7 +1451,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_28"></a>
+<a name="@Aborts_29"></a>
 
 ### Aborts
 
@@ -1407,7 +1459,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_29"></a>
+<a name="@Testing_30"></a>
 
 ### Testing
 

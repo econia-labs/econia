@@ -9,8 +9,10 @@ module econia::funcs {
         // Assert key is 32 bits.
 
         // Search for key, storing match node ID, and side on which a
-        // new leaf would be inserted realtive to match node.
+        // new leaf would be inserted relative to match node.
         let (match_node_id, new_leaf_side) = search(avlq_ref_mut, key);
+        let list_node_id = // Activate list node, storing its node ID.
+            activate_list_node(avlq_ref_mut, match_node_id, value)
         // Determine if inserting at root.
         let empty = (match_node_id == (NIL as u64));
         // Solo list node if empty or if search yields a new leaf side.
@@ -36,7 +38,10 @@ module econia::funcs {
         }
             (
 
-            )
+        // Activate tree node could just be to put it as child or as
+        // root, then call the rebalancer.
+
+        // Check AVL queue head and tail.
 
 
         // If a solo list node, activate a tree node accordingly.

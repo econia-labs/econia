@@ -1065,9 +1065,9 @@ inserting a solo list node.
 ### Testing
 
 
+* <code>test_activate_list_node_get_last_next_new_tail()</code>
 * <code>test_activate_list_node_get_last_next_solo_allocate()</code>
 * <code>test_activate_list_node_get_last_next_solo_stacked()</code>
-* <code>test_activate_list_node_get_last_next_new_tail()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64): (u64, u64)
@@ -1238,11 +1238,12 @@ fields are not set at any bits above 13.
 
 Search in AVL queue for closest match to seed key.
 
-Get node ID of root note, then start walking down nodes,
-branching left whenever the seed key is less than a node's key,
-right whenever the seed key is greater than a node's key, and
-returning when the seed key equals a node's key. Also return if
-there is no child to branch to on a given side.
+Return immediately if empty tree, otherwise get node ID of root
+node. Then start walking down nodes, branching left whenever the
+seed key is less than a node's key, right whenever the seed
+key is greater than a node's key, and returning when the seed
+key equals a node's key. Also return if there is no child to
+branch to on a given side.
 
 The "match" node is the node last walked before returning.
 
@@ -1253,7 +1254,6 @@ The "match" node is the node last walked before returning.
 
 
 * <code>avlq_ref</code>: Immutable reference to AVL queue.
-* <code>root_node_id</code>: Root tree node ID.
 * <code>seed_key</code>: Seed key to search for.
 
 
@@ -1306,7 +1306,7 @@ the root node.
 * <code>test_search()</code>.
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, root_node_id: u64, seed_key: u64): (u64, <a href="_Option">option::Option</a>&lt;bool&gt;)
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, seed_key: u64): (u64, <a href="_Option">option::Option</a>&lt;bool&gt;)
 </code></pre>
 
 
@@ -1317,16 +1317,19 @@ the root node.
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(
     avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
-    root_node_id: u64,
     seed_key: u64
 ): (
     u64,
     Option&lt;bool&gt;
 ) {
+    // Get root MSBs.
+    <b>let</b> root_msbs = avlq_ref.bits & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u128);
+    <b>let</b> node_id = // Shift over, mask in LSBs, store <b>as</b> search node.
+        (root_msbs &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u64) | (avlq_ref.root_lsbs <b>as</b> u64);
+    // If no node at root, <b>return</b> <b>as</b> such, <b>with</b> empty <a href="">option</a>.
+    <b>if</b> (node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) <b>return</b> (node_id, <a href="_none">option::none</a>());
     // Mutably borrow tree nodes <a href="">table</a>.
     <b>let</b> nodes_ref = &avlq_ref.tree_nodes;
-    // Begin walk at root node ID.
-    <b>let</b> node_id = root_node_id;
     <b>loop</b> { // Begin walking down tree nodes:
         <b>let</b> node_ref = // Mutably borrow node having given ID.
             <a href="_borrow">table_with_length::borrow</a>(nodes_ref, node_id);

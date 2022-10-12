@@ -11,11 +11,11 @@ module econia::funcs {
         // Search for key, storing match node ID, and side on which a
         // new leaf would be inserted relative to match node.
         let (match_node_id, new_leaf_side) = search(avlq_ref_mut, key);
-        // If search returned null from the root or flags that a new
-        // tree node will have to be created as child, flag that the
+        // If search returned null from the root or flagged that a new
+        // tree node will have to be activated as child, flag that the
         // activated list node will be alone in a doubly linked list.
         let solo =
-            match_node_id == (NIL as u64) || (option::is_some(&new_leaf_side)
+            match_node_id == (NIL as u64) || (option::is_some(&new_leaf_side);
         // If a solo list node, flag no anchor tree node yet activated,
         // otherwise set anchor tree node as match node.
         let anchor_tree_node_id = if (solo) (NIL as u64) else match_node_id;

@@ -73,26 +73,29 @@ The below index is automatically generated from source code:
 -  [Function `activate_list_node`](#0xc0deb00c_avl_queue_activate_list_node)
     -  [Parameters](#@Parameters_10)
     -  [Returns](#@Returns_11)
+    -  [Testing](#@Testing_12)
 -  [Function `activate_list_node_assign_fields`](#0xc0deb00c_avl_queue_activate_list_node_assign_fields)
-    -  [Parameters](#@Parameters_12)
-    -  [Returns](#@Returns_13)
+    -  [Parameters](#@Parameters_13)
+    -  [Returns](#@Returns_14)
+    -  [Testing](#@Testing_15)
 -  [Function `activate_list_node_get_last_next`](#0xc0deb00c_avl_queue_activate_list_node_get_last_next)
-    -  [Parameters](#@Parameters_14)
-    -  [Returns](#@Returns_15)
--  [Function `activate_tree_node`](#0xc0deb00c_avl_queue_activate_tree_node)
     -  [Parameters](#@Parameters_16)
     -  [Returns](#@Returns_17)
-    -  [Assumptions](#@Assumptions_18)
-    -  [Testing](#@Testing_19)
+    -  [Testing](#@Testing_18)
+-  [Function `activate_tree_node`](#0xc0deb00c_avl_queue_activate_tree_node)
+    -  [Parameters](#@Parameters_19)
+    -  [Returns](#@Returns_20)
+    -  [Assumptions](#@Assumptions_21)
+    -  [Testing](#@Testing_22)
 -  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_20)
-    -  [Returns](#@Returns_21)
-    -  [Assumptions](#@Assumptions_22)
-    -  [Reference diagram](#@Reference_diagram_23)
-    -  [Testing](#@Testing_24)
+    -  [Parameters](#@Parameters_23)
+    -  [Returns](#@Returns_24)
+    -  [Assumptions](#@Assumptions_25)
+    -  [Reference diagram](#@Reference_diagram_26)
+    -  [Testing](#@Testing_27)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_25)
-    -  [Testing](#@Testing_26)
+    -  [Aborts](#@Aborts_28)
+    -  [Testing](#@Testing_29)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -828,6 +831,10 @@ In the case of inserting a list node to a doubly linked list in
 an existing tree node, known as the "anchor tree node", the list
 node becomes the new list tail.
 
+In the other case of inserting a "solo node" as the sole list
+node in a doubly linked list in a new tree leaf, the list node
+becomes the head and tail of the new list.
+
 
 <a name="@Parameters_10"></a>
 
@@ -849,6 +856,15 @@ node.
 * <code>u64</code>: Node ID of activated list node.
 
 
+<a name="@Testing_12"></a>
+
+### Testing
+
+
+* <code>test_activate_list_node_not_solo()</code>
+* <code>test_activate_list_node_solo()</code>
+
+
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64, value: V): u64
 </code></pre>
 
@@ -868,7 +884,7 @@ node.
         avlq_ref_mut, anchor_tree_node_id);
     <b>let</b> list_node_id = // Assign fields, store activated node ID.
         <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_assign_fields">activate_list_node_assign_fields</a>(avlq_ref_mut, last, next, value);
-    // If inserting a new list tail:
+    // If inserting a new list tail that is not solo:
     <b>if</b> (anchor_tree_node_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
         // Mutably borrow tree nodes <a href="">table</a>.
         <b>let</b> tree_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
@@ -888,7 +904,7 @@ node.
             // Clear out all bits via mask unset at relevant bits.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>)) |
             // Mask in the new list tail bits:
-            (list_node_id &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a> <b>as</b> u128);
+            (list_node_id &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a> <b>as</b> u128);
     };
     list_node_id // Return activated list node ID.
 }
@@ -910,7 +926,7 @@ If inactive list node stack is empty, allocate a new list node,
 otherwise pop one off the inactive stack.
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -923,12 +939,21 @@ otherwise pop one off the inactive stack.
 * <code>value</code>: Insertion value.
 
 
-<a name="@Returns_13"></a>
+<a name="@Returns_14"></a>
 
 ### Returns
 
 
 * <code>u64</code>: Node ID of activated list node.
+
+
+<a name="@Testing_15"></a>
+
+### Testing
+
+
+* <code>test_activate_list_node_assign_fields_allocate()</code>
+* <code>test_activate_list_node_assign_fields_stacked()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_assign_fields">activate_list_node_assign_fields</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, last: u64, next: u64, value: V): u64
@@ -1016,7 +1041,7 @@ and is not re-performed in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_acti
 of a solo list node.
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_16"></a>
 
 ### Parameters
 
@@ -1026,13 +1051,23 @@ of a solo list node.
 inserting a solo list node.
 
 
-<a name="@Returns_15"></a>
+<a name="@Returns_17"></a>
 
 ### Returns
 
 
 * <code>u64</code>: Virtual last field of activated list node.
 * <code>u64</code>: Virtual next field of activated list node.
+
+
+<a name="@Testing_18"></a>
+
+### Testing
+
+
+* <code>test_activate_list_node_get_last_next_solo_allocate()</code>
+* <code>test_activate_list_node_get_last_next_solo_stacked()</code>
+* <code>test_activate_list_node_get_last_next_new_tail()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64): (u64, u64)
@@ -1102,7 +1137,7 @@ sole list node in new AVL tree node, thus checking the number
 of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>()</code>.
 
 
-<a name="@Parameters_16"></a>
+<a name="@Parameters_19"></a>
 
 ### Parameters
 
@@ -1114,7 +1149,7 @@ of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_acti
 linked list.
 
 
-<a name="@Returns_17"></a>
+<a name="@Returns_20"></a>
 
 ### Returns
 
@@ -1122,7 +1157,7 @@ linked list.
 * <code>u64</code>: Node ID of activated tree node.
 
 
-<a name="@Assumptions_18"></a>
+<a name="@Assumptions_21"></a>
 
 ### Assumptions
 
@@ -1135,7 +1170,7 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activat
 fields are not set at any bits above 13.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_22"></a>
 
 ### Testing
 
@@ -1212,7 +1247,7 @@ there is no child to branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_23"></a>
 
 ### Parameters
 
@@ -1222,7 +1257,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_21"></a>
+<a name="@Returns_24"></a>
 
 ### Returns
 
@@ -1234,7 +1269,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_22"></a>
+<a name="@Assumptions_25"></a>
 
 ### Assumptions
 
@@ -1244,7 +1279,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_23"></a>
+<a name="@Reference_diagram_26"></a>
 
 ### Reference diagram
 
@@ -1263,7 +1298,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_24"></a>
+<a name="@Testing_27"></a>
 
 ### Testing
 
@@ -1328,7 +1363,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_25"></a>
+<a name="@Aborts_28"></a>
 
 ### Aborts
 
@@ -1336,7 +1371,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_26"></a>
+<a name="@Testing_29"></a>
 
 ### Testing
 

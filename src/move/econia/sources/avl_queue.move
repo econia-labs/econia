@@ -361,6 +361,10 @@ module econia::avl_queue {
     /// an existing tree node, known as the "anchor tree node", the list
     /// node becomes the new list tail.
     ///
+    /// In the other case of inserting a "solo node" as the sole list
+    /// node in a doubly linked list in a new tree leaf, the list node
+    /// becomes the head and tail of the new list.
+    ///
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
@@ -372,6 +376,11 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `u64`: Node ID of activated list node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_list_node_not_solo()`
+    /// * `test_activate_list_node_solo()`
     fun activate_list_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         anchor_tree_node_id: u64,
@@ -382,7 +391,7 @@ module econia::avl_queue {
             avlq_ref_mut, anchor_tree_node_id);
         let list_node_id = // Assign fields, store activated node ID.
             activate_list_node_assign_fields(avlq_ref_mut, last, next, value);
-        // If inserting a new list tail:
+        // If inserting a new list tail that is not solo:
         if (anchor_tree_node_id != (NIL as u64)) {
             // Mutably borrow tree nodes table.
             let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
@@ -402,7 +411,7 @@ module econia::avl_queue {
                 // Clear out all bits via mask unset at relevant bits.
                 (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_LIST_TAIL)) |
                 // Mask in the new list tail bits:
-                (list_node_id << SHIFT_LIST_STACK_TOP as u128);
+                (list_node_id << SHIFT_LIST_TAIL as u128);
         };
         list_node_id // Return activated list node ID.
     }
@@ -426,6 +435,11 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `u64`: Node ID of activated list node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_list_node_assign_fields_allocate()`
+    /// * `test_activate_list_node_assign_fields_stacked()`
     fun activate_list_node_assign_fields<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         last: u64,
@@ -502,6 +516,12 @@ module econia::avl_queue {
     ///
     /// * `u64`: Virtual last field of activated list node.
     /// * `u64`: Virtual next field of activated list node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_list_node_get_last_next_solo_allocate()`
+    /// * `test_activate_list_node_get_last_next_solo_stacked()`
+    /// * `test_activate_list_node_get_last_next_new_tail()`
     fun activate_list_node_get_last_next<V>(
         avlq_ref: &AVLqueue<V>,
         anchor_tree_node_id: u64,
@@ -1019,122 +1039,165 @@ module econia::avl_queue {
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-/*
     #[test]
-    /// Verify state updates for:
-    ///
-    /// * List node that is not solo.
-    /// * Empty inactive tree node stack.
-    /// * Empty inactive list node stack.
-    fun test_activate_list_node_not_solo():
+    /// Verify return and state updates for allocating new list node.
+    fun test_activate_list_node_assign_fields_allocate():
     AVLqueue<u8> {
-        let list_node_id = 1; // Declare new list node ID.
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
-        let solo = false; // Declare list node that is not solo.
-        let last = 321; // Declare virtual last field.
-        // Declare virtual next field.
-        let next_tree_node_id = 456;
-        let next = next_tree_node_id |
-            (BIT_FLAG_TREE_NODE as u64) << SHIFT_NODE_TYPE;
-        let value = 123; // Declare insertion value.
-        // Activate list node for given arguments.
-        activate_list_node(&mut avlq, solo, last, next, value);
-        // Assert inactive tree and list node stack tops.
-        assert!(get_tree_top_test(&mut avlq) == (NIL as u64), 0);
-        assert!(get_list_top_test(&mut avlq) == (NIL as u64), 0);
-        // Immutably borrow list node.
+        // Declare inputs.
+        let value = 123;
+        let last = 456;
+        let next = 789;
+        // Assign fields to activated list node, store its ID.
+        let list_node_id = activate_list_node_assign_fields(
+            &mut avlq, last, next, value);
+        assert!(list_node_id == 1, 0); // Assert list node ID.
+        // Assert field assignments.
         let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
-        // Assert last node ID indicates passed in argument.
-        let (node_id, is_tree_node) = get_list_last_test(list_node_ref);
-        assert!(node_id == last, 0);
-        assert!(!is_tree_node, 0);
-        // Assert next node ID indicates passed in argument.
-        (node_id, is_tree_node) = get_list_next_test(list_node_ref);
-        assert!(node_id == next_tree_node_id, 0);
-        assert!(is_tree_node, 0);
-        // Assert insertion value.
+        let (last_assigned, _) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == last, 0);
+        let (next_assigned, _) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == next, 0);
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
         avlq // Return AVL queue.
     }
-*/
 
-/*
     #[test]
-    /// Verify state updates for:
-    ///
-    /// * Solo list node.
-    /// * Empty inactive tree node stack.
-    /// * Empty inactive list node stack.
-    fun test_activate_list_node_solo_empty_empty():
+    /// Verify return and state updates for activating stack top.
+    fun test_activate_list_node_assign_fields_stacked():
     AVLqueue<u8> {
-        let tree_node_id = 1; // Declare new tree node ID.
-        let list_node_id = 1; // Declare new list node ID.
-        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
-        let solo = true; // Declare solo list node.
-        // Declare overwritten virtual last field.
-        let last = (NIL as u64);
-        // Declare overwritten virtual next field.
-        let next = (NIL as u64);
-        let value = 123; // Declare insertion value.
-        // Activate list node for given arguments.
-        activate_list_node(&mut avlq, solo, last, next, value);
-        // Assert inactive tree and list node stack tops.
-        assert!(get_tree_top_test(&mut avlq) == (NIL as u64), 0);
-        assert!(get_list_top_test(&mut avlq) == (NIL as u64), 0);
-        // Immutably borrow list node.
+        let stack_top_id = 321;
+        let avlq = new(ASCENDING, 0, stack_top_id); // Init AVL queue.
+        // Declare inputs.
+        let value = 123;
+        let last = 456;
+        let next = 789;
+        // Assign fields to activated list node, store its ID.
+        let list_node_id = activate_list_node_assign_fields(
+            &mut avlq, last, next, value);
+        // Assert list node ID.
+        assert!(list_node_id == stack_top_id, 0);
+        // Assert field assignments.
         let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
-        // Assert last node ID indicates new tree node.
-        let (node_id, is_tree_node) = get_list_last_test(list_node_ref);
-        assert!(node_id == tree_node_id, 0);
-        assert!(is_tree_node, 0);
-        // Assert next node ID indicates new tree node.
-        (node_id, is_tree_node) = get_list_next_test(list_node_ref);
-        assert!(node_id == tree_node_id, 0);
-        assert!(is_tree_node, 0);
-        // Assert insertion value.
+        let (last_assigned, _) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == last, 0);
+        let (next_assigned, _) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == next, 0);
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        // Assert stack top update.
+        assert!(get_list_top_test(&avlq) == stack_top_id - 1, 0);
         avlq // Return AVL queue.
     }
-*/
 
-/*
     #[test]
-    /// Verify state updates for:
-    ///
-    /// * Solo list node.
-    /// * Non-empty inactive tree node stack.
-    /// * Non-empty inactive list node stack.
-    fun test_activate_list_node_solo_stacked_stacked():
+    /// Verify returns for list node becoming new tail.
+    fun test_activate_list_node_get_last_next_new_tail():
     AVLqueue<u8> {
-        let tree_node_id = 1234; // Declare new tree node ID.
-        let list_node_id = 5678; // Declare new list node ID.
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        let anchor_tree_node_id = 15; // Declare anchor tree node ID.
+        let old_list_tail = 31; // Declare old list tail node ID.
+        // Manually add anchor tree node to tree nodes table.
+        table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
+            TreeNode{bits: (old_list_tail << SHIFT_LIST_TAIL as u128)});
+        let (last, next) = // Get virtual last and next fields.
+            activate_list_node_get_last_next(&avlq, anchor_tree_node_id);
+        // Assert last and next fields.
+        assert!(last == u_64(b"11111"), 0);
+        assert!(next == u_64(b"100000000001111"), 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify returns for solo list node and allocated tree node.
+    fun test_activate_list_node_get_last_next_solo_allocate():
+    AVLqueue<u8> {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        let (last, next) = // Get virtual last and next fields.
+            activate_list_node_get_last_next(&avlq, (NIL as u64));
+        // Assert last and next fields.
+        assert!(last == u_64(b"100000000000001"), 0);
+        assert!(next == u_64(b"100000000000001"), 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify returns for solo list node and tree node on stack.
+    fun test_activate_list_node_get_last_next_solo_stacked():
+    AVLqueue<u8> {
+        let avlq = new(ASCENDING, 7, 0); // Init AVL queue.
+        let (last, next) = // Get virtual last and next fields.
+            activate_list_node_get_last_next(&avlq, (NIL as u64));
+        // Assert last and next fields.
+        assert!(last == u_64(b"100000000000111"), 0);
+        assert!(next == u_64(b"100000000000111"), 0);
+        avlq // Return AVL queue.
+    }
+
+    #[test]
+    /// Verify return, state updates for solo list node.
+    fun test_activate_list_node_solo():
+    AVLqueue<u8> {
+        // Declare tree node ID and list node IDs at top of
+        // inactive stacks.
+        let tree_node_id = 123;
+        let list_node_id = 456;
         // Init AVL queue.
         let avlq = new(ASCENDING, tree_node_id, list_node_id);
-        let solo = true; // Declare solo list node.
-        // Declare overwritten virtual last field.
-        let last = (NIL as u64);
-        let next = (NIL as u64); // Declare overwritten virtual next field.
-        let value = 123; // Declare insertion value.
-        // Activate list node for given arguments.
-        activate_list_node(&mut avlq, solo, last, next, value);
-        // Assert inactive tree and list node stack tops.
-        assert!(get_tree_top_test(&mut avlq) == tree_node_id, 0);
-        assert!(get_list_top_test(&mut avlq) == list_node_id - 1, 0);
-        // Immutably borrow list node.
+        let value = 100; // Declare insertion value.
+        let list_node_id_return =
+            activate_list_node(&mut avlq, (NIL as u64), value);
+        // Assert return.
+        assert!(list_node_id_return == list_node_id, 0);
+        // Assert state updates.
         let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
-        // Assert last node ID indicates new tree node.
-        let (node_id, is_tree_node) = get_list_last_test(list_node_ref);
-        assert!(node_id == tree_node_id, 0);
+        let (last_assigned, is_tree_node) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == tree_node_id, 0);
         assert!(is_tree_node, 0);
-        // Assert next node ID indicates new tree node.
-        (node_id, is_tree_node) = get_list_next_test(list_node_ref);
-        assert!(node_id == tree_node_id, 0);
+        let (next_assigned, is_tree_node) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == tree_node_id, 0);
         assert!(is_tree_node, 0);
-        // Assert insertion value.
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
         avlq // Return AVL queue.
     }
-*/
+
+    #[test]
+    /// Verify return, state updates for list node that is not solo.
+    fun test_activate_list_node_not_solo():
+    AVLqueue<u8> {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare old list tail state.
+        let old_list_tail = 1;
+        let anchor_tree_node_id = 321;
+        let list_node_id = 2; // Declare list node ID post-allocation.
+        // Manually add anchor tree node to tree nodes table.
+        table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
+            TreeNode{bits: (old_list_tail << SHIFT_LIST_TAIL as u128)});
+        // Manually add old list tail to list nodes table.
+        table_with_length::add(&mut avlq.list_nodes, old_list_tail,
+            ListNode{last_msbs: 0, last_lsbs: 0, next_msbs: 0, next_lsbs: 0});
+        let value = 100; // Declare insertion value.
+        let list_node_id_return =
+            activate_list_node(&mut avlq, anchor_tree_node_id, value);
+        // Assert return.
+        assert!(list_node_id_return == list_node_id, 0);
+        // Assert state updates.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        let (last_assigned, is_tree_node) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == old_list_tail, 0);
+        assert!(!is_tree_node, 0);
+        let (next_assigned, is_tree_node) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == anchor_tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        let old_tail_ref = borrow_list_node_test(&avlq, old_list_tail);
+        (next_assigned, is_tree_node) = get_list_next_test(old_tail_ref);
+        assert!(next_assigned == list_node_id, 0);
+        assert!(!is_tree_node, 0);
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        let anchor_node_ref =
+            borrow_tree_node_test(&avlq, anchor_tree_node_id);
+        assert!(get_list_tail_test(anchor_node_ref) == list_node_id, 0);
+        avlq // Return AVL queue.
+    }
 
     #[test]
     /// Verify state updates for empty inactive nodes stack.

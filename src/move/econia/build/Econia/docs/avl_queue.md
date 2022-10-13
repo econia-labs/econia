@@ -1271,7 +1271,9 @@ activated node is right child of its parent.
 ### Testing
 
 
-* <code>test_activate_tree_node_update_parent_root()</code>.
+* <code>test_activate_tree_node_update_parent_left()</code>
+* <code>test_activate_tree_node_update_parent_right()</code>
+* <code>test_activate_tree_node_update_parent_root()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, tree_node_id: u64, parent: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;)
@@ -1306,7 +1308,8 @@ activated node is right child of its parent.
             tree_nodes_ref_mut, parent);
         // Determine <b>if</b> activating left child.
         <b>let</b> left_child = *<a href="_borrow">option::borrow</a>(&new_leaf_side) == <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>;
-        // Get child node ID and height field shift amounts.
+        // Get child node ID and height field shift amounts for
+        // corresponding side.
         <b>let</b> (child_shift, height_shift) = <b>if</b> (left_child)
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> , <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a> ) <b>else</b>
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>);
@@ -1316,8 +1319,8 @@ activated node is right child of its parent.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; child_shift)) &
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a> <b>as</b> u128) &lt;&lt; height_shift)) |
             // Mask in new field bits, <b>with</b> height of 1 for side.
-            (tree_node_id &lt;&lt; child_shift <b>as</b> u128) |
-            (1 &lt;&lt; height_shift <b>as</b> u128);
+            ((tree_node_id <b>as</b> u128) &lt;&lt; child_shift) |
+            (1u128 &lt;&lt; height_shift);
     };
 }
 </code></pre>

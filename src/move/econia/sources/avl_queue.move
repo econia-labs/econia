@@ -658,7 +658,9 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_activate_tree_node_update_parent_root()`.
+    /// * `test_activate_tree_node_update_parent_left()`
+    /// * `test_activate_tree_node_update_parent_right()`
+    /// * `test_activate_tree_node_update_parent_root()`
     fun activate_tree_node_update_parent<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         tree_node_id: u64,
@@ -682,7 +684,8 @@ module econia::avl_queue {
                 tree_nodes_ref_mut, parent);
             // Determine if activating left child.
             let left_child = *option::borrow(&new_leaf_side) == LEFT;
-            // Get child node ID and height field shift amounts.
+            // Get child node ID and height field shift amounts for
+            // corresponding side.
             let (child_shift, height_shift) = if (left_child)
                 (SHIFT_CHILD_LEFT , SHIFT_HEIGHT_LEFT ) else
                 (SHIFT_CHILD_RIGHT, SHIFT_HEIGHT_RIGHT);
@@ -692,8 +695,8 @@ module econia::avl_queue {
                 (HI_128 ^ ((HI_NODE_ID as u128) << child_shift)) &
                 (HI_128 ^ ((HI_HEIGHT as u128) << height_shift)) |
                 // Mask in new field bits, with height of 1 for side.
-                (tree_node_id << child_shift as u128) |
-                (1 << height_shift as u128);
+                ((tree_node_id as u128) << child_shift) |
+                (1u128 << height_shift);
         };
     }
 
@@ -857,7 +860,6 @@ module econia::avl_queue {
     #[test_only]
     /// Like `get_child_left_test()`, but accepts tree node ID inside
     /// given AVL queue.
-    ///
     fun get_child_left_by_id_test<V>(
         avlq_ref: &AVLqueue<V>,
         tree_node_id: u64
@@ -894,7 +896,6 @@ module econia::avl_queue {
     #[test_only]
     /// Like `get_child_right_test()`, but accepts tree node ID inside
     /// given AVL queue.
-    ///
     fun get_child_right_by_id_test<V>(
         avlq_ref: &AVLqueue<V>,
         tree_node_id: u64
@@ -902,6 +903,18 @@ module econia::avl_queue {
         let tree_node_ref = // Immutably borrow tree node.
             table_with_length::borrow(&avlq_ref.tree_nodes, tree_node_id);
         get_child_right_test(tree_node_ref) // Return right child field.
+    }
+
+    #[test_only]
+    /// Like `get_height_left_test()`, but accepts tree node ID inside
+    /// given AVL queue.
+    fun get_height_left_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        tree_node_id: u64
+    ): u8 {
+        let tree_node_ref = // Immutably borrow tree node.
+            table_with_length::borrow(&avlq_ref.tree_nodes, tree_node_id);
+        get_height_left_test(tree_node_ref) // Return left height.
     }
 
     #[test_only]
@@ -928,6 +941,18 @@ module econia::avl_queue {
     ): u8 {
         ((tree_node_ref.bits >> SHIFT_HEIGHT_RIGHT) &
             (HI_HEIGHT as u128) as u8)
+    }
+
+    #[test_only]
+    /// Like `get_height_right_test()`, but accepts tree node ID inside
+    /// given AVL queue.
+    fun get_height_right_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        tree_node_id: u64
+    ): u8 {
+        let tree_node_ref = // Immutably borrow tree node.
+            table_with_length::borrow(&avlq_ref.tree_nodes, tree_node_id);
+        get_height_right_test(tree_node_ref) // Return right height.
     }
 
     #[test_only]
@@ -1405,11 +1430,59 @@ module econia::avl_queue {
     }
 */
 
-/*
     #[test]
-    /// Verify state update.
-    fun test_activate_tree_node_update_parent_root():
-*/
+    /// Verify state update for activating left child.
+    fun test_activate_tree_node_update_parent_left() {
+        let tree_node_id = 1234; // Declare activated tree node ID.
+        let parent = 321;
+        let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
+        // Declare empty new leaf side.
+        let new_leaf_side = option::some(LEFT);
+        // Update parent to activated node.
+        activate_tree_node_update_parent(&mut avlq, tree_node_id, parent,
+                                         new_leaf_side);
+        // Assert update to parent's child field.
+        assert!(get_child_left_by_id_test(&avlq, parent) == tree_node_id, 0);
+        // Assert update to parent's height field.
+        assert!(get_height_left_by_id_test(&avlq, parent) == 1, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state update for activating right child.
+    fun test_activate_tree_node_update_parent_right() {
+        let tree_node_id = 1234; // Declare activated tree node ID.
+        let parent = 321;
+        let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
+        // Declare empty new leaf side.
+        let new_leaf_side = option::some(RIGHT);
+        // Update parent to activated node.
+        activate_tree_node_update_parent(&mut avlq, tree_node_id, parent,
+                                         new_leaf_side);
+        // Assert update to parent's child field.
+        assert!(get_child_right_by_id_test(&avlq, parent) == tree_node_id, 0);
+        // Assert update to parent's height field.
+        assert!(get_height_right_by_id_test(&avlq, parent) == 1, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state update for activating root.
+    fun test_activate_tree_node_update_parent_root() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        let tree_node_id = 1234; // Declare activated tree node ID.
+        let parent = (NIL as u64); // Declare parent as root flag.
+        // Declare empty new leaf side.
+        let new_leaf_side = option::none();
+        // Assert null root.
+        assert!(get_root_test(&avlq) == (NIL as u64), 0);
+        // Update parent for activated root node.
+        activate_tree_node_update_parent(&mut avlq, tree_node_id, parent,
+                                         new_leaf_side);
+        // Assert root update.
+        assert!(get_root_test(&avlq) == tree_node_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
 
     #[test]
     /// Verify successful extraction.

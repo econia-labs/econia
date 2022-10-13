@@ -155,6 +155,7 @@ elif test $1 = d; then
     conda activate econia # Activate Econia conda environment
     substitute_econia_address docgen # Substitute docgen address
     move build --doc # Build docs
+    substitute_econia_address official # Substitute official address
 
 # Go back to Econia project repository root
 elif test $1 = er; then cd $repo_root

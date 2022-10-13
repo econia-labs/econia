@@ -841,6 +841,20 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Drop AVL queue.
+    fun drop_avlq_test<V>(
+        avlq: AVLqueue<V>
+    ) {
+        // Unpack all fields, dropping those that are not tables.
+        let AVLqueue{bits: _, root_lsbs: _, tree_nodes, list_nodes, values} =
+            avlq;
+        // Drop all tables.
+        table_with_length::drop_unchecked(tree_nodes);
+        table_with_length::drop_unchecked(list_nodes);
+        table::drop_unchecked(values);
+    }
+
+    #[test_only]
     /// Like `get_child_left_test()`, but accepts tree node ID inside
     /// given AVL queue.
     ///
@@ -1168,8 +1182,7 @@ module econia::avl_queue {
 
     #[test]
     /// Verify return and state updates for allocating new list node.
-    fun test_activate_list_node_assign_fields_allocate():
-    AVLqueue<u8> {
+    fun test_activate_list_node_assign_fields_allocate() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
         // Declare inputs.
         let value = 123;
@@ -1186,13 +1199,12 @@ module econia::avl_queue {
         let (next_assigned, _) = get_list_next_test(list_node_ref);
         assert!(next_assigned == next, 0);
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify return and state updates for activating stack top.
-    fun test_activate_list_node_assign_fields_stacked():
-    AVLqueue<u8> {
+    fun test_activate_list_node_assign_fields_stacked() {
         let stack_top_id = 321;
         let avlq = new(ASCENDING, 0, stack_top_id); // Init AVL queue.
         // Declare inputs.
@@ -1213,14 +1225,13 @@ module econia::avl_queue {
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
         // Assert stack top update.
         assert!(get_list_top_test(&avlq) == stack_top_id - 1, 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify returns for list node becoming new tail.
-    fun test_activate_list_node_get_last_next_new_tail():
-    AVLqueue<u8> {
-        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+    fun test_activate_list_node_get_last_next_new_tail() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         let anchor_tree_node_id = 15; // Declare anchor tree node ID.
         let old_list_tail = 31; // Declare old list tail node ID.
         // Manually add anchor tree node to tree nodes table.
@@ -1231,39 +1242,36 @@ module econia::avl_queue {
         // Assert last and next fields.
         assert!(last == u_64(b"11111"), 0);
         assert!(next == u_64(b"100000000001111"), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify returns for solo list node and allocated tree node.
-    fun test_activate_list_node_get_last_next_solo_allocate():
-    AVLqueue<u8> {
-        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+    fun test_activate_list_node_get_last_next_solo_allocate() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         let (last, next) = // Get virtual last and next fields.
             activate_list_node_get_last_next(&avlq, (NIL as u64));
         // Assert last and next fields.
         assert!(last == u_64(b"100000000000001"), 0);
         assert!(next == u_64(b"100000000000001"), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify returns for solo list node and tree node on stack.
-    fun test_activate_list_node_get_last_next_solo_stacked():
-    AVLqueue<u8> {
-        let avlq = new(ASCENDING, 7, 0); // Init AVL queue.
+    fun test_activate_list_node_get_last_next_solo_stacked() {
+        let avlq = new<u8>(ASCENDING, 7, 0); // Init AVL queue.
         let (last, next) = // Get virtual last and next fields.
             activate_list_node_get_last_next(&avlq, (NIL as u64));
         // Assert last and next fields.
         assert!(last == u_64(b"100000000000111"), 0);
         assert!(next == u_64(b"100000000000111"), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify return, state updates for solo list node.
-    fun test_activate_list_node_solo():
-    AVLqueue<u8> {
+    fun test_activate_list_node_solo() {
         // Declare tree node ID and list node IDs at top of
         // inactive stacks.
         let tree_node_id = 123;
@@ -1284,13 +1292,12 @@ module econia::avl_queue {
         assert!(next_assigned == tree_node_id, 0);
         assert!(is_tree_node, 0);
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify return, state updates for list node that is not solo.
-    fun test_activate_list_node_not_solo():
-    AVLqueue<u8> {
+    fun test_activate_list_node_not_solo() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
         // Declare old list tail state.
         let old_list_tail = 1;
@@ -1323,7 +1330,7 @@ module econia::avl_queue {
         let anchor_node_ref =
             borrow_tree_node_test(&avlq, anchor_tree_node_id);
         assert!(get_list_tail_test(anchor_node_ref) == list_node_id, 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
 /*
@@ -1562,9 +1569,8 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful extraction.
-    fun test_get_list_top_test():
-    AVLqueue<u8> {
-        let avlq = AVLqueue{ // Create empty AVL queue.
+    fun test_get_list_top_test() {
+        let avlq = AVLqueue<u8>{ // Create empty AVL queue.
             bits: u_128_by_32(
                 b"11111111111111111000000000000111",
                 //                ^ bit 111    ^ bit 98
@@ -1578,7 +1584,7 @@ module econia::avl_queue {
         };
         // Assert list top.
         assert!(get_list_top_test(&avlq) == u_64(b"10000000000001"), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
@@ -1597,9 +1603,8 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful state operations.
-    fun test_set_get_root_test():
-    AVLqueue<u8> {
-        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+    fun test_set_get_root_test() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         avlq.bits = u_128_by_32( // Set all bits.
             b"11111111111111111111111111111111",
             b"11111111111111111111111111111111",
@@ -1619,7 +1624,7 @@ module econia::avl_queue {
             b"11111111111111111111111111111111",
             b"11111111111111111111111111100000"), 0);
         assert!(avlq.root_lsbs == (u_64(b"00000001") as u8), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
@@ -1638,9 +1643,8 @@ module econia::avl_queue {
 
     #[test]
     /// Verify successful extraction.
-    fun test_get_tree_top_test():
-    AVLqueue<u8> {
-        let avlq = AVLqueue{ // Create empty AVL queue.
+    fun test_get_tree_top_test() {
+        let avlq = AVLqueue<u8>{ // Create empty AVL queue.
             bits: u_128_by_32(
                 b"11100000000000011111111111111111",
                 //  ^ bit 125    ^ bit 112
@@ -1654,36 +1658,32 @@ module econia::avl_queue {
         };
         // Assert tree top.
         assert!(get_tree_top_test(&avlq) == u_64(b"10000000000001"), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify successful initialization for no node allocations.
-    fun test_new_no_nodes(): (
-        AVLqueue<u8>,
-        AVLqueue<u8>
-    ) {
+    fun test_new_no_nodes() {
         // Init ascending AVL queue.
-        let avlq_ascending = new(ASCENDING, 0, 0);
+        let avlq = new<u8>(ASCENDING, 0, 0);
         // Assert flagged ascending.
-        assert!(is_ascending(&avlq_ascending), 0);
+        assert!(is_ascending(&avlq), 0);
         // Assert null stack tops.
-        assert!(get_list_top_test(&avlq_ascending) == (NIL as u64), 0);
-        assert!(get_tree_top_test(&avlq_ascending) == (NIL as u64), 0);
+        assert!(get_list_top_test(&avlq) == (NIL as u64), 0);
+        assert!(get_tree_top_test(&avlq) == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
         // Init descending AVL queue.
-        let avlq_descending = new(DESCENDING, 0, 0);
+        avlq = new(DESCENDING, 0, 0);
         // Assert flagged descending.
-        assert!(!is_ascending(&avlq_descending), 0);
-        (avlq_ascending, avlq_descending) // Return both.
+        assert!(!is_ascending(&avlq), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify successful initialization for allocating tree nodes.
-    fun test_new_some_nodes(): (
-        AVLqueue<u8>
-    ) {
+    fun test_new_some_nodes() {
         // Init ascending AVL queue with two nodes each.
-        let avlq = new(ASCENDING, 3, 2);
+        let avlq = new<u8>(ASCENDING, 3, 2);
         // Assert table lengths.
         assert!(table_with_length::length(&avlq.tree_nodes) == 3, 0);
         assert!(table_with_length::length(&avlq.list_nodes) == 2, 0);
@@ -1707,17 +1707,16 @@ module econia::avl_queue {
         // Assert value options initialize to none.
         assert!(option::is_none(borrow_value_option_test(&avlq, 2)), 0);
         assert!(option::is_none(borrow_value_option_test(&avlq, 1)), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify successful initialization for allocating tree nodes.
-    fun test_new_some_nodes_loop():
-    AVLqueue<u8> {
+    fun test_new_some_nodes_loop() {
         // Declare number of tree and list nodes to allocate.
         let (n_tree_nodes, n_list_nodes) = (1234, 321);
         // Init ascending AVL queue accordingly.
-        let avlq = new(ASCENDING, n_tree_nodes, n_list_nodes);
+        let avlq = new<u8>(ASCENDING, n_tree_nodes, n_list_nodes);
         // Assert table lengths.
         assert!(table_with_length::length(&avlq.tree_nodes) ==
             n_tree_nodes, 0);
@@ -1744,15 +1743,14 @@ module econia::avl_queue {
             assert!(option::is_none(borrow_value_option_test(&avlq, i)), 0);
             i = i - 1; // Decrement loop counter.
         };
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify returns for reference diagram in `search()`.
-    fun test_search():
-    AVLqueue<u8> {
+    fun test_search() {
         // Init ascending AVL queue.
-        let avlq = new(ASCENDING, 0, 0);
+        let avlq = new<u8>(ASCENDING, 0, 0);
         // Assert returns for when empty.
         let (node_id, side_option) = search(&mut avlq, 12345);
         assert!(node_id == (NIL as u64), 0);
@@ -1801,14 +1799,13 @@ module econia::avl_queue {
         assert!(get_insertion_key_test(node_ref) == 4, 0);
         assert!(node_id == 1, 0);
         assert!(option::is_none(&side_option), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify successful check.
-    fun test_is_ascending():
-    AVLqueue<u8> {
-        let avlq = AVLqueue{ // Create empty AVL queue.
+    fun test_is_ascending() {
+        let avlq = AVLqueue<u8>{ // Create empty AVL queue.
             bits: (NIL as u128),
             root_lsbs: NIL,
             tree_nodes: table_with_length::new(),
@@ -1827,7 +1824,7 @@ module econia::avl_queue {
         );
         // Assert flagged descending.
         assert!(is_ascending(&avlq), 0);
-        avlq // Return AVL queue.
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]

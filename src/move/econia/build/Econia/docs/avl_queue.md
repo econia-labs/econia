@@ -1173,8 +1173,7 @@ activated node is right child of its parent.
 its doubly linked list.
 * The number of allocated tree nodes has already been checked
 via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>()</code>.
-* <code>key</code> is not set at any bits above 31, and both other <code>u64</code>
-fields are not set at any bits above 13.
+* All <code>u64</code> fields correspond to valid node IDs.
 
 
 <a name="@Testing_22"></a>
@@ -1203,13 +1202,13 @@ fields are not set at any bits above 13.
     new_leaf_side: Option&lt;bool&gt;
 ): u64 {
     // Pack field bits.
-    <b>let</b> bits = (key <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a> |
-        (parent <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a> |
-        (solo_node_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a> |
-        (solo_node_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>;
+    <b>let</b> bits = ((key <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a>) |
+        ((parent <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>) |
+        ((solo_node_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a>) |
+        ((solo_node_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>);
     // Get top of inactive tree nodes stack.
-    <b>let</b> tree_node_id = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &
-        (avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) <b>as</b> u64);
+    <b>let</b> tree_node_id = ((avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64);
     // Mutably borrow tree nodes <a href="">table</a>.
     <b>let</b> tree_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
     // If need <b>to</b> allocate new tree node:

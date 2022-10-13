@@ -655,6 +655,10 @@ module econia::avl_queue {
     /// * `new_leaf_side`: None if activated node is root, `LEFT` if
     ///   activated node is left child of its parent, and `RIGHT` if
     ///   activated node is right child of its parent.
+    ///
+    /// # Testing
+    ///
+    /// * `test_activate_tree_node_update_parent_root()`.
     fun activate_tree_node_update_parent<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         tree_node_id: u64,
@@ -837,6 +841,19 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Like `get_child_left_test()`, but accepts tree node ID inside
+    /// given AVL queue.
+    ///
+    fun get_child_left_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        tree_node_id: u64
+    ): u64 {
+        let tree_node_ref = // Immutably borrow tree node.
+            table_with_length::borrow(&avlq_ref.tree_nodes, tree_node_id);
+        get_child_left_test(tree_node_ref) // Return left child field.
+    }
+
+    #[test_only]
     /// Return left child node ID indicated by given tree node.
     ///
     /// # Testing
@@ -858,6 +875,19 @@ module econia::avl_queue {
         tree_node_ref: &TreeNode
     ): u64 {
         (tree_node_ref.bits >> SHIFT_CHILD_RIGHT & (HI_NODE_ID as u128) as u64)
+    }
+
+    #[test_only]
+    /// Like `get_child_right_test()`, but accepts tree node ID inside
+    /// given AVL queue.
+    ///
+    fun get_child_right_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        tree_node_id: u64
+    ): u64 {
+        let tree_node_ref = // Immutably borrow tree node.
+            table_with_length::borrow(&avlq_ref.tree_nodes, tree_node_id);
+        get_child_right_test(tree_node_ref) // Return right child field.
     }
 
     #[test_only]
@@ -1366,6 +1396,12 @@ module econia::avl_queue {
         assert!(get_tree_next_test(tree_node_ref) == (NIL as u64), 0);
         avlq // Return AVL queue.
     }
+*/
+
+/*
+    #[test]
+    /// Verify state update.
+    fun test_activate_tree_node_update_parent_root():
 */
 
     #[test]

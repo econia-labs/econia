@@ -89,15 +89,16 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_22)
 -  [Function `activate_tree_node_update_parent`](#0xc0deb00c_avl_queue_activate_tree_node_update_parent)
     -  [Parameters](#@Parameters_23)
+    -  [Testing](#@Testing_24)
 -  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_24)
-    -  [Returns](#@Returns_25)
-    -  [Assumptions](#@Assumptions_26)
-    -  [Reference diagram](#@Reference_diagram_27)
-    -  [Testing](#@Testing_28)
+    -  [Parameters](#@Parameters_25)
+    -  [Returns](#@Returns_26)
+    -  [Assumptions](#@Assumptions_27)
+    -  [Reference diagram](#@Reference_diagram_28)
+    -  [Testing](#@Testing_29)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_29)
-    -  [Testing](#@Testing_30)
+    -  [Aborts](#@Aborts_30)
+    -  [Testing](#@Testing_31)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1265,6 +1266,14 @@ activated node is left child of its parent, and <code><a href="avl_queue.md#0xc0
 activated node is right child of its parent.
 
 
+<a name="@Testing_24"></a>
+
+### Testing
+
+
+* <code>test_activate_tree_node_update_parent_root()</code>.
+
+
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, tree_node_id: u64, parent: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;)
 </code></pre>
 
@@ -1333,7 +1342,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_24"></a>
+<a name="@Parameters_25"></a>
 
 ### Parameters
 
@@ -1342,7 +1351,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_25"></a>
+<a name="@Returns_26"></a>
 
 ### Returns
 
@@ -1354,7 +1363,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_26"></a>
+<a name="@Assumptions_27"></a>
 
 ### Assumptions
 
@@ -1364,7 +1373,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_27"></a>
+<a name="@Reference_diagram_28"></a>
 
 ### Reference diagram
 
@@ -1383,7 +1392,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_28"></a>
+<a name="@Testing_29"></a>
 
 ### Testing
 
@@ -1451,7 +1460,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_29"></a>
+<a name="@Aborts_30"></a>
 
 ### Aborts
 
@@ -1459,7 +1468,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_30"></a>
+<a name="@Testing_31"></a>
 
 ### Testing
 

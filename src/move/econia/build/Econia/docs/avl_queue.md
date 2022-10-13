@@ -87,7 +87,7 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_20)
     -  [Assumptions](#@Assumptions_21)
     -  [Testing](#@Testing_22)
--  [Function `activate_tree_node_update_parent`](#0xc0deb00c_avl_queue_activate_tree_node_update_parent)
+-  [Function `activate_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge)
     -  [Parameters](#@Parameters_23)
     -  [Testing](#@Testing_24)
 -  [Function `search`](#0xc0deb00c_avl_queue_search)
@@ -902,11 +902,11 @@ node.
         // Mutably borrow anchor tree node.
         <b>let</b> anchor_node_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
             tree_nodes_ref_mut, anchor_tree_node_id);
-        // Reassign list tail node bits:
+        // Reassign bits for list tail node:
         anchor_node_ref_mut.bits = anchor_node_ref_mut.bits &
-            // Clear out all bits via mask unset at relevant bits.
+            // Clear out field via mask unset at field bits.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>)) |
-            // Mask in the new list tail bits:
+            // Mask in new bits.
             (list_node_id &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a> <b>as</b> u128);
     };
     list_node_id // Return activated list node ID.
@@ -1003,11 +1003,11 @@ otherwise pop one off the inactive stack.
         <b>let</b> new_list_stack_top = // Get new list stack top node ID.
             ((node_ref_mut.next_msbs <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>) |
              (node_ref_mut.next_lsbs <b>as</b> u128);
-        // Reassign inactive list node stack top bits:
+        // Reassign bits for inactive list node stack top:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
-            // Clear out all bits via mask unset at relevant bits.
+            // Clear out field via mask unset at field bits.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>)) |
-            // Mask in the new stack top bits.
+            // Mask in new bits.
             (new_list_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>);
         node_ref_mut.last_msbs = last_msbs; // Reassign last MSBs.
         node_ref_mut.last_lsbs = last_lsbs; // Reassign last LSBs.
@@ -1223,15 +1223,15 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last
             tree_nodes_ref_mut, tree_node_id);
         // Get new inactive tree nodes stack top node ID.
         <b>let</b> new_tree_stack_top = node_ref_mut.bits & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128);
-        // Reassign inactive tree node stack top bits:
+        // Reassign bits for inactive tree node stack top:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
-            // Clear out all bits via mask unset at relevant bits.
+            // Clear out field via mask unset at field bits.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>)) |
-            // Mask in the new stack top bits.
+            // Mask in new bits.
             (new_tree_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>);
         node_ref_mut.bits = bits; // Reassign activated node bits.
     };
-    <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>( // Update parent fields.
+    <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge">activate_tree_node_update_parent_edge</a>( // Update parent edge.
         avlq_ref_mut, tree_node_id, parent, new_leaf_side);
     tree_node_id // Return activated tree node ID.
 }
@@ -1241,11 +1241,11 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last
 
 </details>
 
-<a name="0xc0deb00c_avl_queue_activate_tree_node_update_parent"></a>
+<a name="0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge"></a>
 
-## Function `activate_tree_node_update_parent`
+## Function `activate_tree_node_update_parent_edge`
 
-Update the parent to a tree node just activated.
+Update the parent edge for a tree node just activated.
 
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>.
 
@@ -1270,12 +1270,12 @@ activated node is right child of its parent.
 ### Testing
 
 
-* <code>test_activate_tree_node_update_parent_left()</code>
-* <code>test_activate_tree_node_update_parent_right()</code>
-* <code>test_activate_tree_node_update_parent_root()</code>
+* <code>test_activate_tree_node_update_parent_edge_left()</code>
+* <code>test_activate_tree_node_update_parent_edge_right()</code>
+* <code>test_activate_tree_node_update_parent_edge_root()</code>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, tree_node_id: u64, parent: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;)
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge">activate_tree_node_update_parent_edge</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, tree_node_id: u64, parent: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;)
 </code></pre>
 
 
@@ -1284,7 +1284,7 @@ activated node is right child of its parent.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent">activate_tree_node_update_parent</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge">activate_tree_node_update_parent_edge</a>&lt;V&gt;(
     avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
     tree_node_id: u64,
     parent: u64,
@@ -1293,11 +1293,11 @@ activated node is right child of its parent.
     <b>if</b> (<a href="_is_none">option::is_none</a>(&new_leaf_side)) { // If activating root:
         // Set root LSBs.
         avlq_ref_mut.root_lsbs = (tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8);
-        // Reassign root MSBs:
+        // Reassign bits for root MSBs:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
-            // Clear out all bits via mask unset at relevant bits.
+            // Clear out field via mask unset at field bits.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u128))) |
-            // Mask in the new root MSBs.
+            // Mask in new bits.
             (tree_node_id &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a> <b>as</b> u128)
     } <b>else</b> { // If activating child <b>to</b> existing node:
         // Mutably borrow tree nodes <a href="">table</a>.
@@ -1307,19 +1307,15 @@ activated node is right child of its parent.
             tree_nodes_ref_mut, parent);
         // Determine <b>if</b> activating left child.
         <b>let</b> left_child = *<a href="_borrow">option::borrow</a>(&new_leaf_side) == <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>;
-        // Get child node ID and height field shift amounts for
-        // corresponding side.
-        <b>let</b> (child_shift, height_shift) = <b>if</b> (left_child)
-            (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> , <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a> ) <b>else</b>
-            (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>);
-        // Reassign both bit fields:
+        // Get child node ID field shift amounts for given side;
+        <b>let</b> child_shift = <b>if</b> (left_child) <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> <b>else</b>
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>;
+        // Reassign bits for child field on given side.
         parent_ref_mut.bits = parent_ref_mut.bits &
             // Clear out all bits via mask unset at relevant bits.
-            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; child_shift)) &
-            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a> <b>as</b> u128) &lt;&lt; height_shift)) |
-            // Mask in new field bits, <b>with</b> height of 1 for side.
-            ((tree_node_id <b>as</b> u128) &lt;&lt; child_shift) |
-            (1u128 &lt;&lt; height_shift);
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; child_shift)) |
+            // Mask in new bits.
+            ((tree_node_id <b>as</b> u128) &lt;&lt; child_shift);
     };
 }
 </code></pre>

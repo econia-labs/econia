@@ -406,11 +406,11 @@ module econia::avl_queue {
             // Mutably borrow anchor tree node.
             let anchor_node_ref_mut = table_with_length::borrow_mut(
                 tree_nodes_ref_mut, anchor_tree_node_id);
-            // Reassign list tail node bits:
+            // Reassign bits for list tail node:
             anchor_node_ref_mut.bits = anchor_node_ref_mut.bits &
-                // Clear out all bits via mask unset at relevant bits.
+                // Clear out field via mask unset at field bits.
                 (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_LIST_TAIL)) |
-                // Mask in the new list tail bits:
+                // Mask in new bits.
                 (list_node_id << SHIFT_LIST_TAIL as u128);
         };
         list_node_id // Return activated list node ID.
@@ -475,11 +475,11 @@ module econia::avl_queue {
             let new_list_stack_top = // Get new list stack top node ID.
                 ((node_ref_mut.next_msbs as u128) << BITS_PER_BYTE) |
                  (node_ref_mut.next_lsbs as u128);
-            // Reassign inactive list node stack top bits:
+            // Reassign bits for inactive list node stack top:
             avlq_ref_mut.bits = avlq_ref_mut.bits &
-                // Clear out all bits via mask unset at relevant bits.
+                // Clear out field via mask unset at field bits.
                 (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_LIST_STACK_TOP)) |
-                // Mask in the new stack top bits.
+                // Mask in new bits.
                 (new_list_stack_top << SHIFT_LIST_STACK_TOP);
             node_ref_mut.last_msbs = last_msbs; // Reassign last MSBs.
             node_ref_mut.last_lsbs = last_lsbs; // Reassign last LSBs.
@@ -627,20 +627,20 @@ module econia::avl_queue {
                 tree_nodes_ref_mut, tree_node_id);
             // Get new inactive tree nodes stack top node ID.
             let new_tree_stack_top = node_ref_mut.bits & (HI_NODE_ID as u128);
-            // Reassign inactive tree node stack top bits:
+            // Reassign bits for inactive tree node stack top:
             avlq_ref_mut.bits = avlq_ref_mut.bits &
-                // Clear out all bits via mask unset at relevant bits.
+                // Clear out field via mask unset at field bits.
                 (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_TREE_STACK_TOP)) |
-                // Mask in the new stack top bits.
+                // Mask in new bits.
                 (new_tree_stack_top << SHIFT_TREE_STACK_TOP);
             node_ref_mut.bits = bits; // Reassign activated node bits.
         };
-        activate_tree_node_update_parent( // Update parent fields.
+        activate_tree_node_update_parent_edge( // Update parent edge.
             avlq_ref_mut, tree_node_id, parent, new_leaf_side);
         tree_node_id // Return activated tree node ID.
     }
 
-    /// Update the parent to a tree node just activated.
+    /// Update the parent edge for a tree node just activated.
     ///
     /// Inner function for `activate_tree_node()`.
     ///
@@ -657,10 +657,10 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_activate_tree_node_update_parent_left()`
-    /// * `test_activate_tree_node_update_parent_right()`
-    /// * `test_activate_tree_node_update_parent_root()`
-    fun activate_tree_node_update_parent<V>(
+    /// * `test_activate_tree_node_update_parent_edge_left()`
+    /// * `test_activate_tree_node_update_parent_edge_right()`
+    /// * `test_activate_tree_node_update_parent_edge_root()`
+    fun activate_tree_node_update_parent_edge<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         tree_node_id: u64,
         parent: u64,
@@ -669,11 +669,11 @@ module econia::avl_queue {
         if (option::is_none(&new_leaf_side)) { // If activating root:
             // Set root LSBs.
             avlq_ref_mut.root_lsbs = (tree_node_id & HI_BYTE as u8);
-            // Reassign root MSBs:
+            // Reassign bits for root MSBs:
             avlq_ref_mut.bits = avlq_ref_mut.bits &
-                // Clear out all bits via mask unset at relevant bits.
+                // Clear out field via mask unset at field bits.
                 (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE as u128))) |
-                // Mask in the new root MSBs.
+                // Mask in new bits.
                 (tree_node_id >> BITS_PER_BYTE as u128)
         } else { // If activating child to existing node:
             // Mutably borrow tree nodes table.
@@ -683,19 +683,15 @@ module econia::avl_queue {
                 tree_nodes_ref_mut, parent);
             // Determine if activating left child.
             let left_child = *option::borrow(&new_leaf_side) == LEFT;
-            // Get child node ID and height field shift amounts for
-            // corresponding side.
-            let (child_shift, height_shift) = if (left_child)
-                (SHIFT_CHILD_LEFT , SHIFT_HEIGHT_LEFT ) else
-                (SHIFT_CHILD_RIGHT, SHIFT_HEIGHT_RIGHT);
-            // Reassign both bit fields:
+            // Get child node ID field shift amounts for given side;
+            let child_shift = if (left_child) SHIFT_CHILD_LEFT else
+                SHIFT_CHILD_RIGHT;
+            // Reassign bits for child field on given side.
             parent_ref_mut.bits = parent_ref_mut.bits &
                 // Clear out all bits via mask unset at relevant bits.
-                (HI_128 ^ ((HI_NODE_ID as u128) << child_shift)) &
-                (HI_128 ^ ((HI_HEIGHT as u128) << height_shift)) |
-                // Mask in new field bits, with height of 1 for side.
-                ((tree_node_id as u128) << child_shift) |
-                (1u128 << height_shift);
+                (HI_128 ^ ((HI_NODE_ID as u128) << child_shift)) |
+                // Mask in new bits.
+                ((tree_node_id as u128) << child_shift);
         };
     }
 
@@ -1173,11 +1169,11 @@ module econia::avl_queue {
     ) {
         // Set root LSBs.
         avlq_ref_mut.root_lsbs = (root_node_id & HI_BYTE as u8);
-        // Reassign root MSBs:
+        // Reassign bits for root MSBs:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
-            // Clear out all bits via mask unset at relevant bits.
+            // Clear out field via mask unset at field bits.
             (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE as u128))) |
-            // Mask in the new root MSBs.
+            // Mask in new bits.
             (root_node_id >> BITS_PER_BYTE as u128)
     }
 
@@ -1460,43 +1456,39 @@ module econia::avl_queue {
 
     #[test]
     /// Verify state update for activating left child.
-    fun test_activate_tree_node_update_parent_left() {
+    fun test_activate_tree_node_update_parent_edge_left() {
         let tree_node_id = 1234; // Declare activated tree node ID.
         let parent = 321;
         let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
         // Declare empty new leaf side.
         let new_leaf_side = option::some(LEFT);
         // Update parent to activated node.
-        activate_tree_node_update_parent(&mut avlq, tree_node_id, parent,
-                                         new_leaf_side);
+        activate_tree_node_update_parent_edge(
+            &mut avlq, tree_node_id, parent, new_leaf_side);
         // Assert update to parent's child field.
         assert!(get_child_left_by_id_test(&avlq, parent) == tree_node_id, 0);
-        // Assert update to parent's height field.
-        assert!(get_height_left_by_id_test(&avlq, parent) == 1, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify state update for activating right child.
-    fun test_activate_tree_node_update_parent_right() {
+    fun test_activate_tree_node_update_parent_edge_right() {
         let tree_node_id = 1234; // Declare activated tree node ID.
         let parent = 321;
         let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
         // Declare empty new leaf side.
         let new_leaf_side = option::some(RIGHT);
         // Update parent to activated node.
-        activate_tree_node_update_parent(&mut avlq, tree_node_id, parent,
-                                         new_leaf_side);
+        activate_tree_node_update_parent_edge(
+            &mut avlq, tree_node_id, parent, new_leaf_side);
         // Assert update to parent's child field.
         assert!(get_child_right_by_id_test(&avlq, parent) == tree_node_id, 0);
-        // Assert update to parent's height field.
-        assert!(get_height_right_by_id_test(&avlq, parent) == 1, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]
     /// Verify state update for activating root.
-    fun test_activate_tree_node_update_parent_root() {
+    fun test_activate_tree_node_update_parent_edge_root() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         let tree_node_id = 1234; // Declare activated tree node ID.
         let parent = (NIL as u64); // Declare parent as root flag.
@@ -1505,8 +1497,8 @@ module econia::avl_queue {
         // Assert null root.
         assert!(get_root_test(&avlq) == (NIL as u64), 0);
         // Update parent for activated root node.
-        activate_tree_node_update_parent(&mut avlq, tree_node_id, parent,
-                                         new_leaf_side);
+        activate_tree_node_update_parent_edge(
+            &mut avlq, tree_node_id, parent, new_leaf_side);
         // Assert root update.
         assert!(get_root_test(&avlq) == tree_node_id, 0);
         drop_avlq_test(avlq); // Drop AVL queue.

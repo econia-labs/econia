@@ -97,15 +97,22 @@ The below index is automatically generated from source code:
         -  [Case 1](#@Case_1_28)
         -  [Case 1](#@Case_1_29)
     -  [Testing](#@Testing_30)
--  [Function `search`](#0xc0deb00c_avl_queue_search)
+-  [Function `rotate_right`](#0xc0deb00c_avl_queue_rotate_right)
     -  [Parameters](#@Parameters_31)
     -  [Returns](#@Returns_32)
-    -  [Assumptions](#@Assumptions_33)
-    -  [Reference diagram](#@Reference_diagram_34)
-    -  [Testing](#@Testing_35)
+    -  [Reference rotations:](#@Reference_rotations:_33)
+        -  [Case 1](#@Case_1_34)
+        -  [Case 1](#@Case_1_35)
+    -  [Testing](#@Testing_36)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_37)
+    -  [Returns](#@Returns_38)
+    -  [Assumptions](#@Assumptions_39)
+    -  [Reference diagram](#@Reference_diagram_40)
+    -  [Testing](#@Testing_41)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_36)
-    -  [Testing](#@Testing_37)
+    -  [Aborts](#@Aborts_42)
+    -  [Testing](#@Testing_43)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1339,8 +1346,8 @@ Rotate left during rebalance.
 
 Here, subtree root node x is right-heavy, with right child
 node z that is not left-heavy. Node x has an optional tree 1
-as its left child subtree, and node z has optional trees 1 and
-2 as its left and right child subtrees, respectively.
+as its left child subtree, and node z has optional trees 2 and
+3 as its left and right child subtrees, respectively.
 
 Pre-rotation:
 
@@ -1484,7 +1491,7 @@ Post-rotation:
     // Node x's right height is from transferred tree 2.
     <b>let</b> node_x_height_right = node_z_height_left;
     <b>let</b> node_x_parent = (((node_x_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>) &
-        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u8); // Get node x left height.
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u8); // Get node x parent field.
     // Reassign bits for right child, right height, and parent:
     node_x_ref_mut.bits = node_x_ref_mut.bits &
         // Clear out fields via mask unset at field bits.
@@ -1517,7 +1524,201 @@ Post-rotation:
     // Determine height of tree rooted at z.
     <b>let</b> node_z_height = <b>if</b> (node_z_height_right &gt;= node_z_height_left)
         node_z_height_right <b>else</b> node_z_height_left;
-    (node_z_id, node_z_height)
+    (node_z_id, node_z_height) // Return new subtree root, height.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_rotate_right"></a>
+
+## Function `rotate_right`
+
+Rotate right during rebalance.
+
+Here, subtree root node x is left-heavy, with left child
+node z that is not right-heavy. Node x has an optional tree 3
+as its right child subtree, and node z has optional trees 1 and
+2 as its left and right child subtrees, respectively.
+
+Pre-rotation:
+
+>           n_x
+>          /   \
+>        n_z   t_3
+>       /   \
+>     t_1   t_2
+
+Post-rotation:
+
+>        n_z
+>       /   \
+>     t_1   n_x
+>          /   \
+>        t_2   t_3
+
+
+<a name="@Parameters_31"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>node_x_id</code>: Node ID of subtree root pre-rotation.
+* <code>node_z_id</code>: Node ID of subtree root post-rotation.
+* <code>tree_2_id</code>: Node z's right child field.
+* <code>node_z_height_right</code>: Node z's right height.
+
+
+<a name="@Returns_32"></a>
+
+### Returns
+
+
+* <code>u64</code>: Node z's ID.
+* <code>u8</code>: The height of the subtree rooted at node z,
+post-rotation.
+
+
+<a name="@Reference_rotations:_33"></a>
+
+### Reference rotations:
+
+
+
+<a name="@Case_1_34"></a>
+
+#### Case 1
+
+
+* Tree 2 empty.
+* Post-rotation, node x height equals node x right height.
+* Post-rotation, node z height equals node z left height.
+
+Pre-rotation:
+
+>         8 <- node x
+>        /
+>       6 <- node z
+>      /
+>     4 <- tree 1
+
+Post-rotation:
+
+>                 6 <- node z
+>                / \
+>     tree 1 -> 4   8 <- node x
+
+
+<a name="@Case_1_35"></a>
+
+#### Case 1
+
+
+* Tree 2 not empty.
+* Post-rotation, node x height equals node x left height.
+* Post-rotation, node z height equals node z right height.
+
+Pre-rotation:
+
+>                   7 <- node x
+>                  /
+>                 4 <- node z
+>                / \
+>     tree 1 -> 3   5 <- tree 2
+
+Post-rotation:
+
+>                 4 <- node z
+>                / \
+>     tree 1 -> 3   7 <- node x
+>                  /
+>                 5 <- tree 2
+
+
+<a name="@Testing_36"></a>
+
+### Testing
+
+
+* <code>test_rotate_right_1()</code>
+* <code>test_rotate_right_2()</code>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_right">rotate_right</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64, node_z_id: u64, tree_2_id: u64, node_z_height_right: u8): (u64, u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_right">rotate_right</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    node_x_id: u64,
+    node_z_id: u64,
+    tree_2_id: u64,
+    node_z_height_right: u8
+): (
+    u64,
+    u8
+) {
+    // Mutably borrow tree nodes <a href="">table</a>.
+    <b>let</b> nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
+    <b>if</b> (tree_2_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) { // If tree 2 is not empty:
+        <b>let</b> tree_2_ref_mut = // Mutably borrow tree 2 root.
+            <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, tree_2_id);
+        // Reassign bits for new parent field:
+        tree_2_ref_mut.bits = tree_2_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>)) |
+            // Mask in new bits.
+            ((node_x_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    };
+    <b>let</b> node_x_ref_mut =  // Mutably borrow node x.
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, node_x_id);
+    <b>let</b> node_x_height_right = (((node_x_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>)
+        & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a> <b>as</b> u128)) <b>as</b> u8); // Get node x right height.
+    // Node x's left height is from transferred tree 2.
+    <b>let</b> node_x_height_left = node_z_height_right;
+    <b>let</b> node_x_parent = (((node_x_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u8); // Get node x parent field.
+    // Reassign bits for left child, left height, and parent:
+    node_x_ref_mut.bits = node_x_ref_mut.bits &
+        // Clear out fields via mask unset at field bits.
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ (((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>))) |
+        // Mask in new bits.
+        ((tree_2_id          <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) |
+        ((node_x_height_left <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>) |
+        ((node_z_id          <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    // Determine height of tree rooted at x.
+    <b>let</b> node_x_height = <b>if</b> (node_x_height_right &gt;= node_x_height_left)
+        node_x_height_right <b>else</b> node_x_height_left;
+    // Get node z right height.
+    <b>let</b> node_z_height_right = node_x_height + 1;
+    <b>let</b> node_z_ref_mut =  // Mutably borrow node z.
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, node_z_id);
+    // Reassign bits for right child, right height, and parent:
+    node_z_ref_mut.bits = node_z_ref_mut.bits &
+        // Clear out fields via mask unset at field bits.
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ (((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>))) |
+        // Mask in new bits.
+        ((node_x_id           <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>) |
+        ((node_z_height_right <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) |
+        ((node_x_parent       <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    <b>let</b> node_z_height_left = (((node_z_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a> <b>as</b> u128)) <b>as</b> u8); // Get node z left height.
+    // Determine height of tree rooted at z.
+    <b>let</b> node_z_height = <b>if</b> (node_z_height_left &gt;= node_z_height_right)
+        node_z_height_left <b>else</b> node_z_height_right;
+    (node_z_id, node_z_height) // Return new subtree root, height.
 }
 </code></pre>
 
@@ -1541,7 +1742,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_31"></a>
+<a name="@Parameters_37"></a>
 
 ### Parameters
 
@@ -1550,7 +1751,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_32"></a>
+<a name="@Returns_38"></a>
 
 ### Returns
 
@@ -1562,7 +1763,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_33"></a>
+<a name="@Assumptions_39"></a>
 
 ### Assumptions
 
@@ -1572,7 +1773,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_34"></a>
+<a name="@Reference_diagram_40"></a>
 
 ### Reference diagram
 
@@ -1591,7 +1792,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_35"></a>
+<a name="@Testing_41"></a>
 
 ### Testing
 
@@ -1659,7 +1860,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_36"></a>
+<a name="@Aborts_42"></a>
 
 ### Aborts
 
@@ -1667,7 +1868,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_37"></a>
+<a name="@Testing_43"></a>
 
 ### Testing
 

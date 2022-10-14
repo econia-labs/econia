@@ -699,8 +699,8 @@ module econia::avl_queue {
     ///
     /// Here, subtree root node x is right-heavy, with right child
     /// node z that is not left-heavy. Node x has an optional tree 1
-    /// as its left child subtree, and node z has optional trees 1 and
-    /// 2 as its left and right child subtrees, respectively.
+    /// as its left child subtree, and node z has optional trees 2 and
+    /// 3 as its left and right child subtrees, respectively.
     ///
     /// Pre-rotation:
     ///
@@ -809,7 +809,7 @@ module econia::avl_queue {
         // Node x's right height is from transferred tree 2.
         let node_x_height_right = node_z_height_left;
         let node_x_parent = (((node_x_ref_mut.bits >> SHIFT_PARENT) &
-            (HI_NODE_ID as u128)) as u8); // Get node x left height.
+            (HI_NODE_ID as u128)) as u8); // Get node x parent field.
         // Reassign bits for right child, right height, and parent:
         node_x_ref_mut.bits = node_x_ref_mut.bits &
             // Clear out fields via mask unset at field bits.
@@ -842,7 +842,157 @@ module econia::avl_queue {
         // Determine height of tree rooted at z.
         let node_z_height = if (node_z_height_right >= node_z_height_left)
             node_z_height_right else node_z_height_left;
-        (node_z_id, node_z_height)
+        (node_z_id, node_z_height) // Return new subtree root, height.
+    }
+
+    /// Rotate right during rebalance.
+    ///
+    /// Here, subtree root node x is left-heavy, with left child
+    /// node z that is not right-heavy. Node x has an optional tree 3
+    /// as its right child subtree, and node z has optional trees 1 and
+    /// 2 as its left and right child subtrees, respectively.
+    ///
+    /// Pre-rotation:
+    ///
+    /// >           n_x
+    /// >          /   \
+    /// >        n_z   t_3
+    /// >       /   \
+    /// >     t_1   t_2
+    ///
+    /// Post-rotation:
+    ///
+    /// >        n_z
+    /// >       /   \
+    /// >     t_1   n_x
+    /// >          /   \
+    /// >        t_2   t_3
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `node_x_id`: Node ID of subtree root pre-rotation.
+    /// * `node_z_id`: Node ID of subtree root post-rotation.
+    /// * `tree_2_id`: Node z's right child field.
+    /// * `node_z_height_right`: Node z's right height.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Node z's ID.
+    /// * `u8`: The height of the subtree rooted at node z,
+    ///   post-rotation.
+    ///
+    /// # Reference rotations:
+    ///
+    /// ## Case 1
+    ///
+    /// * Tree 2 empty.
+    /// * Post-rotation, node x height equals node x right height.
+    /// * Post-rotation, node z height equals node z left height.
+    ///
+    /// Pre-rotation:
+    ///
+    /// >         8 <- node x
+    /// >        /
+    /// >       6 <- node z
+    /// >      /
+    /// >     4 <- tree 1
+    ///
+    /// Post-rotation:
+    ///
+    /// >                 6 <- node z
+    /// >                / \
+    /// >     tree 1 -> 4   8 <- node x
+    ///
+    /// ## Case 1
+    ///
+    /// * Tree 2 not empty.
+    /// * Post-rotation, node x height equals node x left height.
+    /// * Post-rotation, node z height equals node z right height.
+    ///
+    /// Pre-rotation:
+    ///
+    /// >                   7 <- node x
+    /// >                  /
+    /// >                 4 <- node z
+    /// >                / \
+    /// >     tree 1 -> 3   5 <- tree 2
+    ///
+    /// Post-rotation:
+    ///
+    /// >                 4 <- node z
+    /// >                / \
+    /// >     tree 1 -> 3   7 <- node x
+    /// >                  /
+    /// >                 5 <- tree 2
+    ///
+    /// # Testing
+    ///
+    /// * `test_rotate_right_1()`
+    /// * `test_rotate_right_2()`
+    fun rotate_right<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_x_id: u64,
+        node_z_id: u64,
+        tree_2_id: u64,
+        node_z_height_right: u8
+    ): (
+        u64,
+        u8
+    ) {
+        // Mutably borrow tree nodes table.
+        let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        if (tree_2_id != (NIL as u64)) { // If tree 2 is not empty:
+            let tree_2_ref_mut = // Mutably borrow tree 2 root.
+                table_with_length::borrow_mut(nodes_ref_mut, tree_2_id);
+            // Reassign bits for new parent field:
+            tree_2_ref_mut.bits = tree_2_ref_mut.bits &
+                // Clear out field via mask unset at field bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_PARENT)) |
+                // Mask in new bits.
+                ((node_x_id as u128) << SHIFT_PARENT);
+        };
+        let node_x_ref_mut =  // Mutably borrow node x.
+            table_with_length::borrow_mut(nodes_ref_mut, node_x_id);
+        let node_x_height_right = (((node_x_ref_mut.bits >> SHIFT_HEIGHT_RIGHT)
+            & (HI_HEIGHT as u128)) as u8); // Get node x right height.
+        // Node x's left height is from transferred tree 2.
+        let node_x_height_left = node_z_height_right;
+        let node_x_parent = (((node_x_ref_mut.bits >> SHIFT_PARENT) &
+            (HI_NODE_ID as u128)) as u8); // Get node x parent field.
+        // Reassign bits for left child, left height, and parent:
+        node_x_ref_mut.bits = node_x_ref_mut.bits &
+            // Clear out fields via mask unset at field bits.
+            (HI_128 ^ (((HI_NODE_ID as u128) << SHIFT_CHILD_LEFT) |
+                       ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
+                       ((HI_NODE_ID as u128) << SHIFT_PARENT))) |
+            // Mask in new bits.
+            ((tree_2_id          as u128) << SHIFT_CHILD_LEFT) |
+            ((node_x_height_left as u128) << SHIFT_HEIGHT_LEFT) |
+            ((node_z_id          as u128) << SHIFT_PARENT);
+        // Determine height of tree rooted at x.
+        let node_x_height = if (node_x_height_right >= node_x_height_left)
+            node_x_height_right else node_x_height_left;
+        // Get node z right height.
+        let node_z_height_right = node_x_height + 1;
+        let node_z_ref_mut =  // Mutably borrow node z.
+            table_with_length::borrow_mut(nodes_ref_mut, node_z_id);
+        // Reassign bits for right child, right height, and parent:
+        node_z_ref_mut.bits = node_z_ref_mut.bits &
+            // Clear out fields via mask unset at field bits.
+            (HI_128 ^ (((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT) |
+                       ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
+                       ((HI_NODE_ID as u128) << SHIFT_PARENT))) |
+            // Mask in new bits.
+            ((node_x_id           as u128) << SHIFT_CHILD_RIGHT) |
+            ((node_z_height_right as u128) << SHIFT_HEIGHT_RIGHT) |
+            ((node_x_parent       as u128) << SHIFT_PARENT);
+        let node_z_height_left = (((node_z_ref_mut.bits >> SHIFT_HEIGHT_LEFT) &
+            (HI_HEIGHT as u128)) as u8); // Get node z left height.
+        // Determine height of tree rooted at z.
+        let node_z_height = if (node_z_height_left >= node_z_height_right)
+            node_z_height_left else node_z_height_right;
+        (node_z_id, node_z_height) // Return new subtree root, height.
     }
 
     /// Search in AVL queue for closest match to seed key.
@@ -2140,6 +2290,135 @@ module econia::avl_queue {
                 == (NIL as u64), 0);
         // Assert state for tree 2.
         assert!(get_insertion_key_by_id_test(&avlq, tree_2_id) == 6, 0);
+        assert!(get_height_left_by_id_test(&avlq, tree_2_id) == 0, 0);
+        assert!(get_height_right_by_id_test(&avlq, tree_2_id) == 0, 0);
+        assert!(get_parent_by_id_test(&avlq, tree_2_id) == node_x_id, 0);
+        assert!(get_child_left_by_id_test(&avlq, tree_2_id)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(&avlq, tree_2_id)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns/state updates for reference rotation 1.
+    fun test_rotate_right_1() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare node/tree IDs.
+        let node_x_id = HI_NODE_ID;
+        let node_z_id = node_x_id - 1;
+        let tree_1_id = node_z_id - 1;
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
+        // Manually insert nodes from reference diagram.
+        table_with_length::add(tree_nodes_ref_mut, node_x_id, TreeNode{bits:
+            (        8 as u128) << SHIFT_INSERTION_KEY |
+            (        2 as u128) << SHIFT_HEIGHT_LEFT   |
+            (node_z_id as u128) << SHIFT_CHILD_LEFT    });
+        table_with_length::add(tree_nodes_ref_mut, node_z_id, TreeNode{bits:
+            (        6 as u128) << SHIFT_INSERTION_KEY |
+            (        1 as u128) << SHIFT_HEIGHT_LEFT   |
+            (node_x_id as u128) << SHIFT_PARENT        |
+            (tree_1_id as u128) << SHIFT_CHILD_LEFT    });
+        table_with_length::add(tree_nodes_ref_mut, tree_1_id, TreeNode{bits:
+            (        4 as u128) << SHIFT_INSERTION_KEY |
+            (node_z_id as u128) << SHIFT_PARENT        });
+        // Rotate right, storing new subtree root node ID and height.
+        let (node_z_id_return, node_z_height_return) = rotate_right(
+            &mut avlq, node_x_id, node_z_id, (NIL as u64), 0);
+        // Assert returns.
+        assert!(node_z_id_return == node_z_id, 0);
+        assert!(node_z_height_return == 1, 0);
+        // Assert state for node x.
+        assert!(get_insertion_key_by_id_test(&avlq, node_x_id) == 8, 0);
+        assert!(get_height_left_by_id_test(&avlq, node_x_id) == 0, 0);
+        assert!(get_height_right_by_id_test(&avlq, node_x_id) == 0, 0);
+        assert!(get_parent_by_id_test(&avlq, node_x_id) == node_z_id, 0);
+        assert!(get_child_left_by_id_test(&avlq, node_x_id)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(&avlq, node_x_id)
+                == (NIL as u64), 0);
+        // Assert state for node z.
+        assert!(get_insertion_key_by_id_test(&avlq, node_z_id) == 6, 0);
+        assert!(get_height_left_by_id_test(&avlq, node_z_id) == 1, 0);
+        assert!(get_height_right_by_id_test(&avlq, node_z_id) == 1, 0);
+        assert!(get_parent_by_id_test(&avlq, node_z_id) == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(&avlq, node_z_id) == tree_1_id, 0);
+        assert!(get_child_right_by_id_test(&avlq, node_z_id) == node_x_id, 0);
+        // Assert state for tree 1.
+        assert!(get_insertion_key_by_id_test(&avlq, tree_1_id) == 4, 0);
+        assert!(get_height_left_by_id_test(&avlq, tree_1_id) == 0, 0);
+        assert!(get_height_right_by_id_test(&avlq, tree_1_id) == 0, 0);
+        assert!(get_parent_by_id_test(&avlq, tree_1_id) == node_z_id, 0);
+        assert!(get_child_left_by_id_test(&avlq, tree_1_id)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(&avlq, tree_1_id)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns/state updates for reference rotation 2.
+    fun test_rotate_right_2() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare node/tree IDs.
+        let node_x_id = HI_NODE_ID;
+        let node_z_id = node_x_id - 1;
+        let tree_1_id = node_z_id - 1;
+        let tree_2_id = tree_1_id - 2;
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
+        // Manually insert nodes from reference diagram.
+        table_with_length::add(tree_nodes_ref_mut, node_x_id, TreeNode{bits:
+            (        7 as u128) << SHIFT_INSERTION_KEY |
+            (        2 as u128) << SHIFT_HEIGHT_LEFT   |
+            (NIL       as u128) << SHIFT_PARENT        |
+            (node_z_id as u128) << SHIFT_CHILD_LEFT    });
+        table_with_length::add(tree_nodes_ref_mut, node_z_id, TreeNode{bits:
+            (        4 as u128) << SHIFT_INSERTION_KEY |
+            (        1 as u128) << SHIFT_HEIGHT_LEFT   |
+            (        1 as u128) << SHIFT_HEIGHT_RIGHT  |
+            (node_x_id as u128) << SHIFT_PARENT        |
+            (tree_1_id as u128) << SHIFT_CHILD_LEFT    |
+            (tree_2_id as u128) << SHIFT_CHILD_RIGHT   });
+        table_with_length::add(tree_nodes_ref_mut, tree_1_id, TreeNode{bits:
+            (        3 as u128) << SHIFT_INSERTION_KEY |
+            (node_z_id as u128) << SHIFT_PARENT        });
+        table_with_length::add(tree_nodes_ref_mut, tree_2_id, TreeNode{bits:
+            (        5 as u128) << SHIFT_INSERTION_KEY |
+            (node_z_id as u128) << SHIFT_PARENT        });
+        // Rotate right, storing new subtree root node ID and height.
+        let (node_z_id_return, node_z_height_return) = rotate_right(
+            &mut avlq, node_x_id, node_z_id, tree_2_id, 1);
+        // Assert returns.
+        assert!(node_z_id_return == node_z_id, 0);
+        assert!(node_z_height_return == 2, 0);
+        // Assert state for node x.
+        assert!(get_insertion_key_by_id_test(&avlq, node_x_id) == 7, 0);
+        assert!(get_height_left_by_id_test(&avlq, node_x_id) == 1, 0);
+        assert!(get_height_right_by_id_test(&avlq, node_x_id) == 0, 0);
+        assert!(get_parent_by_id_test(&avlq, node_x_id) == node_z_id, 0);
+        assert!(get_child_left_by_id_test(&avlq, node_x_id) == tree_2_id, 0);
+        assert!(get_child_right_by_id_test(&avlq, node_x_id)
+                == (NIL as u64), 0);
+        // Assert state for node z.
+        assert!(get_insertion_key_by_id_test(&avlq, node_z_id) == 4, 0);
+        assert!(get_height_left_by_id_test(&avlq, node_z_id) == 1, 0);
+        assert!(get_height_right_by_id_test(&avlq, node_z_id) == 2, 0);
+        assert!(get_parent_by_id_test(&avlq, node_z_id) == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(&avlq, node_z_id) == tree_1_id, 0);
+        assert!(get_child_right_by_id_test(&avlq, node_z_id) == node_x_id, 0);
+        // Assert state for tree 1.
+        assert!(get_insertion_key_by_id_test(&avlq, tree_1_id) == 3, 0);
+        assert!(get_height_left_by_id_test(&avlq, tree_1_id) == 0, 0);
+        assert!(get_height_right_by_id_test(&avlq, tree_1_id) == 0, 0);
+        assert!(get_parent_by_id_test(&avlq, tree_1_id) == node_z_id, 0);
+        assert!(get_child_left_by_id_test(&avlq, tree_1_id)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(&avlq, tree_1_id)
+                == (NIL as u64), 0);
+        // Assert state for tree 2.
+        assert!(get_insertion_key_by_id_test(&avlq, tree_2_id) == 5, 0);
         assert!(get_height_left_by_id_test(&avlq, tree_2_id) == 0, 0);
         assert!(get_height_right_by_id_test(&avlq, tree_2_id) == 0, 0);
         assert!(get_parent_by_id_test(&avlq, tree_2_id) == node_x_id, 0);

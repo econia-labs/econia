@@ -329,8 +329,8 @@ module econia::avl_queue {
                 table_with_length::add(&mut avlq.list_nodes, i + 1, ListNode{
                     last_msbs: 0,
                     last_lsbs: 0,
-                    next_msbs: (i >> BITS_PER_BYTE as u8),
-                    next_lsbs: (i & HI_BYTE as u8)});
+                    next_msbs: ((i >> BITS_PER_BYTE) as u8),
+                    next_lsbs: ((i & HI_BYTE) as u8)});
                 // Allocate optional insertion value entry.
                 table::add(&mut avlq.values, i + 1, option::none());
                 i = i + 1; // Increment loop counter.
@@ -347,7 +347,7 @@ module econia::avl_queue {
     public fun is_ascending<V>(
         avlq_ref: &AVLqueue<V>
     ): bool {
-        avlq_ref.bits >> SHIFT_SORT_ORDER & (BIT_FLAG_ASCENDING as u128) ==
+        ((avlq_ref.bits >> SHIFT_SORT_ORDER) & (BIT_FLAG_ASCENDING as u128)) ==
             (BIT_FLAG_ASCENDING as u128)
     }
 
@@ -400,9 +400,9 @@ module econia::avl_queue {
             let last_node_ref_mut = // Mutably borrow old tail.
                 table_with_length::borrow_mut(list_nodes_ref_mut, last);
             last_node_ref_mut.next_msbs = // Reassign its next MSBs.
-                (list_node_id >> BITS_PER_BYTE as u8);
+                ((list_node_id >> BITS_PER_BYTE) as u8);
             // Reassign its next LSBs to those of activated list node.
-            last_node_ref_mut.next_lsbs = (list_node_id & HI_BYTE as u8);
+            last_node_ref_mut.next_lsbs = ((list_node_id & HI_BYTE) as u8);
             // Mutably borrow anchor tree node.
             let anchor_node_ref_mut = table_with_length::borrow_mut(
                 tree_nodes_ref_mut, anchor_tree_node_id);
@@ -411,7 +411,7 @@ module econia::avl_queue {
                 // Clear out field via mask unset at field bits.
                 (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_LIST_TAIL)) |
                 // Mask in new bits.
-                (list_node_id << SHIFT_LIST_TAIL as u128);
+                ((list_node_id as u128) << SHIFT_LIST_TAIL);
         };
         list_node_id // Return activated list node ID.
     }
@@ -452,11 +452,11 @@ module econia::avl_queue {
         let values_ref_mut = &mut avlq_ref_mut.values;
         // Split last and next arguments into byte fields.
         let (last_msbs, last_lsbs, next_msbs, next_lsbs) = (
-            (last >> BITS_PER_BYTE as u8), (last & HI_BYTE as u8),
-            (next >> BITS_PER_BYTE as u8), (next & HI_BYTE as u8));
+            ((last >> BITS_PER_BYTE) as u8), ((last & HI_BYTE) as u8),
+            ((next >> BITS_PER_BYTE) as u8), ((next & HI_BYTE) as u8));
         // Get top of inactive list nodes stack.
-        let list_node_id = ((HI_NODE_ID as u128) &
-            (avlq_ref_mut.bits >> SHIFT_LIST_STACK_TOP) as u64);
+        let list_node_id = (((avlq_ref_mut.bits >> SHIFT_LIST_STACK_TOP) &
+                             (HI_NODE_ID as u128)) as u64);
         // If will need to allocate a new list node:
         if (list_node_id == (NIL as u64)) {
             // Get new 1-indexed list node ID.
@@ -530,15 +530,15 @@ module econia::avl_queue {
         u64
     ) {
         // Declare bitmask for flagging a tree node.
-        let is_tree_node = (BIT_FLAG_TREE_NODE as u64) << SHIFT_NODE_TYPE;
+        let is_tree_node = ((BIT_FLAG_TREE_NODE as u64) << SHIFT_NODE_TYPE);
         // Immutably borrow tree nodes table.
         let tree_nodes_ref = &avlq_ref.tree_nodes;
         let last; // Declare virtual last field for activated list node.
         // If inserting a solo list node:
         if (anchor_tree_node_id == (NIL as u64)) {
             // Get top of inactive tree nodes stack.
-            anchor_tree_node_id = ((HI_NODE_ID as u128) &
-                (avlq_ref.bits >> SHIFT_TREE_STACK_TOP) as u64);
+            anchor_tree_node_id = (((avlq_ref.bits >> SHIFT_TREE_STACK_TOP) &
+                                    (HI_NODE_ID as u128)) as u64);
             // If will need to allocate a new tree node:
             if (anchor_tree_node_id == (NIL as u64)) {
                 anchor_tree_node_id = // Get new 1-indexed tree node ID.
@@ -553,12 +553,12 @@ module econia::avl_queue {
             let anchor_node_ref = table_with_length::borrow(
                 tree_nodes_ref, anchor_tree_node_id);
             // Set virtual last field as anchor node list tail.
-            last = (anchor_node_ref.bits >> SHIFT_LIST_TAIL &
-                (HI_NODE_ID as u128) as u64);
+            last = (((anchor_node_ref.bits >> SHIFT_LIST_TAIL) &
+                     (HI_NODE_ID as u128)) as u64);
         };
         // Return virtual last field per above, and virtual next field
         // as flagged anchor tree node ID.
-        (last, anchor_tree_node_id | is_tree_node)
+        (last, (anchor_tree_node_id | is_tree_node))
     }
 
     /// Activate a tree node and return its node ID.
@@ -606,13 +606,13 @@ module econia::avl_queue {
         new_leaf_side: Option<bool>
     ): u64 {
         // Pack field bits.
-        let bits = ((key as u128) << SHIFT_INSERTION_KEY) |
-            ((parent as u128) << SHIFT_PARENT) |
-            ((solo_node_id as u128) << SHIFT_LIST_HEAD) |
-            ((solo_node_id as u128) << SHIFT_LIST_TAIL);
+        let bits = ((key          as u128) << SHIFT_INSERTION_KEY) |
+                   ((parent       as u128) << SHIFT_PARENT) |
+                   ((solo_node_id as u128) << SHIFT_LIST_HEAD) |
+                   ((solo_node_id as u128) << SHIFT_LIST_TAIL);
         // Get top of inactive tree nodes stack.
-        let tree_node_id = ((avlq_ref_mut.bits >> SHIFT_TREE_STACK_TOP) &
-            (HI_NODE_ID as u128) as u64);
+        let tree_node_id = (((avlq_ref_mut.bits >> SHIFT_TREE_STACK_TOP) &
+                             (HI_NODE_ID as u128)) as u64);
         // Mutably borrow tree nodes table.
         let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
         // If need to allocate new tree node:
@@ -668,13 +668,13 @@ module econia::avl_queue {
     ) {
         if (option::is_none(&new_leaf_side)) { // If activating root:
             // Set root LSBs.
-            avlq_ref_mut.root_lsbs = (tree_node_id & HI_BYTE as u8);
+            avlq_ref_mut.root_lsbs = ((tree_node_id & HI_BYTE) as u8);
             // Reassign bits for root MSBs:
             avlq_ref_mut.bits = avlq_ref_mut.bits &
                 // Clear out field via mask unset at field bits.
-                (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE as u128))) |
+                (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE) as u128)) |
                 // Mask in new bits.
-                (tree_node_id >> BITS_PER_BYTE as u128)
+                ((tree_node_id as u128) >> BITS_PER_BYTE)
         } else { // If activating child to existing node:
             // Mutably borrow tree nodes table.
             let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
@@ -804,12 +804,12 @@ module econia::avl_queue {
         };
         let node_x_ref_mut =  // Mutably borrow node x.
             table_with_length::borrow_mut(nodes_ref_mut, node_x_id);
-        let node_x_height_left = ((node_x_ref_mut.bits >> SHIFT_HEIGHT_LEFT) &
-            (HI_HEIGHT as u128) as u8); // Get node x left height.
+        let node_x_height_left = (((node_x_ref_mut.bits >> SHIFT_HEIGHT_LEFT) &
+            (HI_HEIGHT as u128)) as u8); // Get node x left height.
         // Node x's right height is from transferred tree 2.
         let node_x_height_right = node_z_height_left;
-        let node_x_parent = ((node_x_ref_mut.bits >> SHIFT_PARENT) &
-            (HI_NODE_ID as u128) as u8); // Get node x left height.
+        let node_x_parent = (((node_x_ref_mut.bits >> SHIFT_PARENT) &
+            (HI_NODE_ID as u128)) as u8); // Get node x left height.
         // Reassign bits for right child, right height, and parent:
         node_x_ref_mut.bits = node_x_ref_mut.bits &
             // Clear out fields via mask unset at field bits.
@@ -837,8 +837,8 @@ module econia::avl_queue {
             ((node_x_id          as u128) << SHIFT_CHILD_LEFT) |
             ((node_z_height_left as u128) << SHIFT_HEIGHT_LEFT) |
             ((node_x_parent      as u128) << SHIFT_PARENT);
-        let node_z_height_right = ((node_z_ref_mut.bits >> SHIFT_HEIGHT_RIGHT)
-            & (HI_HEIGHT as u128) as u8); // Get node z right height.
+        let node_z_height_right = (((node_z_ref_mut.bits >> SHIFT_HEIGHT_RIGHT)
+            & (HI_HEIGHT as u128)) as u8); // Get node z right height.
         // Determine height of tree rooted at z.
         let node_z_height = if (node_z_height_right >= node_z_height_left)
             node_z_height_right else node_z_height_left;
@@ -900,10 +900,10 @@ module econia::avl_queue {
         u64,
         Option<bool>
     ) {
-        // Get root MSBs.
-        let root_msbs = avlq_ref.bits & (HI_NODE_ID >> BITS_PER_BYTE as u128);
+        let root_msbs = // Get root MSBs.
+            (avlq_ref.bits & ((HI_NODE_ID >> BITS_PER_BYTE) as u128) as u64);
         let node_id = // Shift over, mask in LSBs, store as search node.
-            (root_msbs << BITS_PER_BYTE as u64) | (avlq_ref.root_lsbs as u64);
+            (root_msbs << BITS_PER_BYTE) | (avlq_ref.root_lsbs as u64);
         // If no node at root, return as such, with empty option.
         if (node_id == (NIL as u64)) return (node_id, option::none());
         // Mutably borrow tree nodes table.
@@ -912,8 +912,8 @@ module econia::avl_queue {
             let node_ref = // Mutably borrow node having given ID.
                 table_with_length::borrow(nodes_ref, node_id);
             // Get insertion key encoded in search node's bits.
-            let node_key = (node_ref.bits >> SHIFT_INSERTION_KEY &
-                (HI_INSERTION_KEY as u128) as u64);
+            let node_key = (((node_ref.bits >> SHIFT_INSERTION_KEY) &
+                             (HI_INSERTION_KEY as u128)) as u64);
             // If search key equals seed key, return node's ID and
             // empty option.
             if (seed_key == node_key) return (node_id, option::none());
@@ -921,8 +921,8 @@ module econia::avl_queue {
             // inequality comparison between seed key and node key.
             let (child_shift, child_side) = if (seed_key < node_key)
                 (SHIFT_CHILD_LEFT, LEFT) else (SHIFT_CHILD_RIGHT, RIGHT);
-            let child_id = (node_ref.bits >> child_shift &
-                (HI_NODE_ID as u128) as u64); // Get child node ID.
+            let child_id = (((node_ref.bits >> child_shift) &
+                (HI_NODE_ID as u128)) as u64); // Get child node ID.
             // If no child on given side, return match node's ID
             // and option with given side.
             if (child_id == (NIL as u64)) return
@@ -1023,7 +1023,8 @@ module econia::avl_queue {
     fun get_child_left_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        (tree_node_ref.bits >> SHIFT_CHILD_LEFT & (HI_NODE_ID as u128) as u64)
+        (((tree_node_ref.bits >> SHIFT_CHILD_LEFT) &
+          (HI_NODE_ID as u128)) as u64)
     }
 
     #[test_only]
@@ -1035,7 +1036,8 @@ module econia::avl_queue {
     fun get_child_right_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        (tree_node_ref.bits >> SHIFT_CHILD_RIGHT & (HI_NODE_ID as u128) as u64)
+        (((tree_node_ref.bits >> SHIFT_CHILD_RIGHT)) &
+          (HI_NODE_ID as u128) as u64)
     }
 
     #[test_only]
@@ -1071,8 +1073,8 @@ module econia::avl_queue {
     fun get_height_left_test(
         tree_node_ref: &TreeNode
     ): u8 {
-        ((tree_node_ref.bits >> SHIFT_HEIGHT_LEFT) &
-            (HI_HEIGHT as u128) as u8)
+        (((tree_node_ref.bits >> SHIFT_HEIGHT_LEFT) &
+          (HI_HEIGHT as u128)) as u8)
     }
 
     #[test_only]
@@ -1084,8 +1086,8 @@ module econia::avl_queue {
     fun get_height_right_test(
         tree_node_ref: &TreeNode
     ): u8 {
-        ((tree_node_ref.bits >> SHIFT_HEIGHT_RIGHT) &
-            (HI_HEIGHT as u128) as u8)
+        (((tree_node_ref.bits >> SHIFT_HEIGHT_RIGHT) &
+          (HI_HEIGHT as u128)) as u8)
     }
 
     #[test_only]
@@ -1121,8 +1123,8 @@ module econia::avl_queue {
     fun get_insertion_key_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        ((tree_node_ref.bits >> SHIFT_INSERTION_KEY) &
-            (HI_INSERTION_KEY as u128) as u64)
+        (((tree_node_ref.bits >> SHIFT_INSERTION_KEY) &
+          (HI_INSERTION_KEY as u128)) as u64)
     }
 
     #[test_only]
@@ -1146,7 +1148,8 @@ module econia::avl_queue {
     fun get_list_head_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        (tree_node_ref.bits >> SHIFT_LIST_HEAD & (HI_NODE_ID as u128) as u64)
+        (((tree_node_ref.bits >> SHIFT_LIST_HEAD) &
+          (HI_NODE_ID as u128)) as u64)
     }
 
     #[test_only]
@@ -1163,12 +1166,12 @@ module econia::avl_queue {
         bool
     ) {
         // Get virtual last field.
-        let last_field = ((list_node_ref.last_msbs as u64) << BITS_PER_BYTE |
-            (list_node_ref.last_lsbs as u64));
-        let tree_node_flag = (last_field >> SHIFT_NODE_TYPE &
-            (BIT_FLAG_TREE_NODE as u64) as u8); // Get tree node flag.
+        let last_field = ((list_node_ref.last_msbs as u64) << BITS_PER_BYTE) |
+                          (list_node_ref.last_lsbs as u64);
+        let tree_node_flag = (((last_field >> SHIFT_NODE_TYPE) &
+            (BIT_FLAG_TREE_NODE as u64)) as u8); // Get tree node flag.
         // Return node ID, and if last node is a tree node.
-        (last_field & HI_NODE_ID, tree_node_flag == BIT_FLAG_TREE_NODE)
+        ((last_field & HI_NODE_ID), tree_node_flag == BIT_FLAG_TREE_NODE)
     }
 
     #[test_only]
@@ -1185,12 +1188,12 @@ module econia::avl_queue {
         bool
     ) {
         // Get virtual next field.
-        let next_field = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE |
-            (list_node_ref.next_lsbs as u64));
-        let tree_node_flag = (next_field >> SHIFT_NODE_TYPE &
-            (BIT_FLAG_TREE_NODE as u64) as u8); // Get tree node flag.
+        let next_field = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                          (list_node_ref.next_lsbs as u64);
+        let tree_node_flag = (((next_field >> SHIFT_NODE_TYPE) &
+            (BIT_FLAG_TREE_NODE as u64)) as u8); // Get tree node flag.
         // Return node ID, and if next node is a tree node.
-        (next_field & HI_NODE_ID, tree_node_flag == BIT_FLAG_TREE_NODE)
+        ((next_field & HI_NODE_ID), tree_node_flag == BIT_FLAG_TREE_NODE)
     }
 
     #[test_only]
@@ -1214,7 +1217,8 @@ module econia::avl_queue {
     fun get_list_tail_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        (tree_node_ref.bits >> SHIFT_LIST_TAIL & (HI_NODE_ID as u128) as u64)
+        (((tree_node_ref.bits >> SHIFT_LIST_TAIL) &
+          (HI_NODE_ID as u128)) as u64)
     }
 
     #[test_only]
@@ -1227,7 +1231,8 @@ module econia::avl_queue {
     fun get_list_top_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
-        ((avlq_ref.bits >> SHIFT_LIST_STACK_TOP) & (HI_NODE_ID as u128) as u64)
+        (((avlq_ref.bits >> SHIFT_LIST_STACK_TOP) &
+          (HI_NODE_ID as u128)) as u64)
     }
 
     #[test_only]
@@ -1251,7 +1256,8 @@ module econia::avl_queue {
     fun get_parent_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        (tree_node_ref.bits >> SHIFT_PARENT & (HI_NODE_ID as u128) as u64)
+        (((tree_node_ref.bits >> SHIFT_PARENT) &
+          (HI_NODE_ID as u128)) as u64)
     }
 
     #[test_only]
@@ -1264,7 +1270,7 @@ module econia::avl_queue {
     fun get_tree_next_test(
         tree_node_ref: &TreeNode
     ): u64 {
-        ((tree_node_ref.bits & (HI_64 as u128) as u64) & HI_NODE_ID)
+        ((tree_node_ref.bits & (HI_64 as u128)) as u64) & HI_NODE_ID
     }
 
     #[test_only]
@@ -1277,7 +1283,8 @@ module econia::avl_queue {
     fun get_tree_top_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
-        ((avlq_ref.bits >> SHIFT_TREE_STACK_TOP) & (HI_NODE_ID as u128) as u64)
+        (((avlq_ref.bits >> SHIFT_TREE_STACK_TOP) &
+          (HI_NODE_ID as u128)) as u64)
     }
 
     #[test_only]
@@ -1290,9 +1297,9 @@ module econia::avl_queue {
         avlq_ref: &AVLqueue<V>
     ): u64 {
         // Get MSBs.
-        let msbs = avlq_ref.bits & (HI_NODE_ID >> BITS_PER_BYTE as u128);
+        let msbs = avlq_ref.bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE);
         // Mask in LSBs and return.
-        (msbs << BITS_PER_BYTE as u64) | (avlq_ref.root_lsbs as u64)
+        ((msbs << BITS_PER_BYTE) as u64) | (avlq_ref.root_lsbs as u64)
     }
 
     #[test_only]
@@ -1318,13 +1325,13 @@ module econia::avl_queue {
         root_node_id: u64
     ) {
         // Set root LSBs.
-        avlq_ref_mut.root_lsbs = (root_node_id & HI_BYTE as u8);
+        avlq_ref_mut.root_lsbs = ((root_node_id & HI_BYTE) as u8);
         // Reassign bits for root MSBs:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
             // Clear out field via mask unset at field bits.
-            (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE as u128))) |
+            (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE) as u128)) |
             // Mask in new bits.
-            (root_node_id >> BITS_PER_BYTE as u128)
+            ((root_node_id as u128) >> BITS_PER_BYTE)
     }
 
     #[test_only]
@@ -1347,7 +1354,7 @@ module econia::avl_queue {
             let b = *vector::borrow<u8>(&s, n - 1 - i);
             if (b == 0x31) { // If the bit is 1 (0x31 in ASCII):
                 // OR result with the correspondingly leftshifted bit.
-                r = r | 1 << (i as u8);
+                r = r | (1 << (i as u8));
             // Otherwise, assert bit is marked 0 (0x30 in ASCII).
             } else assert!(b == 0x30, E_BIT_NOT_0_OR_1);
             i = i + 1; // Proceed to next-least-significant bit.
@@ -1454,7 +1461,7 @@ module econia::avl_queue {
         let old_list_tail = 31; // Declare old list tail node ID.
         // Manually add anchor tree node to tree nodes table.
         table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
-            TreeNode{bits: (old_list_tail << SHIFT_LIST_TAIL as u128)});
+            TreeNode{bits: (old_list_tail as u128) << SHIFT_LIST_TAIL});
         let (last, next) = // Get virtual last and next fields.
             activate_list_node_get_last_next(&avlq, anchor_tree_node_id);
         // Assert last and next fields.
@@ -1523,7 +1530,7 @@ module econia::avl_queue {
         let list_node_id = 2; // Declare list node ID post-allocation.
         // Manually add anchor tree node to tree nodes table.
         table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
-            TreeNode{bits: (old_list_tail << SHIFT_LIST_TAIL as u128)});
+            TreeNode{bits: (old_list_tail as u128) << SHIFT_LIST_TAIL});
         // Manually add old list tail to list nodes table.
         table_with_length::add(&mut avlq.list_nodes, old_list_tail,
             ListNode{last_msbs: 0, last_lsbs: 0, next_msbs: 0, next_lsbs: 0});

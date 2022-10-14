@@ -695,6 +695,148 @@ module econia::avl_queue {
         };
     }
 
+    /// Rotate left during rebalance.
+    ///
+    /// Here, node x is right-heavy, and node z is not left-heavy:
+    ///
+    /// Pre-rotation:
+    ///
+    /// >        n_x
+    /// >       /   \
+    /// >     t_1   n_z
+    /// >          /   \
+    /// >        t_2   t_3
+    ///
+    /// Post-rotation:
+    ///
+    /// >           n_z
+    /// >          /   \
+    /// >        n_x   t_3
+    /// >       /   \
+    /// >     t_1   t_2
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `node_x_id`: Node ID of subtree root pre-rotation.
+    /// * `node_z_id`: Node ID of subtree root post-rotation.
+    /// * `tree_2_id`: Node z's left child field.
+    /// * `node_z_height_left`: Node z's left height.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Node z's ID.
+    /// * `u8`: The height of the subtree rooted at node z,
+    ///   post-rotation.
+    ///
+    /// # Reference rotations:
+    ///
+    /// ## Case 1
+    ///
+    /// * Tree 2 empty.
+    /// * Post-rotation, node x height equals node x left height.
+    /// * Post-rotation, node z height equals node z right height.
+    ///
+    /// Pre-rotation:
+    ///
+    /// >     4 <- node x
+    /// >      \
+    /// >       6 <- node z
+    /// >        \
+    /// >         8 <- tree 3
+    ///
+    /// Post-rotation:
+    ///
+    /// >                 6 <- node z
+    /// >                / \
+    /// >     node x -> 4   8 <- tree 3
+    ///
+    /// ## Case 1
+    ///
+    /// * Tree 2 not empty.
+    /// * Post-rotation, node x height equals node x right height.
+    /// * Post-rotation, node z height equals node z left height.
+    ///
+    /// Pre-rotation:
+    ///
+    /// >               4 <- node x
+    /// >                \
+    /// >                 7 <- node z
+    /// >                / \
+    /// >     tree 2 -> 6   8 <- tree 3
+    ///
+    /// Post-rotation:
+    ///
+    /// >                 7 <- node z
+    /// >                / \
+    /// >     node x -> 4   8 <- tree 3
+    /// >                \
+    /// >                 6 <- tree 2
+    fun rotate_left<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_x_id: u64,
+        node_z_id: u64,
+        tree_2_id: u64,
+        node_z_height_left: u8
+    ): (
+        u64,
+        u8
+    ) {
+        // Mutably borrow tree nodes table.
+        let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        if (tree_2_id != (NIL as u64)) { // If tree 2 is not empty:
+            let tree_2_ref_mut = // Mutably borrow tree 2 root.
+                table_with_length::borrow_mut(nodes_ref_mut, tree_2_id);
+            // Reassign bits for new parent field:
+            tree_2_ref_mut.bits = tree_2_ref_mut.bits &
+                // Clear out field via mask unset at field bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_PARENT)) |
+                // Mask in new bits.
+                ((node_x_id << SHIFT_PARENT) as u128);
+        };
+        let node_x_ref_mut =  // Mutably borrow node x.
+            table_with_length::borrow_mut(nodes_ref_mut, node_x_id);
+        let node_x_height_left = ((node_x_ref_mut.bits >> SHIFT_HEIGHT_LEFT) &
+            (HI_HEIGHT as u128) as u8); // Get node x left height.
+        // Node x's right height is from transferred tree 2.
+        let node_x_height_right = node_z_height_left;
+        let node_x_parent = ((node_x_ref_mut.bits >> SHIFT_PARENT) &
+            (HI_NODE_ID as u128) as u8); // Get node x left height.
+        // Reassign bits for right child, right height, and parent:
+        node_x_ref_mut.bits = node_x_ref_mut.bits &
+            // Clear out fields via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT) |
+                      ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
+                      ((HI_NODE_ID as u128) << SHIFT_PARENT)) |
+            // Mask in new bits.
+            ((tree_2_id           as u128) << SHIFT_CHILD_RIGHT) |
+            ((node_x_height_right as u128) << SHIFT_HEIGHT_RIGHT) |
+            ((node_z_id           as u128) << SHIFT_PARENT);
+        // Determine height of tree rooted at x.
+        let node_x_height = if (node_x_height_left >= node_x_height_right)
+            node_x_height_left else node_x_height_right;
+        // Get node z left height.
+        let node_z_height_left = node_x_height + 1;
+        let node_z_ref_mut =  // Mutably borrow node z.
+            table_with_length::borrow_mut(nodes_ref_mut, node_z_id);
+        // Reassign bits for left child, left height, and parent:
+        node_z_ref_mut.bits = node_z_ref_mut.bits &
+            // Clear out fields via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_CHILD_LEFT) |
+                      ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
+                      ((HI_NODE_ID as u128) << SHIFT_PARENT)) |
+            // Mask in new bits.
+            ((node_x_id          as u128) << SHIFT_CHILD_LEFT) |
+            ((node_z_height_left as u128) << SHIFT_HEIGHT_LEFT) |
+            ((node_x_parent      as u128) << SHIFT_PARENT);
+        let node_z_height_right = ((node_z_ref_mut.bits >> SHIFT_HEIGHT_RIGHT)
+            & (HI_HEIGHT as u128) as u8); // Get node z right height.
+        // Determine height of tree rooted at z.
+        let node_z_height = if (node_z_height_right >= node_z_height_left)
+            node_z_height_right else node_z_height_left;
+        (node_z_id, node_z_height)
+    }
+
     /// Search in AVL queue for closest match to seed key.
     ///
     /// Return immediately if empty tree, otherwise get node ID of root

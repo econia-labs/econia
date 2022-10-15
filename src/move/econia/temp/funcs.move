@@ -34,51 +34,44 @@ module econia::funcs {
         // Check AVL queue head and tail.
     }
 
-    /// Parameters
+    /// Rebalance a subtree, returning new root and height.
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `node_id_x`: Node ID of right-heavy subtree root.
-    /// * `node_id_z`: Node ID of right child to subtree root.
-    /// * `height_x_left`: Left height of subtree root.
+    /// * `node_id_x`: Node ID of subtree root.
+    /// * `node_id_z`: Node ID of child to subtree root, on subtree
+    ///   root's heavier side.
+    /// * `node_x_left_heavy`: `true` if node x is left-heavy.
     ///
     /// # Returns
     ///
     /// * `u64`: Tree node ID of new subtree root after rotation.
     /// * `u8`: Height of subtree after rotation.
     ///
-    /// # Reference diagram
+    /// # Node x status
     ///
-    /// * $n_i$ denotes a node having insertion key $i$ .
-    /// * $t_{i, l}$ denotes the left subtree of $n_i$ .
-    /// * $t_{i, r}$ denotes the right subtree of $n_i$ .
-    /// * $h(t)$ Denotes the height of subtree $t$ .
-    /// * $h(n)$ Denotes the height of node $n$ .
+    /// Node x can be either left-heavy or right heavy. In either case,
+    /// consider that node z has a left child and right child field.
     ///
-    /// >         n_x
-    /// >        /   \
-    /// >    t_x_l   n_z
-    /// >           /   \
-    /// >       t_z_l   t_z_r
+    /// ## Node x left-heavy
     ///
-    /// Here, $h(n_z) > h(t_x_l)$ ( $n_x$ is right-heavy).
+    /// >             n_x
+    /// >            /
+    /// >          n_z
+    /// >         /   \
+    /// >     z_c_l   z_c_r
     ///
-    /// If $h(t_{z, l} < h(t_{z, r})$ (if $n_z$ is left heavy), a
-    /// right-left rotation is required, otherwise a left rotation is
-    /// required. In the case of a right-left rotation, $t_z_l$ takes
-    /// the form of node $y$:
+    /// ## Node x right-heavy
     ///
-    /// >         n_x
-    /// >        /   \
-    /// >    t_x_l   n_z
-    /// >           /   \
-    /// >         n_y   t_z_r
-    /// >        /   \
-    /// >    t_y_l   t_y_r
-    fun rebalance_right_heavy(
+    /// >       n_x
+    /// >          \
+    /// >          n_z
+    /// >         /   \
+    /// >     z_c_l   z_c_r
+    fun rebalance(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64,
         node_z_id: u64,
-        height_x_left: u8,
+        node_x_left_heavy: bool,
     ): (
         u64,
         u8
@@ -89,23 +82,32 @@ module econia::funcs {
             table_with_length::borrow_mut(nodes_ref_mut, node_z_id)
         let bits = node_z_ref.bits; // Get node z bits.
         // Get node z's left height, right height, and left child ID.
-        let z_height_left, z_height_right, z_child_left =
-            ((bits >> SHIFT_HEIGHT_LEFT & (HI_HEIGHT as u128) as u8),
-             (bits >> SHIFT_HEIGHT_RIGHT & (HI_HEIGHT as u128) as u8),
-             (bits >> SHIFT_CHILD_LEFT & (HI_NODE_ID as u128) as u8));
-        // If node z is left-heavy, rotate right-left:
-        if (z_left_height > z_right_height) {
-
-        } else { // Rotate left:
-
-            // If z's left child is a node
-            if (z_left_child != (NIL as u64)) { // If
-                t_z_l_ref_mut =
-            }
-            t_z_l = z_left_child; // Store ID of z's left child
-        }
+        let (node_z_height_left, node_z_height_right,
+             node_z_child_left , node_z_child_right  ) =
+            (((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT as u128) as u8),
+             ((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128) as u8),
+             ((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE  as u128) as u8),
+             ((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE  as u128) as u8));
+        // Return result of rotation. If node x is left-heavy:
+        return (if node_x_left_heavy)
+            // If node z is right-heavy:
+            (if (node_z_height_right > node_z_height_left)
+                // Rotate left-right.
+                rotate_left_right() else
+                // Otherwise node z is not right-heavy so rotate right.
+                rotate_right(avlq_ref_mut, node_x_id, node_z_id,
+                              node_z_child_right, node_z_height_right))
+            else // Otherwise, if node x is right-heavy:
+            // If node z is left-heavy:
+            (if (node_z_height_left > node_z_height_right)
+                // Rotate right-left.
+                rotate_right_left(
+                    avlq_ref_mut, node_x_id, node_z_id, node_z_child_left,
+                    node_z_height_left, node_z_height_right) else
+                // Otherwise node z is not left-heavy so rotate left.
+                rotate_left(avlq_ref_mut, node_x_id, node_z_id,
+                             node_z_child_left, node_z_height_left))
     }
-
 
     /// The `node_id` is a tree node that just underwent a
     /// modification to either its left or right height.
@@ -168,8 +170,8 @@ module econia::funcs {
                         (bits >> child_shift) & (NODE_HI as u128) as u64);
                     // Rebalance, storing node ID of new subtree root
                     // and new subtree height.
-                    (new_subtree_root_node_id, height) = if (left_heavy)
-                        rebalance(avlq_ref_mut, node_id, side, child_id);
+                    (new_subtree_root_node_id, height)
+                        rebalance(avlq_ref_mut, node_id, child_id, left_heavy);
                     rebalanced = true;
             }; // Subtree at node has been optionally rebalanced.
             // If subtree at root just rebalanced:

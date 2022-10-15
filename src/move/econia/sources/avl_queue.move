@@ -695,7 +695,96 @@ module econia::avl_queue {
         };
     }
 
+    /// Rebalance a subtree, returning new root and height.
+    ///
+    /// Updates state for nodes in subtree, but not for potential parent
+    /// to subtree.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `node_id_x`: Node ID of subtree root.
+    /// * `node_id_z`: Node ID of child to subtree root, on subtree
+    ///   root's heavy side.
+    /// * `node_x_left_heavy`: `true` if node x is left-heavy.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Tree node ID of new subtree root after rotation.
+    /// * `u8`: Height of subtree after rotation.
+    ///
+    /// # Node x status
+    ///
+    /// Node x can be either left-heavy or right heavy. In either case,
+    /// consider that node z has left child and right child fields.
+    ///
+    /// ## Node x left-heavy
+    ///
+    /// >             n_x
+    /// >            /
+    /// >          n_z
+    /// >         /   \
+    /// >     z_c_l   z_c_r
+    ///
+    /// ## Node x right-heavy
+    ///
+    /// >       n_x
+    /// >          \
+    /// >          n_z
+    /// >         /   \
+    /// >     z_c_l   z_c_r
+    ///
+    /// # Testing
+    ///
+    /// * `test_rotate_left_1()`
+    /// * `test_rotate_left_2()`
+    /// * `test_rotate_left_right_1()`
+    /// * `test_rotate_left_right_2()`
+    /// * `test_rotate_right_1()`
+    /// * `test_rotate_right_2()`
+    /// * `test_rotate_right_left_1()`
+    /// * `test_rotate_right_left_2()`
+    fun rebalance<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_x_id: u64,
+        node_z_id: u64,
+        node_x_left_heavy: bool,
+    ): (
+        u64,
+        u8
+    ) {
+        let node_z_ref = // Immutably borrow node z.
+            table_with_length::borrow(&avlq_ref_mut.tree_nodes, node_z_id);
+        let bits = node_z_ref.bits; // Get node z bits.
+        // Get node z's left height, right height, and child fields.
+        let (node_z_height_left, node_z_height_right,
+             node_z_child_left , node_z_child_right  ) =
+            (((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT  as u128) as u8),
+             ((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT  as u128) as u8),
+             ((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE_ID as u128) as u64),
+             ((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE_ID as u128) as u64));
+        // Return result of rotation. If node x is left-heavy:
+        return (if (node_x_left_heavy)
+            // If node z is right-heavy, rotate left-right
+            (if (node_z_height_right > node_z_height_left)
+                rotate_left_right(avlq_ref_mut, node_x_id, node_z_id,
+                                  node_z_child_right, node_z_height_left) else
+                // Otherwise node z is not right-heavy so rotate right.
+                rotate_right(avlq_ref_mut, node_x_id, node_z_id,
+                              node_z_child_right, node_z_height_right))
+            else // If node x is right-heavy:
+            // If node z is left-heavy, rotate right-left
+            (if (node_z_height_left > node_z_height_right)
+                rotate_right_left(avlq_ref_mut, node_x_id, node_z_id,
+                                  node_z_child_left, node_z_height_right) else
+                // Otherwise node z is not left-heavy so rotate left.
+                rotate_left(avlq_ref_mut, node_x_id, node_z_id,
+                             node_z_child_left, node_z_height_left)))
+    }
+
     /// Rotate left during rebalance.
+    ///
+    /// Inner function for `rebalance()`.
     ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
@@ -853,6 +942,8 @@ module econia::avl_queue {
     }
 
     /// Rotate left-right during rebalance.
+    ///
+    /// Inner function for `rebalance()`.
     ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
@@ -1057,6 +1148,8 @@ module econia::avl_queue {
 
     /// Rotate right during rebalance.
     ///
+    /// Inner function for `rebalance()`.
+    ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
     ///
@@ -1213,6 +1306,8 @@ module econia::avl_queue {
     }
 
     /// Rotate right-left during rebalance.
+    ///
+    /// Inner function for `rebalance()`.
     ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
@@ -2616,9 +2711,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_3_id, TreeNode{bits:
             (        8 as u128) << SHIFT_INSERTION_KEY |
             (node_z_id as u128) << SHIFT_PARENT        });
-        // Rotate left, storing new subtree root node ID and height.
-        let (node_z_id_return, node_z_height_return) = rotate_left(
-            &mut avlq, node_x_id, node_z_id, (NIL as u64), 0);
+        // Rebalance via left rotation, storing new subtree root node ID
+        // and height.
+        let (node_z_id_return, node_z_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 1, 0);
@@ -2680,9 +2776,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_3_id, TreeNode{bits:
             (        8 as u128) << SHIFT_INSERTION_KEY |
             (node_z_id as u128) << SHIFT_PARENT        });
-        // Rotate left, storing new subtree root node ID and height.
-        let (node_z_id_return, node_z_height_return) = rotate_left(
-            &mut avlq, node_x_id, node_z_id, tree_2_id, 1);
+        // Rebalance via left rotation, storing new subtree root node ID
+        // and height.
+        let (node_z_id_return, node_z_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 2, 0);
@@ -2763,9 +2860,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_4_id, TreeNode{bits:
             (        9 as u128) << SHIFT_INSERTION_KEY |
             (node_x_id as u128) << SHIFT_PARENT        });
-        // Rotate left-right, storing new subtree root node ID, height.
-        let (node_y_id_return, node_y_height_return) = rotate_left_right(
-            &mut avlq, node_x_id, node_z_id, node_y_id, 1);
+        // Rebalance via left-right rotation, storing new subtree root
+        // node ID and height.
+        let (node_y_id_return, node_y_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);
@@ -2862,9 +2960,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_4_id, TreeNode{bits:
             (        9 as u128) << SHIFT_INSERTION_KEY |
             (node_x_id as u128) << SHIFT_PARENT        });
-        // Rotate left-right, storing new subtree root node ID, height.
-        let (node_y_id_return, node_y_height_return) = rotate_left_right(
-            &mut avlq, node_x_id, node_z_id, node_y_id, 1);
+        // Rebalance via left-right rotation, storing new subtree root
+        // node ID and height.
+        let (node_y_id_return, node_y_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);
@@ -2943,9 +3042,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_1_id, TreeNode{bits:
             (        4 as u128) << SHIFT_INSERTION_KEY |
             (node_z_id as u128) << SHIFT_PARENT        });
-        // Rotate right, storing new subtree root node ID and height.
-        let (node_z_id_return, node_z_height_return) = rotate_right(
-            &mut avlq, node_x_id, node_z_id, (NIL as u64), 0);
+        // Rebalance via right rotation, storing new subtree root node
+        // ID and height.
+        let (node_z_id_return, node_z_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 1, 0);
@@ -3007,9 +3107,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_2_id, TreeNode{bits:
             (        5 as u128) << SHIFT_INSERTION_KEY |
             (node_z_id as u128) << SHIFT_PARENT        });
-        // Rotate right, storing new subtree root node ID and height.
-        let (node_z_id_return, node_z_height_return) = rotate_right(
-            &mut avlq, node_x_id, node_z_id, tree_2_id, 1);
+        // Rebalance via right rotation, storing new subtree root node
+        // ID and height.
+        let (node_z_id_return, node_z_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 2, 0);
@@ -3090,9 +3191,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_4_id, TreeNode{bits:
             (        9 as u128) << SHIFT_INSERTION_KEY |
             (node_z_id as u128) << SHIFT_PARENT        });
-        // Rotate right-left, storing new subtree root node ID, height.
-        let (node_y_id_return, node_y_height_return) = rotate_right_left(
-            &mut avlq, node_x_id, node_z_id, node_y_id, 1);
+        // Rebalance via right-left rotation, storing new subtree root
+        // node ID and height.
+        let (node_y_id_return, node_y_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);
@@ -3189,9 +3291,10 @@ module econia::avl_queue {
         table_with_length::add(tree_nodes_ref_mut, tree_4_id, TreeNode{bits:
             (        9 as u128) << SHIFT_INSERTION_KEY |
             (node_z_id as u128) << SHIFT_PARENT        });
-        // Rotate right-left, storing new subtree root node ID, height.
-        let (node_y_id_return, node_y_height_return) = rotate_right_left(
-            &mut avlq, node_x_id, node_z_id, node_y_id, 1);
+        // Rebalance via right-left rotation, storing new subtree root
+        // node ID and height.
+        let (node_y_id_return, node_y_height_return) =
+            rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);

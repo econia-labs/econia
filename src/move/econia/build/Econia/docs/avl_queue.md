@@ -90,42 +90,49 @@ The below index is automatically generated from source code:
 -  [Function `activate_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge)
     -  [Parameters](#@Parameters_23)
     -  [Testing](#@Testing_24)
--  [Function `rotate_left`](#0xc0deb00c_avl_queue_rotate_left)
+-  [Function `rebalance`](#0xc0deb00c_avl_queue_rebalance)
     -  [Parameters](#@Parameters_25)
     -  [Returns](#@Returns_26)
-    -  [Reference rotations](#@Reference_rotations_27)
-        -  [Case 1](#@Case_1_28)
-        -  [Case 2](#@Case_2_29)
+    -  [Node x status](#@Node_x_status_27)
+        -  [Node x left-heavy](#@Node_x_left-heavy_28)
+        -  [Node x right-heavy](#@Node_x_right-heavy_29)
     -  [Testing](#@Testing_30)
+-  [Function `rotate_left`](#0xc0deb00c_avl_queue_rotate_left)
+    -  [Parameters](#@Parameters_31)
+    -  [Returns](#@Returns_32)
+    -  [Reference rotations](#@Reference_rotations_33)
+        -  [Case 1](#@Case_1_34)
+        -  [Case 2](#@Case_2_35)
+    -  [Testing](#@Testing_36)
 -  [Function `rotate_left_right`](#0xc0deb00c_avl_queue_rotate_left_right)
-    -  [Procedure](#@Procedure_31)
-    -  [Reference rotations](#@Reference_rotations_32)
-        -  [Case 1](#@Case_1_33)
-        -  [Case 2](#@Case_2_34)
-    -  [Testing](#@Testing_35)
--  [Function `rotate_right`](#0xc0deb00c_avl_queue_rotate_right)
-    -  [Parameters](#@Parameters_36)
-    -  [Returns](#@Returns_37)
+    -  [Procedure](#@Procedure_37)
     -  [Reference rotations](#@Reference_rotations_38)
         -  [Case 1](#@Case_1_39)
         -  [Case 2](#@Case_2_40)
     -  [Testing](#@Testing_41)
--  [Function `rotate_right_left`](#0xc0deb00c_avl_queue_rotate_right_left)
+-  [Function `rotate_right`](#0xc0deb00c_avl_queue_rotate_right)
     -  [Parameters](#@Parameters_42)
-    -  [Procedure](#@Procedure_43)
+    -  [Returns](#@Returns_43)
     -  [Reference rotations](#@Reference_rotations_44)
         -  [Case 1](#@Case_1_45)
         -  [Case 2](#@Case_2_46)
     -  [Testing](#@Testing_47)
--  [Function `search`](#0xc0deb00c_avl_queue_search)
+-  [Function `rotate_right_left`](#0xc0deb00c_avl_queue_rotate_right_left)
     -  [Parameters](#@Parameters_48)
-    -  [Returns](#@Returns_49)
-    -  [Assumptions](#@Assumptions_50)
-    -  [Reference diagram](#@Reference_diagram_51)
-    -  [Testing](#@Testing_52)
+    -  [Procedure](#@Procedure_49)
+    -  [Reference rotations](#@Reference_rotations_50)
+        -  [Case 1](#@Case_1_51)
+        -  [Case 2](#@Case_2_52)
+    -  [Testing](#@Testing_53)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_54)
+    -  [Returns](#@Returns_55)
+    -  [Assumptions](#@Assumptions_56)
+    -  [Reference diagram](#@Reference_diagram_57)
+    -  [Testing](#@Testing_58)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_53)
-    -  [Testing](#@Testing_54)
+    -  [Aborts](#@Aborts_59)
+    -  [Testing](#@Testing_60)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1351,11 +1358,144 @@ activated node is right child of its parent.
 
 </details>
 
+<a name="0xc0deb00c_avl_queue_rebalance"></a>
+
+## Function `rebalance`
+
+Rebalance a subtree, returning new root and height.
+
+Updates state for nodes in subtree, but not for potential parent
+to subtree.
+
+
+<a name="@Parameters_25"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>node_id_x</code>: Node ID of subtree root.
+* <code>node_id_z</code>: Node ID of child to subtree root, on subtree
+root's heavy side.
+* <code>node_x_left_heavy</code>: <code><b>true</b></code> if node x is left-heavy.
+
+
+<a name="@Returns_26"></a>
+
+### Returns
+
+
+* <code>u64</code>: Tree node ID of new subtree root after rotation.
+* <code>u8</code>: Height of subtree after rotation.
+
+
+<a name="@Node_x_status_27"></a>
+
+### Node x status
+
+
+Node x can be either left-heavy or right heavy. In either case,
+consider that node z has left child and right child fields.
+
+
+<a name="@Node_x_left-heavy_28"></a>
+
+#### Node x left-heavy
+
+
+>             n_x
+>            /
+>          n_z
+>         /   \
+>     z_c_l   z_c_r
+
+
+<a name="@Node_x_right-heavy_29"></a>
+
+#### Node x right-heavy
+
+
+>       n_x
+>          \
+>          n_z
+>         /   \
+>     z_c_l   z_c_r
+
+
+<a name="@Testing_30"></a>
+
+### Testing
+
+
+* <code>test_rotate_left_1()</code>
+* <code>test_rotate_left_2()</code>
+* <code>test_rotate_left_right_1()</code>
+* <code>test_rotate_left_right_2()</code>
+* <code>test_rotate_right_1()</code>
+* <code>test_rotate_right_2()</code>
+* <code>test_rotate_right_left_1()</code>
+* <code>test_rotate_right_left_2()</code>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_rebalance">rebalance</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64, node_z_id: u64, node_x_left_heavy: bool): (u64, u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_rebalance">rebalance</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    node_x_id: u64,
+    node_z_id: u64,
+    node_x_left_heavy: bool,
+): (
+    u64,
+    u8
+) {
+    <b>let</b> node_z_ref = // Immutably borrow node z.
+        <a href="_borrow">table_with_length::borrow</a>(&avlq_ref_mut.tree_nodes, node_z_id);
+    <b>let</b> bits = node_z_ref.bits; // Get node z bits.
+    // Get node z's left height, right height, and child fields.
+    <b>let</b> (node_z_height_left, node_z_height_right,
+         node_z_child_left , node_z_child_right  ) =
+        (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a> ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) <b>as</b> u8),
+         ((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) <b>as</b> u8),
+         ((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>  ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64),
+         ((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a> ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64));
+    // Return result of rotation. If node x is left-heavy:
+    <b>return</b> (<b>if</b> (node_x_left_heavy)
+        // If node z is right-heavy, rotate left-right
+        (<b>if</b> (node_z_height_right &gt; node_z_height_left)
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_left_right">rotate_left_right</a>(avlq_ref_mut, node_x_id, node_z_id,
+                              node_z_child_right, node_z_height_left) <b>else</b>
+            // Otherwise node z is not right-heavy so rotate right.
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_right">rotate_right</a>(avlq_ref_mut, node_x_id, node_z_id,
+                          node_z_child_right, node_z_height_right))
+        <b>else</b> // If node x is right-heavy:
+        // If node z is left-heavy, rotate right-left
+        (<b>if</b> (node_z_height_left &gt; node_z_height_right)
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_right_left">rotate_right_left</a>(avlq_ref_mut, node_x_id, node_z_id,
+                              node_z_child_left, node_z_height_right) <b>else</b>
+            // Otherwise node z is not left-heavy so rotate left.
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_left">rotate_left</a>(avlq_ref_mut, node_x_id, node_z_id,
+                         node_z_child_left, node_z_height_left)))
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_avl_queue_rotate_left"></a>
 
 ## Function `rotate_left`
 
 Rotate left during rebalance.
+
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_rebalance">rebalance</a>()</code>.
 
 Updates state for nodes in subtree, but not for potential parent
 to subtree.
@@ -1382,7 +1522,7 @@ Post-rotation:
 >     t_1   t_2
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_31"></a>
 
 ### Parameters
 
@@ -1394,7 +1534,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height.
 
 
-<a name="@Returns_26"></a>
+<a name="@Returns_32"></a>
 
 ### Returns
 
@@ -1404,13 +1544,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_27"></a>
+<a name="@Reference_rotations_33"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_28"></a>
+<a name="@Case_1_34"></a>
 
 #### Case 1
 
@@ -1436,7 +1576,7 @@ Post-rotation:
 >     node x -> 4   8 <- tree 3
 
 
-<a name="@Case_2_29"></a>
+<a name="@Case_2_35"></a>
 
 #### Case 2
 
@@ -1464,7 +1604,7 @@ Post-rotation:
 >                 6 <- tree 2
 
 
-<a name="@Testing_30"></a>
+<a name="@Testing_36"></a>
 
 ### Testing
 
@@ -1558,6 +1698,8 @@ Post-rotation:
 
 Rotate left-right during rebalance.
 
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_rebalance">rebalance</a>()</code>.
+
 Updates state for nodes in subtree, but not for potential parent
 to subtree.
 
@@ -1598,7 +1740,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height pre-rotation.
 
 
-<a name="@Procedure_31"></a>
+<a name="@Procedure_37"></a>
 
 ### Procedure
 
@@ -1611,13 +1753,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_32"></a>
+<a name="@Reference_rotations_38"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_33"></a>
+<a name="@Case_1_39"></a>
 
 #### Case 1
 
@@ -1647,7 +1789,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Case_2_34"></a>
+<a name="@Case_2_40"></a>
 
 #### Case 2
 
@@ -1677,7 +1819,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Testing_35"></a>
+<a name="@Testing_41"></a>
 
 ### Testing
 
@@ -1801,6 +1943,8 @@ Post-rotation:
 
 Rotate right during rebalance.
 
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_rebalance">rebalance</a>()</code>.
+
 Updates state for nodes in subtree, but not for potential parent
 to subtree.
 
@@ -1826,7 +1970,7 @@ Post-rotation:
 >        t_2   t_3
 
 
-<a name="@Parameters_36"></a>
+<a name="@Parameters_42"></a>
 
 ### Parameters
 
@@ -1838,7 +1982,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height.
 
 
-<a name="@Returns_37"></a>
+<a name="@Returns_43"></a>
 
 ### Returns
 
@@ -1848,13 +1992,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_38"></a>
+<a name="@Reference_rotations_44"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_39"></a>
+<a name="@Case_1_45"></a>
 
 #### Case 1
 
@@ -1880,7 +2024,7 @@ Post-rotation:
 >     tree 1 -> 4   8 <- node x
 
 
-<a name="@Case_2_40"></a>
+<a name="@Case_2_46"></a>
 
 #### Case 2
 
@@ -1908,7 +2052,7 @@ Post-rotation:
 >                 5 <- tree 2
 
 
-<a name="@Testing_41"></a>
+<a name="@Testing_47"></a>
 
 ### Testing
 
@@ -2002,6 +2146,8 @@ Post-rotation:
 
 Rotate right-left during rebalance.
 
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_rebalance">rebalance</a>()</code>.
+
 Updates state for nodes in subtree, but not for potential parent
 to subtree.
 
@@ -2036,7 +2182,7 @@ Post-rotation:
 >     t_1   t_2   t_3   t_4
 
 
-<a name="@Parameters_42"></a>
+<a name="@Parameters_48"></a>
 
 ### Parameters
 
@@ -2048,7 +2194,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height pre-rotation.
 
 
-<a name="@Procedure_43"></a>
+<a name="@Procedure_49"></a>
 
 ### Procedure
 
@@ -2061,13 +2207,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_44"></a>
+<a name="@Reference_rotations_50"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_45"></a>
+<a name="@Case_1_51"></a>
 
 #### Case 1
 
@@ -2097,7 +2243,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Case_2_46"></a>
+<a name="@Case_2_52"></a>
 
 #### Case 2
 
@@ -2127,7 +2273,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Testing_47"></a>
+<a name="@Testing_53"></a>
 
 ### Testing
 
@@ -2261,7 +2407,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_48"></a>
+<a name="@Parameters_54"></a>
 
 ### Parameters
 
@@ -2270,7 +2416,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_49"></a>
+<a name="@Returns_55"></a>
 
 ### Returns
 
@@ -2282,7 +2428,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_50"></a>
+<a name="@Assumptions_56"></a>
 
 ### Assumptions
 
@@ -2292,7 +2438,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_51"></a>
+<a name="@Reference_diagram_57"></a>
 
 ### Reference diagram
 
@@ -2311,7 +2457,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_52"></a>
+<a name="@Testing_58"></a>
 
 ### Testing
 
@@ -2379,7 +2525,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_53"></a>
+<a name="@Aborts_59"></a>
 
 ### Aborts
 
@@ -2387,7 +2533,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_54"></a>
+<a name="@Testing_60"></a>
 
 ### Testing
 

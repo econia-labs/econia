@@ -196,6 +196,8 @@ module econia::avl_queue {
     const BIT_FLAG_TREE_NODE: u8 = 1;
     /// Number of bits in a byte.
     const BITS_PER_BYTE: u8 = 8;
+    /// Flag for decrement to height during retrace.
+    const DECREMENT: bool = false;
     /// Descending AVL queue flag.
     const DESCENDING: bool = false;
     /// `u64` bitmask with all bits set, generated in Python via
@@ -219,6 +221,8 @@ module econia::avl_queue {
     /// All bits set in integer of width required to encode node ID.
     /// Generated in Python via `hex(int('1' * 14, 2))`.
     const HI_NODE_ID: u64 = 0x3fff;
+    /// Flag for increment to height during retrace.
+    const INCREMENT: bool = true;
     /// Flag for left direction.
     const LEFT: bool = true;
     /// Flag for null value when null defined as 0.
@@ -780,6 +784,152 @@ module econia::avl_queue {
                 // Otherwise node z is not left-heavy so rotate left.
                 rotate_left(avlq_ref_mut, node_x_id, node_z_id,
                              node_z_child_left, node_z_height_left)))
+    }
+
+    /// The `node_id` is a tree node that just underwent a
+    /// modification to either its left or right height.
+    fun retrace<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_id: u64,
+        operation: bool, // INCREMENT or DECREMENT
+        side: bool, // LEFT or RIGHT
+        delta: u8
+    ) {
+        // Mutably borrow tree nodes table.
+        let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        // Mutably borrow node under consideration.
+        let node_ref_mut =
+            table_with_length::borrow_mut(nodes_ref_mut, node_id);
+        loop {
+            // Get parent field of node under review.
+            let parent = (((node_ref_mut.bits >> SHIFT_PARENT) &
+                           (HI_NODE_ID as u128)) as u64);
+            let (height_left, height_right, height, old_height) =
+                retrace_update_heights(node_ref_mut, side, operation, delta);
+            // Return if node height unchanged by retrace.
+            if (height == old_height) return;
+            // Flag no rebalancing takes place via null subtree root.
+            let new_subtree_root = (NIL as u64);
+            if (height_left != height_right) { // If node not balanced:
+                // Determine if node is left-heavy, and calculate the
+                // imbalance of the node (the difference in height
+                // between node's two subtrees).
+                let (left_heavy, imbalance) = if (height_left > height_right)
+                    (true, height_left - height_right) else
+                    (false, height_right - height_left);
+                if (imbalance > 1) { // If imbalance greater than 1:
+                    // Get shift amount for child on heavy side.
+                    let child_shift = if (side == LEFT)
+                        SHIFT_CHILD_LEFT else SHIFT_CHILD_RIGHT;
+                    // Get child ID from node bits.
+                    let child_id = (((node_ref_mut.bits >> child_shift) &
+                                     (HI_NODE_ID as u128)) as u64);
+                    // Rebalance, storing node ID of new subtree root
+                    // and new subtree height.
+                    (new_subtree_root, height) = rebalance(
+                        avlq_ref_mut, node_id, child_id, left_heavy);
+                };
+            }; // Subtree at node has been optionally rebalanced.
+            // If subtree at root just rebalanced:
+            if (parent == (NIL as u64) && new_subtree_root != (NIL as u64)) {
+                // Set root LSBs.
+                avlq_ref_mut.root_lsbs = (new_subtree_root & HI_BYTE as u8);
+                // Reassign bits for root MSBs:
+                avlq_ref_mut.bits = avlq_ref_mut.bits &
+                    // Clear out field via mask unset at field bits.
+                    (HI_128 ^ ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) |
+                    // Mask in new bits.
+                    ((new_subtree_root as u128) >> BITS_PER_BYTE);
+                return // Stop looping.
+            } else { // If not at root:
+                // Mutably borrow tree nodes table.
+                let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+                node_ref_mut = // Mutably borrow parent node.
+                    table_with_length::borrow_mut(nodes_ref_mut, parent);
+                // Get parent's left child.
+                let left_child = ((node_ref_mut.bits >> SHIFT_CHILD_LEFT) &
+                    (HI_NODE_ID as u128) as u64);
+                // Flag side on which retracing operation took place.
+                side = if (left_child == node_id) LEFT else RIGHT;
+                // If subtree rebalanced:
+                if (new_subtree_root != (NIL as u64)) {
+                    // Get corresponding child field shift amount.
+                    let child_shift = if (side == LEFT)
+                        SHIFT_CHILD_LEFT else SHIFT_CHILD_RIGHT;
+                    // Reassign bits for new child field.
+                    node_ref_mut.bits = node_ref_mut.bits &
+                        // Clear out field via mask unset at field bits.
+                        (HI_128 ^ ((HI_NODE_ID as u128) << child_shift)) |
+                        // Mask in new bits.
+                        ((new_subtree_root as u128) << child_shift)
+                }; // Parent-child edge updated.
+                // Determine if retracing resulted in increment or
+                // decrement to subtree height.
+                operation = if (height >= old_height) INCREMENT else DECREMENT;
+                // Determine change in subtree height.
+                delta = if (INCREMENT) height - old_height else
+                    old_height - height;
+                // Store parent ID as node ID for next iteration.
+                node_id = parent;
+            };
+        }
+    }
+
+    /// Update height fields during retracing.
+    ///
+    /// # Parameters
+    ///
+    /// * `node_ref_mut`: Mutable reference to a node that needs to have
+    ///   its height fields updated during retrace.
+    /// * `side`: `LEFT` or `RIGHT`, the side on which the node's height
+    ///   needs to be updated.
+    /// * `operation`: `INCREMENT` or `DECREMENT`, the kind of change in
+    ///   the height field for the given side.
+    /// * `delta`: The amount of height change for the operation.
+    ///
+    /// # Returns
+    ///
+    /// * `u8`: The left height of the node after updating height.
+    /// * `u8`: The right height of the node after updating height.
+    /// * `u8`: The height of the node before updating height.
+    /// * `u8`: The height of the node after updating height.
+    fun retrace_update_heights(
+        node_ref_mut: &mut TreeNode,
+        side: bool,
+        operation: bool,
+        delta: u8
+    ): (
+        u8,
+        u8,
+        u8,
+        u8
+    ) {
+        let bits = node_ref_mut.bits; // Get node's field bits.
+        // Get node's left height, right height, and parent fields.
+        let (height_left, height_right) =
+            ((((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT as u128)) as u8),
+             (((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8));
+        let old_height = if (height_left >= height_right) height_left else
+            height_right; // Get height of node before retracing.
+        // Get height field and shift amount for operation side.
+        let (height_field, height_shift) = if (side == LEFT)
+            (height_left , SHIFT_HEIGHT_LEFT ) else
+            (height_right, SHIFT_HEIGHT_RIGHT);
+        // Get updated height field for side.
+        let height_field = if (operation == INCREMENT) height_field + delta
+            else height_field - delta;
+        // Reassign bits for corresponding height field:
+        node_ref_mut.bits = bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_HEIGHT as u128) << height_shift)) |
+            // Mask in new bits.
+            ((height_field as u128) << height_shift);
+        // Reassign local height to that of indicated field.
+        if (side == LEFT) height_left = height_field else
+            height_right = height_field;
+        let height = if (height_left >= height_right) height_left else
+            height_right; // Get height of node after update.
+        (height_left, height_right, height, old_height)
     }
 
     /// Rotate left during rebalance.

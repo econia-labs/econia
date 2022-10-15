@@ -97,29 +97,35 @@ The below index is automatically generated from source code:
         -  [Case 1](#@Case_1_28)
         -  [Case 1](#@Case_1_29)
     -  [Testing](#@Testing_30)
+-  [Function `rotate_left_right`](#0xc0deb00c_avl_queue_rotate_left_right)
+    -  [Procedure](#@Procedure_31)
+    -  [Reference rotations:](#@Reference_rotations:_32)
+        -  [Case 1](#@Case_1_33)
+        -  [Case 2](#@Case_2_34)
+    -  [Testing](#@Testing_35)
 -  [Function `rotate_right`](#0xc0deb00c_avl_queue_rotate_right)
-    -  [Parameters](#@Parameters_31)
-    -  [Returns](#@Returns_32)
-    -  [Reference rotations:](#@Reference_rotations:_33)
-        -  [Case 1](#@Case_1_34)
-        -  [Case 1](#@Case_1_35)
-    -  [Testing](#@Testing_36)
--  [Function `rotate_right_left`](#0xc0deb00c_avl_queue_rotate_right_left)
-    -  [Parameters](#@Parameters_37)
-    -  [Procedure](#@Procedure_38)
-    -  [Reference rotations:](#@Reference_rotations:_39)
+    -  [Parameters](#@Parameters_36)
+    -  [Returns](#@Returns_37)
+    -  [Reference rotations:](#@Reference_rotations:_38)
+        -  [Case 1](#@Case_1_39)
         -  [Case 1](#@Case_1_40)
-        -  [Case 2](#@Case_2_41)
-    -  [Testing](#@Testing_42)
--  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_43)
-    -  [Returns](#@Returns_44)
-    -  [Assumptions](#@Assumptions_45)
-    -  [Reference diagram](#@Reference_diagram_46)
+    -  [Testing](#@Testing_41)
+-  [Function `rotate_right_left`](#0xc0deb00c_avl_queue_rotate_right_left)
+    -  [Parameters](#@Parameters_42)
+    -  [Procedure](#@Procedure_43)
+    -  [Reference rotations:](#@Reference_rotations:_44)
+        -  [Case 1](#@Case_1_45)
+        -  [Case 2](#@Case_2_46)
     -  [Testing](#@Testing_47)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_48)
+    -  [Returns](#@Returns_49)
+    -  [Assumptions](#@Assumptions_50)
+    -  [Reference diagram](#@Reference_diagram_51)
+    -  [Testing](#@Testing_52)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_48)
-    -  [Testing](#@Testing_49)
+    -  [Aborts](#@Aborts_53)
+    -  [Testing](#@Testing_54)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1539,6 +1545,244 @@ Post-rotation:
 
 </details>
 
+<a name="0xc0deb00c_avl_queue_rotate_left_right"></a>
+
+## Function `rotate_left_right`
+
+Rotate left-right during rebalance.
+
+Here, subtree root node x is left-heavy, with left child node
+z that is right-heavy. Node z has as its right child node y.
+
+Node z has an optional tree 1 as its left child subtree, node
+y has optional trees 2 and 3 as its left and right child
+subtrees, respectively, and node x has an optional tree 4 as its
+right child subtree.
+
+Double rotations result in a subtree root with a balance factor
+of zero, such that node y is has the same left and right height
+post-rotation.
+
+Pre-rotation:
+
+>           n_x
+>          /   \
+>        n_z   t_4
+>       /   \
+>     t_1   n_y
+>          /   \
+>        t_2   t_3
+
+Post-rotation:
+
+>              n_y
+>          ___/   \___
+>        n_z         n_x
+>       /   \       /   \
+>     t_1   t_2   t_3   t_4
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>node_x_id</code>: Node ID of subtree root pre-rotation.
+* <code>node_z_id</code>: Node ID of subtree left child pre-rotation.
+* <code>node_y_id</code>: Node ID of subtree root post-rotation.
+* <code>node_z_height_left</code>: Node z's left height pre-rotation.
+
+
+<a name="@Procedure_31"></a>
+
+### Procedure
+
+
+* Inspect node y's fields.
+* Optionally update tree 2's parent field.
+* Optionally update tree 3's parent field.
+* Update node x's left child and parent fields.
+* Update node z's right child and parent fields.
+* Update node y's children and parent fields.
+
+
+<a name="@Reference_rotations:_32"></a>
+
+### Reference rotations:
+
+
+
+<a name="@Case_1_33"></a>
+
+#### Case 1
+
+
+* Tree 2 null.
+* Tree 3 not null.
+* Node z right height not greater than or equal to left height
+post-rotation.
+
+Pre-rotation:
+
+>                   8 <- node x
+>                  / \
+>       node z -> 2   9 <- tree 4
+>                / \
+>     tree 1 -> 1   6 <- node y
+>                    \
+>                     7 <- tree 3
+
+Post-rotation:
+
+>                   6 <- node y
+>                  / \
+>       node z -> 2   8 <- node x
+>                /   / \
+>     tree 1 -> 1   7   9 <- tree 4
+>                   ^ tree 3
+
+
+<a name="@Case_2_34"></a>
+
+#### Case 2
+
+
+* Tree 2 not null.
+* Tree 3 null.
+* Node z right height greater than or equal to left height
+post-rotation.
+
+Pre-rotation:
+
+>                   8 <- node x
+>                  / \
+>       node z -> 2   9 <- tree 4
+>                / \
+>     tree 1 -> 1   6 <- node y
+>                  /
+>       tree 2 -> 5
+
+>                   6 <- node y
+>                  / \
+>       node z -> 2   8 <- node x
+>                / \   \
+>     tree 1 -> 1   5   9 <- tree 4
+>                   ^ tree 2
+
+
+<a name="@Testing_35"></a>
+
+### Testing
+
+
+* <code>test_rotate_left_right_1()</code>
+* <code>test_rotate_left_right_2()</code>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_left_right">rotate_left_right</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64, node_z_id: u64, node_y_id: u64, node_z_height_left: u8): (u64, u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_rotate_left_right">rotate_left_right</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    node_x_id: u64,
+    node_z_id: u64,
+    node_y_id: u64,
+    node_z_height_left: u8
+): (
+    u64,
+    u8
+) {
+    // Mutably borrow tree nodes <a href="">table</a>.
+    <b>let</b> nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
+    // Immutably borrow node y.
+    <b>let</b> node_y_ref = <a href="_borrow">table_with_length::borrow</a>(nodes_ref_mut, node_y_id);
+    <b>let</b> y_bits = node_y_ref.bits; // Get node y bits.
+    // Get node y's left and right height, and tree 2 and 3 IDs.
+    <b>let</b> (node_y_height_left, node_y_height_right, tree_2_id, tree_3_id) =
+        ((((y_bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a> ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128)) <b>as</b> u8),
+         (((y_bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128)) <b>as</b> u8),
+         (((y_bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>  ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64),
+         (((y_bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a> ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64));
+    <b>if</b> (tree_2_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) { // If tree 2 not null:
+        <b>let</b> tree_2_ref_mut = // Mutably borrow tree 2 root.
+            <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, tree_2_id);
+        // Reassign bits for new parent field:
+        tree_2_ref_mut.bits = tree_2_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>)) |
+            // Mask in new bits.
+            ((node_z_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    };
+    <b>if</b> (tree_3_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) { // If tree 3 not null:
+        <b>let</b> tree_3_ref_mut = // Mutably borrow tree 3 root.
+            <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, tree_3_id);
+        // Reassign bits for new parent field:
+        tree_3_ref_mut.bits = tree_3_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>)) |
+            // Mask in new bits.
+            ((node_x_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    };
+    <b>let</b> node_x_ref_mut =  // Mutably borrow node x.
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, node_x_id);
+    // Node x's left height is from transferred tree 3.
+    <b>let</b> node_x_height_left = node_y_height_right;
+    <b>let</b> node_x_parent = (((node_x_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u8); // Store node x parent field.
+    // Reassign bits for left child, left height, and parent:
+    node_x_ref_mut.bits = node_x_ref_mut.bits &
+        // Clear out fields via mask unset at field bits.
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ (((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>))) |
+        // Mask in new bits.
+        ((tree_3_id          <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) |
+        ((node_x_height_left <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>) |
+        ((node_y_id          <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    <b>let</b> node_z_ref_mut =  // Mutably borrow node z.
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, node_z_id);
+    // Node z's right height is from transferred tree 2.
+    <b>let</b> node_z_height_right = node_y_height_left;
+    // Reassign bits for right child, right height, and parent:
+    node_z_ref_mut.bits = node_z_ref_mut.bits &
+        // Clear out fields via mask unset at field bits.
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ (((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>))) |
+        // Mask in new bits.
+        ((tree_2_id           <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>) |
+        ((node_z_height_right <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) |
+        ((node_y_id           <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    // Determine height of tree rooted at z.
+    <b>let</b> node_z_height = <b>if</b> (node_z_height_right &gt;= node_z_height_left)
+        node_z_height_right <b>else</b> node_z_height_left;
+    // Get node y's <b>post</b>-rotation height (same on left and right).
+    <b>let</b> node_y_height = node_z_height + 1;
+    <b>let</b> node_y_ref_mut = // Mutably borrow node y.
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, node_y_id);
+    // Reassign bits for both child edges, and parent.
+    node_y_ref_mut.bits = node_y_ref_mut.bits &
+        // Clear out fields via mask unset at field bits.
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ (((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) |
+                   ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>))) |
+        // Mask in new bits.
+        ((node_z_id     <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) |
+        ((node_x_id     <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>) |
+        ((node_y_height <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a>) |
+        ((node_y_height <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) |
+        ((node_x_parent <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    (node_y_id, node_y_height) // Return new subtree root, height.
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_avl_queue_rotate_right"></a>
 
 ## Function `rotate_right`
@@ -1567,7 +1811,7 @@ Post-rotation:
 >        t_2   t_3
 
 
-<a name="@Parameters_31"></a>
+<a name="@Parameters_36"></a>
 
 ### Parameters
 
@@ -1579,7 +1823,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height.
 
 
-<a name="@Returns_32"></a>
+<a name="@Returns_37"></a>
 
 ### Returns
 
@@ -1589,13 +1833,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations:_33"></a>
+<a name="@Reference_rotations:_38"></a>
 
 ### Reference rotations:
 
 
 
-<a name="@Case_1_34"></a>
+<a name="@Case_1_39"></a>
 
 #### Case 1
 
@@ -1619,7 +1863,7 @@ Post-rotation:
 >     tree 1 -> 4   8 <- node x
 
 
-<a name="@Case_1_35"></a>
+<a name="@Case_1_40"></a>
 
 #### Case 1
 
@@ -1645,7 +1889,7 @@ Post-rotation:
 >                 5 <- tree 2
 
 
-<a name="@Testing_36"></a>
+<a name="@Testing_41"></a>
 
 ### Testing
 
@@ -1770,7 +2014,7 @@ Post-rotation:
 >     t_1   t_2   t_3   t_4
 
 
-<a name="@Parameters_37"></a>
+<a name="@Parameters_42"></a>
 
 ### Parameters
 
@@ -1779,10 +2023,10 @@ Post-rotation:
 * <code>node_x_id</code>: Node ID of subtree root pre-rotation.
 * <code>node_z_id</code>: Node ID of subtree right child pre-rotation.
 * <code>node_y_id</code>: Node ID of subtree root post-rotation.
-* <code>node_z_height_right</code>: Node z's right height.
+* <code>node_z_height_right</code>: Node z's right height pre-rotation.
 
 
-<a name="@Procedure_38"></a>
+<a name="@Procedure_43"></a>
 
 ### Procedure
 
@@ -1795,13 +2039,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations:_39"></a>
+<a name="@Reference_rotations:_44"></a>
 
 ### Reference rotations:
 
 
 
-<a name="@Case_1_40"></a>
+<a name="@Case_1_45"></a>
 
 #### Case 1
 
@@ -1831,7 +2075,7 @@ Post-rotation:
 >                 ^ tree 2
 
 
-<a name="@Case_2_41"></a>
+<a name="@Case_2_46"></a>
 
 #### Case 2
 
@@ -1861,7 +2105,7 @@ Post-rotation:
 >                 ^ tree 3
 
 
-<a name="@Testing_42"></a>
+<a name="@Testing_47"></a>
 
 ### Testing
 
@@ -1995,7 +2239,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_43"></a>
+<a name="@Parameters_48"></a>
 
 ### Parameters
 
@@ -2004,7 +2248,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_44"></a>
+<a name="@Returns_49"></a>
 
 ### Returns
 
@@ -2016,7 +2260,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_45"></a>
+<a name="@Assumptions_50"></a>
 
 ### Assumptions
 
@@ -2026,7 +2270,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_46"></a>
+<a name="@Reference_diagram_51"></a>
 
 ### Reference diagram
 
@@ -2045,7 +2289,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_47"></a>
+<a name="@Testing_52"></a>
 
 ### Testing
 
@@ -2113,7 +2357,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_48"></a>
+<a name="@Aborts_53"></a>
 
 ### Aborts
 
@@ -2121,7 +2365,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_49"></a>
+<a name="@Testing_54"></a>
 
 ### Testing
 

@@ -697,6 +697,9 @@ module econia::avl_queue {
 
     /// Rotate left during rebalance.
     ///
+    /// Updates state for nodes in subtree, but not for potential parent
+    /// to subtree.
+    ///
     /// Here, subtree root node x is right-heavy, with right child
     /// node z that is not left-heavy. Node x has an optional tree 1
     /// as its left child subtree, and node z has optional trees 2 and
@@ -732,13 +735,15 @@ module econia::avl_queue {
     /// * `u8`: The height of the subtree rooted at node z,
     ///   post-rotation.
     ///
-    /// # Reference rotations:
+    /// # Reference rotations
     ///
     /// ## Case 1
     ///
-    /// * Tree 2 empty.
-    /// * Post-rotation, node x height equals node x left height.
-    /// * Post-rotation, node z height equals node z right height.
+    /// * Tree 2 null.
+    /// * Node x left height greater than or equal to right height
+    ///   post-rotation.
+    /// * Node z right height greater than or equal to left height
+    ///   post-rotation.
     ///
     /// Pre-rotation:
     ///
@@ -754,11 +759,13 @@ module econia::avl_queue {
     /// >                / \
     /// >     node x -> 4   8 <- tree 3
     ///
-    /// ## Case 1
+    /// ## Case 2
     ///
-    /// * Tree 2 not empty.
-    /// * Post-rotation, node x height equals node x right height.
-    /// * Post-rotation, node z height equals node z left height.
+    /// * Tree 2 not null.
+    /// * Node x left height not greater than or equal to right height
+    ///   post-rotation.
+    /// * Node z right height not greater than or equal to left height
+    ///   post-rotation.
     ///
     /// Pre-rotation:
     ///
@@ -847,6 +854,9 @@ module econia::avl_queue {
 
     /// Rotate left-right during rebalance.
     ///
+    /// Updates state for nodes in subtree, but not for potential parent
+    /// to subtree.
+    ///
     /// Here, subtree root node x is left-heavy, with left child node
     /// z that is right-heavy. Node z has as its right child node y.
     ///
@@ -892,7 +902,7 @@ module econia::avl_queue {
     /// * Update node z's right child and parent fields.
     /// * Update node y's children and parent fields.
     ///
-    /// # Reference rotations:
+    /// # Reference rotations
     ///
     /// ## Case 1
     ///
@@ -936,6 +946,8 @@ module econia::avl_queue {
     /// >     tree 1 -> 1   6 <- node y
     /// >                  /
     /// >       tree 2 -> 5
+    ///
+    /// Post-rotation:
     ///
     /// >                   6 <- node y
     /// >                  / \
@@ -1045,6 +1057,9 @@ module econia::avl_queue {
 
     /// Rotate right during rebalance.
     ///
+    /// Updates state for nodes in subtree, but not for potential parent
+    /// to subtree.
+    ///
     /// Here, subtree root node x is left-heavy, with left child
     /// node z that is not right-heavy. Node x has an optional tree 3
     /// as its right child subtree, and node z has optional trees 1 and
@@ -1080,13 +1095,15 @@ module econia::avl_queue {
     /// * `u8`: The height of the subtree rooted at node z,
     ///   post-rotation.
     ///
-    /// # Reference rotations:
+    /// # Reference rotations
     ///
     /// ## Case 1
     ///
-    /// * Tree 2 empty.
-    /// * Post-rotation, node x height equals node x right height.
-    /// * Post-rotation, node z height equals node z left height.
+    /// * Tree 2 null.
+    /// * Node x right height greater than or equal to left height
+    ///   post-rotation.
+    /// * Node z left height greater than or equal to right height
+    ///   post-rotation.
     ///
     /// Pre-rotation:
     ///
@@ -1102,11 +1119,13 @@ module econia::avl_queue {
     /// >                / \
     /// >     tree 1 -> 4   8 <- node x
     ///
-    /// ## Case 1
+    /// ## Case 2
     ///
-    /// * Tree 2 not empty.
-    /// * Post-rotation, node x height equals node x left height.
-    /// * Post-rotation, node z height equals node z right height.
+    /// * Tree 2 not null.
+    /// * Node x right height not greater than or equal to left height
+    ///   post-rotation.
+    /// * Node z left height not greater than or equal to right height
+    ///   post-rotation.
     ///
     /// Pre-rotation:
     ///
@@ -1195,6 +1214,9 @@ module econia::avl_queue {
 
     /// Rotate right-left during rebalance.
     ///
+    /// Updates state for nodes in subtree, but not for potential parent
+    /// to subtree.
+    ///
     /// Here, subtree root node x is right-heavy, with right child node
     /// z that is left-heavy. Node z has as its left child node y.
     ///
@@ -1242,7 +1264,7 @@ module econia::avl_queue {
     /// * Update node z's left child and parent fields.
     /// * Update node y's children and parent fields.
     ///
-    /// # Reference rotations:
+    /// # Reference rotations
     ///
     /// ## Case 1
     ///
@@ -1263,12 +1285,12 @@ module econia::avl_queue {
     ///
     /// Post-rotation:
     ///
-    /// >                 4 <- node y
-    /// >                / \
-    /// >     node x -> 2   8 <- node z
-    /// >              / \   \
-    /// >   tree 1 -> 1   3   9 <- tree 4
-    /// >                 ^ tree 2
+    /// >                   4 <- node y
+    /// >                  / \
+    /// >       node x -> 2   8 <- node z
+    /// >                / \   \
+    /// >     tree 1 -> 1   3   9 <- tree 4
+    /// >                   ^ tree 2
     ///
     /// ## Case 2
     ///
@@ -1289,12 +1311,12 @@ module econia::avl_queue {
     ///
     /// Post-rotation:
     ///
-    /// >                 4 <- node y
-    /// >                / \
-    /// >     node x -> 2   8 <- node z
-    /// >              /   / \
-    /// >   tree 1 -> 1   5   9 <- tree 4
-    /// >                 ^ tree 3
+    /// >                   4 <- node y
+    /// >                  / \
+    /// >       node x -> 2   8 <- node z
+    /// >                /   / \
+    /// >     tree 1 -> 1   5   9 <- tree 4
+    /// >                   ^ tree 3
     ///
     /// # Testing
     ///

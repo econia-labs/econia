@@ -93,27 +93,27 @@ The below index is automatically generated from source code:
 -  [Function `rotate_left`](#0xc0deb00c_avl_queue_rotate_left)
     -  [Parameters](#@Parameters_25)
     -  [Returns](#@Returns_26)
-    -  [Reference rotations:](#@Reference_rotations:_27)
+    -  [Reference rotations](#@Reference_rotations_27)
         -  [Case 1](#@Case_1_28)
-        -  [Case 1](#@Case_1_29)
+        -  [Case 2](#@Case_2_29)
     -  [Testing](#@Testing_30)
 -  [Function `rotate_left_right`](#0xc0deb00c_avl_queue_rotate_left_right)
     -  [Procedure](#@Procedure_31)
-    -  [Reference rotations:](#@Reference_rotations:_32)
+    -  [Reference rotations](#@Reference_rotations_32)
         -  [Case 1](#@Case_1_33)
         -  [Case 2](#@Case_2_34)
     -  [Testing](#@Testing_35)
 -  [Function `rotate_right`](#0xc0deb00c_avl_queue_rotate_right)
     -  [Parameters](#@Parameters_36)
     -  [Returns](#@Returns_37)
-    -  [Reference rotations:](#@Reference_rotations:_38)
+    -  [Reference rotations](#@Reference_rotations_38)
         -  [Case 1](#@Case_1_39)
-        -  [Case 1](#@Case_1_40)
+        -  [Case 2](#@Case_2_40)
     -  [Testing](#@Testing_41)
 -  [Function `rotate_right_left`](#0xc0deb00c_avl_queue_rotate_right_left)
     -  [Parameters](#@Parameters_42)
     -  [Procedure](#@Procedure_43)
-    -  [Reference rotations:](#@Reference_rotations:_44)
+    -  [Reference rotations](#@Reference_rotations_44)
         -  [Case 1](#@Case_1_45)
         -  [Case 2](#@Case_2_46)
     -  [Testing](#@Testing_47)
@@ -1357,6 +1357,9 @@ activated node is right child of its parent.
 
 Rotate left during rebalance.
 
+Updates state for nodes in subtree, but not for potential parent
+to subtree.
+
 Here, subtree root node x is right-heavy, with right child
 node z that is not left-heavy. Node x has an optional tree 1
 as its left child subtree, and node z has optional trees 2 and
@@ -1401,9 +1404,9 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations:_27"></a>
+<a name="@Reference_rotations_27"></a>
 
-### Reference rotations:
+### Reference rotations
 
 
 
@@ -1412,9 +1415,11 @@ post-rotation.
 #### Case 1
 
 
-* Tree 2 empty.
-* Post-rotation, node x height equals node x left height.
-* Post-rotation, node z height equals node z right height.
+* Tree 2 null.
+* Node x left height greater than or equal to right height
+post-rotation.
+* Node z right height greater than or equal to left height
+post-rotation.
 
 Pre-rotation:
 
@@ -1431,14 +1436,16 @@ Post-rotation:
 >     node x -> 4   8 <- tree 3
 
 
-<a name="@Case_1_29"></a>
+<a name="@Case_2_29"></a>
 
-#### Case 1
+#### Case 2
 
 
-* Tree 2 not empty.
-* Post-rotation, node x height equals node x right height.
-* Post-rotation, node z height equals node z left height.
+* Tree 2 not null.
+* Node x left height not greater than or equal to right height
+post-rotation.
+* Node z right height not greater than or equal to left height
+post-rotation.
 
 Pre-rotation:
 
@@ -1551,6 +1558,9 @@ Post-rotation:
 
 Rotate left-right during rebalance.
 
+Updates state for nodes in subtree, but not for potential parent
+to subtree.
+
 Here, subtree root node x is left-heavy, with left child node
 z that is right-heavy. Node z has as its right child node y.
 
@@ -1601,9 +1611,9 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations:_32"></a>
+<a name="@Reference_rotations_32"></a>
 
-### Reference rotations:
+### Reference rotations
 
 
 
@@ -1656,6 +1666,8 @@ Pre-rotation:
 >     tree 1 -> 1   6 <- node y
 >                  /
 >       tree 2 -> 5
+
+Post-rotation:
 
 >                   6 <- node y
 >                  / \
@@ -1789,6 +1801,9 @@ Pre-rotation:
 
 Rotate right during rebalance.
 
+Updates state for nodes in subtree, but not for potential parent
+to subtree.
+
 Here, subtree root node x is left-heavy, with left child
 node z that is not right-heavy. Node x has an optional tree 3
 as its right child subtree, and node z has optional trees 1 and
@@ -1833,9 +1848,9 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations:_38"></a>
+<a name="@Reference_rotations_38"></a>
 
-### Reference rotations:
+### Reference rotations
 
 
 
@@ -1844,9 +1859,11 @@ post-rotation.
 #### Case 1
 
 
-* Tree 2 empty.
-* Post-rotation, node x height equals node x right height.
-* Post-rotation, node z height equals node z left height.
+* Tree 2 null.
+* Node x right height greater than or equal to left height
+post-rotation.
+* Node z left height greater than or equal to right height
+post-rotation.
 
 Pre-rotation:
 
@@ -1863,14 +1880,16 @@ Post-rotation:
 >     tree 1 -> 4   8 <- node x
 
 
-<a name="@Case_1_40"></a>
+<a name="@Case_2_40"></a>
 
-#### Case 1
+#### Case 2
 
 
-* Tree 2 not empty.
-* Post-rotation, node x height equals node x left height.
-* Post-rotation, node z height equals node z right height.
+* Tree 2 not null.
+* Node x right height not greater than or equal to left height
+post-rotation.
+* Node z left height not greater than or equal to right height
+post-rotation.
 
 Pre-rotation:
 
@@ -1983,6 +2002,9 @@ Post-rotation:
 
 Rotate right-left during rebalance.
 
+Updates state for nodes in subtree, but not for potential parent
+to subtree.
+
 Here, subtree root node x is right-heavy, with right child node
 z that is left-heavy. Node z has as its left child node y.
 
@@ -2039,9 +2061,9 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations:_44"></a>
+<a name="@Reference_rotations_44"></a>
 
-### Reference rotations:
+### Reference rotations
 
 
 
@@ -2067,12 +2089,12 @@ Pre-rotation:
 
 Post-rotation:
 
->                 4 <- node y
->                / \
->     node x -> 2   8 <- node z
->              / \   \
->   tree 1 -> 1   3   9 <- tree 4
->                 ^ tree 2
+>                   4 <- node y
+>                  / \
+>       node x -> 2   8 <- node z
+>                / \   \
+>     tree 1 -> 1   3   9 <- tree 4
+>                   ^ tree 2
 
 
 <a name="@Case_2_46"></a>
@@ -2097,12 +2119,12 @@ Pre-rotation:
 
 Post-rotation:
 
->                 4 <- node y
->                / \
->     node x -> 2   8 <- node z
->              /   / \
->   tree 1 -> 1   5   9 <- tree 4
->                 ^ tree 3
+>                   4 <- node y
+>                  / \
+>       node x -> 2   8 <- node z
+>                /   / \
+>     tree 1 -> 1   5   9 <- tree 4
+>                   ^ tree 3
 
 
 <a name="@Testing_47"></a>

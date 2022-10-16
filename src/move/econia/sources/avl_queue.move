@@ -699,6 +699,10 @@ module econia::avl_queue {
         };
     }
 
+    /// Assumptions
+    ///
+    /// * `delta` is nonzero at the start of each loop.
+    ///
     /// The `node_id` is a tree node that just underwent a
     /// modification to either its left or right height.
     fun retrace<V>(
@@ -719,8 +723,6 @@ module econia::avl_queue {
                            (HI_NODE_ID as u128)) as u64);
             let (height_left, height_right, height, height_old) =
                 retrace_update_heights(node_ref_mut, side, operation, delta);
-            // Return if node height unchanged by retrace.
-            if (height == height_old) return;
             // Flag no rebalancing takes place via null subtree root.
             let new_subtree_root = (NIL as u64);
             if (height_left != height_right) { // If node not balanced:
@@ -743,49 +745,107 @@ module econia::avl_queue {
                         avlq_ref_mut, node_id, child_id, left_heavy);
                 };
             }; // Subtree at node has been optionally rebalanced.
-            // If subtree at root just rebalanced:
-            if (parent == (NIL as u64) && new_subtree_root != (NIL as u64)) {
-                // Set root LSBs.
-                avlq_ref_mut.root_lsbs = (new_subtree_root & HI_BYTE as u8);
-                // Reassign bits for root MSBs:
-                avlq_ref_mut.bits = avlq_ref_mut.bits &
-                    // Clear out field via mask unset at field bits.
-                    (HI_128 ^ ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) |
-                    // Mask in new bits.
-                    ((new_subtree_root as u128) >> BITS_PER_BYTE);
-                return // Stop looping.
-            } else { // If not at root:
-                // Mutably borrow tree nodes table.
-                let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
-                node_ref_mut = // Mutably borrow parent node.
-                    table_with_length::borrow_mut(nodes_ref_mut, parent);
-                // Get parent's left child.
-                let left_child = ((node_ref_mut.bits >> SHIFT_CHILD_LEFT) &
-                    (HI_NODE_ID as u128) as u64);
-                // Flag side on which retracing operation took place.
-                side = if (left_child == node_id) LEFT else RIGHT;
-                // If subtree rebalanced:
+            if (parent == (NIL as u64)) { // If just retraced root:
+                // If just rebalanced root:
                 if (new_subtree_root != (NIL as u64)) {
-                    // Get corresponding child field shift amount.
-                    let child_shift = if (side == LEFT)
-                        SHIFT_CHILD_LEFT else SHIFT_CHILD_RIGHT;
-                    // Reassign bits for new child field.
-                    node_ref_mut.bits = node_ref_mut.bits &
+                    avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
+                        (new_subtree_root & HI_BYTE as u8);
+                    // Reassign bits for root MSBs:
+                    avlq_ref_mut.bits = avlq_ref_mut.bits &
                         // Clear out field via mask unset at field bits.
-                        (HI_128 ^ ((HI_NODE_ID as u128) << child_shift)) |
+                        (HI_128 ^ ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) |
                         // Mask in new bits.
-                        ((new_subtree_root as u128) << child_shift)
-                }; // Parent-child edge updated.
-                // Determine if retracing resulted in increment or
-                // decrement to subtree height.
-                operation = if (height >= height_old) INCREMENT else DECREMENT;
-                // Determine change in subtree height.
-                delta = if (INCREMENT) height - height_old else
-                    height_old - height;
+                        ((new_subtree_root as u128) >> BITS_PER_BYTE);
+                }; // AVL queue root now current for actual root.
+                return // Stop looping.
+            } else { // If just retraced node not at root:
+                // Prepare to optionally iterate again.
+                (node_ref_mut, operation, side, delta) =
+                    retrace_prep_iterate(avlq_ref_mut, parent, node_id,
+                                         new_subtree_root, height, height_old);
+                // Return if current iteration did not result in height
+                // change for corresponding subtree.
+                if (delta == 0) return;
                 // Store parent ID as node ID for next iteration.
                 node_id = parent;
             };
         }
+    }
+
+    /// Prepare for an optional next retrace iteration.
+    ///
+    /// Inner function for `retrace()`, should only be called if just
+    /// retraced below the root of the AVL queue.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `parent_id`: Node ID of next ancestor in retrace chain.
+    /// * `node_id`: Node ID at root of subtree just retraced, before
+    ///   any optional rebalancing took place.
+    /// * `new_subtree_root`: Node ID of new subtree root for when
+    ///   rebalancing took place, `NIL` if no rebalancing.
+    /// * `height`: Height of subtree after retrace.
+    /// * `height_old`: Height of subtree before retrace.
+    ///
+    /// # Returns
+    ///
+    /// * `&mut TreeNode`: Mutable reference to next ancestor.
+    /// * `bool`: `INCREMENT` or `DECREMENT`, the change in height for
+    ///   the subtree just retraced. Evalutes to `DECREMENT` when
+    ///   height does not change.
+    /// * `bool`: `LEFT` or `RIGHT`, the side on which the retraced
+    ///   subtree was a child to the next ancestor.
+    /// * `u8`: Change in height of subtree due to retrace, evaluates to
+    ///   0 when height does not change.
+    ///
+    /// # Testing
+    ///
+    /// * `test_retrace_prep_iterate_1()`.
+    /// * `test_retrace_prep_iterate_2()`.
+    /// * `test_retrace_prep_iterate_3()`.
+    fun retrace_prep_iterate<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        parent_id: u64,
+        node_id: u64,
+        new_subtree_root: u64,
+        height: u8,
+        height_old: u8,
+    ): (
+        &mut TreeNode,
+        bool,
+        bool,
+        u8
+    ) {
+        // Mutably borrow tree nodes table.
+        let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        // Mutably borrow parent to subtree just retraced.
+        let node_ref_mut =
+            table_with_length::borrow_mut(nodes_ref_mut, parent_id);
+        // Get parent's left child.
+        let left_child = ((node_ref_mut.bits >> SHIFT_CHILD_LEFT) &
+                          (HI_NODE_ID as u128) as u64);
+        // Flag side on which retracing operation took place.
+        let side = if (left_child == node_id) LEFT else RIGHT;
+        // If subtree rebalanced:
+        if (new_subtree_root != (NIL as u64)) {
+            // Get corresponding child field shift amount.
+            let child_shift = if (side == LEFT)
+                SHIFT_CHILD_LEFT else SHIFT_CHILD_RIGHT;
+            // Reassign bits for new child field.
+            node_ref_mut.bits = node_ref_mut.bits &
+                // Clear out field via mask unset at field bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << child_shift)) |
+                // Mask in new bits.
+                ((new_subtree_root as u128) << child_shift)
+        }; // Parent-child edge updated.
+        // Determine retrace operation type and height delta.
+        let (operation, delta) = if (height > height_old)
+            (INCREMENT, height - height_old) else
+            (DECREMENT, height_old - height);
+        // Return mutable reference to parent node, operation performed,
+        // side of operation, and corresponding change in height.
+        (node_ref_mut, operation, side, delta)
     }
 
     /// Rebalance a subtree, returning new root and height.
@@ -2848,6 +2908,126 @@ module econia::avl_queue {
             assert!(option::is_none(borrow_value_option_test(&avlq, i)), 0);
             i = i - 1; // Decrement loop counter.
         };
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates/returns for:
+    ///
+    /// * Side is `LEFT`.
+    /// * Subtree rebalanced.
+    /// * Operation is `DECREMENT`.
+    /// * Actual change in height.
+    fun test_retrace_prep_iterate_1() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare arguments.
+        let insertion_key = HI_INSERTION_KEY;
+        let parent_id = HI_NODE_ID;
+        let node_id = parent_id - 1;
+        let new_subtree_root = node_id - 1;
+        let sibling_id = new_subtree_root - 1;
+        let height = 2;
+        let height_old = 3;
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
+        // Manually insert parent node.
+        table_with_length::add(tree_nodes_ref_mut, parent_id, TreeNode{bits:
+            (insertion_key  as u128) << SHIFT_INSERTION_KEY |
+            (node_id        as u128) << SHIFT_CHILD_LEFT |
+            (sibling_id     as u128) << SHIFT_CHILD_RIGHT});
+        // Prepare for next iteration, storing returns.
+        let (node_ref_mut, operation, side, delta) = retrace_prep_iterate(
+            &mut avlq, parent_id, node_id, new_subtree_root, height,
+            height_old);
+        // Assert insertion key accessed by mutable reference return.
+        assert!(get_insertion_key_test(node_ref_mut) == insertion_key, 0);
+        // Assert other returns.
+        assert!(operation == DECREMENT, 0);
+        assert!(side == LEFT, 0);
+        assert!(delta == 1, 0);
+        // Assert child fields of parent.
+        assert!(get_child_left_by_id_test(&avlq, parent_id)
+                == new_subtree_root, 0);
+        assert!(get_child_right_by_id_test(&avlq, parent_id) == sibling_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates/returns for:
+    ///
+    /// * Side is `RIGHT`.
+    /// * Subtree rebalanced.
+    /// * Operation is `DECREMENT`.
+    /// * No change in height.
+    fun test_retrace_prep_iterate_2() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare arguments.
+        let insertion_key = HI_INSERTION_KEY;
+        let parent_id = HI_NODE_ID;
+        let node_id = parent_id - 1;
+        let new_subtree_root = node_id - 1;
+        let sibling_id = new_subtree_root - 1;
+        let height = 3;
+        let height_old = 3;
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
+        // Manually insert parent node.
+        table_with_length::add(tree_nodes_ref_mut, parent_id, TreeNode{bits:
+            (insertion_key  as u128) << SHIFT_INSERTION_KEY |
+            (sibling_id     as u128) << SHIFT_CHILD_LEFT |
+            (node_id        as u128) << SHIFT_CHILD_RIGHT});
+        // Prepare for next iteration, storing returns.
+        let (node_ref_mut, operation, side, delta) = retrace_prep_iterate(
+            &mut avlq, parent_id, node_id, new_subtree_root, height,
+            height_old);
+        // Assert insertion key accessed by mutable reference return.
+        assert!(get_insertion_key_test(node_ref_mut) == insertion_key, 0);
+        // Assert other returns.
+        assert!(operation == DECREMENT, 0);
+        assert!(side == RIGHT, 0);
+        assert!(delta == 0, 0);
+        // Assert child fields of parent.
+        assert!(get_child_left_by_id_test(&avlq, parent_id) == sibling_id, 0);
+        assert!(get_child_right_by_id_test(&avlq, parent_id)
+                == new_subtree_root, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates/returns for:
+    ///
+    /// * Side is `RIGHT`.
+    /// * Subtree not rebalanced.
+    /// * Operation is `INCREMENT`.
+    fun test_retrace_prep_iterate_3() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare arguments.
+        let insertion_key = HI_INSERTION_KEY;
+        let parent_id = HI_NODE_ID;
+        let node_id = parent_id - 1;
+        let new_subtree_root = (NIL as u64);
+        let height = 1;
+        let height_old = 0;
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
+        // Manually insert parent node.
+        table_with_length::add(tree_nodes_ref_mut, parent_id, TreeNode{bits:
+            (insertion_key  as u128) << SHIFT_INSERTION_KEY |
+            (node_id        as u128) << SHIFT_CHILD_RIGHT});
+        // Prepare for next iteration, storing returns.
+        let (node_ref_mut, operation, side, delta) = retrace_prep_iterate(
+            &mut avlq, parent_id, node_id, new_subtree_root, height,
+            height_old);
+        // Assert insertion key accessed by mutable reference return.
+        assert!(get_insertion_key_test(node_ref_mut) == insertion_key, 0);
+        // Assert other returns.
+        assert!(operation == INCREMENT, 0);
+        assert!(side == RIGHT, 0);
+        assert!(delta == 1, 0);
+        // Assert child fields of parent.
+        assert!(get_child_left_by_id_test(&avlq, parent_id)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(&avlq, parent_id) == node_id, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

@@ -91,53 +91,57 @@ The below index is automatically generated from source code:
     -  [Parameters](#@Parameters_23)
     -  [Testing](#@Testing_24)
 -  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
--  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+-  [Function `retrace_prep_iterate`](#0xc0deb00c_avl_queue_retrace_prep_iterate)
     -  [Parameters](#@Parameters_25)
     -  [Returns](#@Returns_26)
-    -  [Node x status](#@Node_x_status_27)
-        -  [Node x left-heavy](#@Node_x_left-heavy_28)
-        -  [Node x right-heavy](#@Node_x_right-heavy_29)
-    -  [Testing](#@Testing_30)
+    -  [Testing](#@Testing_27)
+-  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+    -  [Parameters](#@Parameters_28)
+    -  [Returns](#@Returns_29)
+    -  [Node x status](#@Node_x_status_30)
+        -  [Node x left-heavy](#@Node_x_left-heavy_31)
+        -  [Node x right-heavy](#@Node_x_right-heavy_32)
+    -  [Testing](#@Testing_33)
 -  [Function `retrace_rebalance_rotate_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left)
-    -  [Parameters](#@Parameters_31)
-    -  [Returns](#@Returns_32)
-    -  [Reference rotations](#@Reference_rotations_33)
-        -  [Case 1](#@Case_1_34)
-        -  [Case 2](#@Case_2_35)
-    -  [Testing](#@Testing_36)
+    -  [Parameters](#@Parameters_34)
+    -  [Returns](#@Returns_35)
+    -  [Reference rotations](#@Reference_rotations_36)
+        -  [Case 1](#@Case_1_37)
+        -  [Case 2](#@Case_2_38)
+    -  [Testing](#@Testing_39)
 -  [Function `retrace_rebalance_rotate_left_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left_right)
-    -  [Procedure](#@Procedure_37)
-    -  [Reference rotations](#@Reference_rotations_38)
-        -  [Case 1](#@Case_1_39)
-        -  [Case 2](#@Case_2_40)
-    -  [Testing](#@Testing_41)
+    -  [Procedure](#@Procedure_40)
+    -  [Reference rotations](#@Reference_rotations_41)
+        -  [Case 1](#@Case_1_42)
+        -  [Case 2](#@Case_2_43)
+    -  [Testing](#@Testing_44)
 -  [Function `retrace_rebalance_rotate_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right)
-    -  [Parameters](#@Parameters_42)
-    -  [Returns](#@Returns_43)
-    -  [Reference rotations](#@Reference_rotations_44)
-        -  [Case 1](#@Case_1_45)
-        -  [Case 2](#@Case_2_46)
-    -  [Testing](#@Testing_47)
+    -  [Parameters](#@Parameters_45)
+    -  [Returns](#@Returns_46)
+    -  [Reference rotations](#@Reference_rotations_47)
+        -  [Case 1](#@Case_1_48)
+        -  [Case 2](#@Case_2_49)
+    -  [Testing](#@Testing_50)
 -  [Function `retrace_rebalance_rotate_right_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right_left)
-    -  [Parameters](#@Parameters_48)
-    -  [Procedure](#@Procedure_49)
-    -  [Reference rotations](#@Reference_rotations_50)
-        -  [Case 1](#@Case_1_51)
-        -  [Case 2](#@Case_2_52)
-    -  [Testing](#@Testing_53)
--  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
-    -  [Parameters](#@Parameters_54)
-    -  [Returns](#@Returns_55)
+    -  [Parameters](#@Parameters_51)
+    -  [Procedure](#@Procedure_52)
+    -  [Reference rotations](#@Reference_rotations_53)
+        -  [Case 1](#@Case_1_54)
+        -  [Case 2](#@Case_2_55)
     -  [Testing](#@Testing_56)
--  [Function `search`](#0xc0deb00c_avl_queue_search)
+-  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
     -  [Parameters](#@Parameters_57)
     -  [Returns](#@Returns_58)
-    -  [Assumptions](#@Assumptions_59)
-    -  [Reference diagram](#@Reference_diagram_60)
-    -  [Testing](#@Testing_61)
+    -  [Testing](#@Testing_59)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_60)
+    -  [Returns](#@Returns_61)
+    -  [Assumptions](#@Assumptions_62)
+    -  [Reference diagram](#@Reference_diagram_63)
+    -  [Testing](#@Testing_64)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_62)
-    -  [Testing](#@Testing_63)
+    -  [Aborts](#@Aborts_65)
+    -  [Testing](#@Testing_66)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1387,6 +1391,10 @@ activated node is right child of its parent.
 
 ## Function `retrace`
 
+Assumptions
+
+* <code>delta</code> is nonzero at the start of each loop.
+
 The <code>node_id</code> is a tree node that just underwent a
 modification to either its left or right height.
 
@@ -1418,8 +1426,6 @@ modification to either its left or right height.
                        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
         <b>let</b> (height_left, height_right, height, height_old) =
             <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace_update_heights">retrace_update_heights</a>(node_ref_mut, side, operation, delta);
-        // Return <b>if</b> node height unchanged by retrace.
-        <b>if</b> (height == height_old) <b>return</b>;
         // Flag no rebalancing takes place via null subtree root.
         <b>let</b> new_subtree_root = (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64);
         <b>if</b> (height_left != height_right) { // If node not balanced:
@@ -1442,49 +1448,139 @@ modification to either its left or right height.
                     avlq_ref_mut, node_id, child_id, left_heavy);
             };
         }; // Subtree at node <b>has</b> been optionally rebalanced.
-        // If subtree at root just rebalanced:
-        <b>if</b> (parent == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64) && new_subtree_root != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
-            // Set root LSBs.
-            avlq_ref_mut.root_lsbs = (new_subtree_root & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8);
-            // Reassign bits for root MSBs:
-            avlq_ref_mut.bits = avlq_ref_mut.bits &
-                // Clear out field via mask unset at field bits.
-                (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>)) |
-                // Mask in new bits.
-                ((new_subtree_root <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>);
-            <b>return</b> // Stop looping.
-        } <b>else</b> { // If not at root:
-            // Mutably borrow tree nodes <a href="">table</a>.
-            <b>let</b> nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
-            node_ref_mut = // Mutably borrow parent node.
-                <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, parent);
-            // Get parent's left child.
-            <b>let</b> left_child = ((node_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) &
-                (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64);
-            // Flag side on which retracing operation took place.
-            side = <b>if</b> (left_child == node_id) <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a>;
-            // If subtree rebalanced:
+        <b>if</b> (parent == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) { // If just retraced root:
+            // If just rebalanced root:
             <b>if</b> (new_subtree_root != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
-                // Get corresponding child field shift amount.
-                <b>let</b> child_shift = <b>if</b> (side == <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>)
-                    <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>;
-                // Reassign bits for new child field.
-                node_ref_mut.bits = node_ref_mut.bits &
+                avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
+                    (new_subtree_root & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8);
+                // Reassign bits for root MSBs:
+                avlq_ref_mut.bits = avlq_ref_mut.bits &
                     // Clear out field via mask unset at field bits.
-                    (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; child_shift)) |
+                    (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>)) |
                     // Mask in new bits.
-                    ((new_subtree_root <b>as</b> u128) &lt;&lt; child_shift)
-            }; // Parent-child edge updated.
-            // Determine <b>if</b> retracing resulted in increment or
-            // decrement <b>to</b> subtree height.
-            operation = <b>if</b> (height &gt;= height_old) <a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a>;
-            // Determine change in subtree height.
-            delta = <b>if</b> (<a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a>) height - height_old <b>else</b>
-                height_old - height;
+                    ((new_subtree_root <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>);
+            }; // AVL queue root now current for actual root.
+            <b>return</b> // Stop looping.
+        } <b>else</b> { // If just retraced node not at root:
+            // Prepare <b>to</b> optionally iterate again.
+            (node_ref_mut, operation, side, delta) =
+                <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace_prep_iterate">retrace_prep_iterate</a>(avlq_ref_mut, parent, node_id,
+                                     new_subtree_root, height, height_old);
+            // Return <b>if</b> current iteration did not result in height
+            // change for corresponding subtree.
+            <b>if</b> (delta == 0) <b>return</b>;
             // Store parent ID <b>as</b> node ID for next iteration.
             node_id = parent;
         };
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_retrace_prep_iterate"></a>
+
+## Function `retrace_prep_iterate`
+
+Prepare for an optional next retrace iteration.
+
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>()</code>, should only be called if just
+retraced below the root of the AVL queue.
+
+
+<a name="@Parameters_25"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>parent_id</code>: Node ID of next ancestor in retrace chain.
+* <code>node_id</code>: Node ID at root of subtree just retraced, before
+any optional rebalancing took place.
+* <code>new_subtree_root</code>: Node ID of new subtree root for when
+rebalancing took place, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if no rebalancing.
+* <code>height</code>: Height of subtree after retrace.
+* <code>height_old</code>: Height of subtree before retrace.
+
+
+<a name="@Returns_26"></a>
+
+### Returns
+
+
+* <code>&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a></code>: Mutable reference to next ancestor.
+* <code>bool</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a></code>, the change in height for
+the subtree just retraced. Evalutes to <code><a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a></code> when
+height does not change.
+* <code>bool</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code>, the side on which the retraced
+subtree was a child to the next ancestor.
+* <code>u8</code>: Change in height of subtree due to retrace, evaluates to
+0 when height does not change.
+
+
+<a name="@Testing_27"></a>
+
+### Testing
+
+
+* <code>test_retrace_prep_iterate_1()</code>.
+* <code>test_retrace_prep_iterate_2()</code>.
+* <code>test_retrace_prep_iterate_3()</code>.
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace_prep_iterate">retrace_prep_iterate</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, parent_id: u64, node_id: u64, new_subtree_root: u64, height: u8, height_old: u8): (&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">avl_queue::TreeNode</a>, bool, bool, u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace_prep_iterate">retrace_prep_iterate</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    parent_id: u64,
+    node_id: u64,
+    new_subtree_root: u64,
+    height: u8,
+    height_old: u8,
+): (
+    &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>,
+    bool,
+    bool,
+    u8
+) {
+    // Mutably borrow tree nodes <a href="">table</a>.
+    <b>let</b> nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
+    // Mutably borrow parent <b>to</b> subtree just retraced.
+    <b>let</b> node_ref_mut =
+        <a href="_borrow_mut">table_with_length::borrow_mut</a>(nodes_ref_mut, parent_id);
+    // Get parent's left child.
+    <b>let</b> left_child = ((node_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>) &
+                      (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64);
+    // Flag side on which retracing operation took place.
+    <b>let</b> side = <b>if</b> (left_child == node_id) <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a>;
+    // If subtree rebalanced:
+    <b>if</b> (new_subtree_root != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
+        // Get corresponding child field shift amount.
+        <b>let</b> child_shift = <b>if</b> (side == <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>)
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>;
+        // Reassign bits for new child field.
+        node_ref_mut.bits = node_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; child_shift)) |
+            // Mask in new bits.
+            ((new_subtree_root <b>as</b> u128) &lt;&lt; child_shift)
+    }; // Parent-child edge updated.
+    // Determine retrace operation type and height delta.
+    <b>let</b> (operation, delta) = <b>if</b> (height &gt; height_old)
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a>, height - height_old) <b>else</b>
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a>, height_old - height);
+    // Return mutable reference <b>to</b> parent node, operation performed,
+    // side of operation, and corresponding change in height.
+    (node_ref_mut, operation, side, delta)
 }
 </code></pre>
 
@@ -1504,7 +1600,7 @@ Updates state for nodes in subtree, but not for potential parent
 to subtree.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -1516,7 +1612,7 @@ root's heavy side.
 * <code>node_x_left_heavy</code>: <code><b>true</b></code> if node x is left-heavy.
 
 
-<a name="@Returns_26"></a>
+<a name="@Returns_29"></a>
 
 ### Returns
 
@@ -1525,7 +1621,7 @@ root's heavy side.
 * <code>u8</code>: Height of subtree after rotation.
 
 
-<a name="@Node_x_status_27"></a>
+<a name="@Node_x_status_30"></a>
 
 ### Node x status
 
@@ -1534,7 +1630,7 @@ Node x can be either left-heavy or right heavy. In either case,
 consider that node z has left child and right child fields.
 
 
-<a name="@Node_x_left-heavy_28"></a>
+<a name="@Node_x_left-heavy_31"></a>
 
 #### Node x left-heavy
 
@@ -1546,7 +1642,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Node_x_right-heavy_29"></a>
+<a name="@Node_x_right-heavy_32"></a>
 
 #### Node x right-heavy
 
@@ -1558,7 +1654,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Testing_30"></a>
+<a name="@Testing_33"></a>
 
 ### Testing
 
@@ -1662,7 +1758,7 @@ Post-rotation:
 >     t_1   t_2
 
 
-<a name="@Parameters_31"></a>
+<a name="@Parameters_34"></a>
 
 ### Parameters
 
@@ -1674,7 +1770,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height.
 
 
-<a name="@Returns_32"></a>
+<a name="@Returns_35"></a>
 
 ### Returns
 
@@ -1684,13 +1780,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_33"></a>
+<a name="@Reference_rotations_36"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_34"></a>
+<a name="@Case_1_37"></a>
 
 #### Case 1
 
@@ -1716,7 +1812,7 @@ Post-rotation:
 >     node x -> 4   8 <- tree 3
 
 
-<a name="@Case_2_35"></a>
+<a name="@Case_2_38"></a>
 
 #### Case 2
 
@@ -1744,7 +1840,7 @@ Post-rotation:
 >                 6 <- tree 2
 
 
-<a name="@Testing_36"></a>
+<a name="@Testing_39"></a>
 
 ### Testing
 
@@ -1880,7 +1976,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height pre-rotation.
 
 
-<a name="@Procedure_37"></a>
+<a name="@Procedure_40"></a>
 
 ### Procedure
 
@@ -1893,13 +1989,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_38"></a>
+<a name="@Reference_rotations_41"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_39"></a>
+<a name="@Case_1_42"></a>
 
 #### Case 1
 
@@ -1929,7 +2025,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Case_2_40"></a>
+<a name="@Case_2_43"></a>
 
 #### Case 2
 
@@ -1959,7 +2055,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Testing_41"></a>
+<a name="@Testing_44"></a>
 
 ### Testing
 
@@ -2110,7 +2206,7 @@ Post-rotation:
 >        t_2   t_3
 
 
-<a name="@Parameters_42"></a>
+<a name="@Parameters_45"></a>
 
 ### Parameters
 
@@ -2122,7 +2218,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height.
 
 
-<a name="@Returns_43"></a>
+<a name="@Returns_46"></a>
 
 ### Returns
 
@@ -2132,13 +2228,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_44"></a>
+<a name="@Reference_rotations_47"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_45"></a>
+<a name="@Case_1_48"></a>
 
 #### Case 1
 
@@ -2164,7 +2260,7 @@ Post-rotation:
 >     tree 1 -> 4   8 <- node x
 
 
-<a name="@Case_2_46"></a>
+<a name="@Case_2_49"></a>
 
 #### Case 2
 
@@ -2192,7 +2288,7 @@ Post-rotation:
 >                 5 <- tree 2
 
 
-<a name="@Testing_47"></a>
+<a name="@Testing_50"></a>
 
 ### Testing
 
@@ -2322,7 +2418,7 @@ Post-rotation:
 >     t_1   t_2   t_3   t_4
 
 
-<a name="@Parameters_48"></a>
+<a name="@Parameters_51"></a>
 
 ### Parameters
 
@@ -2334,7 +2430,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height pre-rotation.
 
 
-<a name="@Procedure_49"></a>
+<a name="@Procedure_52"></a>
 
 ### Procedure
 
@@ -2347,13 +2443,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_50"></a>
+<a name="@Reference_rotations_53"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_51"></a>
+<a name="@Case_1_54"></a>
 
 #### Case 1
 
@@ -2383,7 +2479,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Case_2_52"></a>
+<a name="@Case_2_55"></a>
 
 #### Case 2
 
@@ -2413,7 +2509,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Testing_53"></a>
+<a name="@Testing_56"></a>
 
 ### Testing
 
@@ -2540,7 +2636,7 @@ Update height fields during retracing.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>()</code>.
 
 
-<a name="@Parameters_54"></a>
+<a name="@Parameters_57"></a>
 
 ### Parameters
 
@@ -2554,7 +2650,7 @@ the height field for the given side.
 * <code>delta</code>: The amount of height change for the operation.
 
 
-<a name="@Returns_55"></a>
+<a name="@Returns_58"></a>
 
 ### Returns
 
@@ -2565,7 +2661,7 @@ the height field for the given side.
 * <code>u8</code>: The height of the node after updating height.
 
 
-<a name="@Testing_56"></a>
+<a name="@Testing_59"></a>
 
 ### Testing
 
@@ -2643,7 +2739,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_57"></a>
+<a name="@Parameters_60"></a>
 
 ### Parameters
 
@@ -2652,7 +2748,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_58"></a>
+<a name="@Returns_61"></a>
 
 ### Returns
 
@@ -2664,7 +2760,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_59"></a>
+<a name="@Assumptions_62"></a>
 
 ### Assumptions
 
@@ -2674,7 +2770,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_60"></a>
+<a name="@Reference_diagram_63"></a>
 
 ### Reference diagram
 
@@ -2693,7 +2789,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_61"></a>
+<a name="@Testing_64"></a>
 
 ### Testing
 
@@ -2761,7 +2857,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_62"></a>
+<a name="@Aborts_65"></a>
 
 ### Aborts
 
@@ -2769,7 +2865,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_63"></a>
+<a name="@Testing_66"></a>
 
 ### Testing
 

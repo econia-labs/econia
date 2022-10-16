@@ -717,10 +717,10 @@ module econia::avl_queue {
             // Get parent field of node under review.
             let parent = (((node_ref_mut.bits >> SHIFT_PARENT) &
                            (HI_NODE_ID as u128)) as u64);
-            let (height_left, height_right, height, old_height) =
+            let (height_left, height_right, height, height_old) =
                 retrace_update_heights(node_ref_mut, side, operation, delta);
             // Return if node height unchanged by retrace.
-            if (height == old_height) return;
+            if (height == height_old) return;
             // Flag no rebalancing takes place via null subtree root.
             let new_subtree_root = (NIL as u64);
             if (height_left != height_right) { // If node not balanced:
@@ -778,10 +778,10 @@ module econia::avl_queue {
                 }; // Parent-child edge updated.
                 // Determine if retracing resulted in increment or
                 // decrement to subtree height.
-                operation = if (height >= old_height) INCREMENT else DECREMENT;
+                operation = if (height >= height_old) INCREMENT else DECREMENT;
                 // Determine change in subtree height.
-                delta = if (INCREMENT) height - old_height else
-                    old_height - height;
+                delta = if (INCREMENT) height - height_old else
+                    height_old - height;
                 // Store parent ID as node ID for next iteration.
                 node_id = parent;
             };
@@ -1631,6 +1631,11 @@ module econia::avl_queue {
     /// * `u8`: The right height of the node after updating height.
     /// * `u8`: The height of the node before updating height.
     /// * `u8`: The height of the node after updating height.
+    ///
+    /// # Testing
+    ///
+    /// * `test_retrace_update_heights_1()`
+    /// * `test_retrace_update_heights_2()`
     fun retrace_update_heights(
         node_ref_mut: &mut TreeNode,
         side: bool,
@@ -1647,7 +1652,7 @@ module econia::avl_queue {
         let (height_left, height_right) =
             ((((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT as u128)) as u8),
              (((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8));
-        let old_height = if (height_left >= height_right) height_left else
+        let height_old = if (height_left >= height_right) height_left else
             height_right; // Get height of node before retracing.
         // Get height field and shift amount for operation side.
         let (height_field, height_shift) = if (side == LEFT)
@@ -1667,7 +1672,7 @@ module econia::avl_queue {
             height_right = height_field;
         let height = if (height_left >= height_right) height_left else
             height_right; // Get height of node after update.
-        (height_left, height_right, height, old_height)
+        (height_left, height_right, height, height_old)
     }
 
     /// Search in AVL queue for closest match to seed key.
@@ -2847,6 +2852,70 @@ module econia::avl_queue {
     }
 
     #[test]
+    /// Verify state updates/returns for:
+    ///
+    /// * Left height is greater than or equal to right height
+    ///   pre-retrace.
+    /// * Side is `LEFT`.
+    /// * Operation is `DECREMENT`.
+    /// * Left height is greater than or equal to right height
+    ///   post-retrace.
+    fun test_retrace_update_heights_1() {
+        // Declare arguments.
+        let tree_node = TreeNode{bits:
+            (        3 as u128) << SHIFT_HEIGHT_LEFT   |
+            (        1 as u128) << SHIFT_HEIGHT_RIGHT  };
+        let side = LEFT;
+        let operation = DECREMENT;
+        let delta = 1;
+        // Update heights, storing returns.
+        let (height_left, height_right, height, height_old) =
+            retrace_update_heights(&mut tree_node, side, operation, delta);
+        // Assert returns.
+        assert!(height_left == 2, 0);
+        assert!(height_right == 1, 0);
+        assert!(height == 2, 0);
+        assert!(height_old == 3, 0);
+        // Assert node state.
+        assert!(get_height_left_test(&tree_node) == 2, 0);
+        assert!(get_height_right_test(&tree_node) == 1, 0);
+        // Unpack tree node, dropping bits.
+        let TreeNode{bits: _} = tree_node;
+    }
+
+    #[test]
+    /// Verify state updates/returns for:
+    ///
+    /// * Left height is not greater than or equal to right height
+    ///   pre-retrace.
+    /// * Side is `RIGHT`.
+    /// * Operation is `INCREMENT`.
+    /// * Left height is not greater than or equal to right height
+    ///   post-retrace.
+    fun test_retrace_update_heights_2() {
+        // Declare arguments.
+        let tree_node = TreeNode{bits:
+            (        3 as u128) << SHIFT_HEIGHT_LEFT   |
+            (        4 as u128) << SHIFT_HEIGHT_RIGHT  };
+        let side = RIGHT;
+        let operation = INCREMENT;
+        let delta = 1;
+        // Update heights, storing returns.
+        let (height_left, height_right, height, height_old) =
+            retrace_update_heights(&mut tree_node, side, operation, delta);
+        // Assert returns.
+        assert!(height_left == 3, 0);
+        assert!(height_right == 5, 0);
+        assert!(height == 5, 0);
+        assert!(height_old == 4, 0);
+        // Assert node state.
+        assert!(get_height_left_test(&tree_node) == 3, 0);
+        assert!(get_height_right_test(&tree_node) == 5, 0);
+        // Unpack tree node, dropping bits.
+        let TreeNode{bits: _} = tree_node;
+    }
+
+    #[test]
     /// Verify returns/state updates for reference rotation 1.
     fun test_rotate_left_1() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
@@ -2872,7 +2941,7 @@ module econia::avl_queue {
         // Rebalance via left rotation, storing new subtree root node ID
         // and height.
         let (node_z_id_return, node_z_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, false);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 1, 0);
@@ -2937,7 +3006,7 @@ module econia::avl_queue {
         // Rebalance via left rotation, storing new subtree root node ID
         // and height.
         let (node_z_id_return, node_z_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, false);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 2, 0);
@@ -3021,7 +3090,7 @@ module econia::avl_queue {
         // Rebalance via left-right rotation, storing new subtree root
         // node ID and height.
         let (node_y_id_return, node_y_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, true);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);
@@ -3121,7 +3190,7 @@ module econia::avl_queue {
         // Rebalance via left-right rotation, storing new subtree root
         // node ID and height.
         let (node_y_id_return, node_y_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, true);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);
@@ -3203,7 +3272,7 @@ module econia::avl_queue {
         // Rebalance via right rotation, storing new subtree root node
         // ID and height.
         let (node_z_id_return, node_z_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, true);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 1, 0);
@@ -3268,7 +3337,7 @@ module econia::avl_queue {
         // Rebalance via right rotation, storing new subtree root node
         // ID and height.
         let (node_z_id_return, node_z_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, true);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, true);
         // Assert returns.
         assert!(node_z_id_return == node_z_id, 0);
         assert!(node_z_height_return == 2, 0);
@@ -3352,7 +3421,7 @@ module econia::avl_queue {
         // Rebalance via right-left rotation, storing new subtree root
         // node ID and height.
         let (node_y_id_return, node_y_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, false);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);
@@ -3452,7 +3521,7 @@ module econia::avl_queue {
         // Rebalance via right-left rotation, storing new subtree root
         // node ID and height.
         let (node_y_id_return, node_y_height_return) =
-            rebalance(&mut avlq, node_x_id, node_z_id, false);
+            retrace_rebalance(&mut avlq, node_x_id, node_z_id, false);
         // Assert returns.
         assert!(node_y_id_return == node_y_id, 0);
         assert!(node_y_height_return == 2, 0);

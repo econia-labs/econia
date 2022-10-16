@@ -128,15 +128,16 @@ The below index is automatically generated from source code:
 -  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
     -  [Parameters](#@Parameters_54)
     -  [Returns](#@Returns_55)
+    -  [Testing](#@Testing_56)
 -  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_56)
-    -  [Returns](#@Returns_57)
-    -  [Assumptions](#@Assumptions_58)
-    -  [Reference diagram](#@Reference_diagram_59)
-    -  [Testing](#@Testing_60)
+    -  [Parameters](#@Parameters_57)
+    -  [Returns](#@Returns_58)
+    -  [Assumptions](#@Assumptions_59)
+    -  [Reference diagram](#@Reference_diagram_60)
+    -  [Testing](#@Testing_61)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_61)
-    -  [Testing](#@Testing_62)
+    -  [Aborts](#@Aborts_62)
+    -  [Testing](#@Testing_63)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1415,10 +1416,10 @@ modification to either its left or right height.
         // Get parent field of node under review.
         <b>let</b> parent = (((node_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>) &
                        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
-        <b>let</b> (height_left, height_right, height, old_height) =
+        <b>let</b> (height_left, height_right, height, height_old) =
             <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace_update_heights">retrace_update_heights</a>(node_ref_mut, side, operation, delta);
         // Return <b>if</b> node height unchanged by retrace.
-        <b>if</b> (height == old_height) <b>return</b>;
+        <b>if</b> (height == height_old) <b>return</b>;
         // Flag no rebalancing takes place via null subtree root.
         <b>let</b> new_subtree_root = (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64);
         <b>if</b> (height_left != height_right) { // If node not balanced:
@@ -1476,10 +1477,10 @@ modification to either its left or right height.
             }; // Parent-child edge updated.
             // Determine <b>if</b> retracing resulted in increment or
             // decrement <b>to</b> subtree height.
-            operation = <b>if</b> (height &gt;= old_height) <a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a>;
+            operation = <b>if</b> (height &gt;= height_old) <a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a>;
             // Determine change in subtree height.
-            delta = <b>if</b> (<a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a>) height - old_height <b>else</b>
-                old_height - height;
+            delta = <b>if</b> (<a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a>) height - height_old <b>else</b>
+                height_old - height;
             // Store parent ID <b>as</b> node ID for next iteration.
             node_id = parent;
         };
@@ -2564,6 +2565,15 @@ the height field for the given side.
 * <code>u8</code>: The height of the node after updating height.
 
 
+<a name="@Testing_56"></a>
+
+### Testing
+
+
+* <code>test_retrace_update_heights_1()</code>
+* <code>test_retrace_update_heights_2()</code>
+
+
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace_update_heights">retrace_update_heights</a>(node_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">avl_queue::TreeNode</a>, side: bool, operation: bool, delta: u8): (u8, u8, u8, u8)
 </code></pre>
 
@@ -2589,7 +2599,7 @@ the height field for the given side.
     <b>let</b> (height_left, height_right) =
         ((((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a> ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a> <b>as</b> u128)) <b>as</b> u8),
          (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a> <b>as</b> u128)) <b>as</b> u8));
-    <b>let</b> old_height = <b>if</b> (height_left &gt;= height_right) height_left <b>else</b>
+    <b>let</b> height_old = <b>if</b> (height_left &gt;= height_right) height_left <b>else</b>
         height_right; // Get height of node before retracing.
     // Get height field and shift amount for operation side.
     <b>let</b> (height_field, height_shift) = <b>if</b> (side == <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>)
@@ -2609,7 +2619,7 @@ the height field for the given side.
         height_right = height_field;
     <b>let</b> height = <b>if</b> (height_left &gt;= height_right) height_left <b>else</b>
         height_right; // Get height of node after <b>update</b>.
-    (height_left, height_right, height, old_height)
+    (height_left, height_right, height, height_old)
 }
 </code></pre>
 
@@ -2633,7 +2643,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_56"></a>
+<a name="@Parameters_57"></a>
 
 ### Parameters
 
@@ -2642,7 +2652,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_57"></a>
+<a name="@Returns_58"></a>
 
 ### Returns
 
@@ -2654,7 +2664,7 @@ child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> 
 node has no right child.
 
 
-<a name="@Assumptions_58"></a>
+<a name="@Assumptions_59"></a>
 
 ### Assumptions
 
@@ -2664,7 +2674,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_59"></a>
+<a name="@Reference_diagram_60"></a>
 
 ### Reference diagram
 
@@ -2683,7 +2693,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_60"></a>
+<a name="@Testing_61"></a>
 
 ### Testing
 
@@ -2751,7 +2761,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_61"></a>
+<a name="@Aborts_62"></a>
 
 ### Aborts
 
@@ -2759,7 +2769,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_62"></a>
+<a name="@Testing_63"></a>
 
 ### Testing
 

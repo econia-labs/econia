@@ -699,93 +699,6 @@ module econia::avl_queue {
         };
     }
 
-    /// Rebalance a subtree, returning new root and height.
-    ///
-    /// Updates state for nodes in subtree, but not for potential parent
-    /// to subtree.
-    ///
-    /// # Parameters
-    ///
-    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `node_id_x`: Node ID of subtree root.
-    /// * `node_id_z`: Node ID of child to subtree root, on subtree
-    ///   root's heavy side.
-    /// * `node_x_left_heavy`: `true` if node x is left-heavy.
-    ///
-    /// # Returns
-    ///
-    /// * `u64`: Tree node ID of new subtree root after rotation.
-    /// * `u8`: Height of subtree after rotation.
-    ///
-    /// # Node x status
-    ///
-    /// Node x can be either left-heavy or right heavy. In either case,
-    /// consider that node z has left child and right child fields.
-    ///
-    /// ## Node x left-heavy
-    ///
-    /// >             n_x
-    /// >            /
-    /// >          n_z
-    /// >         /   \
-    /// >     z_c_l   z_c_r
-    ///
-    /// ## Node x right-heavy
-    ///
-    /// >       n_x
-    /// >          \
-    /// >          n_z
-    /// >         /   \
-    /// >     z_c_l   z_c_r
-    ///
-    /// # Testing
-    ///
-    /// * `test_rotate_left_1()`
-    /// * `test_rotate_left_2()`
-    /// * `test_rotate_left_right_1()`
-    /// * `test_rotate_left_right_2()`
-    /// * `test_rotate_right_1()`
-    /// * `test_rotate_right_2()`
-    /// * `test_rotate_right_left_1()`
-    /// * `test_rotate_right_left_2()`
-    fun rebalance<V>(
-        avlq_ref_mut: &mut AVLqueue<V>,
-        node_x_id: u64,
-        node_z_id: u64,
-        node_x_left_heavy: bool,
-    ): (
-        u64,
-        u8
-    ) {
-        let node_z_ref = // Immutably borrow node z.
-            table_with_length::borrow(&avlq_ref_mut.tree_nodes, node_z_id);
-        let bits = node_z_ref.bits; // Get node z bits.
-        // Get node z's left height, right height, and child fields.
-        let (node_z_height_left, node_z_height_right,
-             node_z_child_left , node_z_child_right  ) =
-            (((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT  as u128) as u8),
-             ((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT  as u128) as u8),
-             ((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE_ID as u128) as u64));
-        // Return result of rotation. If node x is left-heavy:
-        return (if (node_x_left_heavy)
-            // If node z is right-heavy, rotate left-right
-            (if (node_z_height_right > node_z_height_left)
-                rotate_left_right(avlq_ref_mut, node_x_id, node_z_id,
-                                  node_z_child_right, node_z_height_left) else
-                // Otherwise node z is not right-heavy so rotate right.
-                rotate_right(avlq_ref_mut, node_x_id, node_z_id,
-                              node_z_child_right, node_z_height_right))
-            else // If node x is right-heavy:
-            // If node z is left-heavy, rotate right-left
-            (if (node_z_height_left > node_z_height_right)
-                rotate_right_left(avlq_ref_mut, node_x_id, node_z_id,
-                                  node_z_child_left, node_z_height_right) else
-                // Otherwise node z is not left-heavy so rotate left.
-                rotate_left(avlq_ref_mut, node_x_id, node_z_id,
-                             node_z_child_left, node_z_height_left)))
-    }
-
     /// The `node_id` is a tree node that just underwent a
     /// modification to either its left or right height.
     fun retrace<V>(
@@ -826,7 +739,7 @@ module econia::avl_queue {
                                      (HI_NODE_ID as u128)) as u64);
                     // Rebalance, storing node ID of new subtree root
                     // and new subtree height.
-                    (new_subtree_root, height) = rebalance(
+                    (new_subtree_root, height) = retrace_rebalance(
                         avlq_ref_mut, node_id, child_id, left_heavy);
                 };
             }; // Subtree at node has been optionally rebalanced.
@@ -875,66 +788,102 @@ module econia::avl_queue {
         }
     }
 
-    /// Update height fields during retracing.
+    /// Rebalance a subtree, returning new root and height.
+    ///
+    /// Inner function for `retrace()`.
+    ///
+    /// Updates state for nodes in subtree, but not for potential parent
+    /// to subtree.
     ///
     /// # Parameters
     ///
-    /// * `node_ref_mut`: Mutable reference to a node that needs to have
-    ///   its height fields updated during retrace.
-    /// * `side`: `LEFT` or `RIGHT`, the side on which the node's height
-    ///   needs to be updated.
-    /// * `operation`: `INCREMENT` or `DECREMENT`, the kind of change in
-    ///   the height field for the given side.
-    /// * `delta`: The amount of height change for the operation.
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `node_id_x`: Node ID of subtree root.
+    /// * `node_id_z`: Node ID of child to subtree root, on subtree
+    ///   root's heavy side.
+    /// * `node_x_left_heavy`: `true` if node x is left-heavy.
     ///
     /// # Returns
     ///
-    /// * `u8`: The left height of the node after updating height.
-    /// * `u8`: The right height of the node after updating height.
-    /// * `u8`: The height of the node before updating height.
-    /// * `u8`: The height of the node after updating height.
-    fun retrace_update_heights(
-        node_ref_mut: &mut TreeNode,
-        side: bool,
-        operation: bool,
-        delta: u8
+    /// * `u64`: Tree node ID of new subtree root after rotation.
+    /// * `u8`: Height of subtree after rotation.
+    ///
+    /// # Node x status
+    ///
+    /// Node x can be either left-heavy or right heavy. In either case,
+    /// consider that node z has left child and right child fields.
+    ///
+    /// ## Node x left-heavy
+    ///
+    /// >             n_x
+    /// >            /
+    /// >          n_z
+    /// >         /   \
+    /// >     z_c_l   z_c_r
+    ///
+    /// ## Node x right-heavy
+    ///
+    /// >       n_x
+    /// >          \
+    /// >          n_z
+    /// >         /   \
+    /// >     z_c_l   z_c_r
+    ///
+    /// # Testing
+    ///
+    /// * `test_rotate_left_1()`
+    /// * `test_rotate_left_2()`
+    /// * `test_rotate_left_right_1()`
+    /// * `test_rotate_left_right_2()`
+    /// * `test_rotate_right_1()`
+    /// * `test_rotate_right_2()`
+    /// * `test_rotate_right_left_1()`
+    /// * `test_rotate_right_left_2()`
+    fun retrace_rebalance<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_x_id: u64,
+        node_z_id: u64,
+        node_x_left_heavy: bool,
     ): (
-        u8,
-        u8,
-        u8,
+        u64,
         u8
     ) {
-        let bits = node_ref_mut.bits; // Get node's field bits.
-        // Get node's left height, right height, and parent fields.
-        let (height_left, height_right) =
-            ((((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT as u128)) as u8),
-             (((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8));
-        let old_height = if (height_left >= height_right) height_left else
-            height_right; // Get height of node before retracing.
-        // Get height field and shift amount for operation side.
-        let (height_field, height_shift) = if (side == LEFT)
-            (height_left , SHIFT_HEIGHT_LEFT ) else
-            (height_right, SHIFT_HEIGHT_RIGHT);
-        // Get updated height field for side.
-        let height_field = if (operation == INCREMENT) height_field + delta
-            else height_field - delta;
-        // Reassign bits for corresponding height field:
-        node_ref_mut.bits = bits &
-            // Clear out field via mask unset at field bits.
-            (HI_128 ^ ((HI_HEIGHT as u128) << height_shift)) |
-            // Mask in new bits.
-            ((height_field as u128) << height_shift);
-        // Reassign local height to that of indicated field.
-        if (side == LEFT) height_left = height_field else
-            height_right = height_field;
-        let height = if (height_left >= height_right) height_left else
-            height_right; // Get height of node after update.
-        (height_left, height_right, height, old_height)
+        let node_z_ref = // Immutably borrow node z.
+            table_with_length::borrow(&avlq_ref_mut.tree_nodes, node_z_id);
+        let bits = node_z_ref.bits; // Get node z bits.
+        // Get node z's left height, right height, and child fields.
+        let (node_z_height_left, node_z_height_right,
+             node_z_child_left , node_z_child_right  ) =
+            (((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT  as u128) as u8),
+             ((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT  as u128) as u8),
+             ((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE_ID as u128) as u64),
+             ((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE_ID as u128) as u64));
+        // Return result of rotation. If node x is left-heavy:
+        return (if (node_x_left_heavy)
+            // If node z is right-heavy, rotate left-right
+            (if (node_z_height_right > node_z_height_left)
+                retrace_rebalance_rotate_left_right(
+                    avlq_ref_mut, node_x_id, node_z_id, node_z_child_right,
+                    node_z_height_left)
+                // Otherwise node z is not right-heavy so rotate right.
+                else retrace_rebalance_rotate_right(
+                    avlq_ref_mut, node_x_id, node_z_id, node_z_child_right,
+                    node_z_height_right))
+            else // If node x is right-heavy:
+            // If node z is left-heavy, rotate right-left
+            (if (node_z_height_left > node_z_height_right)
+                retrace_rebalance_rotate_right_left(
+                    avlq_ref_mut, node_x_id, node_z_id, node_z_child_left,
+                    node_z_height_right)
+                // Otherwise node z is not left-heavy so rotate left.
+                else retrace_rebalance_rotate_left(
+                    avlq_ref_mut, node_x_id, node_z_id, node_z_child_left,
+                    node_z_height_left)))
     }
 
     /// Rotate left during rebalance.
     ///
-    /// Inner function for `rebalance()`.
+    /// Inner function for `retrace_rebalance()`.
     ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
@@ -1026,7 +975,7 @@ module econia::avl_queue {
     ///
     /// * `test_rotate_left_1()`
     /// * `test_rotate_left_2()`
-    fun rotate_left<V>(
+    fun retrace_rebalance_rotate_left<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64,
         node_z_id: u64,
@@ -1093,7 +1042,7 @@ module econia::avl_queue {
 
     /// Rotate left-right during rebalance.
     ///
-    /// Inner function for `rebalance()`.
+    /// Inner function for `retrace_rebalance()`.
     ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
@@ -1201,7 +1150,7 @@ module econia::avl_queue {
     ///
     /// * `test_rotate_left_right_1()`
     /// * `test_rotate_left_right_2()`
-    fun rotate_left_right<V>(
+    fun retrace_rebalance_rotate_left_right<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64,
         node_z_id: u64,
@@ -1298,7 +1247,7 @@ module econia::avl_queue {
 
     /// Rotate right during rebalance.
     ///
-    /// Inner function for `rebalance()`.
+    /// Inner function for `retrace_rebalance()`.
     ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
@@ -1390,7 +1339,7 @@ module econia::avl_queue {
     ///
     /// * `test_rotate_right_1()`
     /// * `test_rotate_right_2()`
-    fun rotate_right<V>(
+    fun retrace_rebalance_rotate_right<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64,
         node_z_id: u64,
@@ -1457,7 +1406,7 @@ module econia::avl_queue {
 
     /// Rotate right-left during rebalance.
     ///
-    /// Inner function for `rebalance()`.
+    /// Inner function for `retrace_rebalance()`.
     ///
     /// Updates state for nodes in subtree, but not for potential parent
     /// to subtree.
@@ -1567,7 +1516,7 @@ module econia::avl_queue {
     ///
     /// * `test_rotate_right_left_1()`
     /// * `test_rotate_right_left_2()`
-    fun rotate_right_left<V>(
+    fun retrace_rebalance_rotate_right_left<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64,
         node_z_id: u64,
@@ -1660,6 +1609,65 @@ module econia::avl_queue {
             ((node_y_height as u128) << SHIFT_HEIGHT_RIGHT) |
             ((node_x_parent as u128) << SHIFT_PARENT);
         (node_y_id, node_y_height) // Return new subtree root, height.
+    }
+
+    /// Update height fields during retracing.
+    ///
+    /// Inner function for `retrace()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `node_ref_mut`: Mutable reference to a node that needs to have
+    ///   its height fields updated during retrace.
+    /// * `side`: `LEFT` or `RIGHT`, the side on which the node's height
+    ///   needs to be updated.
+    /// * `operation`: `INCREMENT` or `DECREMENT`, the kind of change in
+    ///   the height field for the given side.
+    /// * `delta`: The amount of height change for the operation.
+    ///
+    /// # Returns
+    ///
+    /// * `u8`: The left height of the node after updating height.
+    /// * `u8`: The right height of the node after updating height.
+    /// * `u8`: The height of the node before updating height.
+    /// * `u8`: The height of the node after updating height.
+    fun retrace_update_heights(
+        node_ref_mut: &mut TreeNode,
+        side: bool,
+        operation: bool,
+        delta: u8
+    ): (
+        u8,
+        u8,
+        u8,
+        u8
+    ) {
+        let bits = node_ref_mut.bits; // Get node's field bits.
+        // Get node's left height, right height, and parent fields.
+        let (height_left, height_right) =
+            ((((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT as u128)) as u8),
+             (((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8));
+        let old_height = if (height_left >= height_right) height_left else
+            height_right; // Get height of node before retracing.
+        // Get height field and shift amount for operation side.
+        let (height_field, height_shift) = if (side == LEFT)
+            (height_left , SHIFT_HEIGHT_LEFT ) else
+            (height_right, SHIFT_HEIGHT_RIGHT);
+        // Get updated height field for side.
+        let height_field = if (operation == INCREMENT) height_field + delta
+            else height_field - delta;
+        // Reassign bits for corresponding height field:
+        node_ref_mut.bits = bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_HEIGHT as u128) << height_shift)) |
+            // Mask in new bits.
+            ((height_field as u128) << height_shift);
+        // Reassign local height to that of indicated field.
+        if (side == LEFT) height_left = height_field else
+            height_right = height_field;
+        let height = if (height_left >= height_right) height_left else
+            height_right; // Get height of node after update.
+        (height_left, height_right, height, old_height)
     }
 
     /// Search in AVL queue for closest match to seed key.

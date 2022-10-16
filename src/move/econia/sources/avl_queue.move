@@ -699,19 +699,39 @@ module econia::avl_queue {
         };
     }
 
-    /// Assumptions
+    /// Retrace ancestor heights after tree node insertion or removal.
     ///
-    /// * `delta` is nonzero at the start of each loop.
+    /// Should only be called by `insert()` or `remove()`.
     ///
-    /// The `node_id` is a tree node that just underwent a
-    /// modification to either its left or right height.
+    /// When a tree leaf node is inserted or removed, the parent-leaf
+    /// edge is first updated with corresponding node IDs for both
+    /// parent and optional leaf. Then the corresponding change in
+    /// height at the parent node, on the affected side, must be
+    /// updated, along with any affected heights up to the root. If the
+    /// process results in an imbalance of more than one between the
+    /// left height and right height of a node in the ancestor chain,
+    /// the corresponding subtree must be rebalanced.
+    ///
+    /// Parent-leaf edge updates are handled in `insert()` and
+    /// `remove()`, while the height retracing process is handled here.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `node_id` : Node ID of tree node that just had a child
+    ///   inserted or removed, resulting in a modification to its height
+    ///   on the side that the insertion or removal took place.
+    /// * `operation`: `INCREMENT` if height on given side increases as
+    ///   a result, `DECREMENT` if it decreases.
+    /// * `side`: `LEFT` or `RIGHT`, the side on which the child was
+    ///   inserted or deleted.
     fun retrace<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_id: u64,
-        operation: bool, // INCREMENT or DECREMENT
-        side: bool, // LEFT or RIGHT
-        delta: u8
+        operation: bool,
+        side: bool
     ) {
+        let delta = 1; // Mark height change of one for first iteration.
         // Mutably borrow tree nodes table.
         let nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
         // Mutably borrow node under consideration.
@@ -723,7 +743,7 @@ module econia::avl_queue {
                            (HI_NODE_ID as u128)) as u64);
             let (height_left, height_right, height, height_old) =
                 retrace_update_heights(node_ref_mut, side, operation, delta);
-            // Flag no rebalancing takes place via null subtree root.
+            // Flag no rebalancing via null new subtree root.
             let new_subtree_root = (NIL as u64);
             if (height_left != height_right) { // If node not balanced:
                 // Determine if node is left-heavy, and calculate the
@@ -744,9 +764,9 @@ module econia::avl_queue {
                     (new_subtree_root, height) = retrace_rebalance(
                         avlq_ref_mut, node_id, child_id, left_heavy);
                 };
-            }; // Subtree at node has been optionally rebalanced.
+            }; // Corresponding subtree has been optionally rebalanced.
             if (parent == (NIL as u64)) { // If just retraced root:
-                // If just rebalanced root:
+                // If just rebalanced at root:
                 if (new_subtree_root != (NIL as u64)) {
                     avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
                         (new_subtree_root & HI_BYTE as u8);
@@ -3096,7 +3116,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 1.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_left()` reference rotation 1.
     fun test_rotate_left_1() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.
@@ -3154,7 +3175,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 2.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_left()` reference rotation 2.
     fun test_rotate_left_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.
@@ -3227,7 +3249,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 1.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_left_right()` reference rotation 1.
     fun test_rotate_left_right_1() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.
@@ -3327,7 +3350,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 2.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_left_right()` reference rotation 2.
     fun test_rotate_left_right_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.
@@ -3427,7 +3451,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 1.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_right()` reference rotation 1.
     fun test_rotate_right_1() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.
@@ -3485,7 +3510,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 2.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_right()` reference rotation 2.
     fun test_rotate_right_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.
@@ -3558,7 +3584,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 1.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_right_left()` reference rotation 1.
     fun test_rotate_right_left_1() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.
@@ -3658,7 +3685,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for reference rotation 2.
+    /// Verify returns/state updates for
+    /// `retrace_rebalance_rotate_right_left()` reference rotation 2.
     fun test_rotate_right_left_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare node/tree IDs.

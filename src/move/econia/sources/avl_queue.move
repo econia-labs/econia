@@ -1,18 +1,5 @@
 /// AVL queue: a hybrid between an AVL tree and a queue.
 ///
-/// # References
-///
-/// * [Adelson-Velski and Landis 1962] (original paper)
-/// * [Galles 2011] (interactive visualizer)
-/// * [Wikipedia 2022]
-///
-/// [Adelson-Velski and Landis 1962]:
-///     https://zhjwpku.com/assets/pdf/AED2-10-avl-paper.pdf
-/// [Galles 2011]:
-///     https://www.cs.usfca.edu/~galles/visualization/AVLtree.html
-/// [Wikipedia 2022]:
-///     https://en.wikipedia.org/wiki/AVL_tree
-///
 /// # Node IDs
 ///
 /// Tree nodes and list nodes are each assigned a 1-indexed 14-bit
@@ -28,6 +15,61 @@
 /// | 33-46  | List node ID                                 |
 /// | 32     | If set, ascending AVL queue, else descending |
 /// | 0-31   | Insertion key                                |
+///
+/// # Height
+///
+/// In the present implementation, left or right height denotes the
+/// height of a node's left or right subtree, respectively, plus one.
+/// Subtree height is adjusted by one to avoid negative numbers, with
+/// the resultant value denoting the height of a tree rooted at the
+/// given node, accounting only for height to the given side:
+///
+/// >       2
+/// >      / \
+/// >     1   3
+/// >          \
+/// >           4
+///
+/// | Key | Left height | Right height |
+/// |-----|-------------|--------------|
+/// | 1   | 0           | 0            |
+/// | 2   | 1           | 2            |
+/// | 3   | 0           | 1            |
+/// | 4   | 0           | 0            |
+///
+/// For a tree of size $n \geq 1$, an AVL tree's height is at most
+///
+/// $$h \leq c \log_2(n + d) + b$$
+///
+/// where
+///
+/// * $\varphi = \frac{1 + \sqrt{5}}{2} \approx 1.618$ (the golden
+///   ratio),
+/// * $c = \frac{1}{\log_2 \varphi} \approx 1.440$ ,
+/// * $b = \frac{c}{2} \log_2 5 - 2 \approx -0.328$ , and
+/// * $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
+///
+/// With a maximum node count of $n_{max} = 2^{14} - 1 = 13683$, the
+/// maximum height of an AVL tree in the present implementation is
+/// thus
+///
+/// $$h_{max} = \lfloor c \log_2(n_{max} + d) + b \rfloor = 19$$
+///
+/// such that left height and right height can always be encoded in
+/// $\lceil \log_2 19 \rceil = 5$ bits each.
+///
+/// # References
+///
+/// * [Adelson-Velski and Landis 1962] (original paper)
+/// * [Galles 2011] (interactive visualizer)
+/// * [Wikipedia 2022]
+///
+/// [Adelson-Velski and Landis 1962]:
+///     https://zhjwpku.com/assets/pdf/AED2-10-avl-paper.pdf
+/// [Galles 2011]:
+///     https://www.cs.usfca.edu/~galles/visualization/AVLtree.html
+/// [Wikipedia 2022]:
+///     https://en.wikipedia.org/wiki/AVL_tree
 ///
 /// # Complete docgen index
 ///
@@ -85,8 +127,8 @@ module econia::avl_queue {
     /// | Bit(s) | Data                                 |
     /// |--------|--------------------------------------|
     /// | 94-125 | Insertion key                        |
-    /// | 89-93  | Left height (see below)              |
-    /// | 84-88  | Right height (see below)             |
+    /// | 89-93  | Left height                          |
+    /// | 84-88  | Right height                         |
     /// | 70-83  | Parent node ID                       |
     /// | 56-69  | Left child node ID                   |
     /// | 42-55  | Right child node ID                  |
@@ -96,48 +138,6 @@ module econia::avl_queue {
     ///
     /// All fields except next inactive node ID are ignored when the
     /// node is in the inactive nodes stack.
-    ///
-    /// # Height
-    ///
-    /// Left or right height denotes the height of the node's left
-    /// or right subtree, respectively, plus one. Subtree height is
-    /// adjusted by one to avoid negative numbers, with the resultant
-    /// value denoting the height of a tree rooted at the given node,
-    /// accounting only for height to the given side:
-    ///
-    /// >       2
-    /// >      / \
-    /// >     1   3
-    /// >          \
-    /// >           4
-    ///
-    /// | Key | Left height | Right height |
-    /// |-----|-------------|--------------|
-    /// | 1   | 0           | 0            |
-    /// | 2   | 1           | 2            |
-    /// | 3   | 0           | 1            |
-    /// | 4   | 0           | 0            |
-    ///
-    /// For a tree of size $n \geq 1$, an AVL tree's height is at most
-    ///
-    /// $$h \leq c \log_2(n + d) + b$$
-    ///
-    /// where
-    ///
-    /// * $\varphi = \frac{1 + \sqrt{5}}{2} \approx 1.618$ (the golden
-    ///   ratio),
-    /// * $c = \frac{1}{\log_2 \varphi} \approx 1.440$ ,
-    /// * $b = \frac{c}{2} \log_2 5 - 2 \approx -0.328$ , and
-    /// * $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
-    ///
-    /// With a maximum node count of $n_{max} = 2^{14} - 1 = 13683$, the
-    /// maximum height of an AVL tree in the present implementation is
-    /// thus
-    ///
-    /// $$h_{max} = \lfloor c \log_2(n_{max} + d) + b \rfloor = 19$$
-    ///
-    /// such that left height and right height can always be encoded in
-    /// $\lceil \log_2 19 \rceil = 5$ bits each.
     struct TreeNode has store {
         bits: u128
     }
@@ -183,15 +183,6 @@ module econia::avl_queue {
 
     /// Ascending AVL queue flag.
     const ASCENDING: bool = true;
-    /// Balance factor bits in `TreeNode.bits` indicating balance factor
-    /// of 0.
-    const BALANCE_FACTOR_0: u8 = 0;
-    /// Balance factor bits in `TreeNode.bits` indicating balance factor
-    /// of -1. Generated in Python via `hex(int('10', 2))`.
-    const BALANCE_FACTOR_NEG_1: u8 = 0x2;
-    /// Balance factor bits in `TreeNode.bits` indicating balance factor
-    /// of 1.
-    const BALANCE_FACTOR_POS_1: u8 = 1;
     /// Bit flag denoting ascending AVL queue.
     const BIT_FLAG_ASCENDING: u8 = 1;
     /// Bit flag denoting a tree node.
@@ -208,9 +199,6 @@ module econia::avl_queue {
     /// `u128` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 128, 2))`.
     const HI_128: u128 = 0xffffffffffffffffffffffffffffffff;
-    /// All bits set in integer of width required to encode balance
-    /// factor. Generated in Python via `hex(int('1' * 2, 2))`.
-    const HI_BALANCE_FACTOR: u64 = 0x3;
     /// Single bit set in integer of width required to encode bit flag.
     const HI_BIT: u8 = 1;
     /// All bits set in integer of width required to encode a byte.
@@ -236,10 +224,14 @@ module econia::avl_queue {
     const N_NODES_MAX: u64 = 16383;
     /// Flag for right direction.
     const RIGHT: bool = false;
+    /// Number of bits sort order bit flag is shifted in an access key.
+    const SHIFT_ACCESS_SORT_ORDER: u8 = 32;
+    /// Number of bits list node ID is shifted in an access key.
+    const SHIFT_ACCESS_LIST_NODE_ID: u8 = 33;
+    /// Number of bits tree node ID is shifted in an access key.
+    const SHIFT_ACCESS_TREE_NODE_ID: u8 = 47;
     /// Number of bits sort order is shifted in `AVLqueue.bits`.
     const SHIFT_SORT_ORDER: u8 = 126;
-    /// Number of bits balance factor is shifted in `TreeNode.bits`.
-    const SHIFT_BALANCE_FACTOR: u8 = 84;
     /// Number of bits left child node ID is shifted in `TreeNode.bits`.
     const SHIFT_CHILD_LEFT: u8 = 56;
     /// Number of bits right child node ID is shifted in
@@ -283,6 +275,17 @@ module econia::avl_queue {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Insert a key-value pair into an AVL queue.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `key`: Key to insert.
+    /// * `value`: Value to insert.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Access key used for lookup.
     public fun insert<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64,
@@ -307,7 +310,7 @@ module econia::avl_queue {
         // Get corresponding tree node: if solo list node, insert a tree
         // node and store its ID. Otherwise tree node is match node from
         // search.
-        let _tree_node_id = if (solo) insert_tree_node(
+        let tree_node_id = if (solo) insert_tree_node(
             avlq_ref_mut, key, match_node_id, list_node_id, new_leaf_side) else
             match_node_id;
         // If just inserted new tree node, retrace starting at the
@@ -315,11 +318,13 @@ module econia::avl_queue {
         if (solo) retrace(avlq_ref_mut, match_node_id, INCREMENT,
                           *option::borrow(&new_leaf_side));
         // Check AVL queue head and tail.
-
-
+        insert_check_head_tail(avlq_ref_mut, key, list_node_id);
+        let order_bit = // Get sort order bit from AVL queue bits.
+            (avlq_ref_mut.bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128);
         // Return bit-packed access key.
-
-        key
+        key | ((order_bit as u64) << SHIFT_ACCESS_SORT_ORDER) |
+              ((list_node_id    ) << SHIFT_ACCESS_LIST_NODE_ID) |
+              ((tree_node_id    ) << SHIFT_ACCESS_LIST_NODE_ID)
     }
 
     /// Return a new AVL queue, optionally allocating inactive nodes.

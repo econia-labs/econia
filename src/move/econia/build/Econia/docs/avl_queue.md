@@ -64,6 +64,7 @@ The below index is automatically generated from source code:
     -  [Height](#@Height_4)
 -  [Struct `ListNode`](#0xc0deb00c_avl_queue_ListNode)
 -  [Constants](#@Constants_5)
+-  [Function `insert`](#0xc0deb00c_avl_queue_insert)
 -  [Function `new`](#0xc0deb00c_avl_queue_new)
     -  [Parameters](#@Parameters_6)
     -  [Returns](#@Returns_7)
@@ -474,6 +475,16 @@ Descending AVL queue flag.
 
 
 
+<a name="0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE"></a>
+
+Insertion key is too large.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a>: u64 = 1;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_E_TOO_MANY_NODES"></a>
 
 Number of allocated nodes is too high.
@@ -745,6 +756,65 @@ Number of bits inactive tree node stack top is shifted in
 </code></pre>
 
 
+
+<a name="0xc0deb00c_avl_queue_insert"></a>
+
+## Function `insert`
+
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert">insert</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, key: u64, value: V): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert">insert</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    key: u64,
+    value: V
+): u64 {
+    // Assert insertion key is not too many bits.
+    <b>assert</b>!(key &lt;= <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_INSERTION_KEY">HI_INSERTION_KEY</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a>);
+    // Search for key, storing match node ID, and optional side on
+    // which a new leaf would be inserted relative <b>to</b> match node.
+    <b>let</b> (match_node_id, new_leaf_side) = <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>(avlq_ref_mut, key);
+    // If search returned null from the root, or <b>if</b> search flagged
+    // that a new tree node will have <b>to</b> be activated <b>as</b> child, flag
+    // that the activated list node will be the sole node in the
+    // corresponding doubly linked list.
+    <b>let</b> solo = match_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64) ||
+               <a href="_is_some">option::is_some</a>(&new_leaf_side);
+    // If a solo list node, flag no anchor tree node yet activated,
+    // otherwise set anchor tree node <b>as</b> match node from search.
+    <b>let</b> anchor_tree_node_id = <b>if</b> (solo) (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64) <b>else</b> match_node_id;
+    <b>let</b> list_node_id = // Activate list node, storing its node ID.
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>(avlq_ref_mut, anchor_tree_node_id, value);
+    // Get corresponding tree node: <b>if</b> solo list node, activate a
+    // tree node and store its ID. Otherwise tree node is match node
+    // from search.
+    <b>let</b> _tree_node_id = <b>if</b> (solo) <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>(
+        avlq_ref_mut, key, match_node_id, list_node_id, new_leaf_side) <b>else</b>
+        match_node_id;
+    // If just activated new tree node, retrace starting at the
+    // parent <b>to</b> the activated tree node.
+    <b>if</b> (solo) <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>(avlq_ref_mut, match_node_id, <a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a>,
+                      *<a href="_borrow">option::borrow</a>(&new_leaf_side));
+    // Check AVL queue head and tail.
+
+
+    // Return bit-packed access key.
+
+    key
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_avl_queue_new"></a>
 
@@ -1396,7 +1466,7 @@ activated node is right child of its parent.
 
 Retrace ancestor heights after tree node insertion or removal.
 
-Should only be called by <code>insert()</code> or <code>remove()</code>.
+Should only be called by <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert">insert</a>()</code> or <code>remove()</code>.
 
 When a tree leaf node is inserted or removed, the parent-leaf
 edge is first updated with corresponding node IDs for both
@@ -1407,7 +1477,7 @@ process results in an imbalance of more than one between the
 left height and right height of a node in the ancestor chain,
 the corresponding subtree must be rebalanced.
 
-Parent-leaf edge updates are handled in <code>insert()</code> and
+Parent-leaf edge updates are handled in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert">insert</a>()</code> and
 <code>remove()</code>, while the height retracing process is handled here.
 
 
@@ -2886,7 +2956,7 @@ The "match" node is the node last walked before returning.
 ### Returns
 
 
-* <code>u64</code>: Node ID of match node.
+* <code>u64</code>: Node ID of match node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if empty tree.
 * <code>Option&lt;bool&gt;</code>: None if match key equals seed key, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
 seed key is less than match key but match node has no left
 child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if seed key is greater than match key but match

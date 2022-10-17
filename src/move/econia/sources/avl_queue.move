@@ -174,6 +174,8 @@ module econia::avl_queue {
 
     /// Number of allocated nodes is too high.
     const E_TOO_MANY_NODES: u64 = 0;
+    /// Insertion key is too large.
+    const E_INSERTION_KEY_TOO_LARGE: u64 = 1;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -266,6 +268,45 @@ module econia::avl_queue {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    public fun insert<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        key: u64,
+        value: V
+    ): u64 {
+        // Assert insertion key is not too many bits.
+        assert!(key <= HI_INSERTION_KEY, E_INSERTION_KEY_TOO_LARGE);
+        // Search for key, storing match node ID, and optional side on
+        // which a new leaf would be inserted relative to match node.
+        let (match_node_id, new_leaf_side) = search(avlq_ref_mut, key);
+        // If search returned null from the root, or if search flagged
+        // that a new tree node will have to be activated as child, flag
+        // that the activated list node will be the sole node in the
+        // corresponding doubly linked list.
+        let solo = match_node_id == (NIL as u64) ||
+                   option::is_some(&new_leaf_side);
+        // If a solo list node, flag no anchor tree node yet activated,
+        // otherwise set anchor tree node as match node from search.
+        let anchor_tree_node_id = if (solo) (NIL as u64) else match_node_id;
+        let list_node_id = // Activate list node, storing its node ID.
+            activate_list_node(avlq_ref_mut, anchor_tree_node_id, value);
+        // Get corresponding tree node: if solo list node, activate a
+        // tree node and store its ID. Otherwise tree node is match node
+        // from search.
+        let _tree_node_id = if (solo) activate_tree_node(
+            avlq_ref_mut, key, match_node_id, list_node_id, new_leaf_side) else
+            match_node_id;
+        // If just activated new tree node, retrace starting at the
+        // parent to the activated tree node.
+        if (solo) retrace(avlq_ref_mut, match_node_id, INCREMENT,
+                          *option::borrow(&new_leaf_side));
+        // Check AVL queue head and tail.
+
+
+        // Return bit-packed access key.
+
+        key
+    }
 
     /// Return a new AVL queue, optionally allocating inactive nodes.
     ///
@@ -1871,7 +1912,7 @@ module econia::avl_queue {
     ///
     /// # Returns
     ///
-    /// * `u64`: Node ID of match node.
+    /// * `u64`: Node ID of match node, or `NIL` if empty tree.
     /// * `Option<bool>`: None if match key equals seed key, `LEFT` if
     ///   seed key is less than match key but match node has no left
     ///   child, `RIGHT` if seed key is greater than match key but match

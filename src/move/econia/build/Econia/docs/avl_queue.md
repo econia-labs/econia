@@ -71,24 +71,24 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_8)
 -  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
     -  [Testing](#@Testing_9)
--  [Function `activate_list_node`](#0xc0deb00c_avl_queue_activate_list_node)
+-  [Function `insert_list_node`](#0xc0deb00c_avl_queue_insert_list_node)
     -  [Parameters](#@Parameters_10)
     -  [Returns](#@Returns_11)
     -  [Testing](#@Testing_12)
--  [Function `activate_list_node_assign_fields`](#0xc0deb00c_avl_queue_activate_list_node_assign_fields)
+-  [Function `insert_list_node_assign_fields`](#0xc0deb00c_avl_queue_insert_list_node_assign_fields)
     -  [Parameters](#@Parameters_13)
     -  [Returns](#@Returns_14)
     -  [Testing](#@Testing_15)
--  [Function `activate_list_node_get_last_next`](#0xc0deb00c_avl_queue_activate_list_node_get_last_next)
+-  [Function `insert_list_node_get_last_next`](#0xc0deb00c_avl_queue_insert_list_node_get_last_next)
     -  [Parameters](#@Parameters_16)
     -  [Returns](#@Returns_17)
     -  [Testing](#@Testing_18)
--  [Function `activate_tree_node`](#0xc0deb00c_avl_queue_activate_tree_node)
+-  [Function `insert_tree_node`](#0xc0deb00c_avl_queue_insert_tree_node)
     -  [Parameters](#@Parameters_19)
     -  [Returns](#@Returns_20)
     -  [Assumptions](#@Assumptions_21)
     -  [Testing](#@Testing_22)
--  [Function `activate_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge)
+-  [Function `insert_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge)
     -  [Parameters](#@Parameters_23)
     -  [Testing](#@Testing_24)
 -  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
@@ -783,24 +783,24 @@ Number of bits inactive tree node stack top is shifted in
     // which a new leaf would be inserted relative <b>to</b> match node.
     <b>let</b> (match_node_id, new_leaf_side) = <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>(avlq_ref_mut, key);
     // If search returned null from the root, or <b>if</b> search flagged
-    // that a new tree node will have <b>to</b> be activated <b>as</b> child, flag
-    // that the activated list node will be the sole node in the
+    // that a new tree node will have <b>to</b> be inserted <b>as</b> child, flag
+    // that the inserted list node will be the sole node in the
     // corresponding doubly linked list.
     <b>let</b> solo = match_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64) ||
                <a href="_is_some">option::is_some</a>(&new_leaf_side);
-    // If a solo list node, flag no anchor tree node yet activated,
+    // If a solo list node, flag no anchor tree node yet inserted,
     // otherwise set anchor tree node <b>as</b> match node from search.
     <b>let</b> anchor_tree_node_id = <b>if</b> (solo) (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64) <b>else</b> match_node_id;
-    <b>let</b> list_node_id = // Activate list node, storing its node ID.
-        <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>(avlq_ref_mut, anchor_tree_node_id, value);
-    // Get corresponding tree node: <b>if</b> solo list node, activate a
-    // tree node and store its ID. Otherwise tree node is match node
-    // from search.
-    <b>let</b> _tree_node_id = <b>if</b> (solo) <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>(
+    <b>let</b> list_node_id = // Insert list node, storing its node ID.
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node">insert_list_node</a>(avlq_ref_mut, anchor_tree_node_id, value);
+    // Get corresponding tree node: <b>if</b> solo list node, insert a tree
+    // node and store its ID. Otherwise tree node is match node from
+    // search.
+    <b>let</b> _tree_node_id = <b>if</b> (solo) <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>(
         avlq_ref_mut, key, match_node_id, list_node_id, new_leaf_side) <b>else</b>
         match_node_id;
-    // If just activated new tree node, retrace starting at the
-    // parent <b>to</b> the activated tree node.
+    // If just inserted new tree node, retrace starting at the
+    // parent <b>to</b> the inserted tree node.
     <b>if</b> (solo) <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>(avlq_ref_mut, match_node_id, <a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a>,
                       *<a href="_borrow">option::borrow</a>(&new_leaf_side));
     // Check AVL queue head and tail.
@@ -960,11 +960,11 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 
 </details>
 
-<a name="0xc0deb00c_avl_queue_activate_list_node"></a>
+<a name="0xc0deb00c_avl_queue_insert_list_node"></a>
 
-## Function `activate_list_node`
+## Function `insert_list_node`
 
-Activate a list node and return its node ID.
+Insert a list node and return its node ID.
 
 In the case of inserting a list node to a doubly linked list in
 an existing tree node, known as the "anchor tree node", the list
@@ -984,7 +984,7 @@ becomes the head and tail of the new list.
 * <code>anchor_tree_node_id</code>: Node ID of anchor tree node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if
 inserting a list node as the sole list node in a new tree
 node.
-* <code>value</code>: Insertion value for list node to activate.
+* <code>value</code>: Insertion value for list node to insert.
 
 
 <a name="@Returns_11"></a>
@@ -992,7 +992,7 @@ node.
 ### Returns
 
 
-* <code>u64</code>: Node ID of activated list node.
+* <code>u64</code>: Node ID of inserted list node.
 
 
 <a name="@Testing_12"></a>
@@ -1000,11 +1000,11 @@ node.
 ### Testing
 
 
-* <code>test_activate_list_node_not_solo()</code>
-* <code>test_activate_list_node_solo()</code>
+* <code>test_insert_list_node_not_solo()</code>
+* <code>test_insert_list_node_solo()</code>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64, value: V): u64
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node">insert_list_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64, value: V): u64
 </code></pre>
 
 
@@ -1013,16 +1013,15 @@ node.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node">insert_list_node</a>&lt;V&gt;(
     avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
     anchor_tree_node_id: u64,
     value: V
 ): u64 {
-    // Get virtual last and next fields for activated list node.
-    <b>let</b> (last, next) = <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>(
-        avlq_ref_mut, anchor_tree_node_id);
-    <b>let</b> list_node_id = // Assign fields, store activated node ID.
-        <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_assign_fields">activate_list_node_assign_fields</a>(avlq_ref_mut, last, next, value);
+    <b>let</b> (last, next) = // Get virtual last and next fields for node.
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>(avlq_ref_mut, anchor_tree_node_id);
+    <b>let</b> list_node_id = // Assign fields, store inserted node ID.
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_assign_fields">insert_list_node_assign_fields</a>(avlq_ref_mut, last, next, value);
     // If inserting a new list tail that is not solo:
     <b>if</b> (anchor_tree_node_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
         // Mutably borrow tree nodes <a href="">table</a>.
@@ -1033,7 +1032,7 @@ node.
             <a href="_borrow_mut">table_with_length::borrow_mut</a>(list_nodes_ref_mut, last);
         last_node_ref_mut.next_msbs = // Reassign its next MSBs.
             ((list_node_id &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>) <b>as</b> u8);
-        // Reassign its next LSBs <b>to</b> those of activated list node.
+        // Reassign its next LSBs <b>to</b> those of inserted list node.
         last_node_ref_mut.next_lsbs = ((list_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a>) <b>as</b> u8);
         // Mutably borrow anchor tree node.
         <b>let</b> anchor_node_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
@@ -1045,7 +1044,7 @@ node.
             // Mask in new bits.
             ((list_node_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>);
     };
-    list_node_id // Return activated list node ID.
+    list_node_id // Return inserted list node ID.
 }
 </code></pre>
 
@@ -1053,13 +1052,13 @@ node.
 
 </details>
 
-<a name="0xc0deb00c_avl_queue_activate_list_node_assign_fields"></a>
+<a name="0xc0deb00c_avl_queue_insert_list_node_assign_fields"></a>
 
-## Function `activate_list_node_assign_fields`
+## Function `insert_list_node_assign_fields`
 
-Assign fields when activating a list node.
+Assign fields when inserting a list node.
 
-Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>()</code>.
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node">insert_list_node</a>()</code>.
 
 If inactive list node stack is empty, allocate a new list node,
 otherwise pop one off the inactive stack.
@@ -1072,9 +1071,9 @@ otherwise pop one off the inactive stack.
 
 * <code>avlq_ref</code>: Immutable reference to AVL queue.
 * <code>last</code>: Virtual last field from
-<code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>()</code>.
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
 * <code>next</code>: Virtual next field from
-<code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>()</code>.
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
 * <code>value</code>: Insertion value.
 
 
@@ -1083,7 +1082,7 @@ otherwise pop one off the inactive stack.
 ### Returns
 
 
-* <code>u64</code>: Node ID of activated list node.
+* <code>u64</code>: Node ID of inserted list node.
 
 
 <a name="@Testing_15"></a>
@@ -1091,11 +1090,11 @@ otherwise pop one off the inactive stack.
 ### Testing
 
 
-* <code>test_activate_list_node_assign_fields_allocate()</code>
-* <code>test_activate_list_node_assign_fields_stacked()</code>
+* <code>test_insert_list_node_assign_fields_allocate()</code>
+* <code>test_insert_list_node_assign_fields_stacked()</code>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_assign_fields">activate_list_node_assign_fields</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, last: u64, next: u64, value: V): u64
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_assign_fields">insert_list_node_assign_fields</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, last: u64, next: u64, value: V): u64
 </code></pre>
 
 
@@ -1104,7 +1103,7 @@ otherwise pop one off the inactive stack.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_assign_fields">activate_list_node_assign_fields</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_assign_fields">insert_list_node_assign_fields</a>&lt;V&gt;(
     avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
     last: u64,
     next: u64,
@@ -1163,20 +1162,20 @@ otherwise pop one off the inactive stack.
 
 </details>
 
-<a name="0xc0deb00c_avl_queue_activate_list_node_get_last_next"></a>
+<a name="0xc0deb00c_avl_queue_insert_list_node_get_last_next"></a>
 
-## Function `activate_list_node_get_last_next`
+## Function `insert_list_node_get_last_next`
 
-Get virtual last and next fields when activating a list node.
+Get virtual last and next fields when inserting a list node.
 
-Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>()</code>.
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node">insert_list_node</a>()</code>.
 
-If activated list node will be the only list node in a doubly
+If inserted list node will be the only list node in a doubly
 linked list, a "solo list node", then it will have to indicate
 for next and last node IDs a new tree node, which will also have
-to be activated via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>. Hence error checking
+to be inserted via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>()</code>. Hence error checking
 for the number of allocated tree nodes is performed here first,
-and is not re-performed in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code> for the case
+and is not re-performed in <code>inserted_tree_node()</code> for the case
 of a solo list node.
 
 
@@ -1195,8 +1194,8 @@ inserting a solo list node.
 ### Returns
 
 
-* <code>u64</code>: Virtual last field of activated list node.
-* <code>u64</code>: Virtual next field of activated list node.
+* <code>u64</code>: Virtual last field of inserted list node.
+* <code>u64</code>: Virtual next field of inserted list node.
 
 
 <a name="@Testing_18"></a>
@@ -1204,12 +1203,12 @@ inserting a solo list node.
 ### Testing
 
 
-* <code>test_activate_list_node_get_last_next_new_tail()</code>
-* <code>test_activate_list_node_get_last_next_solo_allocate()</code>
-* <code>test_activate_list_node_get_last_next_solo_stacked()</code>
+* <code>test_insert_list_node_get_last_next_new_tail()</code>
+* <code>test_insert_list_node_get_last_next_solo_allocate()</code>
+* <code>test_insert_list_node_get_last_next_solo_stacked()</code>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64): (u64, u64)
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64): (u64, u64)
 </code></pre>
 
 
@@ -1218,7 +1217,7 @@ inserting a solo list node.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>&lt;V&gt;(
     avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
     anchor_tree_node_id: u64,
 ): (
@@ -1229,7 +1228,7 @@ inserting a solo list node.
     <b>let</b> is_tree_node = ((<a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_TREE_NODE">BIT_FLAG_TREE_NODE</a> <b>as</b> u64) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_NODE_TYPE">SHIFT_NODE_TYPE</a>);
     // Immutably borrow tree nodes <a href="">table</a>.
     <b>let</b> tree_nodes_ref = &avlq_ref.tree_nodes;
-    <b>let</b> last; // Declare virtual last field for activated list node.
+    <b>let</b> last; // Declare virtual last field for inserted list node.
     // If inserting a solo list node:
     <b>if</b> (anchor_tree_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
         // Get top of inactive tree nodes stack.
@@ -1262,18 +1261,18 @@ inserting a solo list node.
 
 </details>
 
-<a name="0xc0deb00c_avl_queue_activate_tree_node"></a>
+<a name="0xc0deb00c_avl_queue_insert_tree_node"></a>
 
-## Function `activate_tree_node`
+## Function `insert_tree_node`
 
-Activate a tree node and return its node ID.
+Insert a tree node and return its node ID.
 
 If inactive tree node stack is empty, allocate a new tree node,
 otherwise pop one off the inactive stack.
 
-Should only be called when <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node">activate_list_node</a>()</code> activates the
+Should only be called when <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node">insert_list_node</a>()</code> inserts the
 sole list node in new AVL tree node, thus checking the number
-of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>()</code>.
+of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
 
 
 <a name="@Parameters_19"></a>
@@ -1282,14 +1281,14 @@ of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_acti
 
 
 * <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
-* <code>key</code>: Insertion key for activated node.
-* <code>parent</code>: Node ID of parent to actvated node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> when
-activated node is to become root.
+* <code>key</code>: Insertion key for inserted node.
+* <code>parent</code>: Node ID of parent to inserted node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> when
+inserted node is to become root.
 * <code>solo_node_id</code>: Node ID of sole list node in tree node's
 doubly linked list.
-* <code>new_leaf_side</code>: None if activated node is root, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
-activated node is left child of its parent, and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if
-activated node is right child of its parent.
+* <code>new_leaf_side</code>: None if inserted node is root, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
+inserted node is left child of its parent, and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if
+inserted node is right child of its parent.
 
 
 <a name="@Returns_20"></a>
@@ -1297,7 +1296,7 @@ activated node is right child of its parent.
 ### Returns
 
 
-* <code>u64</code>: Node ID of activated tree node.
+* <code>u64</code>: Node ID of inserted tree node.
 
 
 <a name="@Assumptions_21"></a>
@@ -1308,7 +1307,7 @@ activated node is right child of its parent.
 * Node is a leaf in the AVL tree and has a single list node in
 its doubly linked list.
 * The number of allocated tree nodes has already been checked
-via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last_next">activate_list_node_get_last_next</a>()</code>.
+via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
 * All <code>u64</code> fields correspond to valid node IDs.
 
 
@@ -1317,11 +1316,11 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last
 ### Testing
 
 
-* <code>test_activate_tree_node_empty()</code>.
-* <code>test_activate_tree_node_stacked()</code>.
+* <code>test_insert_tree_node_empty()</code>.
+* <code>test_insert_tree_node_stacked()</code>.
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, key: u64, parent: u64, solo_node_id: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;): u64
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, key: u64, parent: u64, solo_node_id: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;): u64
 </code></pre>
 
 
@@ -1330,7 +1329,7 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>&lt;V&gt;(
     avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
     key: u64,
     parent: u64,
@@ -1365,11 +1364,11 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>)) |
             // Mask in new bits.
             (new_tree_stack_top &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>);
-        node_ref_mut.bits = bits; // Reassign activated node bits.
+        node_ref_mut.bits = bits; // Reassign inserted node bits.
     };
-    <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge">activate_tree_node_update_parent_edge</a>( // Update parent edge.
+    <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge">insert_tree_node_update_parent_edge</a>( // Update parent edge.
         avlq_ref_mut, tree_node_id, parent, new_leaf_side);
-    tree_node_id // Return activated tree node ID.
+    tree_node_id // Return inserted tree node ID.
 }
 </code></pre>
 
@@ -1377,13 +1376,13 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_list_node_get_last
 
 </details>
 
-<a name="0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge"></a>
+<a name="0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge"></a>
 
-## Function `activate_tree_node_update_parent_edge`
+## Function `insert_tree_node_update_parent_edge`
 
-Update the parent edge for a tree node just activated.
+Update the parent edge for a tree node just inserted.
 
-Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>.
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>()</code>.
 
 
 <a name="@Parameters_23"></a>
@@ -1392,13 +1391,13 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tre
 
 
 * <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
-* <code>tree_node_id</code>: Node ID of tree node just activated in
-<code><a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node">activate_tree_node</a>()</code>.
-* <code>parent</code>: Node ID of parent to actvation node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> when
-activated node is root.
-* <code>new_leaf_side</code>: None if activated node is root, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
-activated node is left child of its parent, and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if
-activated node is right child of its parent.
+* <code>tree_node_id</code>: Node ID of tree node just inserted in
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>()</code>.
+* <code>parent</code>: Node ID of parent to inserted node, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> when
+inserted node is root.
+* <code>new_leaf_side</code>: None if inserted node is root, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> if
+inserted node is left child of its parent, and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code> if
+inserted node is right child of its parent.
 
 
 <a name="@Testing_24"></a>
@@ -1406,12 +1405,12 @@ activated node is right child of its parent.
 ### Testing
 
 
-* <code>test_activate_tree_node_update_parent_edge_left()</code>
-* <code>test_activate_tree_node_update_parent_edge_right()</code>
-* <code>test_activate_tree_node_update_parent_edge_root()</code>
+* <code>test_insert_tree_node_update_parent_edge_left()</code>
+* <code>test_insert_tree_node_update_parent_edge_right()</code>
+* <code>test_insert_tree_node_update_parent_edge_root()</code>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge">activate_tree_node_update_parent_edge</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, tree_node_id: u64, parent: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;)
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge">insert_tree_node_update_parent_edge</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, tree_node_id: u64, parent: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;)
 </code></pre>
 
 
@@ -1420,13 +1419,13 @@ activated node is right child of its parent.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_activate_tree_node_update_parent_edge">activate_tree_node_update_parent_edge</a>&lt;V&gt;(
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge">insert_tree_node_update_parent_edge</a>&lt;V&gt;(
     avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
     tree_node_id: u64,
     parent: u64,
     new_leaf_side: Option&lt;bool&gt;
 ) {
-    <b>if</b> (<a href="_is_none">option::is_none</a>(&new_leaf_side)) { // If activating root:
+    <b>if</b> (<a href="_is_none">option::is_none</a>(&new_leaf_side)) { // If inserting root:
         // Set root LSBs.
         avlq_ref_mut.root_lsbs = ((tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a>) <b>as</b> u8);
         // Reassign bits for root MSBs:
@@ -1435,13 +1434,13 @@ activated node is right child of its parent.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>) <b>as</b> u128)) |
             // Mask in new bits.
             ((tree_node_id <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>)
-    } <b>else</b> { // If activating child <b>to</b> existing node:
+    } <b>else</b> { // If inserting child <b>to</b> existing node:
         // Mutably borrow tree nodes <a href="">table</a>.
         <b>let</b> tree_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
         // Mutably borrow parent.
         <b>let</b> parent_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
             tree_nodes_ref_mut, parent);
-        // Determine <b>if</b> activating left child.
+        // Determine <b>if</b> inserting left child.
         <b>let</b> left_child = *<a href="_borrow">option::borrow</a>(&new_leaf_side) == <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a>;
         // Get child node ID field shift amounts for given side;
         <b>let</b> child_shift = <b>if</b> (left_child) <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> <b>else</b>

@@ -280,24 +280,24 @@ module econia::avl_queue {
         // which a new leaf would be inserted relative to match node.
         let (match_node_id, new_leaf_side) = search(avlq_ref_mut, key);
         // If search returned null from the root, or if search flagged
-        // that a new tree node will have to be activated as child, flag
-        // that the activated list node will be the sole node in the
+        // that a new tree node will have to be inserted as child, flag
+        // that the inserted list node will be the sole node in the
         // corresponding doubly linked list.
         let solo = match_node_id == (NIL as u64) ||
                    option::is_some(&new_leaf_side);
-        // If a solo list node, flag no anchor tree node yet activated,
+        // If a solo list node, flag no anchor tree node yet inserted,
         // otherwise set anchor tree node as match node from search.
         let anchor_tree_node_id = if (solo) (NIL as u64) else match_node_id;
-        let list_node_id = // Activate list node, storing its node ID.
-            activate_list_node(avlq_ref_mut, anchor_tree_node_id, value);
-        // Get corresponding tree node: if solo list node, activate a
-        // tree node and store its ID. Otherwise tree node is match node
-        // from search.
-        let _tree_node_id = if (solo) activate_tree_node(
+        let list_node_id = // Insert list node, storing its node ID.
+            insert_list_node(avlq_ref_mut, anchor_tree_node_id, value);
+        // Get corresponding tree node: if solo list node, insert a tree
+        // node and store its ID. Otherwise tree node is match node from
+        // search.
+        let _tree_node_id = if (solo) insert_tree_node(
             avlq_ref_mut, key, match_node_id, list_node_id, new_leaf_side) else
             match_node_id;
-        // If just activated new tree node, retrace starting at the
-        // parent to the activated tree node.
+        // If just inserted new tree node, retrace starting at the
+        // parent to the inserted tree node.
         if (solo) retrace(avlq_ref_mut, match_node_id, INCREMENT,
                           *option::borrow(&new_leaf_side));
         // Check AVL queue head and tail.
@@ -400,7 +400,7 @@ module econia::avl_queue {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Activate a list node and return its node ID.
+    /// Insert a list node and return its node ID.
     ///
     /// In the case of inserting a list node to a doubly linked list in
     /// an existing tree node, known as the "anchor tree node", the list
@@ -416,26 +416,25 @@ module econia::avl_queue {
     /// * `anchor_tree_node_id`: Node ID of anchor tree node, `NIL` if
     ///   inserting a list node as the sole list node in a new tree
     ///   node.
-    /// * `value`: Insertion value for list node to activate.
+    /// * `value`: Insertion value for list node to insert.
     ///
     /// # Returns
     ///
-    /// * `u64`: Node ID of activated list node.
+    /// * `u64`: Node ID of inserted list node.
     ///
     /// # Testing
     ///
-    /// * `test_activate_list_node_not_solo()`
-    /// * `test_activate_list_node_solo()`
-    fun activate_list_node<V>(
+    /// * `test_insert_list_node_not_solo()`
+    /// * `test_insert_list_node_solo()`
+    fun insert_list_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         anchor_tree_node_id: u64,
         value: V
     ): u64 {
-        // Get virtual last and next fields for activated list node.
-        let (last, next) = activate_list_node_get_last_next(
-            avlq_ref_mut, anchor_tree_node_id);
-        let list_node_id = // Assign fields, store activated node ID.
-            activate_list_node_assign_fields(avlq_ref_mut, last, next, value);
+        let (last, next) = // Get virtual last and next fields for node.
+            insert_list_node_get_last_next(avlq_ref_mut, anchor_tree_node_id);
+        let list_node_id = // Assign fields, store inserted node ID.
+            insert_list_node_assign_fields(avlq_ref_mut, last, next, value);
         // If inserting a new list tail that is not solo:
         if (anchor_tree_node_id != (NIL as u64)) {
             // Mutably borrow tree nodes table.
@@ -446,7 +445,7 @@ module econia::avl_queue {
                 table_with_length::borrow_mut(list_nodes_ref_mut, last);
             last_node_ref_mut.next_msbs = // Reassign its next MSBs.
                 ((list_node_id >> BITS_PER_BYTE) as u8);
-            // Reassign its next LSBs to those of activated list node.
+            // Reassign its next LSBs to those of inserted list node.
             last_node_ref_mut.next_lsbs = ((list_node_id & HI_BYTE) as u8);
             // Mutably borrow anchor tree node.
             let anchor_node_ref_mut = table_with_length::borrow_mut(
@@ -458,12 +457,12 @@ module econia::avl_queue {
                 // Mask in new bits.
                 ((list_node_id as u128) << SHIFT_LIST_TAIL);
         };
-        list_node_id // Return activated list node ID.
+        list_node_id // Return inserted list node ID.
     }
 
-    /// Assign fields when activating a list node.
+    /// Assign fields when inserting a list node.
     ///
-    /// Inner function for `activate_list_node()`.
+    /// Inner function for `insert_list_node()`.
     ///
     /// If inactive list node stack is empty, allocate a new list node,
     /// otherwise pop one off the inactive stack.
@@ -472,20 +471,20 @@ module econia::avl_queue {
     ///
     /// * `avlq_ref`: Immutable reference to AVL queue.
     /// * `last`: Virtual last field from
-    ///   `activate_list_node_get_last_next()`.
+    ///   `insert_list_node_get_last_next()`.
     /// * `next`: Virtual next field from
-    ///   `activate_list_node_get_last_next()`.
+    ///   `insert_list_node_get_last_next()`.
     /// * `value`: Insertion value.
     ///
     /// # Returns
     ///
-    /// * `u64`: Node ID of activated list node.
+    /// * `u64`: Node ID of inserted list node.
     ///
     /// # Testing
     ///
-    /// * `test_activate_list_node_assign_fields_allocate()`
-    /// * `test_activate_list_node_assign_fields_stacked()`
-    fun activate_list_node_assign_fields<V>(
+    /// * `test_insert_list_node_assign_fields_allocate()`
+    /// * `test_insert_list_node_assign_fields_stacked()`
+    fun insert_list_node_assign_fields<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         last: u64,
         next: u64,
@@ -539,16 +538,16 @@ module econia::avl_queue {
         list_node_id // Return list node ID.
     }
 
-    /// Get virtual last and next fields when activating a list node.
+    /// Get virtual last and next fields when inserting a list node.
     ///
-    /// Inner function for `activate_list_node()`.
+    /// Inner function for `insert_list_node()`.
     ///
-    /// If activated list node will be the only list node in a doubly
+    /// If inserted list node will be the only list node in a doubly
     /// linked list, a "solo list node", then it will have to indicate
     /// for next and last node IDs a new tree node, which will also have
-    /// to be activated via `activate_tree_node()`. Hence error checking
+    /// to be inserted via `insert_tree_node()`. Hence error checking
     /// for the number of allocated tree nodes is performed here first,
-    /// and is not re-performed in `activate_tree_node()` for the case
+    /// and is not re-performed in `inserted_tree_node()` for the case
     /// of a solo list node.
     ///
     /// # Parameters
@@ -559,15 +558,15 @@ module econia::avl_queue {
     ///
     /// # Returns
     ///
-    /// * `u64`: Virtual last field of activated list node.
-    /// * `u64`: Virtual next field of activated list node.
+    /// * `u64`: Virtual last field of inserted list node.
+    /// * `u64`: Virtual next field of inserted list node.
     ///
     /// # Testing
     ///
-    /// * `test_activate_list_node_get_last_next_new_tail()`
-    /// * `test_activate_list_node_get_last_next_solo_allocate()`
-    /// * `test_activate_list_node_get_last_next_solo_stacked()`
-    fun activate_list_node_get_last_next<V>(
+    /// * `test_insert_list_node_get_last_next_new_tail()`
+    /// * `test_insert_list_node_get_last_next_solo_allocate()`
+    /// * `test_insert_list_node_get_last_next_solo_stacked()`
+    fun insert_list_node_get_last_next<V>(
         avlq_ref: &AVLqueue<V>,
         anchor_tree_node_id: u64,
     ): (
@@ -578,7 +577,7 @@ module econia::avl_queue {
         let is_tree_node = ((BIT_FLAG_TREE_NODE as u64) << SHIFT_NODE_TYPE);
         // Immutably borrow tree nodes table.
         let tree_nodes_ref = &avlq_ref.tree_nodes;
-        let last; // Declare virtual last field for activated list node.
+        let last; // Declare virtual last field for inserted list node.
         // If inserting a solo list node:
         if (anchor_tree_node_id == (NIL as u64)) {
             // Get top of inactive tree nodes stack.
@@ -606,44 +605,44 @@ module econia::avl_queue {
         (last, (anchor_tree_node_id | is_tree_node))
     }
 
-    /// Activate a tree node and return its node ID.
+    /// Insert a tree node and return its node ID.
     ///
     /// If inactive tree node stack is empty, allocate a new tree node,
     /// otherwise pop one off the inactive stack.
     ///
-    /// Should only be called when `activate_list_node()` activates the
+    /// Should only be called when `insert_list_node()` inserts the
     /// sole list node in new AVL tree node, thus checking the number
-    /// of allocated tree nodes in `activate_list_node_get_last_next()`.
+    /// of allocated tree nodes in `insert_list_node_get_last_next()`.
     ///
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `key`: Insertion key for activated node.
-    /// * `parent`: Node ID of parent to actvated node, `NIL` when
-    ///   activated node is to become root.
+    /// * `key`: Insertion key for inserted node.
+    /// * `parent`: Node ID of parent to inserted node, `NIL` when
+    ///   inserted node is to become root.
     /// * `solo_node_id`: Node ID of sole list node in tree node's
     ///   doubly linked list.
-    /// * `new_leaf_side`: None if activated node is root, `LEFT` if
-    ///   activated node is left child of its parent, and `RIGHT` if
-    ///   activated node is right child of its parent.
+    /// * `new_leaf_side`: None if inserted node is root, `LEFT` if
+    ///   inserted node is left child of its parent, and `RIGHT` if
+    ///   inserted node is right child of its parent.
     ///
     /// # Returns
     ///
-    /// * `u64`: Node ID of activated tree node.
+    /// * `u64`: Node ID of inserted tree node.
     ///
     /// # Assumptions
     ///
     /// * Node is a leaf in the AVL tree and has a single list node in
     ///   its doubly linked list.
     /// * The number of allocated tree nodes has already been checked
-    ///   via `activate_list_node_get_last_next()`.
+    ///   via `insert_list_node_get_last_next()`.
     /// * All `u64` fields correspond to valid node IDs.
     ///
     /// # Testing
     ///
-    /// * `test_activate_tree_node_empty()`.
-    /// * `test_activate_tree_node_stacked()`.
-    fun activate_tree_node<V>(
+    /// * `test_insert_tree_node_empty()`.
+    /// * `test_insert_tree_node_stacked()`.
+    fun insert_tree_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64,
         parent: u64,
@@ -678,40 +677,40 @@ module econia::avl_queue {
                 (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_TREE_STACK_TOP)) |
                 // Mask in new bits.
                 (new_tree_stack_top << SHIFT_TREE_STACK_TOP);
-            node_ref_mut.bits = bits; // Reassign activated node bits.
+            node_ref_mut.bits = bits; // Reassign inserted node bits.
         };
-        activate_tree_node_update_parent_edge( // Update parent edge.
+        insert_tree_node_update_parent_edge( // Update parent edge.
             avlq_ref_mut, tree_node_id, parent, new_leaf_side);
-        tree_node_id // Return activated tree node ID.
+        tree_node_id // Return inserted tree node ID.
     }
 
-    /// Update the parent edge for a tree node just activated.
+    /// Update the parent edge for a tree node just inserted.
     ///
-    /// Inner function for `activate_tree_node()`.
+    /// Inner function for `insert_tree_node()`.
     ///
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `tree_node_id`: Node ID of tree node just activated in
-    ///   `activate_tree_node()`.
-    /// * `parent`: Node ID of parent to actvation node, `NIL` when
-    ///   activated node is root.
-    /// * `new_leaf_side`: None if activated node is root, `LEFT` if
-    ///   activated node is left child of its parent, and `RIGHT` if
-    ///   activated node is right child of its parent.
+    /// * `tree_node_id`: Node ID of tree node just inserted in
+    ///   `insert_tree_node()`.
+    /// * `parent`: Node ID of parent to inserted node, `NIL` when
+    ///   inserted node is root.
+    /// * `new_leaf_side`: None if inserted node is root, `LEFT` if
+    ///   inserted node is left child of its parent, and `RIGHT` if
+    ///   inserted node is right child of its parent.
     ///
     /// # Testing
     ///
-    /// * `test_activate_tree_node_update_parent_edge_left()`
-    /// * `test_activate_tree_node_update_parent_edge_right()`
-    /// * `test_activate_tree_node_update_parent_edge_root()`
-    fun activate_tree_node_update_parent_edge<V>(
+    /// * `test_insert_tree_node_update_parent_edge_left()`
+    /// * `test_insert_tree_node_update_parent_edge_right()`
+    /// * `test_insert_tree_node_update_parent_edge_root()`
+    fun insert_tree_node_update_parent_edge<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         tree_node_id: u64,
         parent: u64,
         new_leaf_side: Option<bool>
     ) {
-        if (option::is_none(&new_leaf_side)) { // If activating root:
+        if (option::is_none(&new_leaf_side)) { // If inserting root:
             // Set root LSBs.
             avlq_ref_mut.root_lsbs = ((tree_node_id & HI_BYTE) as u8);
             // Reassign bits for root MSBs:
@@ -720,13 +719,13 @@ module econia::avl_queue {
                 (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE) as u128)) |
                 // Mask in new bits.
                 ((tree_node_id as u128) >> BITS_PER_BYTE)
-        } else { // If activating child to existing node:
+        } else { // If inserting child to existing node:
             // Mutably borrow tree nodes table.
             let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
             // Mutably borrow parent.
             let parent_ref_mut = table_with_length::borrow_mut(
                 tree_nodes_ref_mut, parent);
-            // Determine if activating left child.
+            // Determine if inserting left child.
             let left_child = *option::borrow(&new_leaf_side) == LEFT;
             // Get child node ID field shift amounts for given side;
             let child_shift = if (left_child) SHIFT_CHILD_LEFT else
@@ -2456,14 +2455,14 @@ module econia::avl_queue {
 
     #[test]
     /// Verify return and state updates for allocating new list node.
-    fun test_activate_list_node_assign_fields_allocate() {
+    fun test_insert_list_node_assign_fields_allocate() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
         // Declare inputs.
         let value = 123;
         let last = 456;
         let next = 789;
-        // Assign fields to activated list node, store its ID.
-        let list_node_id = activate_list_node_assign_fields(
+        // Assign fields to inserted list node, store its ID.
+        let list_node_id = insert_list_node_assign_fields(
             &mut avlq, last, next, value);
         assert!(list_node_id == 1, 0); // Assert list node ID.
         // Assert field assignments.
@@ -2477,16 +2476,16 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify return and state updates for activating stack top.
-    fun test_activate_list_node_assign_fields_stacked() {
+    /// Verify return and state updates for inserting stack top.
+    fun test_insert_list_node_assign_fields_stacked() {
         let stack_top_id = 321;
         let avlq = new(ASCENDING, 0, stack_top_id); // Init AVL queue.
         // Declare inputs.
         let value = 123;
         let last = 456;
         let next = 789;
-        // Assign fields to activated list node, store its ID.
-        let list_node_id = activate_list_node_assign_fields(
+        // Assign fields to inserted list node, store its ID.
+        let list_node_id = insert_list_node_assign_fields(
             &mut avlq, last, next, value);
         // Assert list node ID.
         assert!(list_node_id == stack_top_id, 0);
@@ -2504,7 +2503,7 @@ module econia::avl_queue {
 
     #[test]
     /// Verify returns for list node becoming new tail.
-    fun test_activate_list_node_get_last_next_new_tail() {
+    fun test_insert_list_node_get_last_next_new_tail() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         let anchor_tree_node_id = 15; // Declare anchor tree node ID.
         let old_list_tail = 31; // Declare old list tail node ID.
@@ -2512,7 +2511,7 @@ module econia::avl_queue {
         table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
             TreeNode{bits: (old_list_tail as u128) << SHIFT_LIST_TAIL});
         let (last, next) = // Get virtual last and next fields.
-            activate_list_node_get_last_next(&avlq, anchor_tree_node_id);
+            insert_list_node_get_last_next(&avlq, anchor_tree_node_id);
         // Assert last and next fields.
         assert!(last == u_64(b"11111"), 0);
         assert!(next == u_64(b"100000000001111"), 0);
@@ -2521,10 +2520,10 @@ module econia::avl_queue {
 
     #[test]
     /// Verify returns for solo list node and allocated tree node.
-    fun test_activate_list_node_get_last_next_solo_allocate() {
+    fun test_insert_list_node_get_last_next_solo_allocate() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         let (last, next) = // Get virtual last and next fields.
-            activate_list_node_get_last_next(&avlq, (NIL as u64));
+            insert_list_node_get_last_next(&avlq, (NIL as u64));
         // Assert last and next fields.
         assert!(last == u_64(b"100000000000001"), 0);
         assert!(next == u_64(b"100000000000001"), 0);
@@ -2533,10 +2532,10 @@ module econia::avl_queue {
 
     #[test]
     /// Verify returns for solo list node and tree node on stack.
-    fun test_activate_list_node_get_last_next_solo_stacked() {
+    fun test_insert_list_node_get_last_next_solo_stacked() {
         let avlq = new<u8>(ASCENDING, 7, 0); // Init AVL queue.
         let (last, next) = // Get virtual last and next fields.
-            activate_list_node_get_last_next(&avlq, (NIL as u64));
+            insert_list_node_get_last_next(&avlq, (NIL as u64));
         // Assert last and next fields.
         assert!(last == u_64(b"100000000000111"), 0);
         assert!(next == u_64(b"100000000000111"), 0);
@@ -2545,16 +2544,16 @@ module econia::avl_queue {
 
     #[test]
     /// Verify return, state updates for solo list node.
-    fun test_activate_list_node_solo() {
-        // Declare tree node ID and list node IDs at top of
-        // inactive stacks.
+    fun test_insert_list_node_solo() {
+        // Declare tree node ID and list node IDs at top of inactive
+        // stacks.
         let tree_node_id = 123;
         let list_node_id = 456;
         // Init AVL queue.
         let avlq = new(ASCENDING, tree_node_id, list_node_id);
         let value = 100; // Declare insertion value.
-        let list_node_id_return =
-            activate_list_node(&mut avlq, (NIL as u64), value);
+        let list_node_id_return = // Insert node, storing resultant ID.
+            insert_list_node(&mut avlq, (NIL as u64), value);
         // Assert return.
         assert!(list_node_id_return == list_node_id, 0);
         // Assert state updates.
@@ -2571,7 +2570,7 @@ module econia::avl_queue {
 
     #[test]
     /// Verify return, state updates for list node that is not solo.
-    fun test_activate_list_node_not_solo() {
+    fun test_insert_list_node_not_solo() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
         // Declare old list tail state.
         let old_list_tail = 1;
@@ -2584,8 +2583,8 @@ module econia::avl_queue {
         table_with_length::add(&mut avlq.list_nodes, old_list_tail,
             ListNode{last_msbs: 0, last_lsbs: 0, next_msbs: 0, next_lsbs: 0});
         let value = 100; // Declare insertion value.
-        let list_node_id_return =
-            activate_list_node(&mut avlq, anchor_tree_node_id, value);
+        let list_node_id_return = // Insert node, storing resultant ID.
+            insert_list_node(&mut avlq, anchor_tree_node_id, value);
         // Assert return.
         assert!(list_node_id_return == list_node_id, 0);
         // Assert state updates.
@@ -2608,16 +2607,16 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state update for activating tree node with empty stack.
-    fun test_activate_tree_node_empty() {
+    /// Verify state update for inserting tree node with empty stack.
+    fun test_insert_tree_node_empty() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        let tree_node_id = 1; // Declare activated tree node ID.
+        let tree_node_id = 1; // Declare inserted tree node ID.
         let solo_node_id = 789; // Declare solo list node ID.
         let key = 321; // Declare insertion key.
-        // Activate new tree node, storing its tree node ID.
-        let tree_node_id_return = activate_tree_node(
+        // Insert new tree node, storing its tree node ID.
+        let tree_node_id_return = insert_tree_node(
             &mut avlq, key, (NIL as u64), solo_node_id, option::none());
-        // Assert activated tree node ID.
+        // Assert inserted tree node ID.
         assert!(tree_node_id_return == tree_node_id, 0);
         // Assert new tree node state.
         assert!(get_insertion_key_by_id_test(&avlq, tree_node_id) == key, 0);
@@ -2634,19 +2633,19 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state update for activating tree node with stack.
-    fun test_activate_tree_node_stacked() {
-        let tree_node_id = 123; // Declare activated tree node ID.
+    /// Verify state update for inserting tree node with stack.
+    fun test_insert_tree_node_stacked() {
+        let tree_node_id = 123; // Declare inserted tree node ID.
         // Init AVL queue.
         let avlq = new<u8>(ASCENDING, tree_node_id, 0);
         let solo_node_id = 789; // Declare solo list node ID.
         let key = 321; // Declare insertion key.
-        // Activate new tree node, storing its tree node ID.
-        let tree_node_id_return = activate_tree_node(
+        // Insert tree node, storing its tree node ID.
+        let tree_node_id_return = insert_tree_node(
             &mut avlq, key, (NIL as u64), solo_node_id, option::none());
-        // Assert activated tree node ID.
+        // Assert inserted tree node ID.
         assert!(tree_node_id_return == tree_node_id, 0);
-        // Assert new tree node state.
+        // Assert tree node state.
         assert!(get_insertion_key_by_id_test(&avlq, tree_node_id) == key, 0);
         assert!(get_parent_by_id_test(&avlq, tree_node_id) == (NIL as u64), 0);
         assert!(get_list_head_by_id_test(&avlq, tree_node_id)
@@ -2661,15 +2660,15 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state update for activating left child.
-    fun test_activate_tree_node_update_parent_edge_left() {
-        let tree_node_id = 1234; // Declare activated tree node ID.
+    /// Verify state update for inserting left child.
+    fun test_insert_tree_node_update_parent_edge_left() {
+        let tree_node_id = 1234; // Declare inserted tree node ID.
         let parent = 321;
         let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
         // Declare empty new leaf side.
         let new_leaf_side = option::some(LEFT);
-        // Update parent to activated node.
-        activate_tree_node_update_parent_edge(
+        // Update parent to inserted node.
+        insert_tree_node_update_parent_edge(
             &mut avlq, tree_node_id, parent, new_leaf_side);
         // Assert update to parent's child field.
         assert!(get_child_left_by_id_test(&avlq, parent) == tree_node_id, 0);
@@ -2677,15 +2676,15 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state update for activating right child.
-    fun test_activate_tree_node_update_parent_edge_right() {
-        let tree_node_id = 1234; // Declare activated tree node ID.
+    /// Verify state update for inserting right child.
+    fun test_insert_tree_node_update_parent_edge_right() {
+        let tree_node_id = 1234; // Declare inserted tree node ID.
         let parent = 321;
         let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
         // Declare empty new leaf side.
         let new_leaf_side = option::some(RIGHT);
-        // Update parent to activated node.
-        activate_tree_node_update_parent_edge(
+        // Update parent to inserted node.
+        insert_tree_node_update_parent_edge(
             &mut avlq, tree_node_id, parent, new_leaf_side);
         // Assert update to parent's child field.
         assert!(get_child_right_by_id_test(&avlq, parent) == tree_node_id, 0);
@@ -2693,17 +2692,17 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state update for activating root.
-    fun test_activate_tree_node_update_parent_edge_root() {
+    /// Verify state update for inserting root.
+    fun test_insert_tree_node_update_parent_edge_root() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        let tree_node_id = 1234; // Declare activated tree node ID.
+        let tree_node_id = 1234; // Declare inserted tree node ID.
         let parent = (NIL as u64); // Declare parent as root flag.
         // Declare empty new leaf side.
         let new_leaf_side = option::none();
         // Assert null root.
         assert!(get_root_test(&avlq) == (NIL as u64), 0);
-        // Update parent for activated root node.
-        activate_tree_node_update_parent_edge(
+        // Update parent for inserted root node.
+        insert_tree_node_update_parent_edge(
             &mut avlq, tree_node_id, parent, new_leaf_side);
         // Assert root update.
         assert!(get_root_test(&avlq) == tree_node_id, 0);

@@ -2454,262 +2454,6 @@ module econia::avl_queue {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
-    /// Verify return and state updates for allocating new list node.
-    fun test_insert_list_node_assign_fields_allocate() {
-        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
-        // Declare inputs.
-        let value = 123;
-        let last = 456;
-        let next = 789;
-        // Assign fields to inserted list node, store its ID.
-        let list_node_id = insert_list_node_assign_fields(
-            &mut avlq, last, next, value);
-        assert!(list_node_id == 1, 0); // Assert list node ID.
-        // Assert field assignments.
-        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
-        let (last_assigned, _) = get_list_last_test(list_node_ref);
-        assert!(last_assigned == last, 0);
-        let (next_assigned, _) = get_list_next_test(list_node_ref);
-        assert!(next_assigned == next, 0);
-        assert!(get_value_test(&avlq, list_node_id) == value, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify return and state updates for inserting stack top.
-    fun test_insert_list_node_assign_fields_stacked() {
-        let stack_top_id = 321;
-        let avlq = new(ASCENDING, 0, stack_top_id); // Init AVL queue.
-        // Declare inputs.
-        let value = 123;
-        let last = 456;
-        let next = 789;
-        // Assign fields to inserted list node, store its ID.
-        let list_node_id = insert_list_node_assign_fields(
-            &mut avlq, last, next, value);
-        // Assert list node ID.
-        assert!(list_node_id == stack_top_id, 0);
-        // Assert field assignments.
-        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
-        let (last_assigned, _) = get_list_last_test(list_node_ref);
-        assert!(last_assigned == last, 0);
-        let (next_assigned, _) = get_list_next_test(list_node_ref);
-        assert!(next_assigned == next, 0);
-        assert!(get_value_test(&avlq, list_node_id) == value, 0);
-        // Assert stack top update.
-        assert!(get_list_top_test(&avlq) == stack_top_id - 1, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify returns for list node becoming new tail.
-    fun test_insert_list_node_get_last_next_new_tail() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        let anchor_tree_node_id = 15; // Declare anchor tree node ID.
-        let old_list_tail = 31; // Declare old list tail node ID.
-        // Manually add anchor tree node to tree nodes table.
-        table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
-            TreeNode{bits: (old_list_tail as u128) << SHIFT_LIST_TAIL});
-        let (last, next) = // Get virtual last and next fields.
-            insert_list_node_get_last_next(&avlq, anchor_tree_node_id);
-        // Assert last and next fields.
-        assert!(last == u_64(b"11111"), 0);
-        assert!(next == u_64(b"100000000001111"), 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify returns for solo list node and allocated tree node.
-    fun test_insert_list_node_get_last_next_solo_allocate() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        let (last, next) = // Get virtual last and next fields.
-            insert_list_node_get_last_next(&avlq, (NIL as u64));
-        // Assert last and next fields.
-        assert!(last == u_64(b"100000000000001"), 0);
-        assert!(next == u_64(b"100000000000001"), 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify returns for solo list node and tree node on stack.
-    fun test_insert_list_node_get_last_next_solo_stacked() {
-        let avlq = new<u8>(ASCENDING, 7, 0); // Init AVL queue.
-        let (last, next) = // Get virtual last and next fields.
-            insert_list_node_get_last_next(&avlq, (NIL as u64));
-        // Assert last and next fields.
-        assert!(last == u_64(b"100000000000111"), 0);
-        assert!(next == u_64(b"100000000000111"), 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify return, state updates for solo list node.
-    fun test_insert_list_node_solo() {
-        // Declare tree node ID and list node IDs at top of inactive
-        // stacks.
-        let tree_node_id = 123;
-        let list_node_id = 456;
-        // Init AVL queue.
-        let avlq = new(ASCENDING, tree_node_id, list_node_id);
-        let value = 100; // Declare insertion value.
-        let list_node_id_return = // Insert node, storing resultant ID.
-            insert_list_node(&mut avlq, (NIL as u64), value);
-        // Assert return.
-        assert!(list_node_id_return == list_node_id, 0);
-        // Assert state updates.
-        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
-        let (last_assigned, is_tree_node) = get_list_last_test(list_node_ref);
-        assert!(last_assigned == tree_node_id, 0);
-        assert!(is_tree_node, 0);
-        let (next_assigned, is_tree_node) = get_list_next_test(list_node_ref);
-        assert!(next_assigned == tree_node_id, 0);
-        assert!(is_tree_node, 0);
-        assert!(get_value_test(&avlq, list_node_id) == value, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify return, state updates for list node that is not solo.
-    fun test_insert_list_node_not_solo() {
-        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
-        // Declare old list tail state.
-        let old_list_tail = 1;
-        let anchor_tree_node_id = 321;
-        let list_node_id = 2; // Declare list node ID post-allocation.
-        // Manually add anchor tree node to tree nodes table.
-        table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
-            TreeNode{bits: (old_list_tail as u128) << SHIFT_LIST_TAIL});
-        // Manually add old list tail to list nodes table.
-        table_with_length::add(&mut avlq.list_nodes, old_list_tail,
-            ListNode{last_msbs: 0, last_lsbs: 0, next_msbs: 0, next_lsbs: 0});
-        let value = 100; // Declare insertion value.
-        let list_node_id_return = // Insert node, storing resultant ID.
-            insert_list_node(&mut avlq, anchor_tree_node_id, value);
-        // Assert return.
-        assert!(list_node_id_return == list_node_id, 0);
-        // Assert state updates.
-        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
-        let (last_assigned, is_tree_node) = get_list_last_test(list_node_ref);
-        assert!(last_assigned == old_list_tail, 0);
-        assert!(!is_tree_node, 0);
-        let (next_assigned, is_tree_node) = get_list_next_test(list_node_ref);
-        assert!(next_assigned == anchor_tree_node_id, 0);
-        assert!(is_tree_node, 0);
-        let old_tail_ref = borrow_list_node_test(&avlq, old_list_tail);
-        (next_assigned, is_tree_node) = get_list_next_test(old_tail_ref);
-        assert!(next_assigned == list_node_id, 0);
-        assert!(!is_tree_node, 0);
-        assert!(get_value_test(&avlq, list_node_id) == value, 0);
-        let anchor_node_ref =
-            borrow_tree_node_test(&avlq, anchor_tree_node_id);
-        assert!(get_list_tail_test(anchor_node_ref) == list_node_id, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state update for inserting tree node with empty stack.
-    fun test_insert_tree_node_empty() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        let tree_node_id = 1; // Declare inserted tree node ID.
-        let solo_node_id = 789; // Declare solo list node ID.
-        let key = 321; // Declare insertion key.
-        // Insert new tree node, storing its tree node ID.
-        let tree_node_id_return = insert_tree_node(
-            &mut avlq, key, (NIL as u64), solo_node_id, option::none());
-        // Assert inserted tree node ID.
-        assert!(tree_node_id_return == tree_node_id, 0);
-        // Assert new tree node state.
-        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id) == key, 0);
-        assert!(get_parent_by_id_test(&avlq, tree_node_id) == (NIL as u64), 0);
-        assert!(get_list_head_by_id_test(&avlq, tree_node_id)
-                == solo_node_id, 0);
-        assert!(get_list_tail_by_id_test(&avlq, tree_node_id)
-                == solo_node_id, 0);
-        // Assert stack top.
-        assert!(get_tree_top_test(&avlq) == (NIL as u64), 0);
-        // Assert root update.
-        assert!(get_root_test(&avlq) == tree_node_id, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state update for inserting tree node with stack.
-    fun test_insert_tree_node_stacked() {
-        let tree_node_id = 123; // Declare inserted tree node ID.
-        // Init AVL queue.
-        let avlq = new<u8>(ASCENDING, tree_node_id, 0);
-        let solo_node_id = 789; // Declare solo list node ID.
-        let key = 321; // Declare insertion key.
-        // Insert tree node, storing its tree node ID.
-        let tree_node_id_return = insert_tree_node(
-            &mut avlq, key, (NIL as u64), solo_node_id, option::none());
-        // Assert inserted tree node ID.
-        assert!(tree_node_id_return == tree_node_id, 0);
-        // Assert tree node state.
-        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id) == key, 0);
-        assert!(get_parent_by_id_test(&avlq, tree_node_id) == (NIL as u64), 0);
-        assert!(get_list_head_by_id_test(&avlq, tree_node_id)
-                == solo_node_id, 0);
-        assert!(get_list_tail_by_id_test(&avlq, tree_node_id)
-                == solo_node_id, 0);
-        // Assert stack top.
-        assert!(get_tree_top_test(&avlq) == tree_node_id - 1, 0);
-        // Assert root update.
-        assert!(get_root_test(&avlq) == tree_node_id, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state update for inserting left child.
-    fun test_insert_tree_node_update_parent_edge_left() {
-        let tree_node_id = 1234; // Declare inserted tree node ID.
-        let parent = 321;
-        let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
-        // Declare empty new leaf side.
-        let new_leaf_side = option::some(LEFT);
-        // Update parent to inserted node.
-        insert_tree_node_update_parent_edge(
-            &mut avlq, tree_node_id, parent, new_leaf_side);
-        // Assert update to parent's child field.
-        assert!(get_child_left_by_id_test(&avlq, parent) == tree_node_id, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state update for inserting right child.
-    fun test_insert_tree_node_update_parent_edge_right() {
-        let tree_node_id = 1234; // Declare inserted tree node ID.
-        let parent = 321;
-        let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
-        // Declare empty new leaf side.
-        let new_leaf_side = option::some(RIGHT);
-        // Update parent to inserted node.
-        insert_tree_node_update_parent_edge(
-            &mut avlq, tree_node_id, parent, new_leaf_side);
-        // Assert update to parent's child field.
-        assert!(get_child_right_by_id_test(&avlq, parent) == tree_node_id, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state update for inserting root.
-    fun test_insert_tree_node_update_parent_edge_root() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        let tree_node_id = 1234; // Declare inserted tree node ID.
-        let parent = (NIL as u64); // Declare parent as root flag.
-        // Declare empty new leaf side.
-        let new_leaf_side = option::none();
-        // Assert null root.
-        assert!(get_root_test(&avlq) == (NIL as u64), 0);
-        // Update parent for inserted root node.
-        insert_tree_node_update_parent_edge(
-            &mut avlq, tree_node_id, parent, new_leaf_side);
-        // Assert root update.
-        assert!(get_root_test(&avlq) == tree_node_id, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
     /// Verify successful extraction.
     fun test_get_child_left_test() {
         let tree_node = TreeNode{bits: u_128_by_32( // Create tree node.
@@ -2900,32 +2644,6 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify successful state operations.
-    fun test_set_get_root_test() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        avlq.bits = u_128_by_32( // Set all bits.
-            b"11111111111111111111111111111111",
-            b"11111111111111111111111111111111",
-            b"11111111111111111111111111111111",
-            b"11111111111111111111111111111111");
-        avlq.root_lsbs = (u_64(b"11111111") as u8); // Set all bits.
-        // Assert getter return.
-        assert!(get_root_test(&avlq) == HI_NODE_ID, 0);
-        let new_root = u_64(b"10000000000001"); // Declare new root.
-        set_root_test(&mut avlq, new_root); // Set new root.
-        // Assert getter return.
-        assert!(get_root_test(&avlq) == new_root, 0);
-        // Assert fields.
-        assert!(avlq.bits == u_128_by_32(
-            b"11111111111111111111111111111111",
-            b"11111111111111111111111111111111",
-            b"11111111111111111111111111111111",
-            b"11111111111111111111111111100000"), 0);
-        assert!(avlq.root_lsbs == (u_64(b"00000001") as u8), 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
     /// Verify successful extraction.
     fun test_get_tree_next_test() {
         // Declare tree node.
@@ -2956,6 +2674,262 @@ module econia::avl_queue {
         };
         // Assert tree top.
         assert!(get_tree_top_test(&avlq) == u_64(b"10000000000001"), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify return and state updates for allocating new list node.
+    fun test_insert_list_node_assign_fields_allocate() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare inputs.
+        let value = 123;
+        let last = 456;
+        let next = 789;
+        // Assign fields to inserted list node, store its ID.
+        let list_node_id = insert_list_node_assign_fields(
+            &mut avlq, last, next, value);
+        assert!(list_node_id == 1, 0); // Assert list node ID.
+        // Assert field assignments.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        let (last_assigned, _) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == last, 0);
+        let (next_assigned, _) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == next, 0);
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify return and state updates for inserting stack top.
+    fun test_insert_list_node_assign_fields_stacked() {
+        let stack_top_id = 321;
+        let avlq = new(ASCENDING, 0, stack_top_id); // Init AVL queue.
+        // Declare inputs.
+        let value = 123;
+        let last = 456;
+        let next = 789;
+        // Assign fields to inserted list node, store its ID.
+        let list_node_id = insert_list_node_assign_fields(
+            &mut avlq, last, next, value);
+        // Assert list node ID.
+        assert!(list_node_id == stack_top_id, 0);
+        // Assert field assignments.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        let (last_assigned, _) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == last, 0);
+        let (next_assigned, _) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == next, 0);
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        // Assert stack top update.
+        assert!(get_list_top_test(&avlq) == stack_top_id - 1, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns for list node becoming new tail.
+    fun test_insert_list_node_get_last_next_new_tail() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        let anchor_tree_node_id = 15; // Declare anchor tree node ID.
+        let old_list_tail = 31; // Declare old list tail node ID.
+        // Manually add anchor tree node to tree nodes table.
+        table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
+            TreeNode{bits: (old_list_tail as u128) << SHIFT_LIST_TAIL});
+        let (last, next) = // Get virtual last and next fields.
+            insert_list_node_get_last_next(&avlq, anchor_tree_node_id);
+        // Assert last and next fields.
+        assert!(last == u_64(b"11111"), 0);
+        assert!(next == u_64(b"100000000001111"), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns for solo list node and allocated tree node.
+    fun test_insert_list_node_get_last_next_solo_allocate() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        let (last, next) = // Get virtual last and next fields.
+            insert_list_node_get_last_next(&avlq, (NIL as u64));
+        // Assert last and next fields.
+        assert!(last == u_64(b"100000000000001"), 0);
+        assert!(next == u_64(b"100000000000001"), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns for solo list node and tree node on stack.
+    fun test_insert_list_node_get_last_next_solo_stacked() {
+        let avlq = new<u8>(ASCENDING, 7, 0); // Init AVL queue.
+        let (last, next) = // Get virtual last and next fields.
+            insert_list_node_get_last_next(&avlq, (NIL as u64));
+        // Assert last and next fields.
+        assert!(last == u_64(b"100000000000111"), 0);
+        assert!(next == u_64(b"100000000000111"), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify return, state updates for list node that is not solo.
+    fun test_insert_list_node_not_solo() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        // Declare old list tail state.
+        let old_list_tail = 1;
+        let anchor_tree_node_id = 321;
+        let list_node_id = 2; // Declare list node ID post-allocation.
+        // Manually add anchor tree node to tree nodes table.
+        table_with_length::add(&mut avlq.tree_nodes, anchor_tree_node_id,
+            TreeNode{bits: (old_list_tail as u128) << SHIFT_LIST_TAIL});
+        // Manually add old list tail to list nodes table.
+        table_with_length::add(&mut avlq.list_nodes, old_list_tail,
+            ListNode{last_msbs: 0, last_lsbs: 0, next_msbs: 0, next_lsbs: 0});
+        let value = 100; // Declare insertion value.
+        let list_node_id_return = // Insert node, storing resultant ID.
+            insert_list_node(&mut avlq, anchor_tree_node_id, value);
+        // Assert return.
+        assert!(list_node_id_return == list_node_id, 0);
+        // Assert state updates.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        let (last_assigned, is_tree_node) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == old_list_tail, 0);
+        assert!(!is_tree_node, 0);
+        let (next_assigned, is_tree_node) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == anchor_tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        let old_tail_ref = borrow_list_node_test(&avlq, old_list_tail);
+        (next_assigned, is_tree_node) = get_list_next_test(old_tail_ref);
+        assert!(next_assigned == list_node_id, 0);
+        assert!(!is_tree_node, 0);
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        let anchor_node_ref =
+            borrow_tree_node_test(&avlq, anchor_tree_node_id);
+        assert!(get_list_tail_test(anchor_node_ref) == list_node_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify return, state updates for solo list node.
+    fun test_insert_list_node_solo() {
+        // Declare tree node ID and list node IDs at top of inactive
+        // stacks.
+        let tree_node_id = 123;
+        let list_node_id = 456;
+        // Init AVL queue.
+        let avlq = new(ASCENDING, tree_node_id, list_node_id);
+        let value = 100; // Declare insertion value.
+        let list_node_id_return = // Insert node, storing resultant ID.
+            insert_list_node(&mut avlq, (NIL as u64), value);
+        // Assert return.
+        assert!(list_node_id_return == list_node_id, 0);
+        // Assert state updates.
+        let list_node_ref = borrow_list_node_test(&avlq, list_node_id);
+        let (last_assigned, is_tree_node) = get_list_last_test(list_node_ref);
+        assert!(last_assigned == tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        let (next_assigned, is_tree_node) = get_list_next_test(list_node_ref);
+        assert!(next_assigned == tree_node_id, 0);
+        assert!(is_tree_node, 0);
+        assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state update for inserting tree node with empty stack.
+    fun test_insert_tree_node_empty() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        let tree_node_id = 1; // Declare inserted tree node ID.
+        let solo_node_id = 789; // Declare solo list node ID.
+        let key = 321; // Declare insertion key.
+        // Insert new tree node, storing its tree node ID.
+        let tree_node_id_return = insert_tree_node(
+            &mut avlq, key, (NIL as u64), solo_node_id, option::none());
+        // Assert inserted tree node ID.
+        assert!(tree_node_id_return == tree_node_id, 0);
+        // Assert new tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id) == key, 0);
+        assert!(get_parent_by_id_test(&avlq, tree_node_id) == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(&avlq, tree_node_id)
+                == solo_node_id, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_node_id)
+                == solo_node_id, 0);
+        // Assert stack top.
+        assert!(get_tree_top_test(&avlq) == (NIL as u64), 0);
+        // Assert root update.
+        assert!(get_root_test(&avlq) == tree_node_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state update for inserting tree node with stack.
+    fun test_insert_tree_node_stacked() {
+        let tree_node_id = 123; // Declare inserted tree node ID.
+        // Init AVL queue.
+        let avlq = new<u8>(ASCENDING, tree_node_id, 0);
+        let solo_node_id = 789; // Declare solo list node ID.
+        let key = 321; // Declare insertion key.
+        // Insert tree node, storing its tree node ID.
+        let tree_node_id_return = insert_tree_node(
+            &mut avlq, key, (NIL as u64), solo_node_id, option::none());
+        // Assert inserted tree node ID.
+        assert!(tree_node_id_return == tree_node_id, 0);
+        // Assert tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id) == key, 0);
+        assert!(get_parent_by_id_test(&avlq, tree_node_id) == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(&avlq, tree_node_id)
+                == solo_node_id, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_node_id)
+                == solo_node_id, 0);
+        // Assert stack top.
+        assert!(get_tree_top_test(&avlq) == tree_node_id - 1, 0);
+        // Assert root update.
+        assert!(get_root_test(&avlq) == tree_node_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state update for inserting left child.
+    fun test_insert_tree_node_update_parent_edge_left() {
+        let tree_node_id = 1234; // Declare inserted tree node ID.
+        let parent = 321;
+        let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
+        // Declare empty new leaf side.
+        let new_leaf_side = option::some(LEFT);
+        // Update parent to inserted node.
+        insert_tree_node_update_parent_edge(
+            &mut avlq, tree_node_id, parent, new_leaf_side);
+        // Assert update to parent's child field.
+        assert!(get_child_left_by_id_test(&avlq, parent) == tree_node_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state update for inserting right child.
+    fun test_insert_tree_node_update_parent_edge_right() {
+        let tree_node_id = 1234; // Declare inserted tree node ID.
+        let parent = 321;
+        let avlq = new<u8>(ASCENDING, parent, 0); // Init AVL queue.
+        // Declare empty new leaf side.
+        let new_leaf_side = option::some(RIGHT);
+        // Update parent to inserted node.
+        insert_tree_node_update_parent_edge(
+            &mut avlq, tree_node_id, parent, new_leaf_side);
+        // Assert update to parent's child field.
+        assert!(get_child_right_by_id_test(&avlq, parent) == tree_node_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state update for inserting root.
+    fun test_insert_tree_node_update_parent_edge_root() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        let tree_node_id = 1234; // Declare inserted tree node ID.
+        let parent = (NIL as u64); // Declare parent as root flag.
+        // Declare empty new leaf side.
+        let new_leaf_side = option::none();
+        // Assert null root.
+        assert!(get_root_test(&avlq) == (NIL as u64), 0);
+        // Update parent for inserted root node.
+        insert_tree_node_update_parent_edge(
+            &mut avlq, tree_node_id, parent, new_leaf_side);
+        // Assert root update.
+        assert!(get_root_test(&avlq) == tree_node_id, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
@@ -4132,6 +4106,32 @@ module econia::avl_queue {
     }
 
     #[test]
+    /// Verify successful state operations.
+    fun test_set_get_root_test() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        avlq.bits = u_128_by_32( // Set all bits.
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111");
+        avlq.root_lsbs = (u_64(b"11111111") as u8); // Set all bits.
+        // Assert getter return.
+        assert!(get_root_test(&avlq) == HI_NODE_ID, 0);
+        let new_root = u_64(b"10000000000001"); // Declare new root.
+        set_root_test(&mut avlq, new_root); // Set new root.
+        // Assert getter return.
+        assert!(get_root_test(&avlq) == new_root, 0);
+        // Assert fields.
+        assert!(avlq.bits == u_128_by_32(
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111111111",
+            b"11111111111111111111111111100000"), 0);
+        assert!(avlq.root_lsbs == (u_64(b"00000001") as u8), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
     /// Verify successful return values.
     fun test_u_128_64() {
         assert!(u_128(b"0") == 0, 0);
@@ -4190,7 +4190,7 @@ module econia::avl_queue {
 
     #[test]
     /// Verify maximum node count passes check.
-    fun test_verify_new_node_id_pass() {
+    fun test_verify_node_count_pass() {
         // Attempt valid invocation for max node count.
         verify_node_count(u_64(b"11111111111111"));
     }

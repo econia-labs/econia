@@ -211,6 +211,8 @@ module econia::avl_queue {
     /// All bits set in integer of width required to encode balance
     /// factor. Generated in Python via `hex(int('1' * 2, 2))`.
     const HI_BALANCE_FACTOR: u64 = 0x3;
+    /// Single bit set in integer of width required to encode bit flag.
+    const HI_BIT: u8 = 1;
     /// All bits set in integer of width required to encode a byte.
     /// Generated in Python via `hex(int('1' * 8, 2))`.
     const HI_BYTE: u64 = 0xff;
@@ -243,6 +245,12 @@ module econia::avl_queue {
     /// Number of bits right child node ID is shifted in
     /// `TreeNode.bits`.
     const SHIFT_CHILD_RIGHT: u8 = 42;
+    /// Number of bits AVL queue head insertion key is shifted in
+    /// `AVLqueue.bits`.
+    const SHIFT_HEAD_KEY: u8 = 52;
+    /// Number of bits AVL queue head list node ID is shifted in
+    /// `AVLqueue.bits`.
+    const SHIFT_HEAD_NODE_ID: u8 = 84;
     /// Number of bits left height is shifted in `TreeNode.bits`.
     const SHIFT_HEIGHT_LEFT: u8 = 89;
     /// Number of bits right height is shifted in `TreeNode.bits`.
@@ -261,6 +269,12 @@ module econia::avl_queue {
     const SHIFT_LIST_TAIL: u8 = 14;
     /// Number of bits parent node ID is shifted in `AVLqueue.bits`.
     const SHIFT_PARENT: u8 = 70;
+    /// Number of bits AVL queue tail insertion key is shifted in
+    /// `AVLqueue.bits`.
+    const SHIFT_TAIL_KEY: u8 = 6;
+    /// Number of bits AVL queue tail list node ID is shifted in
+    /// `AVLqueue.bits`.
+    const SHIFT_TAIL_NODE_ID: u8 = 38;
     /// Number of bits inactive tree node stack top is shifted in
     /// `AVLqueue.bits`.
     const SHIFT_TREE_STACK_TOP: u8 = 112;
@@ -399,6 +413,67 @@ module econia::avl_queue {
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Check head and tail of AVL queue during insertion.
+    ///
+    /// Update fields as needed based on sort order.
+    ///
+    /// Inner function for `insert()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `key`: Insertion key just inserted.
+    /// * `list_node_id`: ID of list node just inserted.
+    ///
+    /// # Testing
+    ///
+    /// * `test_insert_check_head_tail_ascending()`
+    /// * `test_insert_check_head_tail_descending()`
+    fun insert_check_head_tail<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        key: u64,
+        list_node_id: u64
+    ) {
+        let bits = avlq_ref_mut.bits; // Get AVL queue field bits.
+        // Extract relevant fields.
+        let (order_bit, head_key, tail_key) =
+            (((bits >> SHIFT_SORT_ORDER ) & (HI_BIT as u128) as u8),
+             ((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY  as u128) as u64),
+             ((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY  as u128) as u64));
+        // Determine if AVL queue is ascending.
+        let ascending = order_bit == BIT_FLAG_ASCENDING;
+        if ((head_key == (NIL as u64)) || // If no head key,
+            // If ascending AVL queue and insertion key less than head
+            // key,
+            (ascending && key < head_key) || // If
+            // Or if descending AVL queue and insertion key greater than
+            // head key,
+            (!ascending && key > head_key))
+            // Reassign bits for head key and node ID:
+            avlq_ref_mut.bits = avlq_ref_mut.bits &
+                // Clear out fields via mask unset at field bits.
+                (HI_128 ^ (((HI_INSERTION_KEY as u128) << SHIFT_HEAD_KEY) |
+                           ((HI_NODE_ID as u128) << SHIFT_HEAD_NODE_ID))) |
+                // Mask in new bits.
+                ((list_node_id as u128) << SHIFT_HEAD_NODE_ID) |
+                ((key as u128) << SHIFT_HEAD_KEY);
+        if ((tail_key == (NIL as u64)) || // If no tail key,
+            // If ascending AVL queue and insertion key greater than or
+            // equal to tail key,
+            (ascending && key >= tail_key) || // If
+            // Or if descending AVL queue and insertion key less than or
+            // equal to tail key:
+            (!ascending && key <= tail_key))
+            // Reassign bits for tail key and node ID:
+            avlq_ref_mut.bits = avlq_ref_mut.bits &
+                // Clear out fields via mask unset at field bits.
+                (HI_128 ^ (((HI_INSERTION_KEY as u128) << SHIFT_TAIL_KEY) |
+                           ((HI_NODE_ID as u128) << SHIFT_TAIL_NODE_ID))) |
+                // Mask in new bits.
+                ((list_node_id as u128) << SHIFT_TAIL_NODE_ID) |
+                ((key as u128) << SHIFT_TAIL_KEY);
+    }
 
     /// Insert a list node and return its node ID.
     ///
@@ -2101,6 +2176,31 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Return head insertion key indicated by given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun get_head_key_test<V>(
+        avlq_ref: &AVLqueue<V>
+    ): u64 {
+        (((avlq_ref.bits >> SHIFT_HEAD_KEY) &
+          (HI_INSERTION_KEY as u128)) as u64)
+    }
+
+    #[test_only]
+    /// Return head list node ID indicated by given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun get_head_node_id_test<V>(
+        avlq_ref: &AVLqueue<V>
+    ): u64 {
+        (((avlq_ref.bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128)) as u64)
+    }
+
+    #[test_only]
     /// Like `get_height_left_test()`, but accepts tree node ID inside
     /// given AVL queue.
     fun get_height_left_by_id_test<V>(
@@ -2309,6 +2409,31 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Return tail insertion key indicated by given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun get_tail_key_test<V>(
+        avlq_ref: &AVLqueue<V>
+    ): u64 {
+        (((avlq_ref.bits >> SHIFT_TAIL_KEY) &
+          (HI_INSERTION_KEY as u128)) as u64)
+    }
+
+    #[test_only]
+    /// Return tail list node ID indicated by given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun get_tail_node_id_test<V>(
+        avlq_ref: &AVLqueue<V>
+    ): u64 {
+        (((avlq_ref.bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64)
+    }
+
+    #[test_only]
     /// Return node ID of next inactive tree node in stack, indicated
     /// by given tree node.
     ///
@@ -2363,6 +2488,42 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Set head insertion key in given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun set_head_key_test<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        key: u64
+    ) {
+        // Reassign bits:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_INSERTION_KEY as u128) << SHIFT_HEAD_KEY as u128)) |
+            // Mask in new bits.
+            ((key as u128) << SHIFT_HEAD_KEY)
+    }
+
+    #[test_only]
+    /// Set head list node ID in given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun set_head_node_id_test<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_id: u64
+    ) {
+        // Reassign bits:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_HEAD_NODE_ID as u128)) |
+            // Mask in new bits.
+            ((node_id as u128) << SHIFT_HEAD_NODE_ID)
+    }
+
+    #[test_only]
     /// Set root node ID.
     ///
     /// # Testing
@@ -2380,6 +2541,42 @@ module econia::avl_queue {
             (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE) as u128)) |
             // Mask in new bits.
             ((root_node_id as u128) >> BITS_PER_BYTE)
+    }
+
+    #[test_only]
+    /// Set tail insertion key in given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun set_tail_key_test<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        key: u64
+    ) {
+        // Reassign bits:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_INSERTION_KEY as u128) << SHIFT_TAIL_KEY as u128)) |
+            // Mask in new bits.
+            ((key as u128) << SHIFT_TAIL_KEY)
+    }
+
+    #[test_only]
+    /// Set tail list node ID in given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_get_head_tail()`
+    fun set_tail_node_id_test<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_id: u64
+    ) {
+        // Reassign bits:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_TAIL_NODE_ID as u128)) |
+            // Mask in new bits.
+            ((node_id as u128) << SHIFT_TAIL_NODE_ID)
     }
 
     #[test_only]
@@ -2674,6 +2871,114 @@ module econia::avl_queue {
         };
         // Assert tree top.
         assert!(get_tree_top_test(&avlq) == u_64(b"10000000000001"), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify successful state manipulation.
+    fun test_insert_check_head_tail_ascending() {
+        // Init ascending AVL queue.
+        let avlq = new<u8>(ASCENDING, 0, 0);
+        // Assert head and tail fields.
+        assert!(get_head_key_test(&avlq) == (NIL as u64), 0);
+        assert!(get_tail_key_test(&avlq) == (NIL as u64), 0);
+        assert!(get_head_node_id_test(&avlq) == (NIL as u64), 0);
+        assert!(get_tail_node_id_test(&avlq) == (NIL as u64), 0);
+        // Declare insertion key and list node ID.
+        let key_0 = HI_INSERTION_KEY - 1;
+        let list_node_id_0 = HI_NODE_ID;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_0, list_node_id_0);
+        // Assert head and tail fields both updated.
+        assert!(get_head_key_test(&avlq) == key_0, 0);
+        assert!(get_tail_key_test(&avlq) == key_0, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_0, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_0, 0);
+        // Declare same insertion key with new node ID.
+        let key_1 = key_0;
+        let list_node_id_1 = list_node_id_0 - 1;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_1, list_node_id_1);
+        // Assert head not updated, but tail updated.
+        assert!(get_head_key_test(&avlq) == key_0, 0);
+        assert!(get_tail_key_test(&avlq) == key_0, 0);
+        assert!(get_tail_key_test(&avlq) == key_1, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_0, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_1, 0);
+        // Declare insertion key smaller than first, new node ID.
+        let key_2 = key_1 - 1;
+        let list_node_id_2 = list_node_id_1 - 1;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_2, list_node_id_2);
+        // Assert head updated, but tail not updated.
+        assert!(get_head_key_test(&avlq) == key_2, 0);
+        assert!(get_tail_key_test(&avlq) == key_0, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_2, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_1, 0);
+        // Declare insertion key larger than first, new node ID.
+        let key_3 = key_0 + 1;
+        let list_node_id_3 = list_node_id_1 - 1;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_3, list_node_id_3);
+        // Assert head not updated, but tail updated.
+        assert!(get_head_key_test(&avlq) == key_2, 0);
+        assert!(get_tail_key_test(&avlq) == key_3, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_2, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_3, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify successful state manipulation.
+    fun test_insert_check_head_tail_descending() {
+        // Init descending AVL queue.
+        let avlq = new<u8>(DESCENDING, 0, 0);
+        // Assert head and tail fields.
+        assert!(get_head_key_test(&avlq) == (NIL as u64), 0);
+        assert!(get_tail_key_test(&avlq) == (NIL as u64), 0);
+        assert!(get_head_node_id_test(&avlq) == (NIL as u64), 0);
+        assert!(get_tail_node_id_test(&avlq) == (NIL as u64), 0);
+        // Declare insertion key and list node ID.
+        let key_0 = HI_INSERTION_KEY - 1;
+        let list_node_id_0 = HI_NODE_ID;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_0, list_node_id_0);
+        // Assert head and tail fields both updated.
+        assert!(get_head_key_test(&avlq) == key_0, 0);
+        assert!(get_tail_key_test(&avlq) == key_0, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_0, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_0, 0);
+        // Declare same insertion key with new node ID.
+        let key_1 = key_0;
+        let list_node_id_1 = list_node_id_0 - 1;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_1, list_node_id_1);
+        // Assert head not updated, but tail updated.
+        assert!(get_head_key_test(&avlq) == key_0, 0);
+        assert!(get_tail_key_test(&avlq) == key_0, 0);
+        assert!(get_tail_key_test(&avlq) == key_1, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_0, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_1, 0);
+        // Declare insertion key larger than first, new node ID.
+        let key_2 = key_1 + 1;
+        let list_node_id_2 = list_node_id_1 - 1;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_2, list_node_id_2);
+        // Assert head updated, but tail not updated.
+        assert!(get_head_key_test(&avlq) == key_2, 0);
+        assert!(get_tail_key_test(&avlq) == key_0, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_2, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_1, 0);
+        // Declare insertion key smaller than first, new node ID.
+        let key_3 = key_0 - 1;
+        let list_node_id_3 = list_node_id_1 - 1;
+        // Check head and tail accordingly.
+        insert_check_head_tail(&mut avlq, key_3, list_node_id_3);
+        // Assert head not updated, but tail updated.
+        assert!(get_head_key_test(&avlq) == key_2, 0);
+        assert!(get_tail_key_test(&avlq) == key_3, 0);
+        assert!(get_head_node_id_test(&avlq) == list_node_id_2, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_3, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
@@ -4102,6 +4407,39 @@ module econia::avl_queue {
         assert!(get_insertion_key_test(node_ref) == 4, 0);
         assert!(node_id == 1, 0);
         assert!(option::is_none(&side_option), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify successful state operations.
+    fun test_set_get_head_tail_test() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        avlq.bits = 0; // Clear out all bits.
+        // Declare head and tail keys, node IDs.
+        let head_key = u_64(b"10000000000000000000000000000001");
+        let tail_key = u_64(b"11000000000000000000000000000011");
+        let head_node_id = u_64(b"10000000000001");
+        let tail_node_id = u_64(b"11000000000011");
+        // Set head and tail keys, node IDs.
+        set_head_key_test(&mut avlq, head_key);
+        set_tail_key_test(&mut avlq, tail_key);
+        set_head_node_id_test(&mut avlq, head_node_id);
+        set_tail_node_id_test(&mut avlq, tail_node_id);
+        // Assert bit fields.
+        assert!(avlq.bits == u_128_by_32(
+            b"00000000000000000000000000000010",
+            //                              ^ bit 97
+            b"00000000000110000000000000000000",
+            //    bit 84 ^^ bit 83
+            b"00000000000111000000000011110000",
+            //    bit 52 ^^ bits 38-51 ^^ bit 37
+            b"00000000000000000000000011000000"), 0);
+            //                         ^ bit 6
+        // Assert getter returns.
+        assert!(get_head_key_test(&avlq) == head_key, 0);
+        assert!(get_tail_key_test(&avlq) == tail_key, 0);
+        assert!(get_head_node_id_test(&avlq) == head_node_id, 0);
+        assert!(get_tail_node_id_test(&avlq) == tail_node_id, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

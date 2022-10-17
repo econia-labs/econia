@@ -30,7 +30,7 @@ module econia::funcs {
         // If just activated new tree node, retrace starting at the
         // parent to the activated tree node.
         if (solo) retrace(avlq_ref_mut, match_node_id, INCREMENT,
-            *option::borrow(&new_leaf_side), 1);
+            *option::borrow(&new_leaf_side));
         // Check AVL queue head and tail.
     }
 

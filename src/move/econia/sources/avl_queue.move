@@ -2131,6 +2131,42 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Get insertion key encoded in an access key.
+    ///
+    /// # Testing
+    ///
+    /// * `test_access_key_getters()`
+    fun get_access_key_insertion_key_test(
+        access_key: u64
+    ): u64 {
+        access_key & HI_INSERTION_KEY
+    }
+
+    #[test_only]
+    /// Get list node ID encoded in an access key.
+    ///
+    /// # Testing
+    ///
+    /// * `test_access_key_getters()`
+    fun get_access_key_list_node_id_test(
+        access_key: u64
+    ): u64 {
+        (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID
+    }
+
+    #[test_only]
+    /// Get tree node ID encoded in an access key.
+    ///
+    /// # Testing
+    ///
+    /// * `test_access_key_getters()`
+    fun get_access_key_tree_node_id_test(
+        access_key: u64
+    ): u64 {
+        (access_key >> SHIFT_ACCESS_TREE_NODE_ID) & HI_NODE_ID
+    }
+
+    #[test_only]
     /// Like `get_child_left_test()`, but accepts tree node ID inside
     /// given AVL queue.
     fun get_child_left_by_id_test<V>(
@@ -2493,6 +2529,19 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Return `true` if ascending access key, else `false`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_access_key_getters()`
+    fun is_ascending_access_key_test(
+        access_key: u64
+    ): bool {
+        ((access_key >> SHIFT_ACCESS_SORT_ORDER) & (HI_BIT as u64) as u8) ==
+            BIT_FLAG_ASCENDING
+    }
+
+    #[test_only]
     /// Set head insertion key in given AVL queue.
     ///
     /// # Testing
@@ -2654,6 +2703,29 @@ module econia::avl_queue {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify successful returns.
+    fun test_access_key_getters() {
+        // Assert access key not marked ascending if no bits set.
+        assert!(!is_ascending_access_key_test((NIL as u64)), 0);
+        // Declare encoded information for access key.
+        let tree_node_id = u_64(b"10000000000001");
+        let list_node_id = u_64(b"11000000000011");
+        let insertion_key = u_64(b"10000000000000000000000000000001");
+        let access_key = u_64_by_32(
+            b"00010000000000001110000000000111",
+            //   ^ bits 47-60 ^^ bits 33-46 ^^ bit 32
+            b"10000000000000000000000000000001");
+        // Assert access key getter returns.
+        assert!(get_access_key_tree_node_id_test(access_key)
+                == tree_node_id, 0);
+        assert!(get_access_key_list_node_id_test(access_key)
+                == list_node_id, 0);
+        assert!(is_ascending_access_key_test(access_key), 0);
+        assert!(get_access_key_insertion_key_test(access_key)
+                == insertion_key, 0);
+    }
 
     #[test]
     /// Verify successful extraction.

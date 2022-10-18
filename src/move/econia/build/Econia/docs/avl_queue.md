@@ -200,9 +200,17 @@ The below index is automatically generated from source code:
     -  [Reference diagram](#@Reference_diagram_74)
     -  [Testing](#@Testing_75)
 -  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
+    -  [Parameters](#@Parameters_76)
+    -  [Conventions](#@Conventions_77)
+    -  [Returns](#@Returns_78)
+    -  [Membership considerations](#@Membership_considerations_79)
+    -  [Predecessor](#@Predecessor_80)
+    -  [Successor](#@Successor_81)
+    -  [Reference diagram](#@Reference_diagram_82)
+    -  [Testing](#@Testing_83)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_76)
-    -  [Testing](#@Testing_77)
+    -  [Aborts](#@Aborts_84)
+    -  [Testing](#@Testing_85)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -590,6 +598,16 @@ for either node type.
 
 
 
+<a name="0xc0deb00c_avl_queue_PREDECESSOR"></a>
+
+Flag for inorder predecessor traversal.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_PREDECESSOR">PREDECESSOR</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_avl_queue_RIGHT"></a>
 
 Flag for right direction.
@@ -794,6 +812,16 @@ Number of bits inactive tree node stack top is shifted in
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>: u8 = 112;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_SUCCESSOR"></a>
+
+Flag for inorder successor traversal.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SUCCESSOR">SUCCESSOR</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -3309,9 +3337,110 @@ the root node.
 
 ## Function `traverse`
 
+Traverse from tree node to inorder predecessor or succesor.
 
 
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_traverse">traverse</a>&lt;V&gt;(_avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, _start_node_id: u64, _target: bool): (<a href="_Option">option::Option</a>&lt;u64&gt;, <a href="_Option">option::Option</a>&lt;u64&gt;, <a href="_Option">option::Option</a>&lt;u64&gt;, <a href="_Option">option::Option</a>&lt;u64&gt;)
+<a name="@Parameters_76"></a>
+
+### Parameters
+
+
+* <code>avlq_ref</code>: Immutable reference to AVL queue.
+* <code>start_node_id</code>: Tree node ID of node to traverse from.
+* <code>target</code>: Either <code><a href="avl_queue.md#0xc0deb00c_avl_queue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_SUCCESSOR">SUCCESSOR</a></code>.
+
+
+<a name="@Conventions_77"></a>
+
+### Conventions
+
+
+Traversal starts at the "start node" and ends at the "target
+node", if any.
+
+
+<a name="@Returns_78"></a>
+
+### Returns
+
+
+* <code>u64</code>: Insertion key of target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
+* <code>u64</code>: List node ID for head of doubly linked list in
+target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
+* <code>u64</code>: List node ID for tail of doubly linked list in
+target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
+
+
+<a name="@Membership_considerations_79"></a>
+
+### Membership considerations
+
+
+* Aborts if no tree node in AVL queue with given start node ID.
+* Returns all <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if start node is sole node at root.
+* Returns all <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if no predecessor or successor.
+* Returns all <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if start node ID indicates inactive node.
+
+
+<a name="@Predecessor_80"></a>
+
+### Predecessor
+
+
+1. If start node has left child, return maximum node in left
+child's right subtree.
+2. Otherwise, walk upwards until reaching a node that had last
+walked node as the root of its right subtree.
+
+
+<a name="@Successor_81"></a>
+
+### Successor
+
+
+1. If start node has right child, return minimum node in right
+child's left subtree.
+2. Otherwise, walk upwards until reaching a node that had last
+walked node as the root of its left subtree.
+
+
+<a name="@Reference_diagram_82"></a>
+
+### Reference diagram
+
+
+>                 5
+>            ____/ \____
+>           2           8
+>          / \         / \
+>         1   3       7   9
+>              \     /
+>               4   6
+
+Inserted in following sequence:
+
+| Insertion key | Sequence number |
+|---------------|-----------------|
+| 5             | 1               |
+| 8             | 2               |
+| 2             | 3               |
+| 1             | 4               |
+| 3             | 5               |
+| 7             | 6               |
+| 9             | 7               |
+| 4             | 8               |
+| 6             | 9               |
+
+
+<a name="@Testing_83"></a>
+
+### Testing
+
+
+* <code>test_traverse()</code>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_traverse">traverse</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, start_node_id: u64, target: bool): (u64, u64, u64)
 </code></pre>
 
 
@@ -3321,16 +3450,59 @@ the root node.
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_traverse">traverse</a>&lt;V&gt;(
-    _avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
-    _start_node_id: u64,
-    _target: bool
+    avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    start_node_id: u64,
+    target: bool
 ): (
-    Option&lt;u64&gt;, // Insertion key.
-    Option&lt;u64&gt;, // Tree node ID.
-    Option&lt;u64&gt;, // List head ID.
-    Option&lt;u64&gt; // List tail ID.
+    u64,
+    u64,
+    u64
 ) {
-    (<a href="_none">option::none</a>(), <a href="_none">option::none</a>(), <a href="_none">option::none</a>(), <a href="_none">option::none</a>())
+    // Immutably borrow tree nodes <a href="">table</a>.
+    <b>let</b> nodes_ref = &avlq_ref.tree_nodes;
+    // Immutably borrow start node.
+    <b>let</b> node_ref = <a href="_borrow">table_with_length::borrow</a>(nodes_ref, start_node_id);
+    // Determine child and subtree side based on target.
+    <b>let</b> (child_shift, subtree_shift) = <b>if</b> (target == <a href="avl_queue.md#0xc0deb00c_avl_queue_PREDECESSOR">PREDECESSOR</a>)
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> , <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>) <b>else</b>
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> );
+    <b>let</b> bits = node_ref.bits; // Get node bits.
+    // Get node ID of relevant child <b>to</b> start node.
+    <b>let</b> child = (((bits &gt;&gt; child_shift) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
+    <b>if</b> (child == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) { // If no such child:
+        child = start_node_id; // Set child <b>as</b> start node.
+        <b>loop</b> { // Start upward walk.
+            <b>let</b> parent = // Get parent field from node bits.
+                (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
+            // Return all null <b>if</b> no parent.
+            <b>if</b> (parent == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) <b>return</b>
+                ((<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64), (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64), (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64));
+            // Otherwise, immutably borrow parent node.
+            node_ref = <a href="_borrow">table_with_length::borrow</a>(nodes_ref, parent);
+            bits = node_ref.bits; // Get node bits.
+            <b>let</b> subtree = // Get subtree field for <b>break</b> side.
+                (((bits &gt;&gt; subtree_shift) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
+            // If child from indicated subtree, <b>break</b> out of <b>loop</b>.
+            <b>if</b> (subtree == child) <b>break</b>;
+            // Otherwise store node ID for next iteration.
+            child = parent;
+        };
+    } <b>else</b> { // If start node <b>has</b> child on relevant side:
+        <b>loop</b> { // Start downward walk.
+            // Immutably borrow child node.
+            node_ref = <a href="_borrow">table_with_length::borrow</a>(nodes_ref, child);
+            bits = node_ref.bits; // Get node bits.
+            child = // Get node ID of child in relevant subtree.
+                (((bits &gt;&gt; subtree_shift) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
+            // If no subtree left <b>to</b> check, <b>break</b> out of <b>loop</b>.
+            <b>if</b> (child == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) <b>break</b>; // Else iterate again.
+        }
+    };
+    <b>let</b> bits = node_ref.bits; // Get node bits.
+    // Return insertion key, list head, and list tail.
+    ((((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a>) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_INSERTION_KEY">HI_INSERTION_KEY</a> <b>as</b> u128)) <b>as</b> u64),
+     (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a>    ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>       <b>as</b> u128)) <b>as</b> u64),
+     (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>    ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>       <b>as</b> u128)) <b>as</b> u64))
 }
 </code></pre>
 
@@ -3345,7 +3517,7 @@ the root node.
 Verify node count is not too high.
 
 
-<a name="@Aborts_76"></a>
+<a name="@Aborts_84"></a>
 
 ### Aborts
 
@@ -3353,7 +3525,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_77"></a>
+<a name="@Testing_85"></a>
 
 ### Testing
 

@@ -222,6 +222,8 @@ module econia::avl_queue {
     /// $2^{14} - 1$, the maximum number of nodes that can be allocated
     /// for either node type.
     const N_NODES_MAX: u64 = 16383;
+    /// Flag for inorder predecessor traversal.
+    const PREDECESSOR: bool = true;
     /// Flag for right direction.
     const RIGHT: bool = false;
     /// Number of bits sort order bit flag is shifted in an access key.
@@ -270,6 +272,8 @@ module econia::avl_queue {
     /// Number of bits inactive tree node stack top is shifted in
     /// `AVLqueue.bits`.
     const SHIFT_TREE_STACK_TOP: u8 = 112;
+    /// Flag for inorder successor traversal.
+    const SUCCESSOR: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -2126,17 +2130,129 @@ module econia::avl_queue {
         }
     }
 
+    /// Traverse from tree node to inorder predecessor or succesor.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref`: Immutable reference to AVL queue.
+    /// * `start_node_id`: Tree node ID of node to traverse from.
+    /// * `target`: Either `PREDECESSOR` or `SUCCESSOR`.
+    ///
+    /// # Conventions
+    ///
+    /// Traversal starts at the "start node" and ends at the "target
+    /// node", if any.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Insertion key of target node, or `NIL`.
+    /// * `u64`: List node ID for head of doubly linked list in
+    ///   target node, or `NIL`.
+    /// * `u64`: List node ID for tail of doubly linked list in
+    ///   target node, or `NIL`.
+    ///
+    /// # Membership considerations
+    ///
+    /// * Aborts if no tree node in AVL queue with given start node ID.
+    /// * Returns all `NIL` if start node is sole node at root.
+    /// * Returns all `NIL` if no predecessor or successor.
+    /// * Returns all `NIL` if start node ID indicates inactive node.
+    ///
+    /// # Predecessor
+    ///
+    /// 1. If start node has left child, return maximum node in left
+    ///    child's right subtree.
+    /// 2. Otherwise, walk upwards until reaching a node that had last
+    ///    walked node as the root of its right subtree.
+    ///
+    /// # Successor
+    ///
+    /// 1. If start node has right child, return minimum node in right
+    ///    child's left subtree.
+    /// 2. Otherwise, walk upwards until reaching a node that had last
+    ///    walked node as the root of its left subtree.
+    ///
+    /// # Reference diagram
+    ///
+    /// >                 5
+    /// >            ____/ \____
+    /// >           2           8
+    /// >          / \         / \
+    /// >         1   3       7   9
+    /// >              \     /
+    /// >               4   6
+    ///
+    /// Inserted in following sequence:
+    ///
+    /// | Insertion key | Sequence number |
+    /// |---------------|-----------------|
+    /// | 5             | 1               |
+    /// | 8             | 2               |
+    /// | 2             | 3               |
+    /// | 1             | 4               |
+    /// | 3             | 5               |
+    /// | 7             | 6               |
+    /// | 9             | 7               |
+    /// | 4             | 8               |
+    /// | 6             | 9               |
+    ///
+    /// # Testing
+    ///
+    /// * `test_traverse()`
     fun traverse<V>(
-        _avlq_ref: &AVLqueue<V>,
-        _start_node_id: u64,
-        _target: bool
+        avlq_ref: &AVLqueue<V>,
+        start_node_id: u64,
+        target: bool
     ): (
-        Option<u64>, // Insertion key.
-        Option<u64>, // Tree node ID.
-        Option<u64>, // List head ID.
-        Option<u64> // List tail ID.
+        u64,
+        u64,
+        u64
     ) {
-        (option::none(), option::none(), option::none(), option::none())
+        // Immutably borrow tree nodes table.
+        let nodes_ref = &avlq_ref.tree_nodes;
+        // Immutably borrow start node.
+        let node_ref = table_with_length::borrow(nodes_ref, start_node_id);
+        // Determine child and subtree side based on target.
+        let (child_shift, subtree_shift) = if (target == PREDECESSOR)
+            (SHIFT_CHILD_LEFT , SHIFT_CHILD_RIGHT) else
+            (SHIFT_CHILD_RIGHT, SHIFT_CHILD_LEFT );
+        let bits = node_ref.bits; // Get node bits.
+        // Get node ID of relevant child to start node.
+        let child = (((bits >> child_shift) & (HI_NODE_ID as u128)) as u64);
+        if (child == (NIL as u64)) { // If no such child:
+            child = start_node_id; // Set child as start node.
+            loop { // Start upward walk.
+                let parent = // Get parent field from node bits.
+                    (((bits >> SHIFT_PARENT) & (HI_NODE_ID as u128)) as u64);
+                // Return all null if no parent.
+                if (parent == (NIL as u64)) return
+                    ((NIL as u64), (NIL as u64), (NIL as u64));
+                // Otherwise, immutably borrow parent node.
+                node_ref = table_with_length::borrow(nodes_ref, parent);
+                bits = node_ref.bits; // Get node bits.
+                let subtree = // Get subtree field for break side.
+                    (((bits >> subtree_shift) & (HI_NODE_ID as u128)) as u64);
+                // If child from indicated subtree, break out of loop.
+                if (subtree == child) break;
+                // Otherwise store node ID for next iteration.
+                child = parent;
+            };
+        } else { // If start node has child on relevant side:
+            loop { // Start downward walk.
+                // Immutably borrow child node.
+                node_ref = table_with_length::borrow(nodes_ref, child);
+                bits = node_ref.bits; // Get node bits.
+                child = // Get node ID of child in relevant subtree.
+                    (((bits >> subtree_shift) & (HI_NODE_ID as u128)) as u64);
+                // If no subtree left to check, break out of loop.
+                if (child == (NIL as u64)) break; // Else iterate again.
+            }
+        };
+        let bits = node_ref.bits; // Get node bits.
+        // Return insertion key, list head, and list tail.
+        ((((bits >> SHIFT_INSERTION_KEY) & (HI_INSERTION_KEY as u128)) as u64),
+         (((bits >> SHIFT_LIST_HEAD    ) & (HI_NODE_ID       as u128)) as u64),
+         (((bits >> SHIFT_LIST_TAIL    ) & (HI_NODE_ID       as u128)) as u64))
     }
 
     /// Verify node count is not too high.
@@ -4896,6 +5012,144 @@ module econia::avl_queue {
             b"11111111111111111111111111111111",
             b"11111111111111111111111111100000"), 0);
         assert!(avlq.root_lsbs == (u_64(b"00000001") as u8), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify successful returns for reference diagram in `traverse()`,
+    /// with two list nodes in each tree node.
+    fun test_traverse() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert root from reference diagram.
+        let access_key_5_1 = (insert(&mut avlq, 5, 1));
+        let access_key_5_2 = (insert(&mut avlq, 5, 2));
+        let tree_id_5 = get_access_key_tree_node_id_test(access_key_5_1);
+        let list_id_5_1 = get_access_key_list_node_id_test(access_key_5_1);
+        let list_id_5_2 = get_access_key_list_node_id_test(access_key_5_2);
+        // Assert returns for traversal at root.
+        let (key, head, tail) = traverse(&avlq, tree_id_5, PREDECESSOR);
+        assert!(key ==  (NIL as u64), 0);
+        assert!(head == (NIL as u64), 0);
+        assert!(tail == (NIL as u64), 0);
+        (key, head, tail) = traverse(&avlq, tree_id_5, SUCCESSOR);
+        assert!(key ==  (NIL as u64), 0);
+        assert!(head == (NIL as u64), 0);
+        assert!(tail == (NIL as u64), 0);
+        // Insert in remaining sequence from reference diagram.
+        let access_key_8_1 = insert(&mut avlq, 8, 1);
+        let access_key_8_2 = insert(&mut avlq, 8, 2);
+        let tree_id_8 = get_access_key_tree_node_id_test(access_key_8_1);
+        let list_id_8_1 = get_access_key_list_node_id_test(access_key_8_1);
+        let list_id_8_2 = get_access_key_list_node_id_test(access_key_8_2);
+        let access_key_2_1 = insert(&mut avlq, 2, 1);
+        let access_key_2_2 = insert(&mut avlq, 2, 2);
+        let tree_id_2 = get_access_key_tree_node_id_test(access_key_2_1);
+        let list_id_2_1 = get_access_key_list_node_id_test(access_key_2_1);
+        let list_id_2_2 = get_access_key_list_node_id_test(access_key_2_2);
+        let access_key_1_1 = insert(&mut avlq, 1, 1);
+        let access_key_1_2 = insert(&mut avlq, 1, 2);
+        let tree_id_1 = get_access_key_tree_node_id_test(access_key_1_1);
+        let list_id_1_1 = get_access_key_list_node_id_test(access_key_1_1);
+        let list_id_1_2 = get_access_key_list_node_id_test(access_key_1_2);
+        let access_key_3_1 = insert(&mut avlq, 3, 1);
+        let access_key_3_2 = insert(&mut avlq, 3, 2);
+        let tree_id_3 = get_access_key_tree_node_id_test(access_key_3_1);
+        let list_id_3_1 = get_access_key_list_node_id_test(access_key_3_1);
+        let list_id_3_2 = get_access_key_list_node_id_test(access_key_3_2);
+        let access_key_7_1 = insert(&mut avlq, 7, 1);
+        let access_key_7_2 = insert(&mut avlq, 7, 2);
+        let tree_id_7 = get_access_key_tree_node_id_test(access_key_7_1);
+        let list_id_7_1 = get_access_key_list_node_id_test(access_key_7_1);
+        let list_id_7_2 = get_access_key_list_node_id_test(access_key_7_2);
+        let access_key_9_1 = insert(&mut avlq, 9, 1);
+        let access_key_9_2 = insert(&mut avlq, 9, 2);
+        let tree_id_9 = get_access_key_tree_node_id_test(access_key_9_1);
+        let list_id_9_1 = get_access_key_list_node_id_test(access_key_9_1);
+        let list_id_9_2 = get_access_key_list_node_id_test(access_key_9_2);
+        let access_key_4_1 = insert(&mut avlq, 4, 1);
+        let access_key_4_2 = insert(&mut avlq, 4, 2);
+        let tree_id_4 = get_access_key_tree_node_id_test(access_key_4_1);
+        let list_id_4_1 = get_access_key_list_node_id_test(access_key_4_1);
+        let list_id_4_2 = get_access_key_list_node_id_test(access_key_4_2);
+        let access_key_6_1 = insert(&mut avlq, 6, 1);
+        let access_key_6_2 = insert(&mut avlq, 6, 2);
+        let tree_id_6 = get_access_key_tree_node_id_test(access_key_6_1);
+        let list_id_6_1 = get_access_key_list_node_id_test(access_key_6_1);
+        let list_id_6_2 = get_access_key_list_node_id_test(access_key_6_2);
+        // Assert predecessor returns.
+        (key, head, tail) = traverse(&avlq, tree_id_1, PREDECESSOR);
+        assert!(key  == (NIL as u64), 0);
+        assert!(head == (NIL as u64), 0);
+        assert!(tail == (NIL as u64), 0);
+        (key, head, tail) = traverse(&avlq, tree_id_2, PREDECESSOR);
+        assert!(key  ==            1, 0);
+        assert!(head ==  list_id_1_1, 0);
+        assert!(tail ==  list_id_1_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_3, PREDECESSOR);
+        assert!(key  ==            2, 0);
+        assert!(head ==  list_id_2_1, 0);
+        assert!(tail ==  list_id_2_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_4, PREDECESSOR);
+        assert!(key  ==            3, 0);
+        assert!(head ==  list_id_3_1, 0);
+        assert!(tail ==  list_id_3_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_5, PREDECESSOR);
+        assert!(key  ==            4, 0);
+        assert!(head ==  list_id_4_1, 0);
+        assert!(tail ==  list_id_4_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_6, PREDECESSOR);
+        assert!(key  ==            5, 0);
+        assert!(head ==  list_id_5_1, 0);
+        assert!(tail ==  list_id_5_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_7, PREDECESSOR);
+        assert!(key  ==            6, 0);
+        assert!(head ==  list_id_6_1, 0);
+        assert!(tail ==  list_id_6_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_8, PREDECESSOR);
+        assert!(key  ==            7, 0);
+        assert!(head ==  list_id_7_1, 0);
+        assert!(tail ==  list_id_7_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_9, PREDECESSOR);
+        assert!(key  ==            8, 0);
+        assert!(head ==  list_id_8_1, 0);
+        assert!(tail ==  list_id_8_2, 0);
+        // Assert successor returns.
+        (key, head, tail) = traverse(&avlq, tree_id_1, SUCCESSOR);
+        assert!(key  ==            2, 0);
+        assert!(head ==  list_id_2_1, 0);
+        assert!(tail ==  list_id_2_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_2, SUCCESSOR);
+        assert!(key  ==            3, 0);
+        assert!(head ==  list_id_3_1, 0);
+        assert!(tail ==  list_id_3_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_3, SUCCESSOR);
+        assert!(key  ==            4, 0);
+        assert!(head ==  list_id_4_1, 0);
+        assert!(tail ==  list_id_4_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_4, SUCCESSOR);
+        assert!(key  ==            5, 0);
+        assert!(head ==  list_id_5_1, 0);
+        assert!(tail ==  list_id_5_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_5, SUCCESSOR);
+        assert!(key  ==            6, 0);
+        assert!(head ==  list_id_6_1, 0);
+        assert!(tail ==  list_id_6_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_6, SUCCESSOR);
+        assert!(key  ==            7, 0);
+        assert!(head ==  list_id_7_1, 0);
+        assert!(tail ==  list_id_7_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_7, SUCCESSOR);
+        assert!(key  ==            8, 0);
+        assert!(head ==  list_id_8_1, 0);
+        assert!(tail ==  list_id_8_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_8, SUCCESSOR);
+        assert!(key  ==            9, 0);
+        assert!(head ==  list_id_9_1, 0);
+        assert!(tail ==  list_id_9_2, 0);
+        (key, head, tail) = traverse(&avlq, tree_id_9, SUCCESSOR);
+        assert!(key  == (NIL as u64), 0);
+        assert!(head == (NIL as u64), 0);
+        assert!(tail == (NIL as u64), 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

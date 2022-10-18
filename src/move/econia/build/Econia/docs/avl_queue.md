@@ -199,6 +199,7 @@ The below index is automatically generated from source code:
     -  [Assumptions](#@Assumptions_73)
     -  [Reference diagram](#@Reference_diagram_74)
     -  [Testing](#@Testing_75)
+-  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
     -  [Aborts](#@Aborts_76)
     -  [Testing](#@Testing_77)
@@ -870,9 +871,9 @@ Insert a key-value pair into an AVL queue.
 ### Failure testing
 
 
-* <code>test_insert_insertion_key_too_large()</code>.
-* <code>test_insert_too_many_list_nodes()</code>.
-* <code>test_insert_too_many_tree_nodes()</code>.
+* <code>test_insert_insertion_key_too_large()</code>
+* <code>test_insert_too_many_list_nodes()</code>
+* <code>test_insert_too_many_tree_nodes()</code>
 
 
 <a name="@State_verification_testing_11"></a>
@@ -1457,7 +1458,7 @@ inserting a solo list node.
 * <code>test_insert_list_node_get_last_next_new_tail()</code>
 * <code>test_insert_list_node_get_last_next_solo_allocate()</code>
 * <code>test_insert_list_node_get_last_next_solo_stacked()</code>
-* <code>test_insert_too_many_tree_nodes()</code>.
+* <code>test_insert_too_many_tree_nodes()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, anchor_tree_node_id: u64): (u64, u64)
@@ -1568,8 +1569,8 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_n
 ### Testing
 
 
-* <code>test_insert_tree_node_empty()</code>.
-* <code>test_insert_tree_node_stacked()</code>.
+* <code>test_insert_tree_node_empty()</code>
+* <code>test_insert_tree_node_stacked()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, key: u64, parent: u64, solo_node_id: u64, new_leaf_side: <a href="_Option">option::Option</a>&lt;bool&gt;): u64
@@ -1957,9 +1958,9 @@ subtree was a child to the next ancestor.
 ### Testing
 
 
-* <code>test_retrace_prep_iterate_1()</code>.
-* <code>test_retrace_prep_iterate_2()</code>.
-* <code>test_retrace_prep_iterate_3()</code>.
+* <code>test_retrace_prep_iterate_1()</code>
+* <code>test_retrace_prep_iterate_2()</code>
+* <code>test_retrace_prep_iterate_3()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace_prep_iterate">retrace_prep_iterate</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, parent_id: u64, node_id: u64, new_subtree_root: u64, height: u8, height_old: u8): (&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">avl_queue::TreeNode</a>, bool, bool, u8)
@@ -3248,7 +3249,7 @@ the root node.
 ### Testing
 
 
-* <code>test_search()</code>.
+* <code>test_search()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_search">search</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, seed_key: u64): (u64, <a href="_Option">option::Option</a>&lt;bool&gt;)
@@ -3297,6 +3298,39 @@ the root node.
         // Otherwise <b>continue</b> walk at given child.
         node_id = child_id;
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_traverse"></a>
+
+## Function `traverse`
+
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_traverse">traverse</a>&lt;V&gt;(_avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, _start_node_id: u64, _target: bool): (<a href="_Option">option::Option</a>&lt;u64&gt;, <a href="_Option">option::Option</a>&lt;u64&gt;, <a href="_Option">option::Option</a>&lt;u64&gt;, <a href="_Option">option::Option</a>&lt;u64&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_traverse">traverse</a>&lt;V&gt;(
+    _avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    _start_node_id: u64,
+    _target: bool
+): (
+    Option&lt;u64&gt;, // Insertion key.
+    Option&lt;u64&gt;, // Tree node ID.
+    Option&lt;u64&gt;, // List head ID.
+    Option&lt;u64&gt; // List tail ID.
+) {
+    (<a href="_none">option::none</a>(), <a href="_none">option::none</a>(), <a href="_none">option::none</a>(), <a href="_none">option::none</a>())
 }
 </code></pre>
 

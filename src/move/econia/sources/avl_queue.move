@@ -304,9 +304,9 @@ module econia::avl_queue {
     ///
     /// # Failure testing
     ///
-    /// * `test_insert_insertion_key_too_large()`.
-    /// * `test_insert_too_many_list_nodes()`.
-    /// * `test_insert_too_many_tree_nodes()`.
+    /// * `test_insert_insertion_key_too_large()`
+    /// * `test_insert_too_many_list_nodes()`
+    /// * `test_insert_too_many_tree_nodes()`
     ///
     /// # State verification testing
     ///
@@ -711,7 +711,7 @@ module econia::avl_queue {
     /// * `test_insert_list_node_get_last_next_new_tail()`
     /// * `test_insert_list_node_get_last_next_solo_allocate()`
     /// * `test_insert_list_node_get_last_next_solo_stacked()`
-    /// * `test_insert_too_many_tree_nodes()`.
+    /// * `test_insert_too_many_tree_nodes()`
     fun insert_list_node_get_last_next<V>(
         avlq_ref: &AVLqueue<V>,
         anchor_tree_node_id: u64,
@@ -786,8 +786,8 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_insert_tree_node_empty()`.
-    /// * `test_insert_tree_node_stacked()`.
+    /// * `test_insert_tree_node_empty()`
+    /// * `test_insert_tree_node_stacked()`
     fun insert_tree_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64,
@@ -1083,9 +1083,9 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_retrace_prep_iterate_1()`.
-    /// * `test_retrace_prep_iterate_2()`.
-    /// * `test_retrace_prep_iterate_3()`.
+    /// * `test_retrace_prep_iterate_1()`
+    /// * `test_retrace_prep_iterate_2()`
+    /// * `test_retrace_prep_iterate_3()`
     fun retrace_prep_iterate<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         parent_id: u64,
@@ -2086,7 +2086,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_search()`.
+    /// * `test_search()`
     fun search<V>(
         avlq_ref: &AVLqueue<V>,
         seed_key: u64
@@ -2124,6 +2124,19 @@ module econia::avl_queue {
             // Otherwise continue walk at given child.
             node_id = child_id;
         }
+    }
+
+    fun traverse<V>(
+        _avlq_ref: &AVLqueue<V>,
+        _start_node_id: u64,
+        _target: bool
+    ): (
+        Option<u64>, // Insertion key.
+        Option<u64>, // Tree node ID.
+        Option<u64>, // List head ID.
+        Option<u64> // List tail ID.
+    ) {
+        (option::none(), option::none(), option::none(), option::none())
     }
 
     /// Verify node count is not too high.

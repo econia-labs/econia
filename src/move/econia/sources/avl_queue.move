@@ -275,6 +275,17 @@ module econia::avl_queue {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Get insertion key encoded in an access key.
+    ///
+    /// # Testing
+    ///
+    /// * `test_access_key_getters()`
+    fun get_access_key_insertion_key(
+        access_key: u64
+    ): u64 {
+        access_key & HI_INSERTION_KEY
+    }
+
     /// Insert a key-value pair into an AVL queue.
     ///
     /// # Parameters
@@ -286,6 +297,58 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `u64`: Access key used for lookup.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INSERTION_KEY_TOO_LARGE`: Insertion key is too large.
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_insert_insertion_key_too_large()`.
+    /// * `test_insert_too_many_list_nodes()`.
+    /// * `test_insert_too_many_tree_nodes()`.
+    ///
+    /// # State verification testing
+    ///
+    /// See `test_insert()` for state verification testing of the
+    /// below insertion sequence.
+    ///
+    /// Insert $\langle 3, 9 \rangle$:
+    ///
+    /// >      3
+    /// >     [9]
+    ///
+    /// Insert $\langle 4, 8 \rangle$:
+    ///
+    /// >      3
+    /// >     [9]
+    /// >        \
+    /// >         4
+    /// >        [8]
+    ///
+    /// Insert $\langle 5, 7 \rangle$:
+    ///
+    /// >         4
+    /// >        [8]
+    /// >       /   \
+    /// >      3     5
+    /// >     [9]   [7]
+    ///
+    /// Insert $\langle 3, 6 \rangle$
+    ///
+    /// >               4
+    /// >              [8]
+    /// >             /   \
+    /// >            3     5
+    /// >     [9 -> 6]    [7]
+    ///
+    /// Insert $\langle 5, 5 \rangle$
+    ///
+    /// >               4
+    /// >              [8]
+    /// >             /   \
+    /// >            3     5
+    /// >     [9 -> 6]     [7 -> 5]
     public fun insert<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64,
@@ -313,10 +376,11 @@ module econia::avl_queue {
         let tree_node_id = if (solo) insert_tree_node(
             avlq_ref_mut, key, match_node_id, list_node_id, new_leaf_side) else
             match_node_id;
-        // If just inserted new tree node, retrace starting at the
-        // parent to the inserted tree node.
-        if (solo) retrace(avlq_ref_mut, match_node_id, INCREMENT,
-                          *option::borrow(&new_leaf_side));
+        // If just inserted new tree node that is not root, retrace
+        // starting at the parent to the inserted tree node.
+        if (solo && (match_node_id != (NIL as u64)))
+            retrace(avlq_ref_mut, match_node_id, INCREMENT,
+                    *option::borrow(&new_leaf_side));
         // Check AVL queue head and tail.
         insert_check_head_tail(avlq_ref_mut, key, list_node_id);
         let order_bit = // Get sort order bit from AVL queue bits.
@@ -324,7 +388,7 @@ module econia::avl_queue {
         // Return bit-packed access key.
         key | ((order_bit as u64) << SHIFT_ACCESS_SORT_ORDER) |
               ((list_node_id    ) << SHIFT_ACCESS_LIST_NODE_ID) |
-              ((tree_node_id    ) << SHIFT_ACCESS_LIST_NODE_ID)
+              ((tree_node_id    ) << SHIFT_ACCESS_TREE_NODE_ID)
     }
 
     /// Return a new AVL queue, optionally allocating inactive nodes.
@@ -564,6 +628,7 @@ module econia::avl_queue {
     ///
     /// * `test_insert_list_node_assign_fields_allocate()`
     /// * `test_insert_list_node_assign_fields_stacked()`
+    /// * `test_insert_too_many_list_nodes()`
     fun insert_list_node_assign_fields<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         last: u64,
@@ -646,6 +711,7 @@ module econia::avl_queue {
     /// * `test_insert_list_node_get_last_next_new_tail()`
     /// * `test_insert_list_node_get_last_next_solo_allocate()`
     /// * `test_insert_list_node_get_last_next_solo_stacked()`
+    /// * `test_insert_too_many_tree_nodes()`.
     fun insert_list_node_get_last_next<V>(
         avlq_ref: &AVLqueue<V>,
         anchor_tree_node_id: u64,
@@ -1992,10 +2058,10 @@ module econia::avl_queue {
     /// # Returns
     ///
     /// * `u64`: Node ID of match node, or `NIL` if empty tree.
-    /// * `Option<bool>`: None if match key equals seed key, `LEFT` if
-    ///   seed key is less than match key but match node has no left
-    ///   child, `RIGHT` if seed key is greater than match key but match
-    ///   node has no right child.
+    /// * `Option<bool>`: None if empty tree or if match key equals seed
+    ///   key, `LEFT` if seed key is less than match key but match node
+    ///   has no left child, `RIGHT` if seed key is greater than match
+    ///   key but match node has no right child.
     ///
     /// # Assumptions
     ///
@@ -2128,18 +2194,6 @@ module econia::avl_queue {
         table_with_length::drop_unchecked(tree_nodes);
         table_with_length::drop_unchecked(list_nodes);
         table::drop_unchecked(values);
-    }
-
-    #[test_only]
-    /// Get insertion key encoded in an access key.
-    ///
-    /// # Testing
-    ///
-    /// * `test_access_key_getters()`
-    fun get_access_key_insertion_key_test(
-        access_key: u64
-    ): u64 {
-        access_key & HI_INSERTION_KEY
     }
 
     #[test_only]
@@ -2364,6 +2418,32 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Like `get_list_last_test()`, but accepts list node ID inside
+    /// given AVL queue.
+    fun get_list_last_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        list_node_id: u64
+    ): (
+        u64,
+        bool
+    ) {
+        let list_node_ref = // Immutably borrow list node.
+            table_with_length::borrow(&avlq_ref.list_nodes, list_node_id);
+        get_list_last_test(list_node_ref) // Return last field data.
+    }
+
+    #[test_only]
+    /// Return only node ID from `get_list_last_by_id_test()`.
+    fun get_list_last_node_id_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        list_node_id: u64
+    ): u64 {
+        // Get last node ID.
+        let (node_id, _) = get_list_last_by_id_test(avlq_ref, list_node_id);
+        node_id // Return it.
+    }
+
+    #[test_only]
     /// Return node ID of next node and if next node is a tree node,
     /// for given list node.
     ///
@@ -2383,6 +2463,32 @@ module econia::avl_queue {
             (BIT_FLAG_TREE_NODE as u64)) as u8); // Get tree node flag.
         // Return node ID, and if next node is a tree node.
         ((next_field & HI_NODE_ID), tree_node_flag == BIT_FLAG_TREE_NODE)
+    }
+
+    #[test_only]
+    /// Like `get_list_next_test()`, but accepts list node ID inside
+    /// given AVL queue.
+    fun get_list_next_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        list_node_id: u64
+    ): (
+        u64,
+        bool
+    ) {
+        let list_node_ref = // Immutably borrow list node.
+            table_with_length::borrow(&avlq_ref.list_nodes, list_node_id);
+        get_list_next_test(list_node_ref) // Return next field data.
+    }
+
+    #[test_only]
+    /// Return only node ID from `get_list_next_by_id_test()`.
+    fun get_list_next_node_id_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        list_node_id: u64
+    ): u64 {
+        // Get next node ID.
+        let (node_id, _) = get_list_next_by_id_test(avlq_ref, list_node_id);
+        node_id // Return it.
     }
 
     #[test_only]
@@ -2475,6 +2581,18 @@ module econia::avl_queue {
     }
 
     #[test_only]
+    /// Like `get_tree_next_test()`, but accepts tree node ID inside
+    /// given AVL queue.
+    fun get_tree_next_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        tree_node_id: u64
+    ): u64 {
+        let tree_node_ref = // Immutably borrow tree node.
+            table_with_length::borrow(&avlq_ref.tree_nodes, tree_node_id);
+        get_tree_next_test(tree_node_ref) // Return parent field.
+    }
+
+    #[test_only]
     /// Return node ID of next inactive tree node in stack, indicated
     /// by given tree node.
     ///
@@ -2539,6 +2657,28 @@ module econia::avl_queue {
     ): bool {
         ((access_key >> SHIFT_ACCESS_SORT_ORDER) & (HI_BIT as u64) as u8) ==
             BIT_FLAG_ASCENDING
+    }
+
+    #[test_only]
+    /// Return only is tree node flag from `get_list_last_by_id_test()`.
+    fun is_tree_node_list_last_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        list_node_id: u64
+    ): bool {
+        let (_, is_tree_node) = // Check if last node is tree node.
+            get_list_last_by_id_test(avlq_ref, list_node_id);
+        is_tree_node // Return flag.
+    }
+
+    #[test_only]
+    /// Return only is tree node flag from `get_list_next_by_id_test()`.
+    fun is_tree_node_list_next_by_id_test<V>(
+        avlq_ref: &AVLqueue<V>,
+        list_node_id: u64
+    ): bool {
+        let (_, is_tree_node) = // Check if next node is tree node.
+            get_list_next_by_id_test(avlq_ref, list_node_id);
+        is_tree_node // Return flag.
     }
 
     #[test_only]
@@ -2610,9 +2750,9 @@ module econia::avl_queue {
         // Reassign bits:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
             // Clear out field via mask unset at field bits.
-            (HI_128 ^ ((HI_INSERTION_KEY as u128) << SHIFT_TAIL_KEY as u128)) |
+            (HI_128 ^ (((HI_INSERTION_KEY as u128) << SHIFT_TAIL_KEY) as u128))
             // Mask in new bits.
-            ((key as u128) << SHIFT_TAIL_KEY)
+            | ((key as u128) << SHIFT_TAIL_KEY)
     }
 
     #[test_only]
@@ -2628,7 +2768,7 @@ module econia::avl_queue {
         // Reassign bits:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
             // Clear out field via mask unset at field bits.
-            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_TAIL_NODE_ID as u128)) |
+            (HI_128 ^ (((HI_NODE_ID as u128) << SHIFT_TAIL_NODE_ID) as u128)) |
             // Mask in new bits.
             ((node_id as u128) << SHIFT_TAIL_NODE_ID)
     }
@@ -2723,7 +2863,7 @@ module econia::avl_queue {
         assert!(get_access_key_list_node_id_test(access_key)
                 == list_node_id, 0);
         assert!(is_ascending_access_key_test(access_key), 0);
-        assert!(get_access_key_insertion_key_test(access_key)
+        assert!(get_access_key_insertion_key(access_key)
                 == insertion_key, 0);
     }
 
@@ -2952,6 +3092,166 @@ module econia::avl_queue {
     }
 
     #[test]
+    /// Verify insertion sequence from `insert()`.
+    fun test_insert() {
+        // Init ascending AVL queue with allocated nodes.
+        let avlq = new(ASCENDING, 7, 3);
+        // Insert per reference diagram, storing access keys.
+        let access_key_3_9 = insert(&mut avlq, 3, 9);
+        let access_key_4_8 = insert(&mut avlq, 4, 8);
+        let access_key_5_7 = insert(&mut avlq, 5, 7);
+        let access_key_3_6 = insert(&mut avlq, 3, 6);
+        let access_key_5_5 = insert(&mut avlq, 5, 5);
+        // Declare expected node IDs per initial node allocations.
+        let tree_node_id_3_9 = 7;
+        let tree_node_id_4_8 = 6;
+        let tree_node_id_5_7 = 5;
+        let tree_node_id_3_6 = 7;
+        let tree_node_id_5_5 = 5;
+        let list_node_id_3_9 = 3;
+        let list_node_id_4_8 = 2;
+        let list_node_id_5_7 = 1;
+        let list_node_id_3_6 = 4;
+        let list_node_id_5_5 = 5;
+        let tree_node_id_3 = tree_node_id_3_9;
+        let tree_node_id_4 = tree_node_id_4_8;
+        let tree_node_id_5 = tree_node_id_5_7;
+        // Assert access key insertion keys.
+        assert!(get_access_key_insertion_key(access_key_3_9) == 3, 0);
+        assert!(get_access_key_insertion_key(access_key_4_8) == 4, 0);
+        assert!(get_access_key_insertion_key(access_key_5_7) == 5, 0);
+        assert!(get_access_key_insertion_key(access_key_3_6) == 3, 0);
+        assert!(get_access_key_insertion_key(access_key_5_5) == 5, 0);
+        // Assert access key tree node IDs.
+        assert!(get_access_key_tree_node_id_test(access_key_3_9)
+                == tree_node_id_3_9, 0);
+        assert!(get_access_key_tree_node_id_test(access_key_4_8)
+                == tree_node_id_4_8, 0);
+        assert!(get_access_key_tree_node_id_test(access_key_5_7)
+                == tree_node_id_5_7, 0);
+        assert!(get_access_key_tree_node_id_test(access_key_3_6)
+                == tree_node_id_3_6, 0);
+        assert!(get_access_key_tree_node_id_test(access_key_5_5)
+                == tree_node_id_5_5, 0);
+        // Assert access key list node IDs.
+        assert!(get_access_key_list_node_id_test(access_key_3_9)
+                == list_node_id_3_9, 0);
+        assert!(get_access_key_list_node_id_test(access_key_4_8)
+                == list_node_id_4_8, 0);
+        assert!(get_access_key_list_node_id_test(access_key_5_7)
+                == list_node_id_5_7, 0);
+        assert!(get_access_key_list_node_id_test(access_key_3_6)
+                == list_node_id_3_6, 0);
+        assert!(get_access_key_list_node_id_test(access_key_5_5)
+                == list_node_id_5_5, 0);
+        // Assert root tree node ID.
+        assert!(get_root_test(&avlq) == tree_node_id_4, 0);
+        // Assert inactive tree node stack top
+        assert!(get_tree_top_test(&avlq) == 4, 0);
+        // Assert empty inactive list node stack.
+        assert!(get_list_top_test(&avlq) == (NIL as u64), 0);
+        // Assert AVL queue head and tail.
+        assert!(get_head_node_id_test(&avlq) == list_node_id_3_9, 0);
+        assert!(get_tail_node_id_test(&avlq) == list_node_id_5_5, 0);
+        assert!(get_head_key_test(&avlq) == 3, 0);
+        assert!(get_tail_key_test(&avlq) == 5, 0);
+        // Assert all tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id_3) == 3, 0);
+        assert!(get_height_left_by_id_test(  &avlq, tree_node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, tree_node_id_3) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, tree_node_id_3)
+                == tree_node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, tree_node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, tree_node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, tree_node_id_3)
+                == list_node_id_3_9, 0);
+        assert!(get_list_tail_by_id_test(    &avlq, tree_node_id_3)
+                == list_node_id_3_6, 0);
+        assert!(get_tree_next_by_id_test(    &avlq, tree_node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id_4) == 4, 0);
+        assert!(get_height_left_by_id_test(  &avlq, tree_node_id_4) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, tree_node_id_4) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, tree_node_id_4)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, tree_node_id_4)
+                == tree_node_id_3, 0);
+        assert!(get_child_right_by_id_test(  &avlq, tree_node_id_4)
+                == tree_node_id_5, 0);
+        assert!(get_list_head_by_id_test(    &avlq, tree_node_id_4)
+                == list_node_id_4_8, 0);
+        assert!(get_list_tail_by_id_test(    &avlq, tree_node_id_4)
+                == list_node_id_4_8, 0);
+        assert!(get_tree_next_by_id_test(    &avlq, tree_node_id_4)
+                == (NIL as u64), 0);
+        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id_5) == 5, 0);
+        assert!(get_height_left_by_id_test(  &avlq, tree_node_id_5) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, tree_node_id_5) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, tree_node_id_5)
+                == tree_node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, tree_node_id_5)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, tree_node_id_5)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, tree_node_id_5)
+                == list_node_id_5_7, 0);
+        assert!(get_list_tail_by_id_test(    &avlq, tree_node_id_5)
+                == list_node_id_5_5, 0);
+        assert!(get_tree_next_by_id_test(    &avlq, tree_node_id_5)
+                == (NIL as u64), 0);
+        // Assert all list node state.
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_node_id_3_9)
+                == tree_node_id_3, 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_node_id_3_9),
+                0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_node_id_3_9)
+                == list_node_id_3_6, 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_node_id_3_9),
+                0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_node_id_3_6)
+                == list_node_id_3_9, 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_node_id_3_6),
+                0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_node_id_3_6)
+                == tree_node_id_3, 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_node_id_3_6),
+                0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_node_id_4_8)
+                == tree_node_id_4, 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_node_id_4_8),
+                0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_node_id_4_8)
+                == tree_node_id_4, 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_node_id_4_8),
+                0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_node_id_5_7)
+                == tree_node_id_5, 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_node_id_5_7),
+                0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_node_id_5_7)
+                == list_node_id_5_5, 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_node_id_5_7),
+                0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_node_id_5_5)
+                == list_node_id_5_7, 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_node_id_5_5),
+                0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_node_id_5_5)
+                == tree_node_id_5, 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_node_id_5_5),
+                0);
+        // Assert all insertion values.
+        assert!(get_value_test(&avlq, list_node_id_3_9) == 9, 0);
+        assert!(get_value_test(&avlq, list_node_id_3_6) == 6, 0);
+        assert!(get_value_test(&avlq, list_node_id_4_8) == 8, 0);
+        assert!(get_value_test(&avlq, list_node_id_5_7) == 7, 0);
+        assert!(get_value_test(&avlq, list_node_id_5_5) == 5, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
     /// Verify successful state manipulation.
     fun test_insert_check_head_tail_ascending() {
         // Init ascending AVL queue.
@@ -3056,6 +3356,16 @@ module econia::avl_queue {
         assert!(get_tail_key_test(&avlq) == key_3, 0);
         assert!(get_head_node_id_test(&avlq) == list_node_id_2, 0);
         assert!(get_tail_node_id_test(&avlq) == list_node_id_3, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for insertion key too large.
+    fun test_insert_insertion_key_too_large() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        // Attempt invalid insertion
+        insert(&mut avlq, HI_INSERTION_KEY + 1, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
@@ -3209,6 +3519,36 @@ module econia::avl_queue {
         assert!(next_assigned == tree_node_id, 0);
         assert!(is_tree_node, 0);
         assert!(get_value_test(&avlq, list_node_id) == value, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Assert failure for too many list nodes.
+    fun test_insert_too_many_list_nodes() {
+        // Init AVL queue with max list nodes allocated.
+        let avlq = new(ASCENDING, 0, N_NODES_MAX);
+        // Reassign inactive list nodes stack top to null:
+        avlq.bits = avlq.bits &
+            (HI_128 ^ // Clear out field via mask unset at field bits.
+                (((HI_NODE_ID as u128) << SHIFT_LIST_STACK_TOP) as u128));
+        // Attempt invalid insertion.
+        insert(&mut avlq, 0, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Assert failure for too many tree nodes.
+    fun test_insert_too_many_tree_nodes() {
+        // Init AVL queue with max list nodes allocated.
+        let avlq = new(ASCENDING, N_NODES_MAX, 0);
+        // Reassign inactive tree nodes stack top to null:
+        avlq.bits = avlq.bits &
+            (HI_128 ^ // Clear out field via mask unset at field bits.
+                (((HI_NODE_ID as u128) << SHIFT_TREE_STACK_TOP) as u128));
+        // Attempt invalid insertion.
+        insert(&mut avlq, 0, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

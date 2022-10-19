@@ -861,14 +861,14 @@ module econia::avl_queue {
         new_leaf_side: Option<bool>
     ) {
         if (option::is_none(&new_leaf_side)) { // If inserting root:
-            // Set root LSBs.
-            avlq_ref_mut.root_lsbs = ((tree_node_id & HI_BYTE) as u8);
             // Reassign bits for root MSBs:
             avlq_ref_mut.bits = avlq_ref_mut.bits &
                 // Clear out field via mask unset at field bits.
                 (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE) as u128)) |
                 // Mask in new bits.
-                ((tree_node_id as u128) >> BITS_PER_BYTE)
+                ((tree_node_id as u128) >> BITS_PER_BYTE);
+            // Set root LSBs.
+            avlq_ref_mut.root_lsbs = ((tree_node_id & HI_BYTE) as u8);
         } else { // If inserting child to existing node:
             // Mutably borrow tree nodes table.
             let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
@@ -1213,14 +1213,14 @@ module econia::avl_queue {
             if (parent == (NIL as u64)) { // If just retraced root:
                 // If just rebalanced at root:
                 if (new_subtree_root != (NIL as u64)) {
-                    avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
-                        (new_subtree_root & HI_BYTE as u8);
                     // Reassign bits for root MSBs:
                     avlq_ref_mut.bits = avlq_ref_mut.bits &
                         // Clear out field via mask unset at field bits.
                         (HI_128 ^ ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) |
                         // Mask in new bits.
                         ((new_subtree_root as u128) >> BITS_PER_BYTE);
+                    avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
+                        (new_subtree_root & HI_BYTE as u8);
                 }; // AVL queue root now current for actual root.
                 return // Stop looping.
             } else { // If just retraced node not at root:
@@ -3035,14 +3035,14 @@ module econia::avl_queue {
         avlq_ref_mut: &mut AVLqueue<V>,
         root_node_id: u64
     ) {
-        // Set root LSBs.
-        avlq_ref_mut.root_lsbs = ((root_node_id & HI_BYTE) as u8);
         // Reassign bits for root MSBs:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
             // Clear out field via mask unset at field bits.
             (HI_128 ^ ((HI_NODE_ID >> BITS_PER_BYTE) as u128)) |
             // Mask in new bits.
-            ((root_node_id as u128) >> BITS_PER_BYTE)
+            ((root_node_id as u128) >> BITS_PER_BYTE);
+        // Set root LSBs.
+        avlq_ref_mut.root_lsbs = ((root_node_id & HI_BYTE) as u8);
     }
 
     #[test_only]

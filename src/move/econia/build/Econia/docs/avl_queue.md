@@ -1715,14 +1715,14 @@ inserted node is right child of its parent.
     new_leaf_side: Option&lt;bool&gt;
 ) {
     <b>if</b> (<a href="_is_none">option::is_none</a>(&new_leaf_side)) { // If inserting root:
-        // Set root LSBs.
-        avlq_ref_mut.root_lsbs = ((tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a>) <b>as</b> u8);
         // Reassign bits for root MSBs:
         avlq_ref_mut.bits = avlq_ref_mut.bits &
             // Clear out field via mask unset at field bits.
             (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>) <b>as</b> u128)) |
             // Mask in new bits.
-            ((tree_node_id <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>)
+            ((tree_node_id <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>);
+        // Set root LSBs.
+        avlq_ref_mut.root_lsbs = ((tree_node_id & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a>) <b>as</b> u8);
     } <b>else</b> { // If inserting child <b>to</b> existing node:
         // Mutably borrow tree nodes <a href="">table</a>.
         <b>let</b> tree_nodes_ref_mut = &<b>mut</b> avlq_ref_mut.tree_nodes;
@@ -2163,14 +2163,14 @@ Post-removal:
         <b>if</b> (parent == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) { // If just retraced root:
             // If just rebalanced at root:
             <b>if</b> (new_subtree_root != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
-                avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
-                    (new_subtree_root & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8);
                 // Reassign bits for root MSBs:
                 avlq_ref_mut.bits = avlq_ref_mut.bits &
                     // Clear out field via mask unset at field bits.
                     (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>)) |
                     // Mask in new bits.
                     ((new_subtree_root <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>);
+                avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
+                    (new_subtree_root & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8);
             }; // AVL queue root now current for actual root.
             <b>return</b> // Stop looping.
         } <b>else</b> { // If just retraced node not at root:

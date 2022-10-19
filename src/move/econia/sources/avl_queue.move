@@ -889,6 +889,185 @@ module econia::avl_queue {
         };
     }
 
+    /// Remove list node for given access key, return insertion value.
+    ///
+    /// Inner function for `remove()`.
+    ///
+    /// Updates last and next nodes in doubly linked list, optionally
+    /// updating head or tail field in corresponding tree node if list
+    /// node was head or tail of doubly linked list. Does not modify
+    /// corresponding tree node if list node was sole node in doubly
+    /// linked list.
+    ///
+    /// Pushes inactive list node onto inactive list nodes stack.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `list_node_id`: List node ID of node to remove.
+    ///
+    /// # Returns
+    ///
+    /// * `V`: Corresponding insertion value.
+    /// * `Option<u64>`: New list head node ID, if any, with `NIL`
+    ///   indicating that corresponding doubly linked list has been
+    ///   cleared out.
+    /// * `Option<u64>`: New list tail node ID, if any, with `NIL`
+    ///   indicating that corresponding doubly linked list has been
+    ///   cleared out.
+    ///
+    /// # Testing
+    ///
+    /// * `test_remove_list_node()`
+    fun remove_list_node<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        list_node_id: u64
+    ): (
+        V,
+        Option<u64>,
+        Option<u64>
+    ) {
+        // Mutably borrow list nodes table.
+        let list_nodes_ref_mut = &mut avlq_ref_mut.list_nodes;
+        let list_node_ref_mut = // Mutably borrow list node.
+            table_with_length::borrow_mut(list_nodes_ref_mut, list_node_id);
+        // Get virtual last field.
+        let last = ((list_node_ref_mut.last_msbs as u64) << BITS_PER_BYTE) |
+                    (list_node_ref_mut.last_lsbs as u64);
+        // Get virtual next field.
+        let next = ((list_node_ref_mut.next_msbs as u64) << BITS_PER_BYTE) |
+                    (list_node_ref_mut.next_lsbs as u64);
+        // Determine if last node is flagged as tree node.
+        let last_is_tree = ((last >> SHIFT_NODE_TYPE) &
+            (BIT_FLAG_TREE_NODE as u64)) == (BIT_FLAG_TREE_NODE as u64);
+        // Determine if next node is flagged as tree node.
+        let next_is_tree = ((next >> SHIFT_NODE_TYPE) &
+            (BIT_FLAG_TREE_NODE as u64)) == (BIT_FLAG_TREE_NODE as u64);
+        let last_node_id = last & HI_NODE_ID; // Get last node ID.
+        let next_node_id = next & HI_NODE_ID; // Get next node ID.
+        // Get inactive list nodes stack top.
+        let list_top = (((avlq_ref_mut.bits >> SHIFT_LIST_STACK_TOP) &
+            (HI_NODE_ID as u128)) as u64);
+        list_node_ref_mut.last_msbs = 0; // Clear node's last MSBs.
+        list_node_ref_mut.last_lsbs = 0; // Clear node's last LSBs.
+        // Set node's next MSBs to those of inactive stack top.
+        list_node_ref_mut.next_msbs = ((list_top >> BITS_PER_BYTE) as u8);
+        // Set node's next LSBs to those of inactive stack top.
+        list_node_ref_mut.next_lsbs = ((list_top & (HI_BYTE as u64)) as u8);
+        // Reassign bits for inactive list node stack top:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_LIST_STACK_TOP)) |
+            // Mask in new bits.
+            ((list_node_id as u128) << SHIFT_LIST_STACK_TOP);
+        // Update node edges, storing optional new head and tail.
+        let (new_head, new_tail) = remove_list_node_update_edges(
+            avlq_ref_mut, last, next, last_is_tree, next_is_tree, last_node_id,
+            next_node_id);
+        // Mutably borrow insertion values table.
+        let values_ref_mut = &mut avlq_ref_mut.values;
+        let value = option::extract( // Extract insertion value.
+            table::borrow_mut(values_ref_mut, list_node_id));
+        // Return insertion value, optional new head, optional new tail.
+        (value, new_head, new_tail)
+    }
+
+    /// Update node edges when removing a list node.
+    ///
+    /// Inner function for `remove_list_node()`.
+    ///
+    /// Update last and next edges relative to removed list node,
+    /// returning optional new list head and tail list node IDs. If
+    /// removed list node was sole node in doubly linked list, does not
+    /// modify corresponding tree node.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `last`: Virtual last field from removed list node.
+    /// * `next`: Virtual next field from removed list node.
+    /// * `last_is_tree`: `true` if last node is flagged as tree node.
+    /// * `next_is_tree`: `true` if next node is flagged as tree node.
+    /// * `last_node_id`: Node ID of last node.
+    /// * `next_node_id`: Node ID of next node.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<u64>`: New list head node ID, if any, with `NIL`
+    ///   indicating that corresponding doubly linked list has been
+    ///   cleared out.
+    /// * `Option<u64>`: New list tail node ID, if any, with `NIL`
+    ///   indicating that corresponding doubly linked list has been
+    ///   cleared out.
+    ///
+    /// # Testing
+    ///
+    /// * `test_remove_list_node()`
+    fun remove_list_node_update_edges<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        last: u64,
+        next: u64,
+        last_is_tree: bool,
+        next_is_tree: bool,
+        last_node_id: u64,
+        next_node_id: u64
+    ): (
+        Option<u64>,
+        Option<u64>
+    ) {
+        // If node was sole list node in doubly linked list, return that
+        // the doubly linked list has been cleared out.
+        if (last_is_tree && next_is_tree) return
+            (option::some((NIL as u64)), option::some((NIL as u64)));
+        // Otherwise, assume no new list head or tail.
+        let (new_head, new_tail) = (option::none(), option::none());
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        // Mutably borrow list nodes table.
+        let list_nodes_ref_mut = &mut avlq_ref_mut.list_nodes;
+        if (last_is_tree) { // If removed node was list head:
+            // Mutably borrow corresponding tree node.
+            let tree_node_ref_mut = table_with_length::borrow_mut(
+                tree_nodes_ref_mut, last_node_id);
+            // Reassign bits for list head to next node ID:
+            tree_node_ref_mut.bits = tree_node_ref_mut.bits &
+                // Clear out field via mask unset at field bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_LIST_HEAD)) |
+                // Mask in new bits.
+                ((next_node_id as u128) << SHIFT_LIST_HEAD);
+            new_head = option::some(next_node_id); // Flag new head.
+        } else { // If node was not list head:
+            // Mutably borrow last list node.
+            let list_node_ref_mut = table_with_length::borrow_mut(
+                list_nodes_ref_mut, last_node_id);
+            // Set node's next MSBs to those of virtual next field.
+            list_node_ref_mut.next_msbs = ((next >> BITS_PER_BYTE) as u8);
+            // Set node's next LSBs to those of virtual next field.
+            list_node_ref_mut.next_lsbs = ((next & (HI_BYTE as u64)) as u8);
+        };
+        if (next_is_tree) { // If removed node was list tail:
+            // Mutably borrow corresponding tree node.
+            let tree_node_ref_mut = table_with_length::borrow_mut(
+                tree_nodes_ref_mut, next_node_id);
+            // Reassign bits for list tail to last node ID:
+            tree_node_ref_mut.bits = tree_node_ref_mut.bits &
+                // Clear out field via mask unset at field bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_LIST_TAIL)) |
+                // Mask in new bits.
+                ((last_node_id as u128) << SHIFT_LIST_TAIL);
+            new_tail = option::some(last_node_id); // Flag new tail.
+        } else { // If node was not list tail:
+            // Mutably borrow next list node.
+            let list_node_ref_mut = table_with_length::borrow_mut(
+                list_nodes_ref_mut, next_node_id);
+            // Set node's last MSBs to those of virtual next field.
+            list_node_ref_mut.last_msbs = ((last >> BITS_PER_BYTE) as u8);
+            // Set node's last LSBs to those of virtual next field.
+            list_node_ref_mut.last_lsbs = ((last & (HI_BYTE as u64)) as u8);
+        };
+        (new_head, new_tail) // Return optional new head and tail.
+    }
+
     /// Retrace ancestor heights after tree node insertion or removal.
     ///
     /// Should only be called by `insert()` or `remove()`.
@@ -3891,6 +4070,145 @@ module econia::avl_queue {
             assert!(option::is_none(borrow_value_option_test(&avlq, i)), 0);
             i = i - 1; // Decrement loop counter.
         };
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for removing head, tail, and sole list
+    /// node.
+    fun test_remove_list_node() {
+        // Declare tree node ID for sole activated tree node.
+        let tree_id_1 = 10;
+        let avlq = new<u8>(ASCENDING, tree_id_1, 0); // Init AVL queue.
+        // Insert, storing list node IDs.
+        let list_id_1 = get_access_key_list_node_id_test(
+            insert(&mut avlq, HI_INSERTION_KEY, 1));
+        let list_id_2 = get_access_key_list_node_id_test(
+            insert(&mut avlq, HI_INSERTION_KEY, 2));
+        let list_id_3 = get_access_key_list_node_id_test(
+            insert(&mut avlq, HI_INSERTION_KEY, 3));
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == (NIL as u64), 0);
+        // Assert tree node state.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_1, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_3, 0);
+        // Assert list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == tree_id_1, 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == list_id_2, 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_1, 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_3, 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_2, 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == tree_id_1, 0);
+        let (value, new_head, new_tail) = // Remove list head.
+            remove_list_node(&mut avlq, list_id_1);
+        // Assert returns.
+        assert!(value == 1, 0);
+        assert!(*option::borrow(&new_head) == list_id_2, 0);
+        assert!(option::is_none(&new_tail), 0);
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == list_id_1, 0);
+        // Assert tree node state.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_3, 0);
+        // Assert list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == tree_id_1   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_3   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_2    , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == tree_id_1    , 0);
+        // Remove list tail
+        (value, new_head, new_tail) = remove_list_node(&mut avlq, list_id_3);
+        // Assert returns.
+        assert!(value == 3, 0);
+        assert!(option::is_none(&new_head), 0);
+        assert!(*option::borrow(&new_tail) == list_id_2, 0);
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == list_id_3, 0);
+        // Assert tree node state.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        // Assert list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == tree_id_1   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == tree_id_1   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_1    , 0);
+        // Remove sole node in list
+        (value, new_head, new_tail) = remove_list_node(&mut avlq, list_id_2);
+        // Assert returns.
+        assert!(value == 2, 0);
+        assert!(*option::borrow(&new_head) == (NIL as u64), 0);
+        assert!(*option::borrow(&new_tail) == (NIL as u64), 0);
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == list_id_2, 0);
+        // Assert tree node state unmodified.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        // Assert list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_3    , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_1    , 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

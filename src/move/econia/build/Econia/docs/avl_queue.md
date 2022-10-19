@@ -155,70 +155,83 @@ The below index is automatically generated from source code:
     -  [Parameters](#@Parameters_36)
     -  [Returns](#@Returns_37)
     -  [Testing](#@Testing_38)
--  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
+-  [Function `remove_tree_node`](#0xc0deb00c_avl_queue_remove_tree_node)
     -  [Parameters](#@Parameters_39)
-    -  [Testing](#@Testing_40)
-        -  [Reference diagram](#@Reference_diagram_41)
--  [Function `retrace_prep_iterate`](#0xc0deb00c_avl_queue_retrace_prep_iterate)
-    -  [Parameters](#@Parameters_42)
-    -  [Returns](#@Returns_43)
-    -  [Testing](#@Testing_44)
--  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+    -  [Case 1](#@Case_1_40)
+    -  [Case 2](#@Case_2_41)
+        -  [Left child](#@Left_child_42)
+        -  [Right child](#@Right_child_43)
+    -  [Case 3](#@Case_3_44)
+-  [Function `remove_tree_node_follow_up`](#0xc0deb00c_avl_queue_remove_tree_node_follow_up)
     -  [Parameters](#@Parameters_45)
-    -  [Returns](#@Returns_46)
-    -  [Node x status](#@Node_x_status_47)
-        -  [Node x left-heavy](#@Node_x_left-heavy_48)
-        -  [Node x right-heavy](#@Node_x_right-heavy_49)
+-  [Function `remove_tree_node_with_children`](#0xc0deb00c_avl_queue_remove_tree_node_with_children)
+    -  [Parameters](#@Parameters_46)
+    -  [Returns](#@Returns_47)
+    -  [Predecessor is not immediate child](#@Predecessor_is_not_immediate_child_48)
+-  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
+    -  [Parameters](#@Parameters_49)
     -  [Testing](#@Testing_50)
+        -  [Reference diagram](#@Reference_diagram_51)
+-  [Function `retrace_prep_iterate`](#0xc0deb00c_avl_queue_retrace_prep_iterate)
+    -  [Parameters](#@Parameters_52)
+    -  [Returns](#@Returns_53)
+    -  [Testing](#@Testing_54)
+-  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+    -  [Parameters](#@Parameters_55)
+    -  [Returns](#@Returns_56)
+    -  [Node x status](#@Node_x_status_57)
+        -  [Node x left-heavy](#@Node_x_left-heavy_58)
+        -  [Node x right-heavy](#@Node_x_right-heavy_59)
+    -  [Testing](#@Testing_60)
 -  [Function `retrace_rebalance_rotate_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left)
-    -  [Parameters](#@Parameters_51)
-    -  [Returns](#@Returns_52)
-    -  [Reference rotations](#@Reference_rotations_53)
-        -  [Case 1](#@Case_1_54)
-        -  [Case 2](#@Case_2_55)
-    -  [Testing](#@Testing_56)
+    -  [Parameters](#@Parameters_61)
+    -  [Returns](#@Returns_62)
+    -  [Reference rotations](#@Reference_rotations_63)
+        -  [Case 1](#@Case_1_64)
+        -  [Case 2](#@Case_2_65)
+    -  [Testing](#@Testing_66)
 -  [Function `retrace_rebalance_rotate_left_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left_right)
-    -  [Procedure](#@Procedure_57)
-    -  [Reference rotations](#@Reference_rotations_58)
-        -  [Case 1](#@Case_1_59)
-        -  [Case 2](#@Case_2_60)
-    -  [Testing](#@Testing_61)
+    -  [Procedure](#@Procedure_67)
+    -  [Reference rotations](#@Reference_rotations_68)
+        -  [Case 1](#@Case_1_69)
+        -  [Case 2](#@Case_2_70)
+    -  [Testing](#@Testing_71)
 -  [Function `retrace_rebalance_rotate_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right)
-    -  [Parameters](#@Parameters_62)
-    -  [Returns](#@Returns_63)
-    -  [Reference rotations](#@Reference_rotations_64)
-        -  [Case 1](#@Case_1_65)
-        -  [Case 2](#@Case_2_66)
-    -  [Testing](#@Testing_67)
+    -  [Parameters](#@Parameters_72)
+    -  [Returns](#@Returns_73)
+    -  [Reference rotations](#@Reference_rotations_74)
+        -  [Case 1](#@Case_1_75)
+        -  [Case 2](#@Case_2_76)
+    -  [Testing](#@Testing_77)
 -  [Function `retrace_rebalance_rotate_right_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right_left)
-    -  [Parameters](#@Parameters_68)
-    -  [Procedure](#@Procedure_69)
-    -  [Reference rotations](#@Reference_rotations_70)
-        -  [Case 1](#@Case_1_71)
-        -  [Case 2](#@Case_2_72)
-    -  [Testing](#@Testing_73)
+    -  [Parameters](#@Parameters_78)
+    -  [Procedure](#@Procedure_79)
+    -  [Reference rotations](#@Reference_rotations_80)
+        -  [Case 1](#@Case_1_81)
+        -  [Case 2](#@Case_2_82)
+    -  [Testing](#@Testing_83)
 -  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
-    -  [Parameters](#@Parameters_74)
-    -  [Returns](#@Returns_75)
-    -  [Testing](#@Testing_76)
+    -  [Parameters](#@Parameters_84)
+    -  [Returns](#@Returns_85)
+    -  [Testing](#@Testing_86)
 -  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_77)
-    -  [Returns](#@Returns_78)
-    -  [Assumptions](#@Assumptions_79)
-    -  [Reference diagram](#@Reference_diagram_80)
-    -  [Testing](#@Testing_81)
--  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
-    -  [Parameters](#@Parameters_82)
-    -  [Conventions](#@Conventions_83)
-    -  [Returns](#@Returns_84)
-    -  [Membership considerations](#@Membership_considerations_85)
-    -  [Predecessor](#@Predecessor_86)
-    -  [Successor](#@Successor_87)
-    -  [Reference diagram](#@Reference_diagram_88)
-    -  [Testing](#@Testing_89)
--  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_90)
+    -  [Parameters](#@Parameters_87)
+    -  [Returns](#@Returns_88)
+    -  [Assumptions](#@Assumptions_89)
+    -  [Reference diagram](#@Reference_diagram_90)
     -  [Testing](#@Testing_91)
+-  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
+    -  [Parameters](#@Parameters_92)
+    -  [Conventions](#@Conventions_93)
+    -  [Returns](#@Returns_94)
+    -  [Membership considerations](#@Membership_considerations_95)
+    -  [Predecessor](#@Predecessor_96)
+    -  [Successor](#@Successor_97)
+    -  [Reference diagram](#@Reference_diagram_98)
+    -  [Testing](#@Testing_99)
+-  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
+    -  [Aborts](#@Aborts_100)
+    -  [Testing](#@Testing_101)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1991,6 +2004,403 @@ cleared out.
 
 </details>
 
+<a name="0xc0deb00c_avl_queue_remove_tree_node"></a>
+
+## Function `remove_tree_node`
+
+Remove tree node from an AVL queue.
+
+Inner function for <code>remove()</code>.
+
+
+<a name="@Parameters_39"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>node_x_id</code>: Node ID of node to remove.
+
+Here, node x refers to the node to remove from the tree. Node
+x may have a parent or may be the tree root, and may have 0, 1,
+or 2 children.
+
+>        |
+>        x
+>       / \
+
+
+<a name="@Case_1_40"></a>
+
+### Case 1
+
+
+Node x has no children. Here, the parent to node x gets updated
+to have a null subtree as its child on the side that node x used
+to be a child at. If node x has no parent the tree is completely
+cleared out and no retrace takes place, otherwise a decrement
+retrace starts from node x's pre-removal parent on the side that
+node x used to be a child at.
+
+
+<a name="@Case_2_41"></a>
+
+### Case 2
+
+
+Node x has a single child node. Here, the parent to node x gets
+updated to have node x's sole child as its child on the side
+that node x used to be a child at. If node x has no parent then
+the child becomes the root of the tree and no retrace takes
+place, otherwise a decrement retrace starts from node x's
+pre-removal parent on the side that node x used to be a child
+at.
+
+
+<a name="@Left_child_42"></a>
+
+#### Left child
+
+
+Pre-removal:
+
+>       |
+>       x
+>      /
+>     l
+
+Post-removal:
+
+>     |
+>     l
+
+
+<a name="@Right_child_43"></a>
+
+#### Right child
+
+
+Pre-removal:
+
+>     |
+>     x
+>      \
+>       r
+
+Post-removal:
+
+>     |
+>     r
+
+
+<a name="@Case_3_44"></a>
+
+### Case 3
+
+
+Node x has two children. Handled by
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>()</code>.
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tree_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tree_node</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    node_x_id: u64
+) {
+    <b>let</b> node_x_ref = // Immutably borrow node x.
+        <a href="_borrow">table_with_length::borrow</a>(&<b>mut</b> avlq_ref_mut.tree_nodes, node_x_id);
+    <b>let</b> bits = node_x_ref.bits; // Get node x bits.
+    // Get node x's left height, right height, parent, and children
+    // fields.
+    <b>let</b> (node_x_height_left, node_x_height_right, node_x_parent,
+         node_x_child_left , node_x_child_right) =
+        (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_LEFT">SHIFT_HEIGHT_LEFT</a> ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) <b>as</b> u8),
+         ((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEIGHT_RIGHT">SHIFT_HEIGHT_RIGHT</a>) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_HEIGHT">HI_HEIGHT</a>  <b>as</b> u128) <b>as</b> u8),
+         ((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>      ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64),
+         ((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>  ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64),
+         ((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a> ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64));
+    // Determine <b>if</b> node x <b>has</b> left child.
+    <b>let</b> has_child_left  = node_x_child_left  != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64);
+    // Determine <b>if</b> node x <b>has</b> right child.
+    <b>let</b> has_child_right = node_x_child_right != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64);
+    // Assume case 1: node x is leaf node replaced by null subtree,
+    // potentially requiring decrement retrace on side that node x
+    // was child at (retrace side reassigned later).
+    <b>let</b> (new_subtree_root, retrace_node_id, retrace_side) =
+        ((<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)    , node_x_parent  , <b>false</b>       );
+    <b>if</b> (( has_child_left && !has_child_right) ||
+        (!has_child_left &&  has_child_right)) { // If only 1 child:
+        new_subtree_root = <b>if</b> (has_child_left) node_x_child_left <b>else</b>
+            node_x_child_right; // New subtree root is the child.
+        // Mutably borrow child.
+        <b>let</b> child_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
+            &<b>mut</b> avlq_ref_mut.tree_nodes, new_subtree_root);
+        // Reassign bits for new parent field.
+        child_ref_mut.bits = child_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>)) |
+            // Mask in new bits.
+            ((node_x_parent <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
+    }; // Case 2 handled.
+    // If node x <b>has</b> left and right child remove node per case 3,
+    // storing new subtree root, retrace node ID, and retrace side.
+    <b>if</b> (has_child_left && has_child_right)
+        (new_subtree_root, retrace_node_id, retrace_side) =
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>(
+            avlq_ref_mut, node_x_id, node_x_height_left,
+            node_x_height_right, node_x_parent, node_x_child_left,
+            node_x_child_right);
+    // Clean up parent edge, optionally retrace, push onto stack.
+    <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_follow_up">remove_tree_node_follow_up</a>(
+        avlq_ref_mut, node_x_id, node_x_parent, new_subtree_root,
+        retrace_node_id, retrace_side);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_remove_tree_node_follow_up"></a>
+
+## Function `remove_tree_node_follow_up`
+
+Clean up parent edge, optionally retrace, push onto stack.
+
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tree_node</a>()</code>, following up on removal
+of node x.
+
+Follow up on tree node removal re-ordering operations, updating
+parent to node x (if there is one). Retrace as needed, then push
+node x onto the inactive tree nodes stack.
+
+
+<a name="@Parameters_45"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>node_x_id</code>: Node ID of removed node.
+* <code>node_x_parent</code>: Parent field of node x before it was removed,
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if x was root.
+* <code>new_subtree_root</code>: New root of subtree where node x was root
+pre-removal, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if node x was a leaf node.
+* <code>retrace_node_id</code>: Node ID to retrace from, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if node x
+was at the root and had less than two children before it was
+removed.
+* <code>retrace_side</code>: Side of decrement retrace for the case of node
+x having two children, reassigned if node x was not at root
+before removal and had less than two children.
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_follow_up">remove_tree_node_follow_up</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64, node_x_parent: u64, new_subtree_root: u64, retrace_node_id: u64, retrace_side: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_follow_up">remove_tree_node_follow_up</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    node_x_id: u64,
+    node_x_parent: u64,
+    new_subtree_root: u64,
+    retrace_node_id: u64,
+    retrace_side: bool
+) {
+    <b>if</b> (node_x_parent == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) { // If node x was tree root:
+        // Reassign bits for root MSBs:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>)) |
+            // Mask in new bits.
+            ((new_subtree_root <b>as</b> u128) &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_BITS_PER_BYTE">BITS_PER_BYTE</a>);
+        avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
+            (new_subtree_root & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_BYTE">HI_BYTE</a> <b>as</b> u8);
+    } <b>else</b> { // If node x was not root:
+        // Mutably borrow node x's parent.
+        <b>let</b> parent_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
+            &<b>mut</b> avlq_ref_mut.tree_nodes, new_subtree_root);
+        // Get parent's left child.
+        <b>let</b> parent_left_child = (((parent_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>)
+            & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
+        // Get child shift based on node x's side <b>as</b> a child.
+        <b>let</b> child_shift = <b>if</b> (parent_left_child == node_x_id)
+            <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_RIGHT">SHIFT_CHILD_RIGHT</a>;
+        // Reassign bits for new child field.
+        parent_ref_mut.bits = parent_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; child_shift)) |
+            // Mask in new bits.
+            ((new_subtree_root <b>as</b> u128) &lt;&lt; child_shift);
+        // If retrace node id is node x's parent, then node x had
+        // less than two children before removal, so retrace side
+        // is the side on which node x was previously a child.
+        <b>if</b> (retrace_node_id == node_x_parent) retrace_side =
+            <b>if</b> (parent_left_child == node_x_id) <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a>;
+    }; // Parent edge updated, retrace side assigned <b>if</b> needed.
+    <b>if</b> (retrace_node_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) // Retrace <b>if</b> needed.
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>(avlq_ref_mut, retrace_node_id, <a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a>, retrace_side);
+    // Get inactive tree nodes stack top.
+    <b>let</b> tree_top = (((avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
+    // Mutably borrow node x.
+    <b>let</b> node_x_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
+        &<b>mut</b> avlq_ref_mut.tree_nodes, node_x_id);
+    // Set node x <b>to</b> indicate the next inactive tree node in stack.
+    node_x_ref_mut.bits = (tree_top <b>as</b> u128);
+    // Reassign bits for inactive tree node stack top:
+    avlq_ref_mut.bits = avlq_ref_mut.bits &
+        // Clear out field via mask unset at field bits.
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>)) |
+        // Mask in new bits.
+        ((node_x_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_remove_tree_node_with_children"></a>
+
+## Function `remove_tree_node_with_children`
+
+Replace node x with its predecessor in preparation for retrace.
+
+Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tree_node</a>()</code> in the case of removing
+a node with two children.  Here, node x is the node to remove,
+having left child node l and right child node r.
+
+>           |
+>           x
+>          / \
+>         l   r
+
+
+<a name="@Parameters_46"></a>
+
+### Parameters
+
+
+* <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
+* <code>node_x_id</code>: Node ID of removed node.
+* <code>node_x_height_left</code>: Node x's left height.
+* <code>node_x_height_right</code>: Node x's right height.
+* <code>node_x_parent</code>: Node x's parent field.
+* <code>node_l_id</code>: Node ID of node x's left child.
+* <code>node_r_id</code>: Node ID of node x's right child.
+
+
+<a name="@Returns_47"></a>
+
+### Returns
+
+
+* <code>u64</code>: Node ID of new root subtree where node x was root
+pre-removal.
+* <code>u64</code>: Node ID of node to begin decremrent retrace from in
+<code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_follow_up">remove_tree_node_follow_up</a>()</code>.
+* <code>bool</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code>, the side on which the decrement
+retrace should take place.
+
+Node l does not have a right child, but has left child tree l
+which may or may not be empty.
+
+>           |
+>           x
+>          / \
+>         l   r
+>        /
+>     t_l
+
+Here, node l takes the place of node x, with node l's left
+height and right height set to those of node x pre-removal. Then
+a left decrement retrace is initiated at node l.
+
+>         |
+>         l
+>        / \
+>     t_l   r
+
+
+<a name="@Predecessor_is_not_immediate_child_48"></a>
+
+### Predecessor is not immediate child
+
+
+Node l has a right child, with node y as the maximum node in the
+corresponding subtree. Node y has no right child, but has as its
+left child tree y, which may or may not be empty. Node y may or
+may not have node l as its parent.
+
+>           |
+>           x
+>          / \
+>         l   r
+>        / \
+>     t_l   ~
+>            \
+>             y
+>            /
+>         t_y
+
+Here, node y takes the place of node x, with node y's left
+height and right height updated to those of node x pre-removal.
+Tree y then takes the place of y, and a right decrement retrace
+is initiated at node y's pre-removal parent.
+
+>           |
+>           y
+>          / \
+>         l   r
+>        / \
+>     t_l   ~
+>            \
+>             t_y
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>&lt;V&gt;(_avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, _node_x_id: u64, _node_x_height_left: u8, _node_x_height_right: u8, _node_x_parent: u64, _node_l_id: u64, _node_r_id: u64): (u64, u64, bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>&lt;V&gt;(
+    _avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    _node_x_id: u64,
+    _node_x_height_left: u8,
+    _node_x_height_right: u8,
+    _node_x_parent: u64,
+    _node_l_id: u64,
+    _node_r_id: u64,
+): (
+    u64, // New subtree root
+    u64, // Retrace node
+    bool // Retrace side
+) {
+    (0, 0, <b>true</b>)
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_avl_queue_retrace"></a>
 
 ## Function `retrace`
@@ -2012,7 +2422,7 @@ Parent-leaf edge updates are handled in <code><a href="avl_queue.md#0xc0deb00c_a
 <code>remove()</code>, while the height retracing process is handled here.
 
 
-<a name="@Parameters_39"></a>
+<a name="@Parameters_49"></a>
 
 ### Parameters
 
@@ -2027,7 +2437,7 @@ a result, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT<
 inserted or deleted.
 
 
-<a name="@Testing_40"></a>
+<a name="@Testing_50"></a>
 
 ### Testing
 
@@ -2082,7 +2492,7 @@ information on their corresponding reference diagrams.
 | <code>test_rotate_left_2()</code> | <code>test_retrace_insert_remove()</code> |
 
 
-<a name="@Reference_diagram_41"></a>
+<a name="@Reference_diagram_51"></a>
 
 #### Reference diagram
 
@@ -2202,7 +2612,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">ret
 retraced below the root of the AVL queue.
 
 
-<a name="@Parameters_42"></a>
+<a name="@Parameters_52"></a>
 
 ### Parameters
 
@@ -2217,7 +2627,7 @@ rebalancing took place, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NI
 * <code>height_old</code>: Height of subtree before retrace.
 
 
-<a name="@Returns_43"></a>
+<a name="@Returns_53"></a>
 
 ### Returns
 
@@ -2232,7 +2642,7 @@ subtree was a child to the next ancestor.
 0 when height does not change.
 
 
-<a name="@Testing_44"></a>
+<a name="@Testing_54"></a>
 
 ### Testing
 
@@ -2312,7 +2722,7 @@ Updates state for nodes in subtree, but not for potential parent
 to subtree.
 
 
-<a name="@Parameters_45"></a>
+<a name="@Parameters_55"></a>
 
 ### Parameters
 
@@ -2324,7 +2734,7 @@ root's heavy side.
 * <code>node_x_left_heavy</code>: <code><b>true</b></code> if node x is left-heavy.
 
 
-<a name="@Returns_46"></a>
+<a name="@Returns_56"></a>
 
 ### Returns
 
@@ -2333,7 +2743,7 @@ root's heavy side.
 * <code>u8</code>: Height of subtree after rotation.
 
 
-<a name="@Node_x_status_47"></a>
+<a name="@Node_x_status_57"></a>
 
 ### Node x status
 
@@ -2342,7 +2752,7 @@ Node x can be either left-heavy or right heavy. In either case,
 consider that node z has left child and right child fields.
 
 
-<a name="@Node_x_left-heavy_48"></a>
+<a name="@Node_x_left-heavy_58"></a>
 
 #### Node x left-heavy
 
@@ -2354,7 +2764,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Node_x_right-heavy_49"></a>
+<a name="@Node_x_right-heavy_59"></a>
 
 #### Node x right-heavy
 
@@ -2366,7 +2776,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Testing_50"></a>
+<a name="@Testing_60"></a>
 
 ### Testing
 
@@ -2470,7 +2880,7 @@ Post-rotation:
 >     t_1   t_2
 
 
-<a name="@Parameters_51"></a>
+<a name="@Parameters_61"></a>
 
 ### Parameters
 
@@ -2482,7 +2892,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height.
 
 
-<a name="@Returns_52"></a>
+<a name="@Returns_62"></a>
 
 ### Returns
 
@@ -2492,13 +2902,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_53"></a>
+<a name="@Reference_rotations_63"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_54"></a>
+<a name="@Case_1_64"></a>
 
 #### Case 1
 
@@ -2524,7 +2934,7 @@ Post-rotation:
 >     node x -> 4   8 <- tree 3
 
 
-<a name="@Case_2_55"></a>
+<a name="@Case_2_65"></a>
 
 #### Case 2
 
@@ -2567,7 +2977,7 @@ Post-rotation:
 >           6 <- tree 2
 
 
-<a name="@Testing_56"></a>
+<a name="@Testing_66"></a>
 
 ### Testing
 
@@ -2703,7 +3113,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height pre-rotation.
 
 
-<a name="@Procedure_57"></a>
+<a name="@Procedure_67"></a>
 
 ### Procedure
 
@@ -2716,13 +3126,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_58"></a>
+<a name="@Reference_rotations_68"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_59"></a>
+<a name="@Case_1_69"></a>
 
 #### Case 1
 
@@ -2752,7 +3162,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Case_2_60"></a>
+<a name="@Case_2_70"></a>
 
 #### Case 2
 
@@ -2782,7 +3192,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Testing_61"></a>
+<a name="@Testing_71"></a>
 
 ### Testing
 
@@ -2933,7 +3343,7 @@ Post-rotation:
 >        t_2   t_3
 
 
-<a name="@Parameters_62"></a>
+<a name="@Parameters_72"></a>
 
 ### Parameters
 
@@ -2945,7 +3355,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height.
 
 
-<a name="@Returns_63"></a>
+<a name="@Returns_73"></a>
 
 ### Returns
 
@@ -2955,13 +3365,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_64"></a>
+<a name="@Reference_rotations_74"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_65"></a>
+<a name="@Case_1_75"></a>
 
 #### Case 1
 
@@ -2994,7 +3404,7 @@ Post-rotation:
 >     tree 1 -> 4   8 <- node x
 
 
-<a name="@Case_2_66"></a>
+<a name="@Case_2_76"></a>
 
 #### Case 2
 
@@ -3022,7 +3432,7 @@ Post-rotation:
 >                 5 <- tree 2
 
 
-<a name="@Testing_67"></a>
+<a name="@Testing_77"></a>
 
 ### Testing
 
@@ -3152,7 +3562,7 @@ Post-rotation:
 >     t_1   t_2   t_3   t_4
 
 
-<a name="@Parameters_68"></a>
+<a name="@Parameters_78"></a>
 
 ### Parameters
 
@@ -3164,7 +3574,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height pre-rotation.
 
 
-<a name="@Procedure_69"></a>
+<a name="@Procedure_79"></a>
 
 ### Procedure
 
@@ -3177,13 +3587,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_70"></a>
+<a name="@Reference_rotations_80"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_71"></a>
+<a name="@Case_1_81"></a>
 
 #### Case 1
 
@@ -3213,7 +3623,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Case_2_72"></a>
+<a name="@Case_2_82"></a>
 
 #### Case 2
 
@@ -3243,7 +3653,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Testing_73"></a>
+<a name="@Testing_83"></a>
 
 ### Testing
 
@@ -3370,7 +3780,7 @@ Update height fields during retracing.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>()</code>.
 
 
-<a name="@Parameters_74"></a>
+<a name="@Parameters_84"></a>
 
 ### Parameters
 
@@ -3384,7 +3794,7 @@ the height field for the given side.
 * <code>delta</code>: The amount of height change for the operation.
 
 
-<a name="@Returns_75"></a>
+<a name="@Returns_85"></a>
 
 ### Returns
 
@@ -3395,7 +3805,7 @@ the height field for the given side.
 * <code>u8</code>: The height of the node after updating height.
 
 
-<a name="@Testing_76"></a>
+<a name="@Testing_86"></a>
 
 ### Testing
 
@@ -3473,7 +3883,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_77"></a>
+<a name="@Parameters_87"></a>
 
 ### Parameters
 
@@ -3482,7 +3892,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_78"></a>
+<a name="@Returns_88"></a>
 
 ### Returns
 
@@ -3494,7 +3904,7 @@ has no left child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT
 key but match node has no right child.
 
 
-<a name="@Assumptions_79"></a>
+<a name="@Assumptions_89"></a>
 
 ### Assumptions
 
@@ -3504,7 +3914,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_80"></a>
+<a name="@Reference_diagram_90"></a>
 
 ### Reference diagram
 
@@ -3523,7 +3933,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_81"></a>
+<a name="@Testing_91"></a>
 
 ### Testing
 
@@ -3591,7 +4001,7 @@ the root node.
 Traverse from tree node to inorder predecessor or succesor.
 
 
-<a name="@Parameters_82"></a>
+<a name="@Parameters_92"></a>
 
 ### Parameters
 
@@ -3601,7 +4011,7 @@ Traverse from tree node to inorder predecessor or succesor.
 * <code>target</code>: Either <code><a href="avl_queue.md#0xc0deb00c_avl_queue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_SUCCESSOR">SUCCESSOR</a></code>.
 
 
-<a name="@Conventions_83"></a>
+<a name="@Conventions_93"></a>
 
 ### Conventions
 
@@ -3610,7 +4020,7 @@ Traversal starts at the "start node" and ends at the "target
 node", if any.
 
 
-<a name="@Returns_84"></a>
+<a name="@Returns_94"></a>
 
 ### Returns
 
@@ -3622,7 +4032,7 @@ target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></c
 target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
 
 
-<a name="@Membership_considerations_85"></a>
+<a name="@Membership_considerations_95"></a>
 
 ### Membership considerations
 
@@ -3633,7 +4043,7 @@ target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></c
 * Returns all <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if start node ID indicates inactive node.
 
 
-<a name="@Predecessor_86"></a>
+<a name="@Predecessor_96"></a>
 
 ### Predecessor
 
@@ -3644,7 +4054,7 @@ child's right subtree.
 walked node as the root of its right subtree.
 
 
-<a name="@Successor_87"></a>
+<a name="@Successor_97"></a>
 
 ### Successor
 
@@ -3655,7 +4065,7 @@ child's left subtree.
 walked node as the root of its left subtree.
 
 
-<a name="@Reference_diagram_88"></a>
+<a name="@Reference_diagram_98"></a>
 
 ### Reference diagram
 
@@ -3683,7 +4093,7 @@ Inserted in following sequence:
 | 6             | 9               |
 
 
-<a name="@Testing_89"></a>
+<a name="@Testing_99"></a>
 
 ### Testing
 
@@ -3768,7 +4178,7 @@ Inserted in following sequence:
 Verify node count is not too high.
 
 
-<a name="@Aborts_90"></a>
+<a name="@Aborts_100"></a>
 
 ### Aborts
 
@@ -3776,7 +4186,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_91"></a>
+<a name="@Testing_101"></a>
 
 ### Testing
 

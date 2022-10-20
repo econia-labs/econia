@@ -2118,6 +2118,7 @@ Node x has two children. Handled by
 * <code>test_remove_tree_node_with_children_1()</code>
 * <code>test_remove_tree_node_with_children_2()</code>
 * <code>test_remove_tree_node_with_children_3()</code>
+* <code>test_rotate_left_2()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tree_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64)
@@ -2227,6 +2228,7 @@ before removal and had less than two children.
 * <code>test_remove_tree_node_with_children_1()</code>
 * <code>test_remove_tree_node_with_children_2()</code>
 * <code>test_remove_tree_node_with_children_3()</code>
+* <code>test_rotate_left_2()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_follow_up">remove_tree_node_follow_up</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64, node_x_parent: u64, new_subtree_root: u64, retrace_node_id: u64, retrace_side: bool)
@@ -2258,7 +2260,7 @@ before removal and had less than two children.
     } <b>else</b> { // If node x was not root:
         // Mutably borrow node x's parent.
         <b>let</b> parent_ref_mut = <a href="_borrow_mut">table_with_length::borrow_mut</a>(
-            &<b>mut</b> avlq_ref_mut.tree_nodes, new_subtree_root);
+            &<b>mut</b> avlq_ref_mut.tree_nodes, node_x_parent);
         // Get parent's left child.
         <b>let</b> parent_left_child = (((parent_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_CHILD_LEFT">SHIFT_CHILD_LEFT</a>)
             & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128)) <b>as</b> u64);
@@ -3182,7 +3184,7 @@ Post-rotation:
 post-rotation.
 * Node z right height not greater than or equal to left height
 post-rotation.
-* Simulates removing node d, then retracing from node x.
+* Remove node d, then retrace from node x.
 
 Pre-removal:
 

@@ -1142,6 +1142,7 @@ module econia::avl_queue {
     /// * `test_remove_tree_node_with_children_1()`
     /// * `test_remove_tree_node_with_children_2()`
     /// * `test_remove_tree_node_with_children_3()`
+    /// * `test_rotate_left_2()`
     fun remove_tree_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64
@@ -1223,6 +1224,7 @@ module econia::avl_queue {
     /// * `test_remove_tree_node_with_children_1()`
     /// * `test_remove_tree_node_with_children_2()`
     /// * `test_remove_tree_node_with_children_3()`
+    /// * `test_rotate_left_2()`
     fun remove_tree_node_follow_up<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64,
@@ -1243,7 +1245,7 @@ module econia::avl_queue {
         } else { // If node x was not root:
             // Mutably borrow node x's parent.
             let parent_ref_mut = table_with_length::borrow_mut(
-                &mut avlq_ref_mut.tree_nodes, new_subtree_root);
+                &mut avlq_ref_mut.tree_nodes, node_x_parent);
             // Get parent's left child.
             let parent_left_child = (((parent_ref_mut.bits >> SHIFT_CHILD_LEFT)
                 & (HI_NODE_ID as u128)) as u64);
@@ -1974,7 +1976,7 @@ module econia::avl_queue {
     ///   post-rotation.
     /// * Node z right height not greater than or equal to left height
     ///   post-rotation.
-    /// * Simulates removing node d, then retracing from node x.
+    /// * Remove node d, then retrace from node x.
     ///
     /// Pre-removal:
     ///
@@ -5287,55 +5289,26 @@ module econia::avl_queue {
     /// `retrace_rebalance_rotate_left()` reference rotation 2.
     fun test_rotate_left_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        // Declare node/tree IDs.
-        let node_x_id = HI_NODE_ID;
-        let node_z_id = node_x_id - 1;
-        let tree_3_id = node_z_id - 1;
-        let tree_2_id = tree_3_id - 1;
-        let node_a_id = tree_2_id - 1;
-        let node_b_id = node_a_id - 1;
-        let node_c_id = node_b_id - 1;
-        // Mutably borrow tree nodes table.
-        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
-        // Manually insert nodes from reference diagram, with heights
-        // not yet updated via retrace.
-        table_with_length::add(tree_nodes_ref_mut, node_x_id, TreeNode{bits:
-            (        5 as u128) << SHIFT_INSERTION_KEY |
-            (        1 as u128) << SHIFT_HEIGHT_LEFT   |
-            (        2 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_a_id as u128) << SHIFT_PARENT        |
-            (node_z_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, node_z_id, TreeNode{bits:
-            (        7 as u128) << SHIFT_INSERTION_KEY |
-            (        1 as u128) << SHIFT_HEIGHT_LEFT   |
-            (        1 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_x_id as u128) << SHIFT_PARENT        |
-            (tree_2_id as u128) << SHIFT_CHILD_LEFT    |
-            (tree_3_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, tree_2_id, TreeNode{bits:
-            (        6 as u128) << SHIFT_INSERTION_KEY |
-            (node_z_id as u128) << SHIFT_PARENT        });
-        table_with_length::add(tree_nodes_ref_mut, tree_3_id, TreeNode{bits:
-            (        8 as u128) << SHIFT_INSERTION_KEY |
-            (node_z_id as u128) << SHIFT_PARENT        });
-        table_with_length::add(tree_nodes_ref_mut, node_a_id, TreeNode{bits:
-            (        3 as u128) << SHIFT_INSERTION_KEY |
-            (        2 as u128) << SHIFT_HEIGHT_LEFT   |
-            (        3 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_b_id as u128) << SHIFT_CHILD_LEFT    |
-            (node_z_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, node_b_id, TreeNode{bits:
-            (        2 as u128) << SHIFT_INSERTION_KEY |
-            (        1 as u128) << SHIFT_HEIGHT_LEFT   |
-            (node_a_id as u128) << SHIFT_PARENT        |
-            (node_c_id as u128) << SHIFT_CHILD_LEFT    });
-        table_with_length::add(tree_nodes_ref_mut, node_c_id, TreeNode{bits:
-            (        1 as u128) << SHIFT_INSERTION_KEY |
-            (node_b_id as u128) << SHIFT_PARENT        });
-        // Set root node ID.
-        set_root_test(&mut avlq, node_a_id);
-        // Retrace from node x, rebalancing via right rotation.
-        retrace(&mut avlq, node_x_id, DECREMENT, LEFT);
+        // Insert nodes from top to bottom, left to right.
+        let (node_a_id, node_b_id, node_x_id, node_c_id, node_d_id, node_z_id,
+             tree_2_id, tree_3_id) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 8, 0)));
+        // Remove node d, rebalancing via left rotation.
+        remove_tree_node(&mut avlq, node_d_id);
+        assert!(get_root_test(&avlq) == node_a_id, 0); // Assert root.
+        // Assert inactive tree nodes stack top.
+        assert!(get_list_top_test(&avlq) == node_d_id, 0);
+        // Assert node d state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_d_ref = borrow_tree_node_test(&avlq, node_d_id);
+        assert!(node_d_ref.bits == (NIL as u128), 0);
         // Assert state for node x.
         assert!(get_insertion_key_by_id_test(&avlq, node_x_id) == 5, 0);
         assert!(get_height_left_by_id_test(&avlq, node_x_id) == 0, 0);
@@ -5393,8 +5366,6 @@ module econia::avl_queue {
                 == (NIL as u64), 0);
         assert!(get_child_right_by_id_test(&avlq, node_c_id)
                 == (NIL as u64), 0);
-        // Assert root.
-        assert!(get_root_test(&avlq) == node_a_id, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

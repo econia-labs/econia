@@ -1139,9 +1139,9 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_remove_tree_node_with_children_1()`
-    /// * `test_remove_tree_node_with_children_2()`
-    /// * `test_remove_tree_node_with_children_3()`
+    /// * `test_remove_children_1()`
+    /// * `test_remove_children_2()`
+    /// * `test_remove_children_3()`
     /// * `test_rotate_left_2()`
     fun remove_tree_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
@@ -1221,9 +1221,9 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_remove_tree_node_with_children_1()`
-    /// * `test_remove_tree_node_with_children_2()`
-    /// * `test_remove_tree_node_with_children_3()`
+    /// * `test_remove_children_1()`
+    /// * `test_remove_children_2()`
+    /// * `test_remove_children_3()`
     /// * `test_rotate_left_2()`
     fun remove_tree_node_follow_up<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
@@ -1442,9 +1442,9 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_remove_tree_node_with_children_1()`
-    /// * `test_remove_tree_node_with_children_2()`
-    /// * `test_remove_tree_node_with_children_3()`
+    /// * `test_remove_children_1()`
+    /// * `test_remove_children_2()`
+    /// * `test_remove_children_3()`
     fun remove_tree_node_with_children<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_height_left: u8,
@@ -4571,6 +4571,227 @@ module econia::avl_queue {
     }
 
     #[test]
+    /// Verify state updates for `remove_tree_node_with_children()`
+    /// reference diagram 1.
+    fun test_remove_children_1() {
+        // Declare number of allocated tree nodes.
+        let n_allocated_tree_nodes = 123;
+        // Init AVL queue with 4 allocated tree nodes.
+        let avlq = new<u8>(ASCENDING, n_allocated_tree_nodes, 0);
+        // Insert nodes from top to bottom, left to right.
+        let (node_id_2, node_id_1, node_id_3) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
+        // Declare number of active tree nodes.
+        let n_active_tree_nodes = 3;
+        remove_tree_node(&mut avlq, node_id_2); // Remove node x.
+        // Assert AVL queue root field.
+        assert!(get_root_test(&avlq) == node_id_1, 0);
+        // Assert inactive tree nodes stack top.
+        assert!(get_list_top_test(&avlq) == node_id_2, 0);
+        // Assert node x state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_2_ref = borrow_tree_node_test(&avlq, node_id_2);
+        assert!(node_2_ref.bits ==
+            ((n_allocated_tree_nodes - n_active_tree_nodes) as u128), 0);
+        // Assert node l state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1) == node_id_3, 0);
+        // Assert node r state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_3)
+                == node_id_1, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for `remove_tree_node_with_children()`
+    /// reference diagram 2.
+    fun test_remove_children_2() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert nodes from top to bottom, left to right.
+        let (node_id_5, node_id_2, node_id_6, node_id_1, node_id_4, node_id_7,
+             node_id_3) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
+        remove_tree_node(&mut avlq, node_id_5); // Remove node x.
+        // Assert AVL queue root field.
+        assert!(get_root_test(&avlq) == node_id_4, 0);
+        // Assert inactive tree nodes stack top.
+        assert!(get_list_top_test(&avlq) == node_id_5, 0);
+        // Assert node x state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_5_ref = borrow_tree_node_test(&avlq, node_id_5);
+        assert!(node_5_ref.bits == (NIL as u128), 0);
+        // Assert node r state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_6) == 6, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_6) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_6) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_6)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_6)
+                == node_id_7, 0);
+        // Assert node y state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_4) == 4, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_4) == 2, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_4) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_4)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_4)
+                == node_id_2, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_4)
+                == node_id_6, 0);
+        // Assert state for parent to node y.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == node_id_3, 0);
+        // Assert tree y state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_3)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        // Assert tree l state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        // Assert state for child to node r.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_7) == 7, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_7) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_7) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_7)
+                == node_id_6, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_7)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for `remove_tree_node_with_children()`
+    /// reference diagram 3.
+    fun test_remove_children_3() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert nodes from top to bottom, left to right.
+        let (node_id_5, node_id_2, node_id_6, node_id_1, node_id_3, node_id_7,
+             node_id_4) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)));
+        remove_tree_node(&mut avlq, node_id_5); // Remove node x.
+        // Assert AVL queue root field.
+        assert!(get_root_test(&avlq) == node_id_4, 0);
+        // Assert inactive tree nodes stack top.
+        assert!(get_list_top_test(&avlq) == node_id_5, 0);
+        // Assert node x state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_5_ref = borrow_tree_node_test(&avlq, node_id_5);
+        assert!(node_5_ref.bits == (NIL as u128), 0);
+        // Assert node r state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_6) == 6, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_6) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_6) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_6)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_6)
+                == node_id_7, 0);
+        // Assert node y state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_4) == 4, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_4) == 2, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_4) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_4)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_4)
+                == node_id_2, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_4)
+                == node_id_6, 0);
+        // Assert state for node l.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == node_id_3, 0);
+        // Assert state for parent to node y.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_3)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        // Assert tree l state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        // Assert state for child to node r.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_7) == 7, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_7) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_7) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_7)
+                == node_id_6, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_7)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
     /// Verify state updates for removing head, tail, and sole list
     /// node.
     fun test_remove_list_node() {
@@ -4706,227 +4927,6 @@ module econia::avl_queue {
         assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
         assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
                 == list_id_1    , 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state updates for `remove_tree_node_with_children()`
-    /// reference diagram 1.
-    fun test_remove_tree_node_with_children_1() {
-        // Declare number of allocated tree nodes.
-        let n_allocated_tree_nodes = 123;
-        // Init AVL queue with 4 allocated tree nodes.
-        let avlq = new<u8>(ASCENDING, n_allocated_tree_nodes, 0);
-        // Insert nodes from top to bottom, left to right.
-        let (node_id_2, node_id_1, node_id_3) =
-            (get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
-        // Declare number of active tree nodes.
-        let n_active_tree_nodes = 3;
-        remove_tree_node(&mut avlq, node_id_2); // Remove node x.
-        // Assert AVL queue root field.
-        assert!(get_root_test(&avlq) == node_id_1, 0);
-        // Assert inactive tree nodes stack top.
-        assert!(get_list_top_test(&avlq) == node_id_2, 0);
-        // Assert node x state contains only bits for node ID of next
-        // tree node ID in inactive tree node stack.
-        let node_2_ref = borrow_tree_node_test(&avlq, node_id_2);
-        assert!(node_2_ref.bits ==
-            ((n_allocated_tree_nodes - n_active_tree_nodes) as u128), 0);
-        // Assert node l state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 1, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_1)
-                == (NIL as u64), 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_1) == node_id_3, 0);
-        // Assert node r state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_3)
-                == node_id_1, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
-                == (NIL as u64), 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state updates for `remove_tree_node_with_children()`
-    /// reference diagram 2.
-    fun test_remove_tree_node_with_children_2() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        // Insert nodes from top to bottom, left to right.
-        let (node_id_5, node_id_2, node_id_6, node_id_1, node_id_4, node_id_7,
-             node_id_3) =
-            (get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
-        remove_tree_node(&mut avlq, node_id_5); // Remove node x.
-        // Assert AVL queue root field.
-        assert!(get_root_test(&avlq) == node_id_4, 0);
-        // Assert inactive tree nodes stack top.
-        assert!(get_list_top_test(&avlq) == node_id_5, 0);
-        // Assert node x state contains only bits for node ID of next
-        // tree node ID in inactive tree node stack.
-        let node_5_ref = borrow_tree_node_test(&avlq, node_id_5);
-        assert!(node_5_ref.bits == (NIL as u128), 0);
-        // Assert node r state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_6) == 6, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_6) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_6) == 1, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_6)
-                == node_id_4, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_6)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_6)
-                == node_id_7, 0);
-        // Assert node y state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_4) == 4, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_4) == 2, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_4) == 2, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_4)
-                == (NIL as u64), 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_4)
-                == node_id_2, 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_4)
-                == node_id_6, 0);
-        // Assert state for parent to node y.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 1, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_2)
-                == node_id_4, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
-                == node_id_1, 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
-                == node_id_3, 0);
-        // Assert tree y state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_3)
-                == node_id_2, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
-                == (NIL as u64), 0);
-        // Assert tree l state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_1)
-                == node_id_2, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
-                == (NIL as u64), 0);
-        // Assert state for child to node r.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_7) == 7, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_7) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_7) == 0, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_7)
-                == node_id_6, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_7)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
-                == (NIL as u64), 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    /// Verify state updates for `remove_tree_node_with_children()`
-    /// reference diagram 3.
-    fun test_remove_tree_node_with_children_3() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        // Insert nodes from top to bottom, left to right.
-        let (node_id_5, node_id_2, node_id_6, node_id_1, node_id_3, node_id_7,
-             node_id_4) =
-            (get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)));
-        remove_tree_node(&mut avlq, node_id_5); // Remove node x.
-        // Assert AVL queue root field.
-        assert!(get_root_test(&avlq) == node_id_4, 0);
-        // Assert inactive tree nodes stack top.
-        assert!(get_list_top_test(&avlq) == node_id_5, 0);
-        // Assert node x state contains only bits for node ID of next
-        // tree node ID in inactive tree node stack.
-        let node_5_ref = borrow_tree_node_test(&avlq, node_id_5);
-        assert!(node_5_ref.bits == (NIL as u128), 0);
-        // Assert node r state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_6) == 6, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_6) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_6) == 1, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_6)
-                == node_id_4, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_6)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_6)
-                == node_id_7, 0);
-        // Assert node y state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_4) == 4, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_4) == 2, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_4) == 2, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_4)
-                == (NIL as u64), 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_4)
-                == node_id_2, 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_4)
-                == node_id_6, 0);
-        // Assert state for node l.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 1, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_2)
-                == node_id_4, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
-                == node_id_1, 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
-                == node_id_3, 0);
-        // Assert state for parent to node y.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_3)
-                == node_id_2, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
-                == (NIL as u64), 0);
-        // Assert tree l state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_1)
-                == node_id_2, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
-                == (NIL as u64), 0);
-        // Assert state for child to node r.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_7) == 7, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_7) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_7) == 0, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_7)
-                == node_id_6, 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_7)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
-                == (NIL as u64), 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

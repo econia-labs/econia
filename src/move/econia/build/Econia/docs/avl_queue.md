@@ -2115,9 +2115,9 @@ Node x has two children. Handled by
 ### Testing
 
 
-* <code>test_remove_tree_node_with_children_1()</code>
-* <code>test_remove_tree_node_with_children_2()</code>
-* <code>test_remove_tree_node_with_children_3()</code>
+* <code>test_remove_children_1()</code>
+* <code>test_remove_children_2()</code>
+* <code>test_remove_children_3()</code>
 * <code>test_rotate_left_2()</code>
 
 
@@ -2225,9 +2225,9 @@ before removal and had less than two children.
 ### Testing
 
 
-* <code>test_remove_tree_node_with_children_1()</code>
-* <code>test_remove_tree_node_with_children_2()</code>
-* <code>test_remove_tree_node_with_children_3()</code>
+* <code>test_remove_children_1()</code>
+* <code>test_remove_children_2()</code>
+* <code>test_remove_children_3()</code>
 * <code>test_rotate_left_2()</code>
 
 
@@ -2502,9 +2502,9 @@ Post-removal:
 ### Testing
 
 
-* <code>test_remove_tree_node_with_children_1()</code>
-* <code>test_remove_tree_node_with_children_2()</code>
-* <code>test_remove_tree_node_with_children_3()</code>
+* <code>test_remove_children_1()</code>
+* <code>test_remove_children_2()</code>
+* <code>test_remove_children_3()</code>
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_height_left: u8, node_x_height_right: u8, node_x_parent: u64, node_l_id: u64, node_r_id: u64): (u64, u64, bool)

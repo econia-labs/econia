@@ -1271,13 +1271,17 @@ module econia::avl_queue {
     /// Replace node x with its predecessor in preparation for retrace.
     ///
     /// Inner function for `remove_tree_node()` in the case of removing
-    /// a node with two children.  Here, node x is the node to remove,
+    /// a node with two children. Here, node x is the node to remove,
     /// having left child node l and right child node r.
     ///
     /// >       |
     /// >       x
     /// >      / \
     /// >     l   r
+    ///
+    /// Does not modify state of node x, which is updated later via
+    /// `remove_tree_node_follow_up()`. Similarly does not modify state
+    /// for parent of node x or of AVL queue root field.
     ///
     /// # Parameters
     ///
@@ -1349,6 +1353,84 @@ module econia::avl_queue {
     /// >     t_l   ~
     /// >            \
     /// >             t_y
+    ///
+    /// # Reference diagrams
+    ///
+    /// ## Case 1
+    ///
+    /// * Node x has insertion key 2.
+    /// * Predecessor is node x's child.
+    /// * Node l has insertion key 1.
+    ///
+    /// Pre-removal:
+    ///
+    /// >                 2 <- node x
+    /// >                / \
+    /// >     node l -> 1   3 <- node r
+    ///
+    /// Post-removal:
+    ///
+    /// >     1
+    /// >      \
+    /// >       3
+    ///
+    /// ## Case 2
+    ///
+    /// * Node x has insertion key 5.
+    /// * Predecessor is not node x's child.
+    /// * Predecessor is node l's child.
+    /// * Node y has insertion key 4.
+    /// * Subtree y is not empty.
+    ///
+    /// Pre-removal:
+    ///
+    /// >                   5 <- node x
+    /// >                  / \
+    /// >       node l -> 2   6 <- node r
+    /// >                / \   \
+    /// >     tree l -> 1   4   7
+    /// >                  /
+    /// >       tree y -> 3
+    ///
+    /// Post-removal:
+    ///
+    /// >         4
+    /// >        / \
+    /// >       2   6
+    /// >      / \   \
+    /// >     1   3   7
+    ///
+    /// ## Case 3
+    ///
+    /// * Node x has insertion key 5.
+    /// * Predecessor is not node x's child.
+    /// * Predecessor is not node l's child.
+    /// * Node y has insertion key 4.
+    /// * Subtree y is empty.
+    ///
+    /// Pre-removal:
+    ///
+    /// >                   5 <- node x
+    /// >                  / \
+    /// >       node l -> 2   6 <- node r
+    /// >                / \   \
+    /// >     tree l -> 1   3   7
+    /// >                    \
+    /// >                     4 <- node y
+    ///
+    /// Post-removal:
+    ///
+    /// >         4
+    /// >        / \
+    /// >       2   6
+    /// >      / \   \
+    /// >     1   3   7
+    ///
+    /// # Testing
+    ///
+    /// * `test_remove_tree_node_with_children_1()`
+    /// * `test_remove_tree_node_with_children_2()`
+    /// * `test_remove_tree_node_with_children_3()`
     fun remove_tree_node_with_children<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_height_left: u8,
@@ -1373,12 +1455,12 @@ module econia::avl_queue {
         // If node l has no right child (if is immediate predecessor):
         if (node_l_child_right == (NIL as u64)) {
             // Reassign node l bits for parent, heights, right child.
-            node_l_ref_mut.bits = bits &
+            node_l_ref_mut.bits = node_l_ref_mut.bits &
                 // Clear out fields via mask unset at field bits.
-                HI_128 ^ (((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
-                          ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
-                          ((HI_NODE_ID as u128) << SHIFT_PARENT) |
-                          ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT)) |
+                (HI_128 ^ (((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
+                           ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
+                           ((HI_NODE_ID as u128) << SHIFT_PARENT) |
+                           ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT))) |
                 // Mask in new bits.
                 ((node_x_height_left  as u128) << SHIFT_HEIGHT_LEFT) |
                 ((node_x_height_right as u128) << SHIFT_HEIGHT_RIGHT) |
@@ -1411,11 +1493,11 @@ module econia::avl_queue {
             // Reassign node y bits for parent, heights, children.
             node_y_ref_mut.bits = bits &
                 // Clear out fields via mask unset at field bits.
-                HI_128 ^ (((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
-                          ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
-                          ((HI_NODE_ID as u128) << SHIFT_PARENT) |
-                          ((HI_NODE_ID as u128) << SHIFT_CHILD_LEFT) |
-                          ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT)) |
+                (HI_128 ^ (((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
+                           ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
+                           ((HI_NODE_ID as u128) << SHIFT_PARENT) |
+                           ((HI_NODE_ID as u128) << SHIFT_CHILD_LEFT) |
+                           ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT))) |
                 // Mask in new bits.
                 ((node_x_height_left  as u128) << SHIFT_HEIGHT_LEFT) |
                 ((node_x_height_right as u128) << SHIFT_HEIGHT_RIGHT) |
@@ -1431,6 +1513,16 @@ module econia::avl_queue {
                 (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT)) |
                 // Mask in new bits.
                 ((tree_y_id as u128) << SHIFT_CHILD_RIGHT);
+            // Mutably borrow node l, which may be node y's parent.
+            node_l_ref_mut = if (node_y_parent_id == node_l_id)
+                node_y_parent_ref_mut else table_with_length::borrow_mut(
+                    tree_nodes_ref_mut, node_l_id);
+            // Reassign bits for node l's parent field:
+            node_l_ref_mut.bits = node_l_ref_mut.bits &
+                // Clear out fields via mask unset at field bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_PARENT)) |
+                // Mask in new bits.
+                ((node_y_id as u128) << SHIFT_PARENT);
             if (tree_y_id != (NIL as u64)) { // If tree y not null:
                 // Mutably borrow tree y's root.
                 let tree_y_ref_mut = table_with_length::borrow_mut(
@@ -4600,6 +4692,251 @@ module econia::avl_queue {
         assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
         assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
                 == list_id_1    , 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns, state update for
+    /// `remove_tree_node_with_children()` reference diagram 1.
+    fun test_remove_tree_node_with_children_1() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert nodes from top to bottom, left to right.
+        let (node_id_2, node_id_1, node_id_3) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
+        // Remove node x, storing new subtree root ID, retrace node ID,
+        // and decrement retrace side.
+        let (new_subtree_root, retrace_node_id, retrace_side) =
+            remove_tree_node_with_children(
+                &mut avlq, 1, 1, (NIL as u64), node_id_1, node_id_3);
+        // Assert returns.
+        assert!(new_subtree_root == node_id_1, 0);
+        assert!(retrace_node_id == node_id_1, 0);
+        assert!(retrace_side == LEFT, 0);
+        // Assert AVL queue root field unmodified.
+        assert!(get_root_test(&avlq) == node_id_2, 0);
+        // Assert node x state unmodified.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2) == node_id_1, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2) == node_id_3, 0);
+        // Assert node l state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1) == node_id_3, 0);
+        // Assert node r state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_3)
+                == node_id_1, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns, state update for
+    /// `remove_tree_node_with_children()` reference diagram 2.
+    fun test_remove_tree_node_with_children_2() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert nodes from top to bottom, left to right.
+        let (node_id_5, node_id_2, node_id_6, node_id_1, node_id_4, node_id_7,
+             node_id_3) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
+        // Remove node x, storing new subtree root ID, retrace node ID,
+        // and decrement retrace side.
+        let (new_subtree_root, retrace_node_id, retrace_side) =
+            remove_tree_node_with_children(
+                &mut avlq, 3, 2, (NIL as u64), node_id_2, node_id_6);
+        // Assert returns.
+        assert!(new_subtree_root == node_id_4, 0);
+        assert!(retrace_node_id == node_id_2, 0);
+        assert!(retrace_side == RIGHT, 0);
+        // Assert AVL queue root field unmodified.
+        assert!(get_root_test(&avlq) == node_id_5, 0);
+        // Assert node x state unmodified.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_5) == 5, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_5) == 3, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_5) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_5)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_5) == node_id_2, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_5) == node_id_6, 0);
+        // Assert node r state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_6) == 6, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_6) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_6) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_6)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_6)
+                == node_id_7, 0);
+        // Assert node y state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_4) == 4, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_4) == 3, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_4) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_4)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_4)
+                == node_id_2, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_4)
+                == node_id_6, 0);
+        // Assert state for parent to node y.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == node_id_3, 0);
+        // Assert tree y state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_3)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        // Assert tree l state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        // Assert state for child to node r.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_7) == 7, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_7) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_7) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_7)
+                == node_id_6, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_7)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns, state update for
+    /// `remove_tree_node_with_children()` reference diagram 3.
+    fun test_remove_tree_node_with_children_3() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert nodes from top to bottom, left to right.
+        let (node_id_5, node_id_2, node_id_6, node_id_1, node_id_3, node_id_7,
+             node_id_4) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)));
+        // Remove node x, storing new subtree root ID, retrace node ID,
+        // and decrement retrace side.
+        let (new_subtree_root, retrace_node_id, retrace_side) =
+            remove_tree_node_with_children(
+                &mut avlq, 3, 2, (NIL as u64), node_id_2, node_id_6);
+        // Assert returns.
+        assert!(new_subtree_root == node_id_4, 0);
+        assert!(retrace_node_id == node_id_3, 0);
+        assert!(retrace_side == RIGHT, 0);
+        // Assert AVL queue root field unmodified.
+        assert!(get_root_test(&avlq) == node_id_5, 0);
+        // Assert node x state unmodified.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_5) == 5, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_5) == 3, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_5) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_5)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_5) == node_id_2, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_5) == node_id_6, 0);
+        // Assert node r state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_6) == 6, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_6) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_6) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_6)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_6)
+                == node_id_7, 0);
+        // Assert node y state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_4) == 4, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_4) == 3, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_4) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_4)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_4)
+                == node_id_2, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_4)
+                == node_id_6, 0);
+        // Assert state for node l.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == node_id_4, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == node_id_3, 0);
+        // Assert state for parent to node y.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 1, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_3)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        // Assert tree l state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        // Assert state for child to node r.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_7) == 7, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_7) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_7) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_7)
+                == node_id_6, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_7)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

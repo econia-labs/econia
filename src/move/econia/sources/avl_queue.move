@@ -1180,9 +1180,8 @@ module econia::avl_queue {
         if (has_child_left && has_child_right)
             (new_subtree_root, retrace_node_id, retrace_side) =
             remove_tree_node_with_children(
-                avlq_ref_mut, node_x_id, node_x_height_left,
-                node_x_height_right, node_x_parent, node_x_child_left,
-                node_x_child_right);
+                avlq_ref_mut, node_x_height_left, node_x_height_right,
+                node_x_parent, node_x_child_left, node_x_child_right);
         // Clean up parent edge, optionally retrace, push onto stack.
         remove_tree_node_follow_up(
             avlq_ref_mut, node_x_id, node_x_parent, new_subtree_root,
@@ -1275,15 +1274,14 @@ module econia::avl_queue {
     /// a node with two children.  Here, node x is the node to remove,
     /// having left child node l and right child node r.
     ///
-    /// >           |
-    /// >           x
-    /// >          / \
-    /// >         l   r
+    /// >       |
+    /// >       x
+    /// >      / \
+    /// >     l   r
     ///
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `node_x_id`: Node ID of removed node.
     /// * `node_x_height_left`: Node x's left height.
     /// * `node_x_height_right`: Node x's right height.
     /// * `node_x_parent`: Node x's parent field.
@@ -1294,10 +1292,12 @@ module econia::avl_queue {
     ///
     /// * `u64`: Node ID of new root subtree where node x was root
     ///   pre-removal.
-    /// * `u64`: Node ID of node to begin decremrent retrace from in
+    /// * `u64`: Node ID of node to begin decrement retrace from in
     ///   `remove_tree_node_follow_up()`.
     /// * `bool`: `LEFT` or `RIGHT`, the side on which the decrement
     ///   retrace should take place.
+    ///
+    /// # Predecessor is immediate child
     ///
     /// Node l does not have a right child, but has left child tree l
     /// which may or may not be empty.
@@ -1337,9 +1337,9 @@ module econia::avl_queue {
     /// >         t_y
     ///
     /// Here, node y takes the place of node x, with node y's left
-    /// height and right height updated to those of node x pre-removal.
-    /// Tree y then takes the place of y, and a right decrement retrace
-    /// is initiated at node y's pre-removal parent.
+    /// height and right height set to those of node x pre-removal. Tree
+    /// y then takes the place of y, and a right decrement retrace is
+    /// initiated at node y's pre-removal parent.
     ///
     /// >           |
     /// >           y
@@ -1349,48 +1349,142 @@ module econia::avl_queue {
     /// >     t_l   ~
     /// >            \
     /// >             t_y
-    ///
     fun remove_tree_node_with_children<V>(
-        _avlq_ref_mut: &mut AVLqueue<V>,
-        _node_x_id: u64,
-        _node_x_height_left: u8,
-        _node_x_height_right: u8,
-        _node_x_parent: u64,
-        _node_l_id: u64,
-        _node_r_id: u64,
+        avlq_ref_mut: &mut AVLqueue<V>,
+        node_x_height_left: u8,
+        node_x_height_right: u8,
+        node_x_parent: u64,
+        node_l_id: u64,
+        node_r_id: u64,
     ): (
-        u64, // New subtree root
-        u64, // Retrace node
-        bool // Retrace side
+        u64,
+        u64,
+        bool
     ) {
-        (0, 0, true)
+        // Declare returns.
+        let (new_subtree_root, retrace_node_id, retrace_side);
+        // Mutably borrow tree nodes table.
+        let tree_nodes_ref_mut = &mut avlq_ref_mut.tree_nodes;
+        let node_l_ref_mut = // Mutably borrow node l.
+            table_with_length::borrow_mut(tree_nodes_ref_mut, node_l_id);
+        let bits = node_l_ref_mut.bits; // Get node l bits.
+        let node_l_child_right =  // Get node l's right child field.
+            (((bits >> SHIFT_CHILD_RIGHT) & (HI_NODE_ID as u128)) as u64);
+        // If node l has no right child (if is immediate predecessor):
+        if (node_l_child_right == (NIL as u64)) {
+            // Reassign node l bits for parent, heights, right child.
+            node_l_ref_mut.bits = bits &
+                // Clear out fields via mask unset at field bits.
+                HI_128 ^ (((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
+                          ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
+                          ((HI_NODE_ID as u128) << SHIFT_PARENT) |
+                          ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT)) |
+                // Mask in new bits.
+                ((node_x_height_left  as u128) << SHIFT_HEIGHT_LEFT) |
+                ((node_x_height_right as u128) << SHIFT_HEIGHT_RIGHT) |
+                ((node_x_parent       as u128) << SHIFT_PARENT) |
+                ((node_r_id           as u128) << SHIFT_CHILD_RIGHT);
+            // Assign returns accordingly.
+            (new_subtree_root, retrace_node_id, retrace_side) =
+                (   node_l_id,       node_l_id,         LEFT);
+        } else { // If node x predecessor is in node l's right subtree:
+            // Assign node l's right child as a candidate for node y.
+            let node_y_id = node_l_child_right;
+            let node_y_ref_mut; // Declare mutable reference to node y.
+            loop { // Loop down node l's right subtree
+                // Mutably borrow node y candidate.
+                node_y_ref_mut = table_with_length::borrow_mut(
+                    tree_nodes_ref_mut, node_y_id);
+                let child_right = // Get candidate's right child field.
+                    (((node_y_ref_mut.bits >> SHIFT_CHILD_RIGHT) &
+                      (HI_NODE_ID as u128)) as u64);
+                // Break if no right child, since have found node y.
+                if (child_right == (NIL as u64)) break;
+                // Otherwise child is candidate for new iteration.
+                node_y_id = child_right;
+            }; // Node y found.
+            let bits = node_y_ref_mut.bits; // Get node y bits.
+            // Get node y's parent ID and tree y ID.
+            let (node_y_parent_id, tree_y_id) =
+                ((((bits >> SHIFT_PARENT    ) & (HI_NODE_ID as u128)) as u64),
+                 (((bits >> SHIFT_CHILD_LEFT) & (HI_NODE_ID as u128)) as u64));
+            // Reassign node y bits for parent, heights, children.
+            node_y_ref_mut.bits = bits &
+                // Clear out fields via mask unset at field bits.
+                HI_128 ^ (((HI_HEIGHT  as u128) << SHIFT_HEIGHT_LEFT) |
+                          ((HI_HEIGHT  as u128) << SHIFT_HEIGHT_RIGHT) |
+                          ((HI_NODE_ID as u128) << SHIFT_PARENT) |
+                          ((HI_NODE_ID as u128) << SHIFT_CHILD_LEFT) |
+                          ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT)) |
+                // Mask in new bits.
+                ((node_x_height_left  as u128) << SHIFT_HEIGHT_LEFT) |
+                ((node_x_height_right as u128) << SHIFT_HEIGHT_RIGHT) |
+                ((node_x_parent       as u128) << SHIFT_PARENT) |
+                ((node_l_id           as u128) << SHIFT_CHILD_LEFT) |
+                ((node_r_id           as u128) << SHIFT_CHILD_RIGHT);
+            // Mutably borrow node y's parent.
+            let node_y_parent_ref_mut = table_with_length::borrow_mut(
+                tree_nodes_ref_mut, node_y_parent_id);
+            // Reassign bits for parent's right child field:
+            node_y_parent_ref_mut.bits = node_y_parent_ref_mut.bits &
+                // Clear out fields via mask unset at field bits.
+                (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_CHILD_RIGHT)) |
+                // Mask in new bits.
+                ((tree_y_id as u128) << SHIFT_CHILD_RIGHT);
+            if (tree_y_id != (NIL as u64)) { // If tree y not null:
+                // Mutably borrow tree y's root.
+                let tree_y_ref_mut = table_with_length::borrow_mut(
+                    tree_nodes_ref_mut, tree_y_id);
+                // Reassign bits for corresponding parent field:
+                tree_y_ref_mut.bits = tree_y_ref_mut.bits &
+                    // Clear out fields via mask unset at field bits.
+                    (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_PARENT)) |
+                    // Mask in new bits.
+                    ((node_y_parent_id as u128) << SHIFT_PARENT);
+            };
+            // Assign returns accordingly.
+            (new_subtree_root,  retrace_node_id, retrace_side) =
+                (   node_y_id, node_y_parent_id,        RIGHT);
+        };
+        let node_r_ref_mut = // Mutably borrow node r.
+            table_with_length::borrow_mut(tree_nodes_ref_mut, node_r_id);
+        // Reassign bits for node r parent field:
+        node_r_ref_mut.bits = node_r_ref_mut.bits &
+            // Clear out fields via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_PARENT)) |
+            // Mask in new bits.
+            ((new_subtree_root as u128) << SHIFT_PARENT);
+        // Return new subtree root, node ID to retrace from, side to
+        // retrace on.
+        (new_subtree_root, retrace_node_id, retrace_side)
     }
+
     /// Retrace ancestor heights after tree node insertion or removal.
     ///
-    /// Should only be called by `insert()` or `remove()`.
+    /// Should only be called by `insert()` or
+    /// `remove_tree_node_follow_up()`.
     ///
-    /// When a tree leaf node is inserted or removed, the parent-leaf
-    /// edge is first updated with corresponding node IDs for both
-    /// parent and optional leaf. Then the corresponding change in
-    /// height at the parent node, on the affected side, must be
-    /// updated, along with any affected heights up to the root. If the
-    /// process results in an imbalance of more than one between the
-    /// left height and right height of a node in the ancestor chain,
-    /// the corresponding subtree must be rebalanced.
+    /// When a tree node is inserted or removed, a parent-child edge is
+    /// updated with corresponding node IDs for both parent and optional
+    /// child. Then the corresponding change in height at the parent
+    /// node, on the affected side, must be updated, along with any
+    /// affected heights up to the root. If the process results in an
+    /// imbalance of more than one between the left height and right
+    /// height of a node in the ancestor chain, the corresponding
+    /// subtree must be rebalanced.
     ///
-    /// Parent-leaf edge updates are handled in `insert()` and
-    /// `remove()`, while the height retracing process is handled here.
+    /// Parent-child edge updates are handled in `insert_tree_node()`
+    /// and `remove_tree_node()`, while the height retracing process is
+    /// handled here.
     ///
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `node_id` : Node ID of tree node that just had a child
-    ///   inserted or removed, resulting in a modification to its height
-    ///   on the side that the insertion or removal took place.
-    /// * `operation`: `INCREMENT` if height on given side increases as
-    ///   a result, `DECREMENT` if it decreases.
-    /// * `side`: `LEFT` or `RIGHT`, the side on which the child was
-    ///   inserted or deleted.
+    /// * `node_id` : Node ID of affected tree node.
+    /// * `operation`: `INCREMENT` or `DECREMENT`, the change in height
+    ///   on the affected side.
+    /// * `side`: `LEFT` or `RIGHT`, the side on which the height is
+    ///   affected.
     ///
     /// # Testing
     ///

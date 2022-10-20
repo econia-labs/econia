@@ -16,6 +16,23 @@
 /// | 32     | If set, ascending AVL queue, else descending |
 /// | 0-31   | Insertion key                                |
 ///
+/// Insertion values are indexed by list node ID, and since the list
+/// node ID for an insertion value is encoded in the access key
+/// returned upon insertion, access keys can be used for $O(1)$ list
+/// node lookup.
+///
+/// With the exception of list nodes at the head or tail of their
+/// corresponding doubly linked list, list nodes do not, however,
+/// indicate the corresponding tree node in which their doubly linked
+/// list is located. This means that the corresponding tree node ID
+/// and insertion key encoded in an access key are not verified from the
+/// provided access key during lookup, as this process would require
+/// $O(\log_2 n)$ lookup on the tree node.
+///
+/// Lookup operations thus assume that the provided access key
+/// corresponds to a valid list node in the given AVL queue, and are
+/// subject to undefined behavior if this condition is not met.
+///
 /// # Height
 ///
 /// In the present implementation, left or right height denotes the
@@ -395,6 +412,18 @@ module econia::avl_queue {
               ((tree_node_id    ) << SHIFT_ACCESS_TREE_NODE_ID)
     }
 
+    /// Return `true` if given AVL queue has ascending sort order.
+    ///
+    /// # Testing
+    ///
+    /// * `test_is_ascending()`
+    public fun is_ascending<V>(
+        avlq_ref: &AVLqueue<V>
+    ): bool {
+        ((avlq_ref.bits >> SHIFT_SORT_ORDER) & (BIT_FLAG_ASCENDING as u128)) ==
+            (BIT_FLAG_ASCENDING as u128)
+    }
+
     /// Return a new AVL queue, optionally allocating inactive nodes.
     ///
     /// # Parameters
@@ -471,16 +500,65 @@ module econia::avl_queue {
         avlq // Return AVL queue.
     }
 
-    /// Return `true` if given AVL queue has ascending sort order.
+    /// Remove node having given access key, return insertion value.
     ///
-    /// # Testing
+    /// Update AVL queue head, tail, root fields as needed.
     ///
-    /// * `test_is_ascending()`
-    public fun is_ascending<V>(
-        avlq_ref: &AVLqueue<V>
-    ): bool {
-        ((avlq_ref.bits >> SHIFT_SORT_ORDER) & (BIT_FLAG_ASCENDING as u128)) ==
-            (BIT_FLAG_ASCENDING as u128)
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `access_key`: Access key returned by `insert()`.
+    ///
+    /// # Assumptions
+    ///
+    /// * Provided access key corresponds to a valid list node in the
+    ///   given AVL queue.
+    public fun remove<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        access_key: u64
+    ): V {
+        let list_node_id = // Extract list node ID from access key.
+            (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID;
+        // Remove list node, storing insertion value, optional new list
+        // head, and optional new list tail.
+        let (value, new_list_head_option, new_list_tail_option) =
+            remove_list_node(avlq_ref_mut, list_node_id);
+        // Check if doubly linked list head modified.
+        let list_head_modified = option::is_some(&new_list_head_option);
+        // Check if doubly linked list tail modified.
+        let list_tail_modified = option::is_some(&new_list_tail_option);
+        // If doubly linked list head or tail modified:
+        if (list_head_modified || list_tail_modified) {
+            let bits = avlq_ref_mut.bits; // Get AVL queue bits.
+            // Get AVL queue head and tail node IDs, sort order bit.
+            let (avlq_head_node_id, avlq_tail_node_id, order_bit) =
+                (((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128) as u64),
+                 ((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128) as u64),
+                 ((bits >> SHIFT_SORT_ORDER)   & (HI_BIT     as u128) as u8));
+            // Determine if AVL queue head, tail were modified.
+            let (avlq_head_modified, avlq_tail_modified) =
+                ((avlq_head_node_id == list_node_id),
+                 (avlq_tail_node_id == list_node_id));
+            // Determine if ascending AVL queue.
+            let ascending = order_bit == BIT_FLAG_ASCENDING;
+            let tree_node_id = // Get tree node ID from access key.
+                (access_key >> SHIFT_ACCESS_TREE_NODE_ID) & HI_NODE_ID;
+            // If AVL queue head modified, update accordingly.
+            if (avlq_head_modified) remove_update_head(
+                avlq_ref_mut, *option::borrow(&new_list_head_option),
+                ascending, tree_node_id);
+            // If AVL queue tail modified, update accordingly.
+            if (avlq_tail_modified) remove_update_tail(
+                avlq_ref_mut, *option::borrow(&new_list_tail_option),
+                ascending, tree_node_id);
+            // If list head and tail both modified, then just removed
+            // the sole list node in a tree node, so remove tree node:
+            if (list_head_modified && list_tail_modified) {
+                // Remove emptied tree node from tree.
+                remove_tree_node(avlq_ref_mut, tree_node_id);
+            };
+        };
+        value // Return insertion value.
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -511,7 +589,7 @@ module econia::avl_queue {
         let bits = avlq_ref_mut.bits; // Get AVL queue field bits.
         // Extract relevant fields.
         let (order_bit, head_key, tail_key) =
-            (((bits >> SHIFT_SORT_ORDER ) & (HI_BIT as u128) as u8),
+            (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128) as u8),
              ((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY  as u128) as u64),
              ((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY  as u128) as u64));
         // Determine if AVL queue is ascending.
@@ -1593,6 +1671,108 @@ module econia::avl_queue {
         // Return new subtree root, node ID to retrace from, side to
         // retrace on.
         (new_subtree_root, retrace_node_id, retrace_side)
+    }
+
+    /// Update AVL queue head during removal.
+    ///
+    /// Inner function for `remove()`, should only be called if AVL
+    /// queue head is modified.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `new_list_head`: New head of corresonding doubly linked list,
+    ///   `NIL` if doubly linked list is cleared out by removal.
+    /// * `ascending`: `true` if ascending AVL queue, else `false`.
+    /// * `tree_node_id`: Node ID of corresponding tree node.
+    fun remove_update_head<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        new_list_head: u64,
+        ascending: bool,
+        tree_node_id: u64
+    ) {
+        // Declare new AVL queue head node ID.
+        let new_avlq_head_node_id;
+        // If new list head is a list node ID:
+        if (new_list_head != (NIL as u64)) {
+            // Then it becomes the new AVL queue head node ID.
+            new_avlq_head_node_id = new_list_head;
+        // Otherwise, if new list head is null, then just cleared out
+        // sole list node in a doubly linked list:
+        } else {
+            // Declare target tree node to traverse to.
+            let target = if (ascending) SUCCESSOR else PREDECESSOR;
+            // Declare new AVL queue head insertion key.
+            let new_avlq_head_insertion_key;
+            // Get new AVL queue head insertion key and node ID by
+            // traversing to corresponding tree node (both null if start
+            // node is sole leaf at root).
+            (new_avlq_head_insertion_key, new_avlq_head_node_id, _)
+                = traverse(avlq_ref_mut, tree_node_id, target);
+            // Reassign bits for AVL queue head insertion key:
+            avlq_ref_mut.bits = avlq_ref_mut.bits &
+                // Clear out field via mask unset at field bits.
+                (HI_128 ^ ((HI_INSERTION_KEY as u128) << SHIFT_HEAD_KEY)) |
+                // Mask in new bits.
+                ((new_avlq_head_insertion_key as u128) << SHIFT_HEAD_KEY);
+        };
+        // Reassign bits for AVL queue head node ID:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_HEAD_NODE_ID)) |
+            // Mask in new bits.
+            ((new_avlq_head_node_id as u128) << SHIFT_HEAD_NODE_ID);
+    }
+
+    /// Update AVL queue tail during removal.
+    ///
+    /// Inner function for `remove()`, should only be called if AVL
+    /// queue tail is modified.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `new_list_tail`: New tail of corresonding doubly linked list,
+    ///   `NIL` if doubly linked list is cleared out by removal.
+    /// * `ascending`: `true` if ascending AVL queue, else `false`.
+    /// * `tree_node_id`: Node ID of corresponding tree node.
+    fun remove_update_tail<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        new_list_tail: u64,
+        ascending: bool,
+        tree_node_id: u64
+    ) {
+        // Declare new AVL queue tail node ID.
+        let new_avlq_tail_node_id;
+        // If new list tail is a list node ID:
+        if (new_list_tail != (NIL as u64)) {
+            // Then it becomes the new AVL queue tail node ID.
+            new_avlq_tail_node_id = new_list_tail;
+        // Otherwise, if new list tail is null, then just cleared out
+        // sole list node in a doubly linked list:
+        } else {
+            // Declare target tree node to traverse to.
+            let target = if (ascending) PREDECESSOR else SUCCESSOR;
+            // Declare new AVL queue tail insertion key.
+            let new_avlq_tail_insertion_key;
+            // Get new AVL queue tail insertion key and node ID by
+            // traversing to corresponding tree node (both null if start
+            // node is sole leaf at root).
+            (new_avlq_tail_insertion_key, _, new_avlq_tail_node_id)
+                = traverse(avlq_ref_mut, tree_node_id, target);
+            // Reassign bits for AVL queue tail insertion key:
+            avlq_ref_mut.bits = avlq_ref_mut.bits &
+                // Clear out field via mask unset at field bits.
+                (HI_128 ^ ((HI_INSERTION_KEY as u128) << SHIFT_TAIL_KEY)) |
+                // Mask in new bits.
+                ((new_avlq_tail_insertion_key as u128) << SHIFT_TAIL_KEY);
+        };
+        // Reassign bits for AVL queue tail node ID:
+        avlq_ref_mut.bits = avlq_ref_mut.bits &
+            // Clear out field via mask unset at field bits.
+            (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_TAIL_NODE_ID)) |
+            // Mask in new bits.
+            ((new_avlq_tail_node_id as u128) << SHIFT_TAIL_NODE_ID);
     }
 
     /// Retrace ancestor heights after tree node insertion or removal.
@@ -3982,6 +4162,12 @@ module econia::avl_queue {
         assert!(get_access_key_insertion_key(access_key_5_7) == 5, 0);
         assert!(get_access_key_insertion_key(access_key_3_6) == 3, 0);
         assert!(get_access_key_insertion_key(access_key_5_5) == 5, 0);
+        // Assert access key sort order.
+        assert!(is_ascending_access_key_test(access_key_3_9), 0);
+        assert!(is_ascending_access_key_test(access_key_4_8), 0);
+        assert!(is_ascending_access_key_test(access_key_5_7), 0);
+        assert!(is_ascending_access_key_test(access_key_3_6), 0);
+        assert!(is_ascending_access_key_test(access_key_5_5), 0);
         // Assert access key tree node IDs.
         assert!(get_access_key_tree_node_id_test(access_key_3_9)
                 == tree_node_id_3_9, 0);
@@ -4108,6 +4294,12 @@ module econia::avl_queue {
         assert!(get_value_test(&avlq, list_node_id_4_8) == 8, 0);
         assert!(get_value_test(&avlq, list_node_id_5_7) == 7, 0);
         assert!(get_value_test(&avlq, list_node_id_5_5) == 5, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+        // Assert access keys flagged as such for descending AVL queue.
+        avlq = new(DESCENDING, 0, 0);
+        assert!(!is_ascending_access_key_test(insert(&mut avlq, 1, 0)), 0);
+        assert!(!is_ascending_access_key_test(insert(&mut avlq, 2, 0)), 0);
+        assert!(!is_ascending_access_key_test(insert(&mut avlq, 3, 0)), 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

@@ -2115,10 +2115,16 @@ Node x has two children. Handled by
 ### Testing
 
 
-* <code>test_remove_children_1()</code>
-* <code>test_remove_children_2()</code>
-* <code>test_remove_children_3()</code>
-* <code>test_rotate_left_2()</code>
+* <code>test_remove_root_twice()</code> and <code>test_rotate_left_2()</code> test
+case 1.
+* <code>test_rotate_right_left_2()</code> tests case 2 left child variant.
+* <code>test_remove_root_twice()</code> and <code>test_rotate_left_right_1()</code>
+test case 2 right child variant.
+* <code>test_remove_children_1()</code>, <code>test_remove_children_2()</code>, and
+<code>test_remove_children_3()</code> test case 3.
+
+See tests for more information on their corresponding reference
+diagrams.
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tree_node</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64)
@@ -2169,8 +2175,8 @@ Node x has two children. Handled by
             // Mask in new bits.
             ((node_x_parent <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_PARENT">SHIFT_PARENT</a>);
     }; // Case 2 handled.
-    // If node x <b>has</b> left and right child remove node per case 3,
-    // storing new subtree root, retrace node ID, and retrace side.
+    // If node x <b>has</b> two children, remove node per case 3, storing
+    // new subtree root, retrace node ID, and retrace side.
     <b>if</b> (has_child_left && has_child_right)
         (new_subtree_root, retrace_node_id, retrace_side) =
         <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>(
@@ -2225,10 +2231,26 @@ before removal and had less than two children.
 ### Testing
 
 
-* <code>test_remove_children_1()</code>
-* <code>test_remove_children_2()</code>
-* <code>test_remove_children_3()</code>
-* <code>test_rotate_left_2()</code>
+* <code>test_remove_root_twice()</code>, <code>test_remove_children_2()</code>, and
+<code>test_remove_children_3()</code> test node x is tree root.
+* <code>test_rotate_left_2()</code> and <code>test_rotate_right_left_2()</code> test
+node x is left child.
+* <code>test_remove_children_1()</code> and <code>test_rotate_left_right_1()</code>
+test node x is right child.
+* <code>test_rotate_left_2()</code> and <code>test_rotate_right_left_2()</code> test
+retrace node ID is node x's parent, for node x is left child
+and has less than two children.
+* <code>test_rotate_left_right_1()</code> tests retrace node ID is node
+x's parent, for node x is right child and has less than two
+children.
+* <code>test_remove_children_1()</code> tests retrace node ID is not node
+x's parent, for node x is not root and has two children.
+* <code>test_remove_root_twice()</code> tests node x as root with less than
+two children, where retrace node ID is null and no retrace
+needed.
+* Above tests vary whether the inactive tree node stack is empty
+before removal, with <code>test_remove_root_twice()</code> in particular
+covering both cases.
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_follow_up">remove_tree_node_follow_up</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, node_x_id: u64, node_x_parent: u64, new_subtree_root: u64, retrace_node_id: u64, retrace_side: bool)
@@ -2279,7 +2301,8 @@ before removal and had less than two children.
         <b>if</b> (retrace_node_id == node_x_parent) retrace_side =
             <b>if</b> (parent_left_child == node_x_id) <a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a> <b>else</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a>;
     }; // Parent edge updated, retrace side assigned <b>if</b> needed.
-    <b>if</b> (retrace_node_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) // Retrace <b>if</b> needed.
+    // Retrace <b>if</b> node x was not root having less than two children.
+    <b>if</b> (retrace_node_id != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64))
         <a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>(avlq_ref_mut, retrace_node_id, <a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a>, retrace_side);
     // Get inactive tree nodes stack top.
     <b>let</b> tree_top = (((avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>) &
@@ -2294,7 +2317,7 @@ before removal and had less than two children.
         // Clear out field via mask unset at field bits.
         (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_128">HI_128</a> ^ ((<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>)) |
         // Mask in new bits.
-        ((node_x_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_STACK_TOP">SHIFT_LIST_STACK_TOP</a>);
+        ((node_x_id <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TREE_STACK_TOP">SHIFT_TREE_STACK_TOP</a>);
 }
 </code></pre>
 
@@ -2420,21 +2443,26 @@ initiated at node y's pre-removal parent.
 #### Case 1
 
 
-* Node x has insertion key 2.
+* Node x is not root.
+* Node x has insertion key 4.
 * Predecessor is node x's child.
-* Node l has insertion key 1.
+* Node l has insertion key 3.
 
 Pre-removal:
 
->                 2 <- node x
+>               2
+>              / \
+>             1   4 <- node x
 >                / \
->     node l -> 1   3 <- node r
+>     node l -> 3   5 <- node r
 
 Post-removal:
 
->     1
->      \
->       3
+>       2
+>      / \
+>     1   3
+>          \
+>           5
 
 
 <a name="@Case_2_54"></a>
@@ -2442,6 +2470,7 @@ Post-removal:
 #### Case 2
 
 
+* Node x is root.
 * Node x has insertion key 5.
 * Predecessor is not node x's child.
 * Predecessor is node l's child.
@@ -2472,6 +2501,7 @@ Post-removal:
 #### Case 3
 
 
+* Node x is root.
 * Node x has insertion key 5.
 * Predecessor is not node x's child.
 * Predecessor is not node l's child.
@@ -2730,6 +2760,9 @@ information on their corresponding reference diagrams.
 | Exercises <code><b>true</b></code>       | Excercises <code><b>false</b></code>             |
 |------------------------|--------------------------------|
 | <code>test_rotate_left_2()</code> | <code>test_retrace_insert_remove()</code> |
+
+Assorted tests indexed at <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_follow_up">remove_tree_node_follow_up</a>()</code>
+additionally exercise retracing logic.
 
 
 <a name="@Reference_diagram_59"></a>
@@ -3381,24 +3414,35 @@ Post-rotation:
 * Tree 3 not null.
 * Node z right height not greater than or equal to left height
 post-rotation.
+* Remove node r, then retrace from node x.
+
+Pre-removal:
+
+>         5
+>        / \
+>       2   6 <- node r
+>      / \   \
+>     1   3   7
+>          \
+>           4
 
 Pre-rotation:
 
->                   8 <- node x
+>                   5 <- node x
 >                  / \
->       node z -> 2   9 <- tree 4
+>       node z -> 2   7 <- tree 4
 >                / \
->     tree 1 -> 1   6 <- node y
+>     tree 1 -> 1   3 <- node y
 >                    \
->                     7 <- tree 3
+>                     4 <- tree 3
 
 Post-rotation:
 
->                   6 <- node y
+>                   3 <- node y
 >                  / \
->       node z -> 2   8 <- node x
+>       node z -> 2   5 <- node x
 >                /   / \
->     tree 1 -> 1   7   9 <- tree 4
+>     tree 1 -> 1   4   7 <- tree 4
 >                   ^ tree 3
 
 
@@ -3872,14 +3916,25 @@ Post-rotation:
 * Tree 3 not null.
 * Node z left height greater than or equal to right height
 post-rotation.
+* Remove node r, then retrace from node x.
+
+Pre-removal:
+
+>                 3
+>                / \
+>     node r -> 2   6
+>              /   / \
+>             1   4   7
+>                  \
+>                   5
 
 Pre-rotation:
 
->                 2 <- node x
+>                 3 <- node x
 >                / \
->     tree 1 -> 1   8 <- node z
+>     tree 1 -> 1   6 <- node z
 >                  / \
->       node y -> 4   9 <- tree 4
+>       node y -> 4   7 <- tree 4
 >                  \
 >                   5 <- tree 3
 
@@ -3887,9 +3942,9 @@ Post-rotation:
 
 >                   4 <- node y
 >                  / \
->       node x -> 2   8 <- node z
+>       node x -> 3   6 <- node z
 >                /   / \
->     tree 1 -> 1   5   9 <- tree 4
+>     tree 1 -> 1   5   7 <- tree 4
 >                   ^ tree 3
 
 

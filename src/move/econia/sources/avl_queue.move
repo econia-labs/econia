@@ -1139,10 +1139,16 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_remove_children_1()`
-    /// * `test_remove_children_2()`
-    /// * `test_remove_children_3()`
-    /// * `test_rotate_left_2()`
+    /// * `test_remove_root_twice()` and `test_rotate_left_2()` test
+    ///   case 1.
+    /// * `test_rotate_right_left_2()` tests case 2 left child variant.
+    /// * `test_remove_root_twice()` and `test_rotate_left_right_1()`
+    ///   test case 2 right child variant.
+    /// * `test_remove_children_1()`, `test_remove_children_2()`, and
+    ///   `test_remove_children_3()` test case 3.
+    ///
+    /// See tests for more information on their corresponding reference
+    /// diagrams.
     fun remove_tree_node<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64
@@ -1182,8 +1188,8 @@ module econia::avl_queue {
                 // Mask in new bits.
                 ((node_x_parent as u128) << SHIFT_PARENT);
         }; // Case 2 handled.
-        // If node x has left and right child remove node per case 3,
-        // storing new subtree root, retrace node ID, and retrace side.
+        // If node x has two children, remove node per case 3, storing
+        // new subtree root, retrace node ID, and retrace side.
         if (has_child_left && has_child_right)
             (new_subtree_root, retrace_node_id, retrace_side) =
             remove_tree_node_with_children(
@@ -1221,10 +1227,26 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_remove_children_1()`
-    /// * `test_remove_children_2()`
-    /// * `test_remove_children_3()`
-    /// * `test_rotate_left_2()`
+    /// * `test_remove_root_twice()`, `test_remove_children_2()`, and
+    ///   `test_remove_children_3()` test node x is tree root.
+    /// * `test_rotate_left_2()` and `test_rotate_right_left_2()` test
+    ///   node x is left child.
+    /// * `test_remove_children_1()` and `test_rotate_left_right_1()`
+    ///   test node x is right child.
+    /// * `test_rotate_left_2()` and `test_rotate_right_left_2()` test
+    ///   retrace node ID is node x's parent, for node x is left child
+    ///   and has less than two children.
+    /// * `test_rotate_left_right_1()` tests retrace node ID is node
+    ///   x's parent, for node x is right child and has less than two
+    ///   children.
+    /// * `test_remove_children_1()` tests retrace node ID is not node
+    ///   x's parent, for node x is not root and has two children.
+    /// * `test_remove_root_twice()` tests node x as root with less than
+    ///   two children, where retrace node ID is null and no retrace
+    ///   needed.
+    /// * Above tests vary whether the inactive tree node stack is empty
+    ///   before removal, with `test_remove_root_twice()` in particular
+    ///   covering both cases.
     fun remove_tree_node_follow_up<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_x_id: u64,
@@ -1264,7 +1286,8 @@ module econia::avl_queue {
             if (retrace_node_id == node_x_parent) retrace_side =
                 if (parent_left_child == node_x_id) LEFT else RIGHT;
         }; // Parent edge updated, retrace side assigned if needed.
-        if (retrace_node_id != (NIL as u64)) // Retrace if needed.
+        // Retrace if node x was not root having less than two children.
+        if (retrace_node_id != (NIL as u64))
             retrace(avlq_ref_mut, retrace_node_id, DECREMENT, retrace_side);
         // Get inactive tree nodes stack top.
         let tree_top = (((avlq_ref_mut.bits >> SHIFT_TREE_STACK_TOP) &
@@ -1279,7 +1302,7 @@ module econia::avl_queue {
             // Clear out field via mask unset at field bits.
             (HI_128 ^ ((HI_NODE_ID as u128) << SHIFT_TREE_STACK_TOP)) |
             // Mask in new bits.
-            ((node_x_id as u128) << SHIFT_LIST_STACK_TOP);
+            ((node_x_id as u128) << SHIFT_TREE_STACK_TOP);
     }
 
     /// Replace node x with its predecessor in preparation for retrace.
@@ -1372,24 +1395,30 @@ module econia::avl_queue {
     ///
     /// ## Case 1
     ///
-    /// * Node x has insertion key 2.
+    /// * Node x is not root.
+    /// * Node x has insertion key 4.
     /// * Predecessor is node x's child.
-    /// * Node l has insertion key 1.
+    /// * Node l has insertion key 3.
     ///
     /// Pre-removal:
     ///
-    /// >                 2 <- node x
+    /// >               2
+    /// >              / \
+    /// >             1   4 <- node x
     /// >                / \
-    /// >     node l -> 1   3 <- node r
+    /// >     node l -> 3   5 <- node r
     ///
     /// Post-removal:
     ///
-    /// >     1
-    /// >      \
-    /// >       3
+    /// >       2
+    /// >      / \
+    /// >     1   3
+    /// >          \
+    /// >           5
     ///
     /// ## Case 2
     ///
+    /// * Node x is root.
     /// * Node x has insertion key 5.
     /// * Predecessor is not node x's child.
     /// * Predecessor is node l's child.
@@ -1416,6 +1445,7 @@ module econia::avl_queue {
     ///
     /// ## Case 3
     ///
+    /// * Node x is root.
     /// * Node x has insertion key 5.
     /// * Predecessor is not node x's child.
     /// * Predecessor is not node l's child.
@@ -1642,6 +1672,9 @@ module econia::avl_queue {
     /// | Exercises `true`       | Excercises `false`             |
     /// |------------------------|--------------------------------|
     /// | `test_rotate_left_2()` | `test_retrace_insert_remove()` |
+    ///
+    /// Assorted tests indexed at `remove_tree_node_follow_up()`
+    /// additionally exercise retracing logic.
     ///
     /// ## Reference diagram
     ///
@@ -2137,24 +2170,35 @@ module econia::avl_queue {
     /// * Tree 3 not null.
     /// * Node z right height not greater than or equal to left height
     ///   post-rotation.
+    /// * Remove node r, then retrace from node x.
+    ///
+    /// Pre-removal:
+    ///
+    /// >         5
+    /// >        / \
+    /// >       2   6 <- node r
+    /// >      / \   \
+    /// >     1   3   7
+    /// >          \
+    /// >           4
     ///
     /// Pre-rotation:
     ///
-    /// >                   8 <- node x
+    /// >                   5 <- node x
     /// >                  / \
-    /// >       node z -> 2   9 <- tree 4
+    /// >       node z -> 2   7 <- tree 4
     /// >                / \
-    /// >     tree 1 -> 1   6 <- node y
+    /// >     tree 1 -> 1   3 <- node y
     /// >                    \
-    /// >                     7 <- tree 3
+    /// >                     4 <- tree 3
     ///
     /// Post-rotation:
     ///
-    /// >                   6 <- node y
+    /// >                   3 <- node y
     /// >                  / \
-    /// >       node z -> 2   8 <- node x
+    /// >       node z -> 2   5 <- node x
     /// >                /   / \
-    /// >     tree 1 -> 1   7   9 <- tree 4
+    /// >     tree 1 -> 1   4   7 <- tree 4
     /// >                   ^ tree 3
     ///
     /// ## Case 2
@@ -2536,14 +2580,25 @@ module econia::avl_queue {
     /// * Tree 3 not null.
     /// * Node z left height greater than or equal to right height
     ///   post-rotation.
+    /// * Remove node r, then retrace from node x.
+    ///
+    /// Pre-removal:
+    ///
+    /// >                 3
+    /// >                / \
+    /// >     node r -> 2   6
+    /// >              /   / \
+    /// >             1   4   7
+    /// >                  \
+    /// >                   5
     ///
     /// Pre-rotation:
     ///
-    /// >                 2 <- node x
+    /// >                 3 <- node x
     /// >                / \
-    /// >     tree 1 -> 1   8 <- node z
+    /// >     tree 1 -> 1   6 <- node z
     /// >                  / \
-    /// >       node y -> 4   9 <- tree 4
+    /// >       node y -> 4   7 <- tree 4
     /// >                  \
     /// >                   5 <- tree 3
     ///
@@ -2551,9 +2606,9 @@ module econia::avl_queue {
     ///
     /// >                   4 <- node y
     /// >                  / \
-    /// >       node x -> 2   8 <- node z
+    /// >       node x -> 3   6 <- node z
     /// >                /   / \
-    /// >     tree 1 -> 1   5   9 <- tree 4
+    /// >     tree 1 -> 1   5   7 <- tree 4
     /// >                   ^ tree 3
     ///
     /// # Testing
@@ -4575,45 +4630,67 @@ module econia::avl_queue {
     /// reference diagram 1.
     fun test_remove_children_1() {
         // Declare number of allocated tree nodes.
-        let n_allocated_tree_nodes = 123;
+        let n_allocated_tree_nodes = 8;
         // Init AVL queue with 4 allocated tree nodes.
         let avlq = new<u8>(ASCENDING, n_allocated_tree_nodes, 0);
         // Insert nodes from top to bottom, left to right.
-        let (node_id_2, node_id_1, node_id_3) =
+        let (node_id_2, node_id_1, node_id_4, node_id_3, node_id_5) =
             (get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
              get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
-             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)));
         // Declare number of active tree nodes.
-        let n_active_tree_nodes = 3;
-        remove_tree_node(&mut avlq, node_id_2); // Remove node x.
-        // Assert AVL queue root field.
-        assert!(get_root_test(&avlq) == node_id_1, 0);
+        let n_active_tree_nodes = 5;
+        remove_tree_node(&mut avlq, node_id_4); // Remove node x.
+        assert!(get_root_test(&avlq) == node_id_2, 0); // Assert root.
         // Assert inactive tree nodes stack top.
-        assert!(get_list_top_test(&avlq) == node_id_2, 0);
+        assert!(get_tree_top_test(&avlq) == node_id_4, 0);
         // Assert node x state contains only bits for node ID of next
         // tree node ID in inactive tree node stack.
-        let node_2_ref = borrow_tree_node_test(&avlq, node_id_2);
-        assert!(node_2_ref.bits ==
+        let node_4_ref = borrow_tree_node_test(&avlq, node_id_4);
+        assert!(node_4_ref.bits ==
             ((n_allocated_tree_nodes - n_active_tree_nodes) as u128), 0);
         // Assert node l state.
-        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
-        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 1, 0);
-        assert!(get_parent_by_id_test(       &avlq, node_id_1)
-                == (NIL as u64), 0);
-        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
-                == (NIL as u64), 0);
-        assert!(get_child_right_by_id_test(  &avlq, node_id_1) == node_id_3, 0);
-        // Assert node r state.
         assert!(get_insertion_key_by_id_test(&avlq, node_id_3) == 3, 0);
         assert!(get_height_left_by_id_test(  &avlq, node_id_3) == 0, 0);
-        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_3) == 1, 0);
         assert!(get_parent_by_id_test(       &avlq, node_id_3)
-                == node_id_1, 0);
+                == node_id_2, 0);
         assert!(get_child_left_by_id_test(   &avlq, node_id_3)
                 == (NIL as u64), 0);
         assert!(get_child_right_by_id_test(  &avlq, node_id_3)
+                == node_id_5, 0);
+        // Assert node r state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_5) == 5, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_5) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_5) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_5)
+                == node_id_3, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_5)
                 == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_5)
+                == (NIL as u64), 0);
+        // Assert node 1 state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2, 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        // Assert node 2 state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 2, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1, 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == node_id_3, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
@@ -4633,10 +4710,9 @@ module econia::avl_queue {
              get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
              get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)));
         remove_tree_node(&mut avlq, node_id_5); // Remove node x.
-        // Assert AVL queue root field.
-        assert!(get_root_test(&avlq) == node_id_4, 0);
+        assert!(get_root_test(&avlq) == node_id_4, 0); // Assert root.
         // Assert inactive tree nodes stack top.
-        assert!(get_list_top_test(&avlq) == node_id_5, 0);
+        assert!(get_tree_top_test(&avlq) == node_id_5, 0);
         // Assert node x state contains only bits for node ID of next
         // tree node ID in inactive tree node stack.
         let node_5_ref = borrow_tree_node_test(&avlq, node_id_5);
@@ -4720,10 +4796,9 @@ module econia::avl_queue {
              get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
              get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)));
         remove_tree_node(&mut avlq, node_id_5); // Remove node x.
-        // Assert AVL queue root field.
-        assert!(get_root_test(&avlq) == node_id_4, 0);
+        assert!(get_root_test(&avlq) == node_id_4, 0); // Asert root.
         // Assert inactive tree nodes stack top.
-        assert!(get_list_top_test(&avlq) == node_id_5, 0);
+        assert!(get_tree_top_test(&avlq) == node_id_5, 0);
         // Assert node x state contains only bits for node ID of next
         // tree node ID in inactive tree node stack.
         let node_5_ref = borrow_tree_node_test(&avlq, node_id_5);
@@ -4788,6 +4863,44 @@ module econia::avl_queue {
                 == (NIL as u64), 0);
         assert!(get_child_right_by_id_test(  &avlq, node_id_1)
                 == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for tree having 1 at root and 2 as right
+    /// child, removing the root twice.
+    fun test_remove_root_twice() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        let (node_id_1, node_id_2) = // Insert nodes.
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)));
+        remove_tree_node(&mut avlq, node_id_1); // Remove root 1.
+        assert!(get_root_test(&avlq) == node_id_2, 0); // Assert root.
+        // Assert inactive tree nodes stack top.
+        assert!(get_tree_top_test(&avlq) == node_id_1, 0);
+        // Assert node 1 state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_1_ref = borrow_tree_node_test(&avlq, node_id_1);
+        assert!(node_1_ref.bits == (NIL as u128), 0);
+        // Assert node 2 state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        remove_tree_node(&mut avlq, node_id_2); // Remove root 2.
+        // Assert root for empty tree.
+        assert!(get_root_test(&avlq) == (NIL as u64), 0);
+        // Assert inactive tree nodes stack top.
+        assert!(get_tree_top_test(&avlq) == node_id_2, 0);
+        // Assert node 2 state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_2_ref = borrow_tree_node_test(&avlq, node_id_2);
+        assert!(node_2_ref.bits == 1, 0); // Node 1 allocated first.
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
@@ -5285,8 +5398,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for
-    /// `retrace_rebalance_rotate_left()` reference rotation 2.
+    /// Verify state updates for `retrace_rebalance_rotate_left()`
+    /// reference rotation 2.
     fun test_rotate_left_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Insert nodes from top to bottom, left to right.
@@ -5304,7 +5417,7 @@ module econia::avl_queue {
         remove_tree_node(&mut avlq, node_d_id);
         assert!(get_root_test(&avlq) == node_a_id, 0); // Assert root.
         // Assert inactive tree nodes stack top.
-        assert!(get_list_top_test(&avlq) == node_d_id, 0);
+        assert!(get_tree_top_test(&avlq) == node_d_id, 0);
         // Assert node d state contains only bits for node ID of next
         // tree node ID in inactive tree node stack.
         let node_d_ref = borrow_tree_node_test(&avlq, node_d_id);
@@ -5370,63 +5483,44 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for
-    /// `retrace_rebalance_rotate_left_right()` reference rotation 1.
+    /// Verify state updates for `retrace_rebalance_rotate_left_right()`
+    /// reference rotation 1.
     fun test_rotate_left_right_1() {
-        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        // Declare node/tree IDs.
-        let node_x_id = HI_NODE_ID;
-        let node_z_id = node_x_id - 1;
-        let node_y_id = node_z_id - 1;
-        let tree_1_id = node_y_id - 1;
-        let tree_3_id = tree_1_id - 1;
-        let tree_4_id = tree_3_id - 1;
-        // Mutably borrow tree nodes table.
-        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
-        // Manually insert nodes from reference diagram.
-        table_with_length::add(tree_nodes_ref_mut, node_x_id, TreeNode{bits:
-            (        8 as u128) << SHIFT_INSERTION_KEY |
-            (        3 as u128) << SHIFT_HEIGHT_LEFT   |
-            (        1 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_z_id as u128) << SHIFT_CHILD_LEFT    |
-            (tree_4_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, node_z_id, TreeNode{bits:
-            (        2 as u128) << SHIFT_INSERTION_KEY |
-            (        1 as u128) << SHIFT_HEIGHT_LEFT   |
-            (        2 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_x_id as u128) << SHIFT_PARENT        |
-            (tree_1_id as u128) << SHIFT_CHILD_LEFT    |
-            (node_y_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, node_y_id, TreeNode{bits:
-            (        6 as u128) << SHIFT_INSERTION_KEY |
-            (        1 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_z_id as u128) << SHIFT_PARENT        |
-            (tree_3_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, tree_1_id, TreeNode{bits:
-            (        1 as u128) << SHIFT_INSERTION_KEY |
-            (node_z_id as u128) << SHIFT_PARENT        });
-        table_with_length::add(tree_nodes_ref_mut, tree_3_id, TreeNode{bits:
-            (        7 as u128) << SHIFT_INSERTION_KEY |
-            (node_y_id as u128) << SHIFT_PARENT        });
-        table_with_length::add(tree_nodes_ref_mut, tree_4_id, TreeNode{bits:
-            (        9 as u128) << SHIFT_INSERTION_KEY |
-            (node_x_id as u128) << SHIFT_PARENT        });
-        // Rebalance via left-right rotation, storing new subtree root
-        // node ID and height.
-        let (node_y_id_return, node_y_height_return) =
-            retrace_rebalance(&mut avlq, node_x_id, node_z_id, true);
-        // Assert returns.
-        assert!(node_y_id_return == node_y_id, 0);
-        assert!(node_y_height_return == 2, 0);
+        // Declare number of allocated tree nodes.
+        let n_allocated_tree_nodes = 12;
+        // Init AVL queue.
+        let avlq = new<u8>(ASCENDING, n_allocated_tree_nodes, 0);
+        // Insert nodes from top to bottom, left to right.
+        let (node_x_id, node_z_id, node_r_id, tree_1_id, node_y_id, tree_4_id,
+             tree_3_id) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)));
+        // Declare number of active tree nodes.
+        let n_active_tree_nodes = 7;
+        // Remove node r, rebalancing via left-right rotation.
+        remove_tree_node(&mut avlq, node_r_id);
+        assert!(get_root_test(&avlq) == node_y_id, 0); // Assert root.
+        // Assert inactive tree nodes stack top.
+        assert!(get_tree_top_test(&avlq) == node_r_id, 0);
+        // Assert node r state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_r_ref = borrow_tree_node_test(&avlq, node_r_id);
+        assert!(node_r_ref.bits ==
+            ((n_allocated_tree_nodes - n_active_tree_nodes) as u128), 0);
         // Assert state for node x.
-        assert!(get_insertion_key_by_id_test(&avlq, node_x_id) == 8, 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_x_id) == 5, 0);
         assert!(get_height_left_by_id_test(&avlq, node_x_id) == 1, 0);
         assert!(get_height_right_by_id_test(&avlq, node_x_id) == 1, 0);
         assert!(get_parent_by_id_test(&avlq, node_x_id) == node_y_id, 0);
         assert!(get_child_left_by_id_test(&avlq, node_x_id) == tree_3_id, 0);
         assert!(get_child_right_by_id_test(&avlq, node_x_id) == tree_4_id, 0);
         // Assert state for node y.
-        assert!(get_insertion_key_by_id_test(&avlq, node_y_id) == 6, 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_y_id) == 3, 0);
         assert!(get_height_left_by_id_test(&avlq, node_y_id) == 2, 0);
         assert!(get_height_right_by_id_test(&avlq, node_y_id) == 2, 0);
         assert!(get_parent_by_id_test(&avlq, node_y_id) == (NIL as u64), 0);
@@ -5450,7 +5544,7 @@ module econia::avl_queue {
         assert!(get_child_right_by_id_test(&avlq, tree_1_id)
                 == (NIL as u64), 0);
         // Assert state for tree 3.
-        assert!(get_insertion_key_by_id_test(&avlq, tree_3_id) == 7, 0);
+        assert!(get_insertion_key_by_id_test(&avlq, tree_3_id) == 4, 0);
         assert!(get_height_left_by_id_test(&avlq, tree_3_id) == 0, 0);
         assert!(get_height_right_by_id_test(&avlq, tree_3_id) == 0, 0);
         assert!(get_parent_by_id_test(&avlq, tree_3_id) == node_x_id, 0);
@@ -5459,7 +5553,7 @@ module econia::avl_queue {
         assert!(get_child_right_by_id_test(&avlq, tree_3_id)
                 == (NIL as u64), 0);
         // Assert state for tree 4.
-        assert!(get_insertion_key_by_id_test(&avlq, tree_4_id) == 9, 0);
+        assert!(get_insertion_key_by_id_test(&avlq, tree_4_id) == 7, 0);
         assert!(get_height_left_by_id_test(&avlq, tree_4_id) == 0, 0);
         assert!(get_height_right_by_id_test(&avlq, tree_4_id) == 0, 0);
         assert!(get_parent_by_id_test(&avlq, tree_4_id) == node_x_id, 0);
@@ -5805,56 +5899,31 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify returns/state updates for
-    /// `retrace_rebalance_rotate_right_left()` reference rotation 2.
+    /// Verify state updates for `retrace_rebalance_rotate_right_left()`
+    /// reference rotation 2.
     fun test_rotate_right_left_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
-        // Declare node/tree IDs.
-        let node_x_id = HI_NODE_ID;
-        let node_z_id = node_x_id - 1;
-        let node_y_id = node_z_id - 1;
-        let tree_1_id = node_y_id - 1;
-        let tree_3_id = tree_1_id - 1;
-        let tree_4_id = tree_3_id - 1;
-        // Mutably borrow tree nodes table.
-        let tree_nodes_ref_mut = &mut avlq.tree_nodes;
-        // Manually insert nodes from reference diagram.
-        table_with_length::add(tree_nodes_ref_mut, node_x_id, TreeNode{bits:
-            (        2 as u128) << SHIFT_INSERTION_KEY |
-            (        1 as u128) << SHIFT_HEIGHT_LEFT   |
-            (        3 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (tree_1_id as u128) << SHIFT_CHILD_LEFT    |
-            (node_z_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, node_z_id, TreeNode{bits:
-            (        8 as u128) << SHIFT_INSERTION_KEY |
-            (        2 as u128) << SHIFT_HEIGHT_LEFT   |
-            (        1 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_x_id as u128) << SHIFT_PARENT        |
-            (node_y_id as u128) << SHIFT_CHILD_LEFT    |
-            (tree_4_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, node_y_id, TreeNode{bits:
-            (        4 as u128) << SHIFT_INSERTION_KEY |
-            (        1 as u128) << SHIFT_HEIGHT_RIGHT  |
-            (node_z_id as u128) << SHIFT_PARENT        |
-            (tree_3_id as u128) << SHIFT_CHILD_RIGHT   });
-        table_with_length::add(tree_nodes_ref_mut, tree_1_id, TreeNode{bits:
-            (        1 as u128) << SHIFT_INSERTION_KEY |
-            (node_x_id as u128) << SHIFT_PARENT        });
-        table_with_length::add(tree_nodes_ref_mut, tree_3_id, TreeNode{bits:
-            (        5 as u128) << SHIFT_INSERTION_KEY |
-            (node_y_id as u128) << SHIFT_PARENT        });
-        table_with_length::add(tree_nodes_ref_mut, tree_4_id, TreeNode{bits:
-            (        9 as u128) << SHIFT_INSERTION_KEY |
-            (node_z_id as u128) << SHIFT_PARENT        });
-        // Rebalance via right-left rotation, storing new subtree root
-        // node ID and height.
-        let (node_y_id_return, node_y_height_return) =
-            retrace_rebalance(&mut avlq, node_x_id, node_z_id, false);
-        // Assert returns.
-        assert!(node_y_id_return == node_y_id, 0);
-        assert!(node_y_height_return == 2, 0);
+        // Insert nodes from top to bottom, left to right.
+        let (node_x_id, node_r_id, node_z_id, tree_1_id, node_y_id, tree_4_id,
+             tree_3_id) =
+            (get_access_key_tree_node_id_test(insert(&mut avlq, 3, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 2, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 6, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 1, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
+             get_access_key_tree_node_id_test(insert(&mut avlq, 5, 0)));
+        // Remove node r, rebalancing via right-left rotation.
+        remove_tree_node(&mut avlq, node_r_id);
+        assert!(get_root_test(&avlq) == node_y_id, 0); // Assert root.
+        // Assert inactive tree nodes stack top.
+        assert!(get_tree_top_test(&avlq) == node_r_id, 0);
+        // Assert node r state contains only bits for node ID of next
+        // tree node ID in inactive tree node stack.
+        let node_r_ref = borrow_tree_node_test(&avlq, node_r_id);
+        assert!(node_r_ref.bits == (NIL as u128), 0);
         // Assert state for node x.
-        assert!(get_insertion_key_by_id_test(&avlq, node_x_id) == 2, 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_x_id) == 3, 0);
         assert!(get_height_left_by_id_test(&avlq, node_x_id) == 1, 0);
         assert!(get_height_right_by_id_test(&avlq, node_x_id) == 0, 0);
         assert!(get_parent_by_id_test(&avlq, node_x_id) == node_y_id, 0);
@@ -5869,7 +5938,7 @@ module econia::avl_queue {
         assert!(get_child_left_by_id_test(&avlq, node_y_id) == node_x_id, 0);
         assert!(get_child_right_by_id_test(&avlq, node_y_id) == node_z_id, 0);
         // Assert state for node z.
-        assert!(get_insertion_key_by_id_test(&avlq, node_z_id) == 8, 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_z_id) == 6, 0);
         assert!(get_height_left_by_id_test(&avlq, node_z_id) == 1, 0);
         assert!(get_height_right_by_id_test(&avlq, node_z_id) == 1, 0);
         assert!(get_parent_by_id_test(&avlq, node_z_id) == node_y_id, 0);
@@ -5894,7 +5963,7 @@ module econia::avl_queue {
         assert!(get_child_right_by_id_test(&avlq, tree_3_id)
                 == (NIL as u64), 0);
         // Assert state for tree 4.
-        assert!(get_insertion_key_by_id_test(&avlq, tree_4_id) == 9, 0);
+        assert!(get_insertion_key_by_id_test(&avlq, tree_4_id) == 7, 0);
         assert!(get_height_left_by_id_test(&avlq, tree_4_id) == 0, 0);
         assert!(get_height_right_by_id_test(&avlq, tree_4_id) == 0, 0);
         assert!(get_parent_by_id_test(&avlq, tree_4_id) == node_z_id, 0);

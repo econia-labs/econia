@@ -1747,7 +1747,7 @@ module econia::avl_queue {
     ///   leaf at root.
     /// * `test_remove_1()` tests ascending AVL queue.
     /// * `test_remove_3()` tests descending AVL queue.
-    /// * `test_remove_root()` tests new list tail is not a list node
+    /// * `test_remove_root()` tests new list head is not a list node
     ///   ID, for traversal where start node is sole leaf at root.
     fun remove_update_head<V>(
         avlq_ref_mut: &mut AVLqueue<V>,

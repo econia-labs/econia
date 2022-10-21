@@ -2902,7 +2902,7 @@ not a list node ID, for traversal where start node is not sole
 leaf at root.
 * <code>test_remove_1()</code> tests ascending AVL queue.
 * <code>test_remove_3()</code> tests descending AVL queue.
-* <code>test_remove_root()</code> tests new list tail is not a list node
+* <code>test_remove_root()</code> tests new list head is not a list node
 ID, for traversal where start node is sole leaf at root.
 
 

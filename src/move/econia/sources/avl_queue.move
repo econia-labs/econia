@@ -646,6 +646,30 @@ module econia::avl_queue {
         remove(avlq_ref_mut, access_key) // Remove from AVL queue.
     }
 
+    /// Return insertion value at tail of AVL queue, aborting if empty.
+    ///
+    /// # Testing
+    ///
+    /// * `test_pop_head_tail()`
+    public fun pop_tail<V>(
+        avlq_ref_mut: &mut AVLqueue<V>
+    ): V {
+        let (list_node_id) = ((avlq_ref_mut.bits >> SHIFT_TAIL_NODE_ID) &
+            (HI_NODE_ID as u128) as u64); // Get tail list node ID.
+        // Immutably borrow tail list node.
+        let list_node_ref = table_with_length::borrow(
+            &mut avlq_ref_mut.list_nodes, list_node_id);
+        // Get virtual next field from node.
+        let next = ((list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                    (list_node_ref.next_lsbs as u64);
+        // Get tree node ID encoded in next field.
+        let tree_node_id = next & (HI_NODE_ID as u64);
+        // Encode list node and tree node IDs in partial access key.
+        let access_key = (list_node_id << SHIFT_ACCESS_LIST_NODE_ID) |
+                         (tree_node_id << SHIFT_ACCESS_TREE_NODE_ID);
+        remove(avlq_ref_mut, access_key) // Remove from AVL queue.
+    }
+
     /// Remove node having given access key, return insertion value.
     ///
     /// Update AVL queue head, tail, root fields as needed.
@@ -5134,6 +5158,33 @@ module econia::avl_queue {
             assert!(option::is_none(borrow_value_option_test(&avlq, i)), 0);
             i = i - 1; // Decrement loop counter.
         };
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Insert 5 key-value pairs for each of 80 insertion keys, pop
+    /// first 200 from head, then final 200 from tail.
+    fun test_pop_head_tail() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        let i = 0; // Declare loop counter.
+        while (i < 400) { // Insert all key-value insertion pairs.
+            // {0, 0}, {0, 1}, ... {0, 4}, {1, 5}, ... {79, 399}
+            insert(&mut avlq, i / 5, i); // Insert all keys.
+            i = i + 1; // Increment loop counter.
+        };
+        i = 0; // Reset loop counter.
+        while (i < 200) { // Pop first 200 from head.
+            // Assert popped insertion value.
+            assert!(pop_head(&mut avlq) == i, 0);
+            i = i + 1; // Increment loop counter.
+        };
+        i = 0; // Reset loop counter.
+        while (i < 200) { // Pop final 200 from tail.
+            // Assert popped insertion value.
+            assert!(pop_tail(&mut avlq) == 399 - i, 0);
+            i = i + 1; // Increment loop counter.
+        };
+        assert!(is_empty(&avlq), 0); // Assert AVL queue empty.
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

@@ -80,7 +80,7 @@ where
 * $\varphi = \frac{1 + \sqrt{5}}{2} \approx 1.618$ (the golden
 ratio),
 * $c = \frac{1}{\log_2 \varphi} \approx 1.440$ ,
-* $b = \frac{c}{2} \log_2 5 - 2 \approx -0.328$ , and
+* $b = \frac{c}{2} \log_2 5 - 2 \approx -0.3277$ , and
 * $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
 
 With a maximum node count of $n_{max} = 2^{14} - 1 = 13683$, the
@@ -144,126 +144,134 @@ The below index is automatically generated from source code:
 -  [Function `remove`](#0xc0deb00c_avl_queue_remove)
     -  [Parameters](#@Parameters_16)
     -  [Assumptions](#@Assumptions_17)
+    -  [Reference diagram](#@Reference_diagram_18)
+        -  [Case 1: ascending head updates](#@Case_1:_ascending_head_updates_19)
+        -  [Case 2: ascending tail updates](#@Case_2:_ascending_tail_updates_20)
+        -  [Case 3: descending head updates](#@Case_3:_descending_head_updates_21)
+        -  [Case 4: descending tail updates](#@Case_4:_descending_tail_updates_22)
+    -  [Testing](#@Testing_23)
 -  [Function `insert_check_head_tail`](#0xc0deb00c_avl_queue_insert_check_head_tail)
-    -  [Parameters](#@Parameters_18)
-    -  [Testing](#@Testing_19)
--  [Function `insert_list_node`](#0xc0deb00c_avl_queue_insert_list_node)
-    -  [Parameters](#@Parameters_20)
-    -  [Returns](#@Returns_21)
-    -  [Testing](#@Testing_22)
--  [Function `insert_list_node_assign_fields`](#0xc0deb00c_avl_queue_insert_list_node_assign_fields)
-    -  [Parameters](#@Parameters_23)
-    -  [Returns](#@Returns_24)
+    -  [Parameters](#@Parameters_24)
     -  [Testing](#@Testing_25)
--  [Function `insert_list_node_get_last_next`](#0xc0deb00c_avl_queue_insert_list_node_get_last_next)
+-  [Function `insert_list_node`](#0xc0deb00c_avl_queue_insert_list_node)
     -  [Parameters](#@Parameters_26)
     -  [Returns](#@Returns_27)
     -  [Testing](#@Testing_28)
--  [Function `insert_tree_node`](#0xc0deb00c_avl_queue_insert_tree_node)
+-  [Function `insert_list_node_assign_fields`](#0xc0deb00c_avl_queue_insert_list_node_assign_fields)
     -  [Parameters](#@Parameters_29)
     -  [Returns](#@Returns_30)
-    -  [Assumptions](#@Assumptions_31)
-    -  [Testing](#@Testing_32)
--  [Function `insert_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge)
-    -  [Parameters](#@Parameters_33)
+    -  [Testing](#@Testing_31)
+-  [Function `insert_list_node_get_last_next`](#0xc0deb00c_avl_queue_insert_list_node_get_last_next)
+    -  [Parameters](#@Parameters_32)
+    -  [Returns](#@Returns_33)
     -  [Testing](#@Testing_34)
--  [Function `remove_list_node`](#0xc0deb00c_avl_queue_remove_list_node)
+-  [Function `insert_tree_node`](#0xc0deb00c_avl_queue_insert_tree_node)
     -  [Parameters](#@Parameters_35)
     -  [Returns](#@Returns_36)
-    -  [Testing](#@Testing_37)
--  [Function `remove_list_node_update_edges`](#0xc0deb00c_avl_queue_remove_list_node_update_edges)
-    -  [Parameters](#@Parameters_38)
-    -  [Returns](#@Returns_39)
+    -  [Assumptions](#@Assumptions_37)
+    -  [Testing](#@Testing_38)
+-  [Function `insert_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge)
+    -  [Parameters](#@Parameters_39)
     -  [Testing](#@Testing_40)
--  [Function `remove_tree_node`](#0xc0deb00c_avl_queue_remove_tree_node)
+-  [Function `remove_list_node`](#0xc0deb00c_avl_queue_remove_list_node)
     -  [Parameters](#@Parameters_41)
-    -  [Case 1](#@Case_1_42)
-    -  [Case 2](#@Case_2_43)
-        -  [Left child](#@Left_child_44)
-        -  [Right child](#@Right_child_45)
-    -  [Case 3](#@Case_3_46)
-    -  [Testing](#@Testing_47)
+    -  [Returns](#@Returns_42)
+    -  [Testing](#@Testing_43)
+-  [Function `remove_list_node_update_edges`](#0xc0deb00c_avl_queue_remove_list_node_update_edges)
+    -  [Parameters](#@Parameters_44)
+    -  [Returns](#@Returns_45)
+    -  [Testing](#@Testing_46)
+-  [Function `remove_tree_node`](#0xc0deb00c_avl_queue_remove_tree_node)
+    -  [Parameters](#@Parameters_47)
+    -  [Case 1](#@Case_1_48)
+    -  [Case 2](#@Case_2_49)
+        -  [Left child](#@Left_child_50)
+        -  [Right child](#@Right_child_51)
+    -  [Case 3](#@Case_3_52)
+    -  [Testing](#@Testing_53)
 -  [Function `remove_tree_node_follow_up`](#0xc0deb00c_avl_queue_remove_tree_node_follow_up)
-    -  [Parameters](#@Parameters_48)
-    -  [Testing](#@Testing_49)
+    -  [Parameters](#@Parameters_54)
+    -  [Testing](#@Testing_55)
 -  [Function `remove_tree_node_with_children`](#0xc0deb00c_avl_queue_remove_tree_node_with_children)
-    -  [Parameters](#@Parameters_50)
-    -  [Returns](#@Returns_51)
-    -  [Predecessor is immediate child](#@Predecessor_is_immediate_child_52)
-    -  [Predecessor is not immediate child](#@Predecessor_is_not_immediate_child_53)
-    -  [Reference diagrams](#@Reference_diagrams_54)
-        -  [Case 1](#@Case_1_55)
-        -  [Case 2](#@Case_2_56)
-        -  [Case 3](#@Case_3_57)
-    -  [Testing](#@Testing_58)
+    -  [Parameters](#@Parameters_56)
+    -  [Returns](#@Returns_57)
+    -  [Predecessor is immediate child](#@Predecessor_is_immediate_child_58)
+    -  [Predecessor is not immediate child](#@Predecessor_is_not_immediate_child_59)
+    -  [Reference diagrams](#@Reference_diagrams_60)
+        -  [Case 1](#@Case_1_61)
+        -  [Case 2](#@Case_2_62)
+        -  [Case 3](#@Case_3_63)
+    -  [Testing](#@Testing_64)
 -  [Function `remove_update_head`](#0xc0deb00c_avl_queue_remove_update_head)
-    -  [Parameters](#@Parameters_59)
--  [Function `remove_update_tail`](#0xc0deb00c_avl_queue_remove_update_tail)
-    -  [Parameters](#@Parameters_60)
--  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
-    -  [Parameters](#@Parameters_61)
-    -  [Testing](#@Testing_62)
-        -  [Reference diagram](#@Reference_diagram_63)
--  [Function `retrace_prep_iterate`](#0xc0deb00c_avl_queue_retrace_prep_iterate)
-    -  [Parameters](#@Parameters_64)
-    -  [Returns](#@Returns_65)
+    -  [Parameters](#@Parameters_65)
     -  [Testing](#@Testing_66)
--  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+-  [Function `remove_update_tail`](#0xc0deb00c_avl_queue_remove_update_tail)
     -  [Parameters](#@Parameters_67)
-    -  [Returns](#@Returns_68)
-    -  [Node x status](#@Node_x_status_69)
-        -  [Node x left-heavy](#@Node_x_left-heavy_70)
-        -  [Node x right-heavy](#@Node_x_right-heavy_71)
-    -  [Testing](#@Testing_72)
+    -  [Testing](#@Testing_68)
+-  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
+    -  [Parameters](#@Parameters_69)
+    -  [Testing](#@Testing_70)
+        -  [Reference diagram](#@Reference_diagram_71)
+-  [Function `retrace_prep_iterate`](#0xc0deb00c_avl_queue_retrace_prep_iterate)
+    -  [Parameters](#@Parameters_72)
+    -  [Returns](#@Returns_73)
+    -  [Testing](#@Testing_74)
+-  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+    -  [Parameters](#@Parameters_75)
+    -  [Returns](#@Returns_76)
+    -  [Node x status](#@Node_x_status_77)
+        -  [Node x left-heavy](#@Node_x_left-heavy_78)
+        -  [Node x right-heavy](#@Node_x_right-heavy_79)
+    -  [Testing](#@Testing_80)
 -  [Function `retrace_rebalance_rotate_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left)
-    -  [Parameters](#@Parameters_73)
-    -  [Returns](#@Returns_74)
-    -  [Reference rotations](#@Reference_rotations_75)
-        -  [Case 1](#@Case_1_76)
-        -  [Case 2](#@Case_2_77)
-    -  [Testing](#@Testing_78)
+    -  [Parameters](#@Parameters_81)
+    -  [Returns](#@Returns_82)
+    -  [Reference rotations](#@Reference_rotations_83)
+        -  [Case 1](#@Case_1_84)
+        -  [Case 2](#@Case_2_85)
+    -  [Testing](#@Testing_86)
 -  [Function `retrace_rebalance_rotate_left_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left_right)
-    -  [Procedure](#@Procedure_79)
-    -  [Reference rotations](#@Reference_rotations_80)
-        -  [Case 1](#@Case_1_81)
-        -  [Case 2](#@Case_2_82)
-    -  [Testing](#@Testing_83)
+    -  [Procedure](#@Procedure_87)
+    -  [Reference rotations](#@Reference_rotations_88)
+        -  [Case 1](#@Case_1_89)
+        -  [Case 2](#@Case_2_90)
+    -  [Testing](#@Testing_91)
 -  [Function `retrace_rebalance_rotate_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right)
-    -  [Parameters](#@Parameters_84)
-    -  [Returns](#@Returns_85)
-    -  [Reference rotations](#@Reference_rotations_86)
-        -  [Case 1](#@Case_1_87)
-        -  [Case 2](#@Case_2_88)
-    -  [Testing](#@Testing_89)
+    -  [Parameters](#@Parameters_92)
+    -  [Returns](#@Returns_93)
+    -  [Reference rotations](#@Reference_rotations_94)
+        -  [Case 1](#@Case_1_95)
+        -  [Case 2](#@Case_2_96)
+    -  [Testing](#@Testing_97)
 -  [Function `retrace_rebalance_rotate_right_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right_left)
-    -  [Parameters](#@Parameters_90)
-    -  [Procedure](#@Procedure_91)
-    -  [Reference rotations](#@Reference_rotations_92)
-        -  [Case 1](#@Case_1_93)
-        -  [Case 2](#@Case_2_94)
-    -  [Testing](#@Testing_95)
--  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
-    -  [Parameters](#@Parameters_96)
-    -  [Returns](#@Returns_97)
-    -  [Testing](#@Testing_98)
--  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_99)
-    -  [Returns](#@Returns_100)
-    -  [Assumptions](#@Assumptions_101)
-    -  [Reference diagram](#@Reference_diagram_102)
+    -  [Parameters](#@Parameters_98)
+    -  [Procedure](#@Procedure_99)
+    -  [Reference rotations](#@Reference_rotations_100)
+        -  [Case 1](#@Case_1_101)
+        -  [Case 2](#@Case_2_102)
     -  [Testing](#@Testing_103)
--  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
+-  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
     -  [Parameters](#@Parameters_104)
-    -  [Conventions](#@Conventions_105)
-    -  [Returns](#@Returns_106)
-    -  [Membership considerations](#@Membership_considerations_107)
-    -  [Predecessor](#@Predecessor_108)
-    -  [Successor](#@Successor_109)
+    -  [Returns](#@Returns_105)
+    -  [Testing](#@Testing_106)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_107)
+    -  [Returns](#@Returns_108)
+    -  [Assumptions](#@Assumptions_109)
     -  [Reference diagram](#@Reference_diagram_110)
     -  [Testing](#@Testing_111)
+-  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
+    -  [Parameters](#@Parameters_112)
+    -  [Conventions](#@Conventions_113)
+    -  [Returns](#@Returns_114)
+    -  [Membership considerations](#@Membership_considerations_115)
+    -  [Predecessor](#@Predecessor_116)
+    -  [Successor](#@Successor_117)
+    -  [Reference diagram](#@Reference_diagram_118)
+    -  [Testing](#@Testing_119)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_112)
-    -  [Testing](#@Testing_113)
+    -  [Aborts](#@Aborts_120)
+    -  [Testing](#@Testing_121)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1230,6 +1238,84 @@ Update AVL queue head, tail, root fields as needed.
 given AVL queue.
 
 
+<a name="@Reference_diagram_18"></a>
+
+### Reference diagram
+
+
+Consider the following AVL queue:
+
+>        2
+>       [3 -> 4]
+>       /
+>      1
+>     [5 -> 6]
+
+
+<a name="@Case_1:_ascending_head_updates_19"></a>
+
+#### Case 1: ascending head updates
+
+
+* Ascending AVL queue.
+* Remove insertion value 5, updating AVL queue head to node
+having insertion value 6.
+* Remove insertion value 6, updating AVL queue head to node
+having insertion value 3.
+
+
+<a name="@Case_2:_ascending_tail_updates_20"></a>
+
+#### Case 2: ascending tail updates
+
+
+* Ascending AVL queue.
+* Remove insertion value 4, updating AVL queue tail to node
+having insertion value 3.
+* Remove insertion value 3, updating AVL queue tail to node
+having insertion value 6.
+
+
+<a name="@Case_3:_descending_head_updates_21"></a>
+
+#### Case 3: descending head updates
+
+
+* Descending AVL queue.
+* Remove insertion value 3, updating AVL queue head to node
+having insertion value 4.
+* Remove insertion value 4, updating AVL queue head to node
+having insertion value 5.
+
+
+<a name="@Case_4:_descending_tail_updates_22"></a>
+
+#### Case 4: descending tail updates
+
+
+* Descending AVL queue.
+* Remove insertion value 6, updating AVL queue tail to node
+having insertion value 5.
+* Remove insertion value 5, updating AVL queue tail to node
+having insertion value 4.
+
+
+<a name="@Testing_23"></a>
+
+### Testing
+
+
+* <code>test_remove_mid_list()</code> tests no modification to doubly
+linked list or tail.
+* <code>test_remove_1()</code>, <code>test_remove_3()</code>, and <code>test_remove_root()</code>
+test updates to AVL queue head.
+* <code>test_remove_2()</code>, <code>test_remove_4()</code>, and <code>test_remove_root()</code>
+test updates to AVL queue tail.
+* <code>test_remove_1()</code>, <code>test_remove_2()</code>, <code>test_remove_3()</code>,
+<code>test_remove_4()</code>, and <code>test_remove_root()</code> test a doubly
+linked list head and tail modified, and a tree node removed.
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">remove</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, access_key: u64): V
 </code></pre>
 
@@ -1279,10 +1365,8 @@ given AVL queue.
             ascending, tree_node_id);
         // If list head and tail both modified, then just removed
         // the sole list node in a tree node, so remove tree node:
-        <b>if</b> (list_head_modified && list_tail_modified) {
-            // Remove emptied tree node from tree.
+        <b>if</b> (list_head_modified && list_tail_modified)
             <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tree_node</a>(avlq_ref_mut, tree_node_id);
-        };
     };
     value // Return insertion value.
 }
@@ -1303,7 +1387,7 @@ Update fields as needed based on sort order.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert">insert</a>()</code>.
 
 
-<a name="@Parameters_18"></a>
+<a name="@Parameters_24"></a>
 
 ### Parameters
 
@@ -1313,7 +1397,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert">inse
 * <code>list_node_id</code>: ID of list node just inserted.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_25"></a>
 
 ### Testing
 
@@ -1396,7 +1480,7 @@ node in a doubly linked list in a new tree leaf, the list node
 becomes the head and tail of the new list.
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_26"></a>
 
 ### Parameters
 
@@ -1408,7 +1492,7 @@ node.
 * <code>value</code>: Insertion value for list node to insert.
 
 
-<a name="@Returns_21"></a>
+<a name="@Returns_27"></a>
 
 ### Returns
 
@@ -1416,7 +1500,7 @@ node.
 * <code>u64</code>: Node ID of inserted list node.
 
 
-<a name="@Testing_22"></a>
+<a name="@Testing_28"></a>
 
 ### Testing
 
@@ -1485,7 +1569,7 @@ If inactive list node stack is empty, allocate a new list node,
 otherwise pop one off the inactive stack.
 
 
-<a name="@Parameters_23"></a>
+<a name="@Parameters_29"></a>
 
 ### Parameters
 
@@ -1498,7 +1582,7 @@ otherwise pop one off the inactive stack.
 * <code>value</code>: Insertion value.
 
 
-<a name="@Returns_24"></a>
+<a name="@Returns_30"></a>
 
 ### Returns
 
@@ -1506,7 +1590,7 @@ otherwise pop one off the inactive stack.
 * <code>u64</code>: Node ID of inserted list node.
 
 
-<a name="@Testing_25"></a>
+<a name="@Testing_31"></a>
 
 ### Testing
 
@@ -1601,7 +1685,7 @@ and is not re-performed in <code>inserted_tree_node()</code> for the case
 of a solo list node.
 
 
-<a name="@Parameters_26"></a>
+<a name="@Parameters_32"></a>
 
 ### Parameters
 
@@ -1611,7 +1695,7 @@ of a solo list node.
 inserting a solo list node.
 
 
-<a name="@Returns_27"></a>
+<a name="@Returns_33"></a>
 
 ### Returns
 
@@ -1620,7 +1704,7 @@ inserting a solo list node.
 * <code>u64</code>: Virtual next field of inserted list node.
 
 
-<a name="@Testing_28"></a>
+<a name="@Testing_34"></a>
 
 ### Testing
 
@@ -1698,7 +1782,7 @@ sole list node in new AVL tree node, thus checking the number
 of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
 
 
-<a name="@Parameters_29"></a>
+<a name="@Parameters_35"></a>
 
 ### Parameters
 
@@ -1714,7 +1798,7 @@ inserted node is left child of its parent, and <code><a href="avl_queue.md#0xc0d
 inserted node is right child of its parent.
 
 
-<a name="@Returns_30"></a>
+<a name="@Returns_36"></a>
 
 ### Returns
 
@@ -1722,7 +1806,7 @@ inserted node is right child of its parent.
 * <code>u64</code>: Node ID of inserted tree node.
 
 
-<a name="@Assumptions_31"></a>
+<a name="@Assumptions_37"></a>
 
 ### Assumptions
 
@@ -1734,7 +1818,7 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_n
 * All <code>u64</code> fields correspond to valid node IDs.
 
 
-<a name="@Testing_32"></a>
+<a name="@Testing_38"></a>
 
 ### Testing
 
@@ -1808,7 +1892,7 @@ Update the parent edge for a tree node just inserted.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>()</code>.
 
 
-<a name="@Parameters_33"></a>
+<a name="@Parameters_39"></a>
 
 ### Parameters
 
@@ -1823,7 +1907,7 @@ inserted node is left child of its parent, and <code><a href="avl_queue.md#0xc0d
 inserted node is right child of its parent.
 
 
-<a name="@Testing_34"></a>
+<a name="@Testing_40"></a>
 
 ### Testing
 
@@ -1899,7 +1983,7 @@ linked list.
 Pushes inactive list node onto inactive list nodes stack.
 
 
-<a name="@Parameters_35"></a>
+<a name="@Parameters_41"></a>
 
 ### Parameters
 
@@ -1908,7 +1992,7 @@ Pushes inactive list node onto inactive list nodes stack.
 * <code>list_node_id</code>: List node ID of node to remove.
 
 
-<a name="@Returns_36"></a>
+<a name="@Returns_42"></a>
 
 ### Returns
 
@@ -1922,7 +2006,7 @@ indicating that corresponding doubly linked list has been
 cleared out.
 
 
-<a name="@Testing_37"></a>
+<a name="@Testing_43"></a>
 
 ### Testing
 
@@ -2011,7 +2095,7 @@ removed list node was sole node in doubly linked list, does not
 modify corresponding tree node.
 
 
-<a name="@Parameters_38"></a>
+<a name="@Parameters_44"></a>
 
 ### Parameters
 
@@ -2025,7 +2109,7 @@ modify corresponding tree node.
 * <code>next_node_id</code>: Node ID of next node.
 
 
-<a name="@Returns_39"></a>
+<a name="@Returns_45"></a>
 
 ### Returns
 
@@ -2038,7 +2122,7 @@ indicating that corresponding doubly linked list has been
 cleared out.
 
 
-<a name="@Testing_40"></a>
+<a name="@Testing_46"></a>
 
 ### Testing
 
@@ -2134,7 +2218,7 @@ Remove tree node from an AVL queue.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove">remove</a>()</code>.
 
 
-<a name="@Parameters_41"></a>
+<a name="@Parameters_47"></a>
 
 ### Parameters
 
@@ -2151,7 +2235,7 @@ or 2 children.
 >       / \
 
 
-<a name="@Case_1_42"></a>
+<a name="@Case_1_48"></a>
 
 ### Case 1
 
@@ -2164,7 +2248,7 @@ retrace starts from node x's pre-removal parent on the side that
 node x used to be a child at.
 
 
-<a name="@Case_2_43"></a>
+<a name="@Case_2_49"></a>
 
 ### Case 2
 
@@ -2178,7 +2262,7 @@ pre-removal parent on the side that node x used to be a child
 at.
 
 
-<a name="@Left_child_44"></a>
+<a name="@Left_child_50"></a>
 
 #### Left child
 
@@ -2196,7 +2280,7 @@ Post-removal:
 >     l
 
 
-<a name="@Right_child_45"></a>
+<a name="@Right_child_51"></a>
 
 #### Right child
 
@@ -2214,7 +2298,7 @@ Post-removal:
 >     r
 
 
-<a name="@Case_3_46"></a>
+<a name="@Case_3_52"></a>
 
 ### Case 3
 
@@ -2223,7 +2307,7 @@ Node x has two children. Handled by
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>()</code>.
 
 
-<a name="@Testing_47"></a>
+<a name="@Testing_53"></a>
 
 ### Testing
 
@@ -2320,7 +2404,7 @@ parent to node x (if there is one). Retrace as needed, then push
 node x onto the inactive tree nodes stack.
 
 
-<a name="@Parameters_48"></a>
+<a name="@Parameters_54"></a>
 
 ### Parameters
 
@@ -2339,7 +2423,7 @@ x having two children, reassigned if node x was not at root
 before removal and had less than two children.
 
 
-<a name="@Testing_49"></a>
+<a name="@Testing_55"></a>
 
 ### Testing
 
@@ -2458,7 +2542,7 @@ Does not modify state of node x, which is updated later via
 for parent of node x or of AVL queue root field.
 
 
-<a name="@Parameters_50"></a>
+<a name="@Parameters_56"></a>
 
 ### Parameters
 
@@ -2471,7 +2555,7 @@ for parent of node x or of AVL queue root field.
 * <code>node_r_id</code>: Node ID of node x's right child.
 
 
-<a name="@Returns_51"></a>
+<a name="@Returns_57"></a>
 
 ### Returns
 
@@ -2484,7 +2568,7 @@ pre-removal.
 retrace should take place.
 
 
-<a name="@Predecessor_is_immediate_child_52"></a>
+<a name="@Predecessor_is_immediate_child_58"></a>
 
 ### Predecessor is immediate child
 
@@ -2509,7 +2593,7 @@ a left decrement retrace is initiated at node l.
 >     t_l   r
 
 
-<a name="@Predecessor_is_not_immediate_child_53"></a>
+<a name="@Predecessor_is_not_immediate_child_59"></a>
 
 ### Predecessor is not immediate child
 
@@ -2545,13 +2629,13 @@ initiated at node y's pre-removal parent.
 >             t_y
 
 
-<a name="@Reference_diagrams_54"></a>
+<a name="@Reference_diagrams_60"></a>
 
 ### Reference diagrams
 
 
 
-<a name="@Case_1_55"></a>
+<a name="@Case_1_61"></a>
 
 #### Case 1
 
@@ -2578,7 +2662,7 @@ Post-removal:
 >           5
 
 
-<a name="@Case_2_56"></a>
+<a name="@Case_2_62"></a>
 
 #### Case 2
 
@@ -2609,7 +2693,7 @@ Post-removal:
 >     1   3   7
 
 
-<a name="@Case_3_57"></a>
+<a name="@Case_3_63"></a>
 
 #### Case 3
 
@@ -2640,7 +2724,7 @@ Post-removal:
 >     1   3   7
 
 
-<a name="@Testing_58"></a>
+<a name="@Testing_64"></a>
 
 ### Testing
 
@@ -2794,7 +2878,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove">remo
 queue head is modified.
 
 
-<a name="@Parameters_59"></a>
+<a name="@Parameters_65"></a>
 
 ### Parameters
 
@@ -2804,6 +2888,22 @@ queue head is modified.
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if doubly linked list is cleared out by removal.
 * <code>ascending</code>: <code><b>true</b></code> if ascending AVL queue, else <code><b>false</b></code>.
 * <code>tree_node_id</code>: Node ID of corresponding tree node.
+
+
+<a name="@Testing_66"></a>
+
+### Testing
+
+
+* <code>test_remove_1()</code> and <code>test_remove_3()</code> test new list head is
+a list node ID.
+* <code>test_remove_1()</code> and <code>test_remove_3()</code> test new list head is
+not a list node ID, for traversal where start node is not sole
+leaf at root.
+* <code>test_remove_1()</code> tests ascending AVL queue.
+* <code>test_remove_3()</code> tests descending AVL queue.
+* <code>test_remove_root()</code> tests new list tail is not a list node
+ID, for traversal where start node is sole leaf at root.
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_update_head">remove_update_head</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, new_list_head: u64, ascending: bool, tree_node_id: u64)
@@ -2869,7 +2969,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove">remo
 queue tail is modified.
 
 
-<a name="@Parameters_60"></a>
+<a name="@Parameters_67"></a>
 
 ### Parameters
 
@@ -2879,6 +2979,22 @@ queue tail is modified.
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if doubly linked list is cleared out by removal.
 * <code>ascending</code>: <code><b>true</b></code> if ascending AVL queue, else <code><b>false</b></code>.
 * <code>tree_node_id</code>: Node ID of corresponding tree node.
+
+
+<a name="@Testing_68"></a>
+
+### Testing
+
+
+* <code>test_remove_2()</code> and <code>test_remove_4()</code> test new list tail is
+a list node ID.
+* <code>test_remove_2()</code> and <code>test_remove_4()</code> test new list tail is
+not a list node ID, for traversal where start node is not sole
+leaf at root.
+* <code>test_remove_2()</code> tests ascending AVL queue.
+* <code>test_remove_4()</code> tests descending AVL queue.
+* <code>test_remove_root()</code> tests new list tail is not a list node
+ID, for traversal where start node is sole leaf at root.
 
 
 <pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_remove_update_tail">remove_update_tail</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, new_list_tail: u64, ascending: bool, tree_node_id: u64)
@@ -2957,7 +3073,7 @@ and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tr
 handled here.
 
 
-<a name="@Parameters_61"></a>
+<a name="@Parameters_69"></a>
 
 ### Parameters
 
@@ -2970,7 +3086,7 @@ on the affected side.
 affected.
 
 
-<a name="@Testing_62"></a>
+<a name="@Testing_70"></a>
 
 ### Testing
 
@@ -3028,7 +3144,7 @@ Assorted tests indexed at <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remov
 additionally exercise retracing logic.
 
 
-<a name="@Reference_diagram_63"></a>
+<a name="@Reference_diagram_71"></a>
 
 #### Reference diagram
 
@@ -3148,7 +3264,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">ret
 retraced below the root of the AVL queue.
 
 
-<a name="@Parameters_64"></a>
+<a name="@Parameters_72"></a>
 
 ### Parameters
 
@@ -3163,7 +3279,7 @@ rebalancing took place, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NI
 * <code>height_old</code>: Height of subtree before retrace.
 
 
-<a name="@Returns_65"></a>
+<a name="@Returns_73"></a>
 
 ### Returns
 
@@ -3178,7 +3294,7 @@ subtree was a child to the next ancestor.
 0 when height does not change.
 
 
-<a name="@Testing_66"></a>
+<a name="@Testing_74"></a>
 
 ### Testing
 
@@ -3258,7 +3374,7 @@ Updates state for nodes in subtree, but not for potential parent
 to subtree.
 
 
-<a name="@Parameters_67"></a>
+<a name="@Parameters_75"></a>
 
 ### Parameters
 
@@ -3270,7 +3386,7 @@ root's heavy side.
 * <code>node_x_left_heavy</code>: <code><b>true</b></code> if node x is left-heavy.
 
 
-<a name="@Returns_68"></a>
+<a name="@Returns_76"></a>
 
 ### Returns
 
@@ -3279,7 +3395,7 @@ root's heavy side.
 * <code>u8</code>: Height of subtree after rotation.
 
 
-<a name="@Node_x_status_69"></a>
+<a name="@Node_x_status_77"></a>
 
 ### Node x status
 
@@ -3288,7 +3404,7 @@ Node x can be either left-heavy or right heavy. In either case,
 consider that node z has left child and right child fields.
 
 
-<a name="@Node_x_left-heavy_70"></a>
+<a name="@Node_x_left-heavy_78"></a>
 
 #### Node x left-heavy
 
@@ -3300,7 +3416,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Node_x_right-heavy_71"></a>
+<a name="@Node_x_right-heavy_79"></a>
 
 #### Node x right-heavy
 
@@ -3312,7 +3428,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Testing_72"></a>
+<a name="@Testing_80"></a>
 
 ### Testing
 
@@ -3416,7 +3532,7 @@ Post-rotation:
 >     t_1   t_2
 
 
-<a name="@Parameters_73"></a>
+<a name="@Parameters_81"></a>
 
 ### Parameters
 
@@ -3428,7 +3544,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height.
 
 
-<a name="@Returns_74"></a>
+<a name="@Returns_82"></a>
 
 ### Returns
 
@@ -3438,13 +3554,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_75"></a>
+<a name="@Reference_rotations_83"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_76"></a>
+<a name="@Case_1_84"></a>
 
 #### Case 1
 
@@ -3470,7 +3586,7 @@ Post-rotation:
 >     node x -> 4   8 <- tree 3
 
 
-<a name="@Case_2_77"></a>
+<a name="@Case_2_85"></a>
 
 #### Case 2
 
@@ -3513,7 +3629,7 @@ Post-rotation:
 >           6 <- tree 2
 
 
-<a name="@Testing_78"></a>
+<a name="@Testing_86"></a>
 
 ### Testing
 
@@ -3649,7 +3765,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height pre-rotation.
 
 
-<a name="@Procedure_79"></a>
+<a name="@Procedure_87"></a>
 
 ### Procedure
 
@@ -3662,13 +3778,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_80"></a>
+<a name="@Reference_rotations_88"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_81"></a>
+<a name="@Case_1_89"></a>
 
 #### Case 1
 
@@ -3709,7 +3825,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Case_2_82"></a>
+<a name="@Case_2_90"></a>
 
 #### Case 2
 
@@ -3739,7 +3855,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Testing_83"></a>
+<a name="@Testing_91"></a>
 
 ### Testing
 
@@ -3890,7 +4006,7 @@ Post-rotation:
 >        t_2   t_3
 
 
-<a name="@Parameters_84"></a>
+<a name="@Parameters_92"></a>
 
 ### Parameters
 
@@ -3902,7 +4018,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height.
 
 
-<a name="@Returns_85"></a>
+<a name="@Returns_93"></a>
 
 ### Returns
 
@@ -3912,13 +4028,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_86"></a>
+<a name="@Reference_rotations_94"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_87"></a>
+<a name="@Case_1_95"></a>
 
 #### Case 1
 
@@ -3951,7 +4067,7 @@ Post-rotation:
 >     tree 1 -> 4   8 <- node x
 
 
-<a name="@Case_2_88"></a>
+<a name="@Case_2_96"></a>
 
 #### Case 2
 
@@ -3979,7 +4095,7 @@ Post-rotation:
 >                 5 <- tree 2
 
 
-<a name="@Testing_89"></a>
+<a name="@Testing_97"></a>
 
 ### Testing
 
@@ -4109,7 +4225,7 @@ Post-rotation:
 >     t_1   t_2   t_3   t_4
 
 
-<a name="@Parameters_90"></a>
+<a name="@Parameters_98"></a>
 
 ### Parameters
 
@@ -4121,7 +4237,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height pre-rotation.
 
 
-<a name="@Procedure_91"></a>
+<a name="@Procedure_99"></a>
 
 ### Procedure
 
@@ -4134,13 +4250,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_92"></a>
+<a name="@Reference_rotations_100"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_93"></a>
+<a name="@Case_1_101"></a>
 
 #### Case 1
 
@@ -4170,7 +4286,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Case_2_94"></a>
+<a name="@Case_2_102"></a>
 
 #### Case 2
 
@@ -4211,7 +4327,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Testing_95"></a>
+<a name="@Testing_103"></a>
 
 ### Testing
 
@@ -4338,7 +4454,7 @@ Update height fields during retracing.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>()</code>.
 
 
-<a name="@Parameters_96"></a>
+<a name="@Parameters_104"></a>
 
 ### Parameters
 
@@ -4352,7 +4468,7 @@ the height field for the given side.
 * <code>delta</code>: The amount of height change for the operation.
 
 
-<a name="@Returns_97"></a>
+<a name="@Returns_105"></a>
 
 ### Returns
 
@@ -4363,7 +4479,7 @@ the height field for the given side.
 * <code>u8</code>: The height of the node after updating height.
 
 
-<a name="@Testing_98"></a>
+<a name="@Testing_106"></a>
 
 ### Testing
 
@@ -4441,7 +4557,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_99"></a>
+<a name="@Parameters_107"></a>
 
 ### Parameters
 
@@ -4450,7 +4566,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_100"></a>
+<a name="@Returns_108"></a>
 
 ### Returns
 
@@ -4462,7 +4578,7 @@ has no left child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT
 key but match node has no right child.
 
 
-<a name="@Assumptions_101"></a>
+<a name="@Assumptions_109"></a>
 
 ### Assumptions
 
@@ -4472,7 +4588,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_102"></a>
+<a name="@Reference_diagram_110"></a>
 
 ### Reference diagram
 
@@ -4491,7 +4607,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_103"></a>
+<a name="@Testing_111"></a>
 
 ### Testing
 
@@ -4559,7 +4675,7 @@ the root node.
 Traverse from tree node to inorder predecessor or succesor.
 
 
-<a name="@Parameters_104"></a>
+<a name="@Parameters_112"></a>
 
 ### Parameters
 
@@ -4569,7 +4685,7 @@ Traverse from tree node to inorder predecessor or succesor.
 * <code>target</code>: Either <code><a href="avl_queue.md#0xc0deb00c_avl_queue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_SUCCESSOR">SUCCESSOR</a></code>.
 
 
-<a name="@Conventions_105"></a>
+<a name="@Conventions_113"></a>
 
 ### Conventions
 
@@ -4578,7 +4694,7 @@ Traversal starts at the "start node" and ends at the "target
 node", if any.
 
 
-<a name="@Returns_106"></a>
+<a name="@Returns_114"></a>
 
 ### Returns
 
@@ -4590,7 +4706,7 @@ target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></c
 target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
 
 
-<a name="@Membership_considerations_107"></a>
+<a name="@Membership_considerations_115"></a>
 
 ### Membership considerations
 
@@ -4601,7 +4717,7 @@ target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></c
 * Returns all <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if start node ID indicates inactive node.
 
 
-<a name="@Predecessor_108"></a>
+<a name="@Predecessor_116"></a>
 
 ### Predecessor
 
@@ -4612,7 +4728,7 @@ child's right subtree.
 walked node as the root of its right subtree.
 
 
-<a name="@Successor_109"></a>
+<a name="@Successor_117"></a>
 
 ### Successor
 
@@ -4623,7 +4739,7 @@ child's left subtree.
 walked node as the root of its left subtree.
 
 
-<a name="@Reference_diagram_110"></a>
+<a name="@Reference_diagram_118"></a>
 
 ### Reference diagram
 
@@ -4651,7 +4767,7 @@ Inserted in following sequence:
 | 6             | 9               |
 
 
-<a name="@Testing_111"></a>
+<a name="@Testing_119"></a>
 
 ### Testing
 
@@ -4736,7 +4852,7 @@ Inserted in following sequence:
 Verify node count is not too high.
 
 
-<a name="@Aborts_112"></a>
+<a name="@Aborts_120"></a>
 
 ### Aborts
 
@@ -4744,7 +4860,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_113"></a>
+<a name="@Testing_121"></a>
 
 ### Testing
 

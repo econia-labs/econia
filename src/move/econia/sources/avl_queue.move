@@ -63,7 +63,7 @@
 /// * $\varphi = \frac{1 + \sqrt{5}}{2} \approx 1.618$ (the golden
 ///   ratio),
 /// * $c = \frac{1}{\log_2 \varphi} \approx 1.440$ ,
-/// * $b = \frac{c}{2} \log_2 5 - 2 \approx -0.328$ , and
+/// * $b = \frac{c}{2} \log_2 5 - 2 \approx -0.3277$ , and
 /// * $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
 ///
 /// With a maximum node count of $n_{max} = 2^{14} - 1 = 13683$, the
@@ -513,6 +513,60 @@ module econia::avl_queue {
     ///
     /// * Provided access key corresponds to a valid list node in the
     ///   given AVL queue.
+    ///
+    /// # Reference diagram
+    ///
+    /// Consider the following AVL queue:
+    ///
+    /// >        2
+    /// >       [3 -> 4]
+    /// >       /
+    /// >      1
+    /// >     [5 -> 6]
+    ///
+    /// ## Case 1: ascending head updates
+    ///
+    /// * Ascending AVL queue.
+    /// * Remove insertion value 5, updating AVL queue head to node
+    ///   having insertion value 6.
+    /// * Remove insertion value 6, updating AVL queue head to node
+    ///   having insertion value 3.
+    ///
+    /// ## Case 2: ascending tail updates
+    ///
+    /// * Ascending AVL queue.
+    /// * Remove insertion value 4, updating AVL queue tail to node
+    ///   having insertion value 3.
+    /// * Remove insertion value 3, updating AVL queue tail to node
+    ///   having insertion value 6.
+    ///
+    /// ## Case 3: descending head updates
+    ///
+    /// * Descending AVL queue.
+    /// * Remove insertion value 3, updating AVL queue head to node
+    ///   having insertion value 4.
+    /// * Remove insertion value 4, updating AVL queue head to node
+    ///   having insertion value 5.
+    ///
+    /// ## Case 4: descending tail updates
+    ///
+    /// * Descending AVL queue.
+    /// * Remove insertion value 6, updating AVL queue tail to node
+    ///   having insertion value 5.
+    /// * Remove insertion value 5, updating AVL queue tail to node
+    ///   having insertion value 4.
+    ///
+    /// # Testing
+    ///
+    /// * `test_remove_mid_list()` tests no modification to doubly
+    ///   linked list or tail.
+    /// * `test_remove_1()`, `test_remove_3()`, and `test_remove_root()`
+    ///   test updates to AVL queue head.
+    /// * `test_remove_2()`, `test_remove_4()`, and `test_remove_root()`
+    ///   test updates to AVL queue tail.
+    /// * `test_remove_1()`, `test_remove_2()`, `test_remove_3()`,
+    ///   `test_remove_4()`, and `test_remove_root()` test a doubly
+    ///   linked list head and tail modified, and a tree node removed.
     public fun remove<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         access_key: u64
@@ -553,10 +607,8 @@ module econia::avl_queue {
                 ascending, tree_node_id);
             // If list head and tail both modified, then just removed
             // the sole list node in a tree node, so remove tree node:
-            if (list_head_modified && list_tail_modified) {
-                // Remove emptied tree node from tree.
+            if (list_head_modified && list_tail_modified)
                 remove_tree_node(avlq_ref_mut, tree_node_id);
-            };
         };
         value // Return insertion value.
     }
@@ -1685,6 +1737,18 @@ module econia::avl_queue {
     ///   `NIL` if doubly linked list is cleared out by removal.
     /// * `ascending`: `true` if ascending AVL queue, else `false`.
     /// * `tree_node_id`: Node ID of corresponding tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_remove_1()` and `test_remove_3()` test new list head is
+    ///   a list node ID.
+    /// * `test_remove_1()` and `test_remove_3()` test new list head is
+    ///   not a list node ID, for traversal where start node is not sole
+    ///   leaf at root.
+    /// * `test_remove_1()` tests ascending AVL queue.
+    /// * `test_remove_3()` tests descending AVL queue.
+    /// * `test_remove_root()` tests new list tail is not a list node
+    ///   ID, for traversal where start node is sole leaf at root.
     fun remove_update_head<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         new_list_head: u64,
@@ -1736,6 +1800,18 @@ module econia::avl_queue {
     ///   `NIL` if doubly linked list is cleared out by removal.
     /// * `ascending`: `true` if ascending AVL queue, else `false`.
     /// * `tree_node_id`: Node ID of corresponding tree node.
+    ///
+    /// # Testing
+    ///
+    /// * `test_remove_2()` and `test_remove_4()` test new list tail is
+    ///   a list node ID.
+    /// * `test_remove_2()` and `test_remove_4()` test new list tail is
+    ///   not a list node ID, for traversal where start node is not sole
+    ///   leaf at root.
+    /// * `test_remove_2()` tests ascending AVL queue.
+    /// * `test_remove_4()` tests descending AVL queue.
+    /// * `test_remove_root()` tests new list tail is not a list node
+    ///   ID, for traversal where start node is sole leaf at root.
     fun remove_update_tail<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         new_list_tail: u64,
@@ -4818,6 +4894,542 @@ module econia::avl_queue {
     }
 
     #[test]
+    /// Verify state updates for `remove()` reference diagram case 1.
+    fun test_remove_1() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert tree nodes top to bottom, list nodes head to tail.
+        let (access_key_2_3, access_key_2_4, access_key_1_5, access_key_1_6) =
+            (insert(&mut avlq, 2, 3), insert(&mut avlq, 2, 4),
+             insert(&mut avlq, 1, 5), insert(&mut avlq, 1, 6));
+        // Get node IDs.
+        let node_id_1 = get_access_key_tree_node_id_test(access_key_1_5);
+        let node_id_2 = get_access_key_tree_node_id_test(access_key_2_3);
+        let node_id_3 = get_access_key_list_node_id_test(access_key_2_3);
+        let node_id_4 = get_access_key_list_node_id_test(access_key_2_4);
+        let node_id_5 = get_access_key_list_node_id_test(access_key_1_5);
+        let node_id_6 = get_access_key_list_node_id_test(access_key_1_6);
+        // Execute first removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_1_5) == 5, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_list_top_test(    &avlq) == node_id_5, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_6, 0);
+        assert!(get_head_key_test(    &avlq) == 1, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_4, 0);
+        assert!(get_tail_key_test(    &avlq) == 2, 0);
+        assert!(get_root_test(        &avlq) == node_id_2, 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2   , 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_1)
+                == node_id_6   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_1)
+                == node_id_6   , 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1   , 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_2)
+                == node_id_3   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_2)
+                == node_id_4   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == (NIL as u64), 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_1   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_1   , 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_2   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_4   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_3   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_2   , 0);
+        // Execute second removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_1_6) == 6, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == node_id_1, 0);
+        assert!(get_list_top_test(    &avlq) == node_id_6, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_3, 0);
+        assert!(get_head_key_test(    &avlq) == 2, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_4, 0);
+        assert!(get_tail_key_test(    &avlq) == 2, 0);
+        assert!(get_root_test(        &avlq) == node_id_2, 0);
+        // Assert inactive tree node state indicates stack bottom.
+        let node_1_ref = borrow_tree_node_test(&avlq, node_id_1);
+        assert!(node_1_ref.bits == (NIL as u128), 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_2)
+                == node_id_3   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_2)
+                == node_id_4   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_5   , 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_2   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_4   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_3   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_2   , 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for `remove()` reference diagram case 2.
+    fun test_remove_2() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert tree nodes top to bottom, list nodes head to tail.
+        let (access_key_2_3, access_key_2_4, access_key_1_5, access_key_1_6) =
+            (insert(&mut avlq, 2, 3), insert(&mut avlq, 2, 4),
+             insert(&mut avlq, 1, 5), insert(&mut avlq, 1, 6));
+        // Get node IDs.
+        let node_id_1 = get_access_key_tree_node_id_test(access_key_1_5);
+        let node_id_2 = get_access_key_tree_node_id_test(access_key_2_3);
+        let node_id_3 = get_access_key_list_node_id_test(access_key_2_3);
+        let node_id_4 = get_access_key_list_node_id_test(access_key_2_4);
+        let node_id_5 = get_access_key_list_node_id_test(access_key_1_5);
+        let node_id_6 = get_access_key_list_node_id_test(access_key_1_6);
+        // Execute first removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_2_4) == 4, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_list_top_test(    &avlq) == node_id_4, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_5, 0);
+        assert!(get_head_key_test(    &avlq) == 1, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_3, 0);
+        assert!(get_tail_key_test(    &avlq) == 2, 0);
+        assert!(get_root_test(        &avlq) == node_id_2, 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2   , 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_1)
+                == node_id_5   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_1)
+                == node_id_6   , 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1   , 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_2)
+                == node_id_3   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_2)
+                == node_id_3   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == (NIL as u64), 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_1   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_6   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_5   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_1   , 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_2   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_2   , 0);
+        // Execute second removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_2_3) == 3, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == node_id_2, 0);
+        assert!(get_list_top_test(    &avlq) == node_id_3, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_5, 0);
+        assert!(get_head_key_test(    &avlq) == 1, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_6, 0);
+        assert!(get_tail_key_test(    &avlq) == 1, 0);
+        assert!(get_root_test(        &avlq) == node_id_1, 0);
+        // Assert inactive tree node state indicates stack bottom.
+        let node_2_ref = borrow_tree_node_test(&avlq, node_id_2);
+        assert!(node_2_ref.bits == (NIL as u128), 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_1)
+                == node_id_5   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_1)
+                == node_id_6   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_4   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == (NIL as u64), 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_1   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_6   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_5   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_1   , 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for `remove()` reference diagram case 3.
+    fun test_remove_3() {
+        let avlq = new<u8>(DESCENDING, 0, 0); // Init AVL queue.
+        // Insert tree nodes top to bottom, list nodes head to tail.
+        let (access_key_2_3, access_key_2_4, access_key_1_5, access_key_1_6) =
+            (insert(&mut avlq, 2, 3), insert(&mut avlq, 2, 4),
+             insert(&mut avlq, 1, 5), insert(&mut avlq, 1, 6));
+        // Get node IDs.
+        let node_id_1 = get_access_key_tree_node_id_test(access_key_1_5);
+        let node_id_2 = get_access_key_tree_node_id_test(access_key_2_3);
+        let node_id_3 = get_access_key_list_node_id_test(access_key_2_3);
+        let node_id_4 = get_access_key_list_node_id_test(access_key_2_4);
+        let node_id_5 = get_access_key_list_node_id_test(access_key_1_5);
+        let node_id_6 = get_access_key_list_node_id_test(access_key_1_6);
+        // Execute first removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_2_3) == 3, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_list_top_test(    &avlq) == node_id_3, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_4, 0);
+        assert!(get_head_key_test(    &avlq) == 2, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_6, 0);
+        assert!(get_tail_key_test(    &avlq) == 1, 0);
+        assert!(get_root_test(        &avlq) == node_id_2, 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2   , 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_1)
+                == node_id_5   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_1)
+                == node_id_6   , 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1   , 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_2)
+                == node_id_4   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_2)
+                == node_id_4   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_1   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_6   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_5   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_1   , 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_2   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_2   , 0);
+        // Execute second removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_2_4) == 4, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == node_id_2, 0);
+        assert!(get_list_top_test(    &avlq) == node_id_4, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_5, 0);
+        assert!(get_head_key_test(    &avlq) == 1, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_6, 0);
+        assert!(get_tail_key_test(    &avlq) == 1, 0);
+        assert!(get_root_test(        &avlq) == node_id_1, 0);
+        // Assert inactive tree node state indicates stack bottom.
+        let node_2_ref = borrow_tree_node_test(&avlq, node_id_2);
+        assert!(node_2_ref.bits == (NIL as u128), 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_1)
+                == node_id_5   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_1)
+                == node_id_6   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_3   , 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_1   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_6   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_5   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == node_id_1   , 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for `remove()` reference diagram case 4.
+    fun test_remove_4() {
+        let avlq = new<u8>(DESCENDING, 0, 0); // Init AVL queue.
+        // Insert tree nodes top to bottom, list nodes head to tail.
+        let (access_key_2_3, access_key_2_4, access_key_1_5, access_key_1_6) =
+            (insert(&mut avlq, 2, 3), insert(&mut avlq, 2, 4),
+             insert(&mut avlq, 1, 5), insert(&mut avlq, 1, 6));
+        // Get node IDs.
+        let node_id_1 = get_access_key_tree_node_id_test(access_key_1_5);
+        let node_id_2 = get_access_key_tree_node_id_test(access_key_2_3);
+        let node_id_3 = get_access_key_list_node_id_test(access_key_2_3);
+        let node_id_4 = get_access_key_list_node_id_test(access_key_2_4);
+        let node_id_5 = get_access_key_list_node_id_test(access_key_1_5);
+        let node_id_6 = get_access_key_list_node_id_test(access_key_1_6);
+        // Execute first removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_1_6) == 6, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_list_top_test(    &avlq) == node_id_6, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_3, 0);
+        assert!(get_head_key_test(    &avlq) == 2, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_5, 0);
+        assert!(get_tail_key_test(    &avlq) == 1, 0);
+        assert!(get_root_test(        &avlq) == node_id_2, 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_1) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_1) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_1) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_1)
+                == node_id_2   , 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_1)
+                == node_id_5   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_1)
+                == node_id_5   , 0);
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 1, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == node_id_1   , 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_2)
+                == node_id_3   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_2)
+                == node_id_4   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == (NIL as u64), 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_1   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_1   , 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_2   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_4   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_3   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_2   , 0);
+        // Execute second removal, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_1_5) == 5, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == node_id_1, 0);
+        assert!(get_list_top_test(    &avlq) == node_id_5, 0);
+        assert!(get_head_node_id_test(&avlq) == node_id_3, 0);
+        assert!(get_head_key_test(    &avlq) == 2, 0);
+        assert!(get_tail_node_id_test(&avlq) == node_id_4, 0);
+        assert!(get_tail_key_test(    &avlq) == 2, 0);
+        assert!(get_root_test(        &avlq) == node_id_2, 0);
+        // Assert inactive tree node state indicates stack bottom.
+        let node_1_ref = borrow_tree_node_test(&avlq, node_id_1);
+        assert!(node_1_ref.bits == (NIL as u128), 0);
+        // Assert active tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, node_id_2) == 2, 0);
+        assert!(get_height_left_by_id_test(  &avlq, node_id_2) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, node_id_2) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, node_id_2)
+                == node_id_3   , 0);
+        assert!(get_list_tail_by_id_test(    &avlq, node_id_2)
+                == node_id_4   , 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_6), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_6)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_5)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_5), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_5)
+                == node_id_6   , 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_2   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_3)
+                == node_id_4   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_3   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, node_id_4), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_4)
+                == node_id_2   , 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
     /// Verify state updates for `remove_tree_node_with_children()`
     /// reference diagram 1.
     fun test_remove_children_1() {
@@ -5054,6 +5666,135 @@ module econia::avl_queue {
         assert!(get_child_left_by_id_test(   &avlq, node_id_7)
                 == (NIL as u64), 0);
         assert!(get_child_right_by_id_test(  &avlq, node_id_1)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for removing a list node that is neither
+    /// head nor tail of corresponding doubly linked list.
+    fun test_remove_mid_list() {
+        let (n_allocated_tree_nodes, n_allocated_list_nodes) = (7, 4);
+        let avlq = new<u8>( // Init AVL queue.
+            ASCENDING, n_allocated_tree_nodes, n_allocated_list_nodes);
+        // Declare three list nodes all having insertion key 1.
+        let access_key_head   = insert(&mut avlq, 1, 1);
+        let access_key_middle = insert(&mut avlq, 1, 2);
+        let access_key_tail   = insert(&mut avlq, 1, 3);
+        // Remove node from middle of list, asserting insertion value.
+        assert!(remove(&mut avlq, access_key_middle) == 2, 0);
+        let head_list_node_id = // Get head list node ID.
+            get_access_key_list_node_id_test(access_key_head);
+        let tail_list_node_id = // Get tail list node ID.
+            get_access_key_list_node_id_test(access_key_tail);
+        let list_node_id = // Get removed list node ID.
+            get_access_key_list_node_id_test(access_key_middle);
+        let tree_node_id = // Get active tree node ID.
+            get_access_key_tree_node_id_test(access_key_head);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(&avlq) == n_allocated_tree_nodes - 1, 0);
+        assert!(get_list_top_test(&avlq) == list_node_id, 0);
+        assert!(get_head_node_id_test(&avlq) == head_list_node_id, 0);
+        assert!(get_head_key_test(&avlq) == 1, 0);
+        assert!(get_tail_node_id_test(&avlq) == tail_list_node_id, 0);
+        assert!(get_tail_key_test(&avlq) == 1, 0);
+        assert!(get_root_test(&avlq) == tree_node_id, 0);
+        // Assert tree node state.
+        assert!(get_insertion_key_by_id_test(&avlq, tree_node_id) == 1, 0);
+        assert!(get_height_left_by_id_test(  &avlq, tree_node_id) == 0, 0);
+        assert!(get_height_right_by_id_test( &avlq, tree_node_id) == 0, 0);
+        assert!(get_parent_by_id_test(       &avlq, tree_node_id)
+                == (NIL as u64), 0);
+        assert!(get_child_left_by_id_test(   &avlq, tree_node_id)
+                == (NIL as u64), 0);
+        assert!(get_child_right_by_id_test(  &avlq, tree_node_id)
+                == (NIL as u64), 0);
+        assert!(get_list_head_by_id_test(    &avlq, tree_node_id)
+                == head_list_node_id, 0);
+        assert!(get_list_tail_by_id_test(    &avlq, tree_node_id)
+                == tail_list_node_id, 0);
+        // Assert inactive list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_node_id), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_node_id)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_node_id), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_node_id)
+                == n_allocated_list_nodes - 3, 0);
+        // Assert active list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, head_list_node_id),
+                0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, head_list_node_id)
+                == tree_node_id, 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, head_list_node_id),
+                0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, head_list_node_id)
+                == tail_list_node_id, 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, tail_list_node_id),
+                0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, tail_list_node_id)
+                == head_list_node_id, 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, tail_list_node_id),
+                0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, tail_list_node_id)
+                == tree_node_id, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify state updates for removing key-value insertion pair
+    /// (1, 2) as sole entry in ascending as descending AVL queue.
+    fun test_remove_root() {
+        // Init ascending AVL queue.
+        let avlq = new<u8>(ASCENDING, 0, 0);
+        // Insert sole entry.
+        let access_key_1_2 = insert(&mut avlq, 1, 2);
+        // Get node IDs.
+        // Get node IDs.
+        let node_id_1 = get_access_key_tree_node_id_test(access_key_1_2);
+        let node_id_2 = get_access_key_list_node_id_test(access_key_1_2);
+        // Remove sole entry, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_1_2) == 2, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == node_id_1, 0);
+        assert!(get_list_top_test(    &avlq) == node_id_2, 0);
+        assert!(get_head_node_id_test(&avlq) == (NIL as u64), 0);
+        assert!(get_head_key_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_tail_node_id_test(&avlq) == (NIL as u64), 0);
+        assert!(get_tail_key_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_root_test(        &avlq) == (NIL as u64), 0);
+        // Assert inactive tree node state indicates stack bottom.
+        let node_1_ref = borrow_tree_node_test(&avlq, node_id_1);
+        assert!(node_1_ref.bits == (NIL as u128), 0);
+        // Assert inactive list node state indicates stack bottom.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+        // Init descending AVL queue.
+        let avlq = new<u8>(DESCENDING, 0, 0);
+        insert(&mut avlq, 1, 2); // Insert sole entry.
+        // Remove sole entry, asserting returned insertion value.
+        assert!(remove(&mut avlq, access_key_1_2) == 2, 0);
+        // Assert AVL queue state.
+        assert!(get_tree_top_test(    &avlq) == node_id_1, 0);
+        assert!(get_list_top_test(    &avlq) == node_id_2, 0);
+        assert!(get_head_node_id_test(&avlq) == (NIL as u64), 0);
+        assert!(get_head_key_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_tail_node_id_test(&avlq) == (NIL as u64), 0);
+        assert!(get_tail_key_test(    &avlq) == (NIL as u64), 0);
+        assert!(get_root_test(        &avlq) == (NIL as u64), 0);
+        // Assert inactive tree node state indicates stack bottom.
+        let node_1_ref = borrow_tree_node_test(&avlq, node_id_1);
+        assert!(node_1_ref.bits == (NIL as u128), 0);
+        // Assert inactive list node state indicates stack bottom.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, node_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, node_id_2)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, node_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, node_id_2)
                 == (NIL as u64), 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }

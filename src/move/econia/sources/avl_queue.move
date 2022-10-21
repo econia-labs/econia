@@ -66,7 +66,7 @@
 /// * $b = \frac{c}{2} \log_2 5 - 2 \approx -0.3277$ , and
 /// * $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
 ///
-/// With a maximum node count of $n_{max} = 2^{14} - 1 = 13683$, the
+/// With a maximum node count of $n_{max} = 2^{14} - 1 = 16383$, the
 /// maximum height of an AVL tree in the present implementation is
 /// thus
 ///
@@ -193,6 +193,11 @@ module econia::avl_queue {
     const E_TOO_MANY_NODES: u64 = 0;
     /// Insertion key is too large.
     const E_INSERTION_KEY_TOO_LARGE: u64 = 1;
+    /// Attempted insertion with eviction from empty AVL queue.
+    const E_EVICT_EMPTY: u64 = 2;
+    /// Attempted insertion with eviction for key-value insertion pair
+    /// that would become new tail.
+    const E_EVICT_NEW_TAIL: u64 = 3;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -326,8 +331,8 @@ module econia::avl_queue {
     public fun borrow_head<V>(
         avlq_ref: &AVLqueue<V>
     ): &V {
-        let (list_node_id) = ((avlq_ref.bits >> SHIFT_HEAD_NODE_ID) &
-            (HI_NODE_ID as u128) as u64); // Get head list node ID.
+        let (list_node_id) = (((avlq_ref.bits >> SHIFT_HEAD_NODE_ID) &
+            (HI_NODE_ID as u128)) as u64); // Get head list node ID.
         // Immutably borrow corresponding insertion value.
         option::borrow(table::borrow(&avlq_ref.values, list_node_id))
     }
@@ -341,8 +346,8 @@ module econia::avl_queue {
     public fun borrow_head_mut<V>(
         avlq_ref_mut: &mut AVLqueue<V>
     ): &mut V {
-        let (list_node_id) = ((avlq_ref_mut.bits >> SHIFT_HEAD_NODE_ID) &
-            (HI_NODE_ID as u128) as u64); // Get head list node ID.
+        let (list_node_id) = (((avlq_ref_mut.bits >> SHIFT_HEAD_NODE_ID) &
+            (HI_NODE_ID as u128)) as u64); // Get head list node ID.
         // Mutably borrow corresponding insertion value.
         option::borrow_mut(
             table::borrow_mut(&mut avlq_ref_mut.values, list_node_id))
@@ -379,8 +384,8 @@ module econia::avl_queue {
     public fun borrow_tail<V>(
         avlq_ref: &AVLqueue<V>
     ): &V {
-        let (list_node_id) = ((avlq_ref.bits >> SHIFT_TAIL_NODE_ID) &
-            (HI_NODE_ID as u128) as u64); // Get tail list node ID.
+        let (list_node_id) = (((avlq_ref.bits >> SHIFT_TAIL_NODE_ID) &
+            (HI_NODE_ID as u128)) as u64); // Get tail list node ID.
         // Immutably borrow corresponding insertion value.
         option::borrow(table::borrow(&avlq_ref.values, list_node_id))
     }
@@ -394,8 +399,8 @@ module econia::avl_queue {
     public fun borrow_tail_mut<V>(
         avlq_ref_mut: &mut AVLqueue<V>
     ): &mut V {
-        let (list_node_id) = ((avlq_ref_mut.bits >> SHIFT_TAIL_NODE_ID) &
-            (HI_NODE_ID as u128) as u64); // Get tail list node ID.
+        let (list_node_id) = (((avlq_ref_mut.bits >> SHIFT_TAIL_NODE_ID) &
+            (HI_NODE_ID as u128)) as u64); // Get tail list node ID.
         // Mutably borrow corresponding insertion value.
         option::borrow_mut(
             table::borrow_mut(&mut avlq_ref_mut.values, list_node_id))
@@ -423,8 +428,8 @@ module econia::avl_queue {
         let bits = avlq_ref.bits; // Get AVL queue bits.
         // Get AVL queue head node ID and insertion key fields.
         let (avlq_head_node_id, avlq_head_insertion_key) =
-            (((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY as u128) as u64));
+            ((((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY as u128)) as u64));
         // If no AVL queue head return none, else head insertion key.
         if (avlq_head_node_id == (NIL as u64)) option::none() else
             option::some(avlq_head_insertion_key)
@@ -492,8 +497,8 @@ module econia::avl_queue {
         let bits = avlq_ref.bits; // Get AVL queue bits.
         // Get AVL queue tail node ID and insertion key fields.
         let (avlq_tail_node_id, avlq_tail_insertion_key) =
-            (((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128) as u64));
+            ((((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128)) as u64));
         // If no AVL queue tail return none, else tail insertion key.
         if (avlq_tail_node_id == (NIL as u64)) option::none() else
             option::some(avlq_tail_insertion_key)
@@ -625,6 +630,76 @@ module econia::avl_queue {
         key | ((order_bit as u64) << SHIFT_ACCESS_SORT_ORDER) |
               ((list_node_id    ) << SHIFT_ACCESS_LIST_NODE_ID) |
               ((tree_node_id    ) << SHIFT_ACCESS_TREE_NODE_ID)
+    }
+
+    /// Insert key-value insertion pair, evicting AVL queue tail.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `key`: Key to insert.
+    /// * `value`: Value to insert.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Access key for lookup of inserted pair.
+    /// * `u64`: Access key of evicted tail.
+    /// * `V`: Evicted tail insertion value.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_EVICT_EMPTY`: AVL queue is empty.
+    /// * `E_EVICT_NEW_TAIL`: Key-value insertion pair would itself
+    ///   become new tail.
+    ///
+    /// # Testing
+    ///
+    /// * `test_insert_evict_tail()`
+    /// * `test_insert_evict_tail_empty()`
+    /// * `test_insert_evict_tail_new_tail_ascending()`
+    /// * `test_insert_evict_tail_new_tail_descending()`
+    public fun insert_evict_tail<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        key: u64,
+        value: V
+    ): (
+        u64,
+        u64,
+        V
+    ) {
+        let bits = avlq_ref_mut.bits; // Get AVL queue bits.
+        // Get AVL queue sort order bit, tail list node ID, and
+        // tail insertion key.
+        let (order_bit, tail_list_node_id, tail_key) =
+            ((((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8),
+             (((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128)) as u64));
+        // Assert not trying to evict from empty AVL queue.
+        assert!(tail_list_node_id != (NIL as u64), E_EVICT_EMPTY);
+        // Determine if AVL queue is ascending.
+        let ascending = order_bit == BIT_FLAG_ASCENDING;
+        // Assert not trying to evict when new entry would become tail
+        // (assert ascending and insertion key is less than tail key, or
+        // descending and insertion key is greater than tail key).
+        assert!((( ascending && (key < tail_key)) ||
+                 (!ascending && (key > tail_key))), E_EVICT_NEW_TAIL);
+        // Immutably borrow tail list node.
+        let tail_list_node_ref = table_with_length::borrow(
+            &avlq_ref_mut.list_nodes, tail_list_node_id);
+        // Get virtual next field from node.
+        let next = ((tail_list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                    (tail_list_node_ref.next_lsbs as u64);
+        // Get tree node ID encoded in next field.
+        let tail_tree_node_id = next & (HI_NODE_ID as u64);
+        let tail_access_key = tail_key | // Get tail access key.
+            ((order_bit as u64 ) << SHIFT_ACCESS_SORT_ORDER) |
+            ((tail_list_node_id) << SHIFT_ACCESS_LIST_NODE_ID) |
+            ((tail_tree_node_id) << SHIFT_ACCESS_TREE_NODE_ID);
+        // Insert new key-value insertion pair, storing access key.
+        let new_access_key = insert(avlq_ref_mut, key, value);
+        // Remove tail access key, storing insertion value.
+        let tail_value = remove(avlq_ref_mut, tail_access_key);
+        (new_access_key, tail_access_key, tail_value)
     }
 
     /// Return `true` if given AVL queue has ascending sort order.
@@ -860,10 +935,10 @@ module econia::avl_queue {
         if (list_head_modified || list_tail_modified) {
             let bits = avlq_ref_mut.bits; // Get AVL queue bits.
             // Get AVL queue head and tail node IDs, sort order bit.
-            let (avlq_head_node_id, avlq_tail_node_id, order_bit) =
-                (((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128) as u64),
-                 ((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128) as u64),
-                 ((bits >> SHIFT_SORT_ORDER)   & (HI_BIT     as u128) as u8));
+            let (avlq_head_node_id, avlq_tail_node_id, order_bit) = (
+                (((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+                (((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+                (((bits >> SHIFT_SORT_ORDER  ) & (HI_BIT     as u128)) as u8));
             // Determine if AVL queue head, tail were modified.
             let (avlq_head_modified, avlq_tail_modified) =
                 ((avlq_head_node_id == list_node_id),
@@ -907,9 +982,9 @@ module econia::avl_queue {
         let bits = avlq_ref.bits; // Get AVL queue field bits.
         // Extract relevant fields.
         let (order_bit, head_node_id, head_key) =
-            (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128) as u8),
-             ((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY as u128) as u64));
+            ((((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8),
+             (((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY as u128)) as u64));
         // Determine if AVL queue is ascending.
         let ascending = order_bit == BIT_FLAG_ASCENDING;
         // Return true if empty AVL queue with no head node.
@@ -939,9 +1014,9 @@ module econia::avl_queue {
         let bits = avlq_ref.bits; // Get AVL queue field bits.
         // Extract relevant fields.
         let (order_bit, tail_node_id, tail_key) =
-            (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128) as u8),
-             ((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128) as u64));
+            ((((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8),
+             (((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128)) as u64));
         // Determine if AVL queue is ascending.
         let ascending = order_bit == BIT_FLAG_ASCENDING;
         // Return true if empty AVL queue with no tail node.
@@ -981,11 +1056,11 @@ module econia::avl_queue {
         let bits = avlq_ref_mut.bits; // Get AVL queue field bits.
         // Extract relevant fields.
         let (order_bit, head_node_id, head_key, tail_node_id, tail_key) =
-            (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128) as u8),
-             ((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY as u128) as u64),
-             ((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128) as u64));
+            ((((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8),
+             (((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY as u128)) as u64),
+             (((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128)) as u64));
         // Determine if AVL queue is ascending.
         let ascending = order_bit == BIT_FLAG_ASCENDING;
         let reassign_head = false; // Assume not reassigning head.
@@ -1640,11 +1715,11 @@ module econia::avl_queue {
         // fields.
         let (node_x_height_left, node_x_height_right, node_x_parent,
              node_x_child_left , node_x_child_right) =
-            (((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT  as u128) as u8),
-             ((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT  as u128) as u8),
-             ((bits >> SHIFT_PARENT      ) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE_ID as u128) as u64));
+            ((((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT  as u128)) as u8),
+             (((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT  as u128)) as u8),
+             (((bits >> SHIFT_PARENT      ) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE_ID as u128)) as u64));
         // Determine if node x has left child.
         let has_child_left  = node_x_child_left  != (NIL as u64);
         // Determine if node x has right child.
@@ -1743,7 +1818,7 @@ module econia::avl_queue {
                 // Mask in new bits.
                 ((new_subtree_root as u128) >> BITS_PER_BYTE);
             avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
-                (new_subtree_root & HI_BYTE as u8);
+                ((new_subtree_root & HI_BYTE) as u8);
         } else { // If node x was not root:
             // Mutably borrow node x's parent.
             let parent_ref_mut = table_with_length::borrow_mut(
@@ -2515,10 +2590,10 @@ module econia::avl_queue {
         // Get node z's left height, right height, and child fields.
         let (node_z_height_left, node_z_height_right,
              node_z_child_left , node_z_child_right  ) =
-            (((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT  as u128) as u8),
-             ((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT  as u128) as u8),
-             ((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE_ID as u128) as u64),
-             ((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE_ID as u128) as u64));
+            ((((bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT  as u128)) as u8),
+             (((bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT  as u128)) as u8),
+             (((bits >> SHIFT_CHILD_LEFT  ) & (HI_NODE_ID as u128)) as u64),
+             (((bits >> SHIFT_CHILD_RIGHT ) & (HI_NODE_ID as u128)) as u64));
         // Return result of rotation. If node x is left-heavy:
         return (if (node_x_left_heavy)
             // If node z is right-heavy, rotate left-right
@@ -4933,6 +5008,107 @@ module econia::avl_queue {
         assert!(get_tail_key_test(&avlq) == key_3, 0);
         assert!(get_head_node_id_test(&avlq) == list_node_id_2, 0);
         assert!(get_tail_node_id_test(&avlq) == list_node_id_3, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify successful returns for ascending and descending cases.
+    fun test_insert_evict_tail() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        // Insert two elements in same doubly linked list, storing
+        // access keys.
+        let (access_key_2_123, access_key_2_456) = (
+            insert(&mut avlq, 2, 123), insert(&mut avlq, 2, 456));
+        // Insert and evict tail, storing returns.
+        let (access_key_1_789, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 1, 789);
+        // Assert returns.
+        assert!(access_key_return == access_key_2_456, 0);
+        assert!(insertion_value_return == 456, 0);
+        // Insert and evict tail, storing returns.
+        let (access_key_1_321, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 1, 321);
+        // Assert returns.
+        assert!(access_key_return == access_key_2_123, 0);
+        assert!(insertion_value_return == 123, 0);
+        // Insert and evict tail, storing returns.
+        (_, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 0, 0);
+        // Assert returns.
+        assert!(access_key_return == access_key_1_321, 0);
+        assert!(insertion_value_return == 321, 0);
+        // Insert and evict tail, storing returns.
+        (_, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 0, 0);
+        // Assert returns.
+        assert!(access_key_return == access_key_1_789, 0);
+        assert!(insertion_value_return == 789, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+        avlq = new(DESCENDING, 0, 0); // Init AVL queue.
+        // Insert two elements in same doubly linked list, storing
+        // access keys.
+        (access_key_2_123, access_key_2_456) = (
+            insert(&mut avlq, 2, 123), insert(&mut avlq, 2, 456));
+        // Insert and evict tail, storing returns.
+        let (access_key_3_789, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 3, 789);
+        // Assert returns.
+        assert!(access_key_return == access_key_2_456, 0);
+        assert!(insertion_value_return == 456, 0);
+        // Insert and evict tail, storing returns.
+        let (access_key_3_321, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 3, 321);
+        // Assert returns.
+        assert!(access_key_return == access_key_2_123, 0);
+        assert!(insertion_value_return == 123, 0);
+        // Insert and evict tail, storing returns.
+        (_, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 4, 0);
+        // Assert returns.
+        assert!(access_key_return == access_key_3_321, 0);
+        assert!(insertion_value_return == 321, 0);
+        // Insert and evict tail, storing returns.
+        (_, access_key_return, insertion_value_return) =
+            insert_evict_tail(&mut avlq, 4, 0);
+        // Assert returns.
+        assert!(access_key_return == access_key_3_789, 0);
+        assert!(insertion_value_return == 789, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for insertion with eviction from empty AVL queue.
+    fun test_insert_evict_tail_empty() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        // Attempt invalid insertion with eviction.
+        insert_evict_tail(&mut avlq, 0, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for insertion with eviction for key-value
+    /// insertion pair that would become tail.
+    fun test_insert_evict_tail_new_tail_ascending() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        insert(&mut avlq, 0, 0); // Insert tail.
+        insert(&mut avlq, 1, 0); // Insert new tail.
+        // Attempt invalid insertion with eviction.
+        insert_evict_tail(&mut avlq, 1, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for insertion with eviction for key-value
+    /// insertion pair that would become tail.
+    fun test_insert_evict_tail_new_tail_descending() {
+        let avlq = new(DESCENDING, 0, 0); // Init AVL queue.
+        insert(&mut avlq, 1, 0); // Insert tail.
+        insert(&mut avlq, 0, 0); // Insert new tail.
+        // Attempt invalid insertion with eviction.
+        insert_evict_tail(&mut avlq, 0, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

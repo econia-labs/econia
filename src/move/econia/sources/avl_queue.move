@@ -394,7 +394,7 @@ module econia::avl_queue {
             option::some(avlq_tail_insertion_key)
     }
 
-    /// Return `true` if insertion key in AVL queue, else `false`.
+    /// Return `true` if insertion `key` in AVL queue, else `false`.
     ///
     /// # Aborts
     ///
@@ -781,6 +781,71 @@ module econia::avl_queue {
                 remove_tree_node(avlq_ref_mut, tree_node_id);
         };
         value // Return insertion value.
+    }
+
+    /// Return `true` if inserting `key` would update AVL queue head.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INSERTION_KEY_TOO_LARGE`: Insertion key is too large.
+    ///
+    /// # Testing
+    ///
+    /// * `test_would_update_head_too_big()`.
+    /// * `test_would_update_head_tail()`
+    public fun would_update_head<V>(
+        avlq_ref: &AVLqueue<V>,
+        key: u64
+    ): bool {
+        // Assert insertion key is not too many bits.
+        assert!(key <= HI_INSERTION_KEY, E_INSERTION_KEY_TOO_LARGE);
+        let bits = avlq_ref.bits; // Get AVL queue field bits.
+        // Extract relevant fields.
+        let (order_bit, head_node_id, head_key) =
+            (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128) as u8),
+             ((bits >> SHIFT_HEAD_NODE_ID) & (HI_NODE_ID as u128) as u64),
+             ((bits >> SHIFT_HEAD_KEY) & (HI_INSERTION_KEY as u128) as u64));
+        // Determine if AVL queue is ascending.
+        let ascending = order_bit == BIT_FLAG_ASCENDING;
+        // Return true if empty AVL queue with no head node.
+        if (head_node_id == (NIL as u64)) return true;
+        // Return true if ascending and key less than head key, or
+        // descending and key greater than head key.
+        return (( ascending && (key < head_key)) ||
+                (!ascending && (key > head_key)))
+    }
+
+    /// Return `true` if inserting `key` would update AVL queue tail.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INSERTION_KEY_TOO_LARGE`: Insertion key is too large.
+    ///
+    /// # Testing
+    ///
+    /// * `test_would_update_tail_too_big()`.
+    /// * `test_would_update_head_tail()`
+    public fun would_update_tail<V>(
+        avlq_ref: &AVLqueue<V>,
+        key: u64
+    ): bool {
+        // Assert insertion key is not too many bits.
+        assert!(key <= HI_INSERTION_KEY, E_INSERTION_KEY_TOO_LARGE);
+        let bits = avlq_ref.bits; // Get AVL queue field bits.
+        // Extract relevant fields.
+        let (order_bit, tail_node_id, tail_key) =
+            (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128) as u8),
+             ((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128) as u64),
+             ((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128) as u64));
+        // Determine if AVL queue is ascending.
+        let ascending = order_bit == BIT_FLAG_ASCENDING;
+        // Return true if empty AVL queue with no tail node.
+        if (tail_node_id == (NIL as u64)) return true;
+        // Return true if ascending and key greater than or equal to
+        // tail key, or descending and key less than or equal to tail
+        // key.
+        return (( ascending && (key >= tail_key)) ||
+                (!ascending && (key <= tail_key)))
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -7517,6 +7582,81 @@ module econia::avl_queue {
     fun test_verify_node_count_pass() {
         // Attempt valid invocation for max node count.
         verify_node_count(u_64(b"11111111111111"));
+    }
+
+    #[test]
+    /// Verify expected returns.
+    fun test_would_update_head_tail() {
+        // Init ascending AVL queue.
+        let avlq = new<u8>(ASCENDING, 0, 0);
+        // Assert returns for empty AVL queue.
+        assert!( would_update_head(&avlq, 0                   ), 0);
+        assert!( would_update_tail(&avlq, 0                   ), 0);
+        assert!( would_update_head(&avlq, HI_INSERTION_KEY    ), 0);
+        assert!( would_update_tail(&avlq, HI_INSERTION_KEY    ), 0);
+        insert(&mut avlq, 1, 0); // Insert key 1 above min.
+        // Assert returns 1 less than, equal to, and 1 greater than key.
+        assert!( would_update_head(&avlq, 0                   ), 0);
+        assert!(!would_update_head(&avlq, 1                   ), 0);
+        assert!(!would_update_head(&avlq, 2                   ), 0);
+        assert!(!would_update_tail(&avlq, 0                   ), 0);
+        assert!( would_update_tail(&avlq, 1                   ), 0);
+        assert!( would_update_tail(&avlq, 2                   ), 0);
+        // Insert key 1 below max.
+        insert(&mut avlq, HI_INSERTION_KEY - 1, 0);
+        // Assert returns 1 less than, equal to, and 1 greater than key.
+        assert!(!would_update_head(&avlq, HI_INSERTION_KEY - 2), 0);
+        assert!(!would_update_head(&avlq, HI_INSERTION_KEY - 1), 0);
+        assert!(!would_update_head(&avlq, HI_INSERTION_KEY    ), 0);
+        assert!(!would_update_tail(&avlq, HI_INSERTION_KEY - 2), 0);
+        assert!( would_update_tail(&avlq, HI_INSERTION_KEY - 1), 0);
+        assert!( would_update_tail(&avlq, HI_INSERTION_KEY    ), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+        // Init descending AVL queue.
+        let avlq = new<u8>(DESCENDING, 0, 0);
+        // Assert returns for empty AVL queue.
+        assert!( would_update_head(&avlq, 0                   ), 0);
+        assert!( would_update_tail(&avlq, 0                   ), 0);
+        assert!( would_update_head(&avlq, HI_INSERTION_KEY    ), 0);
+        assert!( would_update_tail(&avlq, HI_INSERTION_KEY    ), 0);
+        insert(&mut avlq, 1, 0); // Insert key 1 above min.
+        // Assert returns 1 less than, equal to, and 1 greater than key.
+        assert!(!would_update_head(&avlq, 0                   ), 0);
+        assert!(!would_update_head(&avlq, 1                   ), 0);
+        assert!( would_update_head(&avlq, 2                   ), 0);
+        assert!( would_update_tail(&avlq, 0                   ), 0);
+        assert!( would_update_tail(&avlq, 1                   ), 0);
+        assert!(!would_update_tail(&avlq, 2                   ), 0);
+        // Insert key 1 below max.
+        insert(&mut avlq, HI_INSERTION_KEY - 1, 0);
+        // Assert returns 1 less than, equal to, and 1 greater than key.
+        assert!(!would_update_head(&avlq, HI_INSERTION_KEY - 2), 0);
+        assert!(!would_update_head(&avlq, HI_INSERTION_KEY - 1), 0);
+        assert!( would_update_head(&avlq, HI_INSERTION_KEY    ), 0);
+        assert!(!would_update_tail(&avlq, HI_INSERTION_KEY - 2), 0);
+        assert!(!would_update_tail(&avlq, HI_INSERTION_KEY - 1), 0);
+        assert!(!would_update_tail(&avlq, HI_INSERTION_KEY    ), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for insertion key too large.
+    fun test_would_update_head_too_big() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Attempt invalid invocation.
+        would_update_head(&avlq, HI_INSERTION_KEY + 1);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for insertion key too large.
+    fun test_would_update_tail_too_big() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
+        // Attempt invalid invocation.
+        would_update_tail(&avlq, HI_INSERTION_KEY + 1);
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

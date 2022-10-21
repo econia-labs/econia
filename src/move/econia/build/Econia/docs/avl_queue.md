@@ -127,173 +127,187 @@ The below index is automatically generated from source code:
 -  [Struct `TreeNode`](#0xc0deb00c_avl_queue_TreeNode)
 -  [Struct `ListNode`](#0xc0deb00c_avl_queue_ListNode)
 -  [Constants](#@Constants_5)
--  [Function `get_access_key_insertion_key`](#0xc0deb00c_avl_queue_get_access_key_insertion_key)
-    -  [Testing](#@Testing_6)
--  [Function `get_head_key`](#0xc0deb00c_avl_queue_get_head_key)
+-  [Function `borrow`](#0xc0deb00c_avl_queue_borrow)
+    -  [Assumptions](#@Assumptions_6)
     -  [Testing](#@Testing_7)
--  [Function `get_height`](#0xc0deb00c_avl_queue_get_height)
-    -  [Reference diagram](#@Reference_diagram_8)
+-  [Function `borrow_head`](#0xc0deb00c_avl_queue_borrow_head)
+    -  [Testing](#@Testing_8)
+-  [Function `borrow_head_mut`](#0xc0deb00c_avl_queue_borrow_head_mut)
     -  [Testing](#@Testing_9)
--  [Function `get_tail_key`](#0xc0deb00c_avl_queue_get_tail_key)
-    -  [Testing](#@Testing_10)
--  [Function `has_key`](#0xc0deb00c_avl_queue_has_key)
-    -  [Aborts](#@Aborts_11)
+-  [Function `borrow_mut`](#0xc0deb00c_avl_queue_borrow_mut)
+    -  [Assumptions](#@Assumptions_10)
+    -  [Testing](#@Testing_11)
+-  [Function `borrow_tail`](#0xc0deb00c_avl_queue_borrow_tail)
     -  [Testing](#@Testing_12)
--  [Function `insert`](#0xc0deb00c_avl_queue_insert)
-    -  [Parameters](#@Parameters_13)
-    -  [Returns](#@Returns_14)
-    -  [Aborts](#@Aborts_15)
-    -  [Failure testing](#@Failure_testing_16)
-    -  [State verification testing](#@State_verification_testing_17)
--  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
+-  [Function `borrow_tail_mut`](#0xc0deb00c_avl_queue_borrow_tail_mut)
+    -  [Testing](#@Testing_13)
+-  [Function `get_access_key_insertion_key`](#0xc0deb00c_avl_queue_get_access_key_insertion_key)
+    -  [Testing](#@Testing_14)
+-  [Function `get_head_key`](#0xc0deb00c_avl_queue_get_head_key)
+    -  [Testing](#@Testing_15)
+-  [Function `get_height`](#0xc0deb00c_avl_queue_get_height)
+    -  [Reference diagram](#@Reference_diagram_16)
+    -  [Testing](#@Testing_17)
+-  [Function `get_tail_key`](#0xc0deb00c_avl_queue_get_tail_key)
     -  [Testing](#@Testing_18)
+-  [Function `has_key`](#0xc0deb00c_avl_queue_has_key)
+    -  [Aborts](#@Aborts_19)
+    -  [Testing](#@Testing_20)
+-  [Function `insert`](#0xc0deb00c_avl_queue_insert)
+    -  [Parameters](#@Parameters_21)
+    -  [Returns](#@Returns_22)
+    -  [Aborts](#@Aborts_23)
+    -  [Failure testing](#@Failure_testing_24)
+    -  [State verification testing](#@State_verification_testing_25)
+-  [Function `is_ascending`](#0xc0deb00c_avl_queue_is_ascending)
+    -  [Testing](#@Testing_26)
 -  [Function `is_empty`](#0xc0deb00c_avl_queue_is_empty)
-    -  [Testing](#@Testing_19)
+    -  [Testing](#@Testing_27)
 -  [Function `new`](#0xc0deb00c_avl_queue_new)
-    -  [Parameters](#@Parameters_20)
-    -  [Returns](#@Returns_21)
-    -  [Testing](#@Testing_22)
+    -  [Parameters](#@Parameters_28)
+    -  [Returns](#@Returns_29)
+    -  [Testing](#@Testing_30)
 -  [Function `pop_head`](#0xc0deb00c_avl_queue_pop_head)
-    -  [Testing](#@Testing_23)
+    -  [Testing](#@Testing_31)
 -  [Function `pop_tail`](#0xc0deb00c_avl_queue_pop_tail)
-    -  [Testing](#@Testing_24)
--  [Function `remove`](#0xc0deb00c_avl_queue_remove)
-    -  [Parameters](#@Parameters_25)
-    -  [Assumptions](#@Assumptions_26)
-    -  [Reference diagram](#@Reference_diagram_27)
-        -  [Case 1: ascending head updates](#@Case_1:_ascending_head_updates_28)
-        -  [Case 2: ascending tail updates](#@Case_2:_ascending_tail_updates_29)
-        -  [Case 3: descending head updates](#@Case_3:_descending_head_updates_30)
-        -  [Case 4: descending tail updates](#@Case_4:_descending_tail_updates_31)
     -  [Testing](#@Testing_32)
+-  [Function `remove`](#0xc0deb00c_avl_queue_remove)
+    -  [Parameters](#@Parameters_33)
+    -  [Assumptions](#@Assumptions_34)
+    -  [Reference diagram](#@Reference_diagram_35)
+        -  [Case 1: ascending head updates](#@Case_1:_ascending_head_updates_36)
+        -  [Case 2: ascending tail updates](#@Case_2:_ascending_tail_updates_37)
+        -  [Case 3: descending head updates](#@Case_3:_descending_head_updates_38)
+        -  [Case 4: descending tail updates](#@Case_4:_descending_tail_updates_39)
+    -  [Testing](#@Testing_40)
 -  [Function `would_update_head`](#0xc0deb00c_avl_queue_would_update_head)
-    -  [Aborts](#@Aborts_33)
-    -  [Testing](#@Testing_34)
+    -  [Aborts](#@Aborts_41)
+    -  [Testing](#@Testing_42)
 -  [Function `would_update_tail`](#0xc0deb00c_avl_queue_would_update_tail)
-    -  [Aborts](#@Aborts_35)
-    -  [Testing](#@Testing_36)
--  [Function `insert_check_head_tail`](#0xc0deb00c_avl_queue_insert_check_head_tail)
-    -  [Parameters](#@Parameters_37)
-    -  [Testing](#@Testing_38)
--  [Function `insert_list_node`](#0xc0deb00c_avl_queue_insert_list_node)
-    -  [Parameters](#@Parameters_39)
-    -  [Returns](#@Returns_40)
-    -  [Testing](#@Testing_41)
--  [Function `insert_list_node_assign_fields`](#0xc0deb00c_avl_queue_insert_list_node_assign_fields)
-    -  [Parameters](#@Parameters_42)
-    -  [Returns](#@Returns_43)
+    -  [Aborts](#@Aborts_43)
     -  [Testing](#@Testing_44)
--  [Function `insert_list_node_get_last_next`](#0xc0deb00c_avl_queue_insert_list_node_get_last_next)
+-  [Function `insert_check_head_tail`](#0xc0deb00c_avl_queue_insert_check_head_tail)
     -  [Parameters](#@Parameters_45)
-    -  [Returns](#@Returns_46)
-    -  [Testing](#@Testing_47)
+    -  [Testing](#@Testing_46)
+-  [Function `insert_list_node`](#0xc0deb00c_avl_queue_insert_list_node)
+    -  [Parameters](#@Parameters_47)
+    -  [Returns](#@Returns_48)
+    -  [Testing](#@Testing_49)
+-  [Function `insert_list_node_assign_fields`](#0xc0deb00c_avl_queue_insert_list_node_assign_fields)
+    -  [Parameters](#@Parameters_50)
+    -  [Returns](#@Returns_51)
+    -  [Testing](#@Testing_52)
+-  [Function `insert_list_node_get_last_next`](#0xc0deb00c_avl_queue_insert_list_node_get_last_next)
+    -  [Parameters](#@Parameters_53)
+    -  [Returns](#@Returns_54)
+    -  [Testing](#@Testing_55)
 -  [Function `insert_tree_node`](#0xc0deb00c_avl_queue_insert_tree_node)
-    -  [Parameters](#@Parameters_48)
-    -  [Returns](#@Returns_49)
-    -  [Assumptions](#@Assumptions_50)
-    -  [Testing](#@Testing_51)
--  [Function `insert_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge)
-    -  [Parameters](#@Parameters_52)
-    -  [Testing](#@Testing_53)
--  [Function `remove_list_node`](#0xc0deb00c_avl_queue_remove_list_node)
-    -  [Parameters](#@Parameters_54)
-    -  [Returns](#@Returns_55)
-    -  [Testing](#@Testing_56)
--  [Function `remove_list_node_update_edges`](#0xc0deb00c_avl_queue_remove_list_node_update_edges)
-    -  [Parameters](#@Parameters_57)
-    -  [Returns](#@Returns_58)
+    -  [Parameters](#@Parameters_56)
+    -  [Returns](#@Returns_57)
+    -  [Assumptions](#@Assumptions_58)
     -  [Testing](#@Testing_59)
--  [Function `remove_tree_node`](#0xc0deb00c_avl_queue_remove_tree_node)
+-  [Function `insert_tree_node_update_parent_edge`](#0xc0deb00c_avl_queue_insert_tree_node_update_parent_edge)
     -  [Parameters](#@Parameters_60)
-    -  [Case 1](#@Case_1_61)
-    -  [Case 2](#@Case_2_62)
-        -  [Left child](#@Left_child_63)
-        -  [Right child](#@Right_child_64)
-    -  [Case 3](#@Case_3_65)
-    -  [Testing](#@Testing_66)
+    -  [Testing](#@Testing_61)
+-  [Function `remove_list_node`](#0xc0deb00c_avl_queue_remove_list_node)
+    -  [Parameters](#@Parameters_62)
+    -  [Returns](#@Returns_63)
+    -  [Testing](#@Testing_64)
+-  [Function `remove_list_node_update_edges`](#0xc0deb00c_avl_queue_remove_list_node_update_edges)
+    -  [Parameters](#@Parameters_65)
+    -  [Returns](#@Returns_66)
+    -  [Testing](#@Testing_67)
+-  [Function `remove_tree_node`](#0xc0deb00c_avl_queue_remove_tree_node)
+    -  [Parameters](#@Parameters_68)
+    -  [Case 1](#@Case_1_69)
+    -  [Case 2](#@Case_2_70)
+        -  [Left child](#@Left_child_71)
+        -  [Right child](#@Right_child_72)
+    -  [Case 3](#@Case_3_73)
+    -  [Testing](#@Testing_74)
 -  [Function `remove_tree_node_follow_up`](#0xc0deb00c_avl_queue_remove_tree_node_follow_up)
-    -  [Parameters](#@Parameters_67)
-    -  [Testing](#@Testing_68)
+    -  [Parameters](#@Parameters_75)
+    -  [Testing](#@Testing_76)
 -  [Function `remove_tree_node_with_children`](#0xc0deb00c_avl_queue_remove_tree_node_with_children)
-    -  [Parameters](#@Parameters_69)
-    -  [Returns](#@Returns_70)
-    -  [Predecessor is immediate child](#@Predecessor_is_immediate_child_71)
-    -  [Predecessor is not immediate child](#@Predecessor_is_not_immediate_child_72)
-    -  [Reference diagrams](#@Reference_diagrams_73)
-        -  [Case 1](#@Case_1_74)
-        -  [Case 2](#@Case_2_75)
-        -  [Case 3](#@Case_3_76)
-    -  [Testing](#@Testing_77)
+    -  [Parameters](#@Parameters_77)
+    -  [Returns](#@Returns_78)
+    -  [Predecessor is immediate child](#@Predecessor_is_immediate_child_79)
+    -  [Predecessor is not immediate child](#@Predecessor_is_not_immediate_child_80)
+    -  [Reference diagrams](#@Reference_diagrams_81)
+        -  [Case 1](#@Case_1_82)
+        -  [Case 2](#@Case_2_83)
+        -  [Case 3](#@Case_3_84)
+    -  [Testing](#@Testing_85)
 -  [Function `remove_update_head`](#0xc0deb00c_avl_queue_remove_update_head)
-    -  [Parameters](#@Parameters_78)
-    -  [Testing](#@Testing_79)
--  [Function `remove_update_tail`](#0xc0deb00c_avl_queue_remove_update_tail)
-    -  [Parameters](#@Parameters_80)
-    -  [Testing](#@Testing_81)
--  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
-    -  [Parameters](#@Parameters_82)
-    -  [Testing](#@Testing_83)
-        -  [Reference diagram](#@Reference_diagram_84)
--  [Function `retrace_prep_iterate`](#0xc0deb00c_avl_queue_retrace_prep_iterate)
-    -  [Parameters](#@Parameters_85)
-    -  [Returns](#@Returns_86)
+    -  [Parameters](#@Parameters_86)
     -  [Testing](#@Testing_87)
--  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+-  [Function `remove_update_tail`](#0xc0deb00c_avl_queue_remove_update_tail)
     -  [Parameters](#@Parameters_88)
-    -  [Returns](#@Returns_89)
-    -  [Node x status](#@Node_x_status_90)
-        -  [Node x left-heavy](#@Node_x_left-heavy_91)
-        -  [Node x right-heavy](#@Node_x_right-heavy_92)
-    -  [Testing](#@Testing_93)
+    -  [Testing](#@Testing_89)
+-  [Function `retrace`](#0xc0deb00c_avl_queue_retrace)
+    -  [Parameters](#@Parameters_90)
+    -  [Testing](#@Testing_91)
+        -  [Reference diagram](#@Reference_diagram_92)
+-  [Function `retrace_prep_iterate`](#0xc0deb00c_avl_queue_retrace_prep_iterate)
+    -  [Parameters](#@Parameters_93)
+    -  [Returns](#@Returns_94)
+    -  [Testing](#@Testing_95)
+-  [Function `retrace_rebalance`](#0xc0deb00c_avl_queue_retrace_rebalance)
+    -  [Parameters](#@Parameters_96)
+    -  [Returns](#@Returns_97)
+    -  [Node x status](#@Node_x_status_98)
+        -  [Node x left-heavy](#@Node_x_left-heavy_99)
+        -  [Node x right-heavy](#@Node_x_right-heavy_100)
+    -  [Testing](#@Testing_101)
 -  [Function `retrace_rebalance_rotate_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left)
-    -  [Parameters](#@Parameters_94)
-    -  [Returns](#@Returns_95)
-    -  [Reference rotations](#@Reference_rotations_96)
-        -  [Case 1](#@Case_1_97)
-        -  [Case 2](#@Case_2_98)
-    -  [Testing](#@Testing_99)
+    -  [Parameters](#@Parameters_102)
+    -  [Returns](#@Returns_103)
+    -  [Reference rotations](#@Reference_rotations_104)
+        -  [Case 1](#@Case_1_105)
+        -  [Case 2](#@Case_2_106)
+    -  [Testing](#@Testing_107)
 -  [Function `retrace_rebalance_rotate_left_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_left_right)
-    -  [Procedure](#@Procedure_100)
-    -  [Reference rotations](#@Reference_rotations_101)
-        -  [Case 1](#@Case_1_102)
-        -  [Case 2](#@Case_2_103)
-    -  [Testing](#@Testing_104)
+    -  [Procedure](#@Procedure_108)
+    -  [Reference rotations](#@Reference_rotations_109)
+        -  [Case 1](#@Case_1_110)
+        -  [Case 2](#@Case_2_111)
+    -  [Testing](#@Testing_112)
 -  [Function `retrace_rebalance_rotate_right`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right)
-    -  [Parameters](#@Parameters_105)
-    -  [Returns](#@Returns_106)
-    -  [Reference rotations](#@Reference_rotations_107)
-        -  [Case 1](#@Case_1_108)
-        -  [Case 2](#@Case_2_109)
-    -  [Testing](#@Testing_110)
+    -  [Parameters](#@Parameters_113)
+    -  [Returns](#@Returns_114)
+    -  [Reference rotations](#@Reference_rotations_115)
+        -  [Case 1](#@Case_1_116)
+        -  [Case 2](#@Case_2_117)
+    -  [Testing](#@Testing_118)
 -  [Function `retrace_rebalance_rotate_right_left`](#0xc0deb00c_avl_queue_retrace_rebalance_rotate_right_left)
-    -  [Parameters](#@Parameters_111)
-    -  [Procedure](#@Procedure_112)
-    -  [Reference rotations](#@Reference_rotations_113)
-        -  [Case 1](#@Case_1_114)
-        -  [Case 2](#@Case_2_115)
-    -  [Testing](#@Testing_116)
--  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
-    -  [Parameters](#@Parameters_117)
-    -  [Returns](#@Returns_118)
-    -  [Testing](#@Testing_119)
--  [Function `search`](#0xc0deb00c_avl_queue_search)
-    -  [Parameters](#@Parameters_120)
-    -  [Returns](#@Returns_121)
-    -  [Assumptions](#@Assumptions_122)
-    -  [Reference diagram](#@Reference_diagram_123)
+    -  [Parameters](#@Parameters_119)
+    -  [Procedure](#@Procedure_120)
+    -  [Reference rotations](#@Reference_rotations_121)
+        -  [Case 1](#@Case_1_122)
+        -  [Case 2](#@Case_2_123)
     -  [Testing](#@Testing_124)
--  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
+-  [Function `retrace_update_heights`](#0xc0deb00c_avl_queue_retrace_update_heights)
     -  [Parameters](#@Parameters_125)
-    -  [Conventions](#@Conventions_126)
-    -  [Returns](#@Returns_127)
-    -  [Membership considerations](#@Membership_considerations_128)
-    -  [Predecessor](#@Predecessor_129)
-    -  [Successor](#@Successor_130)
+    -  [Returns](#@Returns_126)
+    -  [Testing](#@Testing_127)
+-  [Function `search`](#0xc0deb00c_avl_queue_search)
+    -  [Parameters](#@Parameters_128)
+    -  [Returns](#@Returns_129)
+    -  [Assumptions](#@Assumptions_130)
     -  [Reference diagram](#@Reference_diagram_131)
     -  [Testing](#@Testing_132)
+-  [Function `traverse`](#0xc0deb00c_avl_queue_traverse)
+    -  [Parameters](#@Parameters_133)
+    -  [Conventions](#@Conventions_134)
+    -  [Returns](#@Returns_135)
+    -  [Membership considerations](#@Membership_considerations_136)
+    -  [Predecessor](#@Predecessor_137)
+    -  [Successor](#@Successor_138)
+    -  [Reference diagram](#@Reference_diagram_139)
+    -  [Testing](#@Testing_140)
 -  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_133)
-    -  [Testing](#@Testing_134)
+    -  [Aborts](#@Aborts_141)
+    -  [Testing](#@Testing_142)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -909,6 +923,263 @@ Flag for inorder successor traversal.
 
 
 
+<a name="0xc0deb00c_avl_queue_borrow"></a>
+
+## Function `borrow`
+
+Immutably borrow insertion value corresponding to access key,
+aborting if invalid key.
+
+
+<a name="@Assumptions_6"></a>
+
+### Assumptions
+
+
+* Provided access key corresponds to a valid list node in the
+given AVL queue.
+
+
+<a name="@Testing_7"></a>
+
+### Testing
+
+
+* <code>test_borrow_borrow_mut()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow">borrow</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, access_key: u64): &V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow">borrow</a>&lt;V&gt;(
+    avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    access_key: u64
+): &V {
+    <b>let</b> list_node_id = // Extract list node ID from access key.
+        (access_key &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_ACCESS_LIST_NODE_ID">SHIFT_ACCESS_LIST_NODE_ID</a>) & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>;
+    // Immutably borrow corresponding insertion value.
+    <a href="_borrow">option::borrow</a>(<a href="_borrow">table::borrow</a>(&avlq_ref.values, list_node_id))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_borrow_head"></a>
+
+## Function `borrow_head`
+
+Immutably borrow AVL queue head insertion value, aborting if
+empty.
+
+
+<a name="@Testing_8"></a>
+
+### Testing
+
+
+* <code>test_borrow_borrow_mut()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_head">borrow_head</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;): &V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_head">borrow_head</a>&lt;V&gt;(
+    avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
+): &V {
+    <b>let</b> (list_node_id) = ((avlq_ref.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEAD_NODE_ID">SHIFT_HEAD_NODE_ID</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64); // Get head list node ID.
+    // Immutably borrow corresponding insertion value.
+    <a href="_borrow">option::borrow</a>(<a href="_borrow">table::borrow</a>(&avlq_ref.values, list_node_id))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_borrow_head_mut"></a>
+
+## Function `borrow_head_mut`
+
+Mutably borrow AVL queue head insertion value, aborting if
+empty.
+
+
+<a name="@Testing_9"></a>
+
+### Testing
+
+
+* <code>test_borrow_borrow_mut()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_head_mut">borrow_head_mut</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;): &<b>mut</b> V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_head_mut">borrow_head_mut</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
+): &<b>mut</b> V {
+    <b>let</b> (list_node_id) = ((avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_HEAD_NODE_ID">SHIFT_HEAD_NODE_ID</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64); // Get head list node ID.
+    // Mutably borrow corresponding insertion value.
+    <a href="_borrow_mut">option::borrow_mut</a>(
+        <a href="_borrow_mut">table::borrow_mut</a>(&<b>mut</b> avlq_ref_mut.values, list_node_id))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_borrow_mut"></a>
+
+## Function `borrow_mut`
+
+Mutably borrow insertion value corresponding to access key,
+aborting if invalid key.
+
+
+<a name="@Assumptions_10"></a>
+
+### Assumptions
+
+
+* Provided access key corresponds to a valid list node in the
+given AVL queue.
+
+
+<a name="@Testing_11"></a>
+
+### Testing
+
+
+* <code>test_borrow_borrow_mut()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_mut">borrow_mut</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, access_key: u64): &<b>mut</b> V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_mut">borrow_mut</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;,
+    access_key: u64
+): &<b>mut</b> V {
+    <b>let</b> list_node_id = // Extract list node ID from access key.
+        (access_key &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_ACCESS_LIST_NODE_ID">SHIFT_ACCESS_LIST_NODE_ID</a>) & <a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>;
+    // Mutably borrow corresponding insertion value.
+    <a href="_borrow_mut">option::borrow_mut</a>(
+        <a href="_borrow_mut">table::borrow_mut</a>(&<b>mut</b> avlq_ref_mut.values, list_node_id))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_borrow_tail"></a>
+
+## Function `borrow_tail`
+
+Immutably borrow AVL queue tail insertion value, aborting if
+empty.
+
+
+<a name="@Testing_12"></a>
+
+### Testing
+
+
+* <code>test_borrow_borrow_mut()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_tail">borrow_tail</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;): &V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_tail">borrow_tail</a>&lt;V&gt;(
+    avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
+): &V {
+    <b>let</b> (list_node_id) = ((avlq_ref.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TAIL_NODE_ID">SHIFT_TAIL_NODE_ID</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64); // Get tail list node ID.
+    // Immutably borrow corresponding insertion value.
+    <a href="_borrow">option::borrow</a>(<a href="_borrow">table::borrow</a>(&avlq_ref.values, list_node_id))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_avl_queue_borrow_tail_mut"></a>
+
+## Function `borrow_tail_mut`
+
+Mutably borrow AVL queue tail insertion value, aborting if
+empty.
+
+
+<a name="@Testing_13"></a>
+
+### Testing
+
+
+* <code>test_borrow_borrow_mut()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_tail_mut">borrow_tail_mut</a>&lt;V&gt;(avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;): &<b>mut</b> V
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_tail_mut">borrow_tail_mut</a>&lt;V&gt;(
+    avlq_ref_mut: &<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;
+): &<b>mut</b> V {
+    <b>let</b> (list_node_id) = ((avlq_ref_mut.bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_TAIL_NODE_ID">SHIFT_TAIL_NODE_ID</a>) &
+        (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a> <b>as</b> u128) <b>as</b> u64); // Get tail list node ID.
+    // Mutably borrow corresponding insertion value.
+    <a href="_borrow_mut">option::borrow_mut</a>(
+        <a href="_borrow_mut">table::borrow_mut</a>(&<b>mut</b> avlq_ref_mut.values, list_node_id))
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_avl_queue_get_access_key_insertion_key"></a>
 
 ## Function `get_access_key_insertion_key`
@@ -916,7 +1187,7 @@ Flag for inorder successor traversal.
 Get insertion key encoded in an access key.
 
 
-<a name="@Testing_6"></a>
+<a name="@Testing_14"></a>
 
 ### Testing
 
@@ -951,7 +1222,7 @@ Get insertion key encoded in an access key.
 Return none if AVL queue empty, else head insertion key.
 
 
-<a name="@Testing_7"></a>
+<a name="@Testing_15"></a>
 
 ### Testing
 
@@ -993,7 +1264,7 @@ Return none if AVL queue empty, else head insertion key.
 Return none if empty AVL queue, else tree height.
 
 
-<a name="@Reference_diagram_8"></a>
+<a name="@Reference_diagram_16"></a>
 
 ### Reference diagram
 
@@ -1023,7 +1294,7 @@ Insert 1, increasing left height to 2:
 >     1
 
 
-<a name="@Testing_9"></a>
+<a name="@Testing_17"></a>
 
 ### Testing
 
@@ -1072,7 +1343,7 @@ Insert 1, increasing left height to 2:
 Return none if AVL queue empty, else tail insertion key.
 
 
-<a name="@Testing_10"></a>
+<a name="@Testing_18"></a>
 
 ### Testing
 
@@ -1114,7 +1385,7 @@ Return none if AVL queue empty, else tail insertion key.
 Return <code><b>true</b></code> if insertion <code>key</code> in AVL queue, else <code><b>false</b></code>.
 
 
-<a name="@Aborts_11"></a>
+<a name="@Aborts_19"></a>
 
 ### Aborts
 
@@ -1122,7 +1393,7 @@ Return <code><b>true</b></code> if insertion <code>key</code> in AVL queue, else
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a></code>: Insertion key is too large.
 
 
-<a name="@Testing_12"></a>
+<a name="@Testing_20"></a>
 
 ### Testing
 
@@ -1165,7 +1436,7 @@ Return <code><b>true</b></code> if insertion <code>key</code> in AVL queue, else
 Insert a key-value pair into an AVL queue.
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_21"></a>
 
 ### Parameters
 
@@ -1175,7 +1446,7 @@ Insert a key-value pair into an AVL queue.
 * <code>value</code>: Value to insert.
 
 
-<a name="@Returns_14"></a>
+<a name="@Returns_22"></a>
 
 ### Returns
 
@@ -1183,7 +1454,7 @@ Insert a key-value pair into an AVL queue.
 * <code>u64</code>: Access key used for lookup.
 
 
-<a name="@Aborts_15"></a>
+<a name="@Aborts_23"></a>
 
 ### Aborts
 
@@ -1191,7 +1462,7 @@ Insert a key-value pair into an AVL queue.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a></code>: Insertion key is too large.
 
 
-<a name="@Failure_testing_16"></a>
+<a name="@Failure_testing_24"></a>
 
 ### Failure testing
 
@@ -1201,7 +1472,7 @@ Insert a key-value pair into an AVL queue.
 * <code>test_insert_too_many_tree_nodes()</code>
 
 
-<a name="@State_verification_testing_17"></a>
+<a name="@State_verification_testing_25"></a>
 
 ### State verification testing
 
@@ -1310,7 +1581,7 @@ Insert $\langle 5, 5 \rangle$
 Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 
 
-<a name="@Testing_18"></a>
+<a name="@Testing_26"></a>
 
 ### Testing
 
@@ -1346,7 +1617,7 @@ Return <code><b>true</b></code> if given AVL queue has ascending sort order.
 Return <code><b>true</b></code> if given AVL queue is empty.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_27"></a>
 
 ### Testing
 
@@ -1382,7 +1653,7 @@ Return <code><b>true</b></code> if given AVL queue is empty.
 Return a new AVL queue, optionally allocating inactive nodes.
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -1394,7 +1665,7 @@ to allocate.
 to allocate.
 
 
-<a name="@Returns_21"></a>
+<a name="@Returns_29"></a>
 
 ### Returns
 
@@ -1402,7 +1673,7 @@ to allocate.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt;</code>: A new AVL queue.
 
 
-<a name="@Testing_22"></a>
+<a name="@Testing_30"></a>
 
 ### Testing
 
@@ -1490,7 +1761,7 @@ to allocate.
 Return insertion value at head of AVL queue, aborting if empty.
 
 
-<a name="@Testing_23"></a>
+<a name="@Testing_31"></a>
 
 ### Testing
 
@@ -1538,7 +1809,7 @@ Return insertion value at head of AVL queue, aborting if empty.
 Return insertion value at tail of AVL queue, aborting if empty.
 
 
-<a name="@Testing_24"></a>
+<a name="@Testing_32"></a>
 
 ### Testing
 
@@ -1588,7 +1859,7 @@ Remove node having given access key, return insertion value.
 Update AVL queue head, tail, root fields as needed.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_33"></a>
 
 ### Parameters
 
@@ -1597,7 +1868,7 @@ Update AVL queue head, tail, root fields as needed.
 * <code>access_key</code>: Access key returned by <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert">insert</a>()</code>.
 
 
-<a name="@Assumptions_26"></a>
+<a name="@Assumptions_34"></a>
 
 ### Assumptions
 
@@ -1606,7 +1877,7 @@ Update AVL queue head, tail, root fields as needed.
 given AVL queue.
 
 
-<a name="@Reference_diagram_27"></a>
+<a name="@Reference_diagram_35"></a>
 
 ### Reference diagram
 
@@ -1620,7 +1891,7 @@ Consider the following AVL queue:
 >     [5 -> 6]
 
 
-<a name="@Case_1:_ascending_head_updates_28"></a>
+<a name="@Case_1:_ascending_head_updates_36"></a>
 
 #### Case 1: ascending head updates
 
@@ -1632,7 +1903,7 @@ having insertion value 6.
 having insertion value 3.
 
 
-<a name="@Case_2:_ascending_tail_updates_29"></a>
+<a name="@Case_2:_ascending_tail_updates_37"></a>
 
 #### Case 2: ascending tail updates
 
@@ -1644,7 +1915,7 @@ having insertion value 3.
 having insertion value 6.
 
 
-<a name="@Case_3:_descending_head_updates_30"></a>
+<a name="@Case_3:_descending_head_updates_38"></a>
 
 #### Case 3: descending head updates
 
@@ -1656,7 +1927,7 @@ having insertion value 4.
 having insertion value 5.
 
 
-<a name="@Case_4:_descending_tail_updates_31"></a>
+<a name="@Case_4:_descending_tail_updates_39"></a>
 
 #### Case 4: descending tail updates
 
@@ -1668,7 +1939,7 @@ having insertion value 5.
 having insertion value 4.
 
 
-<a name="@Testing_32"></a>
+<a name="@Testing_40"></a>
 
 ### Testing
 
@@ -1751,7 +2022,7 @@ linked list head and tail modified, and a tree node removed.
 Return <code><b>true</b></code> if inserting <code>key</code> would update AVL queue head.
 
 
-<a name="@Aborts_33"></a>
+<a name="@Aborts_41"></a>
 
 ### Aborts
 
@@ -1759,7 +2030,7 @@ Return <code><b>true</b></code> if inserting <code>key</code> would update AVL q
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a></code>: Insertion key is too large.
 
 
-<a name="@Testing_34"></a>
+<a name="@Testing_42"></a>
 
 ### Testing
 
@@ -1811,7 +2082,7 @@ Return <code><b>true</b></code> if inserting <code>key</code> would update AVL q
 Return <code><b>true</b></code> if inserting <code>key</code> would update AVL queue tail.
 
 
-<a name="@Aborts_35"></a>
+<a name="@Aborts_43"></a>
 
 ### Aborts
 
@@ -1819,7 +2090,7 @@ Return <code><b>true</b></code> if inserting <code>key</code> would update AVL q
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a></code>: Insertion key is too large.
 
 
-<a name="@Testing_36"></a>
+<a name="@Testing_44"></a>
 
 ### Testing
 
@@ -1876,7 +2147,7 @@ Update fields as needed based on sort order.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert">insert</a>()</code>.
 
 
-<a name="@Parameters_37"></a>
+<a name="@Parameters_45"></a>
 
 ### Parameters
 
@@ -1886,7 +2157,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert">inse
 * <code>list_node_id</code>: ID of list node just inserted.
 
 
-<a name="@Testing_38"></a>
+<a name="@Testing_46"></a>
 
 ### Testing
 
@@ -1979,7 +2250,7 @@ node in a doubly linked list in a new tree leaf, the list node
 becomes the head and tail of the new list.
 
 
-<a name="@Parameters_39"></a>
+<a name="@Parameters_47"></a>
 
 ### Parameters
 
@@ -1991,7 +2262,7 @@ node.
 * <code>value</code>: Insertion value for list node to insert.
 
 
-<a name="@Returns_40"></a>
+<a name="@Returns_48"></a>
 
 ### Returns
 
@@ -1999,7 +2270,7 @@ node.
 * <code>u64</code>: Node ID of inserted list node.
 
 
-<a name="@Testing_41"></a>
+<a name="@Testing_49"></a>
 
 ### Testing
 
@@ -2068,7 +2339,7 @@ If inactive list node stack is empty, allocate a new list node,
 otherwise pop one off the inactive stack.
 
 
-<a name="@Parameters_42"></a>
+<a name="@Parameters_50"></a>
 
 ### Parameters
 
@@ -2081,7 +2352,7 @@ otherwise pop one off the inactive stack.
 * <code>value</code>: Insertion value.
 
 
-<a name="@Returns_43"></a>
+<a name="@Returns_51"></a>
 
 ### Returns
 
@@ -2089,7 +2360,7 @@ otherwise pop one off the inactive stack.
 * <code>u64</code>: Node ID of inserted list node.
 
 
-<a name="@Testing_44"></a>
+<a name="@Testing_52"></a>
 
 ### Testing
 
@@ -2184,7 +2455,7 @@ and is not re-performed in <code>inserted_tree_node()</code> for the case
 of a solo list node.
 
 
-<a name="@Parameters_45"></a>
+<a name="@Parameters_53"></a>
 
 ### Parameters
 
@@ -2194,7 +2465,7 @@ of a solo list node.
 inserting a solo list node.
 
 
-<a name="@Returns_46"></a>
+<a name="@Returns_54"></a>
 
 ### Returns
 
@@ -2203,7 +2474,7 @@ inserting a solo list node.
 * <code>u64</code>: Virtual next field of inserted list node.
 
 
-<a name="@Testing_47"></a>
+<a name="@Testing_55"></a>
 
 ### Testing
 
@@ -2281,7 +2552,7 @@ sole list node in new AVL tree node, thus checking the number
 of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
 
 
-<a name="@Parameters_48"></a>
+<a name="@Parameters_56"></a>
 
 ### Parameters
 
@@ -2297,7 +2568,7 @@ inserted node is left child of its parent, and <code><a href="avl_queue.md#0xc0d
 inserted node is right child of its parent.
 
 
-<a name="@Returns_49"></a>
+<a name="@Returns_57"></a>
 
 ### Returns
 
@@ -2305,7 +2576,7 @@ inserted node is right child of its parent.
 * <code>u64</code>: Node ID of inserted tree node.
 
 
-<a name="@Assumptions_50"></a>
+<a name="@Assumptions_58"></a>
 
 ### Assumptions
 
@@ -2317,7 +2588,7 @@ via <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_n
 * All <code>u64</code> fields correspond to valid node IDs.
 
 
-<a name="@Testing_51"></a>
+<a name="@Testing_59"></a>
 
 ### Testing
 
@@ -2391,7 +2662,7 @@ Update the parent edge for a tree node just inserted.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_tree_node">insert_tree_node</a>()</code>.
 
 
-<a name="@Parameters_52"></a>
+<a name="@Parameters_60"></a>
 
 ### Parameters
 
@@ -2406,7 +2677,7 @@ inserted node is left child of its parent, and <code><a href="avl_queue.md#0xc0d
 inserted node is right child of its parent.
 
 
-<a name="@Testing_53"></a>
+<a name="@Testing_61"></a>
 
 ### Testing
 
@@ -2482,7 +2753,7 @@ linked list.
 Pushes inactive list node onto inactive list nodes stack.
 
 
-<a name="@Parameters_54"></a>
+<a name="@Parameters_62"></a>
 
 ### Parameters
 
@@ -2491,7 +2762,7 @@ Pushes inactive list node onto inactive list nodes stack.
 * <code>list_node_id</code>: List node ID of node to remove.
 
 
-<a name="@Returns_55"></a>
+<a name="@Returns_63"></a>
 
 ### Returns
 
@@ -2505,7 +2776,7 @@ indicating that corresponding doubly linked list has been
 cleared out.
 
 
-<a name="@Testing_56"></a>
+<a name="@Testing_64"></a>
 
 ### Testing
 
@@ -2594,7 +2865,7 @@ removed list node was sole node in doubly linked list, does not
 modify corresponding tree node.
 
 
-<a name="@Parameters_57"></a>
+<a name="@Parameters_65"></a>
 
 ### Parameters
 
@@ -2608,7 +2879,7 @@ modify corresponding tree node.
 * <code>next_node_id</code>: Node ID of next node.
 
 
-<a name="@Returns_58"></a>
+<a name="@Returns_66"></a>
 
 ### Returns
 
@@ -2621,7 +2892,7 @@ indicating that corresponding doubly linked list has been
 cleared out.
 
 
-<a name="@Testing_59"></a>
+<a name="@Testing_67"></a>
 
 ### Testing
 
@@ -2717,7 +2988,7 @@ Remove tree node from an AVL queue.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove">remove</a>()</code>.
 
 
-<a name="@Parameters_60"></a>
+<a name="@Parameters_68"></a>
 
 ### Parameters
 
@@ -2734,7 +3005,7 @@ or 2 children.
 >       / \
 
 
-<a name="@Case_1_61"></a>
+<a name="@Case_1_69"></a>
 
 ### Case 1
 
@@ -2747,7 +3018,7 @@ retrace starts from node x's pre-removal parent on the side that
 node x used to be a child at.
 
 
-<a name="@Case_2_62"></a>
+<a name="@Case_2_70"></a>
 
 ### Case 2
 
@@ -2761,7 +3032,7 @@ pre-removal parent on the side that node x used to be a child
 at.
 
 
-<a name="@Left_child_63"></a>
+<a name="@Left_child_71"></a>
 
 #### Left child
 
@@ -2779,7 +3050,7 @@ Post-removal:
 >     l
 
 
-<a name="@Right_child_64"></a>
+<a name="@Right_child_72"></a>
 
 #### Right child
 
@@ -2797,7 +3068,7 @@ Post-removal:
 >     r
 
 
-<a name="@Case_3_65"></a>
+<a name="@Case_3_73"></a>
 
 ### Case 3
 
@@ -2806,7 +3077,7 @@ Node x has two children. Handled by
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node_with_children">remove_tree_node_with_children</a>()</code>.
 
 
-<a name="@Testing_66"></a>
+<a name="@Testing_74"></a>
 
 ### Testing
 
@@ -2903,7 +3174,7 @@ parent to node x (if there is one). Retrace as needed, then push
 node x onto the inactive tree nodes stack.
 
 
-<a name="@Parameters_67"></a>
+<a name="@Parameters_75"></a>
 
 ### Parameters
 
@@ -2922,7 +3193,7 @@ x having two children, reassigned if node x was not at root
 before removal and had less than two children.
 
 
-<a name="@Testing_68"></a>
+<a name="@Testing_76"></a>
 
 ### Testing
 
@@ -3041,7 +3312,7 @@ Does not modify state of node x, which is updated later via
 for parent of node x or of AVL queue root field.
 
 
-<a name="@Parameters_69"></a>
+<a name="@Parameters_77"></a>
 
 ### Parameters
 
@@ -3054,7 +3325,7 @@ for parent of node x or of AVL queue root field.
 * <code>node_r_id</code>: Node ID of node x's right child.
 
 
-<a name="@Returns_70"></a>
+<a name="@Returns_78"></a>
 
 ### Returns
 
@@ -3067,7 +3338,7 @@ pre-removal.
 retrace should take place.
 
 
-<a name="@Predecessor_is_immediate_child_71"></a>
+<a name="@Predecessor_is_immediate_child_79"></a>
 
 ### Predecessor is immediate child
 
@@ -3092,7 +3363,7 @@ a left decrement retrace is initiated at node l.
 >     t_l   r
 
 
-<a name="@Predecessor_is_not_immediate_child_72"></a>
+<a name="@Predecessor_is_not_immediate_child_80"></a>
 
 ### Predecessor is not immediate child
 
@@ -3128,13 +3399,13 @@ initiated at node y's pre-removal parent.
 >             t_y
 
 
-<a name="@Reference_diagrams_73"></a>
+<a name="@Reference_diagrams_81"></a>
 
 ### Reference diagrams
 
 
 
-<a name="@Case_1_74"></a>
+<a name="@Case_1_82"></a>
 
 #### Case 1
 
@@ -3161,7 +3432,7 @@ Post-removal:
 >           5
 
 
-<a name="@Case_2_75"></a>
+<a name="@Case_2_83"></a>
 
 #### Case 2
 
@@ -3192,7 +3463,7 @@ Post-removal:
 >     1   3   7
 
 
-<a name="@Case_3_76"></a>
+<a name="@Case_3_84"></a>
 
 #### Case 3
 
@@ -3223,7 +3494,7 @@ Post-removal:
 >     1   3   7
 
 
-<a name="@Testing_77"></a>
+<a name="@Testing_85"></a>
 
 ### Testing
 
@@ -3377,7 +3648,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove">remo
 queue head is modified.
 
 
-<a name="@Parameters_78"></a>
+<a name="@Parameters_86"></a>
 
 ### Parameters
 
@@ -3389,7 +3660,7 @@ queue head is modified.
 * <code>tree_node_id</code>: Node ID of corresponding tree node.
 
 
-<a name="@Testing_79"></a>
+<a name="@Testing_87"></a>
 
 ### Testing
 
@@ -3468,7 +3739,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove">remo
 queue tail is modified.
 
 
-<a name="@Parameters_80"></a>
+<a name="@Parameters_88"></a>
 
 ### Parameters
 
@@ -3480,7 +3751,7 @@ queue tail is modified.
 * <code>tree_node_id</code>: Node ID of corresponding tree node.
 
 
-<a name="@Testing_81"></a>
+<a name="@Testing_89"></a>
 
 ### Testing
 
@@ -3572,7 +3843,7 @@ and <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remove_tree_node">remove_tr
 handled here.
 
 
-<a name="@Parameters_82"></a>
+<a name="@Parameters_90"></a>
 
 ### Parameters
 
@@ -3585,7 +3856,7 @@ on the affected side.
 affected.
 
 
-<a name="@Testing_83"></a>
+<a name="@Testing_91"></a>
 
 ### Testing
 
@@ -3643,7 +3914,7 @@ Assorted tests indexed at <code><a href="avl_queue.md#0xc0deb00c_avl_queue_remov
 additionally exercise retracing logic.
 
 
-<a name="@Reference_diagram_84"></a>
+<a name="@Reference_diagram_92"></a>
 
 #### Reference diagram
 
@@ -3763,7 +4034,7 @@ Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">ret
 retraced below the root of the AVL queue.
 
 
-<a name="@Parameters_85"></a>
+<a name="@Parameters_93"></a>
 
 ### Parameters
 
@@ -3778,7 +4049,7 @@ rebalancing took place, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NI
 * <code>height_old</code>: Height of subtree before retrace.
 
 
-<a name="@Returns_86"></a>
+<a name="@Returns_94"></a>
 
 ### Returns
 
@@ -3793,7 +4064,7 @@ subtree was a child to the next ancestor.
 0 when height does not change.
 
 
-<a name="@Testing_87"></a>
+<a name="@Testing_95"></a>
 
 ### Testing
 
@@ -3873,7 +4144,7 @@ Updates state for nodes in subtree, but not for potential parent
 to subtree.
 
 
-<a name="@Parameters_88"></a>
+<a name="@Parameters_96"></a>
 
 ### Parameters
 
@@ -3885,7 +4156,7 @@ root's heavy side.
 * <code>node_x_left_heavy</code>: <code><b>true</b></code> if node x is left-heavy.
 
 
-<a name="@Returns_89"></a>
+<a name="@Returns_97"></a>
 
 ### Returns
 
@@ -3894,7 +4165,7 @@ root's heavy side.
 * <code>u8</code>: Height of subtree after rotation.
 
 
-<a name="@Node_x_status_90"></a>
+<a name="@Node_x_status_98"></a>
 
 ### Node x status
 
@@ -3903,7 +4174,7 @@ Node x can be either left-heavy or right heavy. In either case,
 consider that node z has left child and right child fields.
 
 
-<a name="@Node_x_left-heavy_91"></a>
+<a name="@Node_x_left-heavy_99"></a>
 
 #### Node x left-heavy
 
@@ -3915,7 +4186,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Node_x_right-heavy_92"></a>
+<a name="@Node_x_right-heavy_100"></a>
 
 #### Node x right-heavy
 
@@ -3927,7 +4198,7 @@ consider that node z has left child and right child fields.
 >     z_c_l   z_c_r
 
 
-<a name="@Testing_93"></a>
+<a name="@Testing_101"></a>
 
 ### Testing
 
@@ -4031,7 +4302,7 @@ Post-rotation:
 >     t_1   t_2
 
 
-<a name="@Parameters_94"></a>
+<a name="@Parameters_102"></a>
 
 ### Parameters
 
@@ -4043,7 +4314,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height.
 
 
-<a name="@Returns_95"></a>
+<a name="@Returns_103"></a>
 
 ### Returns
 
@@ -4053,13 +4324,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_96"></a>
+<a name="@Reference_rotations_104"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_97"></a>
+<a name="@Case_1_105"></a>
 
 #### Case 1
 
@@ -4085,7 +4356,7 @@ Post-rotation:
 >     node x -> 4   8 <- tree 3
 
 
-<a name="@Case_2_98"></a>
+<a name="@Case_2_106"></a>
 
 #### Case 2
 
@@ -4128,7 +4399,7 @@ Post-rotation:
 >           6 <- tree 2
 
 
-<a name="@Testing_99"></a>
+<a name="@Testing_107"></a>
 
 ### Testing
 
@@ -4264,7 +4535,7 @@ Post-rotation:
 * <code>node_z_height_left</code>: Node z's left height pre-rotation.
 
 
-<a name="@Procedure_100"></a>
+<a name="@Procedure_108"></a>
 
 ### Procedure
 
@@ -4277,13 +4548,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_101"></a>
+<a name="@Reference_rotations_109"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_102"></a>
+<a name="@Case_1_110"></a>
 
 #### Case 1
 
@@ -4324,7 +4595,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Case_2_103"></a>
+<a name="@Case_2_111"></a>
 
 #### Case 2
 
@@ -4354,7 +4625,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Testing_104"></a>
+<a name="@Testing_112"></a>
 
 ### Testing
 
@@ -4505,7 +4776,7 @@ Post-rotation:
 >        t_2   t_3
 
 
-<a name="@Parameters_105"></a>
+<a name="@Parameters_113"></a>
 
 ### Parameters
 
@@ -4517,7 +4788,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height.
 
 
-<a name="@Returns_106"></a>
+<a name="@Returns_114"></a>
 
 ### Returns
 
@@ -4527,13 +4798,13 @@ Post-rotation:
 post-rotation.
 
 
-<a name="@Reference_rotations_107"></a>
+<a name="@Reference_rotations_115"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_108"></a>
+<a name="@Case_1_116"></a>
 
 #### Case 1
 
@@ -4566,7 +4837,7 @@ Post-rotation:
 >     tree 1 -> 4   8 <- node x
 
 
-<a name="@Case_2_109"></a>
+<a name="@Case_2_117"></a>
 
 #### Case 2
 
@@ -4594,7 +4865,7 @@ Post-rotation:
 >                 5 <- tree 2
 
 
-<a name="@Testing_110"></a>
+<a name="@Testing_118"></a>
 
 ### Testing
 
@@ -4724,7 +4995,7 @@ Post-rotation:
 >     t_1   t_2   t_3   t_4
 
 
-<a name="@Parameters_111"></a>
+<a name="@Parameters_119"></a>
 
 ### Parameters
 
@@ -4736,7 +5007,7 @@ Post-rotation:
 * <code>node_z_height_right</code>: Node z's right height pre-rotation.
 
 
-<a name="@Procedure_112"></a>
+<a name="@Procedure_120"></a>
 
 ### Procedure
 
@@ -4749,13 +5020,13 @@ Post-rotation:
 * Update node y's children and parent fields.
 
 
-<a name="@Reference_rotations_113"></a>
+<a name="@Reference_rotations_121"></a>
 
 ### Reference rotations
 
 
 
-<a name="@Case_1_114"></a>
+<a name="@Case_1_122"></a>
 
 #### Case 1
 
@@ -4785,7 +5056,7 @@ Post-rotation:
 >                   ^ tree 2
 
 
-<a name="@Case_2_115"></a>
+<a name="@Case_2_123"></a>
 
 #### Case 2
 
@@ -4826,7 +5097,7 @@ Post-rotation:
 >                   ^ tree 3
 
 
-<a name="@Testing_116"></a>
+<a name="@Testing_124"></a>
 
 ### Testing
 
@@ -4953,7 +5224,7 @@ Update height fields during retracing.
 Inner function for <code><a href="avl_queue.md#0xc0deb00c_avl_queue_retrace">retrace</a>()</code>.
 
 
-<a name="@Parameters_117"></a>
+<a name="@Parameters_125"></a>
 
 ### Parameters
 
@@ -4967,7 +5238,7 @@ the height field for the given side.
 * <code>delta</code>: The amount of height change for the operation.
 
 
-<a name="@Returns_118"></a>
+<a name="@Returns_126"></a>
 
 ### Returns
 
@@ -4978,7 +5249,7 @@ the height field for the given side.
 * <code>u8</code>: The height of the node after updating height.
 
 
-<a name="@Testing_119"></a>
+<a name="@Testing_127"></a>
 
 ### Testing
 
@@ -5056,7 +5327,7 @@ branch to on a given side.
 The "match" node is the node last walked before returning.
 
 
-<a name="@Parameters_120"></a>
+<a name="@Parameters_128"></a>
 
 ### Parameters
 
@@ -5065,7 +5336,7 @@ The "match" node is the node last walked before returning.
 * <code>seed_key</code>: Seed key to search for.
 
 
-<a name="@Returns_121"></a>
+<a name="@Returns_129"></a>
 
 ### Returns
 
@@ -5077,7 +5348,7 @@ has no left child, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT
 key but match node has no right child.
 
 
-<a name="@Assumptions_122"></a>
+<a name="@Assumptions_130"></a>
 
 ### Assumptions
 
@@ -5087,7 +5358,7 @@ the root node.
 * Seed key fits in 32 bits.
 
 
-<a name="@Reference_diagram_123"></a>
+<a name="@Reference_diagram_131"></a>
 
 ### Reference diagram
 
@@ -5106,7 +5377,7 @@ the root node.
 | 4        | 4         | 1       | None  |
 
 
-<a name="@Testing_124"></a>
+<a name="@Testing_132"></a>
 
 ### Testing
 
@@ -5174,7 +5445,7 @@ the root node.
 Traverse from tree node to inorder predecessor or succesor.
 
 
-<a name="@Parameters_125"></a>
+<a name="@Parameters_133"></a>
 
 ### Parameters
 
@@ -5184,7 +5455,7 @@ Traverse from tree node to inorder predecessor or succesor.
 * <code>target</code>: Either <code><a href="avl_queue.md#0xc0deb00c_avl_queue_PREDECESSOR">PREDECESSOR</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_SUCCESSOR">SUCCESSOR</a></code>.
 
 
-<a name="@Conventions_126"></a>
+<a name="@Conventions_134"></a>
 
 ### Conventions
 
@@ -5193,7 +5464,7 @@ Traversal starts at the "start node" and ends at the "target
 node", if any.
 
 
-<a name="@Returns_127"></a>
+<a name="@Returns_135"></a>
 
 ### Returns
 
@@ -5205,7 +5476,7 @@ target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></c
 target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code>.
 
 
-<a name="@Membership_considerations_128"></a>
+<a name="@Membership_considerations_136"></a>
 
 ### Membership considerations
 
@@ -5216,7 +5487,7 @@ target node, or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></c
 * Returns all <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if start node ID indicates inactive node.
 
 
-<a name="@Predecessor_129"></a>
+<a name="@Predecessor_137"></a>
 
 ### Predecessor
 
@@ -5227,7 +5498,7 @@ child's right subtree.
 walked node as the root of its right subtree.
 
 
-<a name="@Successor_130"></a>
+<a name="@Successor_138"></a>
 
 ### Successor
 
@@ -5238,7 +5509,7 @@ child's left subtree.
 walked node as the root of its left subtree.
 
 
-<a name="@Reference_diagram_131"></a>
+<a name="@Reference_diagram_139"></a>
 
 ### Reference diagram
 
@@ -5266,7 +5537,7 @@ Inserted in following sequence:
 | 6             | 9               |
 
 
-<a name="@Testing_132"></a>
+<a name="@Testing_140"></a>
 
 ### Testing
 
@@ -5351,7 +5622,7 @@ Inserted in following sequence:
 Verify node count is not too high.
 
 
-<a name="@Aborts_133"></a>
+<a name="@Aborts_141"></a>
 
 ### Aborts
 
@@ -5359,7 +5630,7 @@ Verify node count is not too high.
 * <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
 
 
-<a name="@Testing_134"></a>
+<a name="@Testing_142"></a>
 
 ### Testing
 

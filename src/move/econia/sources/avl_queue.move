@@ -296,6 +296,111 @@ module econia::avl_queue {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Immutably borrow insertion value corresponding to access key,
+    /// aborting if invalid key.
+    ///
+    /// # Assumptions
+    ///
+    /// * Provided access key corresponds to a valid list node in the
+    ///   given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrow_borrow_mut()`
+    public fun borrow<V>(
+        avlq_ref: &AVLqueue<V>,
+        access_key: u64
+    ): &V {
+        let list_node_id = // Extract list node ID from access key.
+            (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID;
+        // Immutably borrow corresponding insertion value.
+        option::borrow(table::borrow(&avlq_ref.values, list_node_id))
+    }
+
+    /// Immutably borrow AVL queue head insertion value, aborting if
+    /// empty.
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrow_borrow_mut()`
+    public fun borrow_head<V>(
+        avlq_ref: &AVLqueue<V>
+    ): &V {
+        let (list_node_id) = ((avlq_ref.bits >> SHIFT_HEAD_NODE_ID) &
+            (HI_NODE_ID as u128) as u64); // Get head list node ID.
+        // Immutably borrow corresponding insertion value.
+        option::borrow(table::borrow(&avlq_ref.values, list_node_id))
+    }
+
+    /// Mutably borrow AVL queue head insertion value, aborting if
+    /// empty.
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrow_borrow_mut()`
+    public fun borrow_head_mut<V>(
+        avlq_ref_mut: &mut AVLqueue<V>
+    ): &mut V {
+        let (list_node_id) = ((avlq_ref_mut.bits >> SHIFT_HEAD_NODE_ID) &
+            (HI_NODE_ID as u128) as u64); // Get head list node ID.
+        // Mutably borrow corresponding insertion value.
+        option::borrow_mut(
+            table::borrow_mut(&mut avlq_ref_mut.values, list_node_id))
+    }
+
+    /// Mutably borrow insertion value corresponding to access key,
+    /// aborting if invalid key.
+    ///
+    /// # Assumptions
+    ///
+    /// * Provided access key corresponds to a valid list node in the
+    ///   given AVL queue.
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrow_borrow_mut()`
+    public fun borrow_mut<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        access_key: u64
+    ): &mut V {
+        let list_node_id = // Extract list node ID from access key.
+            (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID;
+        // Mutably borrow corresponding insertion value.
+        option::borrow_mut(
+            table::borrow_mut(&mut avlq_ref_mut.values, list_node_id))
+    }
+
+    /// Immutably borrow AVL queue tail insertion value, aborting if
+    /// empty.
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrow_borrow_mut()`
+    public fun borrow_tail<V>(
+        avlq_ref: &AVLqueue<V>
+    ): &V {
+        let (list_node_id) = ((avlq_ref.bits >> SHIFT_TAIL_NODE_ID) &
+            (HI_NODE_ID as u128) as u64); // Get tail list node ID.
+        // Immutably borrow corresponding insertion value.
+        option::borrow(table::borrow(&avlq_ref.values, list_node_id))
+    }
+
+    /// Mutably borrow AVL queue tail insertion value, aborting if
+    /// empty.
+    ///
+    /// # Testing
+    ///
+    /// * `test_borrow_borrow_mut()`
+    public fun borrow_tail_mut<V>(
+        avlq_ref_mut: &mut AVLqueue<V>
+    ): &mut V {
+        let (list_node_id) = ((avlq_ref_mut.bits >> SHIFT_TAIL_NODE_ID) &
+            (HI_NODE_ID as u128) as u64); // Get tail list node ID.
+        // Mutably borrow corresponding insertion value.
+        option::borrow_mut(
+            table::borrow_mut(&mut avlq_ref_mut.values, list_node_id))
+    }
+
     /// Get insertion key encoded in an access key.
     ///
     /// # Testing
@@ -4226,6 +4331,29 @@ module econia::avl_queue {
         assert!(is_ascending_access_key_test(access_key), 0);
         assert!(get_access_key_insertion_key(access_key)
                 == insertion_key, 0);
+    }
+
+    #[test]
+    /// Verify successful state updates.
+    fun test_borrow_borrow_mut() {
+        let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
+        let access_key_0 = insert(&mut avlq, 0, 123); // Insert key.
+        // Assert borrow.
+        assert!(*borrow(&avlq, access_key_0) == 123, 0);
+        *borrow_mut(&mut avlq, access_key_0) = 456; // Mutate directly.
+        assert!(*borrow_head(&avlq) == 456, 0); // Assert head borrow.
+        *borrow_head_mut(&mut avlq) = 789; // Mutate via head lookup.
+        assert!(*borrow_tail(&avlq) == 789, 0); // Assert tail borrow.
+        *borrow_tail_mut(&mut avlq) = 321; // Mutate via tail lookup.
+        insert(&mut avlq, 1, 654); // Insert new tail.
+        assert!(*borrow_head(&avlq) == 321, 0); // Assert head borrow.
+        assert!(*borrow_tail(&avlq) == 654, 0); // Assert tail borrow.
+        *borrow_tail_mut(&mut avlq) = 987; // Mutate via tail lookup.
+        assert!(*borrow_tail(&avlq) == 987, 0); // Assert tail borrow.
+        *borrow_head_mut(&mut avlq) = 123; // Mutate via head lookup.
+        // Assert borrow.
+        assert!(*borrow(&avlq, access_key_0) == 123, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
     }
 
     #[test]

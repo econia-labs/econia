@@ -277,7 +277,9 @@
 /// height of a node's left or right subtree, respectively, plus one.
 /// Subtree height is adjusted by one to avoid negative numbers, with
 /// the resultant value denoting the height of a tree rooted at the
-/// given node, accounting only for height to the given side:
+/// given node, accounting only for height to the given side. The height
+/// of a node is denoted as the larger of its left height and right
+/// height:
 ///
 /// >       2
 /// >      / \
@@ -285,16 +287,19 @@
 /// >          \
 /// >           4
 ///
-/// | Key | Left height | Right height |
-/// |-----|-------------|--------------|
-/// | 1   | 0           | 0            |
-/// | 2   | 1           | 2            |
-/// | 3   | 0           | 1            |
-/// | 4   | 0           | 0            |
+/// | Key | Left height | Right height | Height |
+/// |-----|-------------|--------------|--------|
+/// | 1   | 0           | 0            | 0      |
+/// | 2   | 1           | 2            | 2      |
+/// | 3   | 0           | 1            | 1      |
+/// | 4   | 0           | 0            | 0      |
 ///
-/// For a tree of size $n \geq 1$, an AVL tree's height is at most
+/// The overall height $h$ of a tree (the height of the root node) is
+/// related to the number of levels $l$ in the tree by the equation
+/// $h = l - 1$, and for an AVL tree of size $n \geq 1$ nodes, the
+/// number of levels in the tree lies in the interval
 ///
-/// $$h \leq c \log_2(n + d) + b$$
+/// $$\log_2(n + 1) \leq l \leq c \log_2(n + d) + b$$
 ///
 /// where
 ///
@@ -305,22 +310,164 @@
 /// * $d = 1 + \frac{1}{\varphi^4 \sqrt{5}} \approx 1.065$ .
 ///
 /// With a maximum node count of $n_{max} = 2^{14} - 1 = 16383$, the
-/// maximum height of an AVL tree in the present implementation is
-/// thus
+/// the maximum height $h_{max}$ of an AVL tree in the present
+/// implementation is thus
 ///
-/// $$h_{max} = \lfloor c \log_2(n_{max} + d) + b \rfloor = 19$$
+/// $$h_{max} = \lfloor c \log_2(n_{max} + d) + b \rfloor - 1 = 18$$
 ///
 /// such that left height and right height can always be encoded in
-/// $\lceil \log_2 19 \rceil = 5$ bits each.
+/// $b_{max} = \lceil \log_2 h_{max} \rceil = 5$ bits each.
+///
+/// Similarly, for a given height the size of an AVL tree is at most
+///
+/// $$log_2(n + 1) \leq h + 1$$
+///
+/// $$n + 1 \leq 2^{h + 1}$$
+///
+/// $$n \leq 2^{h + 1} - 1$$
+///
+/// and at least
+///
+/// $$c \log_2(n + d) + b \geq h + 1$$
+///
+/// $$\log_{\varphi}(n + d) + b \geq h + 1$$
+///
+/// $$\log_{\varphi}(n + d) \geq h + 1 - b$$
+///
+/// $$n + d \geq \varphi^{h + 1 - b}$$
+///
+/// $$n \geq \varphi^{h + 1 - b} - d$$
+///
+/// such that size lies in the interval
+///
+/// $$\varphi ^ {h +1 - b} - d \leq n \leq 2^{h + 1} - 1$$
+///
+/// which, for the special case of $h = 1$, results in the integer lower
+/// bound
+///
+/// $$n_{h = 1} \geq \varphi ^ {1 + 1 - b} - d$$
+///
+/// $$n_{h = 1} \geq \varphi ^ {2 - b} - d$$
+///
+/// $$n_{h = 1} \geq \varphi ^ {2 - (\frac{c}{2}\log_2 5 - 2)} - d$$
+///
+/// $$n_{h = 1} \geq \varphi ^ {4 - \frac{c}{2}\log_2 5} - d$$
+///
+/// $$n_{h = 1} \geq \varphi ^ {4 - \frac{1}{2}\log_\varphi 5} - d$$
+///
+/// $$n_{h = 1} \geq \varphi ^ {4 - \log_\varphi \sqrt{5}} - d$$
+///
+/// $$n_{h = 1} \geq \varphi^4 / \varphi^{\log_\varphi \sqrt{5}} - d$$
+///
+/// $$n_{h = 1} \geq \varphi^4 / \sqrt{5} - d$$
+///
+/// $$n_{h = 1} \geq \varphi^4/\sqrt{5}-(1+1/(\varphi^4 \sqrt{5}))$$
+///
+/// $$n_{h=1}\geq(1+s)^4/(2^4s)-1-2^4/((1+s)^4s), s = \sqrt{5}$$
+///
+/// $$n_{h=1}\geq\frac{(1+s)^4}{2^4s}-\frac{2^4}{s(1+s)^4}-1$$
+///
+/// $$n_{h = 1} \geq 2$$
+///
+/// with the final step verifiable via a computer algebra system like
+/// WolframAlpha. Thus for the heights possible in the present
+/// implementation (and for one height higher):
+///
+/// | Height       | Minimum size | Maximum size    |
+/// |--------------|--------------|-----------------|
+/// | 0            | 1            | 1               |
+/// | 1            | 2            | 3               |
+/// | 2            | 4            | 7               |
+/// | 3            | 7            | 15              |
+/// | 4            | 12           | 31              |
+/// | 5            | 20           | 63              |
+/// | 6            | 33           | 127             |
+/// | 7            | 54           | 255             |
+/// | 8            | 88           | 511             |
+/// | 9            | 143          | 1023            |
+/// | 10           | 232          | 2047            |
+/// | 11           | 376          | 4095            |
+/// | 12           | 609          | 8191            |
+/// | 13           | 986          | 16383 (`n_max`) |
+/// | 14           | 1596         | 32767           |
+/// | 15           | 2583         | 65535           |
+/// | 16           | 4180         | 131071          |
+/// | 17           | 6764         | 262143          |
+/// | 18 (`h_max`) | 10945        | 524287          |
+/// | 19           | 17710        | 1048575         |
+///
+/// Associated Python calcuations:
+///
+/// ```python
+/// >>> import math
+/// >>> phi = (1 + math.sqrt(5)) / 2
+/// >>> phi
+/// 1.618033988749895
+/// >>> c = 1 / math.log(phi, 2)
+/// >>> c
+/// 1.4404200904125564
+/// >>> b = c / 2 * math.log(5, 2) - 2
+/// >>> b
+/// -0.32772406181544556
+/// >>> d = 1 + 1 / (phi ** 4 * math.sqrt(5))
+/// >>> d
+/// 1.0652475842498528
+/// >>> n_max = 2 ** 14 - 1
+/// >>> n_max
+/// 16383
+/// >>> h_max = math.floor(c * math.log(n_max + d, 2) + b) - 1
+/// >>> h_max
+/// 18
+/// >>> b_max = math.ceil(math.log(h_max, 2))
+/// >>> b_max
+/// 5
+/// >>> for h in range(h_max + 2):
+/// ...     if h == 1:
+/// ...         n_min = 2
+/// ...     else:
+/// ...         n_min = phi ** (h + 1 - b) - d
+/// ...     n_max = 2 ** (h + 1) - 1
+/// ...     n_min_ceil = math.ceil(n_min)
+/// ...     print(f"h: {h}, n_min: {n_min_ceil}, n_max: {n_max}, "
+/// ...           f"n_min_raw: {n_min}")
+/// ...
+/// h: 0, n_min: 1, n_max: 1, n_min_raw: 0.8291796067500634
+/// h: 1, n_min: 2, n_max: 3, n_min_raw: 2
+/// h: 2, n_min: 4, n_max: 7, n_min_raw: 3.894427190999917
+/// h: 3, n_min: 7, n_max: 15, n_min_raw: 6.959674775249768
+/// h: 4, n_min: 12, n_max: 31, n_min_raw: 11.919349550499538
+/// h: 5, n_min: 20, n_max: 63, n_min_raw: 19.944271909999163
+/// h: 6, n_min: 33, n_max: 127, n_min_raw: 32.92886904474855
+/// h: 7, n_min: 54, n_max: 255, n_min_raw: 53.93838853899757
+/// h: 8, n_min: 88, n_max: 511, n_min_raw: 87.93250516799598
+/// h: 9, n_min: 143, n_max: 1023, n_min_raw: 142.93614129124342
+/// h: 10, n_min: 232, n_max: 2047, n_min_raw: 231.93389404348926
+/// h: 11, n_min: 376, n_max: 4095, n_min_raw: 375.9352829189826
+/// h: 12, n_min: 609, n_max: 8191, n_min_raw: 608.9344245467217
+/// h: 13, n_min: 986, n_max: 16383, n_min_raw: 985.9349550499542
+/// h: 14, n_min: 1596, n_max: 32767, n_min_raw: 1595.9346271809259
+/// h: 15, n_min: 2583, n_max: 65535, n_min_raw: 2582.93482981513
+/// h: 16, n_min: 4180, n_max: 131071, n_min_raw: 4179.934704580306
+/// h: 17, n_min: 6764, n_max: 262143, n_min_raw: 6763.934781979686
+/// h: 18, n_min: 10945, n_max: 524287, n_min_raw: 10944.93473414424
+/// h: 19, n_min: 17710, n_max: 1048575, n_min_raw: 17709.934763708177
+/// ```
 ///
 /// # Implementation analysis
 ///
-/// ## Storage gas
+/// ## Gas considerations
 ///
 /// The present implementation relies on bit packing in assorted forms
 /// to minimize per-byte storage costs. Hence insertion keys are at most
 /// 32 bits and node IDs are 14 bits, for example, for maximum data
-/// compression.
+/// compression. Notably, associated bit packing operations are manually
+/// inlined to reduce the number of function calls: as of the time of
+/// this writing, instruction gas for 15 function calls costs the same
+/// as a single per-item read out of global storage. Hence inlined
+/// bit packing significantly reduces the number of function calls when
+/// compared against an implementation that instead relies on frequent
+/// calls to helper functions of the form
+/// `mask_in_bits(target, incoming, shift)`.
 ///
 /// As of the time of this writing, per-item reads and per-item writes
 /// cost the same amount of storage gas, per-item writes cost 60 times

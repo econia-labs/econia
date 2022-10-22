@@ -1,13 +1,238 @@
 /// AVL queue: a hybrid between an AVL tree and a queue.
 ///
-/// # Node IDs
+/// The present implementation involves an Adelson-Velsky and Landis
+/// (AVL) tree, where each tree node has an enclosed doubly linked list.
+/// Tree nodes correspond to keys from key-value insertion pairs, and
+/// list nodes correspond to distinct insertion values sharing the same
+/// insertion key. Hence tree node insertion keys are sorted in
+/// lexicographical order, while list node insertion values are sorted
+/// in order of insertion within a corresponding doubly linked list, to
+/// the effect that key-value insertion pairs can be popped from the
+/// head of the AVL queue in:
+///
+/// 1. Either ascending or descending order of insertion key (with
+///    sort order set upon initialization), then by
+/// 2. Ascending order of insertion within a doubly linked list.
+///
+/// Like an AVL tree, the present implementation also allows for
+/// insertions and removals from anywhere inside the data structure.
+///
+/// # AVL trees
+///
+/// ## Height invariant
+///
+/// An AVL tree is a self-balancing binary search tree where the height
+/// of a node's two child subtrees differ by at most one. For example:
+///
+/// >         3
+/// >        / \
+/// >       2   5
+/// >      /   / \
+/// >     1   4   7
+/// >            / \
+/// >           6   8
+///
+/// Here, node 3's left child subtree has height 1 while its right child
+/// subtree has height 2. Similarly, all other nodes satisfy the AVL
+/// height invariant.
+///
+/// ## Rotations
+///
+/// Continuing the above example, if node 4 were to be removed then node
+/// 5 would violate the height invariant:
+///
+/// >         3
+/// >        / \
+/// >       2   5
+/// >      /     \
+/// >     1       7
+/// >            / \
+/// >           6   8
+///
+/// Here, a left rotation is necesary to rebalance the tree, yielding:
+///
+/// >         3
+/// >        / \
+/// >       2   7
+/// >      /   / \
+/// >     1   5   8
+/// >          \
+/// >           6
+///
+/// Rotations are required whenever an insertion or removal leads to a
+/// violation of the AVL height invariant.
+///
+/// ## Retracing
+///
+/// Similarly, insertion and removal operations may require retracing up
+/// to the root, a process that updates node-wise state pertaining to
+/// the height invariant.
+///
+/// Here, some implementations encode in each node a  "balance factor"
+/// that describes whether a given node is left-heavy, right-heavy, or
+/// balanced, while others track the height at a given node, as in the
+/// present implementation. For example, consider the following tree:
+///
+/// >       2
+/// >      / \
+/// >     1   3
+///
+/// Here, nodes 1 and 3 have height 0, while node 2 has height 1.
+/// Inserting 4 yields:
+///
+/// >       2
+/// >      / \
+/// >     1   3
+/// >          \
+/// >           4
+///
+/// Now node 4 has height 0, and the heights of nodes 3 and 2 have both
+/// increased by 1. In practice, this means that inserting node 4 will
+/// require modifying state in node 3 and in node 2, by looping back up
+/// to the root to update heights, checking along the way whether a
+/// height modification leads to an invariant violation.
+///
+/// ## As a map
+///
+/// AVL trees can be used as an associative array that maps from keys to
+/// values, simply by storing values in the leaves of the tree. For
+/// example, the insertion sequence
+///
+/// 1. $\langle 2, a \rangle$
+/// 2. $\langle 3, b \rangle$
+/// 3. $\langle 1, c \rangle$
+/// 4. $\langle 4, d \rangle$
+///
+/// produces:
+///
+/// >          <2, a>
+/// >          /    \
+/// >     <1, c>    <3, b>
+/// >                    \
+/// >                    <4, d>
+///
+/// Notably, in an AVL tree, keys can only be inserted once, such that
+/// inserting $\langle 2, e \rangle$ to the above tree would be invalid
+/// unless $\langle 2, a \rangle$ were first removed.
+///
+/// # AVL queues
+///
+/// ## Key storage multiplicity
+///
+/// Unlike an AVL tree, which can only store one instance of a given
+/// key, AVL queues can store multiple instances. For example, the
+/// following insertion sequence, without intermediate removals, is
+/// invalid in an AVL tree but valid in an AVL queue:
+///
+/// 1. $p_{3, 0} = \langle 3, 5 \rangle$
+/// 2. $p_{3, 1} = \langle 3, 8 \rangle$
+/// 3. $p_{3, 2} = \langle 3, 2 \rangle$
+/// 4. $p_{3, 3} = \langle 3, 5 \rangle$
+///
+/// Here, the "key-value insertion pair"
+/// $p_{i, j} = \langle i, v_j \rangle$ has:
+///
+/// * "Insertion key" $i$: the inserted key.
+/// * "Insertion count" $j$: the number of key-value insertion pairs,
+///   having the same insertion key, that were previously inserted.
+/// * "Insertion value" $v_j$: the value from the key-value
+///   insertion pair having insertion count $j$.
+///
+/// ## Sorting order
+///
+/// Key-value insertion pairs in an AVL queue are sorted by:
+///
+/// 1. Either ascending or descending order of insertion key, then by
+/// 2. Ascending order of insertion count.
+///
+/// For example, consider the following insertion key sequence, where
+/// $p_{i, j}$ denotes insertion key $i$ with insertion count $j$:
+///
+/// 1. $p_{1, 0} = \langle 1, a \rangle$
+/// 2. $p_{3, 0} = \langle 3, b \rangle$
+/// 3. $p_{3, 1} = \langle 3, c \rangle$
+/// 4. $p_{1, 1} = \langle 1, d \rangle$
+/// 5. $p_{2, 0} = \langle 2, e \rangle$
+///
+/// In an ascending AVL queue, the dequeue sequence would be:
+///
+/// 1. $p_{1, 0} = \langle 1, a \rangle$
+/// 2. $p_{1, 1} = \langle 1, d \rangle$
+/// 3. $p_{2, 0} = \langle 2, e \rangle$
+/// 4. $p_{3, 0} = \langle 3, b \rangle$
+/// 5. $p_{3, 1} = \langle 3, c \rangle$
+///
+/// In a descending AVL queue, the dequeue sequence would instead be:
+///
+/// 1. $p_{3, 0} = \langle 3, b \rangle$
+/// 2. $p_{3, 1} = \langle 3, c \rangle$
+/// 3. $p_{2, 0} = \langle 2, e \rangle$
+/// 4. $p_{1, 0} = \langle 1, a \rangle$
+/// 5. $p_{1, 1} = \langle 1, d \rangle$
+///
+/// ## Node structure
+///
+/// Continuing the above example, key-value insertion pairs would be
+/// stored in an ascending AVL queue as follows:
+///
+/// >                              2 [e]
+/// >                             / \
+/// >                   [a -> d] 1   3 [b -> c]
+/// >     AVL queue head ^                   ^ AVL queue tail
+///
+/// In a descending AVL queue:
+///
+/// >                         2 [e]
+/// >                        / \
+/// >              [a -> d] 1   3 [b -> c]
+/// >     AVL queue tail ^         ^ AVL queue head
+///
+/// For each case, the tree node with insertion key 1 has a doubly
+/// linked list where the head list node has insertion value a, and the
+/// tail list node has insertion value d. Similarly, the tree node with
+/// insertion key 3 has a doubly linked list where the head list node
+/// has insertion value b, and the tail list node has insertion value c.
+///
+/// ## Node provisioning
+///
+/// Tree nodes and list nodes are stored as hash table entries, and thus
+/// incur per-item global storage costs on the Aptos blockchain. As of
+/// the time of this writing, per-item creation costs are by far the
+/// most expensive per-item operation, and moreover, there is no
+/// incentive to deallocate from memory. Hence the typical approach of
+/// allocating a node upon insertion and deallocating upon removal is
+/// more costly than the approach taken in the present implementation,
+/// which involves re-using nodes once they have been allocated.
+///
+/// More specifically, when a tree node or list node is removed from the
+/// AVL queue, it is pushed onto a stack of inactive nodes for the
+/// corresponding type. Then, when an insertion operation requires a new
+/// node, the inactive node can be popped off the top of the stack and
+/// overwritten. Rather than allocating a new node for each insertion
+/// and deallocating for each removal, this approach minimizes per-item
+/// creation costs. Nodes can additionally be pre-allocated upon AVL
+/// queue initialization and pushed directly on the inactive nodes
+/// so as to reduce per-item costs for future operations.
 ///
 /// Tree nodes and list nodes are each assigned a 1-indexed 14-bit
 /// serial ID known as a node ID. Node ID 0 is reserved for null, such
 /// that the maximum number of allocated nodes for each node type is
 /// thus $2^{14} - 1 = 16383$.
 ///
-/// # Access keys
+/// To additionally reduce costs, insertion values are not stored in
+/// list nodes, but are also stored as hash table entries, accessed via
+/// the corresponding list node ID. This approach reduces per-byte costs
+/// associated with list node operations: if a list node is removed from
+/// the middle of a doubly linked list, for example, per-byte write
+/// costs will only be assessed on the next and last fields of the
+/// removed node's neighbors, and will not be assessed on the neighbors'
+/// insertion values.
+///
+/// ## Access keys
+///
+/// When a key-value insertion pair is inserted to the AVL queue, an
+/// "access key" is returned, and can be used for subsequent lookup
+/// operations. Access keys have the following bit structure:
 ///
 /// | Bit(s) | Data                                         |
 /// |--------|----------------------------------------------|
@@ -33,7 +258,20 @@
 /// corresponds to a valid list node in the given AVL queue, and are
 /// subject to undefined behavior if this condition is not met.
 ///
-/// # Height
+/// Notably, access keys are guaranteed to be unique within an AVL queue
+/// at any given time, but are not gauranteed to be unique within an
+/// AVL queue across time: since node IDs are reused per the stack-based
+/// allocation strategy above, the same access key can be issued
+/// multiple times. Hence it is up to callers to ensure appropriate
+/// management of access keys, which effectively function as pointers
+/// into AVL queue memory. Notably, if a caller wishes to uniquely
+/// identify issued access keys, they can simply concatenate them with a
+/// global counter.
+///
+/// Bits 0-32 are not required for lookup operations, but rather, are
+/// included for potential external bookkeeping purposes.
+///
+/// ## Height
 ///
 /// In the present implementation, left or right height denotes the
 /// height of a node's left or right subtree, respectively, plus one.
@@ -75,13 +313,198 @@
 /// such that left height and right height can always be encoded in
 /// $\lceil \log_2 19 \rceil = 5$ bits each.
 ///
+/// # Implementation analysis
+///
+/// ## Storage gas
+///
+/// The present implementation relies on bit packing in assorted forms
+/// to minimize per-byte storage costs. Hence insertion keys are at most
+/// 32 bits and node IDs are 14 bits, for example, for maximum data
+/// compression.
+///
+/// As of the time of this writing, per-item reads and per-item writes
+/// cost the same amount of storage gas, per-item writes cost 60 times
+/// as much as per-byte writes, and per-byte writes cost approximately
+/// 16.7 times as much as per-item writes. Hence with tree nodes only
+/// occupying 128 bits (16 bytes), writing to a tree node only costs
+/// about 25% more then reading a tree node.
+///
+/// With storage gas only assessed on a per-transaction basis, this
+/// means that inserting a tree node and retracing all the way back up
+/// to the root only costs 25% more than does the $O(\log_2 n)$ lookup
+/// required for a key search, assuming no rebalancing takes place:
+/// per-item read costs are assessed on the way down, then replaced by
+/// per-item write costs on the way back up.
+///
+/// As for rebalancing, this process is only (potentially) required for
+/// operations that alter the number of tree nodes: if key-value
+/// insertion pair operations consistently involve the same insertion
+/// keys, then no tree retracing or rebalancing will be required, and
+/// only list node state will have to be overwritten.
+///
+/// In the case that rebalancing does occur, per-item write costs on the
+/// affected nodes are essentially amortized against the gas reductions
+/// afforded by an AVL tree's height guarantees: the height of a
+/// red-black tree is at most $2 \log_2 n$, for example, but the
+/// height of an AVL tree is at most approximately $1.44 \log_2 n$
+/// (per above). This means that fewer per-item costs are assessed on
+/// key lookup for the latter, and moreover, re-coloring operations
+/// required for the former may still require looping back up to the
+/// root in the worst case, resulting in higher per-item write costs.
+///
+/// ## Test development
+///
+/// Unit tests for the present implementation were written alongside
+/// source code development, with some integration updates applied along
+/// the way. For example, rotation tests were first devised based on
+/// manual allocation of nodes, then some were later updated for
+/// specific insertion and deletion scenarios. As such, syntax may vary
+/// slightly between some test cases depending on the level to which
+/// they were later scoped for integration.
+///
+/// ## Public function index
+///
+/// * `borrow()`
+/// * `borrow_head()`
+/// * `borrow_head_mut()`
+/// * `borrow_mut()`
+/// * `borrow_tail()`
+/// * `borrow_tail_mut()`
+/// * `get_access_key_insertion_key()`
+/// * `get_head_key()`
+/// * `get_height()`
+/// * `get_tail_key()`
+/// * `has_key()`
+/// * `insert()`
+/// * `insert_evict_tail()`
+/// * `is_ascending()`
+/// * `is_ascending_access_key()`
+/// * `is_empty()`
+/// * `new()`
+/// * `pop_head()`
+/// * `pop_tail()`
+/// * `remove()`
+/// * `would_update_head()`
+/// * `would_update_tail()`
+///
+/// ## Dependency charts
+///
+/// The below dependency charts use `mermaid.js` syntax, which can be
+/// automatically rendered into a diagram (depending on the browser)
+/// when viewing the documentation file generated from source code. If
+/// a browser renders the diagrams with coloring that makes it difficult
+/// to read, try a different browser.
+///
+/// `retrace()`:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// retrace --> retrace_update_heights
+/// retrace --> retrace_rebalance
+/// retrace --> retrace_prep_iterate
+///
+/// retrace_rebalance --> retrace_rebalance_rotate_left_right
+/// retrace_rebalance --> retrace_rebalance_rotate_right
+/// retrace_rebalance --> retrace_rebalance_rotate_right_left
+/// retrace_rebalance --> retrace_rebalance_rotate_left
+///
+/// ```
+///
+/// `insert()`:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// insert --> search
+/// insert --> insert_list_node
+/// insert --> insert_tree_node
+/// insert --> retrace
+/// insert --> insert_check_head_tail
+///
+/// insert_list_node --> insert_list_node_get_last_next
+/// insert_list_node --> insert_list_node_assign_fields
+///
+/// insert_list_node_get_last_next --> verify_node_count
+/// insert_list_node_assign_fields --> verify_node_count
+///
+/// insert_tree_node --> insert_tree_node_update_parent_edge
+///
+/// ```
+///
+/// `remove()`:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// remove --> remove_list_node
+/// remove --> remove_update_head
+/// remove --> remove_update_tail
+/// remove --> remove_tree_node
+///
+/// remove_list_node --> remove_list_node_update_edges
+///
+/// remove_update_head --> traverse
+///
+/// remove_update_tail --> traverse
+///
+/// remove_tree_node --> remove_tree_node_with_children
+/// remove_tree_node --> remove_tree_node_follow_up
+///
+/// remove_tree_node_follow_up --> retrace
+///
+/// ```
+///
+/// Assorted:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// insert_evict_tail --> insert
+/// insert_evict_tail --> remove
+///
+/// has_key --> search
+///
+/// new --> verify_node_count
+///
+/// pop_head --> remove
+///
+/// pop_tail --> remove
+///
+/// ```
+///
+/// # Bit conventions
+///
+/// ## Number
+///
+/// Bit numbers are 0-indexed from the least-significant bit (LSB):
+///
+/// >     11101...1010010101
+/// >       bit 5 = 0 ^    ^ bit 0 = 1
+///
+/// ## Status
+///
+/// `0` is considered an "unset" bit, and `1` is considered a "set" bit.
+/// Hence `11101` is set at bit 0 and unset at bit 1.
+///
+/// ## Masking
+///
+/// In the present implementation, a bitmask refers to a bitstring that
+/// is only set at the indicated bit. For example, a bitmask with bit 0
+/// set corresponds to `000...001`, and a bitmask with bit 3 set
+/// corresponds to `000...01000`.
+///
 /// # References
 ///
-/// * [Adelson-Velski and Landis 1962] (original paper)
+/// * [Adelson-Velsky and Landis 1962] (original paper)
 /// * [Galles 2011] (interactive visualizer)
 /// * [Wikipedia 2022]
 ///
-/// [Adelson-Velski and Landis 1962]:
+/// [Adelson-Velsky and Landis 1962]:
 ///     https://zhjwpku.com/assets/pdf/AED2-10-avl-paper.pdf
 /// [Galles 2011]:
 ///     https://www.cs.usfca.edu/~galles/visualization/AVLtree.html
@@ -556,40 +979,31 @@ module econia::avl_queue {
     ///
     /// Insert $\langle 3, 9 \rangle$:
     ///
-    /// >      3
-    /// >     [9]
+    /// >     3 [9]
     ///
     /// Insert $\langle 4, 8 \rangle$:
     ///
-    /// >      3
-    /// >     [9]
-    /// >        \
-    /// >         4
-    /// >        [8]
+    /// >     3 [9]
+    /// >      \
+    /// >       4 [8]
     ///
     /// Insert $\langle 5, 7 \rangle$:
     ///
-    /// >         4
-    /// >        [8]
-    /// >       /   \
-    /// >      3     5
-    /// >     [9]   [7]
+    /// >           4 [8]
+    /// >          / \
+    /// >     [9] 3   5 [7]
     ///
     /// Insert $\langle 3, 6 \rangle$
     ///
-    /// >               4
-    /// >              [8]
-    /// >             /   \
-    /// >            3     5
-    /// >     [9 -> 6]    [7]
+    /// >                4 [8]
+    /// >               / \
+    /// >     [9 -> 6] 3   5 [7]
     ///
     /// Insert $\langle 5, 5 \rangle$
     ///
-    /// >               4
-    /// >              [8]
-    /// >             /   \
-    /// >            3     5
-    /// >     [9 -> 6]     [7 -> 5]
+    /// >                4 [8]
+    /// >               / \
+    /// >     [9 -> 6] 3   5 [7 -> 5]
     public fun insert<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64,
@@ -712,6 +1126,18 @@ module econia::avl_queue {
     ): bool {
         ((avlq_ref.bits >> SHIFT_SORT_ORDER) & (BIT_FLAG_ASCENDING as u128)) ==
             (BIT_FLAG_ASCENDING as u128)
+    }
+
+    /// Return `true` if ascending access key, else `false`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_access_key_getters()`
+    public fun is_ascending_access_key(
+        access_key: u64
+    ): bool {
+        ((access_key >> SHIFT_ACCESS_SORT_ORDER) & (HI_BIT as u64) as u8) ==
+            BIT_FLAG_ASCENDING
     }
 
     /// Return `true` if given AVL queue is empty.
@@ -3481,8 +3907,6 @@ module econia::avl_queue {
     ///
     /// # Assumptions
     ///
-    /// * AVL queue is not empty, and `root_node_id` properly indicates
-    ///   the root node.
     /// * Seed key fits in 32 bits.
     ///
     /// # Reference diagram
@@ -4188,19 +4612,6 @@ module econia::avl_queue {
     }
 
     #[test_only]
-    /// Return `true` if ascending access key, else `false`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_access_key_getters()`
-    fun is_ascending_access_key_test(
-        access_key: u64
-    ): bool {
-        ((access_key >> SHIFT_ACCESS_SORT_ORDER) & (HI_BIT as u64) as u8) ==
-            BIT_FLAG_ASCENDING
-    }
-
-    #[test_only]
     /// Return only is tree node flag from `get_list_last_by_id_test()`.
     fun is_tree_node_list_last_by_id_test<V>(
         avlq_ref: &AVLqueue<V>,
@@ -4389,7 +4800,7 @@ module econia::avl_queue {
     /// Verify successful returns.
     fun test_access_key_getters() {
         // Assert access key not marked ascending if no bits set.
-        assert!(!is_ascending_access_key_test((NIL as u64)), 0);
+        assert!(!is_ascending_access_key((NIL as u64)), 0);
         // Declare encoded information for access key.
         let tree_node_id = u_64(b"10000000000001");
         let list_node_id = u_64(b"11000000000011");
@@ -4403,7 +4814,7 @@ module econia::avl_queue {
                 == tree_node_id, 0);
         assert!(get_access_key_list_node_id_test(access_key)
                 == list_node_id, 0);
-        assert!(is_ascending_access_key_test(access_key), 0);
+        assert!(is_ascending_access_key(access_key), 0);
         assert!(get_access_key_insertion_key(access_key)
                 == insertion_key, 0);
     }
@@ -4763,11 +5174,11 @@ module econia::avl_queue {
         assert!(get_access_key_insertion_key(access_key_3_6) == 3, 0);
         assert!(get_access_key_insertion_key(access_key_5_5) == 5, 0);
         // Assert access key sort order.
-        assert!(is_ascending_access_key_test(access_key_3_9), 0);
-        assert!(is_ascending_access_key_test(access_key_4_8), 0);
-        assert!(is_ascending_access_key_test(access_key_5_7), 0);
-        assert!(is_ascending_access_key_test(access_key_3_6), 0);
-        assert!(is_ascending_access_key_test(access_key_5_5), 0);
+        assert!(is_ascending_access_key(access_key_3_9), 0);
+        assert!(is_ascending_access_key(access_key_4_8), 0);
+        assert!(is_ascending_access_key(access_key_5_7), 0);
+        assert!(is_ascending_access_key(access_key_3_6), 0);
+        assert!(is_ascending_access_key(access_key_5_5), 0);
         // Assert access key tree node IDs.
         assert!(get_access_key_tree_node_id_test(access_key_3_9)
                 == tree_node_id_3_9, 0);
@@ -4897,9 +5308,9 @@ module econia::avl_queue {
         drop_avlq_test(avlq); // Drop AVL queue.
         // Assert access keys flagged as such for descending AVL queue.
         avlq = new(DESCENDING, 0, 0);
-        assert!(!is_ascending_access_key_test(insert(&mut avlq, 1, 0)), 0);
-        assert!(!is_ascending_access_key_test(insert(&mut avlq, 2, 0)), 0);
-        assert!(!is_ascending_access_key_test(insert(&mut avlq, 3, 0)), 0);
+        assert!(!is_ascending_access_key(insert(&mut avlq, 1, 0)), 0);
+        assert!(!is_ascending_access_key(insert(&mut avlq, 2, 0)), 0);
+        assert!(!is_ascending_access_key(insert(&mut avlq, 3, 0)), 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
@@ -5409,7 +5820,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify successful check.
+    /// Verify successful checks.
     fun test_is_ascending() {
         let avlq = AVLqueue<u8>{ // Create empty AVL queue.
             bits: (NIL as u128),

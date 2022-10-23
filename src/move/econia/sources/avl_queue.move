@@ -574,9 +574,6 @@
 /// insert_list_node --> insert_list_node_get_last_next
 /// insert_list_node --> insert_list_node_assign_fields
 ///
-/// insert_list_node_get_last_next --> verify_node_count
-/// insert_list_node_assign_fields --> verify_node_count
-///
 /// insert_tree_node --> insert_tree_node_update_parent_edge
 ///
 /// ```
@@ -615,8 +612,6 @@
 /// insert_evict_tail --> remove
 ///
 /// has_key --> search
-///
-/// new --> verify_node_count
 ///
 /// pop_head --> remove
 ///
@@ -759,15 +754,17 @@ module econia::avl_queue {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Number of allocated nodes is too high.
-    const E_TOO_MANY_NODES: u64 = 0;
+    /// Number of allocated tree nodes is too high.
+    const E_TOO_MANY_TREE_NODES: u64 = 0;
+    /// Number of allocated list nodes is too high.
+    const E_TOO_MANY_LIST_NODES: u64 = 1;
     /// Insertion key is too large.
-    const E_INSERTION_KEY_TOO_LARGE: u64 = 1;
+    const E_INSERTION_KEY_TOO_LARGE: u64 = 2;
     /// Attempted insertion with eviction from empty AVL queue.
-    const E_EVICT_EMPTY: u64 = 2;
+    const E_EVICT_EMPTY: u64 = 3;
     /// Attempted insertion with eviction for key-value insertion pair
     /// that would become new tail.
-    const E_EVICT_NEW_TAIL: u64 = 3;
+    const E_EVICT_NEW_TAIL: u64 = 4;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1318,15 +1315,17 @@ module econia::avl_queue {
     /// * `test_new_no_nodes()`
     /// * `test_new_some_nodes()`
     /// * `test_new_some_nodes_loop()`
+    /// * `test_new_too_many_list_nodes()`
+    /// * `test_new_too_many_tree_nodes()`
     public fun new<V: store>(
         sort_order: bool,
         n_inactive_tree_nodes: u64,
         n_inactive_list_nodes: u64,
     ): AVLqueue<V> {
         // Assert not trying to allocate too many tree nodes.
-        verify_node_count(n_inactive_tree_nodes);
+        assert!(n_inactive_tree_nodes <= N_NODES_MAX, E_TOO_MANY_TREE_NODES);
         // Assert not trying to allocate too many list nodes.
-        verify_node_count(n_inactive_list_nodes);
+        assert!(n_inactive_list_nodes <= N_NODES_MAX, E_TOO_MANY_LIST_NODES);
         // Initialize bits field based on sort order.
         let bits = if (sort_order == DESCENDING) (NIL as u128) else
             ((BIT_FLAG_ASCENDING as u128) << SHIFT_SORT_ORDER);
@@ -1544,8 +1543,8 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_would_update_head_too_big()`.
     /// * `test_would_update_head_tail()`
+    /// * `test_would_update_head_too_big()`
     public fun would_update_head<V>(
         avlq_ref: &AVLqueue<V>,
         key: u64
@@ -1576,8 +1575,8 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_would_update_tail_too_big()`.
     /// * `test_would_update_head_tail()`
+    /// * `test_would_update_tail_too_big()`
     public fun would_update_tail<V>(
         avlq_ref: &AVLqueue<V>,
         key: u64
@@ -1782,8 +1781,8 @@ module econia::avl_queue {
         if (list_node_id == (NIL as u64)) {
             // Get new 1-indexed list node ID.
             list_node_id = table_with_length::length(list_nodes_ref_mut) + 1;
-            // Verify list nodes not over-allocated.
-            verify_node_count(list_node_id);
+            assert!( // Verify list nodes not over-allocated.
+                list_node_id <= N_NODES_MAX, E_TOO_MANY_LIST_NODES);
             // Allocate a new list node with given fields.
             table_with_length::add(list_nodes_ref_mut, list_node_id, ListNode{
                 last_msbs, last_lsbs, next_msbs, next_lsbs});
@@ -1865,8 +1864,8 @@ module econia::avl_queue {
             if (anchor_tree_node_id == (NIL as u64)) {
                 anchor_tree_node_id = // Get new 1-indexed tree node ID.
                     table_with_length::length(tree_nodes_ref) + 1;
-                // Verify tree nodes not over-allocated.
-                verify_node_count(anchor_tree_node_id);
+                assert!( // Verify tree nodes not over-allocated.
+                    anchor_tree_node_id <= N_NODES_MAX, E_TOO_MANY_TREE_NODES);
             };
             // Set virtual last field as flagged anchor tree node ID.
             last = anchor_tree_node_id | is_tree_node;
@@ -1890,7 +1889,7 @@ module econia::avl_queue {
     ///
     /// Should only be called when `insert_list_node()` inserts the
     /// sole list node in new AVL tree node, thus checking the number
-    /// of allocated tree nodes in `insert_list_node_get_last_next()`.
+    /// of allocated tree nodes per `insert_list_node_get_last_next()`.
     ///
     /// # Parameters
     ///
@@ -4238,23 +4237,6 @@ module econia::avl_queue {
          (((bits >> SHIFT_LIST_TAIL    ) & (HI_NODE_ID       as u128)) as u64))
     }
 
-    /// Verify node count is not too high.
-    ///
-    /// # Aborts
-    ///
-    /// * `E_TOO_MANY_NODES`: `n_nodes` is not less than `N_NODES_MAX`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_verify_node_count_fail()`
-    /// * `test_verify_node_count_pass()`
-    fun verify_node_count(
-        n_nodes: u64,
-    ) {
-        // Assert node count is less than or equal to max amount.
-        assert!(n_nodes <= N_NODES_MAX, E_TOO_MANY_NODES);
-    }
-
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -5280,7 +5262,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = 2)]
     /// Verify failure for insertion key too big.
     fun test_has_key_too_big() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
@@ -5635,7 +5617,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 2)]
+    #[expected_failure(abort_code = 3)]
     /// Verify failure for insertion with eviction from empty AVL queue.
     fun test_insert_evict_tail_empty() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
@@ -5645,7 +5627,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = 4)]
     /// Verify failure for insertion with eviction for key-value
     /// insertion pair that would become tail.
     fun test_insert_evict_tail_new_tail_ascending() {
@@ -5658,7 +5640,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 3)]
+    #[expected_failure(abort_code = 4)]
     /// Verify failure for insertion with eviction for key-value
     /// insertion pair that would become tail.
     fun test_insert_evict_tail_new_tail_descending() {
@@ -5671,7 +5653,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = 2)]
     /// Verify failure for insertion key too large.
     fun test_insert_insertion_key_too_large() {
         let avlq = new(ASCENDING, 0, 0); // Init AVL queue.
@@ -5834,7 +5816,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0)]
+    #[expected_failure(abort_code = 1)]
     /// Assert failure for too many list nodes.
     fun test_insert_too_many_list_nodes() {
         // Init AVL queue with max list nodes allocated.
@@ -6085,6 +6067,24 @@ module econia::avl_queue {
             assert!(option::is_none(borrow_value_option_test(&avlq, i)), 0);
             i = i - 1; // Decrement loop counter.
         };
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for attempting to allocate too many list nodes.
+    fun test_new_too_many_list_nodes() {
+        // Attempt invalid invocation.
+        let avlq = new<u8>(ASCENDING, 0, N_NODES_MAX + 1);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for attempting to allocate too many tree nodes.
+    fun test_new_too_many_tree_nodes() {
+        // Attempt invalid invocation.
+        let avlq = new<u8>(ASCENDING, N_NODES_MAX + 1, 0);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 
@@ -8432,21 +8432,6 @@ module econia::avl_queue {
     fun test_u_128_failure() {u_128(b"2");}
 
     #[test]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for too many nodes.
-    fun test_verify_node_count_fail() {
-        // Attempt invalid invocation for one too many nodes.
-        verify_node_count(u_64(b"100000000000000"));
-    }
-
-    #[test]
-    /// Verify maximum node count passes check.
-    fun test_verify_node_count_pass() {
-        // Attempt valid invocation for max node count.
-        verify_node_count(u_64(b"11111111111111"));
-    }
-
-    #[test]
     /// Verify expected returns.
     fun test_would_update_head_tail() {
         // Init ascending AVL queue.
@@ -8502,7 +8487,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = 2)]
     /// Verify failure for insertion key too large.
     fun test_would_update_head_too_big() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
@@ -8512,7 +8497,7 @@ module econia::avl_queue {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)]
+    #[expected_failure(abort_code = 2)]
     /// Verify failure for insertion key too large.
     fun test_would_update_tail_too_big() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.

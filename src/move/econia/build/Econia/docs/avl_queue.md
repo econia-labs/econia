@@ -647,9 +647,6 @@ insert --> insert_check_head_tail
 insert_list_node --> insert_list_node_get_last_next
 insert_list_node --> insert_list_node_assign_fields
 
-insert_list_node_get_last_next --> verify_node_count
-insert_list_node_assign_fields --> verify_node_count
-
 insert_tree_node --> insert_tree_node_update_parent_edge
 
 ```
@@ -688,8 +685,6 @@ insert_evict_tail --> insert
 insert_evict_tail --> remove
 
 has_key --> search
-
-new --> verify_node_count
 
 pop_head --> remove
 
@@ -972,9 +967,6 @@ The below index is automatically generated from source code:
     -  [Successor](#@Successor_161)
     -  [Reference diagram](#@Reference_diagram_162)
     -  [Testing](#@Testing_163)
--  [Function `verify_node_count`](#0xc0deb00c_avl_queue_verify_node_count)
-    -  [Aborts](#@Aborts_164)
-    -  [Testing](#@Testing_165)
 
 
 <pre><code><b>use</b> <a href="">0x1::option</a>;
@@ -1230,7 +1222,7 @@ Descending AVL queue flag.
 Attempted insertion with eviction from empty AVL queue.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_EVICT_EMPTY">E_EVICT_EMPTY</a>: u64 = 2;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_EVICT_EMPTY">E_EVICT_EMPTY</a>: u64 = 3;
 </code></pre>
 
 
@@ -1241,7 +1233,7 @@ Attempted insertion with eviction for key-value insertion pair
 that would become new tail.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_EVICT_NEW_TAIL">E_EVICT_NEW_TAIL</a>: u64 = 3;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_EVICT_NEW_TAIL">E_EVICT_NEW_TAIL</a>: u64 = 4;
 </code></pre>
 
 
@@ -1251,17 +1243,27 @@ that would become new tail.
 Insertion key is too large.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a>: u64 = 1;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_INSERTION_KEY_TOO_LARGE">E_INSERTION_KEY_TOO_LARGE</a>: u64 = 2;
 </code></pre>
 
 
 
-<a name="0xc0deb00c_avl_queue_E_TOO_MANY_NODES"></a>
+<a name="0xc0deb00c_avl_queue_E_TOO_MANY_LIST_NODES"></a>
 
-Number of allocated nodes is too high.
+Number of allocated list nodes is too high.
 
 
-<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>: u64 = 0;
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_LIST_NODES">E_TOO_MANY_LIST_NODES</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_avl_queue_E_TOO_MANY_TREE_NODES"></a>
+
+Number of allocated tree nodes is too high.
+
+
+<pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_TREE_NODES">E_TOO_MANY_TREE_NODES</a>: u64 = 0;
 </code></pre>
 
 
@@ -2502,6 +2504,8 @@ to allocate.
 * <code>test_new_no_nodes()</code>
 * <code>test_new_some_nodes()</code>
 * <code>test_new_some_nodes_loop()</code>
+* <code>test_new_too_many_list_nodes()</code>
+* <code>test_new_too_many_tree_nodes()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_new">new</a>&lt;V: store&gt;(sort_order: bool, n_inactive_tree_nodes: u64, n_inactive_list_nodes: u64): <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;
@@ -2519,9 +2523,9 @@ to allocate.
     n_inactive_list_nodes: u64,
 ): <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">AVLqueue</a>&lt;V&gt; {
     // Assert not trying <b>to</b> allocate too many tree nodes.
-    <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(n_inactive_tree_nodes);
+    <b>assert</b>!(n_inactive_tree_nodes &lt;= <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_TREE_NODES">E_TOO_MANY_TREE_NODES</a>);
     // Assert not trying <b>to</b> allocate too many list nodes.
-    <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(n_inactive_list_nodes);
+    <b>assert</b>!(n_inactive_list_nodes &lt;= <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_LIST_NODES">E_TOO_MANY_LIST_NODES</a>);
     // Initialize bits field based on sort order.
     <b>let</b> bits = <b>if</b> (sort_order == <a href="avl_queue.md#0xc0deb00c_avl_queue_DESCENDING">DESCENDING</a>) (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u128) <b>else</b>
         ((<a href="avl_queue.md#0xc0deb00c_avl_queue_BIT_FLAG_ASCENDING">BIT_FLAG_ASCENDING</a> <b>as</b> u128) &lt;&lt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_SORT_ORDER">SHIFT_SORT_ORDER</a>);
@@ -2856,8 +2860,8 @@ Return <code><b>true</b></code> if inserting <code>key</code> would update AVL q
 ### Testing
 
 
-* <code>test_would_update_head_too_big()</code>.
 * <code>test_would_update_head_tail()</code>
+* <code>test_would_update_head_too_big()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">would_update_head</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, key: u64): bool
@@ -2916,8 +2920,8 @@ Return <code><b>true</b></code> if inserting <code>key</code> would update AVL q
 ### Testing
 
 
-* <code>test_would_update_tail_too_big()</code>.
 * <code>test_would_update_head_tail()</code>
+* <code>test_would_update_tail_too_big()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_tail">would_update_tail</a>&lt;V&gt;(avlq_ref: &<a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;V&gt;, key: u64): bool
@@ -3221,8 +3225,8 @@ otherwise pop one off the inactive stack.
     <b>if</b> (list_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
         // Get new 1-indexed list node ID.
         list_node_id = <a href="_length">table_with_length::length</a>(list_nodes_ref_mut) + 1;
-        // Verify list nodes not over-allocated.
-        <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(list_node_id);
+        <b>assert</b>!( // Verify list nodes not over-allocated.
+            list_node_id &lt;= <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_LIST_NODES">E_TOO_MANY_LIST_NODES</a>);
         // Allocate a new list node <b>with</b> given fields.
         <a href="_add">table_with_length::add</a>(list_nodes_ref_mut, list_node_id, <a href="avl_queue.md#0xc0deb00c_avl_queue_ListNode">ListNode</a>{
             last_msbs, last_lsbs, next_msbs, next_lsbs});
@@ -3336,8 +3340,8 @@ inserting a solo list node.
         <b>if</b> (anchor_tree_node_id == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64)) {
             anchor_tree_node_id = // Get new 1-indexed tree node ID.
                 <a href="_length">table_with_length::length</a>(tree_nodes_ref) + 1;
-            // Verify tree nodes not over-allocated.
-            <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(anchor_tree_node_id);
+            <b>assert</b>!( // Verify tree nodes not over-allocated.
+                anchor_tree_node_id &lt;= <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_TREE_NODES">E_TOO_MANY_TREE_NODES</a>);
         };
         // Set virtual last field <b>as</b> flagged anchor tree node ID.
         last = anchor_tree_node_id | is_tree_node;
@@ -3370,7 +3374,7 @@ otherwise pop one off the inactive stack.
 
 Should only be called when <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node">insert_list_node</a>()</code> inserts the
 sole list node in new AVL tree node, thus checking the number
-of allocated tree nodes in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
+of allocated tree nodes per <code><a href="avl_queue.md#0xc0deb00c_avl_queue_insert_list_node_get_last_next">insert_list_node_get_last_next</a>()</code>.
 
 
 <a name="@Parameters_79"></a>
@@ -6427,51 +6431,6 @@ Inserted in following sequence:
     ((((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_INSERTION_KEY">SHIFT_INSERTION_KEY</a>) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_INSERTION_KEY">HI_INSERTION_KEY</a> <b>as</b> u128)) <b>as</b> u64),
      (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a>    ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>       <b>as</b> u128)) <b>as</b> u64),
      (((bits &gt;&gt; <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>    ) & (<a href="avl_queue.md#0xc0deb00c_avl_queue_HI_NODE_ID">HI_NODE_ID</a>       <b>as</b> u128)) <b>as</b> u64))
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_avl_queue_verify_node_count"></a>
-
-## Function `verify_node_count`
-
-Verify node count is not too high.
-
-
-<a name="@Aborts_164"></a>
-
-### Aborts
-
-
-* <code><a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a></code>: <code>n_nodes</code> is not less than <code><a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a></code>.
-
-
-<a name="@Testing_165"></a>
-
-### Testing
-
-
-* <code>test_verify_node_count_fail()</code>
-* <code>test_verify_node_count_pass()</code>
-
-
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(n_nodes: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_verify_node_count">verify_node_count</a>(
-    n_nodes: u64,
-) {
-    // Assert node count is less than or equal <b>to</b> max amount.
-    <b>assert</b>!(n_nodes &lt;= <a href="avl_queue.md#0xc0deb00c_avl_queue_N_NODES_MAX">N_NODES_MAX</a>, <a href="avl_queue.md#0xc0deb00c_avl_queue_E_TOO_MANY_NODES">E_TOO_MANY_NODES</a>);
 }
 </code></pre>
 

@@ -837,10 +837,10 @@ The below index is automatically generated from source code:
     -  [Parameters](#@Parameters_56)
     -  [Assumptions](#@Assumptions_57)
     -  [Reference diagram](#@Reference_diagram_58)
-        -  [Case 1 ascending head updates](#@Case_1_ascending_head_updates_59)
-        -  [Case 2 ascending tail updates](#@Case_2_ascending_tail_updates_60)
-        -  [Case 3 descending head updates](#@Case_3_descending_head_updates_61)
-        -  [Case 4 descending tail updates](#@Case_4_descending_tail_updates_62)
+        -  [Case 1 (ascending head updates)](#@Case_1_(ascending_head_updates)_59)
+        -  [Case 2 (ascending tail updates)](#@Case_2_(ascending_tail_updates)_60)
+        -  [Case 3 (descending head updates)](#@Case_3_(descending_head_updates)_61)
+        -  [Case 4 (descending tail updates)](#@Case_4_(descending_tail_updates)_62)
     -  [Testing](#@Testing_63)
 -  [Function `would_update_head`](#0xc0deb00c_avl_queue_would_update_head)
     -  [Aborts](#@Aborts_64)
@@ -2716,9 +2716,9 @@ Consider the following AVL queue:
 >     [5 -> 6]
 
 
-<a name="@Case_1_ascending_head_updates_59"></a>
+<a name="@Case_1_(ascending_head_updates)_59"></a>
 
-#### Case 1 ascending head updates
+#### Case 1 (ascending head updates)
 
 
 * Ascending AVL queue.
@@ -2728,9 +2728,9 @@ having insertion value 6.
 having insertion value 3.
 
 
-<a name="@Case_2_ascending_tail_updates_60"></a>
+<a name="@Case_2_(ascending_tail_updates)_60"></a>
 
-#### Case 2 ascending tail updates
+#### Case 2 (ascending tail updates)
 
 
 * Ascending AVL queue.
@@ -2740,9 +2740,9 @@ having insertion value 3.
 having insertion value 6.
 
 
-<a name="@Case_3_descending_head_updates_61"></a>
+<a name="@Case_3_(descending_head_updates)_61"></a>
 
-#### Case 3 descending head updates
+#### Case 3 (descending head updates)
 
 
 * Descending AVL queue.
@@ -2752,9 +2752,9 @@ having insertion value 4.
 having insertion value 5.
 
 
-<a name="@Case_4_descending_tail_updates_62"></a>
+<a name="@Case_4_(descending_tail_updates)_62"></a>
 
-#### Case 4 descending tail updates
+#### Case 4 (descending tail updates)
 
 
 * Descending AVL queue.

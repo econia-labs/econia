@@ -1440,10 +1440,9 @@ module econia::avl_queue {
     ///
     /// Consider the following AVL queue:
     ///
-    /// >        2
-    /// >       [3 -> 4]
+    /// >        2 [3 -> 4]
     /// >       /
-    /// >      1
+    /// >      1 [5 -> 6]
     /// >     [5 -> 6]
     ///
     /// ## Case 1 (ascending head updates)

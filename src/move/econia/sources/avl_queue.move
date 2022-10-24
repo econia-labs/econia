@@ -396,7 +396,7 @@
 /// | 18 (`h_max`) | 10945        | 524287          |
 /// | 19           | 17710        | 1048575         |
 ///
-/// Associated Python calcuations:
+/// Supporting Python calculations:
 ///
 /// ```python
 /// >>> import math
@@ -1446,7 +1446,7 @@ module econia::avl_queue {
     /// >      1
     /// >     [5 -> 6]
     ///
-    /// ## Case 1: ascending head updates
+    /// ## Case 1 ascending head updates
     ///
     /// * Ascending AVL queue.
     /// * Remove insertion value 5, updating AVL queue head to node
@@ -1454,7 +1454,7 @@ module econia::avl_queue {
     /// * Remove insertion value 6, updating AVL queue head to node
     ///   having insertion value 3.
     ///
-    /// ## Case 2: ascending tail updates
+    /// ## Case 2 ascending tail updates
     ///
     /// * Ascending AVL queue.
     /// * Remove insertion value 4, updating AVL queue tail to node
@@ -1462,7 +1462,7 @@ module econia::avl_queue {
     /// * Remove insertion value 3, updating AVL queue tail to node
     ///   having insertion value 6.
     ///
-    /// ## Case 3: descending head updates
+    /// ## Case 3 descending head updates
     ///
     /// * Descending AVL queue.
     /// * Remove insertion value 3, updating AVL queue head to node
@@ -1470,7 +1470,7 @@ module econia::avl_queue {
     /// * Remove insertion value 4, updating AVL queue head to node
     ///   having insertion value 5.
     ///
-    /// ## Case 4: descending tail updates
+    /// ## Case 4 descending tail updates
     ///
     /// * Descending AVL queue.
     /// * Remove insertion value 6, updating AVL queue tail to node

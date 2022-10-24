@@ -1443,7 +1443,6 @@ module econia::avl_queue {
     /// >        2 [3 -> 4]
     /// >       /
     /// >      1 [5 -> 6]
-    /// >     [5 -> 6]
     ///
     /// ## Case 1 (ascending head updates)
     ///

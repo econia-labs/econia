@@ -2712,7 +2712,6 @@ Consider the following AVL queue:
 >        2 [3 -> 4]
 >       /
 >      1 [5 -> 6]
->     [5 -> 6]
 
 
 <a name="@Case_1_(ascending_head_updates)_59"></a>

@@ -84,7 +84,7 @@
 /// >            / \
 /// >           6   8
 ///
-/// Here, a left rotation is necesary to rebalance the tree, yielding:
+/// Here, a left rotation is necessary to rebalance the tree, yielding:
 ///
 /// >         3
 /// >        / \
@@ -180,8 +180,8 @@
 /// 1. Either ascending or descending order of insertion key, then by
 /// 2. Ascending order of insertion count.
 ///
-/// For example, consider the following insertion key sequence, where
-/// $p_{i, j}$ denotes insertion key $i$ with insertion count $j$:
+/// For example, consider the key-value pair insertion pairs inserted in
+/// the following sequence:
 ///
 /// 1. $p_{1, 0} = \langle 1, a \rangle$
 /// 2. $p_{3, 0} = \langle 3, b \rangle$
@@ -245,7 +245,7 @@
 /// node, the inactive node can be popped off the top of the stack and
 /// overwritten. Rather than allocating a new node for each insertion
 /// and deallocating for each removal, this approach minimizes per-item
-/// creation costs. Nodes can additionally be pre-allocated upon AVL
+/// creation costs. Additionally, nodes can be pre-allocated upon AVL
 /// queue initialization and pushed directly on the inactive nodes stack
 /// so as to reduce per-item costs for future operations.
 ///
@@ -298,17 +298,17 @@
 /// subject to undefined behavior if this condition is not met.
 ///
 /// Notably, access keys are guaranteed to be unique within an AVL queue
-/// at any given time, but are not gauranteed to be unique within an
+/// at any given time, but are not guaranteed to be unique within an
 /// AVL queue across time: since node IDs are reused per the stack-based
 /// allocation strategy above, the same access key can be issued
 /// multiple times. Hence it is up to callers to ensure appropriate
 /// management of access keys, which effectively function as pointers
 /// into AVL queue memory. Notably, if a caller wishes to uniquely
-/// identify issued access keys, they can simply concatenate them with a
-/// global counter.
+/// identify issued access keys, the caller can simply concatenate
+/// access keys with a global counter.
 ///
 /// Bits 0-32 are not required for lookup operations, but rather, are
-/// included for potential external bookkeeping purposes.
+/// included in access keys simply to provide additional metadata.
 ///
 /// ## Height
 ///
@@ -497,16 +497,15 @@
 /// ## Gas considerations
 ///
 /// The present implementation relies on bit packing in assorted forms
-/// to minimize per-byte storage costs. Hence insertion keys are at most
-/// 32 bits and node IDs are 14 bits, for example, for maximum data
+/// to minimize per-byte storage costs: insertion keys are at most 32
+/// bits and node IDs are 14 bits, for example, for maximum data
 /// compression. Notably, associated bit packing operations are manually
 /// inlined to reduce the number of function calls: as of the time of
 /// this writing, instruction gas for 15 function calls costs the same
 /// as a single per-item read out of global storage. Hence inlined
 /// bit packing significantly reduces the number of function calls when
-/// compared against an implementation that instead relies on frequent
-/// calls to helper functions of the form
-/// `mask_in_bits(target, incoming, shift)`.
+/// compared against an implementation with frequent calls to helper
+/// functions of the form `mask_in_bits(target, incoming, shift)`.
 ///
 /// As of the time of this writing, per-item reads and per-item writes
 /// cost the same amount of storage gas, per-item writes cost 60 times
@@ -525,8 +524,7 @@
 /// As for rebalancing, this process is only (potentially) required for
 /// operations that alter the number of tree nodes: if key-value
 /// insertion pair operations consistently involve the same insertion
-/// keys, then no tree retracing or rebalancing will be required, and
-/// only list node state will have to be overwritten.
+/// keys, then tree retracing and rebalancing operations are minimized.
 ///
 /// In the case that rebalancing does occur, per-item write costs on the
 /// affected nodes are essentially amortized against the gas reductions
@@ -541,10 +539,10 @@
 /// ## Test development
 ///
 /// Unit tests for the present implementation were written alongside
-/// source code development, with some integration updates applied along
-/// the way. For example, rotation tests were first devised based on
-/// manual allocation of nodes, then some were later updated for
-/// specific insertion and deletion scenarios. As such, syntax may vary
+/// source code, with some integration refactors applied along the way.
+/// For example, rotation tests were first devised based on manual
+/// allocation of nodes, then some were later updated for specific
+/// insertion and deletion scenarios. As such, syntax may vary
 /// slightly between some test cases depending on the level to which
 /// they were later scoped for integration.
 ///
@@ -893,9 +891,9 @@ module econia::avl_queue {
     /// Number of bits node type bit flag is shifted in `ListNode`
     /// virtual last and next fields.
     const SHIFT_NODE_TYPE: u8 = 14;
-    /// Number of bits list head node ID is shited in `TreeNode.bits`.
+    /// Number of bits list head node ID is shifted in `TreeNode.bits`.
     const SHIFT_LIST_HEAD: u8 = 28;
-    /// Number of bits list tail node ID is shited in `TreeNode.bits`.
+    /// Number of bits list tail node ID is shifted in `TreeNode.bits`.
     const SHIFT_LIST_TAIL: u8 = 14;
     /// Number of bits parent node ID is shifted in `AVLqueue.bits`.
     const SHIFT_PARENT: u8 = 70;
@@ -2974,7 +2972,7 @@ module econia::avl_queue {
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `new_list_head`: New head of corresonding doubly linked list,
+    /// * `new_list_head`: New head of corresponding doubly linked list,
     ///   `NIL` if doubly linked list is cleared out by removal.
     /// * `ascending`: `true` if ascending AVL queue, else `false`.
     /// * `tree_node_id`: Node ID of corresponding tree node.
@@ -3037,7 +3035,7 @@ module econia::avl_queue {
     /// # Parameters
     ///
     /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `new_list_tail`: New tail of corresonding doubly linked list,
+    /// * `new_list_tail`: New tail of corresponding doubly linked list,
     ///   `NIL` if doubly linked list is cleared out by removal.
     /// * `ascending`: `true` if ascending AVL queue, else `false`.
     /// * `tree_node_id`: Node ID of corresponding tree node.
@@ -3130,43 +3128,43 @@ module econia::avl_queue {
     ///
     /// `if (height_left != height_right)`
     ///
-    /// | Exercises `true`       | Excercises `false`             |
+    /// | Exercises `true`       | Exercises `false`              |
     /// |------------------------|--------------------------------|
     /// | `test_rotate_left_2()` | `test_retrace_insert_remove()` |
     ///
     /// `if (height_left > height_right)`
     ///
-    /// | Exercises `true`        | Excercises `false`     |
+    /// | Exercises `true`        | Exercises `false`      |
     /// |-------------------------|------------------------|
     /// | `test_rotate_right_1()` | `test_rotate_left_2()` |
     ///
     /// `if (imbalance > 1)`
     ///
-    /// | Exercises `true`       | Excercises `false`             |
+    /// | Exercises `true`       | Exercises `false`              |
     /// |------------------------|--------------------------------|
     /// | `test_rotate_left_2()` | `test_retrace_insert_remove()` |
     ///
     /// `if (left_heavy)`
     ///
-    /// | Exercises `true`        | Excercises `false`     |
+    /// | Exercises `true`        | Exercises `false`      |
     /// |-------------------------|------------------------|
     /// | `test_rotate_right_1()` | `test_rotate_left_2()` |
     ///
     /// `if (parent == (NIL as u64))`
     ///
-    /// | Exercises `true`        | Excercises `false`     |
+    /// | Exercises `true`        | Exercises `false`      |
     /// |-------------------------|------------------------|
     /// | `test_rotate_right_1()` | `test_rotate_left_2()` |
     ///
     /// `if (new_subtree_root != (NIL as u64))`
     ///
-    /// | Exercises `true`        | Excercises `false`             |
+    /// | Exercises `true`        | Exercises `false`              |
     /// |-------------------------|--------------------------------|
     /// | `test_rotate_right_1()` | `test_retrace_insert_remove()` |
     ///
     /// `if (delta == 0)`
     ///
-    /// | Exercises `true`       | Excercises `false`             |
+    /// | Exercises `true`       | Exercises `false`              |
     /// |------------------------|--------------------------------|
     /// | `test_rotate_left_2()` | `test_retrace_insert_remove()` |
     ///
@@ -3284,7 +3282,7 @@ module econia::avl_queue {
     ///
     /// * `&mut TreeNode`: Mutable reference to next ancestor.
     /// * `bool`: `INCREMENT` or `DECREMENT`, the change in height for
-    ///   the subtree just retraced. Evalutes to `DECREMENT` when
+    ///   the subtree just retraced. Evaluates to `DECREMENT` when
     ///   height does not change.
     /// * `bool`: `LEFT` or `RIGHT`, the side on which the retraced
     ///   subtree was a child to the next ancestor.
@@ -4394,7 +4392,7 @@ module econia::avl_queue {
         }
     }
 
-    /// Traverse from tree node to inorder predecessor or succesor.
+    /// Traverse from tree node to inorder predecessor or successor.
     ///
     /// # Parameters
     ///

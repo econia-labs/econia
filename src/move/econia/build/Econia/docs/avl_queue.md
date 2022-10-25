@@ -105,7 +105,7 @@ Continuing the above example, if node 4 were to be removed then node
 >            / \
 >           6   8
 
-Here, a left rotation is necesary to rebalance the tree, yielding:
+Here, a left rotation is necessary to rebalance the tree, yielding:
 
 >         3
 >        / \
@@ -221,8 +221,8 @@ Key-value insertion pairs in an AVL queue are sorted by:
 1. Either ascending or descending order of insertion key, then by
 2. Ascending order of insertion count.
 
-For example, consider the following insertion key sequence, where
-$p_{i, j}$ denotes insertion key $i$ with insertion count $j$:
+For example, consider the key-value pair insertion pairs inserted in
+the following sequence:
 
 1. $p_{1, 0} = \langle 1, a \rangle$
 2. $p_{3, 0} = \langle 3, b \rangle$
@@ -294,7 +294,7 @@ corresponding type. Then, when an insertion operation requires a new
 node, the inactive node can be popped off the top of the stack and
 overwritten. Rather than allocating a new node for each insertion
 and deallocating for each removal, this approach minimizes per-item
-creation costs. Nodes can additionally be pre-allocated upon AVL
+creation costs. Additionally, nodes can be pre-allocated upon AVL
 queue initialization and pushed directly on the inactive nodes stack
 so as to reduce per-item costs for future operations.
 
@@ -351,17 +351,17 @@ corresponds to a valid list node in the given AVL queue, and are
 subject to undefined behavior if this condition is not met.
 
 Notably, access keys are guaranteed to be unique within an AVL queue
-at any given time, but are not gauranteed to be unique within an
+at any given time, but are not guaranteed to be unique within an
 AVL queue across time: since node IDs are reused per the stack-based
 allocation strategy above, the same access key can be issued
 multiple times. Hence it is up to callers to ensure appropriate
 management of access keys, which effectively function as pointers
 into AVL queue memory. Notably, if a caller wishes to uniquely
-identify issued access keys, they can simply concatenate them with a
-global counter.
+identify issued access keys, the caller can simply concatenate
+access keys with a global counter.
 
 Bits 0-32 are not required for lookup operations, but rather, are
-included for potential external bookkeeping purposes.
+included in access keys simply to provide additional metadata.
 
 
 <a name="@Height_12"></a>
@@ -562,16 +562,15 @@ h: 19, n_min: 17710, n_max: 1048575, n_min_raw: 17709.934763708177
 
 
 The present implementation relies on bit packing in assorted forms
-to minimize per-byte storage costs. Hence insertion keys are at most
-32 bits and node IDs are 14 bits, for example, for maximum data
+to minimize per-byte storage costs: insertion keys are at most 32
+bits and node IDs are 14 bits, for example, for maximum data
 compression. Notably, associated bit packing operations are manually
 inlined to reduce the number of function calls: as of the time of
 this writing, instruction gas for 15 function calls costs the same
 as a single per-item read out of global storage. Hence inlined
 bit packing significantly reduces the number of function calls when
-compared against an implementation that instead relies on frequent
-calls to helper functions of the form
-<code>mask_in_bits(target, incoming, shift)</code>.
+compared against an implementation with frequent calls to helper
+functions of the form <code>mask_in_bits(target, incoming, shift)</code>.
 
 As of the time of this writing, per-item reads and per-item writes
 cost the same amount of storage gas, per-item writes cost 60 times
@@ -590,8 +589,7 @@ per-item write costs on the way back up.
 As for rebalancing, this process is only (potentially) required for
 operations that alter the number of tree nodes: if key-value
 insertion pair operations consistently involve the same insertion
-keys, then no tree retracing or rebalancing will be required, and
-only list node state will have to be overwritten.
+keys, then tree retracing and rebalancing operations are minimized.
 
 In the case that rebalancing does occur, per-item write costs on the
 affected nodes are essentially amortized against the gas reductions
@@ -610,10 +608,10 @@ root in the worst case, resulting in higher per-item write costs.
 
 
 Unit tests for the present implementation were written alongside
-source code development, with some integration updates applied along
-the way. For example, rotation tests were first devised based on
-manual allocation of nodes, then some were later updated for
-specific insertion and deletion scenarios. As such, syntax may vary
+source code, with some integration refactors applied along the way.
+For example, rotation tests were first devised based on manual
+allocation of nodes, then some were later updated for specific
+insertion and deletion scenarios. As such, syntax may vary
 slightly between some test cases depending on the level to which
 they were later scoped for integration.
 
@@ -1593,7 +1591,7 @@ Number of bits insertion key is shifted in <code><a href="avl_queue.md#0xc0deb00
 
 <a name="0xc0deb00c_avl_queue_SHIFT_LIST_HEAD"></a>
 
-Number of bits list head node ID is shited in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+Number of bits list head node ID is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_HEAD">SHIFT_LIST_HEAD</a>: u8 = 28;
@@ -1614,7 +1612,7 @@ Number of bits inactive list node stack top is shifted in
 
 <a name="0xc0deb00c_avl_queue_SHIFT_LIST_TAIL"></a>
 
-Number of bits list tail node ID is shited in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
+Number of bits list tail node ID is shifted in <code><a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a>.bits</code>.
 
 
 <pre><code><b>const</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_SHIFT_LIST_TAIL">SHIFT_LIST_TAIL</a>: u8 = 14;
@@ -4815,7 +4813,7 @@ queue head is modified.
 
 
 * <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
-* <code>new_list_head</code>: New head of corresonding doubly linked list,
+* <code>new_list_head</code>: New head of corresponding doubly linked list,
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if doubly linked list is cleared out by removal.
 * <code>ascending</code>: <code><b>true</b></code> if ascending AVL queue, else <code><b>false</b></code>.
 * <code>tree_node_id</code>: Node ID of corresponding tree node.
@@ -4906,7 +4904,7 @@ queue tail is modified.
 
 
 * <code>avlq_ref_mut</code>: Mutable reference to AVL queue.
-* <code>new_list_tail</code>: New tail of corresonding doubly linked list,
+* <code>new_list_tail</code>: New tail of corresponding doubly linked list,
 <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a></code> if doubly linked list is cleared out by removal.
 * <code>ascending</code>: <code><b>true</b></code> if ascending AVL queue, else <code><b>false</b></code>.
 * <code>tree_node_id</code>: Node ID of corresponding tree node.
@@ -5031,43 +5029,43 @@ information on their corresponding reference diagrams.
 
 <code><b>if</b> (height_left != height_right)</code>
 
-| Exercises <code><b>true</b></code>       | Excercises <code><b>false</b></code>             |
+| Exercises <code><b>true</b></code>       | Exercises <code><b>false</b></code>              |
 |------------------------|--------------------------------|
 | <code>test_rotate_left_2()</code> | <code>test_retrace_insert_remove()</code> |
 
 <code><b>if</b> (height_left &gt; height_right)</code>
 
-| Exercises <code><b>true</b></code>        | Excercises <code><b>false</b></code>     |
+| Exercises <code><b>true</b></code>        | Exercises <code><b>false</b></code>      |
 |-------------------------|------------------------|
 | <code>test_rotate_right_1()</code> | <code>test_rotate_left_2()</code> |
 
 <code><b>if</b> (imbalance &gt; 1)</code>
 
-| Exercises <code><b>true</b></code>       | Excercises <code><b>false</b></code>             |
+| Exercises <code><b>true</b></code>       | Exercises <code><b>false</b></code>              |
 |------------------------|--------------------------------|
 | <code>test_rotate_left_2()</code> | <code>test_retrace_insert_remove()</code> |
 
 <code><b>if</b> (left_heavy)</code>
 
-| Exercises <code><b>true</b></code>        | Excercises <code><b>false</b></code>     |
+| Exercises <code><b>true</b></code>        | Exercises <code><b>false</b></code>      |
 |-------------------------|------------------------|
 | <code>test_rotate_right_1()</code> | <code>test_rotate_left_2()</code> |
 
 <code><b>if</b> (parent == (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64))</code>
 
-| Exercises <code><b>true</b></code>        | Excercises <code><b>false</b></code>     |
+| Exercises <code><b>true</b></code>        | Exercises <code><b>false</b></code>      |
 |-------------------------|------------------------|
 | <code>test_rotate_right_1()</code> | <code>test_rotate_left_2()</code> |
 
 <code><b>if</b> (new_subtree_root != (<a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NIL</a> <b>as</b> u64))</code>
 
-| Exercises <code><b>true</b></code>        | Excercises <code><b>false</b></code>             |
+| Exercises <code><b>true</b></code>        | Exercises <code><b>false</b></code>              |
 |-------------------------|--------------------------------|
 | <code>test_rotate_right_1()</code> | <code>test_retrace_insert_remove()</code> |
 
 <code><b>if</b> (delta == 0)</code>
 
-| Exercises <code><b>true</b></code>       | Excercises <code><b>false</b></code>             |
+| Exercises <code><b>true</b></code>       | Exercises <code><b>false</b></code>              |
 |------------------------|--------------------------------|
 | <code>test_rotate_left_2()</code> | <code>test_retrace_insert_remove()</code> |
 
@@ -5217,7 +5215,7 @@ rebalancing took place, <code><a href="avl_queue.md#0xc0deb00c_avl_queue_NIL">NI
 
 * <code>&<b>mut</b> <a href="avl_queue.md#0xc0deb00c_avl_queue_TreeNode">TreeNode</a></code>: Mutable reference to next ancestor.
 * <code>bool</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_INCREMENT">INCREMENT</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a></code>, the change in height for
-the subtree just retraced. Evalutes to <code><a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a></code> when
+the subtree just retraced. Evaluates to <code><a href="avl_queue.md#0xc0deb00c_avl_queue_DECREMENT">DECREMENT</a></code> when
 height does not change.
 * <code>bool</code>: <code><a href="avl_queue.md#0xc0deb00c_avl_queue_LEFT">LEFT</a></code> or <code><a href="avl_queue.md#0xc0deb00c_avl_queue_RIGHT">RIGHT</a></code>, the side on which the retraced
 subtree was a child to the next ancestor.
@@ -6659,7 +6657,7 @@ key but match node has no right child.
 
 ## Function `traverse`
 
-Traverse from tree node to inorder predecessor or succesor.
+Traverse from tree node to inorder predecessor or successor.
 
 
 <a name="@Parameters_171"></a>

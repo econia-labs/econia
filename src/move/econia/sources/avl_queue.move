@@ -17,6 +17,41 @@
 /// Like an AVL tree, the present implementation also allows for
 /// insertions and removals from anywhere inside the data structure.
 ///
+/// # General overview sections
+///
+/// [AVL trees](#avl-trees)
+///
+/// * [Height invariant](#height-invariant)
+/// * [Rotations](#rotations)
+/// * [Retracing](#retracing)
+/// * [As a map](#as-a-map)
+///
+/// [AVL queues](#avl-queues)
+///
+/// * [Key storage multiplicity](#key-storage-multiplicity)
+/// * [Sort order](#sort-order)
+/// * [Node structure](#node-structure)
+/// * [Node provisioning](#node-provisioning)
+/// * [Access keys](#access-keys)
+/// * [Height](#height)
+///
+/// [Implementation analysis](#implementation-analysis)
+///
+/// * [Gas considerations](#gas-considerations)
+/// * [Test development](#test-development)
+/// * [Public function index](#public-function-index)
+/// * [Dependency charts](#dependency-charts)
+///
+/// [Bit conventions](#bit-conventions)
+///
+/// * [Number](#number)
+/// * [Status](#status)
+/// * [Masking](#masking)
+///
+/// [References](#references)
+///
+/// [Complete DocGen index](#complete-docgen-index)
+///
 /// # AVL trees
 ///
 /// ## Height invariant
@@ -138,7 +173,7 @@
 /// * "Insertion value" $v_j$: the value from the key-value
 ///   insertion pair having insertion count $j$.
 ///
-/// ## Sorting order
+/// ## Sort order
 ///
 /// Key-value insertion pairs in an AVL queue are sorted by:
 ///
@@ -661,7 +696,7 @@
 /// [Wikipedia 2022]:
 ///     https://en.wikipedia.org/wiki/AVL_tree
 ///
-/// # Complete docgen index
+/// # Complete DocGen index
 ///
 /// The below index is automatically generated from source code:
 module econia::avl_queue {

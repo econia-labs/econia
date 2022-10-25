@@ -527,6 +527,7 @@
 /// * `get_tail_key()`
 /// * `has_key()`
 /// * `insert()`
+/// * `insert_check_eviction()`
 /// * `insert_evict_tail()`
 /// * `is_ascending()`
 /// * `is_ascending_access_key()`
@@ -614,6 +615,9 @@
 ///
 /// insert_evict_tail --> insert
 /// insert_evict_tail --> remove
+///
+/// insert_check_eviction --> remove
+/// insert_check_eviction --> insert
 ///
 /// has_key --> search
 ///
@@ -1244,6 +1248,54 @@ module econia::avl_queue {
     /// # Aborts
     ///
     /// * `E_INVALID_HEIGHT`: Specified height exceeds max height.
+    ///
+    /// # Reference diagrams
+    ///
+    /// ## Case 1
+    ///
+    /// * Ascending AVL queue.
+    /// * Left height greater than or equal to right height.
+    /// * Max list nodes active.
+    ///
+    /// >       [1] 2
+    /// >          / \
+    /// >     [2] 1   3 [3 -> 4 -> ... N_NODES_MAX]
+    ///
+    /// 1. Attempting to insert with insertion key 3, critical height 2
+    ///    is invalid (not too tall, max list nodes active, attempting
+    ///    to insert tail).
+    /// 2. Attempting to insert with insertion key 2, critical height 2
+    ///    then evicts tail (not too tall, max list nodes active, not
+    ///    attempting to insert tail).
+    ///
+    /// ## Case 2
+    ///
+    /// * Descending AVL queue.
+    /// * Left height not greater than or equal to right height.
+    /// * Not max list nodes active.
+    ///
+    /// >       [123] 2
+    /// >            / \
+    /// >     [456] 1   3 [789]
+    /// >                \
+    /// >                 4 [321]
+    ///
+    /// 1. Attempting to insert with insertion key 1, critical height 1
+    ///    is invalid (too tall, not max list nodes active, attempting
+    ///    to insert tail).
+    /// 2. Attempting to insert with insertion key 2, critical height 1
+    ///    then evicts tail (too tall, not max list nodes active, not
+    ///    attempting to insert tail).
+    /// 3. Attempting to insert with insertion key 1, critical height
+    ///    10 then results in standard insertion at tail (not too tall,
+    ///    not max list nodes active).
+    ///
+    /// # Testing
+    ///
+    /// * `test_insert_check_eviction_case_1()`
+    /// * `test_insert_check_eviction_case_2()`
+    /// * `test_insert_check_eviction_empty()`
+    /// * `test_insert_check_eviction_invalid_height()`
     public fun insert_check_eviction<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64,
@@ -1265,7 +1317,7 @@ module econia::avl_queue {
         // Get inactive list nodes stack top and root MSBs.
         let (list_top, root_msbs) =
             ((((bits >> SHIFT_LIST_STACK_TOP) & (HI_NODE_ID as u128)) as u64),
-             (((bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) as u8)));
+             (((bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE)))));
         // Get root field by masking in root LSBs.
         let root = ((root_msbs << BITS_PER_BYTE) as u64) |
                    (avlq_ref_mut.root_lsbs as u64);
@@ -3153,7 +3205,7 @@ module econia::avl_queue {
                         // Mask in new bits.
                         ((new_subtree_root as u128) >> BITS_PER_BYTE);
                     avlq_ref_mut.root_lsbs = // Set AVL queue root LSBs.
-                        (new_subtree_root & HI_BYTE as u8);
+                        ((new_subtree_root & HI_BYTE) as u8);
                 }; // AVL queue root now current for actual root.
                 return // Stop looping.
             } else { // If just retraced node not at root:
@@ -4231,7 +4283,7 @@ module econia::avl_queue {
         Option<bool>
     ) {
         let root_msbs = // Get root MSBs.
-            (avlq_ref.bits & ((HI_NODE_ID >> BITS_PER_BYTE) as u128) as u64);
+            ((avlq_ref.bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) as u64);
         let node_id = // Shift over, mask in LSBs, store as search node.
             (root_msbs << BITS_PER_BYTE) | (avlq_ref.root_lsbs as u64);
         // If no node at root, return as such, with empty option.
@@ -5590,6 +5642,107 @@ module econia::avl_queue {
         assert!(!is_ascending_access_key(insert(&mut avlq, 1, 0)), 0);
         assert!(!is_ascending_access_key(insert(&mut avlq, 2, 0)), 0);
         assert!(!is_ascending_access_key(insert(&mut avlq, 3, 0)), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns, state updates for `insert_check_eviction()`
+    /// reference diagram case 1.
+    fun test_insert_check_eviction_case_1() {
+        let avlq = new(ASCENDING, 0, 0); // Initialize AVL queue.
+        // Insert root tree node and node with insertion key 1.
+        insert(&mut avlq, 1, 2);
+        insert(&mut avlq, 1, 2);
+        let v = 3; // Initialize insertion value counter.
+        while (v <= N_NODES_MAX) { // Activate max list nodes.
+            insert(&mut avlq, 3, v); // Insert with insertion value 3.
+            v = v + 1; // Increment value counter.
+        };
+        // Attempt invalid insertion.
+        let (access_key, evictee_access_key, evictee_value) =
+            insert_check_eviction(&mut avlq, 3, 123, 2);
+        // Assert flagged invalid.
+        assert!(access_key == (NIL as u64), 0);
+        assert!(evictee_access_key == (NIL as u64), 0);
+        assert!(*option::borrow(&evictee_value) == 123, 0);
+        // Attempt valid insertion.
+        (access_key, evictee_access_key, evictee_value) =
+            insert_check_eviction(&mut avlq, 2, 123, 2);
+        // Assert access key lookup on insertion value.
+        assert!(*borrow(&avlq, access_key) == 123, 0);
+        // Assert encoded insertion key.
+        assert!(get_access_key_insertion_key(access_key) == 2, 0);
+        // Assert evictee insertion key.
+        assert!(get_access_key_insertion_key(evictee_access_key) == 3, 0);
+        // Assert evictee insertion value.
+        assert!(*option::borrow(&evictee_value) == N_NODES_MAX, 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns, state updates for `insert_check_eviction()`
+    /// reference diagram case 2.
+    fun test_insert_check_eviction_case_2() {
+        let avlq = new(DESCENDING, 0, 0); // Initialize AVL queue.
+        // Insert nodes top to bottom, left to right.
+        insert(&mut avlq, 2, 123);
+        insert(&mut avlq, 1, 456);
+        insert(&mut avlq, 3, 789);
+        insert(&mut avlq, 4, 321);
+        // Attempt invalid insertion.
+        let (access_key, evictee_access_key, evictee_value) =
+            insert_check_eviction(&mut avlq, 1, 987, 1);
+        // Assert flagged invalid.
+        assert!(access_key == (NIL as u64), 0);
+        assert!(evictee_access_key == (NIL as u64), 0);
+        assert!(*option::borrow(&evictee_value) == 987, 0);
+        // Attempt valid insertion.
+        (access_key, evictee_access_key, evictee_value) =
+            insert_check_eviction(&mut avlq, 2, 987, 1);
+        // Assert access key lookup on insertion value.
+        assert!(*borrow(&avlq, access_key) == 987, 0);
+        // Assert encoded insertion key.
+        assert!(get_access_key_insertion_key(access_key) == 2, 0);
+        // Assert evictee insertion key.
+        assert!(get_access_key_insertion_key(evictee_access_key) == 1, 0);
+        // Assert evictee insertion value.
+        assert!(*option::borrow(&evictee_value) == 456, 0);
+        // Attempt valid insertion.
+        (access_key, evictee_access_key, evictee_value) =
+            insert_check_eviction(&mut avlq, 1, 654, 10);
+        // Assert access key lookup on insertion value.
+        assert!(*borrow(&avlq, access_key) == 654, 0);
+        // Assert encoded insertion key.
+        assert!(get_access_key_insertion_key(access_key) == 1, 0);
+        // Assert no evictee.
+        assert!(evictee_access_key == (NIL as u64), 0);
+        assert!(option::is_none(&evictee_value), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    /// Verify returns, state updates for inserting to empty AVL queue.
+    fun insert_check_eviction_empty() {
+        let avlq = new(ASCENDING, 0, 0); // Initialize AVL queue.
+        let (access_key, evictee_access_key, evictee_value) =
+            insert_check_eviction(&mut avlq, 123, 456, 0);
+        // Assert access key lookup on insertion value.
+        assert!(*borrow(&avlq, access_key) == 456, 0);
+        // Assert encoded insertion key.
+        assert!(get_access_key_insertion_key(access_key) == 123, 0);
+        // Assert no evictee.
+        assert!(evictee_access_key == (NIL as u64), 0);
+        assert!(option::is_none(&evictee_value), 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for invalid height.
+    fun test_insert_check_eviction_invalid_height() {
+        let avlq = new<u8>(ASCENDING, 0, 0); // Initialize AVL queue.
+        // Attempt invalid insertion.
+        insert_check_eviction(&mut avlq, 1, 1, MAX_HEIGHT + 1);
         drop_avlq_test(avlq); // Drop AVL queue.
     }
 

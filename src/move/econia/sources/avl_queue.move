@@ -1537,6 +1537,7 @@ module econia::avl_queue {
         value // Return insertion value.
     }
 
+/*
     /// Try inserting key-value pair, evicting AVL queue tail as needed.
     ///
     /// If attempting to insert a new tail, insertion not valid if
@@ -1596,47 +1597,10 @@ module econia::avl_queue {
         // If empty, return result of standard insertion.
         if (tail_list_node_id == (NIL as u64)) return
             (insert(avlq_ref_mut, key, value), (NIL as u64), option::none());
-        // Get sort order bit flag and tail insertion key.
-        let (order_bit, tail_key) =
-            ((((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8),
-             (((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128)) as u64));
-        // Determine if ascending AVL queue.
-        let ascending = order_bit == BIT_FLAG_ASCENDING;
-        // If ascending and insertion key greater than or equal to tail
-        // key, or descending and insertion key less than or equal to
-        // tail key (if attempting to insert new tail):
-        if (( ascending && (key >= tail_key)) ||
-            (!ascending && (key <= tail_key))) {
-            let n_list_nodes = // Get allocated list node count.
-                table_with_length::length(&avlq_ref_mut.list_nodes);
-            // Get inactive list nodes stack top.
-            let list_top = (((bits >> SHIFT_LIST_STACK_TOP) &
-                             (HI_NODE_ID as u128)) as u64);
-            let root_msbs =  // Get root MSBs.
-                (((bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) as u8));
-            // Get root field by masking in root LSBs.
-            let root = ((root_msbs << BITS_PER_BYTE) as u64) |
-                       (avlq_ref_mut.root_lsbs as u64);
-            let root_ref = // Immutably borrow root node.
-                table_with_length::borrow(&avlq_ref_mut.tree_nodes, root);
-            let r_bits = root_ref.bits; // Get root node bits.
-            let height_left = // Get root left height.
-                (((r_bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT as u128)) as u8);
-            let height_right = // Get root right height.
-                (((r_bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8);
-            let height = // Height is greater of left and right height.
-                if (height_left >= height_right) height_left else height_right;
-            // Return invalid insertion if height above critical height
-            // or if max list nodes allocated and all are active.
-            if ((height > critical_height) ||
-                ((n_list_nodes == N_NODES_MAX) && (list_top == (NIL as u64))))
-                return ((NIL as u64), (NIL as u64), option::some(value));
-        }; // Done with validity check for trying to insert new tail.
-        // Insert new key-value insertion pair, storing access key.
-        let new_access_key = insert(avlq_ref_mut, key, value);
-        bits = avlq_ref_mut.bits; // Refresh AVL queue bits.
-        // Get root MSBs post-insertion.
-        let root_msbs = (bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE) as u8);
+        // Get inactive list nodes stack top and root MSBs.
+        let (list_top, root_msbs) =
+            ((((bits >> SHIFT_LIST_STACK_TOP) & (HI_NODE_ID as u128)) as u64),
+             (((bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) as u8)));
         // Get root field by masking in root LSBs.
         let root = ((root_msbs << BITS_PER_BYTE) as u64) |
                    (avlq_ref_mut.root_lsbs as u64);
@@ -1644,40 +1608,53 @@ module econia::avl_queue {
             table_with_length::borrow(&avlq_ref_mut.tree_nodes, root);
         let r_bits = root_ref.bits; // Get root node bits.
         let (height_left, height_right) = // Get left and right height.
-            ((((r_bits >> SHIFT_HEIGHT_LEFT ) & (HI_HEIGHT as u128)) as u8),
+            ((((r_bits >> SHIFT_HEIGHT_LEFT) & (HI_HEIGHT as u128)) as u8),
              (((r_bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8));
         let height = // Height is greater of left and right height.
             if (height_left >= height_right) height_left else height_right;
-        // If below critical height no need to evict, so return as such.
-        if (height <= critical_height) return
-            (new_access_key, (NIL as u64), option::none());
-        // Refresh tail list node ID and insertion key.
-        (tail_list_node_id, tail_key) =
-            ((((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64),
-             (((bits >> SHIFT_TAIL_KEY) & (HI_INSERTION_KEY as u128)) as u64));
-        // Immutably borrow tail list node.
-        let tail_list_node_ref = table_with_length::borrow(
-            &avlq_ref_mut.list_nodes, tail_list_node_id);
-        // Get virtual next field from node.
-        let next = ((tail_list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
-                   (tail_list_node_ref.next_lsbs as u64);
-        // Get tree node ID encoded in next field.
-        let tail_tree_node_id = next & (HI_NODE_ID as u64);
-        let tail_access_key = tail_key | // Get tail access key.
-            ((order_bit as u64 ) << SHIFT_ACCESS_SORT_ORDER) |
-            ((tail_list_node_id) << SHIFT_ACCESS_LIST_NODE_ID) |
-            ((tail_tree_node_id) << SHIFT_ACCESS_TREE_NODE_ID);
-        // Remove AVL queue tail, storing insertion value.
-        let tail_value = remove(avlq_ref_mut, tail_access_key);
-        // If tail access key equals new access key, then just inserted
-        // sole list node in a new tree node at tail, leading to height
-        // violation that was not predictable before insertion. The
-        // tail then had to be removed, so return invalid insertion.
-        if (tail_access_key == new_access_key) return
-            ((NIL as u64), (NIL as u64), option::some(tail_value));
-        // Otherwise return valid insertion with evictee.
-        (new_access_key, tail_access_key, option::some(tail_value))
+        let too_tall = height > critical_height; // Check if too tall.
+        // Get number of allocated list nodes.
+        let n_list_nodes = table_with_length::length(&avlq_ref_mut.list_nodes);
+        let max_list_nodes_active = // Check if max list nodes active.
+            (n_list_nodes == N_NODES_MAX) && (list_top == (NIL as u64));
+        // Assume not evicting tail.
+        let (tail_access_key, tail_value) = ((NIL as u64), option::none());
+        // If above critical height or max list nodes active:
+        if (too_tall || max_list_nodes_active) {
+            let order_bit = // Get sort order bit flag.
+                (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8);
+            // Determine if ascending AVL queue.
+            let ascending = order_bit == BIT_FLAG_ASCENDING;
+            // Get AVL queue tail insertion key.
+            let tail_key = (((bits >> SHIFT_TAIL_KEY) &
+                             (HI_INSERTION_KEY as u128)) as u64);
+            // If ascending and insertion key greater than or equal to
+            // tail key, or descending and insertion key less than or
+            // equal to tail key, attempting to insert new tail: invalid
+            // when above critical height or max list nodes active.
+            if (( ascending && (key >= tail_key)) ||
+                (!ascending && (key <= tail_key))) return
+                ((NIL as u64), (NIL as u64), option::some(value));
+            // Immutably borrow tail list node.
+            let tail_list_node_ref = table_with_length::borrow(
+                &avlq_ref_mut.list_nodes, tail_list_node_id);
+            let next = // Get virtual next field from node.
+                ((tail_list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                 (tail_list_node_ref.next_lsbs as u64);
+            // Get tree node ID encoded in next field.
+            let tail_tree_node_id = next & (HI_NODE_ID as u64);
+            tail_access_key = tail_key | // Get tail access key.
+                ((order_bit as u64 ) << SHIFT_ACCESS_SORT_ORDER) |
+                ((tail_list_node_id) << SHIFT_ACCESS_LIST_NODE_ID) |
+                ((tail_tree_node_id) << SHIFT_ACCESS_TREE_NODE_ID);
+            // Get tail insertion value from evicted tail.
+            tail_value = option::some(remove(avlq_ref_mut, tail_access_key));
+        }; // Optional eviction now complete.
+        // Return access key for new key-value insertion pair, optional
+        // access key and insertion value for evicted tail.
+        (insert(avlq_ref_mut, key, value), tail_access_key, tail_value)
     }
+*/
 
     /// Return `true` if inserting `key` would update AVL queue head.
     ///

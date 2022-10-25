@@ -3261,6 +3261,26 @@ module econia::avl_queue {
     /// * `test_retrace_prep_iterate_1()`
     /// * `test_retrace_prep_iterate_2()`
     /// * `test_retrace_prep_iterate_3()`
+    ///
+    /// ## Case 1
+    ///
+    /// * Side is `LEFT`.
+    /// * Subtree rebalanced.
+    /// * Operation is `DECREMENT`.
+    /// * Actual change in height.
+    ///
+    /// ## Case 2
+    ///
+    /// * Side is `RIGHT`.
+    /// * Subtree rebalanced.
+    /// * Operation is `DECREMENT`.
+    /// * No change in height.
+    ///
+    /// ## Case 3
+    ///
+    /// * Side is `RIGHT`.
+    /// * Subtree not rebalanced.
+    /// * Operation is `INCREMENT`.
     fun retrace_prep_iterate<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         parent_id: u64,
@@ -4197,6 +4217,24 @@ module econia::avl_queue {
     ///
     /// * `test_retrace_update_heights_1()`
     /// * `test_retrace_update_heights_2()`
+    ///
+    /// ## Case 1
+    ///
+    /// * Left height is greater than or equal to right height
+    ///   pre-retrace.
+    /// * Side is `LEFT`.
+    /// * Operation is `DECREMENT`.
+    /// * Left height is greater than or equal to right height
+    ///   post-retrace.
+    ///
+    /// ## Case 2
+    ///
+    /// * Left height is not greater than or equal to right height
+    ///   pre-retrace.
+    /// * Side is `RIGHT`.
+    /// * Operation is `INCREMENT`.
+    /// * Left height is not greater than or equal to right height
+    ///   post-retrace.
     fun retrace_update_heights(
         node_ref_mut: &mut TreeNode,
         side: bool,
@@ -4578,7 +4616,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun get_head_key_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
@@ -4591,7 +4629,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun get_head_node_id_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
@@ -4863,7 +4901,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun get_tail_key_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
@@ -4876,7 +4914,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun get_tail_node_id_test<V>(
         avlq_ref: &AVLqueue<V>
     ): u64 {
@@ -4976,7 +5014,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun set_head_key_test<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64
@@ -4994,7 +5032,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun set_head_node_id_test<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_id: u64
@@ -5032,7 +5070,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun set_tail_key_test<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         key: u64
@@ -5050,7 +5088,7 @@ module econia::avl_queue {
     ///
     /// # Testing
     ///
-    /// * `test_set_get_head_tail()`
+    /// * `test_set_get_head_tail_test()`
     fun set_tail_node_id_test<V>(
         avlq_ref_mut: &mut AVLqueue<V>,
         node_id: u64
@@ -5729,7 +5767,7 @@ module econia::avl_queue {
 
     #[test]
     /// Verify returns, state updates for inserting to empty AVL queue.
-    fun insert_check_eviction_empty() {
+    fun test_insert_check_eviction_empty() {
         let avlq = new(ASCENDING, 0, 0); // Initialize AVL queue.
         let (access_key, evictee_access_key, evictee_value) =
             insert_check_eviction(&mut avlq, 123, 456, 0);
@@ -7188,6 +7226,145 @@ module econia::avl_queue {
     }
 
     #[test]
+    /// Verify state updates for removing head, tail, and sole list
+    /// node.
+    fun test_remove_list_node() {
+        // Declare tree node ID for sole activated tree node.
+        let tree_id_1 = 10;
+        let avlq = new<u8>(ASCENDING, tree_id_1, 0); // Init AVL queue.
+        // Insert, storing list node IDs.
+        let list_id_1 = get_access_key_list_node_id_test(
+            insert(&mut avlq, HI_INSERTION_KEY, 1));
+        let list_id_2 = get_access_key_list_node_id_test(
+            insert(&mut avlq, HI_INSERTION_KEY, 2));
+        let list_id_3 = get_access_key_list_node_id_test(
+            insert(&mut avlq, HI_INSERTION_KEY, 3));
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == (NIL as u64), 0);
+        // Assert tree node state.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_1, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_3, 0);
+        // Assert list node state.
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == tree_id_1, 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == list_id_2, 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_1, 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_3, 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_2, 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == tree_id_1, 0);
+        let (value, new_head, new_tail) = // Remove list head.
+            remove_list_node(&mut avlq, list_id_1);
+        // Assert returns.
+        assert!(value == 1, 0);
+        assert!(*option::borrow(&new_head) == list_id_2, 0);
+        assert!(option::is_none(&new_tail), 0);
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == list_id_1, 0);
+        // Assert tree node state.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_3, 0);
+        // Assert list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == tree_id_1   , 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_3   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_2    , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == tree_id_1    , 0);
+        // Remove list tail
+        (value, new_head, new_tail) = remove_list_node(&mut avlq, list_id_3);
+        // Assert returns.
+        assert!(value == 3, 0);
+        assert!(option::is_none(&new_head), 0);
+        assert!(*option::borrow(&new_tail) == list_id_2, 0);
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == list_id_3, 0);
+        // Assert tree node state.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        // Assert list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == tree_id_1   , 0);
+        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == tree_id_1   , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_1    , 0);
+        // Remove sole node in list
+        (value, new_head, new_tail) = remove_list_node(&mut avlq, list_id_2);
+        // Assert returns.
+        assert!(value == 2, 0);
+        assert!(*option::borrow(&new_head) == (NIL as u64), 0);
+        assert!(*option::borrow(&new_tail) == (NIL as u64), 0);
+        // Assert inactive list node stack top.
+        assert!(get_list_top_test(&avlq) == list_id_2, 0);
+        // Assert tree node state unmodified.
+        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
+                == list_id_2, 0);
+        // Assert list node state.
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
+                == list_id_3    , 0);
+        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
+                == (NIL as u64), 0);
+        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
+        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
+                == list_id_1    , 0);
+        drop_avlq_test(avlq); // Drop AVL queue.
+    }
+
+    #[test]
     /// Verify state updates for removing a list node that is neither
     /// head nor tail of corresponding doubly linked list.
     fun test_remove_mid_list() {
@@ -7355,145 +7532,6 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state updates for removing head, tail, and sole list
-    /// node.
-    fun test_remove_list_node() {
-        // Declare tree node ID for sole activated tree node.
-        let tree_id_1 = 10;
-        let avlq = new<u8>(ASCENDING, tree_id_1, 0); // Init AVL queue.
-        // Insert, storing list node IDs.
-        let list_id_1 = get_access_key_list_node_id_test(
-            insert(&mut avlq, HI_INSERTION_KEY, 1));
-        let list_id_2 = get_access_key_list_node_id_test(
-            insert(&mut avlq, HI_INSERTION_KEY, 2));
-        let list_id_3 = get_access_key_list_node_id_test(
-            insert(&mut avlq, HI_INSERTION_KEY, 3));
-        // Assert inactive list node stack top.
-        assert!(get_list_top_test(&avlq) == (NIL as u64), 0);
-        // Assert tree node state.
-        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
-                == list_id_1, 0);
-        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
-                == list_id_3, 0);
-        // Assert list node state.
-        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
-                == tree_id_1, 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
-                == list_id_2, 0);
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
-                == list_id_1, 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
-                == list_id_3, 0);
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
-                == list_id_2, 0);
-        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
-                == tree_id_1, 0);
-        let (value, new_head, new_tail) = // Remove list head.
-            remove_list_node(&mut avlq, list_id_1);
-        // Assert returns.
-        assert!(value == 1, 0);
-        assert!(*option::borrow(&new_head) == list_id_2, 0);
-        assert!(option::is_none(&new_tail), 0);
-        // Assert inactive list node stack top.
-        assert!(get_list_top_test(&avlq) == list_id_1, 0);
-        // Assert tree node state.
-        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
-                == list_id_2, 0);
-        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
-                == list_id_3, 0);
-        // Assert list node state.
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
-                == (NIL as u64), 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
-                == (NIL as u64), 0);
-        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
-                == tree_id_1   , 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
-                == list_id_3   , 0);
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
-                == list_id_2    , 0);
-        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
-                == tree_id_1    , 0);
-        // Remove list tail
-        (value, new_head, new_tail) = remove_list_node(&mut avlq, list_id_3);
-        // Assert returns.
-        assert!(value == 3, 0);
-        assert!(option::is_none(&new_head), 0);
-        assert!(*option::borrow(&new_tail) == list_id_2, 0);
-        // Assert inactive list node stack top.
-        assert!(get_list_top_test(&avlq) == list_id_3, 0);
-        // Assert tree node state.
-        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
-                == list_id_2, 0);
-        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
-                == list_id_2, 0);
-        // Assert list node state.
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
-                == (NIL as u64), 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
-                == (NIL as u64), 0);
-        assert!( is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
-                == tree_id_1   , 0);
-        assert!( is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
-                == tree_id_1   , 0);
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
-                == (NIL as u64), 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
-                == list_id_1    , 0);
-        // Remove sole node in list
-        (value, new_head, new_tail) = remove_list_node(&mut avlq, list_id_2);
-        // Assert returns.
-        assert!(value == 2, 0);
-        assert!(*option::borrow(&new_head) == (NIL as u64), 0);
-        assert!(*option::borrow(&new_tail) == (NIL as u64), 0);
-        // Assert inactive list node stack top.
-        assert!(get_list_top_test(&avlq) == list_id_2, 0);
-        // Assert tree node state unmodified.
-        assert!(get_list_head_by_id_test(&avlq, tree_id_1)
-                == list_id_2, 0);
-        assert!(get_list_tail_by_id_test(&avlq, tree_id_1)
-                == list_id_2, 0);
-        // Assert list node state.
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_1)
-                == (NIL as u64), 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_1), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_1)
-                == (NIL as u64), 0);
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_2)
-                == (NIL as u64), 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_2), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_2)
-                == list_id_3    , 0);
-        assert!(!is_tree_node_list_last_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_last_node_id_by_id_test(  &avlq, list_id_3)
-                == (NIL as u64), 0);
-        assert!(!is_tree_node_list_next_by_id_test(&avlq, list_id_3), 0);
-        assert!(get_list_next_node_id_by_id_test(  &avlq, list_id_3)
-                == list_id_1    , 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
     /// Verify state updates for reference operations in `retrace()`.
     fun test_retrace_insert_remove() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
@@ -7605,12 +7643,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state updates/returns for:
-    ///
-    /// * Side is `LEFT`.
-    /// * Subtree rebalanced.
-    /// * Operation is `DECREMENT`.
-    /// * Actual change in height.
+    /// Verify state updates/returns for `retrace_prep_iterate()` case
+    /// 1.
     fun test_retrace_prep_iterate_1() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare arguments.
@@ -7646,12 +7680,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state updates/returns for:
-    ///
-    /// * Side is `RIGHT`.
-    /// * Subtree rebalanced.
-    /// * Operation is `DECREMENT`.
-    /// * No change in height.
+    /// Verify state updates/returns for `retrace_prep_iterate()` case
+    /// 2.
     fun test_retrace_prep_iterate_2() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare arguments.
@@ -7687,11 +7717,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state updates/returns for:
-    ///
-    /// * Side is `RIGHT`.
-    /// * Subtree not rebalanced.
-    /// * Operation is `INCREMENT`.
+    /// Verify state updates/returns for `retrace_prep_iterate()` case
+    /// 3.
     fun test_retrace_prep_iterate_3() {
         let avlq = new<u8>(ASCENDING, 0, 0); // Init AVL queue.
         // Declare arguments.
@@ -7725,14 +7752,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state updates/returns for:
-    ///
-    /// * Left height is greater than or equal to right height
-    ///   pre-retrace.
-    /// * Side is `LEFT`.
-    /// * Operation is `DECREMENT`.
-    /// * Left height is greater than or equal to right height
-    ///   post-retrace.
+    /// Verify state updates/returns for `retrace_update_heights()`
+    /// case 1.
     fun test_retrace_update_heights_1() {
         // Declare arguments.
         let tree_node = TreeNode{bits:
@@ -7757,14 +7778,8 @@ module econia::avl_queue {
     }
 
     #[test]
-    /// Verify state updates/returns for:
-    ///
-    /// * Left height is not greater than or equal to right height
-    ///   pre-retrace.
-    /// * Side is `RIGHT`.
-    /// * Operation is `INCREMENT`.
-    /// * Left height is not greater than or equal to right height
-    ///   post-retrace.
+    /// Verify state updates/returns for `retrace_update_heights()`
+    /// case 2.
     fun test_retrace_update_heights_2() {
         // Declare arguments.
         let tree_node = TreeNode{bits:

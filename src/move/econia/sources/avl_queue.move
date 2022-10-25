@@ -1495,6 +1495,11 @@ module econia::avl_queue {
     ///
     /// * `AVLqueue<V>`: A new AVL queue.
     ///
+    /// # Aborts
+    ///
+    /// * `E_TOO_MANY_TREE_NODES`: Too many tree nodes specified.
+    /// * `E_TOO_MANY_LIST_NODES`: Too many list nodes specified.
+    ///
     /// # Testing
     ///
     /// * `test_new_no_nodes()`
@@ -1859,6 +1864,8 @@ module econia::avl_queue {
     }
 
     /// Insert a list node and return its node ID.
+    ///
+    /// Inner function for `insert()`.
     ///
     /// In the case of inserting a list node to a doubly linked list in
     /// an existing tree node, known as the "anchor tree node", the list
@@ -7110,7 +7117,7 @@ module econia::avl_queue {
              get_access_key_tree_node_id_test(insert(&mut avlq, 7, 0)),
              get_access_key_tree_node_id_test(insert(&mut avlq, 4, 0)));
         remove_tree_node(&mut avlq, node_id_5); // Remove node x.
-        assert!(get_root_test(&avlq) == node_id_4, 0); // Asert root.
+        assert!(get_root_test(&avlq) == node_id_4, 0); // Assert root.
         // Assert inactive tree nodes stack top.
         assert!(get_tree_top_test(&avlq) == node_id_5, 0);
         // Assert node x state contains only bits for node ID of next

@@ -211,8 +211,12 @@
 /// overwritten. Rather than allocating a new node for each insertion
 /// and deallocating for each removal, this approach minimizes per-item
 /// creation costs. Nodes can additionally be pre-allocated upon AVL
-/// queue initialization and pushed directly on the inactive nodes
+/// queue initialization and pushed directly on the inactive nodes stack
 /// so as to reduce per-item costs for future operations.
+///
+/// Since each active tree node contains a doubly linked list having at
+/// least one active list node, the number of active tree nodes is
+/// less than or equal to the number of active list nodes.
 ///
 /// Tree nodes and list nodes are each assigned a 1-indexed 14-bit
 /// serial ID known as a node ID. Node ID 0 is reserved for null, such
@@ -1118,7 +1122,6 @@ module econia::avl_queue {
     ///
     /// * `test_insert_insertion_key_too_large()`
     /// * `test_insert_too_many_list_nodes()`
-    /// * `test_insert_too_many_tree_nodes()`
     ///
     /// # State verification testing
     ///
@@ -1192,6 +1195,132 @@ module econia::avl_queue {
         key | ((order_bit as u64) << SHIFT_ACCESS_SORT_ORDER) |
               ((list_node_id    ) << SHIFT_ACCESS_LIST_NODE_ID) |
               ((tree_node_id    ) << SHIFT_ACCESS_TREE_NODE_ID)
+    }
+
+    /// Try inserting key-value pair, evicting AVL queue tail as needed.
+    ///
+    /// If AVL queue is empty then no eviction is required, and a
+    /// standard insertion is performed.
+    ///
+    /// If AVL queue is not empty, then eviction is required if the AVL
+    /// queue is above the provided critical height or if the maximum
+    /// number of list nodes have already been allocated and all are
+    /// active. Here, insertion is not permitted if attempting to insert
+    /// a new tail. Otherwise, the tail of the AVL queue is removed then
+    /// the provided key-value pair is inserted.
+    ///
+    /// If AVL queue is not empty but eviction is not required, a
+    /// standard insertion is performed.
+    ///
+    /// Does not guarantee that height will be less than or equal to
+    /// critical height post-insertion, since there is no limit on the
+    /// number of list nodes with a given insertion key: evicting the
+    /// tail node does not guarantee removing a corresponding tree node.
+    /// Rather, critical height is simply a threshold for determining
+    /// whether height-driven eviction is required.
+    ///
+    /// Does not check number of active tree nodes because the number of
+    /// active tree nodes is less than or equal to the number of active
+    /// list nodes.
+    ///
+    /// # Parameters
+    ///
+    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
+    /// * `key`: Key to insert.
+    /// * `value`: Value to insert.
+    /// * `critical_height`: Tree height above which eviction should
+    ///   take place.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Access key of key-value pair just inserted, otherwise
+    ///   `NIL` if an invalid insertion.
+    /// * `u64`: `NIL` if no eviction required, otherwise access key of
+    ///   evicted key-value insertion pair.
+    /// * `Option<V>`: None if no eviction required. If an invalid
+    ///   insertion, the insertion value that could not be inserted.
+    ///   Otherwise, the evicted insertion value.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_HEIGHT`: Specified height exceeds max height.
+    public fun insert_check_eviction<V>(
+        avlq_ref_mut: &mut AVLqueue<V>,
+        key: u64,
+        value: V,
+        critical_height: u8
+    ): (
+        u64,
+        u64,
+        Option<V>
+    ) {
+        // Assert specified critical height is a valid height.
+        assert!(critical_height <= MAX_HEIGHT, E_INVALID_HEIGHT);
+        let bits = avlq_ref_mut.bits; // Get AVL queue bits.
+        let tail_list_node_id = // Get AVL queue tail list node id.
+            (((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64);
+        // If empty, return result of standard insertion.
+        if (tail_list_node_id == (NIL as u64)) return
+            (insert(avlq_ref_mut, key, value), (NIL as u64), option::none());
+        // Get inactive list nodes stack top and root MSBs.
+        let (list_top, root_msbs) =
+            ((((bits >> SHIFT_LIST_STACK_TOP) & (HI_NODE_ID as u128)) as u64),
+             (((bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) as u8)));
+        // Get root field by masking in root LSBs.
+        let root = ((root_msbs << BITS_PER_BYTE) as u64) |
+                   (avlq_ref_mut.root_lsbs as u64);
+        let root_ref = // Immutably borrow root node.
+            table_with_length::borrow(&avlq_ref_mut.tree_nodes, root);
+        let r_bits = root_ref.bits; // Get root node bits.
+        let (height_left, height_right) = // Get left and right height.
+            ((((r_bits >> SHIFT_HEIGHT_LEFT) & (HI_HEIGHT as u128)) as u8),
+             (((r_bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8));
+        let height = // Height is greater of left and right height.
+            if (height_left >= height_right) height_left else height_right;
+        let too_tall = height > critical_height; // Check if too tall.
+        // Get number of allocated list nodes.
+        let n_list_nodes = table_with_length::length(&avlq_ref_mut.list_nodes);
+        let max_list_nodes_active = // Check if max list nodes active.
+            (n_list_nodes == N_NODES_MAX) && (list_top == (NIL as u64));
+        // Declare tail access key and insertion value.
+        let (tail_access_key, tail_value);
+        // If above critical height or max list nodes active:
+        if (too_tall || max_list_nodes_active) { // If need to evict:
+            let order_bit = // Get sort order bit flag.
+                (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8);
+            // Determine if ascending AVL queue.
+            let ascending = order_bit == BIT_FLAG_ASCENDING;
+            // Get AVL queue tail insertion key.
+            let tail_key = (((bits >> SHIFT_TAIL_KEY) &
+                             (HI_INSERTION_KEY as u128)) as u64);
+            // If ascending and insertion key greater than or equal to
+            // tail key, or descending and insertion key less than or
+            // equal to tail key, attempting to insert new tail: invalid
+            // when above critical height or max list nodes active.
+            if (( ascending && (key >= tail_key)) ||
+                (!ascending && (key <= tail_key))) return
+                ((NIL as u64), (NIL as u64), option::some(value));
+            // Immutably borrow tail list node.
+            let tail_list_node_ref = table_with_length::borrow(
+                &avlq_ref_mut.list_nodes, tail_list_node_id);
+            let next = // Get virtual next field from node.
+                ((tail_list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
+                 (tail_list_node_ref.next_lsbs as u64);
+            // Get tree node ID encoded in next field.
+            let tail_tree_node_id = next & (HI_NODE_ID as u64);
+            tail_access_key = tail_key | // Get tail access key.
+                ((order_bit as u64 ) << SHIFT_ACCESS_SORT_ORDER) |
+                ((tail_list_node_id) << SHIFT_ACCESS_LIST_NODE_ID) |
+                ((tail_tree_node_id) << SHIFT_ACCESS_TREE_NODE_ID);
+            // Get tail insertion value from evicted tail.
+            tail_value = option::some(remove(avlq_ref_mut, tail_access_key));
+        } else { // If no potential for eviction:
+            // Flag no evicted tail return values.
+            (tail_access_key, tail_value) = ((NIL as u64), option::none());
+        }; // Optional eviction now complete.
+        // Return access key for new key-value insertion pair, optional
+        // access key and insertion value for evicted tail.
+        (insert(avlq_ref_mut, key, value), tail_access_key, tail_value)
     }
 
     /// Insert key-value insertion pair, evicting AVL queue tail.
@@ -1537,125 +1666,6 @@ module econia::avl_queue {
         value // Return insertion value.
     }
 
-/*
-    /// Try inserting key-value pair, evicting AVL queue tail as needed.
-    ///
-    /// If attempting to insert a new tail, insertion not valid if
-    /// already above critical height or if max list nodes already
-    /// allocated and all are active.
-    ///
-    /// If not attempting to insert a new tail, tail is evicted if tree
-    /// height exceeds critical height or if max list nodes already
-    /// allocated and all are active. Then provided key-value insertion
-    /// pair is inserted.
-    ///
-    /// Otherwise, provided key-value insertion pair is inserted without
-    /// evicting the AVL queue tail.
-    ///
-    /// Does not guarantee that height will be less than or equal to
-    /// critical height post-insertion, since there is no limit on the
-    /// number of list nodes with a given insertion key: evicting the
-    /// tail node does not guarantee removing the corresponding tree
-    /// node.
-    ///
-    /// # Parameters
-    ///
-    /// * `avlq_ref_mut`: Mutable reference to AVL queue.
-    /// * `key`: Key to insert.
-    /// * `value`: Value to insert.
-    /// * `critical_height`: Tree height above which eviction should
-    ///   take place.
-    ///
-    /// # Returns
-    ///
-    /// * `u64`: Access key of key-value pair just inserted, otherwise
-    ///   `NIL` if an invalid insertion.
-    /// * `u64`: `NIL` if no eviction required, otherwise access key of
-    ///   evicted key-value insertion pair.
-    /// * `Option<V>`: None if no eviction required. If an invalid
-    ///   insertion, the insertion value that could not be inserted.
-    ///   Otherwise, the evicted insertion value.
-    ///
-    /// # Aborts
-    ///
-    /// * `E_INVALID_HEIGHT`: Specified height exceeds max height.
-    public fun try_insert_check_eviction<V>(
-        avlq_ref_mut: &mut AVLqueue<V>,
-        key: u64,
-        value: V,
-        critical_height: u8
-    ): (
-        u64,
-        u64,
-        Option<V>
-    ) {
-        // Assert specified critical height is a valid height.
-        assert!(critical_height <= MAX_HEIGHT, E_INVALID_HEIGHT);
-        let bits = avlq_ref_mut.bits; // Get AVL queue bits.
-        let tail_list_node_id = // Get AVL queue tail list node id.
-            (((bits >> SHIFT_TAIL_NODE_ID) & (HI_NODE_ID as u128)) as u64);
-        // If empty, return result of standard insertion.
-        if (tail_list_node_id == (NIL as u64)) return
-            (insert(avlq_ref_mut, key, value), (NIL as u64), option::none());
-        // Get inactive list nodes stack top and root MSBs.
-        let (list_top, root_msbs) =
-            ((((bits >> SHIFT_LIST_STACK_TOP) & (HI_NODE_ID as u128)) as u64),
-             (((bits & ((HI_NODE_ID as u128) >> BITS_PER_BYTE)) as u8)));
-        // Get root field by masking in root LSBs.
-        let root = ((root_msbs << BITS_PER_BYTE) as u64) |
-                   (avlq_ref_mut.root_lsbs as u64);
-        let root_ref = // Immutably borrow root node.
-            table_with_length::borrow(&avlq_ref_mut.tree_nodes, root);
-        let r_bits = root_ref.bits; // Get root node bits.
-        let (height_left, height_right) = // Get left and right height.
-            ((((r_bits >> SHIFT_HEIGHT_LEFT) & (HI_HEIGHT as u128)) as u8),
-             (((r_bits >> SHIFT_HEIGHT_RIGHT) & (HI_HEIGHT as u128)) as u8));
-        let height = // Height is greater of left and right height.
-            if (height_left >= height_right) height_left else height_right;
-        let too_tall = height > critical_height; // Check if too tall.
-        // Get number of allocated list nodes.
-        let n_list_nodes = table_with_length::length(&avlq_ref_mut.list_nodes);
-        let max_list_nodes_active = // Check if max list nodes active.
-            (n_list_nodes == N_NODES_MAX) && (list_top == (NIL as u64));
-        // Assume not evicting tail.
-        let (tail_access_key, tail_value) = ((NIL as u64), option::none());
-        // If above critical height or max list nodes active:
-        if (too_tall || max_list_nodes_active) {
-            let order_bit = // Get sort order bit flag.
-                (((bits >> SHIFT_SORT_ORDER) & (HI_BIT as u128)) as u8);
-            // Determine if ascending AVL queue.
-            let ascending = order_bit == BIT_FLAG_ASCENDING;
-            // Get AVL queue tail insertion key.
-            let tail_key = (((bits >> SHIFT_TAIL_KEY) &
-                             (HI_INSERTION_KEY as u128)) as u64);
-            // If ascending and insertion key greater than or equal to
-            // tail key, or descending and insertion key less than or
-            // equal to tail key, attempting to insert new tail: invalid
-            // when above critical height or max list nodes active.
-            if (( ascending && (key >= tail_key)) ||
-                (!ascending && (key <= tail_key))) return
-                ((NIL as u64), (NIL as u64), option::some(value));
-            // Immutably borrow tail list node.
-            let tail_list_node_ref = table_with_length::borrow(
-                &avlq_ref_mut.list_nodes, tail_list_node_id);
-            let next = // Get virtual next field from node.
-                ((tail_list_node_ref.next_msbs as u64) << BITS_PER_BYTE) |
-                 (tail_list_node_ref.next_lsbs as u64);
-            // Get tree node ID encoded in next field.
-            let tail_tree_node_id = next & (HI_NODE_ID as u64);
-            tail_access_key = tail_key | // Get tail access key.
-                ((order_bit as u64 ) << SHIFT_ACCESS_SORT_ORDER) |
-                ((tail_list_node_id) << SHIFT_ACCESS_LIST_NODE_ID) |
-                ((tail_tree_node_id) << SHIFT_ACCESS_TREE_NODE_ID);
-            // Get tail insertion value from evicted tail.
-            tail_value = option::some(remove(avlq_ref_mut, tail_access_key));
-        }; // Optional eviction now complete.
-        // Return access key for new key-value insertion pair, optional
-        // access key and insertion value for evicted tail.
-        (insert(avlq_ref_mut, key, value), tail_access_key, tail_value)
-    }
-*/
-
     /// Return `true` if inserting `key` would update AVL queue head.
     ///
     /// # Aborts
@@ -1876,6 +1886,10 @@ module econia::avl_queue {
     ///
     /// * `u64`: Node ID of inserted list node.
     ///
+    /// # Aborts
+    ///
+    /// `E_TOO_MANY_LIST_NODES`: Too many list nodes allocated.
+    ///
     /// # Testing
     ///
     /// * `test_insert_list_node_assign_fields_allocate()`
@@ -1941,11 +1955,24 @@ module econia::avl_queue {
     ///
     /// If inserted list node will be the only list node in a doubly
     /// linked list, a "solo list node", then it will have to indicate
-    /// for next and last node IDs a new tree node, which will also have
-    /// to be inserted via `insert_tree_node()`. Hence error checking
-    /// for the number of allocated tree nodes is performed here first,
-    /// and is not re-performed in `inserted_tree_node()` for the case
-    /// of a solo list node.
+    /// for next and last node IDs a new tree node, which will be
+    /// inserted via a call to `insert_tree_node()` from within
+    /// `insert()`. This only happens after `insert()` calls
+    /// `insert_list_node()` and `insert_list_node()` calls
+    /// `insert_list_node_assign_fields()`, which verifies that the
+    /// number of allocated list nodes does not exceed the maximum
+    /// permissible amount.
+    ///
+    /// Since the number of active tree nodes is always less than or
+    /// equal to the number of active list nodes, it is thus not
+    /// necessary to check on the number of allocated tree nodes here
+    /// when getting a new 1-indexed tree node ID: a list node
+    /// allocation violation precedes a tree node allocation violation,
+    /// and `insert_list_node_assign_fields()` already checks the
+    /// number of allocated list nodes during insertion (since the
+    /// inactive node stack is emptied before allocating new nodes, this
+    /// means that if the number of allocated list nodes is valid, then
+    /// the number of allocated tree nodes is also valid).
     ///
     /// # Parameters
     ///
@@ -1963,7 +1990,6 @@ module econia::avl_queue {
     /// * `test_insert_list_node_get_last_next_new_tail()`
     /// * `test_insert_list_node_get_last_next_solo_allocate()`
     /// * `test_insert_list_node_get_last_next_solo_stacked()`
-    /// * `test_insert_too_many_tree_nodes()`
     fun insert_list_node_get_last_next<V>(
         avlq_ref: &AVLqueue<V>,
         anchor_tree_node_id: u64,
@@ -1981,13 +2007,10 @@ module econia::avl_queue {
             // Get top of inactive tree nodes stack.
             anchor_tree_node_id = (((avlq_ref.bits >> SHIFT_TREE_STACK_TOP) &
                                     (HI_NODE_ID as u128)) as u64);
-            // If will need to allocate a new tree node:
-            if (anchor_tree_node_id == (NIL as u64)) {
-                anchor_tree_node_id = // Get new 1-indexed tree node ID.
-                    table_with_length::length(tree_nodes_ref) + 1;
-                assert!( // Verify tree nodes not over-allocated.
-                    anchor_tree_node_id <= N_NODES_MAX, E_TOO_MANY_TREE_NODES);
-            };
+            // If will need to allocate a new tree node, get new
+            // 1-indexed tree node ID.
+            if (anchor_tree_node_id == (NIL as u64)) anchor_tree_node_id =
+                table_with_length::length(tree_nodes_ref) + 1;
             // Set virtual last field as flagged anchor tree node ID.
             last = anchor_tree_node_id | is_tree_node;
         } else { // If not inserting a solo list node:
@@ -2005,12 +2028,18 @@ module econia::avl_queue {
 
     /// Insert a tree node and return its node ID.
     ///
+    /// Inner function for `insert()`.
+    ///
     /// If inactive tree node stack is empty, allocate a new tree node,
     /// otherwise pop one off the inactive stack.
     ///
     /// Should only be called when `insert_list_node()` inserts the
     /// sole list node in new AVL tree node, thus checking the number
-    /// of allocated tree nodes per `insert_list_node_get_last_next()`.
+    /// of allocated list nodes per `insert_list_node_assign_fields()`.
+    /// As discussed in `insert_list_node_get_last_next()`, this check
+    /// verifies the number of allocated tree nodes, since the number
+    /// of active tree nodes is less than or equal to the number of
+    /// active list nodes.
     ///
     /// # Parameters
     ///
@@ -5946,21 +5975,6 @@ module econia::avl_queue {
         avlq.bits = avlq.bits &
             (HI_128 ^ // Clear out field via mask unset at field bits.
                 (((HI_NODE_ID as u128) << SHIFT_LIST_STACK_TOP) as u128));
-        // Attempt invalid insertion.
-        insert(&mut avlq, 0, 0);
-        drop_avlq_test(avlq); // Drop AVL queue.
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 0)]
-    /// Assert failure for too many tree nodes.
-    fun test_insert_too_many_tree_nodes() {
-        // Init AVL queue with max list nodes allocated.
-        let avlq = new(ASCENDING, N_NODES_MAX, 0);
-        // Reassign inactive tree nodes stack top to null:
-        avlq.bits = avlq.bits &
-            (HI_128 ^ // Clear out field via mask unset at field bits.
-                (((HI_NODE_ID as u128) << SHIFT_TREE_STACK_TOP) as u128));
         // Attempt invalid insertion.
         insert(&mut avlq, 0, 0);
         drop_avlq_test(avlq); // Drop AVL queue.

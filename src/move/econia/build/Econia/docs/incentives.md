@@ -30,7 +30,7 @@ updated later per <code><a href="incentives.md#0xc0deb00c_incentives_set_incenti
 * [Integrator operations](#integrator-operations)
 * [Match operations](#match-operations)
 
-[Complete docgen index](#complete-docgen-index)
+[Complete DocGen index](#complete-docgen-index)
 
 
 <a name="@Functions_1"></a>
@@ -220,9 +220,9 @@ assess_taker_fees --> range_check_coin_merge
 ```
 
 
-<a name="@Complete_docgen_index_12"></a>
+<a name="@Complete_DocGen_index_12"></a>
 
-## Complete docgen index
+## Complete DocGen index
 
 
 The below index is automatically generated from source code:
@@ -240,7 +240,7 @@ The below index is automatically generated from source code:
     -  [Registrant operations](#@Registrant_operations_9)
     -  [Integrator operations](#@Integrator_operations_10)
     -  [Match operations](#@Match_operations_11)
--  [Complete docgen index](#@Complete_docgen_index_12)
+-  [Complete DocGen index](#@Complete_DocGen_index_12)
 -  [Resource `EconiaFeeStore`](#0xc0deb00c_incentives_EconiaFeeStore)
 -  [Resource `IncentiveParameters`](#0xc0deb00c_incentives_IncentiveParameters)
 -  [Struct `IntegratorFeeStore`](#0xc0deb00c_incentives_IntegratorFeeStore)

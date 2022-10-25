@@ -21,7 +21,7 @@
 /// * [Integrator operations](#integrator-operations)
 /// * [Match operations](#match-operations)
 ///
-/// [Complete docgen index](#complete-docgen-index)
+/// [Complete DocGen index](#complete-docgen-index)
 ///
 /// # Functions
 ///
@@ -166,7 +166,7 @@
 ///
 /// ```
 ///
-/// # Complete docgen index
+/// # Complete DocGen index
 ///
 /// The below index is automatically generated from source code:
 module econia::incentives {

@@ -39,30 +39,26 @@ The below index is automatically generated from source code:
 -  [Constants](#@Constants_2)
 -  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
     -  [Testing](#@Testing_3)
--  [Function `get_n_custodians`](#0xc0deb00c_registry_get_n_custodians)
-    -  [Testing](#@Testing_4)
--  [Function `get_n_underwriters`](#0xc0deb00c_registry_get_n_underwriters)
-    -  [Testing](#@Testing_5)
 -  [Function `get_underwriter_id`](#0xc0deb00c_registry_get_underwriter_id)
-    -  [Testing](#@Testing_6)
+    -  [Testing](#@Testing_4)
 -  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
-    -  [Testing](#@Testing_7)
+    -  [Testing](#@Testing_5)
 -  [Function `register_underwriter_capability`](#0xc0deb00c_registry_register_underwriter_capability)
-    -  [Testing](#@Testing_8)
+    -  [Testing](#@Testing_6)
 -  [Function `register_market_base_coin_internal`](#0xc0deb00c_registry_register_market_base_coin_internal)
+    -  [Aborts](#@Aborts_7)
+    -  [Testing](#@Testing_8)
+-  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
     -  [Aborts](#@Aborts_9)
     -  [Testing](#@Testing_10)
--  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
-    -  [Aborts](#@Aborts_11)
-    -  [Testing](#@Testing_12)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
-    -  [Type parameters](#@Type_parameters_13)
-    -  [Parameters](#@Parameters_14)
-    -  [Emits](#@Emits_15)
-    -  [Aborts](#@Aborts_16)
-    -  [Assumptions](#@Assumptions_17)
-    -  [Testing](#@Testing_18)
+    -  [Type parameters](#@Type_parameters_11)
+    -  [Parameters](#@Parameters_12)
+    -  [Emits](#@Emits_13)
+    -  [Aborts](#@Aborts_14)
+    -  [Assumptions](#@Assumptions_15)
+    -  [Testing](#@Testing_16)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -697,76 +693,6 @@ Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_Custodi
 
 </details>
 
-<a name="0xc0deb00c_registry_get_n_custodians"></a>
-
-## Function `get_n_custodians`
-
-Return the number of registered custodians.
-
-
-<a name="@Testing_4"></a>
-
-### Testing
-
-
-* <code>test_register_capabilities()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_n_custodians">get_n_custodians</a>(): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_n_custodians">get_n_custodians</a>():
-u64
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).n_custodians
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_get_n_underwriters"></a>
-
-## Function `get_n_underwriters`
-
-Return the number of registered underwriters.
-
-
-<a name="@Testing_5"></a>
-
-### Testing
-
-
-* <code>test_register_capabilities()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_n_underwriters">get_n_underwriters</a>(): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_n_underwriters">get_n_underwriters</a>():
-u64
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
-    <b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).n_underwriters
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_registry_get_underwriter_id"></a>
 
 ## Function `get_underwriter_id`
@@ -774,7 +700,7 @@ u64
 Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a></code>.
 
 
-<a name="@Testing_6"></a>
+<a name="@Testing_4"></a>
 
 ### Testing
 
@@ -813,7 +739,7 @@ capability with the corresponding serial ID. Requires utility
 coins to cover the custodian registration fee.
 
 
-<a name="@Testing_7"></a>
+<a name="@Testing_5"></a>
 
 ### Testing
 
@@ -862,7 +788,7 @@ capability with the corresponding serial ID. Requires utility
 coins to cover the underwriter registration fee.
 
 
-<a name="@Testing_8"></a>
+<a name="@Testing_6"></a>
 
 ### Testing
 
@@ -909,7 +835,7 @@ Wrapped market registration call for a base coin type.
 See inner function <code><a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>()</code>.
 
 
-<a name="@Aborts_9"></a>
+<a name="@Aborts_7"></a>
 
 ### Aborts
 
@@ -917,12 +843,13 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 * <code><a href="registry.md#0xc0deb00c_registry_E_BASE_NOT_COIN">E_BASE_NOT_COIN</a></code>: Base coin type is not initialized.
 
 
-<a name="@Testing_10"></a>
+<a name="@Testing_8"></a>
 
 ### Testing
 
 
 * <code>test_register_market_base_not_coin()</code>
+* <code>test_register_market_base_coin_internal()</code>
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_register_market_base_coin_internal">register_market_base_coin_internal</a>&lt;BaseCoinType, QuoteCoinType, UtilityCoinType&gt;(lot_size: u64, tick_size: u64, min_size: u64, utility_coins: <a href="_Coin">coin::Coin</a>&lt;UtilityCoinType&gt;): u64
@@ -971,7 +898,7 @@ descriptor.
 See inner function <code><a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>()</code>.
 
 
-<a name="@Aborts_11"></a>
+<a name="@Aborts_9"></a>
 
 ### Aborts
 
@@ -980,11 +907,12 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 * <code><a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS">E_GENERIC_TOO_MANY_CHARACTERS</a></code>: Asset descriptor is too long.
 
 
-<a name="@Testing_12"></a>
+<a name="@Testing_10"></a>
 
 ### Testing
 
 
+* <code>test_register_market_base_generic_internal()</code>
 * <code>test_register_market_generic_name_too_few()</code>
 * <code>test_register_market_generic_name_too_many()</code>
 
@@ -1016,7 +944,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
         name_length &gt;= <a href="registry.md#0xc0deb00c_registry_MIN_CHARACTERS_GENERIC">MIN_CHARACTERS_GENERIC</a>,
         <a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_FEW_CHARACTERS">E_GENERIC_TOO_FEW_CHARACTERS</a>);
     <b>assert</b>!( // Assert generic base asset <a href="">string</a> is not too long.
-        name_length &lt;= <a href="registry.md#0xc0deb00c_registry_MIN_CHARACTERS_GENERIC">MIN_CHARACTERS_GENERIC</a>,
+        name_length &lt;= <a href="registry.md#0xc0deb00c_registry_MAX_CHARACTERS_GENERIC">MAX_CHARACTERS_GENERIC</a>,
         <a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS">E_GENERIC_TOO_MANY_CHARACTERS</a>);
     // Get underwriter ID.
     <b>let</b> underwriter_id = underwriter_capability_ref.underwriter_id;
@@ -1079,7 +1007,7 @@ module publication.
 Register a market in the global registry.
 
 
-<a name="@Type_parameters_13"></a>
+<a name="@Type_parameters_11"></a>
 
 ### Type parameters
 
@@ -1088,7 +1016,7 @@ Register a market in the global registry.
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -1104,7 +1032,7 @@ of market underwriter.
 * <code>utility_coins</code>: Utility coins paid to register a market.
 
 
-<a name="@Emits_15"></a>
+<a name="@Emits_13"></a>
 
 ### Emits
 
@@ -1113,7 +1041,7 @@ of market underwriter.
 registered.
 
 
-<a name="@Aborts_16"></a>
+<a name="@Aborts_14"></a>
 
 ### Aborts
 
@@ -1127,7 +1055,7 @@ registered.
 for specified market info.
 
 
-<a name="@Assumptions_17"></a>
+<a name="@Assumptions_15"></a>
 
 ### Assumptions
 
@@ -1137,11 +1065,13 @@ for specified market info.
 <code>register_market_base_generic_interal</code>.
 
 
-<a name="@Testing_18"></a>
+<a name="@Testing_16"></a>
 
 ### Testing
 
 
+* <code>test_register_market_base_coin_internal()</code>
+* <code>test_register_market_base_generic_internal()</code>
 * <code>test_register_market_lot_size_0()</code>
 * <code>test_register_market_min_size_0()</code>
 * <code>test_register_market_quote_not_coin()</code>

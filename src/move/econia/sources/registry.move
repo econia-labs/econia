@@ -219,28 +219,6 @@ module econia::registry {
         custodian_capability_ref.custodian_id
     }
 
-    /// Return the number of registered custodians.
-    ///
-    /// # Testing
-    ///
-    /// * `test_register_capabilities()`
-    public fun get_n_custodians():
-    u64
-    acquires Registry {
-        borrow_global<Registry>(@econia).n_custodians
-    }
-
-    /// Return the number of registered underwriters.
-    ///
-    /// # Testing
-    ///
-    /// * `test_register_capabilities()`
-    public fun get_n_underwriters():
-    u64
-    acquires Registry {
-        borrow_global<Registry>(@econia).n_underwriters
-    }
-
     /// Return serial ID of given `UnderwriterCapability`.
     ///
     /// # Testing
@@ -317,6 +295,7 @@ module econia::registry {
     /// # Testing
     ///
     /// * `test_register_market_base_not_coin()`
+    /// * `test_register_market_base_coin_internal()`
     public(friend) fun register_market_base_coin_internal<
         BaseCoinType,
         QuoteCoinType,
@@ -351,6 +330,7 @@ module econia::registry {
     ///
     /// # Testing
     ///
+    /// * `test_register_market_base_generic_internal()`
     /// * `test_register_market_generic_name_too_few()`
     /// * `test_register_market_generic_name_too_many()`
     public(friend) fun register_market_base_generic_internal<
@@ -371,7 +351,7 @@ module econia::registry {
             name_length >= MIN_CHARACTERS_GENERIC,
             E_GENERIC_TOO_FEW_CHARACTERS);
         assert!( // Assert generic base asset string is not too long.
-            name_length <= MIN_CHARACTERS_GENERIC,
+            name_length <= MAX_CHARACTERS_GENERIC,
             E_GENERIC_TOO_MANY_CHARACTERS);
         // Get underwriter ID.
         let underwriter_id = underwriter_capability_ref.underwriter_id;
@@ -448,6 +428,8 @@ module econia::registry {
     ///
     /// # Testing
     ///
+    /// * `test_register_market_base_coin_internal()`
+    /// * `test_register_market_base_generic_internal()`
     /// * `test_register_market_lot_size_0()`
     /// * `test_register_market_min_size_0()`
     /// * `test_register_market_quote_not_coin()`
@@ -530,37 +512,6 @@ module econia::registry {
         let UnderwriterCapability{underwriter_id: _} = underwriter_capability;
     }
 
-/*
-    #[test_only]
-    /// Return `MarketInfo` fields corresponding to given `market_id`,
-    /// aborting if no such registered market.
-    ///
-    /// # Restrictions
-    ///
-    /// * Restricted to test-only to prevent excessive public queries
-    ///   against the registry and thus potential transaction collisions
-    ///   across markets.
-    public fun get_market_info_test(
-        market_id: u64
-    ): (
-        String,
-        String,
-        u64,
-        u64,
-        Option<u64>
-    ) acquires Registry {
-        // Immutably borrow map from market ID to market info.
-        let markets_ref = &borrow_global<Registry>(@econia).market_id_to_info;
-        // Immutably borrow corresponding market info.
-        let market_info_ref = tablist::borrow(markets_ref, market_id);
-        (market_info_ref.base_type, // Return market info fields.
-         market_info_ref.quote_type,
-         market_info_ref.lot_size,
-         market_info_ref.tick_size,
-         market_info_ref.underwriter_id)
-    }
-*/
-
     #[test_only]
     /// Return an `UnderwriterCapabilty` having given ID, setting it as
     /// a valid ID in the registry.
@@ -598,9 +549,6 @@ module econia::registry {
     fun test_register_capabilities()
     acquires Registry {
         init_test(); // Initialize for testing.
-        // Assert number of registered custodians, underwriters.
-        assert!(get_n_custodians() == 0, 0);
-        assert!(get_n_underwriters() == 0, 0);
         // Get custodian registration fee.
         let custodian_registration_fee =
             incentives::get_custodian_registration_fee();
@@ -649,9 +597,91 @@ module econia::registry {
         assert!(get_underwriter_id(&underwriter_capability) == 3, 0);
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
-        // Assert number of registered custodians, underwriters.
-        assert!(get_n_custodians() == 3, 0);
-        assert!(get_n_underwriters() == 3, 0);
+    }
+
+    #[test]
+    /// Verify state updates, return, for pure coin market.
+    fun test_register_market_base_coin_internal()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 123;
+        let tick_size = 456;
+        let min_size = 789;
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register market, storing market ID.
+        let market_id = register_market_base_coin_internal<BC, QC, UC>(
+            lot_size - 1, tick_size, min_size, assets::mint_test(fee));
+        assert!(market_id == 1, 0); // Assert market ID.
+        // Register another market, storing market ID.
+        market_id = register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, assets::mint_test(fee));
+        assert!(market_id == 2, 0); // Assert market ID.
+        let markets_tablist_ref = // Immutably borrow markets tablist.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        // Immutably borrow market info.
+        let market_info_ref = tablist::borrow(markets_tablist_ref, market_id);
+        // Assert fields.
+        assert!(market_info_ref.base_type == type_info::type_of<BC>(), 0);
+        assert!(string::is_empty(&market_info_ref.base_name_generic), 0);
+        assert!(market_info_ref.quote_type == type_info::type_of<QC>(), 0);
+        assert!(market_info_ref.lot_size == lot_size, 0);
+        assert!(market_info_ref.tick_size == tick_size, 0);
+        assert!(market_info_ref.min_size == min_size, 0);
+        assert!(market_info_ref.underwriter_id == NIL, 0);
+        let market_info_map_ref = // Immutably borrow market info map.
+            &borrow_global<Registry>(@econia).market_info_to_id;
+        assert!( // Assert lookup on market info.
+            *table::borrow(market_info_map_ref, *market_info_ref) == market_id,
+            0);
+    }
+
+    #[test]
+    /// Verify state updates, return, for generic asset market.
+    fun test_register_market_base_generic_internal()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        let underwriter_id = 100; // Declare underwriter ID.
+        let underwriter_capability = // Get underwriter capability.
+            get_underwriter_capability_test(underwriter_id);
+        // Declare arguments.
+        let lot_size = 123;
+        let tick_size = 456;
+        let min_size = 789;
+        let base_name_generic = string::utf8(b"Generic asset");
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register market, storing market ID.
+        let market_id = register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size - 1, tick_size, min_size,
+            &underwriter_capability, assets::mint_test(fee));
+        assert!(market_id == 1, 0); // Assert market ID.
+        // Register another market, storing market ID.
+        let market_id = register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size, tick_size, min_size,
+            &underwriter_capability, assets::mint_test(fee));
+        assert!(market_id == 2, 0); // Assert market ID.
+        let markets_tablist_ref = // Immutably borrow markets tablist.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        // Immutably borrow market info.
+        let market_info_ref = tablist::borrow(markets_tablist_ref, market_id);
+        assert!( // Assert fields.
+            market_info_ref.base_type == type_info::type_of<GenericAsset>(),
+            0);
+        assert!(market_info_ref.base_name_generic == base_name_generic, 0);
+        assert!(market_info_ref.quote_type == type_info::type_of<QC>(), 0);
+        assert!(market_info_ref.lot_size == lot_size, 0);
+        assert!(market_info_ref.tick_size == tick_size, 0);
+        assert!(market_info_ref.min_size == min_size, 0);
+        assert!(market_info_ref.underwriter_id == underwriter_id, 0);
+        let market_info_map_ref = // Immutably borrow market info map.
+            &borrow_global<Registry>(@econia).market_info_to_id;
+        assert!( // Assert lookup on market info.
+            *table::borrow(market_info_map_ref, *market_info_ref) == market_id,
+            0);
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
     }
 
     #[test]

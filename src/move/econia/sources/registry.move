@@ -2,23 +2,9 @@
 ///
 /// # Indexing
 ///
-/// Custodian and underwriter capabilities IDs are 1-indexed, since they
-/// are optional: an ID of 0 is thus reserved as a flag for when there
-/// is no associated capability.
-///
-/// For consistency, market IDs are thus 1-indexed as well.
-///
-/// # Functions
-///
-/// ## Public getters
-///
-/// * `get_custodian_id()`
-/// * `get_underwriter_id()`
-///
-/// ## Public registration functions
-///
-/// * `register_custodian_capability()`
-/// * `register_underwriter_capability()`
+/// Custodian capabilities and underwriter capabilities are 1-indexed,
+/// with an ID of 0 reserved as a flag for null. For consistency, market
+/// IDs are thus 1-indexed too.
 ///
 /// # Complete docgen index
 ///
@@ -27,22 +13,28 @@ module econia::registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use aptos_framework::event::{EventHandle};
+    use aptos_framework::table::{Table};
+    use aptos_framework::type_info::{TypeInfo};
+    use econia::tablist::{Tablist};
+    use std::option::{Option};
+    use std::string::{String};
+
+/*
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::table::{Self, Table};
     use aptos_framework::type_info;
     use econia::incentives;
-    use econia::tablist::{Self, Tablist};
-    use std::option::{Self, Option};
-    use std::string::{Self, String};
+*/
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /*
     #[test_only]
     use econia::assets::{Self, BC, QC, UC};
+    */
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -57,28 +49,22 @@ module econia::registry {
         custodian_id: u64
     }
 
-    /// Emitted when a capability is registered.
-    struct CapabilityRegistrationEvent has drop, store {
-        /// Either `CUSTODIAN` or `UNDERWRITER`, the capability type
-        /// just registered.
-        capability_type: bool,
-        /// ID of capability just registered.
-        capability_id: u64
-    }
-
     /// Type flag for generic asset. Must be passed as base asset type
     /// argument for generic market operations.
     struct GenericAsset has key {}
 
     /// Information about a market.
     struct MarketInfo has copy, drop, store {
-        /// Base asset type name. When base asset is an
+        /// Base asset type info. When base asset is an
         /// `aptos_framework::coin::Coin`, corresponds to the phantom
         /// `CoinType` (`address:module::MyCoin` rather than
-        /// `aptos_framework::coin::Coin<address:module::MyCoin>`), and
-        /// `underwriter_id` is none. Otherwise can be any value, and
-        /// `underwriter` is some.
-        base_type: String,
+        /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
+        /// Otherwise should be `GenericAsset`.
+        base_type: TypeInfo,
+        /// Custom base asset name for a generic market, provided by the
+        /// underwriter who registers the market. Empty if a pure coin
+        /// market.
+        base_name_generic: String,
         /// Quote asset coin type name. Corresponds to a phantom
         /// `CoinType` (`address:module::MyCoin` rather than
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
@@ -89,10 +75,12 @@ module econia::registry {
         /// Number of quote coin units exchanged per tick (corresponds
         /// to `aptos_framework::coin::Coin.value`).
         tick_size: u64,
-        /// ID of underwriter capability required to verify generic
-        /// asset amounts. A market-wide ID that only applies to markets
-        /// having a generic base asset. None when base and quote types
-        /// are both coins.
+        /// Minimum number of lots per order.
+        min_size: u64,
+        /// `NIL` if a pure coin market, otherwise ID of underwriter
+        /// capability required to verify generic asset amounts. A
+        /// market-wide ID that only applies to markets having a generic
+        /// base asset.
         underwriter_id: Option<u64>
     }
 
@@ -100,18 +88,21 @@ module econia::registry {
     struct MarketRegistrationEvent has drop, store {
         /// Market ID of the market just registered.
         market_id: u64,
-        /// Base asset type name.
-        base_type: String,
-        /// Quote asset type name.
-        quote_type: String,
+        /// Base asset type info.
+        base_type: TypeInfo,
+        /// Base asset generic name, if any.
+        base_name_generic: String,
+        /// Quote asset type info.
+        quote_type: TypeInfo,
         /// Number of base units exchanged per lot.
         lot_size: u64,
         /// Number of quote units exchanged per tick.
         tick_size: u64,
-        /// ID of `UnderwriterCapability` required to verify generic
-        /// asset amounts. None when base and quote assets are both
-        /// coins.
-        underwriter_id: Option<u64>,
+        /// Minimum number of lots per order.
+        min_size: u64,
+        /// `NIL` if a pure coin market, otherwise ID of underwriter
+        /// capability required to verify generic asset amounts.
+        underwriter_id: u64,
     }
 
     /// Emitted when a recognized market is added, removed, or updated.
@@ -131,11 +122,11 @@ module econia::registry {
         lot_size: u64,
         /// Number of quote units exchanged per tick.
         tick_size: u64,
-        /// ID of underwriter capability required to verify generic
-        /// asset amounts. A market-wide ID that only applies to
-        /// markets having a generic base asset. None when base and
-        /// quote types are both coins.
-        underwriter_id: Option<u64>,
+        /// Minimum number of lots per order.
+        min_size: u64,
+        /// `NIL` if a pure coin market, otherwise ID of underwriter
+        /// capability required to verify generic asset amounts.
+        underwriter_id: u64,
     }
 
     /// Recognized markets for specific trading pairs.
@@ -160,18 +151,17 @@ module econia::registry {
         /// The number of registered underwriters.
         n_underwriters: u64,
         /// Event handle for market registration events.
-        market_registration_events: EventHandle<MarketRegistrationEvent>,
-        /// Event handle for capability registration events.
-        capability_registration_events:
-            EventHandle<CapabilityRegistrationEvent>
+        market_registration_events: EventHandle<MarketRegistrationEvent>
     }
 
     /// A combination of a base asset and a quote asset.
     struct TradingPair has copy, drop, store {
-        /// Base type name.
-        base_type: String,
-        /// Quote type name.
-        quote_type: String
+        /// Base asset type info.
+        base_type: TypeInfo,
+        /// Base asset generic name, if any.
+        base_name_generic: String,
+        /// Quote asset type info.
+        quote_type: TypeInfo
     }
 
     /// Underwriter capability required to verify generic asset
@@ -187,6 +177,7 @@ module econia::registry {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+/*
     /// Base coin type has not been initialized for a pure coin market.
     const E_BASE_NOT_COIN: u64 = 0;
     /// Generic base asset descriptor has too few charaters.
@@ -203,25 +194,25 @@ module econia::registry {
     const E_BASE_QUOTE_SAME: u64 = 6;
     /// Market is already registered.
     const E_MARKET_REGISTERED: u64 = 7;
+*/
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Flag for custodian capability.
-    const CUSTODIAN: bool = true;
-    /// Flag for underwriter capability.
-    const UNDERWRITER: bool = false;
     /// Maximum number of characters permitted in a generic asset name,
     /// equal to the maximum number of characters permitted in a comment
     /// line per PEP 8.
-    const MAX_CHARACTERS_GENERIC: u64 = 72;
+    const MAX_CHARACTERS_GENERIC: u8 = 72;
     /// Minimum number of characters permitted in a generic asset name,
     /// equal to the number of spaces in an indentation level per PEP 8.
-    const MIN_CHARACTERS_GENERIC: u64 = 4;
+    const MIN_CHARACTERS_GENERIC: u8 = 4;
+    /// Flag for null value when null defined as 0.
+    const NIL: u8 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+/*
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return serial ID of given `CustodianCapability`.
@@ -740,4 +731,5 @@ module econia::registry {
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+*/
 }

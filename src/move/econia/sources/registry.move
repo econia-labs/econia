@@ -4,7 +4,7 @@
 ///
 /// Custodian capabilities and underwriter capabilities are 1-indexed,
 /// with an ID of 0 reserved as a flag for null. For consistency, market
-/// IDs are thus 1-indexed too.
+/// IDs are 1-indexed too.
 ///
 /// # Complete docgen index
 ///
@@ -13,28 +13,22 @@ module econia::registry {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    use aptos_framework::event::{EventHandle};
-    use aptos_framework::table::{Table};
-    use aptos_framework::type_info::{TypeInfo};
-    use econia::tablist::{Tablist};
-    use std::option::{Option};
-    use std::string::{String};
-
-/*
-    use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::type_info;
+    use aptos_framework::account;
+    use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::table::{Self, Table};
+    use aptos_framework::type_info::{Self, TypeInfo};
     use econia::incentives;
-*/
+    use econia::tablist::{Self, Tablist};
+    use std::option::{Option};
+    use std::string::{Self, String};
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /*
     #[test_only]
     use econia::assets::{Self, BC, QC, UC};
-    */
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -65,10 +59,10 @@ module econia::registry {
         /// underwriter who registers the market. Empty if a pure coin
         /// market.
         base_name_generic: String,
-        /// Quote asset coin type name. Corresponds to a phantom
+        /// Quote asset coin type info. Corresponds to a phantom
         /// `CoinType` (`address:module::MyCoin` rather than
         /// `aptos_framework::coin::Coin<address:module::MyCoin>`).
-        quote_type: String,
+        quote_type: TypeInfo,
         /// Number of base units exchanged per lot (when base asset is
         /// a coin, corresponds to `aptos_framework::coin::Coin.value`).
         lot_size: u64,
@@ -81,7 +75,7 @@ module econia::registry {
         /// capability required to verify generic asset amounts. A
         /// market-wide ID that only applies to markets having a generic
         /// base asset.
-        underwriter_id: Option<u64>
+        underwriter_id: u64
     }
 
     /// Emitted when a market is registered.
@@ -177,24 +171,24 @@ module econia::registry {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-/*
-    /// Base coin type has not been initialized for a pure coin market.
-    const E_BASE_NOT_COIN: u64 = 0;
-    /// Generic base asset descriptor has too few charaters.
-    const E_GENERIC_TOO_FEW_CHARACTERS: u64 = 1;
-    /// Generic base asset descriptor has too many charaters.
-    const E_GENERIC_TOO_MANY_CHARACTERS: u64 = 2;
     /// Lot size specified as 0.
-    const E_LOT_SIZE_0: u64 = 3;
+    const E_LOT_SIZE_0: u64 = 0;
     /// Tick size specified as 0.
-    const E_TICK_SIZE_0: u64 = 4;
+    const E_TICK_SIZE_0: u64 = 1;
+    /// Minimum order size specified as 0.
+    const E_MIN_SIZE_0: u64 = 2;
     /// Quote asset type has not been initialized as a coin.
-    const E_QUOTE_NOT_COIN: u64 = 5;
+    const E_QUOTE_NOT_COIN: u64 = 3;
     /// Base and quote asset descriptors are identical.
-    const E_BASE_QUOTE_SAME: u64 = 6;
+    const E_BASE_QUOTE_SAME: u64 = 4;
     /// Market is already registered.
-    const E_MARKET_REGISTERED: u64 = 7;
-*/
+    const E_MARKET_REGISTERED: u64 = 5;
+    /// Base coin type has not been initialized for a pure coin market.
+    const E_BASE_NOT_COIN: u64 = 6;
+    /// Generic base asset descriptor has too few charaters.
+    const E_GENERIC_TOO_FEW_CHARACTERS: u64 = 7;
+    /// Generic base asset descriptor has too many charaters.
+    const E_GENERIC_TOO_MANY_CHARACTERS: u64 = 8;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -203,16 +197,15 @@ module econia::registry {
     /// Maximum number of characters permitted in a generic asset name,
     /// equal to the maximum number of characters permitted in a comment
     /// line per PEP 8.
-    const MAX_CHARACTERS_GENERIC: u8 = 72;
+    const MAX_CHARACTERS_GENERIC: u64 = 72;
     /// Minimum number of characters permitted in a generic asset name,
     /// equal to the number of spaces in an indentation level per PEP 8.
-    const MIN_CHARACTERS_GENERIC: u8 = 4;
+    const MIN_CHARACTERS_GENERIC: u64 = 4;
     /// Flag for null value when null defined as 0.
-    const NIL: u8 = 0;
+    const NIL: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-/*
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return serial ID of given `CustodianCapability`.
@@ -224,6 +217,28 @@ module econia::registry {
         custodian_capability_ref: &CustodianCapability
     ): u64 {
         custodian_capability_ref.custodian_id
+    }
+
+    /// Return the number of registered custodians.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public fun get_n_custodians():
+    u64
+    acquires Registry {
+        borrow_global<Registry>(@econia).n_custodians
+    }
+
+    /// Return the number of registered underwriters.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public fun get_n_underwriters():
+    u64
+    acquires Registry {
+        borrow_global<Registry>(@econia).n_underwriters
     }
 
     /// Return serial ID of given `UnderwriterCapability`.
@@ -301,7 +316,7 @@ module econia::registry {
     ///
     /// # Testing
     ///
-    /// * `test_register_market_base_coin_internal_not_coin()`
+    /// * `test_register_market_base_not_coin()`
     public(friend) fun register_market_base_coin_internal<
         BaseCoinType,
         QuoteCoinType,
@@ -309,16 +324,17 @@ module econia::registry {
     >(
         lot_size: u64,
         tick_size: u64,
+        min_size: u64,
         utility_coins: Coin<UtilityCoinType>
     ): u64
     acquires Registry {
         // Assert base coin type is initialized.
         assert!(coin::is_coin_initialized<BaseCoinType>(), E_BASE_NOT_COIN);
-        // Add to the registry a corresponding entry, returnig new
+        // Add to the registry a corresponding entry, returning new
         // market ID.
         register_market_internal<QuoteCoinType, UtilityCoinType>(
-            type_info::type_name<BaseCoinType>(), lot_size, tick_size,
-            option::none(), utility_coins)
+            type_info::type_of<BaseCoinType>(), string::utf8(b""), lot_size,
+            tick_size, min_size, NIL, utility_coins)
     }
 
     /// Wrapped market registration call for a generic base type,
@@ -335,32 +351,35 @@ module econia::registry {
     ///
     /// # Testing
     ///
-    /// * `test_register_market_base_generic_internal_too_few()`
-    /// * `test_register_market_base_generic_internal_too_many()`
+    /// * `test_register_market_generic_name_too_few()`
+    /// * `test_register_market_generic_name_too_many()`
     public(friend) fun register_market_base_generic_internal<
         QuoteCoinType,
         UtilityCoinType
     >(
-        base_type: String,
+        base_name_generic: String,
         lot_size: u64,
         tick_size: u64,
+        min_size: u64,
         underwriter_capability_ref: &UnderwriterCapability,
         utility_coins: Coin<UtilityCoinType>
     ): u64
     acquires Registry {
-        // Assert generic base asset string is not too short.
-        assert!(string::length(&base_type) >= MIN_CHARACTERS_GENERIC,
+        // Get generic asset name length.
+        let name_length = string::length(&base_name_generic);
+        assert!( // Assert generic base asset string is not too short.
+            name_length >= MIN_CHARACTERS_GENERIC,
             E_GENERIC_TOO_FEW_CHARACTERS);
-        // Assert generic base asset string is not too long.
-        assert!(string::length(&base_type) <= MAX_CHARACTERS_GENERIC,
+        assert!( // Assert generic base asset string is not too long.
+            name_length <= MIN_CHARACTERS_GENERIC,
             E_GENERIC_TOO_MANY_CHARACTERS);
         // Get underwriter ID.
-        let underwriter_id = get_underwriter_id(underwriter_capability_ref);
-        // Add to the registry a corresponding entry, returnig new
+        let underwriter_id = underwriter_capability_ref.underwriter_id;
+        // Add to the registry a corresponding entry, returning new
         // market ID.
         register_market_internal<QuoteCoinType, UtilityCoinType>(
-            base_type, lot_size, tick_size, option::some(underwriter_id),
-            utility_coins)
+            type_info::type_of<GenericAsset>(), base_name_generic, lot_size,
+            tick_size, min_size, underwriter_id, utility_coins)
     }
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -379,16 +398,12 @@ module econia::registry {
             n_custodians: 0,
             n_underwriters: 0,
             market_registration_events:
-                account::new_event_handle<MarketRegistrationEvent>(econia),
-            capability_registration_events:
-                account::new_event_handle<CapabilityRegistrationEvent>(econia)
-        });
+                account::new_event_handle<MarketRegistrationEvent>(econia)});
         // Initialize recognized markets list.
         move_to(econia, RecognizedMarkets{
             map: tablist::new(),
             recognized_market_events:
-                account::new_event_handle<RecognizedMarketEvent>(econia)
-        });
+                account::new_event_handle<RecognizedMarketEvent>(econia)});
     }
 
     /// Register a market in the global registry.
@@ -400,50 +415,55 @@ module econia::registry {
     ///
     /// # Parameters
     ///
-    /// * `base_type`: The base asset type. Should correspond to a coin
-    ///   type if called by `register_market_base_coin_internal()`, else
-    ///   provided by the market registrant.
+    /// * `base_type`: The base coin type info for a pure coin market,
+    ///   otherwise that of `GenericAsset`.
+    /// * `base_name_generic`: Base asset generic name, if any.
     /// * `lot_size`: Lot size for the market.
     /// * `tick_size`: Tick size for the market.
-    /// * `underwriter_id`: Optional underwriter ID for a market with a
-    ///   generic base asset.
+    /// * `min_size`: Minimum lots per order for market.
+    /// * `underwriter_id`: `NIL` if a pure coin market, otherwise ID
+    ///   of market underwriter.
     /// * `utility_coins`: Utility coins paid to register a market.
     ///
     /// # Emits
     ///
-    /// * `MarketRegistrationEvent`: Parameters of the market just
+    /// * `MarketRegistrationEvent`: Parameters of market just
     ///   registered.
     ///
     /// # Aborts
     ///
     /// * `E_LOT_SIZE_0`: Lot size is 0.
     /// * `E_TICK_SIZE_0`: Tick size is 0.
-    /// * `E_QUOTE_NOT_COIN`: Tick size is 0.
+    /// * `E_MIN_SIZE_0`: Minimum size is 0.
+    /// * `E_QUOTE_NOT_COIN`: Quote coin type not initialized as coin.
     /// * `E_BASE_QUOTE_SAME`: Base and quote type are the same.
     /// * `E_MARKET_REGISTERED`: Markets map already contains an entry
     ///   for specified market info.
     ///
     /// # Assumptions
     ///
-    /// * `underwriter_id` has been properly packed and passed by either
+    /// * `underwriter_id` has been properly passed by either
     ///   `register_market_base_coin_internal` or
     ///   `register_market_base_generic_interal`.
     ///
     /// # Testing
     ///
-    /// * `test_register_market_internal_lot_size_0()`
-    /// * `test_register_market_internal_market_registered()`
-    /// * `test_register_market_internal_tick_size_0()`
-    /// * `test_register_market_internal_quote_not_coin()`
-    /// * `test_register_market_internal_same_type()`
+    /// * `test_register_market_lot_size_0()`
+    /// * `test_register_market_min_size_0()`
+    /// * `test_register_market_quote_not_coin()`
+    /// * `test_register_market_registered()`
+    /// * `test_register_market_same_type()`
+    /// * `test_register_market_tick_size_0()`
     fun register_market_internal<
         QuoteCoinType,
         UtilityCoinType
     >(
-        base_type: String,
+        base_type: TypeInfo,
+        base_name_generic: String,
         lot_size: u64,
         tick_size: u64,
-        underwriter_id: Option<u64>,
+        min_size: u64,
+        underwriter_id: u64,
         utility_coins: Coin<UtilityCoinType>
     ): u64
     acquires Registry {
@@ -451,14 +471,17 @@ module econia::registry {
         assert!(lot_size > 0, E_LOT_SIZE_0);
         // Assert tick size is nonzero.
         assert!(tick_size > 0, E_TICK_SIZE_0);
+        // Assert minimum size is nonzero.
+        assert!(min_size > 0, E_MIN_SIZE_0);
         // Assert quote coin type is initialized.
         assert!(coin::is_coin_initialized<QuoteCoinType>(), E_QUOTE_NOT_COIN);
-        // Get quote type name.
-        let quote_type = type_info::type_name<QuoteCoinType>();
+        // Get quote coin type.
+        let quote_type = type_info::type_of<QuoteCoinType>();
         // Assert base and quote type names are not the same.
         assert!(base_type != quote_type, E_BASE_QUOTE_SAME);
         let market_info = MarketInfo{ // Pack market info.
-            base_type, quote_type, lot_size, tick_size, underwriter_id};
+            base_type, base_name_generic, quote_type, lot_size, tick_size,
+            min_size, underwriter_id};
         // Mutably borrow registry.
         let registry_ref_mut = borrow_global_mut<Registry>(@econia);
         // Mutably borrow map from market info to market ID.
@@ -474,10 +497,12 @@ module econia::registry {
         table::add(info_to_id_ref_mut, market_info, market_id);
         // Register a market entry in map from market ID to market info.
         tablist::add(id_to_info_ref_mut, market_id, market_info);
+        // Get market registration events handle.
+        let event_handle = &mut registry_ref_mut.market_registration_events;
         // Emit a market registration event.
-        event::emit_event(&mut registry_ref_mut.market_registration_events,
-            MarketRegistrationEvent{market_id, base_type, quote_type,
-                lot_size, tick_size, underwriter_id});
+        event::emit_event(event_handle, MarketRegistrationEvent{
+            market_id, base_type, base_name_generic, quote_type, lot_size,
+            tick_size, min_size, underwriter_id});
         incentives::deposit_market_registration_utility_coins<UtilityCoinType>(
                 utility_coins); // Deposit utility coins.
         market_id // Return market ID.
@@ -505,6 +530,7 @@ module econia::registry {
         let UnderwriterCapability{underwriter_id: _} = underwriter_capability;
     }
 
+/*
     #[test_only]
     /// Return `MarketInfo` fields corresponding to given `market_id`,
     /// aborting if no such registered market.
@@ -533,6 +559,7 @@ module econia::registry {
          market_info_ref.tick_size,
          market_info_ref.underwriter_id)
     }
+*/
 
     #[test_only]
     /// Return an `UnderwriterCapabilty` having given ID, setting it as
@@ -571,6 +598,9 @@ module econia::registry {
     fun test_register_capabilities()
     acquires Registry {
         init_test(); // Initialize for testing.
+        // Assert number of registered custodians, underwriters.
+        assert!(get_n_custodians() == 0, 0);
+        assert!(get_n_underwriters() == 0, 0);
         // Get custodian registration fee.
         let custodian_registration_fee =
             incentives::get_custodian_registration_fee();
@@ -619,117 +649,165 @@ module econia::registry {
         assert!(get_underwriter_id(&underwriter_capability) == 3, 0);
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 0)]
-    /// Verify failure for non-coin type.
-    fun test_register_market_base_coin_internal_not_coin()
-    acquires Registry {
-        init_test(); // Initialize for testing.
-        // Attempt invalid invocation.
-        register_market_base_coin_internal<GenericAsset, QC, UC>(
-            0, 0, assets::mint_test(1));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 1)]
-    /// Verify failure for too few characters in generic asset
-    /// descriptor.
-    fun test_register_market_base_generic_internal_too_few()
-    acquires Registry {
-        init_test(); // Initialize for testing.
-        // Get underwriter capability.
-        let underwriter_capability = get_underwriter_capability_test(1);
-        // Attempt invalid invocation.
-        register_market_base_generic_internal<QC, UC>(
-            string::utf8(b"123"), 0, 0, &underwriter_capability,
-            assets::mint_test(1));
-        // Drop underwriter capability.
-        drop_underwriter_capability_test(underwriter_capability);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for too many characters in generic asset
-    /// descriptor.
-    fun test_register_market_base_generic_internal_too_many()
-    acquires Registry {
-        init_test(); // Initialize for testing.
-        // Get underwriter capability.
-        let underwriter_capability = get_underwriter_capability_test(1);
-        let long_string = // Get 36-character string.
-            string::utf8(b"111111111111111111111111111111111111");
-        string::append(&mut long_string, // Append 37 characters.
-            string::utf8(b"1111111111111111111111111111111111111"));
-        // Attempt invalid invocation.
-        register_market_base_generic_internal<QC, UC>(
-            long_string, 0, 0, &underwriter_capability, assets::mint_test(1));
-        // Drop underwriter capability.
-        drop_underwriter_capability_test(underwriter_capability);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for lot size 0.
-    fun test_register_market_internal_lot_size_0()
-    acquires Registry {
-        init_test(); // Initialize for testing.
-        // Attempt invalid invocation.
-        register_market_base_coin_internal<BC, QC, UC>(
-            0, 0, assets::mint_test(1));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 7)]
-    /// Verify failure for market already registered.
-    fun test_register_market_internal_market_registered()
-    acquires Registry {
-        init_test(); // Initialize for testing.
-        let market_registration_fee = // Get market registration fee.
-            incentives::get_market_registration_fee();
-        // Register a market.
-        register_market_base_coin_internal<BC, QC, UC>(
-            1, 1, assets::mint_test(market_registration_fee));
-        // Attempt invalid re-registration.
-        register_market_base_coin_internal<BC, QC, UC>(
-            1, 1, assets::mint_test(market_registration_fee));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 4)]
-    /// Verify failure for tick size 0.
-    fun test_register_market_internal_tick_size_0()
-    acquires Registry {
-        init_test(); // Initialize for testing.
-        // Attempt invalid invocation.
-        register_market_base_coin_internal<BC, QC, UC>(
-            1, 0, assets::mint_test(1));
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 5)]
-    /// Verify failure for quote not coin type.
-    fun test_register_market_internal_quote_not_coin()
-    acquires Registry {
-        init_test(); // Initialize for testing.
-        // Attempt invalid invocation.
-        register_market_base_coin_internal<BC, GenericAsset, UC>(
-            1, 1, assets::mint_test(1));
+        // Assert number of registered custodians, underwriters.
+        assert!(get_n_custodians() == 3, 0);
+        assert!(get_n_underwriters() == 3, 0);
     }
 
     #[test]
     #[expected_failure(abort_code = 6)]
-    /// Verify failure for base and quote same coin type.
-    fun test_register_market_internal_same_type()
+    /// Verify failure for non-coin type.
+    fun test_register_market_base_not_coin()
+    acquires Registry {
+        // Declare arguments.
+        let lot_size = 0;
+        let tick_size = 0;
+        let min_size = 0;
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for too few characters in generic asset name.
+    fun test_register_market_generic_name_too_few()
     acquires Registry {
         init_test(); // Initialize for testing.
+        // Get underwriter capability.
+        let underwriter_capability = get_underwriter_capability_test(1);
+        // Declare arguments.
+        let base_name_generic = string::utf8(b"ABC");
+        let lot_size = 0;
+        let tick_size = 0;
+        let min_size = 0;
+        // Attempt invalid invocation.
+        register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size, tick_size, min_size,
+            &underwriter_capability, coin::zero());
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for too many characters in generic asset name.
+    fun test_register_market_generic_name_too_many()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Get underwriter capability.
+        let underwriter_capability = get_underwriter_capability_test(1);
+        // Declare arguments.
+        let base_name_generic = // Get 36-character string.
+            string::utf8(b"123456789012345678901234567890123456");
+        string::append(&mut base_name_generic, // Append 37 characters.
+            string::utf8(b"1111111111111111111111111111111111111"));
+        let lot_size = 0;
+        let tick_size = 0;
+        let min_size = 0;
+        // Attempt invalid invocation.
+        register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size, tick_size, min_size,
+            &underwriter_capability, coin::zero());
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for lot size 0.
+    fun test_register_market_lot_size_0()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 0;
+        let tick_size = 0;
+        let min_size = 0;
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, assets::mint_test(1));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for minimum size 0.
+    fun test_register_market_min_size_0()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 1;
+        let tick_size = 1;
+        let min_size = 0;
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for quote asset not coin.
+    fun test_register_market_quote_not_coin()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 1;
+        let tick_size = 1;
+        let min_size = 1;
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<QC, GenericAsset, UC>(
+            lot_size, tick_size, min_size, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for market already registered.
+    fun test_register_market_registered()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 1;
+        let tick_size = 1;
+        let min_size = 1;
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register valid market.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, assets::mint_test(fee));
+        // Attempt invalid re-registration.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for base and quote same coin type.
+    fun test_register_market_same_type()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 1;
+        let tick_size = 1;
+        let min_size = 1;
         // Attempt invalid invocation.
         register_market_base_coin_internal<QC, QC, UC>(
-            1, 1, assets::mint_test(1));
+            lot_size, tick_size, min_size, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for tick size 0.
+    fun test_register_market_tick_size_0()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 1;
+        let tick_size = 0;
+        let min_size = 0;
+        // Attempt invalid invocation.
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, coin::zero());
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-*/
 }

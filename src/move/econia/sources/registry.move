@@ -325,6 +325,12 @@ module econia::registry {
     const E_NO_RECOGNIZED_MARKET: u64 = 10;
     /// Market info is not recognized for given trading pair.
     const E_WRONG_RECOGNIZED_MARKET: u64 = 11;
+    /// Market ID is invalid.
+    const E_INVALID_MARKET_ID: u64 = 12;
+    /// Base asset type is invalid.
+    const E_INVALID_BASE: u64 = 13;
+    /// Quote asset type is invalid.
+    const E_INVALID_QUOTE: u64 = 14;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -825,7 +831,67 @@ module econia::registry {
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Return `true` if `cusotdian_id` has been registered.
+    /// Check types, return market info for market account registration.
+    ///
+    /// Restricted to friends to prevent excessive public queries
+    /// against the registry.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID to check.
+    /// * `base_type`: Base type to check.
+    /// * `quote_type`: Quote type to check.
+    ///
+    /// # Returns
+    ///
+    /// * `String`: `MarketInfo.base_name_generic`.
+    /// * `u64`: `MarketInfo.lot_size`.
+    /// * `u64`: `MarketInfo.tick_size`.
+    /// * `u64`: `MarketInfo.min_size`.
+    /// * `u64`: `MarketInfo.underwriter_id`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ID`: Market ID is invalid.
+    /// * `E_INVALID_BASE`: Base asset type is invalid.
+    /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_market_info_for_market_account()`
+    /// * `test_get_market_info_for_market_account_invalid_base()`
+    /// * `test_get_market_info_for_market_account_invalid_market_id()`
+    /// * `test_get_market_info_for_market_account_invalid_quote()`
+    public(friend) fun get_market_info_for_market_account(
+        market_id: u64,
+        base_type: TypeInfo,
+        quote_type: TypeInfo
+    ): (
+        String,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires Registry {
+        let markets_map_ref = // Immutably borrow markets map.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        assert!( // Assert market ID corresponds to registered market.
+            tablist::contains(markets_map_ref, market_id),
+            E_INVALID_MARKET_ID);
+        // Immutably borrow market info for market ID.
+        let market_info_ref = tablist::borrow(markets_map_ref, market_id);
+        // Assert valid base asset type info.
+        assert!(base_type == market_info_ref.base_type, E_INVALID_BASE);
+        // Assert valid quote asset type info.
+        assert!(quote_type == market_info_ref.quote_type, E_INVALID_QUOTE);
+        (market_info_ref.base_name_generic, // Return market info.
+         market_info_ref.lot_size,
+         market_info_ref.tick_size,
+         market_info_ref.min_size,
+         market_info_ref.underwriter_id)
+    }
+
+    /// Return `true` if `custodian_id` has been registered.
     ///
     /// Restricted to friends to prevent excessive public queries
     /// against the registry.
@@ -1187,6 +1253,109 @@ module econia::registry {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
+    /// Verify returns.
+    fun test_get_market_info_for_market_account()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        let underwriter_id = 100; // Declare underwriter ID.
+        let underwriter_capability = // Get underwriter capability.
+            get_underwriter_capability_test(underwriter_id);
+        // Declare arguments.
+        let lot_size = 123;
+        let tick_size = 456;
+        let min_size = 789;
+        let base_name_generic = string::utf8(b"Generic asset");
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register market, storing market ID.
+        let market_id = register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size, tick_size, min_size,
+            &underwriter_capability, assets::mint_test(fee));
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+        let (base_type, quote_type) = // Get asset types.
+            (type_info::type_of<GenericAsset>(), type_info::type_of<QC>());
+        // Get market info returns.
+        let (base_name_generic_r, lot_size_r, tick_size_r, min_size_r,
+             underwriter_id_r) = get_market_info_for_market_account(
+                market_id, base_type, quote_type);
+        // Assert returns.
+        assert!(base_name_generic_r == base_name_generic, 0);
+        assert!(lot_size_r == lot_size, 0);
+        assert!(tick_size_r == tick_size, 0);
+        assert!(min_size_r == min_size, 0);
+        assert!(underwriter_id_r == underwriter_id, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for invalid base asset.
+    fun test_get_market_info_for_market_account_invalid_base()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        let underwriter_id = 100; // Declare underwriter ID.
+        let underwriter_capability = // Get underwriter capability.
+            get_underwriter_capability_test(underwriter_id);
+        // Declare arguments.
+        let lot_size = 123;
+        let tick_size = 456;
+        let min_size = 789;
+        let base_name_generic = string::utf8(b"Generic asset");
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register market, storing market ID.
+        let market_id = register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size, tick_size, min_size,
+            &underwriter_capability, assets::mint_test(fee));
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+        let (base_type, quote_type) = // Get asset types (invalid base).
+            (type_info::type_of<BC>(), type_info::type_of<BC>());
+        // Attempt invalid invocation.
+        get_market_info_for_market_account(market_id, base_type, quote_type);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for invalid market ID.
+    fun test_get_market_info_for_market_account_invalid_market_id()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        let (base_type, quote_type) = // Get asset types.
+            (type_info::type_of<BC>(), type_info::type_of<QC>());
+        // Attempt invalid invocation.
+        get_market_info_for_market_account(123, base_type, quote_type);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for invalid quote asset.
+    fun test_get_market_info_for_market_account_invalid_quote()
+    acquires Registry {
+        init_test(); // Initialize for testing.
+        let underwriter_id = 100; // Declare underwriter ID.
+        let underwriter_capability = // Get underwriter capability.
+            get_underwriter_capability_test(underwriter_id);
+        // Declare arguments.
+        let lot_size = 123;
+        let tick_size = 456;
+        let min_size = 789;
+        let base_name_generic = string::utf8(b"Generic asset");
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register market, storing market ID.
+        let market_id = register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size, tick_size, min_size,
+            &underwriter_capability, assets::mint_test(fee));
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+        let (base_type, quote_type) = // Get asset types (wrong quote).
+            (type_info::type_of<GenericAsset>(), type_info::type_of<BC>());
+        // Attempt invalid invocation.
+        get_market_info_for_market_account(market_id, base_type, quote_type);
+    }
+
+    #[test]
     #[expected_failure(abort_code = 10)]
     /// Verify failure for no recognized market.
     fun test_get_recognized_market_info_no_market()
@@ -1223,7 +1392,7 @@ module econia::registry {
         // Assert it has ID 2.
         assert!(get_custodian_id(&custodian_capability) == 2, 0);
         // Assert custodian ID 2 marked as registered.
-        assert!(is_registered_custodian_id(1), 0);
+        assert!(is_registered_custodian_id(2), 0);
         // Drop custodian capability.
         drop_custodian_capability_test(custodian_capability);
         // Get another custodian capability.

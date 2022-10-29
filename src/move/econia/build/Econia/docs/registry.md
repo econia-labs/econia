@@ -257,29 +257,34 @@ The below index is automatically generated from source code:
     -  [Testing](#@Testing_44)
 -  [Function `set_recognized_markets`](#0xc0deb00c_registry_set_recognized_markets)
     -  [Testing](#@Testing_45)
+-  [Function `get_market_info_for_market_account`](#0xc0deb00c_registry_get_market_info_for_market_account)
+    -  [Parameters](#@Parameters_46)
+    -  [Returns](#@Returns_47)
+    -  [Aborts](#@Aborts_48)
+    -  [Testing](#@Testing_49)
 -  [Function `is_registered_custodian_id`](#0xc0deb00c_registry_is_registered_custodian_id)
-    -  [Testing](#@Testing_46)
--  [Function `register_market_base_coin_internal`](#0xc0deb00c_registry_register_market_base_coin_internal)
-    -  [Aborts](#@Aborts_47)
-    -  [Testing](#@Testing_48)
--  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
-    -  [Aborts](#@Aborts_49)
     -  [Testing](#@Testing_50)
--  [Function `get_recognized_market_info`](#0xc0deb00c_registry_get_recognized_market_info)
-    -  [Parameters](#@Parameters_51)
-    -  [Returns](#@Returns_52)
+-  [Function `register_market_base_coin_internal`](#0xc0deb00c_registry_register_market_base_coin_internal)
+    -  [Aborts](#@Aborts_51)
+    -  [Testing](#@Testing_52)
+-  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
     -  [Aborts](#@Aborts_53)
     -  [Testing](#@Testing_54)
+-  [Function `get_recognized_market_info`](#0xc0deb00c_registry_get_recognized_market_info)
+    -  [Parameters](#@Parameters_55)
+    -  [Returns](#@Returns_56)
+    -  [Aborts](#@Aborts_57)
+    -  [Testing](#@Testing_58)
 -  [Function `has_recognized_market`](#0xc0deb00c_registry_has_recognized_market)
-    -  [Testing](#@Testing_55)
+    -  [Testing](#@Testing_59)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
-    -  [Type parameters](#@Type_parameters_56)
-    -  [Parameters](#@Parameters_57)
-    -  [Emits](#@Emits_58)
-    -  [Aborts](#@Aborts_59)
-    -  [Assumptions](#@Assumptions_60)
-    -  [Testing](#@Testing_61)
+    -  [Type parameters](#@Type_parameters_60)
+    -  [Parameters](#@Parameters_61)
+    -  [Emits](#@Emits_62)
+    -  [Aborts](#@Aborts_63)
+    -  [Assumptions](#@Assumptions_64)
+    -  [Testing](#@Testing_65)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -806,6 +811,36 @@ Generic base asset descriptor has too many characters.
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS">E_GENERIC_TOO_MANY_CHARACTERS</a>: u64 = 8;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_INVALID_BASE"></a>
+
+Base asset type is invalid.
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_INVALID_BASE">E_INVALID_BASE</a>: u64 = 13;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_INVALID_MARKET_ID"></a>
+
+Market ID is invalid.
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>: u64 = 12;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_registry_E_INVALID_QUOTE"></a>
+
+Quote asset type is invalid.
+
+
+<pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_INVALID_QUOTE">E_INVALID_QUOTE</a>: u64 = 14;
 </code></pre>
 
 
@@ -1854,17 +1889,113 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_set_recognized_market
 
 </details>
 
-<a name="0xc0deb00c_registry_is_registered_custodian_id"></a>
+<a name="0xc0deb00c_registry_get_market_info_for_market_account"></a>
 
-## Function `is_registered_custodian_id`
+## Function `get_market_info_for_market_account`
 
-Return <code><b>true</b></code> if <code>cusotdian_id</code> has been registered.
+Check types, return market info for market account registration.
 
 Restricted to friends to prevent excessive public queries
 against the registry.
 
 
-<a name="@Testing_46"></a>
+<a name="@Parameters_46"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: Market ID to check.
+* <code>base_type</code>: Base type to check.
+* <code>quote_type</code>: Quote type to check.
+
+
+<a name="@Returns_47"></a>
+
+### Returns
+
+
+* <code>String</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>.base_name_generic</code>.
+* <code>u64</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>.lot_size</code>.
+* <code>u64</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>.tick_size</code>.
+* <code>u64</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>.min_size</code>.
+* <code>u64</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>.underwriter_id</code>.
+
+
+<a name="@Aborts_48"></a>
+
+### Aborts
+
+
+* <code><a href="registry.md#0xc0deb00c_registry_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: Market ID is invalid.
+* <code><a href="registry.md#0xc0deb00c_registry_E_INVALID_BASE">E_INVALID_BASE</a></code>: Base asset type is invalid.
+* <code><a href="registry.md#0xc0deb00c_registry_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
+
+
+<a name="@Testing_49"></a>
+
+### Testing
+
+
+* <code>test_get_market_info_for_market_account()</code>
+* <code>test_get_market_info_for_market_account_invalid_base()</code>
+* <code>test_get_market_info_for_market_account_invalid_market_id()</code>
+* <code>test_get_market_info_for_market_account_invalid_quote()</code>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_info_for_market_account">get_market_info_for_market_account</a>(market_id: u64, base_type: <a href="_TypeInfo">type_info::TypeInfo</a>, quote_type: <a href="_TypeInfo">type_info::TypeInfo</a>): (<a href="_String">string::String</a>, u64, u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_market_info_for_market_account">get_market_info_for_market_account</a>(
+    market_id: u64,
+    base_type: TypeInfo,
+    quote_type: TypeInfo
+): (
+    String,
+    u64,
+    u64,
+    u64,
+    u64
+) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
+    <b>let</b> markets_map_ref = // Immutably borrow markets map.
+        &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).market_id_to_info;
+    <b>assert</b>!( // Assert market ID corresponds <b>to</b> registered market.
+        <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(markets_map_ref, market_id),
+        <a href="registry.md#0xc0deb00c_registry_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
+    // Immutably borrow market info for market ID.
+    <b>let</b> market_info_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(markets_map_ref, market_id);
+    // Assert valid base asset type info.
+    <b>assert</b>!(base_type == market_info_ref.base_type, <a href="registry.md#0xc0deb00c_registry_E_INVALID_BASE">E_INVALID_BASE</a>);
+    // Assert valid quote asset type info.
+    <b>assert</b>!(quote_type == market_info_ref.quote_type, <a href="registry.md#0xc0deb00c_registry_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
+    (market_info_ref.base_name_generic, // Return market info.
+     market_info_ref.lot_size,
+     market_info_ref.tick_size,
+     market_info_ref.min_size,
+     market_info_ref.underwriter_id)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_is_registered_custodian_id"></a>
+
+## Function `is_registered_custodian_id`
+
+Return <code><b>true</b></code> if <code>custodian_id</code> has been registered.
+
+Restricted to friends to prevent excessive public queries
+against the registry.
+
+
+<a name="@Testing_50"></a>
 
 ### Testing
 
@@ -1906,7 +2037,7 @@ Wrapped market registration call for a base coin type.
 See inner function <code><a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>()</code>.
 
 
-<a name="@Aborts_47"></a>
+<a name="@Aborts_51"></a>
 
 ### Aborts
 
@@ -1914,7 +2045,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 * <code><a href="registry.md#0xc0deb00c_registry_E_BASE_NOT_COIN">E_BASE_NOT_COIN</a></code>: Base coin type is not initialized.
 
 
-<a name="@Testing_48"></a>
+<a name="@Testing_52"></a>
 
 ### Testing
 
@@ -1969,7 +2100,7 @@ descriptor.
 See inner function <code><a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>()</code>.
 
 
-<a name="@Aborts_49"></a>
+<a name="@Aborts_53"></a>
 
 ### Aborts
 
@@ -1978,7 +2109,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 * <code><a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS">E_GENERIC_TOO_MANY_CHARACTERS</a></code>: Asset descriptor is too long.
 
 
-<a name="@Testing_50"></a>
+<a name="@Testing_54"></a>
 
 ### Testing
 
@@ -2038,7 +2169,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 Return recognized market info for given trading pair.
 
 
-<a name="@Parameters_51"></a>
+<a name="@Parameters_55"></a>
 
 ### Parameters
 
@@ -2046,7 +2177,7 @@ Return recognized market info for given trading pair.
 * <code>trading_pair</code>: Trading pair to look up.
 
 
-<a name="@Returns_52"></a>
+<a name="@Returns_56"></a>
 
 ### Returns
 
@@ -2058,7 +2189,7 @@ Return recognized market info for given trading pair.
 * <code>u64</code>: <code><a href="registry.md#0xc0deb00c_registry_RecognizedMarketInfo">RecognizedMarketInfo</a>.underwriter_id</code>
 
 
-<a name="@Aborts_53"></a>
+<a name="@Aborts_57"></a>
 
 ### Aborts
 
@@ -2067,7 +2198,7 @@ Return recognized market info for given trading pair.
 market.
 
 
-<a name="@Testing_54"></a>
+<a name="@Testing_58"></a>
 
 ### Testing
 
@@ -2123,7 +2254,7 @@ market.
 Return <code><b>true</b></code> if given <code><a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a></code> has recognized market.
 
 
-<a name="@Testing_55"></a>
+<a name="@Testing_59"></a>
 
 ### Testing
 
@@ -2203,7 +2334,7 @@ module publication.
 Register a market in the global registry.
 
 
-<a name="@Type_parameters_56"></a>
+<a name="@Type_parameters_60"></a>
 
 ### Type parameters
 
@@ -2212,7 +2343,7 @@ Register a market in the global registry.
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_57"></a>
+<a name="@Parameters_61"></a>
 
 ### Parameters
 
@@ -2228,7 +2359,7 @@ otherwise ID of market underwriter.
 * <code>utility_coins</code>: Utility coins paid to register a market.
 
 
-<a name="@Emits_58"></a>
+<a name="@Emits_62"></a>
 
 ### Emits
 
@@ -2237,7 +2368,7 @@ otherwise ID of market underwriter.
 registered.
 
 
-<a name="@Aborts_59"></a>
+<a name="@Aborts_63"></a>
 
 ### Aborts
 
@@ -2251,7 +2382,7 @@ registered.
 for specified market info.
 
 
-<a name="@Assumptions_60"></a>
+<a name="@Assumptions_64"></a>
 
 ### Assumptions
 
@@ -2261,7 +2392,7 @@ for specified market info.
 <code><a href="registry.md#0xc0deb00c_registry_register_market_base_generic_internal">register_market_base_generic_internal</a>()</code>.
 
 
-<a name="@Testing_61"></a>
+<a name="@Testing_65"></a>
 
 ### Testing
 

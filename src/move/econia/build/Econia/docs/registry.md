@@ -17,15 +17,29 @@ list can only be managed by the Econia account, and provides a set
 of public APIs that allow lookup of an official market based on a
 trading pair.
 
-
-<a name="@Indexing_0"></a>
-
-## Indexing
-
-
 Custodian capabilities and underwriter capabilities are 1-indexed,
 with an ID of 0 reserved as a flag for null. For consistency, market
 IDs are 1-indexed too.
+
+
+<a name="@General_overview_sections_0"></a>
+
+## General overview sections
+
+
+[Public function index](#public-function-index)
+
+* [Capability management](#capability-management)
+* [Recognized market lookup](#recognized-market-lookup)
+* [Recognized market management](#recognized-market-management)
+
+[Dependency charts](#dependency-charts)
+
+* [Recognized market getters](#recognized-market-getters)
+* [Recognized market setters](#recognized-market-setters)
+* [Internal market registration](#internal-market-registration)
+
+[Complete DocGen index](#complete-docgen-index)
 
 
 <a name="@Public_function_index_1"></a>
@@ -83,9 +97,9 @@ a browser renders the diagrams with coloring that makes it difficult
 to read, try a different browser.
 
 
-<a name="@Recognized_market_lookup_6"></a>
+<a name="@Recognized_market_getters_6"></a>
 
-### Recognized market lookup
+### Recognized market getters
 
 
 ```mermaid
@@ -112,9 +126,9 @@ has_recognized_market_base_generic
 ```
 
 
-<a name="@Recognized_market_management_7"></a>
+<a name="@Recognized_market_setters_7"></a>
 
-### Recognized market management
+### Recognized market setters
 
 
 ```mermaid
@@ -142,24 +156,24 @@ register_market_base_generic_internal --> register_market_internal
 ```
 
 
-<a name="@Complete_docgen_index_9"></a>
+<a name="@Complete_DocGen_index_9"></a>
 
-## Complete docgen index
+## Complete DocGen index
 
 
 The below index is automatically generated from source code:
 
 
--  [Indexing](#@Indexing_0)
+-  [General overview sections](#@General_overview_sections_0)
 -  [Public function index](#@Public_function_index_1)
     -  [Capability management](#@Capability_management_2)
     -  [Recognized market lookup](#@Recognized_market_lookup_3)
     -  [Recognized market management](#@Recognized_market_management_4)
 -  [Dependency charts](#@Dependency_charts_5)
-    -  [Recognized market lookup](#@Recognized_market_lookup_6)
-    -  [Recognized market management](#@Recognized_market_management_7)
+    -  [Recognized market getters](#@Recognized_market_getters_6)
+    -  [Recognized market setters](#@Recognized_market_setters_7)
     -  [Internal market registration](#@Internal_market_registration_8)
--  [Complete docgen index](#@Complete_docgen_index_9)
+-  [Complete DocGen index](#@Complete_DocGen_index_9)
 -  [Struct `CustodianCapability`](#0xc0deb00c_registry_CustodianCapability)
 -  [Resource `GenericAsset`](#0xc0deb00c_registry_GenericAsset)
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
@@ -173,20 +187,20 @@ The below index is automatically generated from source code:
 -  [Constants](#@Constants_10)
 -  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
     -  [Testing](#@Testing_11)
--  [Function `get_underwriter_id`](#0xc0deb00c_registry_get_underwriter_id)
-    -  [Testing](#@Testing_12)
 -  [Function `get_recognized_market_info_base_coin`](#0xc0deb00c_registry_get_recognized_market_info_base_coin)
-    -  [Parameters](#@Parameters_13)
-    -  [Testing](#@Testing_14)
+    -  [Parameters](#@Parameters_12)
+    -  [Testing](#@Testing_13)
 -  [Function `get_recognized_market_info_base_coin_by_type`](#0xc0deb00c_registry_get_recognized_market_info_base_coin_by_type)
-    -  [Type parameters](#@Type_parameters_15)
-    -  [Testing](#@Testing_16)
+    -  [Type parameters](#@Type_parameters_14)
+    -  [Testing](#@Testing_15)
 -  [Function `get_recognized_market_info_base_generic`](#0xc0deb00c_registry_get_recognized_market_info_base_generic)
-    -  [Parameters](#@Parameters_17)
-    -  [Testing](#@Testing_18)
+    -  [Parameters](#@Parameters_16)
+    -  [Testing](#@Testing_17)
 -  [Function `get_recognized_market_info_base_generic_by_type`](#0xc0deb00c_registry_get_recognized_market_info_base_generic_by_type)
-    -  [Type parameters](#@Type_parameters_19)
-    -  [Parameters](#@Parameters_20)
+    -  [Type parameters](#@Type_parameters_18)
+    -  [Parameters](#@Parameters_19)
+    -  [Testing](#@Testing_20)
+-  [Function `get_underwriter_id`](#0xc0deb00c_registry_get_underwriter_id)
     -  [Testing](#@Testing_21)
 -  [Function `has_recognized_market_base_coin`](#0xc0deb00c_registry_has_recognized_market_base_coin)
     -  [Parameters](#@Parameters_22)
@@ -762,7 +776,7 @@ Base and quote asset descriptors are identical.
 
 <a name="0xc0deb00c_registry_E_GENERIC_TOO_FEW_CHARACTERS"></a>
 
-Generic base asset descriptor has too few charaters.
+Generic base asset descriptor has too few characters.
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_FEW_CHARACTERS">E_GENERIC_TOO_FEW_CHARACTERS</a>: u64 = 7;
@@ -772,7 +786,7 @@ Generic base asset descriptor has too few charaters.
 
 <a name="0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS"></a>
 
-Generic base asset descriptor has too many charaters.
+Generic base asset descriptor has too many characters.
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS">E_GENERIC_TOO_MANY_CHARACTERS</a>: u64 = 8;
@@ -908,41 +922,6 @@ Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_Custodi
 
 </details>
 
-<a name="0xc0deb00c_registry_get_underwriter_id"></a>
-
-## Function `get_underwriter_id`
-
-Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a></code>.
-
-
-<a name="@Testing_12"></a>
-
-### Testing
-
-
-* <code>test_register_capabilities()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>(underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>(
-    underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a>
-): u64 {
-    underwriter_capability_ref.underwriter_id
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_registry_get_recognized_market_info_base_coin"></a>
 
 ## Function `get_recognized_market_info_base_coin`
@@ -950,7 +929,7 @@ Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_Underwr
 Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market_info">get_recognized_market_info</a>()</code> for coin base asset.
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_12"></a>
 
 ### Parameters
 
@@ -959,7 +938,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 * <code>quote_type</code>: Quote asset phantom coin type info.
 
 
-<a name="@Testing_14"></a>
+<a name="@Testing_13"></a>
 
 ### Testing
 
@@ -1007,7 +986,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 type parameters.
 
 
-<a name="@Type_parameters_15"></a>
+<a name="@Type_parameters_14"></a>
 
 ### Type parameters
 
@@ -1016,7 +995,7 @@ type parameters.
 * <code>QuoteCoinType</code>: Quote asset phantom coin type.
 
 
-<a name="@Testing_16"></a>
+<a name="@Testing_15"></a>
 
 ### Testing
 
@@ -1061,7 +1040,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 asset.
 
 
-<a name="@Parameters_17"></a>
+<a name="@Parameters_16"></a>
 
 ### Parameters
 
@@ -1070,7 +1049,7 @@ asset.
 * <code>quote_type</code>: Quote asset phantom coin type info.
 
 
-<a name="@Testing_18"></a>
+<a name="@Testing_17"></a>
 
 ### Testing
 
@@ -1118,7 +1097,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 quote type parameter.
 
 
-<a name="@Type_parameters_19"></a>
+<a name="@Type_parameters_18"></a>
 
 ### Type parameters
 
@@ -1126,7 +1105,7 @@ quote type parameter.
 * <code>QuoteCoinType</code>: Quote asset phantom coin type.
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_19"></a>
 
 ### Parameters
 
@@ -1134,7 +1113,7 @@ quote type parameter.
 * <code>base_name_generic</code>: Generic base asset name.
 
 
-<a name="@Testing_21"></a>
+<a name="@Testing_20"></a>
 
 ### Testing
 
@@ -1165,6 +1144,41 @@ quote type parameter.
     <a href="registry.md#0xc0deb00c_registry_get_recognized_market_info_base_generic">get_recognized_market_info_base_generic</a>(
         base_name_generic,
         <a href="_type_of">type_info::type_of</a>&lt;QuoteCoinType&gt;())
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_get_underwriter_id"></a>
+
+## Function `get_underwriter_id`
+
+Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a></code>.
+
+
+<a name="@Testing_21"></a>
+
+### Testing
+
+
+* <code>test_register_capabilities()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>(underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>(
+    underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a>
+): u64 {
+    underwriter_capability_ref.underwriter_id
 }
 </code></pre>
 
@@ -2164,8 +2178,8 @@ for specified market info.
 
 
 * <code>underwriter_id</code> has been properly passed by either
-<code>register_market_base_coin_internal</code> or
-<code>register_market_base_generic_interal</code>.
+<code><a href="registry.md#0xc0deb00c_registry_register_market_base_coin_internal">register_market_base_coin_internal</a>()</code> or
+<code><a href="registry.md#0xc0deb00c_registry_register_market_base_generic_internal">register_market_base_generic_internal</a>()</code>.
 
 
 <a name="@Testing_59"></a>

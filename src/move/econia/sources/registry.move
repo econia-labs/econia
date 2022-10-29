@@ -12,11 +12,25 @@
 /// of public APIs that allow lookup of an official market based on a
 /// trading pair.
 ///
-/// # Indexing
-///
 /// Custodian capabilities and underwriter capabilities are 1-indexed,
 /// with an ID of 0 reserved as a flag for null. For consistency, market
 /// IDs are 1-indexed too.
+///
+/// # General overview sections
+///
+/// [Public function index](#public-function-index)
+///
+/// * [Capability management](#capability-management)
+/// * [Recognized market lookup](#recognized-market-lookup)
+/// * [Recognized market management](#recognized-market-management)
+///
+/// [Dependency charts](#dependency-charts)
+///
+/// * [Recognized market getters](#recognized-market-getters)
+/// * [Recognized market setters](#recognized-market-setters)
+/// * [Internal market registration](#internal-market-registration)
+///
+/// [Complete DocGen index](#complete-docgen-index)
 ///
 /// # Public function index
 ///
@@ -53,7 +67,7 @@
 /// a browser renders the diagrams with coloring that makes it difficult
 /// to read, try a different browser.
 ///
-/// ## Recognized market lookup
+/// ## Recognized market getters
 ///
 /// ```mermaid
 ///
@@ -78,7 +92,7 @@
 ///
 /// ```
 ///
-/// ## Recognized market management
+/// ## Recognized market setters
 ///
 /// ```mermaid
 ///
@@ -100,7 +114,7 @@
 ///
 /// ```
 ///
-/// # Complete docgen index
+/// # Complete DocGen index
 ///
 /// The below index is automatically generated from source code:
 module econia::registry {
@@ -282,9 +296,9 @@ module econia::registry {
     const E_MARKET_REGISTERED: u64 = 5;
     /// Base coin type has not been initialized for a pure coin market.
     const E_BASE_NOT_COIN: u64 = 6;
-    /// Generic base asset descriptor has too few charaters.
+    /// Generic base asset descriptor has too few characters.
     const E_GENERIC_TOO_FEW_CHARACTERS: u64 = 7;
-    /// Generic base asset descriptor has too many charaters.
+    /// Generic base asset descriptor has too many characters.
     const E_GENERIC_TOO_MANY_CHARACTERS: u64 = 8;
     /// Caller is not Econia, but should be.
     const E_NOT_ECONIA: u64 = 9;
@@ -320,17 +334,6 @@ module econia::registry {
         custodian_capability_ref: &CustodianCapability
     ): u64 {
         custodian_capability_ref.custodian_id
-    }
-
-    /// Return serial ID of given `UnderwriterCapability`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_register_capabilities()`
-    public fun get_underwriter_id(
-        underwriter_capability_ref: &UnderwriterCapability
-    ): u64 {
-        underwriter_capability_ref.underwriter_id
     }
 
     /// Wrapper for `get_recognized_market_info()` for coin base asset.
@@ -444,6 +447,17 @@ module econia::registry {
         get_recognized_market_info_base_generic(
             base_name_generic,
             type_info::type_of<QuoteCoinType>())
+    }
+
+    /// Return serial ID of given `UnderwriterCapability`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public fun get_underwriter_id(
+        underwriter_capability_ref: &UnderwriterCapability
+    ): u64 {
+        underwriter_capability_ref.underwriter_id
     }
 
     /// Wrapper for `has_recognized_market()` for coin base asset.
@@ -994,8 +1008,8 @@ module econia::registry {
     /// # Assumptions
     ///
     /// * `underwriter_id` has been properly passed by either
-    ///   `register_market_base_coin_internal` or
-    ///   `register_market_base_generic_interal`.
+    ///   `register_market_base_coin_internal()` or
+    ///   `register_market_base_generic_internal()`.
     ///
     /// # Testing
     ///
@@ -1082,6 +1096,22 @@ module econia::registry {
     ) {
         // Unpack provided capability.
         let UnderwriterCapability{underwriter_id: _} = underwriter_capability;
+    }
+
+    #[test_only]
+    /// Return a `CustodianCapabilty` having given ID, setting it as
+    /// a valid ID in the registry.
+    public fun get_custodian_capability_test(
+        custodian_id: u64
+    ): CustodianCapability
+    acquires Registry {
+        // If proposed custodian ID is less than number registered:
+        if (custodian_id < borrow_global<Registry>(@econia).n_custodians)
+            // Update registry to have provided ID as number registered.
+            borrow_global_mut<Registry>(@econia).n_custodians =
+                custodian_id;
+        // Return corresponding custodian capability.
+        CustodianCapability{custodian_id}
     }
 
     #[test_only]
@@ -1543,7 +1573,6 @@ module econia::registry {
         assert!(min_size == min_size_2, 0);
         assert!(underwriter_id == NIL, 0);
     }
-
 
     #[test(econia = @econia)]
     /// Verify returns, state updates for setting and removing

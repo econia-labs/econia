@@ -20,8 +20,10 @@ module econia::registry {
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::incentives;
     use econia::tablist::{Self, Tablist};
-    use std::option::{Option};
+    use std::option::{Self, Option};
+    use std::signer::{address_of};
     use std::string::{Self, String};
+    use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -105,11 +107,11 @@ module econia::registry {
         trading_pair: TradingPair,
         /// The recognized market info for the given trading pair after
         /// an addition or update. None if a removal.
-        recognized_market_info: Option<RecognizedMarketInfo>,
+        recognized_market_info: Option<RecognizedMarketInfo>
     }
 
     /// Recognized market info for a given trading pair.
-    struct RecognizedMarketInfo has drop, store {
+    struct RecognizedMarketInfo has copy, drop, store {
         /// Market ID of recognized market, 0-indexed.
         market_id: u64,
         /// Number of base units exchanged per lot.
@@ -120,13 +122,14 @@ module econia::registry {
         min_size: u64,
         /// `NIL` if a pure coin market, otherwise ID of underwriter
         /// capability required to verify generic asset amounts.
-        underwriter_id: u64,
+        underwriter_id: u64
     }
 
     /// Recognized markets for specific trading pairs.
     struct RecognizedMarkets has key {
         /// Map from trading pair info to market information for the
-        /// recognized market, if any, for given trading pair.
+        /// recognized market, if any, for given trading pair. Enables
+        /// off-chain iterated indexing by market ID.
         map: Tablist<TradingPair, RecognizedMarketInfo>,
         /// Event handle for recognized market events.
         recognized_market_events: EventHandle<RecognizedMarketEvent>
@@ -135,7 +138,7 @@ module econia::registry {
     /// Global registration information.
     struct Registry has key {
         /// Map from 1-indexed market ID to corresponding market info,
-        /// enabling iterated indexing by market ID.
+        /// enabling off-chain iterated indexing by market ID.
         market_id_to_info: Tablist<u64, MarketInfo>,
         /// Map from market info to corresponding 1-indexed market ID,
         /// enabling market duplicate checks.
@@ -189,6 +192,12 @@ module econia::registry {
     const E_GENERIC_TOO_FEW_CHARACTERS: u64 = 7;
     /// Generic base asset descriptor has too many charaters.
     const E_GENERIC_TOO_MANY_CHARACTERS: u64 = 8;
+    /// Caller is not Econia, but should be.
+    const E_NOT_ECONIA: u64 = 9;
+    /// Trading pair does not have recognized market.
+    const E_NO_RECOGNIZED_MARKET: u64 = 10;
+    /// Market info is not recognized for given trading pair.
+    const E_WRONG_RECOGNIZED_MARKET: u64 = 11;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -228,6 +237,211 @@ module econia::registry {
         underwriter_capability_ref: &UnderwriterCapability
     ): u64 {
         underwriter_capability_ref.underwriter_id
+    }
+
+    /// Wrapper for `has_recognized_market()` for coin base asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_type`: Base asset phantom coin type info.
+    /// * `quote_type`: Quote asset phantom coin type info.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_coin(
+        base_type: TypeInfo,
+        quote_type: TypeInfo
+    ): bool
+    acquires RecognizedMarkets {
+        // Get empty generic base asset name.
+        let base_name_generic = string::utf8(b"");
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Check if trading pair has recognized market.
+        has_recognized_market(trading_pair)
+    }
+
+    /// Wrapper for `has_recognized_market_base_coin()` with type
+    /// parameters.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseCoinType`: Base asset phantom coin type.
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_coin_by_type<
+        BaseCoinType,
+        QuoteCoinType
+    >(): bool
+    acquires RecognizedMarkets {
+        has_recognized_market_base_coin(
+            type_info::type_of<BaseCoinType>(),
+            type_info::type_of<QuoteCoinType>())
+    }
+
+    /// Wrapper for `has_recognized_market()` for generic base asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: Generic base asset name.
+    /// * `quote_type`: Quote asset phantom coin type info.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_generic(
+        base_name_generic: String,
+        quote_type: TypeInfo
+    ): bool
+    acquires RecognizedMarkets {
+        // Get generic base asset type info.
+        let base_type = type_info::type_of<GenericAsset>();
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Check if trading pair has recognized market.
+        has_recognized_market(trading_pair)
+    }
+
+    /// Wrapper for `has_recognized_market_base_generic()` with quote
+    /// type parameter.
+    ///
+    /// # Type parameters
+    ///
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: Generic base asset name.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_generic_by_type<
+        QuoteCoinType
+    >(
+        base_name_generic: String,
+    ): bool
+    acquires RecognizedMarkets {
+        has_recognized_market_base_generic(
+            base_name_generic,
+            type_info::type_of<QuoteCoinType>())
+    }
+
+    /// Wrapper for `get_recognized_market_info()` for coin base asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_type`: Base asset phantom coin type info.
+    /// * `quote_type`: Quote asset phantom coin type info.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun get_recognized_market_info_base_coin(
+        base_type: TypeInfo,
+        quote_type: TypeInfo
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires RecognizedMarkets {
+        // Get empty generic base asset name.
+        let base_name_generic = string::utf8(b"");
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Get recognized market info.
+        get_recognized_market_info(trading_pair)
+    }
+
+    /// Wrapper for `get_recognized_market_info_base_coin()` with
+    /// type parameters.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseCoinType`: Base asset phantom coin type.
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun get_recognized_market_info_base_coin_by_type<
+        BaseCoinType,
+        QuoteCoinType
+    >(): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires RecognizedMarkets {
+        get_recognized_market_info_base_coin(
+            type_info::type_of<BaseCoinType>(),
+            type_info::type_of<QuoteCoinType>())
+    }
+
+    /// Wrapper for `get_recognized_market_info()` for generic base
+    /// asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: Generic base asset name.
+    /// * `quote_type`: Quote asset phantom coin type info.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun get_recognized_market_info_base_generic(
+        base_name_generic: String,
+        quote_type: TypeInfo
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires RecognizedMarkets {
+        // Get generic base asset type info.
+        let base_type = type_info::type_of<GenericAsset>();
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Get recognized market info.
+        get_recognized_market_info(trading_pair)
+    }
+
+    /// Wrapper for `get_recognized_market_info_base_generic()` with
+    /// quote type parameter.
+    ///
+    /// # Type parameters
+    ///
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: Generic base asset name.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun get_recognized_market_info_base_generic_by_type<
+        QuoteCoinType
+    >(
+        base_name_generic: String,
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires RecognizedMarkets {
+        get_recognized_market_info_base_generic(
+            base_name_generic,
+            type_info::type_of<QuoteCoinType>())
     }
 
     /// Return a unique `CustodianCapability`.
@@ -278,6 +492,204 @@ module econia::registry {
             deposit_underwriter_registration_utility_coins(utility_coins);
         // Pack and return corresponding capability.
         UnderwriterCapability{underwriter_id}
+    }
+
+    /// Remove market having given ID from recognized markets list.
+    ///
+    /// # Parameters
+    ///
+    /// * `account`: Econia account.
+    /// * `market_id`: Market ID to recognize.
+    ///
+    /// # Emits
+    ///
+    /// * `RecognizedMarketEvent`: Info about recognized market for
+    ///   given trading pair.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NOT_ECONIA`: `account` is not Econia.
+    /// * `E_NO_RECOGNIZED_MARKET`: Market having given ID is not a
+    ///   recognized market.
+    /// * `E_WRONG_RECOGNIZED_MARKET`: Market info is not recognized for
+    ///   given trading pair.
+    ///
+    /// # Assumptions
+    ///
+    /// * `market_id` corresponds to a registered market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_remove_recognized_market_no_recognized()`
+    /// * `test_remove_recognized_market_not_econia()`
+    /// * `test_remove_recognized_market_wrong_market()`
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun remove_recognized_market(
+        account: &signer,
+        market_id: u64
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        // Assert account is Econia.
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        let markets_map_ref = // Immutably borrow markets map.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        // Immutably borrow info for market having given ID.
+        let market_info_ref = tablist::borrow(markets_map_ref, market_id);
+        // Get recognized market info parameters.
+        let (base_type, base_name_generic, quote_type, lot_size, tick_size,
+             min_size, underwriter_id) =
+            (market_info_ref.base_type, market_info_ref.base_name_generic,
+             market_info_ref.quote_type, market_info_ref.lot_size,
+             market_info_ref.tick_size, market_info_ref.min_size,
+             market_info_ref.underwriter_id);
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Pack recognized market info.
+        let recognized_market_info = RecognizedMarketInfo{
+            market_id, lot_size, tick_size, min_size, underwriter_id};
+        // Mutably borrow recognized markets resource.
+        let recognized_markets_ref_mut =
+            borrow_global_mut<RecognizedMarkets>(@econia);
+        // Mutably borrow recognized markets map.
+        let recognized_map_ref_mut = &mut recognized_markets_ref_mut.map;
+        assert!( // Assert trading pair has a recognized market.
+            tablist::contains(recognized_map_ref_mut, trading_pair),
+            E_NO_RECOGNIZED_MARKET);
+        assert!( // Assert market info is recognized for trading pair.
+            *tablist::borrow(recognized_map_ref_mut, trading_pair) ==
+                recognized_market_info,
+            E_WRONG_RECOGNIZED_MARKET);
+        // Remove entry for given trading pair.
+        tablist::remove(recognized_map_ref_mut, trading_pair);
+        // Mutably borrow recognized markets events handle.
+        let event_handle_ref_mut =
+            &mut recognized_markets_ref_mut.recognized_market_events;
+        // Emit a recognized market event.
+        event::emit_event(event_handle_ref_mut, RecognizedMarketEvent{
+            trading_pair, recognized_market_info: option::none()});
+    }
+
+    /// Wrapper for `remove_recognized_market()` with market IDs vector.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun remove_recognized_markets(
+        account: &signer,
+        market_ids_ref: &vector<u64>
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        // Get number of markets to remove.
+        let n_markets = vector::length(market_ids_ref);
+        let i = 0; // Declare loop counter.
+        while (i < n_markets) { // Loop over all markets in vector:
+            // Get market ID to remove.
+            let market_id = *vector::borrow(market_ids_ref, i);
+            // Remove as recognized market.
+            remove_recognized_market(account, market_id);
+            i = i + 1; // Increment loop counter.
+        }
+    }
+
+    /// Set market having given ID as recognized market.
+    ///
+    /// # Parameters
+    ///
+    /// * `account`: Econia account.
+    /// * `market_id`: Market ID to recognize.
+    ///
+    /// # Emits
+    ///
+    /// * `RecognizedMarketEvent`: Info about recognized market for
+    ///   given trading pair.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NOT_ECONIA`: `account` is not Econia.
+    ///
+    /// # Assumptions
+    ///
+    /// * `market_id` corresponds to a registered market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_recognized_market_not_econia()`
+    /// * `test_set_recognized_market_update()`
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun set_recognized_market(
+        account: &signer,
+        market_id: u64
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        // Assert account is Econia.
+        assert!(address_of(account) == @econia, E_NOT_ECONIA);
+        let markets_map_ref = // Immutably borrow markets map.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        // Immutably borrow info for market having given ID.
+        let market_info_ref = tablist::borrow(markets_map_ref, market_id);
+        // Get recognized market info parameters.
+        let (base_type, base_name_generic, quote_type, lot_size, tick_size,
+             min_size, underwriter_id) =
+            (market_info_ref.base_type, market_info_ref.base_name_generic,
+             market_info_ref.quote_type, market_info_ref.lot_size,
+             market_info_ref.tick_size, market_info_ref.min_size,
+             market_info_ref.underwriter_id);
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Pack recognized market info.
+        let recognized_market_info = RecognizedMarketInfo{
+            market_id, lot_size, tick_size, min_size, underwriter_id};
+        // Mutably borrow recognized markets resource.
+        let recognized_markets_ref_mut =
+            borrow_global_mut<RecognizedMarkets>(@econia);
+        // Mutably borrow recognized markets map.
+        let recognized_map_ref_mut = &mut recognized_markets_ref_mut.map;
+        let new = // New if trading pair not already recognized.
+            !tablist::contains(recognized_map_ref_mut, trading_pair);
+        // If new trading pair, add an entry to map.
+        if (new) tablist::add(
+            recognized_map_ref_mut, trading_pair, recognized_market_info)
+        // Otherwise update existing entry.
+        else *tablist::borrow_mut(recognized_map_ref_mut, trading_pair) =
+                recognized_market_info;
+        // Pack market info in an option.
+        let optional_market_info = option::some(recognized_market_info);
+        // Mutably borrow recognized markets events handle.
+        let event_handle_ref_mut =
+            &mut recognized_markets_ref_mut.recognized_market_events;
+        // Emit a recognized market event.
+        event::emit_event(event_handle_ref_mut, RecognizedMarketEvent{
+            trading_pair, recognized_market_info: optional_market_info});
+    }
+
+    /// Wrapper for `set_recognized_market()` with market IDs vector.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun set_recognized_markets(
+        account: &signer,
+        market_ids_ref: &vector<u64>
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        // Get number of markets to set.
+        let n_markets = vector::length(market_ids_ref);
+        let i = 0; // Declare loop counter.
+        while (i < n_markets) { // Loop over all markets in vector:
+            // Get market ID to set.
+            let market_id = *vector::borrow(market_ids_ref, i);
+            // Set as recognized market.
+            set_recognized_market(account, market_id);
+            i = i + 1; // Increment loop counter.
+        }
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -365,6 +777,71 @@ module econia::registry {
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return recognized market info for given trading pair.
+    ///
+    /// # Parameters
+    ///
+    /// * `trading_pair`: Trading pair to look up.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: `RecognizedMarketInfo.market_id`
+    /// * `u64`: `RecognizedMarketInfo.lot_size`
+    /// * `u64`: `RecognizedMarketInfo.tick_size`
+    /// * `u64`: `RecognizedMarketInfo.min_size`
+    /// * `u64`: `RecognizedMarketInfo.underwriter_id`
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_RECOGNIZED_MARKET`: Trading pair has no recognized
+    ///   market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_recognized_market_info_no_market()`
+    /// * `test_set_remove_check_recognized_markets()`
+    fun get_recognized_market_info(
+        trading_pair: TradingPair
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires RecognizedMarkets {
+        // Mutably borrow recognized markets map.
+        let recognized_map_ref =
+            &borrow_global<RecognizedMarkets>(@econia).map;
+        // Assert is actually recognized.
+        assert!(tablist::contains(recognized_map_ref, trading_pair),
+                E_NO_RECOGNIZED_MARKET);
+        // Immutably borrow corresponding recognized market info.
+        let recognized_market_info_ref =
+            *tablist::borrow(recognized_map_ref, trading_pair);
+        // Return recognized market info.
+        (recognized_market_info_ref.market_id,
+         recognized_market_info_ref.lot_size,
+         recognized_market_info_ref.tick_size,
+         recognized_market_info_ref.min_size,
+         recognized_market_info_ref.underwriter_id)
+    }
+
+    /// Return `true` if given `TradingPair` has recognized market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    fun has_recognized_market(
+        trading_pair: TradingPair
+    ): bool
+    acquires RecognizedMarkets {
+        // Mutably borrow recognized markets map.
+        let recognized_map_ref =
+            &borrow_global<RecognizedMarkets>(@econia).map;
+        // Return if map contains entry for given trading pair.
+        tablist::contains(recognized_map_ref, trading_pair)
+    }
 
     /// Initialize the Econia registry and recognized markets list upon
     /// module publication.
@@ -479,10 +956,11 @@ module econia::registry {
         table::add(info_to_id_ref_mut, market_info, market_id);
         // Register a market entry in map from market ID to market info.
         tablist::add(id_to_info_ref_mut, market_id, market_info);
-        // Get market registration events handle.
-        let event_handle = &mut registry_ref_mut.market_registration_events;
+        // Mutably borrow market registration events handle.
+        let event_handle_ref_mut =
+            &mut registry_ref_mut.market_registration_events;
         // Emit a market registration event.
-        event::emit_event(event_handle, MarketRegistrationEvent{
+        event::emit_event(event_handle_ref_mut, MarketRegistrationEvent{
             market_id, base_type, base_name_generic, quote_type, lot_size,
             tick_size, min_size, underwriter_id});
         incentives::deposit_market_registration_utility_coins<UtilityCoinType>(
@@ -543,6 +1021,16 @@ module econia::registry {
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for no recognized market.
+    fun test_get_recognized_market_info_no_market()
+    acquires RecognizedMarkets {
+        init_test(); // Initialize for testing.
+        // Attempt invalid invocation.
+        get_recognized_market_info_base_coin_by_type<BC, QC>();
+    }
 
     #[test]
     /// Verify custodian then underwriter capability registration.
@@ -836,6 +1324,201 @@ module econia::registry {
         // Attempt invalid invocation.
         register_market_base_coin_internal<BC, QC, UC>(
             lot_size, tick_size, min_size, coin::zero());
+    }
+
+    #[test(account = @econia)]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for market no recognized market.
+    fun test_remove_recognized_market_no_recognized(
+        account: &signer
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 123;
+        let tick_size = 456;
+        let min_size = 789;
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register market, storing ID.
+        let market_id = register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, assets::mint_test(fee));
+        // Attempt invalid invocation.
+        remove_recognized_market(account, market_id);
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for account is not Econia.
+    fun test_remove_recognized_market_not_econia(
+        account: &signer
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        // Attempt invalid invocation.
+        remove_recognized_market(account, 0);
+    }
+
+    #[test(account = @econia)]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for wrong recognized market.
+    fun test_remove_recognized_market_wrong_market(
+        account: &signer
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size = 123;
+        let tick_size = 456;
+        let min_size = 789;
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register market, storing ID.
+        let market_id = register_market_base_coin_internal<BC, QC, UC>(
+            lot_size, tick_size, min_size, assets::mint_test(fee));
+        set_recognized_market(account, market_id); // Set as recognized.
+        // Register different market with same trading pair, storing ID.
+        let market_id_2 = register_market_base_coin_internal<BC, QC, UC>(
+            lot_size - 1, tick_size, min_size, assets::mint_test(fee));
+        // Attempt invalid invocation.
+        remove_recognized_market(account, market_id_2);
+    }
+
+    #[test(account = @user)]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for account is not Econia.
+    fun test_set_recognized_market_not_econia(
+        account: &signer
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        // Attempt invalid invocation.
+        set_recognized_market(account, 0);
+    }
+
+    #[test(account = @econia)]
+    /// Verify state updates for updating recognized market info for
+    /// given trading pair.
+    fun test_set_recognized_market_update(
+        account: &signer
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        init_test(); // Initialize for testing.
+        // Declare arguments.
+        let lot_size_1 = 123;
+        let tick_size_1 = 456;
+        let min_size_1 = 789;
+        let lot_size_2 = lot_size_1 - 1;
+        let tick_size_2 = tick_size_1 - 1;
+        let min_size_2 = min_size_1 - 1;
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Register markets, storing IDs.
+        let market_id_1 = register_market_base_coin_internal<BC, QC, UC>(
+            lot_size_1, tick_size_1, min_size_1, assets::mint_test(fee));
+        let market_id_2 = register_market_base_coin_internal<BC, QC, UC>(
+            lot_size_2, tick_size_2, min_size_2, assets::mint_test(fee));
+        // Set first market as recognized.
+        set_recognized_market(account, market_id_1);
+        // Assert lookup.
+        assert!(has_recognized_market_base_coin_by_type<BC, QC>(), 0);
+        // Assert pure coin asset market info.
+        let (market_id, lot_size, tick_size, min_size, underwriter_id) =
+            get_recognized_market_info_base_coin_by_type<BC, QC>();
+        assert!(market_id == market_id_1, 0);
+        assert!(lot_size == lot_size_1, 0);
+        assert!(tick_size == tick_size_1, 0);
+        assert!(min_size == min_size_1, 0);
+        assert!(underwriter_id == NIL, 0);
+        // Set second market as recognized.
+        set_recognized_market(account, market_id_2);
+        // Assert update.
+        (market_id, lot_size, tick_size, min_size, underwriter_id) =
+            get_recognized_market_info_base_coin_by_type<BC, QC>();
+        assert!(market_id == market_id_2, 0);
+        assert!(lot_size == lot_size_2, 0);
+        assert!(tick_size == tick_size_2, 0);
+        assert!(min_size == min_size_2, 0);
+        assert!(underwriter_id == NIL, 0);
+    }
+
+
+    #[test(econia = @econia)]
+    /// Verify returns, state updates for setting and removing
+    /// registered markets, lookup operations.
+    fun test_set_remove_check_recognized_markets(
+        econia: &signer
+    ) acquires
+        RecognizedMarkets,
+        Registry
+    {
+        init_test(); // Initialize for testing.
+        // Get generic market underwriter capability.
+        let underwriter_id_generic = 123;
+        let underwriter_capability = // Get underwriter capability.
+            get_underwriter_capability_test(underwriter_id_generic);
+        // Declare market parameters.
+        let base_name_generic = string::utf8(b"Generic asset");
+        let lot_size_1 = 234;
+        let tick_size_1 = 345;
+        let min_size_1 = 456;
+        let lot_size_2 = lot_size_1 - 1;
+        let tick_size_2 = tick_size_1 - 1;
+        let min_size_2 = min_size_1 - 1;
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Assert existence checks.
+        assert!(
+            !has_recognized_market_base_generic_by_type<QC>(base_name_generic),
+            0);
+        assert!(!has_recognized_market_base_coin_by_type<BC, QC>(), 0);
+        // Register markets.
+        register_market_base_generic_internal<QC, UC>(
+            base_name_generic, lot_size_1, tick_size_1, min_size_1,
+            &underwriter_capability, assets::mint_test(fee));
+        register_market_base_coin_internal<BC, QC, UC>(
+            lot_size_2, tick_size_2, min_size_2, assets::mint_test(fee));
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+        // Set both as recognized markets.
+        set_recognized_markets(econia, &vector[1, 2]);
+        // Assert existence checks.
+        assert!(
+            has_recognized_market_base_generic_by_type<QC>(base_name_generic),
+            0);
+        assert!(has_recognized_market_base_coin_by_type<BC, QC>(), 0);
+        // Assert generic asset market info.
+        let (market_id, lot_size, tick_size, min_size, underwriter_id) =
+            get_recognized_market_info_base_generic_by_type<QC>(
+                base_name_generic);
+        assert!(market_id == 1, 0);
+        assert!(lot_size == lot_size_1, 0);
+        assert!(tick_size == tick_size_1, 0);
+        assert!(min_size == min_size_1, 0);
+        assert!(underwriter_id == underwriter_id_generic, 0);
+        // Assert pure coin asset market info.
+        let (market_id, lot_size, tick_size, min_size, underwriter_id) =
+            get_recognized_market_info_base_coin_by_type<BC, QC>();
+        assert!(market_id == 2, 0);
+        assert!(lot_size == lot_size_2, 0);
+        assert!(tick_size == tick_size_2, 0);
+        assert!(min_size == min_size_2, 0);
+        assert!(underwriter_id == NIL, 0);
+        // Remove both recognized markets.
+        remove_recognized_markets(econia, &vector[1, 2]);
+        // Assert existence checks.
+        assert!(
+            !has_recognized_market_base_generic_by_type<QC>(base_name_generic),
+            0);
+        assert!(!has_recognized_market_base_coin_by_type<BC, QC>(), 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

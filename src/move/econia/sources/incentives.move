@@ -313,56 +313,54 @@ module econia::incentives {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When caller is not Econia, but should be.
+    /// Caller is not Econia, but should be.
     const E_NOT_ECONIA: u64 = 0;
-    /// When type does not correspond to an initialized coin.
+    /// Type does not correspond to an initialized coin.
     const E_NOT_COIN: u64 = 1;
-    /// When passed fee store tiers vector is empty.
+    /// Passed fee store tiers vector is empty.
     const E_EMPTY_FEE_STORE_TIERS: u64 = 2;
-    /// When indicated fee share divisor for given tier is too big.
+    /// Indicated fee share divisor for given tier is too big.
     const E_FEE_SHARE_DIVISOR_TOO_BIG: u64 = 3;
-    /// When the indicated fee share divisor for a given tier is less
-    /// than the indicated taker fee divisor.
+    /// The indicated fee share divisor for a given tier is less than
+    /// the indicated taker fee divisor.
     const E_FEE_SHARE_DIVISOR_TOO_SMALL: u64 = 4;
-    /// When market registration fee is less than the minimum.
+    /// Market registration fee is less than the minimum.
     const E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 5;
-    /// When custodian registration fee is less than the minimum.
+    /// Custodian registration fee is less than the minimum.
     const E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 6;
-    /// When taker fee divisor is less than the minimum.
+    /// Taker fee divisor is less than the minimum.
     const E_TAKER_DIVISOR_LESS_THAN_MIN: u64 = 7;
-    /// When the wrong number of fields are passed for a given tier.
+    /// The wrong number of fields are passed for a given tier.
     const E_TIER_FIELDS_WRONG_LENGTH: u64 = 8;
-    /// When the indicated tier activation fee is too small.
+    /// The indicated tier activation fee is too small.
     const E_ACTIVATION_FEE_TOO_SMALL: u64 = 9;
-    /// When the indicated withdrawal fee is too big.
+    /// The indicated withdrawal fee is too big.
     const E_WITHDRAWAL_FEE_TOO_BIG: u64 = 10;
-    /// When the indicated withdrawal fee is too small.
+    /// The indicated withdrawal fee is too small.
     const E_WITHDRAWAL_FEE_TOO_SMALL: u64 = 11;
-    /// When type is not the utility coin type.
+    /// Type is not the utility coin type.
     const E_INVALID_UTILITY_COIN_TYPE: u64 = 12;
-    /// When not enough utility coins provided.
+    /// Not enough utility coins provided.
     const E_NOT_ENOUGH_UTILITY_COINS: u64 = 13;
-    /// When too many integrater fee store tiers indicated.
+    /// Too many integrater fee store tiers indicated.
     const E_TOO_MANY_TIERS: u64 = 14;
-    /// When indicated tier is not higher than existing tier.
+    /// Indicated tier is not higher than existing tier.
     const E_NOT_AN_UPGRADE: u64 = 15;
-    /// When an update to the incentive parameters set indicates a
-    /// reduction in fee store tiers.
+    /// An update to the incentive parameters set indicates a reduction
+    /// in fee store tiers.
     const E_FEWER_TIERS: u64 = 16;
-    /// When maximum amount of quote coins to match overflows a `u64`.
+    /// Maximum amount of quote coins to match overflows a `u64`.
     const E_MAX_QUOTE_MATCH_OVERFLOW: u64 = 17;
-    /// When the cost to activate to tier 0 is nonzero.
+    /// The cost to activate to tier 0 is nonzero.
     const E_FIRST_TIER_ACTIVATION_FEE_NONZERO: u64 = 18;
-    /// When custodian registration fee is less than the minimum.
+    /// Custodian registration fee is less than the minimum.
     const E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 19;
-    /// When depositing to an integrator fee store would result in an
+    /// Depositing to an integrator fee store would result in an
     /// overflow.
     const E_INTEGRATOR_FEE_STORE_OVERFLOW: u64 = 20;
-    /// When depositing to an Econia fee store would result in an
-    /// overflow.
+    /// Depositing to an Econia fee store would result in an overflow.
     const E_ECONIA_FEE_STORE_OVERFLOW: u64 = 21;
-    /// When depositing to a utility coin store would result in an
-    /// overflow.
+    /// Depositing to a utility coin store would result in an overflow.
     const E_UTILITY_COIN_STORE_OVERFLOW: u64 = 22;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

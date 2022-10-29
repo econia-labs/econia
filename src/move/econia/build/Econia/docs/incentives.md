@@ -627,7 +627,7 @@ Container for utility coin fees collected by Econia.
 
 <a name="0xc0deb00c_incentives_E_NOT_ECONIA"></a>
 
-When caller is not Econia, but should be.
+Caller is not Econia, but should be.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 0;
@@ -667,7 +667,7 @@ Genesis parameter.
 
 <a name="0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL"></a>
 
-When the indicated tier activation fee is too small.
+The indicated tier activation fee is too small.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_ACTIVATION_FEE_TOO_SMALL">E_ACTIVATION_FEE_TOO_SMALL</a>: u64 = 9;
@@ -677,7 +677,7 @@ When the indicated tier activation fee is too small.
 
 <a name="0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN"></a>
 
-When custodian registration fee is less than the minimum.
+Custodian registration fee is less than the minimum.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN">E_CUSTODIAN_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 6;
@@ -687,8 +687,7 @@ When custodian registration fee is less than the minimum.
 
 <a name="0xc0deb00c_incentives_E_ECONIA_FEE_STORE_OVERFLOW"></a>
 
-When depositing to an Econia fee store would result in an
-overflow.
+Depositing to an Econia fee store would result in an overflow.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_ECONIA_FEE_STORE_OVERFLOW">E_ECONIA_FEE_STORE_OVERFLOW</a>: u64 = 21;
@@ -698,7 +697,7 @@ overflow.
 
 <a name="0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS"></a>
 
-When passed fee store tiers vector is empty.
+Passed fee store tiers vector is empty.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_EMPTY_FEE_STORE_TIERS">E_EMPTY_FEE_STORE_TIERS</a>: u64 = 2;
@@ -708,7 +707,7 @@ When passed fee store tiers vector is empty.
 
 <a name="0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_BIG"></a>
 
-When indicated fee share divisor for given tier is too big.
+Indicated fee share divisor for given tier is too big.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_BIG">E_FEE_SHARE_DIVISOR_TOO_BIG</a>: u64 = 3;
@@ -718,8 +717,8 @@ When indicated fee share divisor for given tier is too big.
 
 <a name="0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_SMALL"></a>
 
-When the indicated fee share divisor for a given tier is less
-than the indicated taker fee divisor.
+The indicated fee share divisor for a given tier is less than
+the indicated taker fee divisor.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_FEE_SHARE_DIVISOR_TOO_SMALL">E_FEE_SHARE_DIVISOR_TOO_SMALL</a>: u64 = 4;
@@ -729,8 +728,8 @@ than the indicated taker fee divisor.
 
 <a name="0xc0deb00c_incentives_E_FEWER_TIERS"></a>
 
-When an update to the incentive parameters set indicates a
-reduction in fee store tiers.
+An update to the incentive parameters set indicates a reduction
+in fee store tiers.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_FEWER_TIERS">E_FEWER_TIERS</a>: u64 = 16;
@@ -740,7 +739,7 @@ reduction in fee store tiers.
 
 <a name="0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO"></a>
 
-When the cost to activate to tier 0 is nonzero.
+The cost to activate to tier 0 is nonzero.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_FIRST_TIER_ACTIVATION_FEE_NONZERO">E_FIRST_TIER_ACTIVATION_FEE_NONZERO</a>: u64 = 18;
@@ -750,7 +749,7 @@ When the cost to activate to tier 0 is nonzero.
 
 <a name="0xc0deb00c_incentives_E_INTEGRATOR_FEE_STORE_OVERFLOW"></a>
 
-When depositing to an integrator fee store would result in an
+Depositing to an integrator fee store would result in an
 overflow.
 
 
@@ -761,7 +760,7 @@ overflow.
 
 <a name="0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE"></a>
 
-When type is not the utility coin type.
+Type is not the utility coin type.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE">E_INVALID_UTILITY_COIN_TYPE</a>: u64 = 12;
@@ -771,7 +770,7 @@ When type is not the utility coin type.
 
 <a name="0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN"></a>
 
-When market registration fee is less than the minimum.
+Market registration fee is less than the minimum.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN">E_MARKET_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 5;
@@ -781,7 +780,7 @@ When market registration fee is less than the minimum.
 
 <a name="0xc0deb00c_incentives_E_MAX_QUOTE_MATCH_OVERFLOW"></a>
 
-When maximum amount of quote coins to match overflows a <code>u64</code>.
+Maximum amount of quote coins to match overflows a <code>u64</code>.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_MAX_QUOTE_MATCH_OVERFLOW">E_MAX_QUOTE_MATCH_OVERFLOW</a>: u64 = 17;
@@ -791,7 +790,7 @@ When maximum amount of quote coins to match overflows a <code>u64</code>.
 
 <a name="0xc0deb00c_incentives_E_NOT_AN_UPGRADE"></a>
 
-When indicated tier is not higher than existing tier.
+Indicated tier is not higher than existing tier.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_NOT_AN_UPGRADE">E_NOT_AN_UPGRADE</a>: u64 = 15;
@@ -801,7 +800,7 @@ When indicated tier is not higher than existing tier.
 
 <a name="0xc0deb00c_incentives_E_NOT_COIN"></a>
 
-When type does not correspond to an initialized coin.
+Type does not correspond to an initialized coin.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_NOT_COIN">E_NOT_COIN</a>: u64 = 1;
@@ -811,7 +810,7 @@ When type does not correspond to an initialized coin.
 
 <a name="0xc0deb00c_incentives_E_NOT_ENOUGH_UTILITY_COINS"></a>
 
-When not enough utility coins provided.
+Not enough utility coins provided.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_NOT_ENOUGH_UTILITY_COINS">E_NOT_ENOUGH_UTILITY_COINS</a>: u64 = 13;
@@ -821,7 +820,7 @@ When not enough utility coins provided.
 
 <a name="0xc0deb00c_incentives_E_TAKER_DIVISOR_LESS_THAN_MIN"></a>
 
-When taker fee divisor is less than the minimum.
+Taker fee divisor is less than the minimum.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TAKER_DIVISOR_LESS_THAN_MIN">E_TAKER_DIVISOR_LESS_THAN_MIN</a>: u64 = 7;
@@ -831,7 +830,7 @@ When taker fee divisor is less than the minimum.
 
 <a name="0xc0deb00c_incentives_E_TIER_FIELDS_WRONG_LENGTH"></a>
 
-When the wrong number of fields are passed for a given tier.
+The wrong number of fields are passed for a given tier.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TIER_FIELDS_WRONG_LENGTH">E_TIER_FIELDS_WRONG_LENGTH</a>: u64 = 8;
@@ -841,7 +840,7 @@ When the wrong number of fields are passed for a given tier.
 
 <a name="0xc0deb00c_incentives_E_TOO_MANY_TIERS"></a>
 
-When too many integrater fee store tiers indicated.
+Too many integrater fee store tiers indicated.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_TOO_MANY_TIERS">E_TOO_MANY_TIERS</a>: u64 = 14;
@@ -851,7 +850,7 @@ When too many integrater fee store tiers indicated.
 
 <a name="0xc0deb00c_incentives_E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN"></a>
 
-When custodian registration fee is less than the minimum.
+Custodian registration fee is less than the minimum.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN">E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN</a>: u64 = 19;
@@ -861,8 +860,7 @@ When custodian registration fee is less than the minimum.
 
 <a name="0xc0deb00c_incentives_E_UTILITY_COIN_STORE_OVERFLOW"></a>
 
-When depositing to a utility coin store would result in an
-overflow.
+Depositing to a utility coin store would result in an overflow.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_UTILITY_COIN_STORE_OVERFLOW">E_UTILITY_COIN_STORE_OVERFLOW</a>: u64 = 22;
@@ -872,7 +870,7 @@ overflow.
 
 <a name="0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG"></a>
 
-When the indicated withdrawal fee is too big.
+The indicated withdrawal fee is too big.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG">E_WITHDRAWAL_FEE_TOO_BIG</a>: u64 = 10;
@@ -882,7 +880,7 @@ When the indicated withdrawal fee is too big.
 
 <a name="0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL"></a>
 
-When the indicated withdrawal fee is too small.
+The indicated withdrawal fee is too small.
 
 
 <pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL">E_WITHDRAWAL_FEE_TOO_SMALL</a>: u64 = 11;

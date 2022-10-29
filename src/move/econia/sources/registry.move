@@ -1,10 +1,104 @@
-/// Manages registration capabilities and operations.
+/// Market and capability registration operations.
+///
+/// Econia relies on a global market registry, which supports
+/// permissionless registration of markets, as well as capabilities.
+/// Custodian capabilities are required to approve order operations and
+/// coin withdrawals, while underwriter capabilities are required to
+/// approve generic asset amounts.
+///
+/// The registry is paired with a recognized market list that tabulates
+/// a recognized market for select trading pairs. The recognized market
+/// list can only be managed by the Econia account, and provides a set
+/// of public APIs that allow lookup of an official market based on a
+/// trading pair.
 ///
 /// # Indexing
 ///
 /// Custodian capabilities and underwriter capabilities are 1-indexed,
 /// with an ID of 0 reserved as a flag for null. For consistency, market
 /// IDs are 1-indexed too.
+///
+/// # Public function index
+///
+/// ## Capability management
+///
+/// * `get_custodian_id()`
+/// * `get_underwriter_id()`
+/// * `register_custodian_capability()`
+/// * `register_underwriter_capability()`
+///
+/// ## Recognized market lookup
+///
+/// * `get_recognized_market_info_base_coin()`
+/// * `get_recognized_market_info_base_coin_by_type()`
+/// * `get_recognized_market_info_base_generic()`
+/// * `get_recognized_market_info_base_generic_by_type()`
+/// * `has_recognized_market_base_coin()`
+/// * `has_recognized_market_base_coin_by_type()`
+/// * `has_recognized_market_base_generic()`
+/// * `has_recognized_market_base_generic_by_type()`
+///
+/// ## Recognized market management
+///
+/// * `remove_recognized_market()`
+/// * `remove_recognized_markets()`
+/// * `set_recognized_market()`
+/// * `set_recognized_markets()`
+///
+/// # Dependency charts
+///
+/// The below dependency charts use `mermaid.js` syntax, which can be
+/// automatically rendered into a diagram (depending on the browser)
+/// when viewing the documentation file generated from source code. If
+/// a browser renders the diagrams with coloring that makes it difficult
+/// to read, try a different browser.
+///
+/// ## Recognized market lookup
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// get_recognized_market_info_base_coin -->
+///     get_recognized_market_info
+/// get_recognized_market_info_base_coin_by_type -->
+///     get_recognized_market_info_base_coin
+/// get_recognized_market_info_base_generic -->
+///     get_recognized_market_info
+/// get_recognized_market_info_base_generic_by_type  -->
+///     get_recognized_market_info_base_generic
+///
+/// has_recognized_market_base_coin --> has_recognized_market
+/// has_recognized_market_base_coin_by_type -->
+///     has_recognized_market_base_coin
+/// has_recognized_market_base_generic -->
+///     has_recognized_market
+/// has_recognized_market_base_generic_by_type -->
+///     has_recognized_market_base_generic
+///
+/// ```
+///
+/// ## Recognized market management
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// remove_recognized_markets --> remove_recognized_market
+/// set_recognized_markets --> set_recognized_market
+///
+/// ```
+///
+/// ## Internal market registration
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// register_market_base_coin_internal --> register_market_internal
+/// register_market_base_generic_internal --> register_market_internal
+///
+/// ```
 ///
 /// # Complete docgen index
 ///
@@ -36,9 +130,9 @@ module econia::registry {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Custodian capability required to approve order placement, order
-    /// cancellation, and coin withdrawals. Administered to third-party
-    /// registrants who may store it as they wish.
+    /// Custodian capability required to approve order operations and
+    /// coin withdrawals. Administered to third-party registrants who
+    /// may store it as they wish.
     struct CustodianCapability has store {
         /// Serial ID, 1-indexed, generated upon registration as a
         /// custodian.
@@ -239,98 +333,6 @@ module econia::registry {
         underwriter_capability_ref.underwriter_id
     }
 
-    /// Wrapper for `has_recognized_market()` for coin base asset.
-    ///
-    /// # Parameters
-    ///
-    /// * `base_type`: Base asset phantom coin type info.
-    /// * `quote_type`: Quote asset phantom coin type info.
-    ///
-    /// # Testing
-    ///
-    /// * `test_set_remove_check_recognized_markets()`
-    public fun has_recognized_market_base_coin(
-        base_type: TypeInfo,
-        quote_type: TypeInfo
-    ): bool
-    acquires RecognizedMarkets {
-        // Get empty generic base asset name.
-        let base_name_generic = string::utf8(b"");
-        let trading_pair = // Pack trading pair.
-            TradingPair{base_type, base_name_generic, quote_type};
-        // Check if trading pair has recognized market.
-        has_recognized_market(trading_pair)
-    }
-
-    /// Wrapper for `has_recognized_market_base_coin()` with type
-    /// parameters.
-    ///
-    /// # Type parameters
-    ///
-    /// * `BaseCoinType`: Base asset phantom coin type.
-    /// * `QuoteCoinType`: Quote asset phantom coin type.
-    ///
-    /// # Testing
-    ///
-    /// * `test_set_remove_check_recognized_markets()`
-    public fun has_recognized_market_base_coin_by_type<
-        BaseCoinType,
-        QuoteCoinType
-    >(): bool
-    acquires RecognizedMarkets {
-        has_recognized_market_base_coin(
-            type_info::type_of<BaseCoinType>(),
-            type_info::type_of<QuoteCoinType>())
-    }
-
-    /// Wrapper for `has_recognized_market()` for generic base asset.
-    ///
-    /// # Parameters
-    ///
-    /// * `base_name_generic`: Generic base asset name.
-    /// * `quote_type`: Quote asset phantom coin type info.
-    ///
-    /// # Testing
-    ///
-    /// * `test_set_remove_check_recognized_markets()`
-    public fun has_recognized_market_base_generic(
-        base_name_generic: String,
-        quote_type: TypeInfo
-    ): bool
-    acquires RecognizedMarkets {
-        // Get generic base asset type info.
-        let base_type = type_info::type_of<GenericAsset>();
-        let trading_pair = // Pack trading pair.
-            TradingPair{base_type, base_name_generic, quote_type};
-        // Check if trading pair has recognized market.
-        has_recognized_market(trading_pair)
-    }
-
-    /// Wrapper for `has_recognized_market_base_generic()` with quote
-    /// type parameter.
-    ///
-    /// # Type parameters
-    ///
-    /// * `QuoteCoinType`: Quote asset phantom coin type.
-    ///
-    /// # Parameters
-    ///
-    /// * `base_name_generic`: Generic base asset name.
-    ///
-    /// # Testing
-    ///
-    /// * `test_set_remove_check_recognized_markets()`
-    public fun has_recognized_market_base_generic_by_type<
-        QuoteCoinType
-    >(
-        base_name_generic: String,
-    ): bool
-    acquires RecognizedMarkets {
-        has_recognized_market_base_generic(
-            base_name_generic,
-            type_info::type_of<QuoteCoinType>())
-    }
-
     /// Wrapper for `get_recognized_market_info()` for coin base asset.
     ///
     /// # Parameters
@@ -440,6 +442,98 @@ module econia::registry {
         u64
     ) acquires RecognizedMarkets {
         get_recognized_market_info_base_generic(
+            base_name_generic,
+            type_info::type_of<QuoteCoinType>())
+    }
+
+    /// Wrapper for `has_recognized_market()` for coin base asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_type`: Base asset phantom coin type info.
+    /// * `quote_type`: Quote asset phantom coin type info.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_coin(
+        base_type: TypeInfo,
+        quote_type: TypeInfo
+    ): bool
+    acquires RecognizedMarkets {
+        // Get empty generic base asset name.
+        let base_name_generic = string::utf8(b"");
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Check if trading pair has recognized market.
+        has_recognized_market(trading_pair)
+    }
+
+    /// Wrapper for `has_recognized_market_base_coin()` with type
+    /// parameters.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseCoinType`: Base asset phantom coin type.
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_coin_by_type<
+        BaseCoinType,
+        QuoteCoinType
+    >(): bool
+    acquires RecognizedMarkets {
+        has_recognized_market_base_coin(
+            type_info::type_of<BaseCoinType>(),
+            type_info::type_of<QuoteCoinType>())
+    }
+
+    /// Wrapper for `has_recognized_market()` for generic base asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: Generic base asset name.
+    /// * `quote_type`: Quote asset phantom coin type info.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_generic(
+        base_name_generic: String,
+        quote_type: TypeInfo
+    ): bool
+    acquires RecognizedMarkets {
+        // Get generic base asset type info.
+        let base_type = type_info::type_of<GenericAsset>();
+        let trading_pair = // Pack trading pair.
+            TradingPair{base_type, base_name_generic, quote_type};
+        // Check if trading pair has recognized market.
+        has_recognized_market(trading_pair)
+    }
+
+    /// Wrapper for `has_recognized_market_base_generic()` with quote
+    /// type parameter.
+    ///
+    /// # Type parameters
+    ///
+    /// * `QuoteCoinType`: Quote asset phantom coin type.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: Generic base asset name.
+    ///
+    /// # Testing
+    ///
+    /// * `test_set_remove_check_recognized_markets()`
+    public fun has_recognized_market_base_generic_by_type<
+        QuoteCoinType
+    >(
+        base_name_generic: String,
+    ): bool
+    acquires RecognizedMarkets {
+        has_recognized_market_base_generic(
             base_name_generic,
             type_info::type_of<QuoteCoinType>())
     }

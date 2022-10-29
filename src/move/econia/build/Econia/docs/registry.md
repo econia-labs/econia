@@ -3,7 +3,19 @@
 
 # Module `0xc0deb00c::registry`
 
-Manages registration capabilities and operations.
+Market and capability registration operations.
+
+Econia relies on a global market registry, which supports
+permissionless registration of markets, as well as capabilities.
+Custodian capabilities are required to approve order operations and
+coin withdrawals, while underwriter capabilities are required to
+approve generic asset amounts.
+
+The registry is paired with a recognized market list that tabulates
+a recognized market for select trading pairs. The recognized market
+list can only be managed by the Econia account, and provides a set
+of public APIs that allow lookup of an official market based on a
+trading pair.
 
 
 <a name="@Indexing_0"></a>
@@ -16,7 +28,121 @@ with an ID of 0 reserved as a flag for null. For consistency, market
 IDs are 1-indexed too.
 
 
-<a name="@Complete_docgen_index_1"></a>
+<a name="@Public_function_index_1"></a>
+
+## Public function index
+
+
+
+<a name="@Capability_management_2"></a>
+
+### Capability management
+
+
+* <code><a href="registry.md#0xc0deb00c_registry_get_custodian_id">get_custodian_id</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_get_underwriter_id">get_underwriter_id</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_register_custodian_capability">register_custodian_capability</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_register_underwriter_capability">register_underwriter_capability</a>()</code>
+
+
+<a name="@Recognized_market_lookup_3"></a>
+
+### Recognized market lookup
+
+
+* <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market_info_base_coin">get_recognized_market_info_base_coin</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market_info_base_coin_by_type">get_recognized_market_info_base_coin_by_type</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market_info_base_generic">get_recognized_market_info_base_generic</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market_info_base_generic_by_type">get_recognized_market_info_base_generic_by_type</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin_by_type">has_recognized_market_base_coin_by_type</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic_by_type">has_recognized_market_base_generic_by_type</a>()</code>
+
+
+<a name="@Recognized_market_management_4"></a>
+
+### Recognized market management
+
+
+* <code><a href="registry.md#0xc0deb00c_registry_remove_recognized_market">remove_recognized_market</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_remove_recognized_markets">remove_recognized_markets</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_set_recognized_market">set_recognized_market</a>()</code>
+* <code><a href="registry.md#0xc0deb00c_registry_set_recognized_markets">set_recognized_markets</a>()</code>
+
+
+<a name="@Dependency_charts_5"></a>
+
+## Dependency charts
+
+
+The below dependency charts use <code>mermaid.js</code> syntax, which can be
+automatically rendered into a diagram (depending on the browser)
+when viewing the documentation file generated from source code. If
+a browser renders the diagrams with coloring that makes it difficult
+to read, try a different browser.
+
+
+<a name="@Recognized_market_lookup_6"></a>
+
+### Recognized market lookup
+
+
+```mermaid
+
+flowchart LR
+
+get_recognized_market_info_base_coin -->
+get_recognized_market_info
+get_recognized_market_info_base_coin_by_type -->
+get_recognized_market_info_base_coin
+get_recognized_market_info_base_generic -->
+get_recognized_market_info
+get_recognized_market_info_base_generic_by_type  -->
+get_recognized_market_info_base_generic
+
+has_recognized_market_base_coin --> has_recognized_market
+has_recognized_market_base_coin_by_type -->
+has_recognized_market_base_coin
+has_recognized_market_base_generic -->
+has_recognized_market
+has_recognized_market_base_generic_by_type -->
+has_recognized_market_base_generic
+
+```
+
+
+<a name="@Recognized_market_management_7"></a>
+
+### Recognized market management
+
+
+```mermaid
+
+flowchart LR
+
+remove_recognized_markets --> remove_recognized_market
+set_recognized_markets --> set_recognized_market
+
+```
+
+
+<a name="@Internal_market_registration_8"></a>
+
+### Internal market registration
+
+
+```mermaid
+
+flowchart LR
+
+register_market_base_coin_internal --> register_market_internal
+register_market_base_generic_internal --> register_market_internal
+
+```
+
+
+<a name="@Complete_docgen_index_9"></a>
 
 ## Complete docgen index
 
@@ -25,7 +151,15 @@ The below index is automatically generated from source code:
 
 
 -  [Indexing](#@Indexing_0)
--  [Complete docgen index](#@Complete_docgen_index_1)
+-  [Public function index](#@Public_function_index_1)
+    -  [Capability management](#@Capability_management_2)
+    -  [Recognized market lookup](#@Recognized_market_lookup_3)
+    -  [Recognized market management](#@Recognized_market_management_4)
+-  [Dependency charts](#@Dependency_charts_5)
+    -  [Recognized market lookup](#@Recognized_market_lookup_6)
+    -  [Recognized market management](#@Recognized_market_management_7)
+    -  [Internal market registration](#@Internal_market_registration_8)
+-  [Complete docgen index](#@Complete_docgen_index_9)
 -  [Struct `CustodianCapability`](#0xc0deb00c_registry_CustodianCapability)
 -  [Resource `GenericAsset`](#0xc0deb00c_registry_GenericAsset)
 -  [Struct `MarketInfo`](#0xc0deb00c_registry_MarketInfo)
@@ -36,78 +170,78 @@ The below index is automatically generated from source code:
 -  [Resource `Registry`](#0xc0deb00c_registry_Registry)
 -  [Struct `TradingPair`](#0xc0deb00c_registry_TradingPair)
 -  [Struct `UnderwriterCapability`](#0xc0deb00c_registry_UnderwriterCapability)
--  [Constants](#@Constants_2)
+-  [Constants](#@Constants_10)
 -  [Function `get_custodian_id`](#0xc0deb00c_registry_get_custodian_id)
-    -  [Testing](#@Testing_3)
+    -  [Testing](#@Testing_11)
 -  [Function `get_underwriter_id`](#0xc0deb00c_registry_get_underwriter_id)
-    -  [Testing](#@Testing_4)
--  [Function `has_recognized_market_base_coin`](#0xc0deb00c_registry_has_recognized_market_base_coin)
-    -  [Parameters](#@Parameters_5)
-    -  [Testing](#@Testing_6)
--  [Function `has_recognized_market_base_coin_by_type`](#0xc0deb00c_registry_has_recognized_market_base_coin_by_type)
-    -  [Type parameters](#@Type_parameters_7)
-    -  [Testing](#@Testing_8)
--  [Function `has_recognized_market_base_generic`](#0xc0deb00c_registry_has_recognized_market_base_generic)
-    -  [Parameters](#@Parameters_9)
-    -  [Testing](#@Testing_10)
--  [Function `has_recognized_market_base_generic_by_type`](#0xc0deb00c_registry_has_recognized_market_base_generic_by_type)
-    -  [Type parameters](#@Type_parameters_11)
-    -  [Parameters](#@Parameters_12)
-    -  [Testing](#@Testing_13)
+    -  [Testing](#@Testing_12)
 -  [Function `get_recognized_market_info_base_coin`](#0xc0deb00c_registry_get_recognized_market_info_base_coin)
-    -  [Parameters](#@Parameters_14)
-    -  [Testing](#@Testing_15)
+    -  [Parameters](#@Parameters_13)
+    -  [Testing](#@Testing_14)
 -  [Function `get_recognized_market_info_base_coin_by_type`](#0xc0deb00c_registry_get_recognized_market_info_base_coin_by_type)
-    -  [Type parameters](#@Type_parameters_16)
-    -  [Testing](#@Testing_17)
+    -  [Type parameters](#@Type_parameters_15)
+    -  [Testing](#@Testing_16)
 -  [Function `get_recognized_market_info_base_generic`](#0xc0deb00c_registry_get_recognized_market_info_base_generic)
-    -  [Parameters](#@Parameters_18)
-    -  [Testing](#@Testing_19)
+    -  [Parameters](#@Parameters_17)
+    -  [Testing](#@Testing_18)
 -  [Function `get_recognized_market_info_base_generic_by_type`](#0xc0deb00c_registry_get_recognized_market_info_base_generic_by_type)
-    -  [Type parameters](#@Type_parameters_20)
-    -  [Parameters](#@Parameters_21)
-    -  [Testing](#@Testing_22)
--  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
+    -  [Type parameters](#@Type_parameters_19)
+    -  [Parameters](#@Parameters_20)
+    -  [Testing](#@Testing_21)
+-  [Function `has_recognized_market_base_coin`](#0xc0deb00c_registry_has_recognized_market_base_coin)
+    -  [Parameters](#@Parameters_22)
     -  [Testing](#@Testing_23)
--  [Function `register_underwriter_capability`](#0xc0deb00c_registry_register_underwriter_capability)
-    -  [Testing](#@Testing_24)
--  [Function `remove_recognized_market`](#0xc0deb00c_registry_remove_recognized_market)
-    -  [Parameters](#@Parameters_25)
-    -  [Emits](#@Emits_26)
-    -  [Aborts](#@Aborts_27)
-    -  [Assumptions](#@Assumptions_28)
-    -  [Testing](#@Testing_29)
--  [Function `remove_recognized_markets`](#0xc0deb00c_registry_remove_recognized_markets)
+-  [Function `has_recognized_market_base_coin_by_type`](#0xc0deb00c_registry_has_recognized_market_base_coin_by_type)
+    -  [Type parameters](#@Type_parameters_24)
+    -  [Testing](#@Testing_25)
+-  [Function `has_recognized_market_base_generic`](#0xc0deb00c_registry_has_recognized_market_base_generic)
+    -  [Parameters](#@Parameters_26)
+    -  [Testing](#@Testing_27)
+-  [Function `has_recognized_market_base_generic_by_type`](#0xc0deb00c_registry_has_recognized_market_base_generic_by_type)
+    -  [Type parameters](#@Type_parameters_28)
+    -  [Parameters](#@Parameters_29)
     -  [Testing](#@Testing_30)
--  [Function `set_recognized_market`](#0xc0deb00c_registry_set_recognized_market)
-    -  [Parameters](#@Parameters_31)
-    -  [Emits](#@Emits_32)
-    -  [Aborts](#@Aborts_33)
-    -  [Assumptions](#@Assumptions_34)
-    -  [Testing](#@Testing_35)
--  [Function `set_recognized_markets`](#0xc0deb00c_registry_set_recognized_markets)
-    -  [Testing](#@Testing_36)
--  [Function `register_market_base_coin_internal`](#0xc0deb00c_registry_register_market_base_coin_internal)
-    -  [Aborts](#@Aborts_37)
+-  [Function `register_custodian_capability`](#0xc0deb00c_registry_register_custodian_capability)
+    -  [Testing](#@Testing_31)
+-  [Function `register_underwriter_capability`](#0xc0deb00c_registry_register_underwriter_capability)
+    -  [Testing](#@Testing_32)
+-  [Function `remove_recognized_market`](#0xc0deb00c_registry_remove_recognized_market)
+    -  [Parameters](#@Parameters_33)
+    -  [Emits](#@Emits_34)
+    -  [Aborts](#@Aborts_35)
+    -  [Assumptions](#@Assumptions_36)
+    -  [Testing](#@Testing_37)
+-  [Function `remove_recognized_markets`](#0xc0deb00c_registry_remove_recognized_markets)
     -  [Testing](#@Testing_38)
--  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
-    -  [Aborts](#@Aborts_39)
-    -  [Testing](#@Testing_40)
--  [Function `get_recognized_market_info`](#0xc0deb00c_registry_get_recognized_market_info)
-    -  [Parameters](#@Parameters_41)
-    -  [Returns](#@Returns_42)
-    -  [Aborts](#@Aborts_43)
+-  [Function `set_recognized_market`](#0xc0deb00c_registry_set_recognized_market)
+    -  [Parameters](#@Parameters_39)
+    -  [Emits](#@Emits_40)
+    -  [Aborts](#@Aborts_41)
+    -  [Assumptions](#@Assumptions_42)
+    -  [Testing](#@Testing_43)
+-  [Function `set_recognized_markets`](#0xc0deb00c_registry_set_recognized_markets)
     -  [Testing](#@Testing_44)
+-  [Function `register_market_base_coin_internal`](#0xc0deb00c_registry_register_market_base_coin_internal)
+    -  [Aborts](#@Aborts_45)
+    -  [Testing](#@Testing_46)
+-  [Function `register_market_base_generic_internal`](#0xc0deb00c_registry_register_market_base_generic_internal)
+    -  [Aborts](#@Aborts_47)
+    -  [Testing](#@Testing_48)
+-  [Function `get_recognized_market_info`](#0xc0deb00c_registry_get_recognized_market_info)
+    -  [Parameters](#@Parameters_49)
+    -  [Returns](#@Returns_50)
+    -  [Aborts](#@Aborts_51)
+    -  [Testing](#@Testing_52)
 -  [Function `has_recognized_market`](#0xc0deb00c_registry_has_recognized_market)
-    -  [Testing](#@Testing_45)
+    -  [Testing](#@Testing_53)
 -  [Function `init_module`](#0xc0deb00c_registry_init_module)
 -  [Function `register_market_internal`](#0xc0deb00c_registry_register_market_internal)
-    -  [Type parameters](#@Type_parameters_46)
-    -  [Parameters](#@Parameters_47)
-    -  [Emits](#@Emits_48)
-    -  [Aborts](#@Aborts_49)
-    -  [Assumptions](#@Assumptions_50)
-    -  [Testing](#@Testing_51)
+    -  [Type parameters](#@Type_parameters_54)
+    -  [Parameters](#@Parameters_55)
+    -  [Emits](#@Emits_56)
+    -  [Aborts](#@Aborts_57)
+    -  [Assumptions](#@Assumptions_58)
+    -  [Testing](#@Testing_59)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -128,9 +262,9 @@ The below index is automatically generated from source code:
 
 ## Struct `CustodianCapability`
 
-Custodian capability required to approve order placement, order
-cancellation, and coin withdrawals. Administered to third-party
-registrants who may store it as they wish.
+Custodian capability required to approve order operations and
+coin withdrawals. Administered to third-party registrants who
+may store it as they wish.
 
 
 <pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a> <b>has</b> store
@@ -581,7 +715,7 @@ it as they wish.
 
 </details>
 
-<a name="@Constants_2"></a>
+<a name="@Constants_10"></a>
 
 ## Constants
 
@@ -746,7 +880,7 @@ equal to the number of spaces in an indentation level per PEP 8.
 Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a></code>.
 
 
-<a name="@Testing_3"></a>
+<a name="@Testing_11"></a>
 
 ### Testing
 
@@ -781,7 +915,7 @@ Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_Custodi
 Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">UnderwriterCapability</a></code>.
 
 
-<a name="@Testing_4"></a>
+<a name="@Testing_12"></a>
 
 ### Testing
 
@@ -809,214 +943,6 @@ Return serial ID of given <code><a href="registry.md#0xc0deb00c_registry_Underwr
 
 </details>
 
-<a name="0xc0deb00c_registry_has_recognized_market_base_coin"></a>
-
-## Function `has_recognized_market_base_coin`
-
-Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>()</code> for coin base asset.
-
-
-<a name="@Parameters_5"></a>
-
-### Parameters
-
-
-* <code>base_type</code>: Base asset phantom coin type info.
-* <code>quote_type</code>: Quote asset phantom coin type info.
-
-
-<a name="@Testing_6"></a>
-
-### Testing
-
-
-* <code>test_set_remove_check_recognized_markets()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>(base_type: <a href="_TypeInfo">type_info::TypeInfo</a>, quote_type: <a href="_TypeInfo">type_info::TypeInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>(
-    base_type: TypeInfo,
-    quote_type: TypeInfo
-): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
-    // Get empty generic base asset name.
-    <b>let</b> base_name_generic = <a href="_utf8">string::utf8</a>(b"");
-    <b>let</b> trading_pair = // Pack trading pair.
-        <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Check <b>if</b> trading pair <b>has</b> recognized market.
-    <a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>(trading_pair)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_has_recognized_market_base_coin_by_type"></a>
-
-## Function `has_recognized_market_base_coin_by_type`
-
-Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>()</code> with type
-parameters.
-
-
-<a name="@Type_parameters_7"></a>
-
-### Type parameters
-
-
-* <code>BaseCoinType</code>: Base asset phantom coin type.
-* <code>QuoteCoinType</code>: Quote asset phantom coin type.
-
-
-<a name="@Testing_8"></a>
-
-### Testing
-
-
-* <code>test_set_remove_check_recognized_markets()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin_by_type">has_recognized_market_base_coin_by_type</a>&lt;BaseCoinType, QuoteCoinType&gt;(): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin_by_type">has_recognized_market_base_coin_by_type</a>&lt;
-    BaseCoinType,
-    QuoteCoinType
-&gt;(): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
-    <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>(
-        <a href="_type_of">type_info::type_of</a>&lt;BaseCoinType&gt;(),
-        <a href="_type_of">type_info::type_of</a>&lt;QuoteCoinType&gt;())
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_has_recognized_market_base_generic"></a>
-
-## Function `has_recognized_market_base_generic`
-
-Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>()</code> for generic base asset.
-
-
-<a name="@Parameters_9"></a>
-
-### Parameters
-
-
-* <code>base_name_generic</code>: Generic base asset name.
-* <code>quote_type</code>: Quote asset phantom coin type info.
-
-
-<a name="@Testing_10"></a>
-
-### Testing
-
-
-* <code>test_set_remove_check_recognized_markets()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>(base_name_generic: <a href="_String">string::String</a>, quote_type: <a href="_TypeInfo">type_info::TypeInfo</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>(
-    base_name_generic: String,
-    quote_type: TypeInfo
-): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
-    // Get generic base asset type info.
-    <b>let</b> base_type = <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a>&gt;();
-    <b>let</b> trading_pair = // Pack trading pair.
-        <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Check <b>if</b> trading pair <b>has</b> recognized market.
-    <a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>(trading_pair)
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_registry_has_recognized_market_base_generic_by_type"></a>
-
-## Function `has_recognized_market_base_generic_by_type`
-
-Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>()</code> with quote
-type parameter.
-
-
-<a name="@Type_parameters_11"></a>
-
-### Type parameters
-
-
-* <code>QuoteCoinType</code>: Quote asset phantom coin type.
-
-
-<a name="@Parameters_12"></a>
-
-### Parameters
-
-
-* <code>base_name_generic</code>: Generic base asset name.
-
-
-<a name="@Testing_13"></a>
-
-### Testing
-
-
-* <code>test_set_remove_check_recognized_markets()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic_by_type">has_recognized_market_base_generic_by_type</a>&lt;QuoteCoinType&gt;(base_name_generic: <a href="_String">string::String</a>): bool
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic_by_type">has_recognized_market_base_generic_by_type</a>&lt;
-    QuoteCoinType
-&gt;(
-    base_name_generic: String,
-): bool
-<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
-    <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>(
-        base_name_generic,
-        <a href="_type_of">type_info::type_of</a>&lt;QuoteCoinType&gt;())
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_registry_get_recognized_market_info_base_coin"></a>
 
 ## Function `get_recognized_market_info_base_coin`
@@ -1024,7 +950,7 @@ type parameter.
 Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market_info">get_recognized_market_info</a>()</code> for coin base asset.
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1033,7 +959,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 * <code>quote_type</code>: Quote asset phantom coin type info.
 
 
-<a name="@Testing_15"></a>
+<a name="@Testing_14"></a>
 
 ### Testing
 
@@ -1081,7 +1007,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 type parameters.
 
 
-<a name="@Type_parameters_16"></a>
+<a name="@Type_parameters_15"></a>
 
 ### Type parameters
 
@@ -1090,7 +1016,7 @@ type parameters.
 * <code>QuoteCoinType</code>: Quote asset phantom coin type.
 
 
-<a name="@Testing_17"></a>
+<a name="@Testing_16"></a>
 
 ### Testing
 
@@ -1135,7 +1061,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 asset.
 
 
-<a name="@Parameters_18"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1144,7 +1070,7 @@ asset.
 * <code>quote_type</code>: Quote asset phantom coin type info.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_18"></a>
 
 ### Testing
 
@@ -1192,7 +1118,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
 quote type parameter.
 
 
-<a name="@Type_parameters_20"></a>
+<a name="@Type_parameters_19"></a>
 
 ### Type parameters
 
@@ -1200,7 +1126,7 @@ quote type parameter.
 * <code>QuoteCoinType</code>: Quote asset phantom coin type.
 
 
-<a name="@Parameters_21"></a>
+<a name="@Parameters_20"></a>
 
 ### Parameters
 
@@ -1208,7 +1134,7 @@ quote type parameter.
 * <code>base_name_generic</code>: Generic base asset name.
 
 
-<a name="@Testing_22"></a>
+<a name="@Testing_21"></a>
 
 ### Testing
 
@@ -1246,6 +1172,214 @@ quote type parameter.
 
 </details>
 
+<a name="0xc0deb00c_registry_has_recognized_market_base_coin"></a>
+
+## Function `has_recognized_market_base_coin`
+
+Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>()</code> for coin base asset.
+
+
+<a name="@Parameters_22"></a>
+
+### Parameters
+
+
+* <code>base_type</code>: Base asset phantom coin type info.
+* <code>quote_type</code>: Quote asset phantom coin type info.
+
+
+<a name="@Testing_23"></a>
+
+### Testing
+
+
+* <code>test_set_remove_check_recognized_markets()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>(base_type: <a href="_TypeInfo">type_info::TypeInfo</a>, quote_type: <a href="_TypeInfo">type_info::TypeInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>(
+    base_type: TypeInfo,
+    quote_type: TypeInfo
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
+    // Get empty generic base asset name.
+    <b>let</b> base_name_generic = <a href="_utf8">string::utf8</a>(b"");
+    <b>let</b> trading_pair = // Pack trading pair.
+        <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
+    // Check <b>if</b> trading pair <b>has</b> recognized market.
+    <a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>(trading_pair)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_has_recognized_market_base_coin_by_type"></a>
+
+## Function `has_recognized_market_base_coin_by_type`
+
+Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>()</code> with type
+parameters.
+
+
+<a name="@Type_parameters_24"></a>
+
+### Type parameters
+
+
+* <code>BaseCoinType</code>: Base asset phantom coin type.
+* <code>QuoteCoinType</code>: Quote asset phantom coin type.
+
+
+<a name="@Testing_25"></a>
+
+### Testing
+
+
+* <code>test_set_remove_check_recognized_markets()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin_by_type">has_recognized_market_base_coin_by_type</a>&lt;BaseCoinType, QuoteCoinType&gt;(): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin_by_type">has_recognized_market_base_coin_by_type</a>&lt;
+    BaseCoinType,
+    QuoteCoinType
+&gt;(): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
+    <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_coin">has_recognized_market_base_coin</a>(
+        <a href="_type_of">type_info::type_of</a>&lt;BaseCoinType&gt;(),
+        <a href="_type_of">type_info::type_of</a>&lt;QuoteCoinType&gt;())
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_has_recognized_market_base_generic"></a>
+
+## Function `has_recognized_market_base_generic`
+
+Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>()</code> for generic base asset.
+
+
+<a name="@Parameters_26"></a>
+
+### Parameters
+
+
+* <code>base_name_generic</code>: Generic base asset name.
+* <code>quote_type</code>: Quote asset phantom coin type info.
+
+
+<a name="@Testing_27"></a>
+
+### Testing
+
+
+* <code>test_set_remove_check_recognized_markets()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>(base_name_generic: <a href="_String">string::String</a>, quote_type: <a href="_TypeInfo">type_info::TypeInfo</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>(
+    base_name_generic: String,
+    quote_type: TypeInfo
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
+    // Get generic base asset type info.
+    <b>let</b> base_type = <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a>&gt;();
+    <b>let</b> trading_pair = // Pack trading pair.
+        <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
+    // Check <b>if</b> trading pair <b>has</b> recognized market.
+    <a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>(trading_pair)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_registry_has_recognized_market_base_generic_by_type"></a>
+
+## Function `has_recognized_market_base_generic_by_type`
+
+Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>()</code> with quote
+type parameter.
+
+
+<a name="@Type_parameters_28"></a>
+
+### Type parameters
+
+
+* <code>QuoteCoinType</code>: Quote asset phantom coin type.
+
+
+<a name="@Parameters_29"></a>
+
+### Parameters
+
+
+* <code>base_name_generic</code>: Generic base asset name.
+
+
+<a name="@Testing_30"></a>
+
+### Testing
+
+
+* <code>test_set_remove_check_recognized_markets()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic_by_type">has_recognized_market_base_generic_by_type</a>&lt;QuoteCoinType&gt;(base_name_generic: <a href="_String">string::String</a>): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic_by_type">has_recognized_market_base_generic_by_type</a>&lt;
+    QuoteCoinType
+&gt;(
+    base_name_generic: String,
+): bool
+<b>acquires</b> <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a> {
+    <a href="registry.md#0xc0deb00c_registry_has_recognized_market_base_generic">has_recognized_market_base_generic</a>(
+        base_name_generic,
+        <a href="_type_of">type_info::type_of</a>&lt;QuoteCoinType&gt;())
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_registry_register_custodian_capability"></a>
 
 ## Function `register_custodian_capability`
@@ -1257,7 +1391,7 @@ capability with the corresponding serial ID. Requires utility
 coins to cover the custodian registration fee.
 
 
-<a name="@Testing_23"></a>
+<a name="@Testing_31"></a>
 
 ### Testing
 
@@ -1306,7 +1440,7 @@ capability with the corresponding serial ID. Requires utility
 coins to cover the underwriter registration fee.
 
 
-<a name="@Testing_24"></a>
+<a name="@Testing_32"></a>
 
 ### Testing
 
@@ -1351,7 +1485,7 @@ coins to cover the underwriter registration fee.
 Remove market having given ID from recognized markets list.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_33"></a>
 
 ### Parameters
 
@@ -1360,7 +1494,7 @@ Remove market having given ID from recognized markets list.
 * <code>market_id</code>: Market ID to recognize.
 
 
-<a name="@Emits_26"></a>
+<a name="@Emits_34"></a>
 
 ### Emits
 
@@ -1369,7 +1503,7 @@ Remove market having given ID from recognized markets list.
 given trading pair.
 
 
-<a name="@Aborts_27"></a>
+<a name="@Aborts_35"></a>
 
 ### Aborts
 
@@ -1381,7 +1515,7 @@ recognized market.
 given trading pair.
 
 
-<a name="@Assumptions_28"></a>
+<a name="@Assumptions_36"></a>
 
 ### Assumptions
 
@@ -1389,7 +1523,7 @@ given trading pair.
 * <code>market_id</code> corresponds to a registered market.
 
 
-<a name="@Testing_29"></a>
+<a name="@Testing_37"></a>
 
 ### Testing
 
@@ -1468,7 +1602,7 @@ given trading pair.
 Wrapper for <code><a href="registry.md#0xc0deb00c_registry_remove_recognized_market">remove_recognized_market</a>()</code> with market IDs vector.
 
 
-<a name="@Testing_30"></a>
+<a name="@Testing_38"></a>
 
 ### Testing
 
@@ -1516,7 +1650,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_remove_recognized_mar
 Set market having given ID as recognized market.
 
 
-<a name="@Parameters_31"></a>
+<a name="@Parameters_39"></a>
 
 ### Parameters
 
@@ -1525,7 +1659,7 @@ Set market having given ID as recognized market.
 * <code>market_id</code>: Market ID to recognize.
 
 
-<a name="@Emits_32"></a>
+<a name="@Emits_40"></a>
 
 ### Emits
 
@@ -1534,7 +1668,7 @@ Set market having given ID as recognized market.
 given trading pair.
 
 
-<a name="@Aborts_33"></a>
+<a name="@Aborts_41"></a>
 
 ### Aborts
 
@@ -1542,7 +1676,7 @@ given trading pair.
 * <code><a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a></code>: <code><a href="">account</a></code> is not Econia.
 
 
-<a name="@Assumptions_34"></a>
+<a name="@Assumptions_42"></a>
 
 ### Assumptions
 
@@ -1550,7 +1684,7 @@ given trading pair.
 * <code>market_id</code> corresponds to a registered market.
 
 
-<a name="@Testing_35"></a>
+<a name="@Testing_43"></a>
 
 ### Testing
 
@@ -1629,7 +1763,7 @@ given trading pair.
 Wrapper for <code><a href="registry.md#0xc0deb00c_registry_set_recognized_market">set_recognized_market</a>()</code> with market IDs vector.
 
 
-<a name="@Testing_36"></a>
+<a name="@Testing_44"></a>
 
 ### Testing
 
@@ -1679,7 +1813,7 @@ Wrapped market registration call for a base coin type.
 See inner function <code><a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>()</code>.
 
 
-<a name="@Aborts_37"></a>
+<a name="@Aborts_45"></a>
 
 ### Aborts
 
@@ -1687,7 +1821,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 * <code><a href="registry.md#0xc0deb00c_registry_E_BASE_NOT_COIN">E_BASE_NOT_COIN</a></code>: Base coin type is not initialized.
 
 
-<a name="@Testing_38"></a>
+<a name="@Testing_46"></a>
 
 ### Testing
 
@@ -1742,7 +1876,7 @@ descriptor.
 See inner function <code><a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>()</code>.
 
 
-<a name="@Aborts_39"></a>
+<a name="@Aborts_47"></a>
 
 ### Aborts
 
@@ -1751,7 +1885,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 * <code><a href="registry.md#0xc0deb00c_registry_E_GENERIC_TOO_MANY_CHARACTERS">E_GENERIC_TOO_MANY_CHARACTERS</a></code>: Asset descriptor is too long.
 
 
-<a name="@Testing_40"></a>
+<a name="@Testing_48"></a>
 
 ### Testing
 
@@ -1811,7 +1945,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
 Return recognized market info for given trading pair.
 
 
-<a name="@Parameters_41"></a>
+<a name="@Parameters_49"></a>
 
 ### Parameters
 
@@ -1819,7 +1953,7 @@ Return recognized market info for given trading pair.
 * <code>trading_pair</code>: Trading pair to look up.
 
 
-<a name="@Returns_42"></a>
+<a name="@Returns_50"></a>
 
 ### Returns
 
@@ -1831,7 +1965,7 @@ Return recognized market info for given trading pair.
 * <code>u64</code>: <code><a href="registry.md#0xc0deb00c_registry_RecognizedMarketInfo">RecognizedMarketInfo</a>.underwriter_id</code>
 
 
-<a name="@Aborts_43"></a>
+<a name="@Aborts_51"></a>
 
 ### Aborts
 
@@ -1840,7 +1974,7 @@ Return recognized market info for given trading pair.
 market.
 
 
-<a name="@Testing_44"></a>
+<a name="@Testing_52"></a>
 
 ### Testing
 
@@ -1896,7 +2030,7 @@ market.
 Return <code><b>true</b></code> if given <code><a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a></code> has recognized market.
 
 
-<a name="@Testing_45"></a>
+<a name="@Testing_53"></a>
 
 ### Testing
 
@@ -1976,7 +2110,7 @@ module publication.
 Register a market in the global registry.
 
 
-<a name="@Type_parameters_46"></a>
+<a name="@Type_parameters_54"></a>
 
 ### Type parameters
 
@@ -1985,7 +2119,7 @@ Register a market in the global registry.
 * <code>UtilityCoinType</code>: The utility coin type.
 
 
-<a name="@Parameters_47"></a>
+<a name="@Parameters_55"></a>
 
 ### Parameters
 
@@ -2001,7 +2135,7 @@ of market underwriter.
 * <code>utility_coins</code>: Utility coins paid to register a market.
 
 
-<a name="@Emits_48"></a>
+<a name="@Emits_56"></a>
 
 ### Emits
 
@@ -2010,7 +2144,7 @@ of market underwriter.
 registered.
 
 
-<a name="@Aborts_49"></a>
+<a name="@Aborts_57"></a>
 
 ### Aborts
 
@@ -2024,7 +2158,7 @@ registered.
 for specified market info.
 
 
-<a name="@Assumptions_50"></a>
+<a name="@Assumptions_58"></a>
 
 ### Assumptions
 
@@ -2034,7 +2168,7 @@ for specified market info.
 <code>register_market_base_generic_interal</code>.
 
 
-<a name="@Testing_51"></a>
+<a name="@Testing_59"></a>
 
 ### Testing
 

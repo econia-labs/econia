@@ -4,6 +4,8 @@ module econia::resource_account {
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     use aptos_framework::account::{Self, SignerCapability};
+    use aptos_framework::timestamp;
+    use std::bcs;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -26,23 +28,31 @@ module econia::resource_account {
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return resource account address.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public(friend) fun get_address():
     address
     acquires SignerCapabilityStore {
-        // Borrow immutable reference to signer capability.
-        let signer_capability_ref = &borrow_global<SignerCapabilityStore>(
-            @econia).signer_capability;
+        // Immutably borrow signer capability.
+        let signer_capability_ref =
+            &borrow_global<SignerCapabilityStore>(@econia).signer_capability;
         // Return its address.
         account::get_signer_capability_address(signer_capability_ref)
     }
 
     /// Return resource account signer.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     public(friend) fun get_signer():
     signer
     acquires SignerCapabilityStore {
-        // Borrow immutable reference to signer capability.
-        let signer_capability_ref = &borrow_global<SignerCapabilityStore>(
-            @econia).signer_capability;
+        // Immutably borrow signer capability.
+        let signer_capability_ref =
+            &borrow_global<SignerCapabilityStore>(@econia).signer_capability;
         // Return associated signer.
         account::create_signer_with_capability(signer_capability_ref)
     }
@@ -55,16 +65,24 @@ module econia::resource_account {
     ///
     /// # Seed considerations
     ///
-    /// * Resource account creation seed supplied as an empty vector,
-    ///   pending the acceptance of `aptos-core` PR #4173. If PR is not
-    ///   accepted by version release, will be updated with similar
-    ///   functionality.
+    /// Uses block timestamp as a seed for future-proofing the potential
+    /// creation of additional resource accounts via the Econia account:
+    /// the use of a seed that is not hard-coded mitigates the threat
+    /// of resource account creation blockage via mismanaged seeds,
+    /// assuming in this case that multiple resource accounts are not
+    /// created during the same block.
+    ///
+    /// # Testing
+    ///
+    /// * `test_mixed()`
     fun init_module(
         econia: &signer
     ) {
+        // Get resource account time seed.
+        let time_seed = bcs::to_bytes(&timestamp::now_microseconds());
         // Create resource account, storing signer capability.
         let (_, signer_capability) =
-            account::create_resource_account(econia, b"");
+            account::create_resource_account(econia, time_seed);
         // Store signing capability under Econia account.
         move_to(econia, SignerCapabilityStore{signer_capability});
     }
@@ -83,6 +101,11 @@ module econia::resource_account {
     #[test_only]
     /// Initialize resource account for testing.
     public fun init_test() {
+        // Get signer for Aptos framework account.
+        let aptos_framework = account::create_signer_with_capability(
+            &account::create_test_signer_cap(@aptos_framework));
+        // Set time for seed.
+        timestamp::set_time_has_started_for_testing(&aptos_framework);
         // Get signer for Econia account.
         let econia = account::create_signer_with_capability(
             &account::create_test_signer_cap(@econia));

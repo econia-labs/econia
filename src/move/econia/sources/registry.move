@@ -26,6 +26,7 @@
 ///
 /// [Dependency charts](#dependency-charts)
 ///
+/// * [Capability registration](#capability-registration)
 /// * [Recognized market getters](#recognized-market-getters)
 /// * [Recognized market setters](#recognized-market-setters)
 /// * [Internal market registration](#internal-market-registration)
@@ -66,6 +67,19 @@
 /// when viewing the documentation file generated from source code. If
 /// a browser renders the diagrams with coloring that makes it difficult
 /// to read, try a different browser.
+///
+/// ## Capability registration
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// register_custodian_capability -->
+///     incentives::deposit_custodian_registration_utility_coins
+/// register_underwriter_capability -->
+///     incentives::deposit_underwriter_registration_utility_coins
+///
+/// ```
 ///
 /// ## Recognized market getters
 ///
@@ -111,6 +125,9 @@
 ///
 /// register_market_base_coin_internal --> register_market_internal
 /// register_market_base_generic_internal --> register_market_internal
+///
+/// register_market_internal -->
+///     incentives::deposit_market_registration_utility_coins
 ///
 /// ```
 ///
@@ -181,10 +198,10 @@ module econia::registry {
         tick_size: u64,
         /// Minimum number of lots per order.
         min_size: u64,
-        /// `NIL` if a pure coin market, otherwise ID of underwriter
-        /// capability required to verify generic asset amounts. A
-        /// market-wide ID that only applies to markets having a generic
-        /// base asset.
+        /// `NO_CUSTODIAN` if a pure coin market, otherwise ID of
+        /// underwriter capability required to verify generic asset
+        /// amounts. A market-wide ID that only applies to markets
+        /// having a generic base asset.
         underwriter_id: u64
     }
 
@@ -204,8 +221,9 @@ module econia::registry {
         tick_size: u64,
         /// Minimum number of lots per order.
         min_size: u64,
-        /// `NIL` if a pure coin market, otherwise ID of underwriter
-        /// capability required to verify generic asset amounts.
+        /// `NO_CUSTODIAN` if a pure coin market, otherwise ID of
+        /// underwriter capability required to verify generic asset
+        /// amounts.
         underwriter_id: u64,
     }
 
@@ -228,8 +246,9 @@ module econia::registry {
         tick_size: u64,
         /// Minimum number of lots per order.
         min_size: u64,
-        /// `NIL` if a pure coin market, otherwise ID of underwriter
-        /// capability required to verify generic asset amounts.
+        /// `NO_CUSTODIAN` if a pure coin market, otherwise ID of
+        /// underwriter capability required to verify generic asset
+        /// amounts.
         underwriter_id: u64
     }
 
@@ -318,8 +337,8 @@ module econia::registry {
     /// Minimum number of characters permitted in a generic asset name,
     /// equal to the number of spaces in an indentation level per PEP 8.
     const MIN_CHARACTERS_GENERIC: u64 = 4;
-    /// Flag for null value when null defined as 0.
-    const NIL: u64 = 0;
+    /// Custodian ID flag for no custodian.
+    const NO_CUSTODIAN: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -833,7 +852,7 @@ module econia::registry {
         // market ID.
         register_market_internal<QuoteCoinType, UtilityCoinType>(
             type_info::type_of<BaseCoinType>(), string::utf8(b""), lot_size,
-            tick_size, min_size, NIL, utility_coins)
+            tick_size, min_size, NO_CUSTODIAN, utility_coins)
     }
 
     /// Wrapped market registration call for a generic base type,
@@ -986,8 +1005,8 @@ module econia::registry {
     /// * `lot_size`: Lot size for the market.
     /// * `tick_size`: Tick size for the market.
     /// * `min_size`: Minimum lots per order for market.
-    /// * `underwriter_id`: `NIL` if a pure coin market, otherwise ID
-    ///   of market underwriter.
+    /// * `underwriter_id`: `NO_CUSTODIAN` if a pure coin market,
+    ///   otherwise ID of market underwriter.
     /// * `utility_coins`: Utility coins paid to register a market.
     ///
     /// # Emits
@@ -1241,7 +1260,7 @@ module econia::registry {
         assert!(market_info_ref.lot_size == lot_size, 0);
         assert!(market_info_ref.tick_size == tick_size, 0);
         assert!(market_info_ref.min_size == min_size, 0);
-        assert!(market_info_ref.underwriter_id == NIL, 0);
+        assert!(market_info_ref.underwriter_id == NO_CUSTODIAN, 0);
         let market_info_map_ref = // Immutably borrow market info map.
             &borrow_global<Registry>(@econia).market_info_to_id;
         assert!( // Assert lookup on market info.
@@ -1561,7 +1580,7 @@ module econia::registry {
         assert!(lot_size == lot_size_1, 0);
         assert!(tick_size == tick_size_1, 0);
         assert!(min_size == min_size_1, 0);
-        assert!(underwriter_id == NIL, 0);
+        assert!(underwriter_id == NO_CUSTODIAN, 0);
         // Set second market as recognized.
         set_recognized_market(account, market_id_2);
         // Assert update.
@@ -1571,7 +1590,7 @@ module econia::registry {
         assert!(lot_size == lot_size_2, 0);
         assert!(tick_size == tick_size_2, 0);
         assert!(min_size == min_size_2, 0);
-        assert!(underwriter_id == NIL, 0);
+        assert!(underwriter_id == NO_CUSTODIAN, 0);
     }
 
     #[test(econia = @econia)]
@@ -1634,7 +1653,7 @@ module econia::registry {
         assert!(lot_size == lot_size_2, 0);
         assert!(tick_size == tick_size_2, 0);
         assert!(min_size == min_size_2, 0);
-        assert!(underwriter_id == NIL, 0);
+        assert!(underwriter_id == NO_CUSTODIAN, 0);
         // Remove both recognized markets.
         remove_recognized_markets(econia, &vector[1, 2]);
         // Assert existence checks.

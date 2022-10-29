@@ -198,7 +198,7 @@ module econia::registry {
         tick_size: u64,
         /// Minimum number of lots per order.
         min_size: u64,
-        /// `NO_CUSTODIAN` if a pure coin market, otherwise ID of
+        /// `NO_UNDERWRITER` if a pure coin market, otherwise ID of
         /// underwriter capability required to verify generic asset
         /// amounts. A market-wide ID that only applies to markets
         /// having a generic base asset.
@@ -221,7 +221,7 @@ module econia::registry {
         tick_size: u64,
         /// Minimum number of lots per order.
         min_size: u64,
-        /// `NO_CUSTODIAN` if a pure coin market, otherwise ID of
+        /// `NO_UNDERWRITER` if a pure coin market, otherwise ID of
         /// underwriter capability required to verify generic asset
         /// amounts.
         underwriter_id: u64,
@@ -246,7 +246,7 @@ module econia::registry {
         tick_size: u64,
         /// Minimum number of lots per order.
         min_size: u64,
-        /// `NO_CUSTODIAN` if a pure coin market, otherwise ID of
+        /// `NO_UNDERWRITER` if a pure coin market, otherwise ID of
         /// underwriter capability required to verify generic asset
         /// amounts.
         underwriter_id: u64
@@ -339,6 +339,8 @@ module econia::registry {
     const MIN_CHARACTERS_GENERIC: u64 = 4;
     /// Custodian ID flag for no custodian.
     const NO_CUSTODIAN: u64 = 0;
+    /// Underwriter ID flag for no custodian.
+    const NO_UNDERWRITER: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -823,6 +825,25 @@ module econia::registry {
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Return `true` if `cusotdian_id` has been registered.
+    ///
+    /// Restricted to friends to prevent excessive public queries
+    /// against the registry.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_capabilities()`
+    public(friend) fun is_registered_custodian_id(
+        custodian_id: u64
+    ): bool
+    acquires Registry {
+        // Get number of registered custodians.
+        let n_custodians = borrow_global<Registry>(@econia).n_custodians;
+        // Return if custodian ID is less than or equal to number of
+        // registered custodians and, if is not flag for no custodian.
+        (custodian_id <= n_custodians) && (custodian_id != NO_CUSTODIAN)
+    }
+
     /// Wrapped market registration call for a base coin type.
     ///
     /// See inner function `register_market_internal()`.
@@ -852,7 +873,7 @@ module econia::registry {
         // market ID.
         register_market_internal<QuoteCoinType, UtilityCoinType>(
             type_info::type_of<BaseCoinType>(), string::utf8(b""), lot_size,
-            tick_size, min_size, NO_CUSTODIAN, utility_coins)
+            tick_size, min_size, NO_UNDERWRITER, utility_coins)
     }
 
     /// Wrapped market registration call for a generic base type,
@@ -1005,7 +1026,7 @@ module econia::registry {
     /// * `lot_size`: Lot size for the market.
     /// * `tick_size`: Tick size for the market.
     /// * `min_size`: Minimum lots per order for market.
-    /// * `underwriter_id`: `NO_CUSTODIAN` if a pure coin market,
+    /// * `underwriter_id`: `NO_UNDERWRITER` if a pure coin market,
     ///   otherwise ID of market underwriter.
     /// * `utility_coins`: Utility coins paid to register a market.
     ///
@@ -1183,11 +1204,17 @@ module econia::registry {
         // Get custodian registration fee.
         let custodian_registration_fee =
             incentives::get_custodian_registration_fee();
+        // Assert custodian ID 1 marked as not registered.
+        assert!(!is_registered_custodian_id(1), 0);
         // Get custodian capability.
         let custodian_capability = register_custodian_capability(
             assets::mint_test<UC>(custodian_registration_fee));
         // Assert it has ID 1.
         assert!(get_custodian_id(&custodian_capability) == 1, 0);
+        // Assert custodian ID 1 marked as registered.
+        assert!(is_registered_custodian_id(1), 0);
+        // Assert custodian ID 2 marked as not registered.
+        assert!(!is_registered_custodian_id(2), 0);
         // Drop custodian capability.
         drop_custodian_capability_test(custodian_capability);
         // Get another custodian capability.
@@ -1195,6 +1222,8 @@ module econia::registry {
             assets::mint_test<UC>(custodian_registration_fee));
         // Assert it has ID 2.
         assert!(get_custodian_id(&custodian_capability) == 2, 0);
+        // Assert custodian ID 2 marked as registered.
+        assert!(is_registered_custodian_id(1), 0);
         // Drop custodian capability.
         drop_custodian_capability_test(custodian_capability);
         // Get another custodian capability.
@@ -1228,6 +1257,8 @@ module econia::registry {
         assert!(get_underwriter_id(&underwriter_capability) == 3, 0);
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
+        // Assert no custodian flag not marked as registered.
+        assert!(!is_registered_custodian_id(NO_CUSTODIAN), 0);
     }
 
     #[test]
@@ -1260,7 +1291,7 @@ module econia::registry {
         assert!(market_info_ref.lot_size == lot_size, 0);
         assert!(market_info_ref.tick_size == tick_size, 0);
         assert!(market_info_ref.min_size == min_size, 0);
-        assert!(market_info_ref.underwriter_id == NO_CUSTODIAN, 0);
+        assert!(market_info_ref.underwriter_id == NO_UNDERWRITER, 0);
         let market_info_map_ref = // Immutably borrow market info map.
             &borrow_global<Registry>(@econia).market_info_to_id;
         assert!( // Assert lookup on market info.
@@ -1580,7 +1611,7 @@ module econia::registry {
         assert!(lot_size == lot_size_1, 0);
         assert!(tick_size == tick_size_1, 0);
         assert!(min_size == min_size_1, 0);
-        assert!(underwriter_id == NO_CUSTODIAN, 0);
+        assert!(underwriter_id == NO_UNDERWRITER, 0);
         // Set second market as recognized.
         set_recognized_market(account, market_id_2);
         // Assert update.
@@ -1590,7 +1621,7 @@ module econia::registry {
         assert!(lot_size == lot_size_2, 0);
         assert!(tick_size == tick_size_2, 0);
         assert!(min_size == min_size_2, 0);
-        assert!(underwriter_id == NO_CUSTODIAN, 0);
+        assert!(underwriter_id == NO_UNDERWRITER, 0);
     }
 
     #[test(econia = @econia)]
@@ -1653,7 +1684,7 @@ module econia::registry {
         assert!(lot_size == lot_size_2, 0);
         assert!(tick_size == tick_size_2, 0);
         assert!(min_size == min_size_2, 0);
-        assert!(underwriter_id == NO_CUSTODIAN, 0);
+        assert!(underwriter_id == NO_UNDERWRITER, 0);
         // Remove both recognized markets.
         remove_recognized_markets(econia, &vector[1, 2]);
         // Assert existence checks.

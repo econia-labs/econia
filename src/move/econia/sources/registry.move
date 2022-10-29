@@ -1254,6 +1254,75 @@ module econia::registry {
         incentives::init_test(); // Init incentives
     }
 
+    #[test_only]
+    /// Register pure coin and generic markets, returning market info.
+    public fun register_markets_test(): (
+        u64,
+        String,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        String,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires Registry {
+        init_test(); // Initialize for testing.
+        // Get market registration fee.
+        let fee = incentives::get_market_registration_fee();
+        // Declare market parameters.
+        let base_name_generic_pure_coin = string::utf8(b"");
+        let lot_size_pure_coin          = 1;
+        let tick_size_pure_coin         = 2;
+        let min_size_pure_coin          = 3;
+        let underwriter_id_pure_coin    = NO_UNDERWRITER;
+        let base_name_generic_generic   = string::utf8(b"Generic asset");
+        let lot_size_generic            = 4;
+        let tick_size_generic           = 5;
+        let min_size_generic            = 6;
+        let underwriter_id_generic      = 7;
+        let underwriter_capability = // Get underwriter capability.
+            get_underwriter_capability_test(underwriter_id_generic);
+        // Register markets.
+        let market_id_pure_coin = register_market_base_coin_internal<
+            BC, QC, UC>(lot_size_pure_coin, tick_size_pure_coin,
+            min_size_pure_coin, assets::mint_test(fee));
+        let market_id_generic = register_market_base_generic_internal<QC, UC>(
+            base_name_generic_generic, lot_size_generic, tick_size_generic,
+            min_size_generic, &underwriter_capability, assets::mint_test(fee));
+        // Drop underwriter capability.
+        drop_underwriter_capability_test(underwriter_capability);
+        // Return market info.
+        (market_id_pure_coin,
+         base_name_generic_pure_coin,
+         lot_size_pure_coin,
+         tick_size_pure_coin,
+         min_size_pure_coin,
+         underwriter_id_pure_coin,
+         market_id_generic,
+         base_name_generic_generic,
+         lot_size_generic,
+         tick_size_generic,
+         min_size_generic,
+         underwriter_id_generic)
+    }
+
+    #[test_only]
+    /// Update registry to indicate custodian ID is valid.
+    public fun set_registered_custodian_test(
+        custodian_id: u64
+    ) acquires Registry {
+        let n_custodians_ref_mut =  // Mutably borrow custodian count.
+            &mut borrow_global_mut<Registry>(@econia).n_custodians;
+        // If custodian ID is greater than number of registered
+        // custodians, update count to ID.
+        if (custodian_id > *n_custodians_ref_mut)
+            *n_custodians_ref_mut = custodian_id;
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

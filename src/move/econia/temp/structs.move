@@ -30,7 +30,7 @@ module econia::structs {
     struct MarketAccounts has key {
         map: Table<u128, MarketAccount>,
         /// Map from market ID to vector of custodian IDs registered.
-        indexed: Tablist<u64, vector<u64>>
+        custodians: Tablist<u64, vector<u64>>
     }
 
     struct OpenOrder has store {

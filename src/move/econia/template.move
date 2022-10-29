@@ -1,15 +1,30 @@
-/// # Heading one
-///
 /// A Move module template
 ///
-/// ## Subheading 1
+/// # General overview sections
+///
+/// [Section](#section-name)
+///
+/// * [Subsection](#subsection-name)
+///
+/// [Complete DocGen index](#complete-docgen-index)
+///
+/// # Section 1
+///
+/// ## Subsection 1
 ///
 /// Discussion topic 1
 ///
-/// ## Subheading 2
+/// ## Dependency charts
 ///
-/// Discussion topic 2
+/// The below dependency charts use `mermaid.js` syntax, which can be
+/// automatically rendered into a diagram (depending on the browser)
+/// when viewing the documentation file generated from source code. If
+/// a browser renders the diagrams with coloring that makes it difficult
+/// to read, try a different browser.
 ///
+/// # Complete DocGen index
+///
+/// The below index is automatically generated from source code:
 /// ---
 ///
 module econia::template {

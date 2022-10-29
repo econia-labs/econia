@@ -53,7 +53,7 @@ module econia::tablist {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When attempting to destroy a tablist that is not empty.
+    /// Attempting to destroy a tablist that is not empty.
     const E_DESTROY_NOT_EMPTY: u64 = 0;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

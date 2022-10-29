@@ -185,7 +185,7 @@ Base coin symbol.
 
 <a name="0xc0deb00c_assets_E_HAS_CAPABILITIES"></a>
 
-When coin capabilities have already been initialized.
+Coin capabilities have already been initialized.
 
 
 <pre><code><b>const</b> <a href="assets.md#0xc0deb00c_assets_E_HAS_CAPABILITIES">E_HAS_CAPABILITIES</a>: u64 = 1;
@@ -195,7 +195,7 @@ When coin capabilities have already been initialized.
 
 <a name="0xc0deb00c_assets_E_NOT_ECONIA"></a>
 
-When caller is not Econia.
+Caller is not Econia.
 
 
 <pre><code><b>const</b> <a href="assets.md#0xc0deb00c_assets_E_NOT_ECONIA">E_NOT_ECONIA</a>: u64 = 0;

@@ -153,7 +153,7 @@ A hybrid between a table and a doubly linked list.
 
 <a name="0xc0deb00c_tablist_E_DESTROY_NOT_EMPTY"></a>
 
-When attempting to destroy a tablist that is not empty.
+Attempting to destroy a tablist that is not empty.
 
 
 <pre><code><b>const</b> <a href="tablist.md#0xc0deb00c_tablist_E_DESTROY_NOT_EMPTY">E_DESTROY_NOT_EMPTY</a>: u64 = 0;

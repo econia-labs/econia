@@ -40,9 +40,9 @@ module econia::assets {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// When caller is not Econia.
+    /// Caller is not Econia.
     const E_NOT_ECONIA: u64 = 0;
-    /// When coin capabilities have already been initialized.
+    /// Coin capabilities have already been initialized.
     const E_HAS_CAPABILITIES: u64 = 1;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

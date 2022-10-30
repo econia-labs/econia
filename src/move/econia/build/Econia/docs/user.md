@@ -94,43 +94,43 @@ duplicates to reduce global storage item queries.
 <code>base_type: <a href="_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
- <code>registry::MarketInfo::base_type</code>.
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.base_type</code>.
 </dd>
 <dt>
 <code>base_name_generic: <a href="_String">string::String</a></code>
 </dt>
 <dd>
- <code>registry::MarketInfo::base_name_generic</code>.
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.base_name_generic</code>.
 </dd>
 <dt>
 <code>quote_type: <a href="_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
- <code>registry::MarketInfo::quote_type</code>.
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.quote_type</code>.
 </dd>
 <dt>
 <code>lot_size: u64</code>
 </dt>
 <dd>
- <code>registry::MarketInfo::lot_size</code>.
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.lot_size</code>.
 </dd>
 <dt>
 <code>tick_size: u64</code>
 </dt>
 <dd>
- <code>registry::MarketInfo::tick_size</code>.
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.tick_size</code>.
 </dd>
 <dt>
 <code>min_size: u64</code>
 </dt>
 <dd>
- <code>registry::MarketInfo::min_size</code>.
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code>.
 </dd>
 <dt>
 <code>underwriter_id: u64</code>
 </dt>
 <dd>
- <code>registry::MarketInfo::underwriter_id</code>.
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.underwriter_id</code>.
 </dd>
 <dt>
 <code>asks: <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;u64, <a href="user.md#0xc0deb00c_user_Order">user::Order</a>&gt;</code>

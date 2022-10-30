@@ -37,19 +37,19 @@ module econia::user {
     /// market account ID. Contains `registry::MarketInfo` field
     /// duplicates to reduce global storage item queries.
     struct MarketAccount has store {
-        /// `registry::MarketInfo::base_type`.
+        /// `registry::MarketInfo.base_type`.
         base_type: TypeInfo,
-        /// `registry::MarketInfo::base_name_generic`.
+        /// `registry::MarketInfo.base_name_generic`.
         base_name_generic: String,
-        /// `registry::MarketInfo::quote_type`.
+        /// `registry::MarketInfo.quote_type`.
         quote_type: TypeInfo,
-        /// `registry::MarketInfo::lot_size`.
+        /// `registry::MarketInfo.lot_size`.
         lot_size: u64,
-        /// `registry::MarketInfo::tick_size`.
+        /// `registry::MarketInfo.tick_size`.
         tick_size: u64,
-        /// `registry::MarketInfo::min_size`.
+        /// `registry::MarketInfo.min_size`.
         min_size: u64,
-        /// `registry::MarketInfo::underwriter_id`.
+        /// `registry::MarketInfo.underwriter_id`.
         underwriter_id: u64,
         /// Map from order access key to open ask order.
         asks: Tablist<u64, Order>,

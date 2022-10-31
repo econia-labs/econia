@@ -6,7 +6,8 @@ module econia::user {
     use aptos_framework::table::{Self, Table};
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::tablist::{Self, Tablist};
-    use econia::registry::{Self, GenericAsset, UnderwriterCapability};
+    use econia::registry::{
+        Self, CustodianCapability, GenericAsset, UnderwriterCapability};
     use std::option::{Self, Option};
     use std::string::String;
     use std::signer::address_of;
@@ -226,6 +227,45 @@ module econia::user {
         market_account_ids // Return market account IDs.
     }
 
+    /// Wrapped call to `get_asset_counts_internal()` for custodian.
+    ///
+    /// Restricted to custodian for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
+    public fun get_asset_counts_custodian(
+        user_address: address,
+        market_id: u64,
+        custodian_capability_ref: &CustodianCapability
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_asset_counts_internal(
+            user_address, market_id,
+            registry::get_custodian_id(custodian_capability_ref))
+    }
+
+    /// Wrapped call to `get_asset_counts_internal()` for signing user.
+    ///
+    /// Restricted to signing user for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
+    public fun get_asset_counts_user(
+        user: &signer,
+        market_id: u64
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
+    }
+
     /// Return all of a user's market account IDs.
     ///
     /// # Parameters
@@ -427,6 +467,63 @@ module econia::user {
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Return asset counts for specified market account.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    ///
+    /// # Returns
+    ///
+    /// * `MarketAccount.base_total`
+    /// * `MarketAccount.base_available`
+    /// * `MarketAccount.base_ceiling`
+    /// * `MarketAccount.quote_total`
+    /// * `MarketAccount.quote_available`
+    /// * `MarketAccount.quote_ceiling`
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    fun get_asset_counts_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Assert user has market account for given ID.
+        assert!(table::contains(market_accounts_map_ref, market_account_id),
+                E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        (market_account_ref.base_total,
+         market_account_ref.base_available,
+         market_account_ref.base_ceiling,
+         market_account_ref.quote_total,
+         market_account_ref.quote_available,
+         market_account_ref.quote_ceiling) // Return asset count fields.
+    }
+
+    // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Deposit an asset to a user's market account.
@@ -440,9 +537,9 @@ module econia::user {
     ///
     /// # Parameters
     ///
-    /// * `user_address`: Address of user to deposit for.
-    /// * `market_id`: Corresponding market ID.
-    /// * `custodian_id`: Custodian ID for corresponding market account.
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
     /// * `amount`: Amount to deposit.
     /// * `optional_coins`: Optional coins to deposit.
     /// * `underwriter_id`: Underwriter ID for market, ignored when
@@ -486,7 +583,7 @@ module econia::user {
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
         // Assert user has market account for given ID.
         assert!(table::contains(market_accounts_map_ref_mut, market_account_id),
-               E_NO_MARKET_ACCOUNT);
+                E_NO_MARKET_ACCOUNT);
         let market_account_ref_mut = // Mutably borrow market account.
             table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
         // Get asset type info.

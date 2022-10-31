@@ -325,6 +325,17 @@ module econia::user {
         market_account_ids // Return market account IDs.
     }
 
+    /// Return custodian ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    fun get_custodian_id(
+        market_account_id: u128
+    ): u64 {
+        ((market_account_id & (HI_64 as u128)) as u64)
+    }
+
     /// Return market account ID with encoded market and custodian IDs.
     ///
     /// # Testing
@@ -335,6 +346,17 @@ module econia::user {
         custodian_id: u64
     ): u128 {
         ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
+    }
+
+    /// Return market ID encoded in market account ID.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_id_getters()`
+    fun get_market_id(
+        market_account_id: u128
+    ): u64 {
+        (market_account_id >> SHIFT_MARKET_ID as u64)
     }
 
     /// Return `true` if `user` has at market account registered with
@@ -772,14 +794,18 @@ module econia::user {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    /// Register market accounts under test `@user`, return signer.
+    /// Register market accounts under test `@user`, return signer and
+    /// market account ID of:
     ///
     /// * Pure coin self-custodied market account.
     /// * Pure coin market account with delegated custodian.
     /// * Generic self-custodian market account.
-    fun register_market_accounts_test():
-    signer
-    acquires
+    fun register_market_accounts_test(): (
+        signer,
+        u128,
+        u128,
+        u128
+    ) acquires
         Collateral,
         MarketAccounts
     {
@@ -804,7 +830,10 @@ module econia::user {
         // Register generic asset account.
         register_market_account_generic_base<QC>(
             &user, market_id_generic, NO_CUSTODIAN);
-        user // Return signing user.
+        (user, // Return signing user and market account IDs.
+         get_market_account_id(market_id_pure_coin, NO_CUSTODIAN),
+         get_market_account_id(market_id_pure_coin, DELEGATED_CUSTODIAN_ID),
+         get_market_account_id(market_id_generic  , NO_CUSTODIAN))
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -898,11 +927,14 @@ module econia::user {
                                       b"00000000000000000000000000000001");
         let custodian_id = u_64_by_32(b"11000000000000000000000000000000",
                                       b"00000000000000000000000000000011");
-        assert!(get_market_account_id(market_id, custodian_id) ==
+        let market_account_id = get_market_account_id(market_id, custodian_id);
+        assert!(market_account_id ==
                           u_128_by_32(b"10000000000000000000000000000000",
                                       b"00000000000000000000000000000001",
                                       b"11000000000000000000000000000000",
                                       b"00000000000000000000000000000011"), 0);
+        assert!(get_market_id(market_account_id) == market_id, 0);
+        assert!(get_custodian_id(market_account_id) == custodian_id, 0);
     }
 
 

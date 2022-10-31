@@ -10,26 +10,26 @@
 -  [Resource `MarketAccounts`](#0xc0deb00c_user_MarketAccounts)
 -  [Struct `Order`](#0xc0deb00c_user_Order)
 -  [Constants](#@Constants_0)
--  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
-    -  [Type parameters](#@Type_parameters_1)
-    -  [Parameters](#@Parameters_2)
-    -  [Aborts](#@Aborts_3)
-    -  [Testing](#@Testing_4)
--  [Function `register_market_account_generic_base`](#0xc0deb00c_user_register_market_account_generic_base)
-    -  [Testing](#@Testing_5)
 -  [Function `get_all_market_account_ids_for_market_id`](#0xc0deb00c_user_get_all_market_account_ids_for_market_id)
-    -  [Parameters](#@Parameters_6)
-    -  [Returns](#@Returns_7)
-    -  [Gas considerations](#@Gas_considerations_8)
-    -  [Testing](#@Testing_9)
+    -  [Parameters](#@Parameters_1)
+    -  [Returns](#@Returns_2)
+    -  [Gas considerations](#@Gas_considerations_3)
+    -  [Testing](#@Testing_4)
 -  [Function `get_all_market_account_ids_for_user`](#0xc0deb00c_user_get_all_market_account_ids_for_user)
-    -  [Parameters](#@Parameters_10)
-    -  [Returns](#@Returns_11)
-    -  [Gas considerations](#@Gas_considerations_12)
-    -  [Testing](#@Testing_13)
+    -  [Parameters](#@Parameters_5)
+    -  [Returns](#@Returns_6)
+    -  [Gas considerations](#@Gas_considerations_7)
+    -  [Testing](#@Testing_8)
 -  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
-    -  [Testing](#@Testing_14)
+    -  [Testing](#@Testing_9)
 -  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
+    -  [Testing](#@Testing_10)
+-  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
+    -  [Type parameters](#@Type_parameters_11)
+    -  [Parameters](#@Parameters_12)
+    -  [Aborts](#@Aborts_13)
+    -  [Testing](#@Testing_14)
+-  [Function `register_market_account_generic_base`](#0xc0deb00c_user_register_market_account_generic_base)
     -  [Testing](#@Testing_15)
 -  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
     -  [Type parameters](#@Type_parameters_16)
@@ -339,140 +339,6 @@ Number of bits market ID is shifted in market account ID.
 
 
 
-<a name="0xc0deb00c_user_register_market_account"></a>
-
-## Function `register_market_account`
-
-Register market account for indicated market and custodian.
-
-
-<a name="@Type_parameters_1"></a>
-
-### Type parameters
-
-
-* <code>BaseType</code>: Base type for indicated market. If base asset is
-a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code>
-(alternatively use <code>register_market_account_base_generic()</code>).
-* <code>QuoteType</code>: Quote type for indicated market.
-
-
-<a name="@Parameters_2"></a>
-
-### Parameters
-
-
-* <code><a href="user.md#0xc0deb00c_user">user</a></code>: User registering a market account.
-* <code>market_id</code>: Market ID for given market.
-* <code>custodian_id</code>: Custodian ID to register account with, or
-<code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
-
-
-<a name="@Aborts_3"></a>
-
-### Aborts
-
-
-* <code><a href="user.md#0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN">E_UNREGISTERED_CUSTODIAN</a></code>: Custodian ID has not been
-registered.
-
-
-<a name="@Testing_4"></a>
-
-### Testing
-
-
-* <code>test_register_market_account_unregistered_custodian()</code>
-* <code>test_register_market_accounts()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, custodian_id: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;
-    BaseType,
-    QuoteType
-&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    market_id: u64,
-    custodian_id: u64
-) <b>acquires</b>
-    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
-{
-    // If custodian ID indicated, <b>assert</b> it is registered.
-    <b>if</b> (custodian_id != <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>) <b>assert</b>!(
-        <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(custodian_id),
-        <a href="user.md#0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN">E_UNREGISTERED_CUSTODIAN</a>);
-    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
-        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Register market accounts map entries.
-    <a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>&lt;BaseType, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id, market_id, custodian_id);
-    // If base asset is <a href="">coin</a>, register collateral entry.
-    <b>if</b> (<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;())
-        <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;BaseType&gt;(
-            <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id);
-    // Register quote asset collateral entry.
-    <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_user_register_market_account_generic_base"></a>
-
-## Function `register_market_account_generic_base`
-
-Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code> call for generic base asset.
-
-
-<a name="@Testing_5"></a>
-
-### Testing
-
-
-* <code>test_register_market_accounts()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_generic_base">register_market_account_generic_base</a>&lt;QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, custodian_id: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_generic_base">register_market_account_generic_base</a>&lt;
-    QuoteType
-&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    market_id: u64,
-    custodian_id: u64
-) <b>acquires</b>
-    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
-{
-    <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;GenericAsset, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id);
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_user_get_all_market_account_ids_for_market_id"></a>
 
 ## Function `get_all_market_account_ids_for_market_id`
@@ -480,7 +346,7 @@ Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register
 Return all market account IDs associated with market ID.
 
 
-<a name="@Parameters_6"></a>
+<a name="@Parameters_1"></a>
 
 ### Parameters
 
@@ -489,7 +355,7 @@ Return all market account IDs associated with market ID.
 * <code>market_id</code>: Market ID to check market accounts for.
 
 
-<a name="@Returns_7"></a>
+<a name="@Returns_2"></a>
 
 ### Returns
 
@@ -498,7 +364,7 @@ Return all market account IDs associated with market ID.
 market, empty if no market accounts.
 
 
-<a name="@Gas_considerations_8"></a>
+<a name="@Gas_considerations_3"></a>
 
 ### Gas considerations
 
@@ -507,7 +373,7 @@ Loops over all elements within a vector that is itself a single
 item in global storage, and returns a vector via pass-by-value.
 
 
-<a name="@Testing_9"></a>
+<a name="@Testing_4"></a>
 
 ### Testing
 
@@ -566,7 +432,7 @@ item in global storage, and returns a vector via pass-by-value.
 Return all of a user's market account IDs.
 
 
-<a name="@Parameters_10"></a>
+<a name="@Parameters_5"></a>
 
 ### Parameters
 
@@ -574,7 +440,7 @@ Return all of a user's market account IDs.
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user to check market account IDs for.
 
 
-<a name="@Returns_11"></a>
+<a name="@Returns_6"></a>
 
 ### Returns
 
@@ -583,7 +449,7 @@ Return all of a user's market account IDs.
 no market accounts.
 
 
-<a name="@Gas_considerations_12"></a>
+<a name="@Gas_considerations_7"></a>
 
 ### Gas considerations
 
@@ -595,7 +461,7 @@ read, incurring linearly-scaled vector operation costs. Returns
 a vector via pass-by-value.
 
 
-<a name="@Testing_13"></a>
+<a name="@Testing_8"></a>
 
 ### Testing
 
@@ -662,7 +528,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 given <code>market_account_id</code>.
 
 
-<a name="@Testing_14"></a>
+<a name="@Testing_9"></a>
 
 ### Testing
 
@@ -706,7 +572,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 registered with given <code>market_id</code>.
 
 
-<a name="@Testing_15"></a>
+<a name="@Testing_10"></a>
 
 ### Testing
 
@@ -734,6 +600,140 @@ registered with given <code>market_id</code>.
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).custodians;
     // Return <b>if</b> custodians map <b>has</b> entry for given market ID.
     <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(custodians_map_ref, market_id)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_register_market_account"></a>
+
+## Function `register_market_account`
+
+Register market account for indicated market and custodian.
+
+
+<a name="@Type_parameters_11"></a>
+
+### Type parameters
+
+
+* <code>BaseType</code>: Base type for indicated market. If base asset is
+a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code>
+(alternatively use <code>register_market_account_base_generic()</code>).
+* <code>QuoteType</code>: Quote type for indicated market.
+
+
+<a name="@Parameters_12"></a>
+
+### Parameters
+
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: User registering a market account.
+* <code>market_id</code>: Market ID for given market.
+* <code>custodian_id</code>: Custodian ID to register account with, or
+<code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
+
+
+<a name="@Aborts_13"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN">E_UNREGISTERED_CUSTODIAN</a></code>: Custodian ID has not been
+registered.
+
+
+<a name="@Testing_14"></a>
+
+### Testing
+
+
+* <code>test_register_market_account_unregistered_custodian()</code>
+* <code>test_register_market_accounts()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, custodian_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    custodian_id: u64
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    // If custodian ID indicated, <b>assert</b> it is registered.
+    <b>if</b> (custodian_id != <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>) <b>assert</b>!(
+        <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(custodian_id),
+        <a href="user.md#0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN">E_UNREGISTERED_CUSTODIAN</a>);
+    <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
+    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
+    // Register market accounts map entries.
+    <a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>&lt;BaseType, QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id, market_id, custodian_id);
+    // If base asset is <a href="">coin</a>, register collateral entry.
+    <b>if</b> (<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseType&gt;())
+        <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;BaseType&gt;(
+            <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id);
+    // Register quote asset collateral entry.
+    <a href="user.md#0xc0deb00c_user_register_market_account_collateral_entry">register_market_account_collateral_entry</a>&lt;QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_register_market_account_generic_base"></a>
+
+## Function `register_market_account_generic_base`
+
+Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code> call for generic base asset.
+
+
+<a name="@Testing_15"></a>
+
+### Testing
+
+
+* <code>test_register_market_accounts()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_generic_base">register_market_account_generic_base</a>&lt;QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, custodian_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_register_market_account_generic_base">register_market_account_generic_base</a>&lt;
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    custodian_id: u64
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>&lt;GenericAsset, QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id);
 }
 </code></pre>
 

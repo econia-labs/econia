@@ -118,87 +118,7 @@ module econia::user {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[cmd]
-    /// Register market account for indicated market and custodian.
-    ///
-    /// # Type parameters
-    ///
-    /// * `BaseType`: Base type for indicated market. If base asset is
-    ///   a generic asset, must be passed as `registry::GenericAsset`
-    ///   (alternatively use `register_market_account_base_generic()`).
-    /// * `QuoteType`: Quote type for indicated market.
-    ///
-    /// # Parameters
-    ///
-    /// * `user`: User registering a market account.
-    /// * `market_id`: Market ID for given market.
-    /// * `custodian_id`: Custodian ID to register account with, or
-    ///   `NO_CUSTODIAN`.
-    ///
-    /// # Aborts
-    ///
-    /// * `E_UNREGISTERED_CUSTODIAN`: Custodian ID has not been
-    ///   registered.
-    ///
-    /// # Testing
-    ///
-    /// * `test_register_market_account_unregistered_custodian()`
-    /// * `test_register_market_accounts()`
-    public entry fun register_market_account<
-        BaseType,
-        QuoteType
-    >(
-        user: &signer,
-        market_id: u64,
-        custodian_id: u64
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        // If custodian ID indicated, assert it is registered.
-        if (custodian_id != NO_CUSTODIAN) assert!(
-            registry::is_registered_custodian_id(custodian_id),
-            E_UNREGISTERED_CUSTODIAN);
-        let user_address = address_of(user); // Get user address.
-        let market_account_id = // Get market account ID.
-            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        // Register market accounts map entries.
-        register_market_account_account_entries<BaseType, QuoteType>(
-            user, user_address, market_account_id, market_id, custodian_id);
-        // If base asset is coin, register collateral entry.
-        if (coin::is_coin_initialized<BaseType>())
-            register_market_account_collateral_entry<BaseType>(
-                user, user_address, market_account_id);
-        // Register quote asset collateral entry.
-        register_market_account_collateral_entry<QuoteType>(
-            user, user_address, market_account_id);
-    }
-
-    #[cmd]
-    /// Wrapped `register_market_account()` call for generic base asset.
-    ///
-    /// # Testing
-    ///
-    /// * `test_register_market_accounts()`
-    public entry fun register_market_account_generic_base<
-        QuoteType
-    >(
-        user: &signer,
-        market_id: u64,
-        custodian_id: u64
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        register_market_account<GenericAsset, QuoteType>(
-            user, market_id, custodian_id);
-    }
-
-    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Return all market account IDs associated with market ID.
     ///
@@ -347,6 +267,90 @@ module econia::user {
         // Return if custodians map has entry for given market ID.
         tablist::contains(custodians_map_ref, market_id)
     }
+
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Register market account for indicated market and custodian.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for indicated market. If base asset is
+    ///   a generic asset, must be passed as `registry::GenericAsset`
+    ///   (alternatively use `register_market_account_base_generic()`).
+    /// * `QuoteType`: Quote type for indicated market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: User registering a market account.
+    /// * `market_id`: Market ID for given market.
+    /// * `custodian_id`: Custodian ID to register account with, or
+    ///   `NO_CUSTODIAN`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_UNREGISTERED_CUSTODIAN`: Custodian ID has not been
+    ///   registered.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_account_unregistered_custodian()`
+    /// * `test_register_market_accounts()`
+    public entry fun register_market_account<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        custodian_id: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // If custodian ID indicated, assert it is registered.
+        if (custodian_id != NO_CUSTODIAN) assert!(
+            registry::is_registered_custodian_id(custodian_id),
+            E_UNREGISTERED_CUSTODIAN);
+        let user_address = address_of(user); // Get user address.
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Register market accounts map entries.
+        register_market_account_account_entries<BaseType, QuoteType>(
+            user, user_address, market_account_id, market_id, custodian_id);
+        // If base asset is coin, register collateral entry.
+        if (coin::is_coin_initialized<BaseType>())
+            register_market_account_collateral_entry<BaseType>(
+                user, user_address, market_account_id);
+        // Register quote asset collateral entry.
+        register_market_account_collateral_entry<QuoteType>(
+            user, user_address, market_account_id);
+    }
+
+    #[cmd]
+    /// Wrapped `register_market_account()` call for generic base asset.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_market_accounts()`
+    public entry fun register_market_account_generic_base<
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        custodian_id: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_account<GenericAsset, QuoteType>(
+            user, market_id, custodian_id);
+    }
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Register market account entries for given market account info.
     ///

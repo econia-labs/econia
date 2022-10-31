@@ -22,7 +22,7 @@ module econia::user {
     #[test_only]
     use econia::avl_queue::{u_128_by_32, u_64_by_32};
     #[test_only]
-    use econia::assets::{BC, QC};
+    use econia::assets::{Self, BC, QC, UC};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -137,6 +137,10 @@ module econia::user {
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Wrapped call to `deposit_asset()` for depositing coins.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
     public fun deposit_coins<
         CoinType
     >(
@@ -158,6 +162,10 @@ module econia::user {
     }
 
     /// Wrapped call to `deposit_asset()` for depositing generic asset.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
     public fun deposit_generic_asset(
         user_address: address,
         market_id: u64,
@@ -231,6 +239,10 @@ module econia::user {
     ///
     /// Restricted to custodian for given market account to prevent
     /// excessive public queries and thus transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
     public fun get_asset_counts_custodian(
         user_address: address,
         market_id: u64,
@@ -252,6 +264,10 @@ module econia::user {
     ///
     /// Restricted to signing user for given market account to prevent
     /// excessive public queries and thus transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
     public fun get_asset_counts_user(
         user: &signer,
         market_id: u64
@@ -405,6 +421,10 @@ module econia::user {
     #[cmd]
     /// Wrapped call to `deposit_coins()` for depositing from an
     /// `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
     public entry fun deposit_from_coinstore<
         CoinType
     >(
@@ -524,6 +544,12 @@ module econia::user {
     ///
     /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
     /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    /// * `test_get_asset_counts_internal_no_account()`
+    /// * `test_get_asset_counts_internal_no_accounts()`
     fun get_asset_counts_internal(
         user_address: address,
         market_id: u64,
@@ -595,6 +621,15 @@ module econia::user {
     /// * If optional coins provided, their value equals `amount`.
     /// * When depositing coins, if a market account exists, then so
     ///   does a corresponding collateral map entry.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_asset_no_account()`
+    /// * `test_deposit_asset_no_accounts()`
+    /// * `test_deposit_asset_not_in_pair()`
+    /// * `test_deposit_asset_overflow()`
+    /// * `test_deposit_asset_underwriter()`
+    /// * `test_deposits()`
     fun deposit_asset<
         AssetType
     >(
@@ -778,7 +813,7 @@ module econia::user {
 
     #[test_only]
     /// Custodian ID for pure coin test market with delegated custodian.
-    const DELEGATED_CUSTODIAN_ID: u64 = 123;
+    const CUSTODIAN_ID: u64 = 123;
     #[test_only]
     /// Market ID for generic test market.
     const MARKET_ID_GENERIC: u64 = 2;
@@ -787,11 +822,47 @@ module econia::user {
     const MARKET_ID_PURE_COIN: u64 = 1;
     #[test_only]
     /// Underwriter ID for generic test market.
-    const UNDERWRITER_ID_GENERIC: u64 = 7;
+    const UNDERWRITER_ID: u64 = 7;
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Return `Coin.value` of entry in `Collateral` for given
+    /// `user_address`, `AssetType` and `market_account_id`.
+    public fun get_collateral_value_test<
+        CoinType
+    >(
+        user_address: address,
+        market_account_id: u128,
+    ): u64
+    acquires Collateral {
+        let collateral_map_ref = // Immutably borrow collateral map.
+            &borrow_global<Collateral<CoinType>>(user_address).map;
+        let coin_ref = // Immutably borrow coin collateral.
+            tablist::borrow(collateral_map_ref, market_account_id);
+        coin::value(coin_ref) // Return coin value.
+    }
+
+    #[test_only]
+    /// Return `true` if `user_adress` has an entry in `Collateral` for
+    /// given `AssetType` and `market_account_id`.
+    public fun has_collateral_test<
+        AssetType
+    >(
+        user_address: address,
+        market_account_id: u128,
+    ): bool
+    acquires Collateral {
+        // Return false if does not even have collateral map.
+        if (!exists<Collateral<AssetType>>(user_address)) return false;
+        // Immutably borrow collateral map.
+        let collateral_map_ref =
+            &borrow_global<Collateral<AssetType>>(user_address).map;
+        // Return if table contains entry for market account ID.
+        tablist::contains(collateral_map_ref, market_account_id)
+    }
 
     #[test_only]
     /// Register market accounts under test `@user`, return signer and
@@ -812,33 +883,211 @@ module econia::user {
         // Get signer for test user account.
         let user = account::create_signer_with_capability(
             &account::create_test_signer_cap(@user));
+        // Create Aptos account.
+        account::create_account_for_test(@user);
+        // Register coin store for test assets.
+        coin::register<BC>(&user);
+        coin::register<QC>(&user);
         // Register a pure coin and a generic market, discarding most
         // returns.
         let (market_id_pure_coin, _, _, _, _, _, market_id_generic, _, _, _, _,
              underwriter_id_generic) = registry::register_markets_test();
         // Assert both market IDs and generic underwriter ID.
-        assert!(market_id_pure_coin == MARKET_ID_PURE_COIN, 0);
-        assert!(market_id_generic == MARKET_ID_GENERIC, 0);
-        assert!(underwriter_id_generic == UNDERWRITER_ID_GENERIC, 0);
+        assert!(market_id_pure_coin    == MARKET_ID_PURE_COIN, 0);
+        assert!(market_id_generic      == MARKET_ID_GENERIC, 0);
+        assert!(underwriter_id_generic == UNDERWRITER_ID, 0);
         // Register pure coin account.
         register_market_account<BC, QC>(
             &user, market_id_pure_coin, NO_CUSTODIAN);
         // Set delegated custodian ID as registered.
-        registry::set_registered_custodian_test(DELEGATED_CUSTODIAN_ID);
+        registry::set_registered_custodian_test(CUSTODIAN_ID);
         register_market_account<BC, QC>( // Register delegated account.
-            &user, market_id_pure_coin, DELEGATED_CUSTODIAN_ID);
+            &user, market_id_pure_coin, CUSTODIAN_ID);
         // Register generic asset account.
         register_market_account_generic_base<QC>(
             &user, market_id_generic, NO_CUSTODIAN);
+        // Get market account IDs.
+        let market_account_id_coin_self =
+            get_market_account_id(market_id_pure_coin, NO_CUSTODIAN);
+        let market_account_id_coin_delegated =
+            get_market_account_id(market_id_pure_coin, CUSTODIAN_ID);
+        let market_account_id_generic_self =
+            get_market_account_id(market_id_generic  , NO_CUSTODIAN);
         (user, // Return signing user and market account IDs.
-         get_market_account_id(market_id_pure_coin, NO_CUSTODIAN),
-         get_market_account_id(market_id_pure_coin, DELEGATED_CUSTODIAN_ID),
-         get_market_account_id(market_id_generic  , NO_CUSTODIAN))
+         market_account_id_coin_self,
+         market_account_id_coin_delegated,
+         market_account_id_generic_self)
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account.
+    fun test_deposit_asset_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        deposit_coins<BC>(@user, 0, 0, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts.
+    fun test_deposit_asset_no_accounts()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Attempt invalid invocation.
+        deposit_coins<BC>(@user, 0, 0, coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for asset not in pair.
+    fun test_deposit_asset_not_in_pair()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        deposit_coins<UC>(@user, MARKET_ID_PURE_COIN, NO_CUSTODIAN,
+                          coin::zero());
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for ceiling overflow.
+    fun test_deposit_asset_overflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID);
+        // Deposit maximum amount of generic asset.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              HI_64, &underwriter_capability);
+        // Attempt invalid deposit of one more unit.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              1, &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid underwriter.
+    fun test_deposit_asset_underwriter()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID + 1);
+        // Attempt deposit with invalid underwriter capability.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              1, &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    /// Verify state updates for assorted deposit styles.
+    fun test_deposits()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Declare deposit parameters
+        let coin_amount = 700;
+        let generic_amount = 500;
+        // Get signing user and test market account IDs.
+        let (user, _,
+             market_account_id_coin_delegated,
+             market_account_id_generic_self) = register_market_accounts_test();
+        // Deposit coin asset to user's coin store.
+        coin::deposit(@user, assets::mint_test<QC>(coin_amount));
+        // Deposit to user's delegated pure coin market account.
+        deposit_from_coinstore<QC>(&user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                                   coin_amount);
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID);
+        // Deposit to user's generic market account.
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              generic_amount, &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+        let custodian_capability = // Get custodian capability.
+            registry::get_custodian_capability_test(CUSTODIAN_ID);
+        // Assert state for quote deposit.
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_custodian(
+                @user, MARKET_ID_PURE_COIN, &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        assert!(base_total      == 0             , 0);
+        assert!(base_available  == 0             , 0);
+        assert!(base_ceiling    == 0             , 0);
+        assert!(quote_total     == coin_amount   , 0);
+        assert!(quote_available == coin_amount   , 0);
+        assert!(quote_ceiling   == coin_amount   , 0);
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id_coin_delegated) == 0, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_coin_delegated) == coin_amount, 0);
+        // Assert state for base deposit.
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_user(&user, MARKET_ID_GENERIC);
+        assert!(base_total      == generic_amount, 0);
+        assert!(base_available  == generic_amount, 0);
+        assert!(base_ceiling    == generic_amount, 0);
+        assert!(quote_total     == 0             , 0);
+        assert!(quote_available == 0             , 0);
+        assert!(quote_ceiling   == 0             , 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self) == 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account resource.
+    fun test_get_asset_counts_internal_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        get_asset_counts_internal(@user, 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts resource.
+    fun test_get_asset_counts_internal_no_accounts()
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_asset_counts_internal(@user, 0, 0);
+    }
 
     #[test]
     /// Verify valid returns.
@@ -851,7 +1100,7 @@ module econia::user {
         let market_account_id_coin_self = get_market_account_id(
             MARKET_ID_PURE_COIN, NO_CUSTODIAN);
         let market_account_id_coin_delegated = get_market_account_id(
-            MARKET_ID_PURE_COIN, DELEGATED_CUSTODIAN_ID);
+            MARKET_ID_PURE_COIN, CUSTODIAN_ID);
         let market_account_id_generic_self = get_market_account_id(
             MARKET_ID_GENERIC, NO_CUSTODIAN);
         // Assert empty returns.
@@ -994,12 +1243,12 @@ module econia::user {
              min_size_generic, underwriter_id_generic) =
              registry::register_markets_test();
         // Set custodian ID as registered.
-        registry::set_registered_custodian_test(DELEGATED_CUSTODIAN_ID);
+        registry::set_registered_custodian_test(CUSTODIAN_ID);
         // Register pure coin market account.
         register_market_account<BC, QC>(
             user, market_id_pure_coin, NO_CUSTODIAN);
         register_market_account<BC, QC>( // Register delegated account.
-            user, market_id_pure_coin, DELEGATED_CUSTODIAN_ID);
+            user, market_id_pure_coin, CUSTODIAN_ID);
         // Register generic asset account.
         register_market_account_generic_base<QC>(
             user, market_id_generic, NO_CUSTODIAN);
@@ -1007,7 +1256,7 @@ module econia::user {
         let market_account_id_self = get_market_account_id(
             market_id_pure_coin, NO_CUSTODIAN);
         let market_account_id_delegated = get_market_account_id(
-            market_id_pure_coin, DELEGATED_CUSTODIAN_ID);
+            market_id_pure_coin, CUSTODIAN_ID);
         let market_account_id_generic = get_market_account_id(
             market_id_generic, NO_CUSTODIAN);
         // Immutably borrow base coin collateral.
@@ -1035,7 +1284,7 @@ module econia::user {
             tablist::borrow(custodians_map_ref, market_id_pure_coin);
         // Assert listed custodians.
         assert!(*custodians_ref
-                == vector[NO_CUSTODIAN, DELEGATED_CUSTODIAN_ID], 0);
+                == vector[NO_CUSTODIAN, CUSTODIAN_ID], 0);
         // Immutably borrow custodians entry for generic market.
         custodians_ref =
             tablist::borrow(custodians_map_ref, market_id_generic);

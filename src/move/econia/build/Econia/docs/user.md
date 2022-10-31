@@ -21,21 +21,25 @@
     -  [Parameters](#@Parameters_6)
     -  [Returns](#@Returns_7)
     -  [Gas considerations](#@Gas_considerations_8)
+    -  [Testing](#@Testing_9)
 -  [Function `get_all_market_account_ids_for_user`](#0xc0deb00c_user_get_all_market_account_ids_for_user)
-    -  [Parameters](#@Parameters_9)
-    -  [Returns](#@Returns_10)
-    -  [Gas considerations](#@Gas_considerations_11)
+    -  [Parameters](#@Parameters_10)
+    -  [Returns](#@Returns_11)
+    -  [Gas considerations](#@Gas_considerations_12)
+    -  [Testing](#@Testing_13)
 -  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
+    -  [Testing](#@Testing_14)
 -  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
--  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
-    -  [Type parameters](#@Type_parameters_12)
-    -  [Parameters](#@Parameters_13)
-    -  [Aborts](#@Aborts_14)
     -  [Testing](#@Testing_15)
--  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
+-  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
     -  [Type parameters](#@Type_parameters_16)
     -  [Parameters](#@Parameters_17)
-    -  [Testing](#@Testing_18)
+    -  [Aborts](#@Aborts_18)
+    -  [Testing](#@Testing_19)
+-  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
+    -  [Type parameters](#@Type_parameters_20)
+    -  [Parameters](#@Parameters_21)
+    -  [Testing](#@Testing_22)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -503,6 +507,14 @@ Loops over all elements within a vector that is itself a single
 item in global storage, and returns a vector via pass-by-value.
 
 
+<a name="@Testing_9"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_market_id">get_all_market_account_ids_for_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): <a href="">vector</a>&lt;u128&gt;
 </code></pre>
 
@@ -554,7 +566,7 @@ item in global storage, and returns a vector via pass-by-value.
 Return all of a user's market account IDs.
 
 
-<a name="@Parameters_9"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -562,7 +574,7 @@ Return all of a user's market account IDs.
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user to check market account IDs for.
 
 
-<a name="@Returns_10"></a>
+<a name="@Returns_11"></a>
 
 ### Returns
 
@@ -571,7 +583,7 @@ Return all of a user's market account IDs.
 no market accounts.
 
 
-<a name="@Gas_considerations_11"></a>
+<a name="@Gas_considerations_12"></a>
 
 ### Gas considerations
 
@@ -581,6 +593,14 @@ a separate item in global storage, incurring a per-item read
 cost. Additionally loops over a vector for each such per-item
 read, incurring linearly-scaled vector operation costs. Returns
 a vector via pass-by-value.
+
+
+<a name="@Testing_13"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_get_all_market_account_ids_for_user">get_all_market_account_ids_for_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>): <a href="">vector</a>&lt;u128&gt;
@@ -601,8 +621,6 @@ a vector via pass-by-value.
     <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> market_account_ids;
     <b>let</b> custodians_map_ref = // Immutably borrow custodians map.
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).custodians;
-    // Return empty <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no market accounts.
-    <b>if</b> (<a href="tablist.md#0xc0deb00c_tablist_is_empty">tablist::is_empty</a>(custodians_map_ref)) <b>return</b> market_account_ids;
     // Get market ID <a href="">option</a> at head of market ID list.
     <b>let</b> market_id_option = <a href="tablist.md#0xc0deb00c_tablist_get_head_key">tablist::get_head_key</a>(custodians_map_ref);
     // While market IDs left <b>to</b> <b>loop</b> over:
@@ -644,6 +662,14 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 given <code>market_account_id</code>.
 
 
+<a name="@Testing_14"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_account_id">has_market_account_by_market_account_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_account_id: u128): bool
 </code></pre>
 
@@ -678,6 +704,14 @@ given <code>market_account_id</code>.
 
 Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user</a></code> has at least one market account
 registered with given <code>market_id</code>.
+
+
+<a name="@Testing_15"></a>
+
+### Testing
+
+
+* <code>test_market_account_getters()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_has_market_account_by_market_id">has_market_account_by_market_id</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64): bool
@@ -716,7 +750,7 @@ Register market account entries for given market account info.
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_12"></a>
+<a name="@Type_parameters_16"></a>
 
 ### Type parameters
 
@@ -725,7 +759,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_13"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -738,7 +772,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_14"></a>
+<a name="@Aborts_18"></a>
 
 ### Aborts
 
@@ -746,7 +780,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_15"></a>
+<a name="@Testing_19"></a>
 
 ### Testing
 
@@ -831,7 +865,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_16"></a>
+<a name="@Type_parameters_20"></a>
 
 ### Type parameters
 
@@ -839,7 +873,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_17"></a>
+<a name="@Parameters_21"></a>
 
 ### Parameters
 
@@ -849,7 +883,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_18"></a>
+<a name="@Testing_22"></a>
 
 ### Testing
 

@@ -17,6 +17,8 @@ module econia::user {
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    use aptos_framework::account;
+    #[test_only]
     use econia::avl_queue::{u_128_by_32, u_64_by_32};
     #[test_only]
     use econia::assets::{BC, QC};
@@ -214,6 +216,10 @@ module econia::user {
     ///
     /// Loops over all elements within a vector that is itself a single
     /// item in global storage, and returns a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
     public fun get_all_market_account_ids_for_market_id(
         user: address,
         market_id: u64
@@ -262,6 +268,10 @@ module econia::user {
     /// cost. Additionally loops over a vector for each such per-item
     /// read, incurring linearly-scaled vector operation costs. Returns
     /// a vector via pass-by-value.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
     public fun get_all_market_account_ids_for_user(
         user: address,
     ): vector<u128>
@@ -271,8 +281,6 @@ module econia::user {
         if (!exists<MarketAccounts>(user)) return market_account_ids;
         let custodians_map_ref = // Immutably borrow custodians map.
             &borrow_global<MarketAccounts>(user).custodians;
-        // Return empty if user has no market accounts.
-        if (tablist::is_empty(custodians_map_ref)) return market_account_ids;
         // Get market ID option at head of market ID list.
         let market_id_option = tablist::get_head_key(custodians_map_ref);
         // While market IDs left to loop over:
@@ -303,6 +311,10 @@ module econia::user {
 
     /// Return `true` if `user` has at market account registered with
     /// given `market_account_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
     public fun has_market_account_by_market_account_id(
         user: address,
         market_account_id: u128
@@ -319,6 +331,10 @@ module econia::user {
 
     /// Return `true` if `user` has at least one market account
     /// registered with given `market_id`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_market_account_getters()`
     public fun has_market_account_by_market_id(
         user: address,
         market_id: u64
@@ -449,6 +465,23 @@ module econia::user {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Custodian ID for pure coin test market with delegated custodian.
+    const DELEGATED_CUSTODIAN_ID: u64 = 123;
+    #[test_only]
+    /// Market ID for generic test market.
+    const MARKET_ID_GENERIC: u64 = 2;
+    #[test_only]
+    /// Market ID for pure coin test market.
+    const MARKET_ID_PURE_COIN: u64 = 1;
+    #[test_only]
+    /// Underwriter ID for generic test market.
+    const UNDERWRITER_ID_GENERIC: u64 = 7;
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
@@ -462,6 +495,42 @@ module econia::user {
         custodian_id: u64
     ): u128 {
         ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128)
+    }
+
+    #[test_only]
+    /// Register market accounts under test `@user`, return signer.
+    ///
+    /// * Pure coin self-custodied market account.
+    /// * Pure coin market account with delegated custodian.
+    /// * Generic self-custodian market account.
+    fun register_market_accounts_test():
+    signer
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Get signer for test user account.
+        let user = account::create_signer_with_capability(
+            &account::create_test_signer_cap(@user));
+        // Register a pure coin and a generic market, discarding most
+        // returns.
+        let (market_id_pure_coin, _, _, _, _, _, market_id_generic, _, _, _, _,
+             underwriter_id_generic) = registry::register_markets_test();
+        // Assert both market IDs and generic underwriter ID.
+        assert!(market_id_pure_coin == MARKET_ID_PURE_COIN, 0);
+        assert!(market_id_generic == MARKET_ID_GENERIC, 0);
+        assert!(underwriter_id_generic == UNDERWRITER_ID_GENERIC, 0);
+        // Register pure coin account.
+        register_market_account<BC, QC>(
+            &user, market_id_pure_coin, NO_CUSTODIAN);
+        // Set delegated custodian ID as registered.
+        registry::set_registered_custodian_test(DELEGATED_CUSTODIAN_ID);
+        register_market_account<BC, QC>( // Register delegated account.
+            &user, market_id_pure_coin, DELEGATED_CUSTODIAN_ID);
+        // Register generic asset account.
+        register_market_account_generic_base<QC>(
+            &user, market_id_generic, NO_CUSTODIAN);
+        user // Return signing user.
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -480,6 +549,86 @@ module econia::user {
                                       b"00000000000000000000000000000001",
                                       b"11000000000000000000000000000000",
                                       b"00000000000000000000000000000011"), 0);
+    }
+
+    #[test]
+    /// Verify valid returns.
+    fun test_market_account_getters()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Get market account IDs for test accounts.
+        let market_account_id_coin_self = get_market_account_id_test(
+            MARKET_ID_PURE_COIN, NO_CUSTODIAN);
+        let market_account_id_coin_delegated = get_market_account_id_test(
+            MARKET_ID_PURE_COIN, DELEGATED_CUSTODIAN_ID);
+        let market_account_id_generic_self = get_market_account_id_test(
+            MARKET_ID_GENERIC, NO_CUSTODIAN);
+        // Assert empty returns.
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_PURE_COIN) == vector[], 0);
+        assert!(get_all_market_account_ids_for_user(
+                @user) == vector[], 0);
+        // Assert false returns.
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_coin_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_coin_delegated), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_generic_self), 0);
+        assert!(!has_market_account_by_market_id(
+                @user, MARKET_ID_PURE_COIN), 0);
+        assert!(!has_market_account_by_market_id(
+                @user, MARKET_ID_GENERIC), 0);
+        register_market_accounts_test(); // Register market accounts.
+        // Assert empty returns.
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, 123) == vector[], 0);
+        // Get signer for another test user account.
+        let user_2 = account::create_signer_with_capability(
+            &account::create_test_signer_cap(@user_2));
+        // Move to another user empty market accounts resource.
+        move_to<MarketAccounts>(&user_2, MarketAccounts{
+            map: table::new(), custodians: tablist::new()});
+        // Assert empty returns.
+        assert!(get_all_market_account_ids_for_user(
+                @user_2) == vector[], 0);
+        // Assert non-empty returns.
+        let expected_ids = vector[market_account_id_coin_self,
+                                  market_account_id_coin_delegated];
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_PURE_COIN) == expected_ids, 0);
+        expected_ids = vector[market_account_id_generic_self];
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_GENERIC) == expected_ids, 0);
+        expected_ids = vector[market_account_id_coin_self,
+                              market_account_id_coin_delegated,
+                              market_account_id_generic_self];
+        assert!(get_all_market_account_ids_for_user(
+                @user) == expected_ids, 0);
+        // Assert true returns.
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_coin_self), 0);
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_coin_delegated), 0);
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_generic_self), 0);
+        assert!(has_market_account_by_market_id(
+                @user, MARKET_ID_PURE_COIN), 0);
+        assert!(has_market_account_by_market_id(
+                @user, MARKET_ID_GENERIC), 0);
+        // Assert false returns.
+        assert!(!has_market_account_by_market_account_id(
+                @user_2, market_account_id_coin_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user_2, market_account_id_coin_delegated), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user_2, market_account_id_generic_self), 0);
+        assert!(!has_market_account_by_market_id(
+                @user_2, MARKET_ID_PURE_COIN), 0);
+        assert!(!has_market_account_by_market_id(
+                @user_2, MARKET_ID_GENERIC), 0);
     }
 
     #[test(user = @user)]
@@ -537,40 +686,39 @@ module econia::user {
              base_name_generic_generic, lot_size_generic, tick_size_generic,
              min_size_generic, underwriter_id_generic) =
              registry::register_markets_test();
-        let margin_custodian_id = 123; // Declare custodian ID.
         // Set custodian ID as registered.
-        registry::set_registered_custodian_test(margin_custodian_id);
-        // Register market account for pure coin spot trading.
+        registry::set_registered_custodian_test(DELEGATED_CUSTODIAN_ID);
+        // Register pure coin market account.
         register_market_account<BC, QC>(
             user, market_id_pure_coin, NO_CUSTODIAN);
-        register_market_account<BC, QC>( // Register margin account
-            user, market_id_pure_coin, margin_custodian_id);
+        register_market_account<BC, QC>( // Register delegated account.
+            user, market_id_pure_coin, DELEGATED_CUSTODIAN_ID);
         // Register generic asset account.
         register_market_account_generic_base<QC>(
             user, market_id_generic, NO_CUSTODIAN);
         // Get market account IDs.
-        let market_account_id_spot = get_market_account_id_test(
+        let market_account_id_self = get_market_account_id_test(
             market_id_pure_coin, NO_CUSTODIAN);
-        let market_account_id_margin = get_market_account_id_test(
-            market_id_pure_coin, margin_custodian_id);
+        let market_account_id_delegated = get_market_account_id_test(
+            market_id_pure_coin, DELEGATED_CUSTODIAN_ID);
         let market_account_id_generic = get_market_account_id_test(
             market_id_generic, NO_CUSTODIAN);
         // Immutably borrow base coin collateral.
         let collateral_map_ref = &borrow_global<Collateral<BC>>(@user).map;
         // Assert entries only made for pure coin market accounts.
         assert!(coin::value(tablist::borrow(
-            collateral_map_ref, market_account_id_spot)) == 0, 0);
+            collateral_map_ref, market_account_id_self)) == 0, 0);
         assert!(coin::value(tablist::borrow(
-            collateral_map_ref, market_account_id_margin)) == 0, 0);
+            collateral_map_ref, market_account_id_delegated)) == 0, 0);
         assert!(!tablist::contains(
             collateral_map_ref, market_account_id_generic), 0);
         // Immutably borrow quote coin collateral.
         let collateral_map_ref = &borrow_global<Collateral<QC>>(@user).map;
         // Assert entries made for all market accounts.
         assert!(coin::value(tablist::borrow(
-            collateral_map_ref, market_account_id_spot)) == 0, 0);
+            collateral_map_ref, market_account_id_self)) == 0, 0);
         assert!(coin::value(tablist::borrow(
-            collateral_map_ref, market_account_id_margin)) == 0, 0);
+            collateral_map_ref, market_account_id_delegated)) == 0, 0);
         assert!(coin::value(tablist::borrow(
             collateral_map_ref, market_account_id_generic)) == 0, 0);
         let custodians_map_ref = // Immutably borrow custodians map.
@@ -578,8 +726,9 @@ module econia::user {
         // Immutably borrow custodians entry for pure coin market.
         let custodians_ref =
             tablist::borrow(custodians_map_ref, market_id_pure_coin);
-        assert!( // Assert listed custodians.
-            *custodians_ref == vector[NO_CUSTODIAN, margin_custodian_id], 0);
+        // Assert listed custodians.
+        assert!(*custodians_ref
+                == vector[NO_CUSTODIAN, DELEGATED_CUSTODIAN_ID], 0);
         // Immutably borrow custodians entry for generic market.
         custodians_ref =
             tablist::borrow(custodians_map_ref, market_id_generic);
@@ -588,9 +737,9 @@ module econia::user {
         // Immutably borrow market accounts map.
         let market_accounts_map_ref =
             &borrow_global<MarketAccounts>(@user).map;
-        // Immutably borrow pure coin spot market account.
+        // Immutably borrow pure coin self-custodied market account.
         let market_account_ref =
-            table::borrow(market_accounts_map_ref, market_account_id_spot);
+            table::borrow(market_accounts_map_ref, market_account_id_self);
         // Assert state.
         assert!(market_account_ref.base_type == type_info::type_of<BC>(), 0);
         assert!(market_account_ref.base_name_generic
@@ -611,9 +760,9 @@ module econia::user {
         assert!(market_account_ref.quote_total == 0, 0);
         assert!(market_account_ref.quote_available == 0, 0);
         assert!(market_account_ref.quote_ceiling == 0, 0);
-        // Immutably borrow pure coin margin market account.
-        market_account_ref =
-            table::borrow(market_accounts_map_ref, market_account_id_margin);
+        // Immutably borrow pure coin delegated market account.
+        market_account_ref = table::borrow(market_accounts_map_ref,
+                                           market_account_id_delegated);
         // Assert state.
         assert!(market_account_ref.base_type == type_info::type_of<BC>(), 0);
         assert!(market_account_ref.base_name_generic

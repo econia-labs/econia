@@ -10,6 +10,8 @@
 -  [Resource `MarketAccounts`](#0xc0deb00c_user_MarketAccounts)
 -  [Struct `Order`](#0xc0deb00c_user_Order)
 -  [Constants](#@Constants_0)
+-  [Function `deposit_coins`](#0xc0deb00c_user_deposit_coins)
+-  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
 -  [Function `get_all_market_account_ids_for_market_id`](#0xc0deb00c_user_get_all_market_account_ids_for_market_id)
     -  [Parameters](#@Parameters_1)
     -  [Returns](#@Returns_2)
@@ -24,6 +26,7 @@
     -  [Testing](#@Testing_9)
 -  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
     -  [Testing](#@Testing_10)
+-  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
     -  [Type parameters](#@Type_parameters_11)
     -  [Parameters](#@Parameters_12)
@@ -31,15 +34,20 @@
     -  [Testing](#@Testing_14)
 -  [Function `register_market_account_generic_base`](#0xc0deb00c_user_register_market_account_generic_base)
     -  [Testing](#@Testing_15)
--  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
+-  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
     -  [Type parameters](#@Type_parameters_16)
     -  [Parameters](#@Parameters_17)
     -  [Aborts](#@Aborts_18)
-    -  [Testing](#@Testing_19)
--  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
+    -  [Assumptions](#@Assumptions_19)
+-  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
     -  [Type parameters](#@Type_parameters_20)
     -  [Parameters](#@Parameters_21)
-    -  [Testing](#@Testing_22)
+    -  [Aborts](#@Aborts_22)
+    -  [Testing](#@Testing_23)
+-  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
+    -  [Type parameters](#@Type_parameters_24)
+    -  [Parameters](#@Parameters_25)
+    -  [Testing](#@Testing_26)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -289,6 +297,17 @@ An open order, either ask or bid.
 ## Constants
 
 
+<a name="0xc0deb00c_user_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 64, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_NIL"></a>
 
 Flag for null value when null defined as 0.
@@ -309,12 +328,72 @@ Custodian ID flag for no custodian.
 
 
 
+<a name="0xc0deb00c_user_NO_UNDERWRITER"></a>
+
+Underwriter ID flag for no underwriter.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_ASSET_NOT_IN_PAIR"></a>
+
+Asset type is not in trading pair for market.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_ASSET_NOT_IN_PAIR">E_ASSET_NOT_IN_PAIR</a>: u64 = 4;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING"></a>
+
+Deposit would overflow asset ceiling.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>: u64 = 5;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT"></a>
 
 Market account already exists.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_INVALID_UNDERWRITER"></a>
+
+Underwriter is not valid for indicated market.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_INVALID_UNDERWRITER">E_INVALID_UNDERWRITER</a>: u64 = 6;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
+
+No market account resource found.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNTS"></a>
+
+No market accounts resource found.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 2;
 </code></pre>
 
 
@@ -338,6 +417,87 @@ Number of bits market ID is shifted in market account ID.
 </code></pre>
 
 
+
+<a name="0xc0deb00c_user_deposit_coins"></a>
+
+## Function `deposit_coins`
+
+Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing coins.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, coins: <a href="_Coin">coin::Coin</a>&lt;CoinType&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;
+    CoinType
+&gt;(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    coins: Coin&lt;CoinType&gt;
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;CoinType&gt;(
+        user_address,
+        market_id,
+        custodian_id,
+        <a href="_value">coin::value</a>(&coins),
+        <a href="_some">option::some</a>(coins),
+        <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_deposit_generic_asset"></a>
+
+## Function `deposit_generic_asset`
+
+Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing generic asset.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, amount: u64, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_generic_asset">deposit_generic_asset</a>(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    amount: u64,
+    underwriter_capability_ref: &UnderwriterCapability
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;GenericAsset&gt;(
+        user_address,
+        market_id,
+        custodian_id,
+        amount,
+        <a href="_none">option::none</a>(),
+        <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">registry::get_underwriter_id</a>(underwriter_capability_ref));
+}
+</code></pre>
+
+
+
+</details>
 
 <a name="0xc0deb00c_user_get_all_market_account_ids_for_market_id"></a>
 
@@ -607,6 +767,46 @@ registered with given <code>market_id</code>.
 
 </details>
 
+<a name="0xc0deb00c_user_deposit_from_coinstore"></a>
+
+## Function `deposit_from_coinstore`
+
+Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>()</code> for depositing from an
+<code>aptos_framework::coin::CoinStore</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_from_coinstore">deposit_from_coinstore</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, custodian_id: u64, amount: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_from_coinstore">deposit_from_coinstore</a>&lt;
+    CoinType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    custodian_id: u64,
+    amount: u64
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="user.md#0xc0deb00c_user_deposit_coins">deposit_coins</a>&lt;CoinType&gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        market_id,
+        custodian_id,
+        <a href="_withdraw">coin::withdraw</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>, amount));
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_market_account"></a>
 
 ## Function `register_market_account`
@@ -741,6 +941,139 @@ Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register
 
 </details>
 
+<a name="0xc0deb00c_user_deposit_asset"></a>
+
+## Function `deposit_asset`
+
+Deposit an asset to a user's market account.
+
+Update asset counts, deposit optional coins as collateral.
+
+
+<a name="@Type_parameters_16"></a>
+
+### Type parameters
+
+
+* <code>AssetType</code>: Asset type to deposit, <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code>
+if a generic asset.
+
+
+<a name="@Parameters_17"></a>
+
+### Parameters
+
+
+* <code>user_address</code>: Address of user to deposit for.
+* <code>market_id</code>: Corresponding market ID.
+* <code>custodian_id</code>: Custodian ID for corresponding market account.
+* <code>amount</code>: Amount to deposit.
+* <code>optional_coins</code>: Optional coins to deposit.
+* <code>underwriter_id</code>: Underwriter ID for market, ignored when
+depositing coins.
+
+
+<a name="@Aborts_18"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a></code>: No market accounts resource found.
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
+* <code><a href="user.md#0xc0deb00c_user_E_ASSET_NOT_IN_PAIR">E_ASSET_NOT_IN_PAIR</a></code>: Asset type is not in trading pair for
+market.
+* <code><a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a></code>: Deposit would overflow
+asset ceiling.
+* <code><a href="user.md#0xc0deb00c_user_E_INVALID_UNDERWRITER">E_INVALID_UNDERWRITER</a></code>: Underwriter is not valid for
+indicated market, in the case of a generic asset deposit.
+
+
+<a name="@Assumptions_19"></a>
+
+### Assumptions
+
+
+* If optional coins provided, their value equals <code>amount</code>.
+* When depositing coins, if a market account exists, then so
+does a corresponding collateral map entry.
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;AssetType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, amount: u64, optional_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;AssetType&gt;&gt;, underwriter_id: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>&lt;
+    AssetType
+&gt;(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    amount: u64,
+    optional_coins: Option&lt;Coin&lt;AssetType&gt;&gt;,
+    underwriter_id: u64
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
+    // Mutably borrow market accounts map.
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
+    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given ID.
+    <b>assert</b>!(<a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id),
+           <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+        <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
+    // Get asset type info.
+    <b>let</b> asset_type = <a href="_type_of">type_info::type_of</a>&lt;AssetType&gt;();
+    // Get asset total, available, and ceiling amounts based on <b>if</b>
+    // asset is base or quote for trading pair, aborting <b>if</b> neither.
+    <b>let</b> (total_ref_mut, available_ref_mut, ceiling_ref_mut) =
+        <b>if</b> (asset_type == market_account_ref_mut.base_type) (
+            &<b>mut</b> market_account_ref_mut.base_total,
+            &<b>mut</b> market_account_ref_mut.base_available,
+            &<b>mut</b> market_account_ref_mut.base_ceiling
+        ) <b>else</b> <b>if</b> (asset_type == market_account_ref_mut.quote_type) (
+            &<b>mut</b> market_account_ref_mut.quote_total,
+            &<b>mut</b> market_account_ref_mut.quote_available,
+            &<b>mut</b> market_account_ref_mut.quote_ceiling
+        ) <b>else</b> <b>abort</b> <a href="user.md#0xc0deb00c_user_E_ASSET_NOT_IN_PAIR">E_ASSET_NOT_IN_PAIR</a>;
+    <b>assert</b>!( // Assert deposit does not overflow asset ceiling.
+        ((*ceiling_ref_mut <b>as</b> u128) + (amount <b>as</b> u128)) &lt;= (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128),
+        <a href="user.md#0xc0deb00c_user_E_DEPOSIT_OVERFLOW_ASSET_CEILING">E_DEPOSIT_OVERFLOW_ASSET_CEILING</a>);
+    *total_ref_mut = *total_ref_mut + amount; // Update total.
+    // Update available asset amount.
+    *available_ref_mut = *available_ref_mut + amount;
+    *ceiling_ref_mut = *ceiling_ref_mut + amount; // Update ceiling.
+    <b>if</b> (<a href="_is_some">option::is_some</a>(&optional_coins)) { // If asset is <a href="">coin</a>:
+        // Mutably borrow collateral map.
+        <b>let</b> collateral_map_ref_mut = &<b>mut</b> <b>borrow_global_mut</b>&lt;
+            <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;AssetType&gt;&gt;(user_address).map;
+        // Mutably borrow collateral for market <a href="">account</a>.
+        <b>let</b> collateral_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
+            collateral_map_ref_mut, market_account_id);
+        <a href="_merge">coin::merge</a>( // Merge optional coins into collateral.
+            collateral_ref_mut, <a href="_destroy_some">option::destroy_some</a>(optional_coins));
+    } <b>else</b> { // If asset is not <a href="">coin</a>:
+        <b>assert</b>!(underwriter_id == market_account_ref_mut.underwriter_id,
+                <a href="user.md#0xc0deb00c_user_E_INVALID_UNDERWRITER">E_INVALID_UNDERWRITER</a>); // Assert underwriter ID.
+        <a href="_destroy_none">option::destroy_none</a>(optional_coins); // Destroy <a href="">option</a>.
+    };
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_register_market_account_account_entries"></a>
 
 ## Function `register_market_account_account_entries`
@@ -750,7 +1083,7 @@ Register market account entries for given market account info.
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_16"></a>
+<a name="@Type_parameters_20"></a>
 
 ### Type parameters
 
@@ -759,7 +1092,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_17"></a>
+<a name="@Parameters_21"></a>
 
 ### Parameters
 
@@ -772,7 +1105,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_18"></a>
+<a name="@Aborts_22"></a>
 
 ### Aborts
 
@@ -780,7 +1113,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_23"></a>
 
 ### Testing
 
@@ -865,7 +1198,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_20"></a>
+<a name="@Type_parameters_24"></a>
 
 ### Type parameters
 
@@ -873,7 +1206,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_21"></a>
+<a name="@Parameters_25"></a>
 
 ### Parameters
 
@@ -883,7 +1216,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_22"></a>
+<a name="@Testing_26"></a>
 
 ### Testing
 

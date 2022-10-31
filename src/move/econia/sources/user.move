@@ -6,8 +6,8 @@ module econia::user {
     use aptos_framework::table::{Self, Table};
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::tablist::{Self, Tablist};
-    use econia::registry::{Self, GenericAsset};
-    use std::option;
+    use econia::registry::{Self, GenericAsset, UnderwriterCapability};
+    use std::option::{Self, Option};
     use std::string::String;
     use std::signer::address_of;
     use std::vector;
@@ -104,21 +104,77 @@ module econia::user {
     const E_EXISTS_MARKET_ACCOUNT: u64 = 0;
     /// Custodian ID has not been registered.
     const E_UNREGISTERED_CUSTODIAN: u64 = 1;
+    /// No market accounts resource found.
+    const E_NO_MARKET_ACCOUNTS: u64 = 2;
+    /// No market account resource found.
+    const E_NO_MARKET_ACCOUNT: u64 = 3;
+    /// Asset type is not in trading pair for market.
+    const E_ASSET_NOT_IN_PAIR: u64 = 4;
+    /// Deposit would overflow asset ceiling.
+    const E_DEPOSIT_OVERFLOW_ASSET_CEILING: u64 = 5;
+    /// Underwriter is not valid for indicated market.
+    const E_INVALID_UNDERWRITER: u64 = 6;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Custodian ID flag for no custodian.
-    const NO_CUSTODIAN: u64 = 0;
+    /// `u64` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 64, 2))`.
+    const HI_64: u64 = 0xffffffffffffffff;
     /// Flag for null value when null defined as 0.
     const NIL: u64 = 0;
+    /// Custodian ID flag for no custodian.
+    const NO_CUSTODIAN: u64 = 0;
+    /// Underwriter ID flag for no underwriter.
+    const NO_UNDERWRITER: u64 = 0;
     /// Number of bits market ID is shifted in market account ID.
     const SHIFT_MARKET_ID: u8 = 64;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Wrapped call to `deposit_asset()` for depositing coins.
+    public fun deposit_coins<
+        CoinType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        coins: Coin<CoinType>
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        deposit_asset<CoinType>(
+            user_address,
+            market_id,
+            custodian_id,
+            coin::value(&coins),
+            option::some(coins),
+            NO_UNDERWRITER);
+    }
+
+    /// Wrapped call to `deposit_asset()` for depositing generic asset.
+    public fun deposit_generic_asset(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+        underwriter_capability_ref: &UnderwriterCapability
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        deposit_asset<GenericAsset>(
+            user_address,
+            market_id,
+            custodian_id,
+            amount,
+            option::none(),
+            registry::get_underwriter_id(underwriter_capability_ref));
+    }
 
     /// Return all market account IDs associated with market ID.
     ///
@@ -273,6 +329,27 @@ module econia::user {
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[cmd]
+    /// Wrapped call to `deposit_coins()` for depositing from an
+    /// `aptos_framework::coin::CoinStore`.
+    public entry fun deposit_from_coinstore<
+        CoinType
+    >(
+        user: &signer,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        deposit_coins<CoinType>(
+            address_of(user),
+            market_id,
+            custodian_id,
+            coin::withdraw<CoinType>(user, amount));
+    }
+
+    #[cmd]
     /// Register market account for indicated market and custodian.
     ///
     /// # Type parameters
@@ -351,6 +428,103 @@ module econia::user {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Deposit an asset to a user's market account.
+    ///
+    /// Update asset counts, deposit optional coins as collateral.
+    ///
+    /// # Type parameters
+    ///
+    /// * `AssetType`: Asset type to deposit, `registry::GenericAsset`
+    ///   if a generic asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: Address of user to deposit for.
+    /// * `market_id`: Corresponding market ID.
+    /// * `custodian_id`: Custodian ID for corresponding market account.
+    /// * `amount`: Amount to deposit.
+    /// * `optional_coins`: Optional coins to deposit.
+    /// * `underwriter_id`: Underwriter ID for market, ignored when
+    ///   depositing coins.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    /// * `E_ASSET_NOT_IN_PAIR`: Asset type is not in trading pair for
+    ///    market.
+    /// * `E_DEPOSIT_OVERFLOW_ASSET_CEILING`: Deposit would overflow
+    ///   asset ceiling.
+    /// * `E_INVALID_UNDERWRITER`: Underwriter is not valid for
+    ///   indicated market, in the case of a generic asset deposit.
+    ///
+    /// # Assumptions
+    ///
+    /// * If optional coins provided, their value equals `amount`.
+    /// * When depositing coins, if a market account exists, then so
+    ///   does a corresponding collateral map entry.
+    fun deposit_asset<
+        AssetType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+        optional_coins: Option<Coin<AssetType>>,
+        underwriter_id: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Assert user has market account for given ID.
+        assert!(table::contains(market_accounts_map_ref_mut, market_account_id),
+               E_NO_MARKET_ACCOUNT);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Get asset type info.
+        let asset_type = type_info::type_of<AssetType>();
+        // Get asset total, available, and ceiling amounts based on if
+        // asset is base or quote for trading pair, aborting if neither.
+        let (total_ref_mut, available_ref_mut, ceiling_ref_mut) =
+            if (asset_type == market_account_ref_mut.base_type) (
+                &mut market_account_ref_mut.base_total,
+                &mut market_account_ref_mut.base_available,
+                &mut market_account_ref_mut.base_ceiling
+            ) else if (asset_type == market_account_ref_mut.quote_type) (
+                &mut market_account_ref_mut.quote_total,
+                &mut market_account_ref_mut.quote_available,
+                &mut market_account_ref_mut.quote_ceiling
+            ) else abort E_ASSET_NOT_IN_PAIR;
+        assert!( // Assert deposit does not overflow asset ceiling.
+            ((*ceiling_ref_mut as u128) + (amount as u128)) <= (HI_64 as u128),
+            E_DEPOSIT_OVERFLOW_ASSET_CEILING);
+        *total_ref_mut = *total_ref_mut + amount; // Update total.
+        // Update available asset amount.
+        *available_ref_mut = *available_ref_mut + amount;
+        *ceiling_ref_mut = *ceiling_ref_mut + amount; // Update ceiling.
+        if (option::is_some(&optional_coins)) { // If asset is coin:
+            // Mutably borrow collateral map.
+            let collateral_map_ref_mut = &mut borrow_global_mut<
+                Collateral<AssetType>>(user_address).map;
+            // Mutably borrow collateral for market account.
+            let collateral_ref_mut = tablist::borrow_mut(
+                collateral_map_ref_mut, market_account_id);
+            coin::merge( // Merge optional coins into collateral.
+                collateral_ref_mut, option::destroy_some(optional_coins));
+        } else { // If asset is not coin:
+            assert!(underwriter_id == market_account_ref_mut.underwriter_id,
+                    E_INVALID_UNDERWRITER); // Assert underwriter ID.
+            option::destroy_none(optional_coins); // Destroy option.
+        };
+    }
 
     /// Register market account entries for given market account info.
     ///

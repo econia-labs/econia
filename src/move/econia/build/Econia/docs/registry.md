@@ -85,6 +85,8 @@ IDs are 1-indexed too.
 * <code><a href="registry.md#0xc0deb00c_registry_set_recognized_market">set_recognized_market</a>()</code>
 * <code><a href="registry.md#0xc0deb00c_registry_set_recognized_markets">set_recognized_markets</a>()</code>
 
+(These are public entry functions.)
+
 
 <a name="@Dependency_charts_5"></a>
 
@@ -1628,7 +1630,7 @@ given trading pair.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_remove_recognized_market">remove_recognized_market</a>(
+<pre><code><b>public</b> entry <b>fun</b> <a href="registry.md#0xc0deb00c_registry_remove_recognized_market">remove_recognized_market</a>(
     <a href="">account</a>: &<a href="">signer</a>,
     market_id: u64
 ) <b>acquires</b>
@@ -1695,7 +1697,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_remove_recognized_mar
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_remove_recognized_markets">remove_recognized_markets</a>(<a href="">account</a>: &<a href="">signer</a>, market_ids_ref: &<a href="">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_remove_recognized_markets">remove_recognized_markets</a>(<a href="">account</a>: &<a href="">signer</a>, market_ids: <a href="">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1704,19 +1706,19 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_remove_recognized_mar
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_remove_recognized_markets">remove_recognized_markets</a>(
+<pre><code><b>public</b> entry <b>fun</b> <a href="registry.md#0xc0deb00c_registry_remove_recognized_markets">remove_recognized_markets</a>(
     <a href="">account</a>: &<a href="">signer</a>,
-    market_ids_ref: &<a href="">vector</a>&lt;u64&gt;
+    market_ids: <a href="">vector</a>&lt;u64&gt;
 ) <b>acquires</b>
     <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a>,
     <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>
 {
     // Get number of markets <b>to</b> remove.
-    <b>let</b> n_markets = <a href="_length">vector::length</a>(market_ids_ref);
+    <b>let</b> n_markets = <a href="_length">vector::length</a>(&market_ids);
     <b>let</b> i = 0; // Declare <b>loop</b> counter.
     <b>while</b> (i &lt; n_markets) { // Loop over all markets in <a href="">vector</a>:
         // Get market ID <b>to</b> remove.
-        <b>let</b> market_id = *<a href="_borrow">vector::borrow</a>(market_ids_ref, i);
+        <b>let</b> market_id = *<a href="_borrow">vector::borrow</a>(&market_ids, i);
         // Remove <b>as</b> recognized market.
         <a href="registry.md#0xc0deb00c_registry_remove_recognized_market">remove_recognized_market</a>(<a href="">account</a>, market_id);
         i = i + 1; // Increment <b>loop</b> counter.
@@ -1788,7 +1790,7 @@ given trading pair.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_set_recognized_market">set_recognized_market</a>(
+<pre><code><b>public</b> entry <b>fun</b> <a href="registry.md#0xc0deb00c_registry_set_recognized_market">set_recognized_market</a>(
     <a href="">account</a>: &<a href="">signer</a>,
     market_id: u64
 ) <b>acquires</b>
@@ -1856,7 +1858,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_set_recognized_market
 * <code>test_set_remove_check_recognized_markets()</code>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_set_recognized_markets">set_recognized_markets</a>(<a href="">account</a>: &<a href="">signer</a>, market_ids_ref: &<a href="">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_set_recognized_markets">set_recognized_markets</a>(<a href="">account</a>: &<a href="">signer</a>, market_ids: <a href="">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1865,19 +1867,19 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_set_recognized_market
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="registry.md#0xc0deb00c_registry_set_recognized_markets">set_recognized_markets</a>(
+<pre><code><b>public</b> entry <b>fun</b> <a href="registry.md#0xc0deb00c_registry_set_recognized_markets">set_recognized_markets</a>(
     <a href="">account</a>: &<a href="">signer</a>,
-    market_ids_ref: &<a href="">vector</a>&lt;u64&gt;
+    market_ids: <a href="">vector</a>&lt;u64&gt;
 ) <b>acquires</b>
     <a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a>,
     <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>
 {
     // Get number of markets <b>to</b> set.
-    <b>let</b> n_markets = <a href="_length">vector::length</a>(market_ids_ref);
+    <b>let</b> n_markets = <a href="_length">vector::length</a>(&market_ids);
     <b>let</b> i = 0; // Declare <b>loop</b> counter.
     <b>while</b> (i &lt; n_markets) { // Loop over all markets in <a href="">vector</a>:
         // Get market ID <b>to</b> set.
-        <b>let</b> market_id = *<a href="_borrow">vector::borrow</a>(market_ids_ref, i);
+        <b>let</b> market_id = *<a href="_borrow">vector::borrow</a>(&market_ids, i);
         // Set <b>as</b> recognized market.
         <a href="registry.md#0xc0deb00c_registry_set_recognized_market">set_recognized_market</a>(<a href="">account</a>, market_id);
         i = i + 1; // Increment <b>loop</b> counter.

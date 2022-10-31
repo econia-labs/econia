@@ -60,6 +60,8 @@
 /// * `set_recognized_market()`
 /// * `set_recognized_markets()`
 ///
+/// (These are public entry functions.)
+///
 /// # Dependency charts
 ///
 /// The below dependency charts use `mermaid.js` syntax, which can be
@@ -635,6 +637,11 @@ module econia::registry {
         UnderwriterCapability{underwriter_id}
     }
 
+    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
     /// Remove market having given ID from recognized markets list.
     ///
     /// # Parameters
@@ -665,7 +672,7 @@ module econia::registry {
     /// * `test_remove_recognized_market_not_econia()`
     /// * `test_remove_recognized_market_wrong_market()`
     /// * `test_set_remove_check_recognized_markets()`
-    public fun remove_recognized_market(
+    public entry fun remove_recognized_market(
         account: &signer,
         market_id: u64
     ) acquires
@@ -712,30 +719,32 @@ module econia::registry {
             trading_pair, recognized_market_info: option::none()});
     }
 
+    #[cmd]
     /// Wrapper for `remove_recognized_market()` with market IDs vector.
     ///
     /// # Testing
     ///
     /// * `test_set_remove_check_recognized_markets()`
-    public fun remove_recognized_markets(
+    public entry fun remove_recognized_markets(
         account: &signer,
-        market_ids_ref: &vector<u64>
+        market_ids: vector<u64>
     ) acquires
         RecognizedMarkets,
         Registry
     {
         // Get number of markets to remove.
-        let n_markets = vector::length(market_ids_ref);
+        let n_markets = vector::length(&market_ids);
         let i = 0; // Declare loop counter.
         while (i < n_markets) { // Loop over all markets in vector:
             // Get market ID to remove.
-            let market_id = *vector::borrow(market_ids_ref, i);
+            let market_id = *vector::borrow(&market_ids, i);
             // Remove as recognized market.
             remove_recognized_market(account, market_id);
             i = i + 1; // Increment loop counter.
         }
     }
 
+    #[cmd]
     /// Set market having given ID as recognized market.
     ///
     /// # Parameters
@@ -761,7 +770,7 @@ module econia::registry {
     /// * `test_set_recognized_market_not_econia()`
     /// * `test_set_recognized_market_update()`
     /// * `test_set_remove_check_recognized_markets()`
-    public fun set_recognized_market(
+    public entry fun set_recognized_market(
         account: &signer,
         market_id: u64
     ) acquires
@@ -809,31 +818,32 @@ module econia::registry {
             trading_pair, recognized_market_info: optional_market_info});
     }
 
+    #[cmd]
     /// Wrapper for `set_recognized_market()` with market IDs vector.
     ///
     /// # Testing
     ///
     /// * `test_set_remove_check_recognized_markets()`
-    public fun set_recognized_markets(
+    public entry fun set_recognized_markets(
         account: &signer,
-        market_ids_ref: &vector<u64>
+        market_ids: vector<u64>
     ) acquires
         RecognizedMarkets,
         Registry
     {
         // Get number of markets to set.
-        let n_markets = vector::length(market_ids_ref);
+        let n_markets = vector::length(&market_ids);
         let i = 0; // Declare loop counter.
         while (i < n_markets) { // Loop over all markets in vector:
             // Get market ID to set.
-            let market_id = *vector::borrow(market_ids_ref, i);
+            let market_id = *vector::borrow(&market_ids, i);
             // Set as recognized market.
             set_recognized_market(account, market_id);
             i = i + 1; // Increment loop counter.
         }
     }
 
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -1906,7 +1916,7 @@ module econia::registry {
         // Drop underwriter capability.
         drop_underwriter_capability_test(underwriter_capability);
         // Set both as recognized markets.
-        set_recognized_markets(econia, &vector[1, 2]);
+        set_recognized_markets(econia, vector[1, 2]);
         // Assert existence checks.
         assert!(
             has_recognized_market_base_generic_by_type<QC>(base_name_generic),
@@ -1930,7 +1940,7 @@ module econia::registry {
         assert!(min_size == min_size_2, 0);
         assert!(underwriter_id == NO_UNDERWRITER, 0);
         // Remove both recognized markets.
-        remove_recognized_markets(econia, &vector[1, 2]);
+        remove_recognized_markets(econia, vector[1, 2]);
         // Assert existence checks.
         assert!(
             !has_recognized_market_base_generic_by_type<QC>(base_name_generic),

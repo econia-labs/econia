@@ -68,42 +68,44 @@
     -  [Aborts](#@Aborts_35)
     -  [Assumptions](#@Assumptions_36)
     -  [Expected value testing](#@Expected_value_testing_37)
+    -  [Failure testing](#@Failure_testing_38)
 -  [Function `change_order_size_internal`](#0xc0deb00c_user_change_order_size_internal)
-    -  [Parameters](#@Parameters_38)
-    -  [Aborts](#@Aborts_39)
-    -  [Assumptions](#@Assumptions_40)
-    -  [Testing](#@Testing_41)
+    -  [Parameters](#@Parameters_39)
+    -  [Aborts](#@Aborts_40)
+    -  [Assumptions](#@Assumptions_41)
+    -  [Testing](#@Testing_42)
 -  [Function `place_order_internal`](#0xc0deb00c_user_place_order_internal)
-    -  [Parameters](#@Parameters_42)
-    -  [Terminology](#@Terminology_43)
-    -  [Assumptions](#@Assumptions_44)
-    -  [Aborts](#@Aborts_45)
-    -  [Expected value testing](#@Expected_value_testing_46)
+    -  [Parameters](#@Parameters_43)
+    -  [Terminology](#@Terminology_44)
+    -  [Assumptions](#@Assumptions_45)
+    -  [Aborts](#@Aborts_46)
+    -  [Expected value testing](#@Expected_value_testing_47)
+    -  [Failure testing](#@Failure_testing_48)
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Type parameters](#@Type_parameters_47)
-    -  [Parameters](#@Parameters_48)
-    -  [Aborts](#@Aborts_49)
-    -  [Assumptions](#@Assumptions_50)
-    -  [Testing](#@Testing_51)
+    -  [Type parameters](#@Type_parameters_49)
+    -  [Parameters](#@Parameters_50)
+    -  [Aborts](#@Aborts_51)
+    -  [Assumptions](#@Assumptions_52)
+    -  [Testing](#@Testing_53)
 -  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
-    -  [Type parameters](#@Type_parameters_52)
-    -  [Parameters](#@Parameters_53)
-    -  [Aborts](#@Aborts_54)
-    -  [Testing](#@Testing_55)
+    -  [Type parameters](#@Type_parameters_54)
+    -  [Parameters](#@Parameters_55)
+    -  [Aborts](#@Aborts_56)
+    -  [Testing](#@Testing_57)
 -  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
-    -  [Type parameters](#@Type_parameters_56)
-    -  [Parameters](#@Parameters_57)
-    -  [Testing](#@Testing_58)
+    -  [Type parameters](#@Type_parameters_58)
+    -  [Parameters](#@Parameters_59)
+    -  [Testing](#@Testing_60)
 -  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
-    -  [Type parameters](#@Type_parameters_59)
-    -  [Parameters](#@Parameters_60)
-    -  [Returns](#@Returns_61)
-    -  [Aborts](#@Aborts_62)
-    -  [Testing](#@Testing_63)
--  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
-    -  [Testing](#@Testing_64)
--  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Type parameters](#@Type_parameters_61)
+    -  [Parameters](#@Parameters_62)
+    -  [Returns](#@Returns_63)
+    -  [Aborts](#@Aborts_64)
     -  [Testing](#@Testing_65)
+-  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
+    -  [Testing](#@Testing_66)
+-  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Testing](#@Testing_67)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -1752,6 +1754,14 @@ order.
 * <code>test_place_cancel_order_stack()</code>
 
 
+<a name="@Failure_testing_38"></a>
+
+### Failure testing
+
+
+* <code>test_cancel_order_interal_mismatch()</code>
+
+
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, price: u64, order_access_key: u64, market_order_id: u128)
 </code></pre>
 
@@ -1831,7 +1841,7 @@ order.
 Change the size of a user's open order on given side.
 
 
-<a name="@Parameters_38"></a>
+<a name="@Parameters_39"></a>
 
 ### Parameters
 
@@ -1846,7 +1856,7 @@ Change the size of a user's open order on given side.
 * <code>market_order_id</code>: Market order ID for order book lookup.
 
 
-<a name="@Aborts_39"></a>
+<a name="@Aborts_40"></a>
 
 ### Aborts
 
@@ -1854,7 +1864,7 @@ Change the size of a user's open order on given side.
 * <code><a href="user.md#0xc0deb00c_user_E_CHANGE_ORDER_NO_CHANGE">E_CHANGE_ORDER_NO_CHANGE</a></code>: No change in order size.
 
 
-<a name="@Assumptions_40"></a>
+<a name="@Assumptions_41"></a>
 
 ### Assumptions
 
@@ -1867,13 +1877,14 @@ successfully to begin with.
 order.
 
 
-<a name="@Testing_41"></a>
+<a name="@Testing_42"></a>
 
 ### Testing
 
 
 * <code>test_change_order_size_internal_ask()</code>
 * <code>test_change_order_size_internal_bid()</code>
+* <code>test_change_order_size_internal_no_change()</code>
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_change_order_size_internal">change_order_size_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, new_size: u64, price: u64, order_access_key: u64, market_order_id: u128)
@@ -1935,7 +1946,7 @@ Allocates a new order if the inactive order stack is empty,
 otherwise pops one off the top of the stack and overwrites it.
 
 
-<a name="@Parameters_42"></a>
+<a name="@Parameters_43"></a>
 
 ### Parameters
 
@@ -1949,7 +1960,7 @@ otherwise pops one off the top of the stack and overwrites it.
 * <code>market_order_id</code>: Market order ID for order book access.
 
 
-<a name="@Terminology_43"></a>
+<a name="@Terminology_44"></a>
 
 ### Terminology
 
@@ -1958,7 +1969,7 @@ otherwise pops one off the top of the stack and overwrites it.
 * The "outbound" asset is the asset traded away.
 
 
-<a name="@Assumptions_44"></a>
+<a name="@Assumptions_45"></a>
 
 ### Assumptions
 
@@ -1967,7 +1978,7 @@ otherwise pops one off the top of the stack and overwrites it.
 * <code>price</code> matches that encoded in <code>market_order_id</code>.
 
 
-<a name="@Aborts_45"></a>
+<a name="@Aborts_46"></a>
 
 ### Aborts
 
@@ -1983,7 +1994,7 @@ received from trade.
 * <code><a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Expected_value_testing_46"></a>
+<a name="@Expected_value_testing_47"></a>
 
 ### Expected value testing
 
@@ -1991,6 +2002,21 @@ received from trade.
 * <code>test_place_cancel_order_ask()</code>
 * <code>test_place_cancel_order_bid()</code>
 * <code>test_place_cancel_order_stack()</code>
+
+
+<a name="@Failure_testing_48"></a>
+
+### Failure testing
+
+
+* <code>test_place_order_internal_in_overflow()</code>
+* <code>test_place_order_internal_no_account()</code>
+* <code>test_place_order_internal_no_accounts()</code>
+* <code>test_place_order_internal_out_underflow()</code>
+* <code>test_place_order_internal_price_hi()</code>
+* <code>test_place_order_internal_price_0()</code>
+* <code>test_place_order_internal_size_lo()</code>
+* <code>test_place_order_internal_ticks_overflow()</code>
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, size: u64, price: u64, market_order_id: u128)
@@ -2095,7 +2121,7 @@ Deposit an asset to a user's market account.
 Update asset counts, deposit optional coins as collateral.
 
 
-<a name="@Type_parameters_47"></a>
+<a name="@Type_parameters_49"></a>
 
 ### Type parameters
 
@@ -2104,7 +2130,7 @@ Update asset counts, deposit optional coins as collateral.
 if a generic asset.
 
 
-<a name="@Parameters_48"></a>
+<a name="@Parameters_50"></a>
 
 ### Parameters
 
@@ -2118,7 +2144,7 @@ if a generic asset.
 depositing coins.
 
 
-<a name="@Aborts_49"></a>
+<a name="@Aborts_51"></a>
 
 ### Aborts
 
@@ -2133,7 +2159,7 @@ asset ceiling.
 indicated market, in the case of a generic asset deposit.
 
 
-<a name="@Assumptions_50"></a>
+<a name="@Assumptions_52"></a>
 
 ### Assumptions
 
@@ -2143,7 +2169,7 @@ indicated market, in the case of a generic asset deposit.
 does a corresponding collateral map entry.
 
 
-<a name="@Testing_51"></a>
+<a name="@Testing_53"></a>
 
 ### Testing
 
@@ -2243,7 +2269,7 @@ Register market account entries for given market account info.
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_52"></a>
+<a name="@Type_parameters_54"></a>
 
 ### Type parameters
 
@@ -2252,7 +2278,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_53"></a>
+<a name="@Parameters_55"></a>
 
 ### Parameters
 
@@ -2265,7 +2291,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_54"></a>
+<a name="@Aborts_56"></a>
 
 ### Aborts
 
@@ -2273,7 +2299,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_55"></a>
+<a name="@Testing_57"></a>
 
 ### Testing
 
@@ -2358,7 +2384,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_56"></a>
+<a name="@Type_parameters_58"></a>
 
 ### Type parameters
 
@@ -2366,7 +2392,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_57"></a>
+<a name="@Parameters_59"></a>
 
 ### Parameters
 
@@ -2376,7 +2402,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_58"></a>
+<a name="@Testing_60"></a>
 
 ### Testing
 
@@ -2426,7 +2452,7 @@ Withdraw an asset from a user's market account.
 Update asset counts, withdraw optional collateral coins.
 
 
-<a name="@Type_parameters_59"></a>
+<a name="@Type_parameters_61"></a>
 
 ### Type parameters
 
@@ -2435,7 +2461,7 @@ Update asset counts, withdraw optional collateral coins.
 if a generic asset.
 
 
-<a name="@Parameters_60"></a>
+<a name="@Parameters_62"></a>
 
 ### Parameters
 
@@ -2448,7 +2474,7 @@ if a generic asset.
 withdrawing coins.
 
 
-<a name="@Returns_61"></a>
+<a name="@Returns_63"></a>
 
 ### Returns
 
@@ -2456,7 +2482,7 @@ withdrawing coins.
 * <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional collateral coins.
 
 
-<a name="@Aborts_62"></a>
+<a name="@Aborts_64"></a>
 
 ### Aborts
 
@@ -2471,7 +2497,7 @@ withdrawal.
 indicated market, in the case of a generic asset withdrawal.
 
 
-<a name="@Testing_63"></a>
+<a name="@Testing_65"></a>
 
 ### Testing
 
@@ -2570,7 +2596,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
 asset.
 
 
-<a name="@Testing_64"></a>
+<a name="@Testing_66"></a>
 
 ### Testing
 
@@ -2617,7 +2643,7 @@ asset.
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing coins.
 
 
-<a name="@Testing_65"></a>
+<a name="@Testing_67"></a>
 
 ### Testing
 

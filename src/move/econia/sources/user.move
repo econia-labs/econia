@@ -776,6 +776,10 @@ module econia::user {
     /// * `test_place_cancel_order_ask()`
     /// * `test_place_cancel_order_bid()`
     /// * `test_place_cancel_order_stack()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_cancel_order_internal_mismatch()`
     public(friend) fun cancel_order_internal(
         user_address: address,
         market_id: u64,
@@ -864,6 +868,7 @@ module econia::user {
     ///
     /// * `test_change_order_size_internal_ask()`
     /// * `test_change_order_size_internal_bid()`
+    /// * `test_change_order_size_internal_no_change()`
     public(friend) fun change_order_size_internal(
         user_address: address,
         market_id: u64,
@@ -941,6 +946,17 @@ module econia::user {
     /// * `test_place_cancel_order_ask()`
     /// * `test_place_cancel_order_bid()`
     /// * `test_place_cancel_order_stack()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_place_order_internal_in_overflow()`
+    /// * `test_place_order_internal_no_account()`
+    /// * `test_place_order_internal_no_accounts()`
+    /// * `test_place_order_internal_out_underflow()`
+    /// * `test_place_order_internal_price_0()`
+    /// * `test_place_order_internal_price_hi()`
+    /// * `test_place_order_internal_size_lo()`
+    /// * `test_place_order_internal_ticks_overflow()`
     public(friend) fun place_order_internal(
         user_address: address,
         market_id: u64,
@@ -1655,6 +1671,33 @@ module econia::user {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for market account ID mismatch.
+    fun test_cancel_order_internal_mismatch()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id = 123;
+        let size            = MIN_SIZE_PURE_COIN;
+        let price           = 1;
+        let side            = BID;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Attempt invalid cancellation.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                              price, 1, market_order_id + 1);
+    }
+
+    #[test]
     /// Verify state updates for changing ask size. Based on
     /// `test_place_cancel_order_ask()`.
     fun test_change_order_size_internal_ask()
@@ -1738,6 +1781,33 @@ module econia::user {
         assert!(quote_total     == QUOTE_START, 0);
         assert!(quote_available == QUOTE_START - quote_delta, 0);
         assert!(quote_ceiling   == QUOTE_START, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for no change in size.
+    fun test_change_order_size_internal_no_change()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id = 123;
+        let size            = MIN_SIZE_PURE_COIN;
+        let price           = 1;
+        let side            = BID;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        change_order_size_internal( // Attempt invalid order size change.
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            1, market_order_id);
     }
 
     #[test]
@@ -2228,6 +2298,162 @@ module econia::user {
             @user, market_account_id, side, 2);
         assert!(market_order_id_r == market_order_id_3, 0);
         assert!(size_r == size, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for overflowed inbound asset.
+    fun test_place_order_internal_in_overflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 1;
+        let side             = BID;
+        // Calculate minimum base fill amount for price of 1.
+        let min_fill_base = MIN_SIZE_PURE_COIN * LOT_SIZE_PURE_COIN;
+        // Calculate starting base coin amount for barely overflowing.
+        let base_start = HI_64 - min_fill_base + 1;
+        // Deposit base coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(base_start));
+        // Deposit max quote coins.
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(HI_64));
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account resource.
+    fun test_place_order_internal_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = MAX_PRICE;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_GENERIC + 5, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts resource.
+    fun test_place_order_internal_no_accounts()
+    acquires
+        MarketAccounts
+    {
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = MAX_PRICE;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for underflowed outbound asset.
+    fun test_place_order_internal_out_underflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 1;
+        let side             = BID;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for price 0.
+    fun test_place_order_internal_price_0()
+    acquires
+        MarketAccounts
+    {
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 0;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for price too high.
+    fun test_place_order_internal_price_hi()
+    acquires
+        MarketAccounts
+    {
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = MAX_PRICE + 1;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for size too low.
+    fun test_place_order_internal_size_lo()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = MIN_SIZE_PURE_COIN - 1;
+        let price            = MAX_PRICE;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for overflowed ticks.
+    fun test_place_order_internal_ticks_overflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register market accounts.
+        // Declare order parameters
+        let market_order_id  = 123;
+        let size             = HI_64 / MAX_PRICE + 1;
+        let price            = MAX_PRICE;
+        let side             = ASK;
+        // Attempt invalid invocation.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
     }
 
     #[test(user = @user)]

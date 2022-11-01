@@ -62,31 +62,39 @@
     -  [Returns](#@Returns_30)
     -  [Aborts](#@Aborts_31)
     -  [Testing](#@Testing_32)
+-  [Function `cancel_order_internal`](#0xc0deb00c_user_cancel_order_internal)
+    -  [Terminology](#@Terminology_33)
+    -  [Assumptions](#@Assumptions_34)
+-  [Function `place_order_internal`](#0xc0deb00c_user_place_order_internal)
+    -  [Parameters](#@Parameters_35)
+    -  [Terminology](#@Terminology_36)
+    -  [Assumptions](#@Assumptions_37)
+    -  [Aborts](#@Aborts_38)
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Type parameters](#@Type_parameters_33)
-    -  [Parameters](#@Parameters_34)
-    -  [Aborts](#@Aborts_35)
-    -  [Assumptions](#@Assumptions_36)
-    -  [Testing](#@Testing_37)
+    -  [Type parameters](#@Type_parameters_39)
+    -  [Parameters](#@Parameters_40)
+    -  [Aborts](#@Aborts_41)
+    -  [Assumptions](#@Assumptions_42)
+    -  [Testing](#@Testing_43)
 -  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
-    -  [Type parameters](#@Type_parameters_38)
-    -  [Parameters](#@Parameters_39)
-    -  [Aborts](#@Aborts_40)
-    -  [Testing](#@Testing_41)
+    -  [Type parameters](#@Type_parameters_44)
+    -  [Parameters](#@Parameters_45)
+    -  [Aborts](#@Aborts_46)
+    -  [Testing](#@Testing_47)
 -  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
-    -  [Type parameters](#@Type_parameters_42)
-    -  [Parameters](#@Parameters_43)
-    -  [Testing](#@Testing_44)
--  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
-    -  [Type parameters](#@Type_parameters_45)
-    -  [Parameters](#@Parameters_46)
-    -  [Returns](#@Returns_47)
-    -  [Aborts](#@Aborts_48)
-    -  [Testing](#@Testing_49)
--  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
+    -  [Type parameters](#@Type_parameters_48)
+    -  [Parameters](#@Parameters_49)
     -  [Testing](#@Testing_50)
+-  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
+    -  [Type parameters](#@Type_parameters_51)
+    -  [Parameters](#@Parameters_52)
+    -  [Returns](#@Returns_53)
+    -  [Aborts](#@Aborts_54)
+    -  [Testing](#@Testing_55)
+-  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
+    -  [Testing](#@Testing_56)
 -  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
-    -  [Testing](#@Testing_51)
+    -  [Testing](#@Testing_57)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -377,6 +385,26 @@ Underwriter ID flag for no underwriter.
 
 
 
+<a name="0xc0deb00c_user_ASK"></a>
+
+Flag for ask side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_BID"></a>
+
+Flag for bid side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_ASSET_NOT_IN_PAIR"></a>
 
 Asset type is not in trading pair for market.
@@ -417,6 +445,16 @@ Underwriter is not valid for indicated market.
 
 
 
+<a name="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT"></a>
+
+Not enough asset to trade away.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>: u64 = 13;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
 
 No market account resource found.
@@ -437,6 +475,56 @@ No market accounts resource found.
 
 
 
+<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
+
+Filling order would overflow asset received from trade.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>: u64 = 12;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_PRICE_0"></a>
+
+Price is zero.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>: u64 = 8;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_PRICE_TOO_HIGH"></a>
+
+Price exceeds maximum possible price.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>: u64 = 9;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_SIZE_TOO_LOW"></a>
+
+Size is below minimum size for market.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_SIZE_TOO_LOW">E_SIZE_TOO_LOW</a>: u64 = 10;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_TICKS_OVERFLOW"></a>
+
+Ticks to fill an order overflows a <code>u64</code>.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_TICKS_OVERFLOW">E_TICKS_OVERFLOW</a>: u64 = 11;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN"></a>
 
 Custodian ID has not been registered.
@@ -453,6 +541,17 @@ Too little available for withdrawal.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_WITHDRAW_TOO_LITTLE_AVAILABLE">E_WITHDRAW_TOO_LITTLE_AVAILABLE</a>: u64 = 7;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_MAX_PRICE"></a>
+
+Maximum possible price that can be encoded in 32 bits. Generated
+in Python via <code>hex(int('1' * 32, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
 </code></pre>
 
 
@@ -1506,7 +1605,7 @@ Return asset counts for specified market account.
 * <code>test_get_asset_counts_internal_no_accounts()</code>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">get_asset_counts_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64): (u64, u64, u64, u64, u64, u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">get_asset_counts_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64): (u64, u64, u64, u64, u64, u64)
 </code></pre>
 
 
@@ -1515,7 +1614,7 @@ Return asset counts for specified market account.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">get_asset_counts_internal</a>(
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">get_asset_counts_internal</a>(
     user_address: <b>address</b>,
     market_id: u64,
     custodian_id: u64
@@ -1552,6 +1651,262 @@ Return asset counts for specified market account.
 
 </details>
 
+<a name="0xc0deb00c_user_cancel_order_internal"></a>
+
+## Function `cancel_order_internal`
+
+Cancel order from a user's tablist of open orders on given side.
+
+Updates asset counts, pushes order onto top of inactive orders
+stack and overwrites its fields accordingly.
+
+
+<a name="@Terminology_33"></a>
+
+### Terminology
+
+
+* The "inbound" asset is the asset that would have been received
+from a trade if the cancelled order had been filled.
+* The "outbound" asset is the asset that would have been traded
+away if the cancelled order had been filled.
+
+
+<a name="@Assumptions_34"></a>
+
+### Assumptions
+
+
+* Only called when also cancelling an order from the order book.
+* User has an open order as specified: if order is cancelled
+from the book, then it had to have been placed on the book
+successfully to begin with.
+* <code>price</code> matches that encoded in market order ID from cancelled
+order.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, price: u64, order_access_key: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    side: bool,
+    price: u64,
+    order_access_key: u64
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Mutably borrow market accounts map.
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
+    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
+    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+        <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
+    // Mutably borrow orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a>, inactive orders stack top,
+    // inbound asset ceiling, and outbound asset available fields,
+    // and determine size multiplier for calculating change in
+    // available and ceiling fields, based on order side.
+    <b>let</b> (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
+         out_available_ref_mut, size_multiplier_ceiling,
+         size_multiplier_available) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>) (
+            &<b>mut</b> market_account_ref_mut.asks,
+            &<b>mut</b> market_account_ref_mut.asks_stack_top,
+            &<b>mut</b> market_account_ref_mut.quote_ceiling,
+            &<b>mut</b> market_account_ref_mut.base_available,
+            price * market_account_ref_mut.tick_size,
+            market_account_ref_mut.lot_size
+        ) <b>else</b> (
+            &<b>mut</b> market_account_ref_mut.bids,
+            &<b>mut</b> market_account_ref_mut.bids_stack_top,
+            &<b>mut</b> market_account_ref_mut.base_ceiling,
+            &<b>mut</b> market_account_ref_mut.quote_available,
+            market_account_ref_mut.lot_size,
+            price * market_account_ref_mut.tick_size);
+    <b>let</b> order_ref_mut = // Mutably borrow order <b>to</b> remove.
+        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, order_access_key);
+    <b>let</b> size = order_ref_mut.size; // Store order's size field.
+    // Clear out order's market order ID field.
+    order_ref_mut.market_order_id = (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128);
+    // Mark order's size field <b>to</b> indicate top of inactive stack.
+    order_ref_mut.size = *stack_top_ref_mut;
+    // Reassign stack top field <b>to</b> indicate newly inactive order.
+    *stack_top_ref_mut = order_access_key;
+    // Calculate increment amount for outbound available field.
+    <b>let</b> available_increment_amount = size * size_multiplier_available;
+    *out_available_ref_mut = // Increment available field.
+        *out_available_ref_mut + available_increment_amount;
+    // Calculate decrement amount for inbound ceiling field.
+    <b>let</b> ceiling_decrement_amount = size * size_multiplier_ceiling;
+    *in_ceiling_ref_mut = // Decrement ceiling field.
+        *in_ceiling_ref_mut + ceiling_decrement_amount;
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_place_order_internal"></a>
+
+## Function `place_order_internal`
+
+Place order in user's tablist of open orders on given side.
+
+Range checks order parameters and updates asset counts
+accordingly.
+
+Allocates a new order if the inactive order stack is empty,
+otherwise pops one off the top of the stack and overwrites it.
+
+
+<a name="@Parameters_35"></a>
+
+### Parameters
+
+
+* <code>user_address</code>: User address for market account.
+* <code>market_id</code>: Market ID for market account.
+* <code>custodian_id</code>: Custodian ID for market account.
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which an order is placed.
+* <code>size</code>: Order size, in lots.
+* <code>price</code>: Order price, in ticks per lot.
+* <code>market_order_id</code>: Market order ID for order book access.
+
+
+<a name="@Terminology_36"></a>
+
+### Terminology
+
+
+* The "inbound" asset is the asset received from a trade.
+* The "outbound" asset is the asset traded away.
+
+
+<a name="@Assumptions_37"></a>
+
+### Assumptions
+
+
+* Only called when also placing an order on the order book.
+* <code>price</code> matches that encoded in <code>market_order_id</code>.
+
+
+<a name="@Aborts_38"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a></code>: Price is zero.
+* <code><a href="user.md#0xc0deb00c_user_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a></code>: Price exceeds maximum possible price.
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a></code>: No market accounts resource found.
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
+* <code><a href="user.md#0xc0deb00c_user_E_SIZE_TOO_LOW">E_SIZE_TOO_LOW</a></code>: Size is below minimum size for market.
+* <code><a href="user.md#0xc0deb00c_user_E_TICKS_OVERFLOW">E_TICKS_OVERFLOW</a></code>: Ticks to fill order overflows a <code>u64</code>.
+* <code><a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a></code>: Filling order would overflow asset
+received from trade.
+* <code><a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, size: u64, price: u64, market_order_id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    side: bool,
+    size: u64,
+    price: u64,
+    market_order_id: u128
+) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    <b>assert</b>!(price &gt; 0, <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>); // Assert price is nonzero.
+    // Assert price is not too high.
+    <b>assert</b>!(price &lt;= <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>, <a href="user.md#0xc0deb00c_user_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
+    // Mutably borrow market accounts map.
+    <b>let</b> market_accounts_map_ref_mut =
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
+    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
+    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
+        <a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+        <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
+    // Assert order size is greater than or equal <b>to</b> market minimum.
+    <b>assert</b>!(size &gt;= market_account_ref_mut.min_size, <a href="user.md#0xc0deb00c_user_E_SIZE_TOO_LOW">E_SIZE_TOO_LOW</a>);
+    <b>let</b> base_fill = // Calculate base units needed <b>to</b> fill order.
+        (size <b>as</b> u128) * (market_account_ref_mut.lot_size <b>as</b> u128);
+    // Calculate ticks <b>to</b> fill order.
+    <b>let</b> ticks = (size <b>as</b> u128) * (price <b>as</b> u128);
+    // Assert ticks <b>to</b> fill order is not too large.
+    <b>assert</b>!(ticks &lt;= (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128), <a href="user.md#0xc0deb00c_user_E_TICKS_OVERFLOW">E_TICKS_OVERFLOW</a>);
+    // Calculate quote units <b>to</b> fill order.
+    <b>let</b> quote_fill = ticks * (market_account_ref_mut.tick_size <b>as</b> u128);
+    // Mutably borrow orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a>, inactive orders stack top,
+    // inbound asset ceiling, and outbound asset available fields,
+    // and assign inbound and outbound asset fill amounts, based on
+    // order side.
+    <b>let</b> (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
+         out_available_ref_mut, in_fill, out_fill) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
+         (&<b>mut</b> market_account_ref_mut.asks,
+          &<b>mut</b> market_account_ref_mut.asks_stack_top,
+          &<b>mut</b> market_account_ref_mut.quote_ceiling,
+          &<b>mut</b> market_account_ref_mut.base_available,
+          quote_fill, base_fill) <b>else</b>
+         (&<b>mut</b> market_account_ref_mut.bids,
+          &<b>mut</b> market_account_ref_mut.bids_stack_top,
+          &<b>mut</b> market_account_ref_mut.base_ceiling,
+          &<b>mut</b> market_account_ref_mut.quote_available,
+          base_fill, quote_fill);
+    // Assert no inbound asset overflow.
+    <b>assert</b>!((in_fill + (*in_ceiling_ref_mut <b>as</b> u128)) &lt;= (<a href="user.md#0xc0deb00c_user_HI_64">HI_64</a> <b>as</b> u128),
+            <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>);
+    // Assert enough outbound asset <b>to</b> cover the fill, which also
+    // <b>ensures</b> outbound fill amount does not overflow.
+    <b>assert</b>!((out_fill &lt;= (*out_available_ref_mut <b>as</b> u128)),
+            <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>);
+    // Update ceiling for inbound asset.
+    *in_ceiling_ref_mut = *in_ceiling_ref_mut + (in_fill <b>as</b> u64);
+    // Update available amount for outbound asset.
+    *out_available_ref_mut = *out_available_ref_mut - (out_fill <b>as</b> u64);
+    <b>if</b> (*stack_top_ref_mut == <a href="user.md#0xc0deb00c_user_NIL">NIL</a>) { // If empty inactive stack:
+        // Get one-indexed order access key for new order.
+        <b>let</b> order_access_key = <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(orders_ref_mut);
+        // Allocate new order.
+        <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(orders_ref_mut, order_access_key, <a href="user.md#0xc0deb00c_user_Order">Order</a>{
+            market_order_id, size});
+    } <b>else</b> { // If inactive order stack not empty:
+        <b>let</b> order_ref_mut = // Mutably borrow order at top of stack.
+            <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, *stack_top_ref_mut);
+        // Reassign stack top field <b>to</b> next in stack.
+        *stack_top_ref_mut = order_ref_mut.size;
+        // Reassign market order ID for active order.
+        order_ref_mut.market_order_id = market_order_id;
+        order_ref_mut.size = size; // Reassign order size field.
+    };
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_user_deposit_asset"></a>
 
 ## Function `deposit_asset`
@@ -1561,7 +1916,7 @@ Deposit an asset to a user's market account.
 Update asset counts, deposit optional coins as collateral.
 
 
-<a name="@Type_parameters_33"></a>
+<a name="@Type_parameters_39"></a>
 
 ### Type parameters
 
@@ -1570,7 +1925,7 @@ Update asset counts, deposit optional coins as collateral.
 if a generic asset.
 
 
-<a name="@Parameters_34"></a>
+<a name="@Parameters_40"></a>
 
 ### Parameters
 
@@ -1584,7 +1939,7 @@ if a generic asset.
 depositing coins.
 
 
-<a name="@Aborts_35"></a>
+<a name="@Aborts_41"></a>
 
 ### Aborts
 
@@ -1599,7 +1954,7 @@ asset ceiling.
 indicated market, in the case of a generic asset deposit.
 
 
-<a name="@Assumptions_36"></a>
+<a name="@Assumptions_42"></a>
 
 ### Assumptions
 
@@ -1609,7 +1964,7 @@ indicated market, in the case of a generic asset deposit.
 does a corresponding collateral map entry.
 
 
-<a name="@Testing_37"></a>
+<a name="@Testing_43"></a>
 
 ### Testing
 
@@ -1709,7 +2064,7 @@ Register market account entries for given market account info.
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_38"></a>
+<a name="@Type_parameters_44"></a>
 
 ### Type parameters
 
@@ -1718,7 +2073,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_39"></a>
+<a name="@Parameters_45"></a>
 
 ### Parameters
 
@@ -1731,7 +2086,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_40"></a>
+<a name="@Aborts_46"></a>
 
 ### Aborts
 
@@ -1739,7 +2094,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_41"></a>
+<a name="@Testing_47"></a>
 
 ### Testing
 
@@ -1824,7 +2179,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_42"></a>
+<a name="@Type_parameters_48"></a>
 
 ### Type parameters
 
@@ -1832,7 +2187,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_43"></a>
+<a name="@Parameters_49"></a>
 
 ### Parameters
 
@@ -1842,7 +2197,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_44"></a>
+<a name="@Testing_50"></a>
 
 ### Testing
 
@@ -1892,7 +2247,7 @@ Withdraw an asset from a user's market account.
 Update asset counts, withdraw optional collateral coins.
 
 
-<a name="@Type_parameters_45"></a>
+<a name="@Type_parameters_51"></a>
 
 ### Type parameters
 
@@ -1901,7 +2256,7 @@ Update asset counts, withdraw optional collateral coins.
 if a generic asset.
 
 
-<a name="@Parameters_46"></a>
+<a name="@Parameters_52"></a>
 
 ### Parameters
 
@@ -1914,7 +2269,7 @@ if a generic asset.
 withdrawing coins.
 
 
-<a name="@Returns_47"></a>
+<a name="@Returns_53"></a>
 
 ### Returns
 
@@ -1922,7 +2277,7 @@ withdrawing coins.
 * <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional collateral coins.
 
 
-<a name="@Aborts_48"></a>
+<a name="@Aborts_54"></a>
 
 ### Aborts
 
@@ -1937,7 +2292,7 @@ withdrawal.
 indicated market, in the case of a generic asset withdrawal.
 
 
-<a name="@Testing_49"></a>
+<a name="@Testing_55"></a>
 
 ### Testing
 
@@ -2036,7 +2391,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
 asset.
 
 
-<a name="@Testing_50"></a>
+<a name="@Testing_56"></a>
 
 ### Testing
 
@@ -2083,7 +2438,7 @@ asset.
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing coins.
 
 
-<a name="@Testing_51"></a>
+<a name="@Testing_57"></a>
 
 ### Testing
 

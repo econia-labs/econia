@@ -117,14 +117,33 @@ module econia::user {
     const E_INVALID_UNDERWRITER: u64 = 6;
     /// Too little available for withdrawal.
     const E_WITHDRAW_TOO_LITTLE_AVAILABLE: u64 = 7;
+    /// Price is zero.
+    const E_PRICE_0: u64 = 8;
+    /// Price exceeds maximum possible price.
+    const E_PRICE_TOO_HIGH: u64 = 9;
+    /// Size is below minimum size for market.
+    const E_SIZE_TOO_LOW: u64 = 10;
+    /// Ticks to fill an order overflows a `u64`.
+    const E_TICKS_OVERFLOW: u64 = 11;
+    /// Filling order would overflow asset received from trade.
+    const E_OVERFLOW_ASSET_IN: u64 = 12;
+    /// Not enough asset to trade away.
+    const E_NOT_ENOUGH_ASSET_OUT: u64 = 13;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Flag for ask side
+    const ASK: bool = true;
+    /// Flag for bid side
+    const BID: bool = false;
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
+    /// Maximum possible price that can be encoded in 32 bits. Generated
+    /// in Python via `hex(int('1' * 32, 2))`.
+    const MAX_PRICE: u64 = 0xffffffff;
     /// Flag for null value when null defined as 0.
     const NIL: u64 = 0;
     /// Custodian ID flag for no custodian.
@@ -675,7 +694,7 @@ module econia::user {
     /// * `test_deposits()`
     /// * `test_get_asset_counts_internal_no_account()`
     /// * `test_get_asset_counts_internal_no_accounts()`
-    fun get_asset_counts_internal(
+    public(friend) fun get_asset_counts_internal(
         user_address: address,
         market_id: u64,
         custodian_id: u64
@@ -705,6 +724,198 @@ module econia::user {
          market_account_ref.quote_total,
          market_account_ref.quote_available,
          market_account_ref.quote_ceiling) // Return asset count fields.
+    }
+
+    /// Cancel order from a user's tablist of open orders on given side.
+    ///
+    /// Updates asset counts, pushes order onto top of inactive orders
+    /// stack and overwrites its fields accordingly.
+    ///
+    /// # Terminology
+    ///
+    /// * The "inbound" asset is the asset that would have been received
+    ///   from a trade if the cancelled order had been filled.
+    /// * The "outbound" asset is the asset that would have been traded
+    ///   away if the cancelled order had been filled.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also cancelling an order from the order book.
+    /// * User has an open order as specified: if order is cancelled
+    ///   from the book, then it had to have been placed on the book
+    ///   successfully to begin with.
+    /// * `price` matches that encoded in market order ID from cancelled
+    ///   order.
+    public(friend) fun cancel_order_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        price: u64,
+        order_access_key: u64
+    ) acquires MarketAccounts {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Mutably borrow orders tablist, inactive orders stack top,
+        // inbound asset ceiling, and outbound asset available fields,
+        // and determine size multiplier for calculating change in
+        // available and ceiling fields, based on order side.
+        let (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
+             out_available_ref_mut, size_multiplier_ceiling,
+             size_multiplier_available) = if (side == ASK) (
+                &mut market_account_ref_mut.asks,
+                &mut market_account_ref_mut.asks_stack_top,
+                &mut market_account_ref_mut.quote_ceiling,
+                &mut market_account_ref_mut.base_available,
+                price * market_account_ref_mut.tick_size,
+                market_account_ref_mut.lot_size
+            ) else (
+                &mut market_account_ref_mut.bids,
+                &mut market_account_ref_mut.bids_stack_top,
+                &mut market_account_ref_mut.base_ceiling,
+                &mut market_account_ref_mut.quote_available,
+                market_account_ref_mut.lot_size,
+                price * market_account_ref_mut.tick_size);
+        let order_ref_mut = // Mutably borrow order to remove.
+            tablist::borrow_mut(orders_ref_mut, order_access_key);
+        let size = order_ref_mut.size; // Store order's size field.
+        // Clear out order's market order ID field.
+        order_ref_mut.market_order_id = (NIL as u128);
+        // Mark order's size field to indicate top of inactive stack.
+        order_ref_mut.size = *stack_top_ref_mut;
+        // Reassign stack top field to indicate newly inactive order.
+        *stack_top_ref_mut = order_access_key;
+        // Calculate increment amount for outbound available field.
+        let available_increment_amount = size * size_multiplier_available;
+        *out_available_ref_mut = // Increment available field.
+            *out_available_ref_mut + available_increment_amount;
+        // Calculate decrement amount for inbound ceiling field.
+        let ceiling_decrement_amount = size * size_multiplier_ceiling;
+        *in_ceiling_ref_mut = // Decrement ceiling field.
+            *in_ceiling_ref_mut + ceiling_decrement_amount;
+    }
+
+    /// Place order in user's tablist of open orders on given side.
+    ///
+    /// Range checks order parameters and updates asset counts
+    /// accordingly.
+    ///
+    /// Allocates a new order if the inactive order stack is empty,
+    /// otherwise pops one off the top of the stack and overwrites it.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order is placed.
+    /// * `size`: Order size, in lots.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `market_order_id`: Market order ID for order book access.
+    ///
+    /// # Terminology
+    ///
+    /// * The "inbound" asset is the asset received from a trade.
+    /// * The "outbound" asset is the asset traded away.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also placing an order on the order book.
+    /// * `price` matches that encoded in `market_order_id`.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_PRICE_0`: Price is zero.
+    /// * `E_PRICE_TOO_HIGH`: Price exceeds maximum possible price.
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    /// * `E_SIZE_TOO_LOW`: Size is below minimum size for market.
+    /// * `E_TICKS_OVERFLOW`: Ticks to fill order overflows a `u64`.
+    /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
+    ///   received from trade.
+    /// * `E_NOT_ENOUGH_ASSET_OUT`: Not enough asset to trade away.
+    public(friend) fun place_order_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        size: u64,
+        price: u64,
+        market_order_id: u128
+    ) acquires MarketAccounts {
+        assert!(price > 0, E_PRICE_0); // Assert price is nonzero.
+        // Assert price is not too high.
+        assert!(price <= MAX_PRICE, E_PRICE_TOO_HIGH);
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref_mut, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Assert order size is greater than or equal to market minimum.
+        assert!(size >= market_account_ref_mut.min_size, E_SIZE_TOO_LOW);
+        let base_fill = // Calculate base units needed to fill order.
+            (size as u128) * (market_account_ref_mut.lot_size as u128);
+        // Calculate ticks to fill order.
+        let ticks = (size as u128) * (price as u128);
+        // Assert ticks to fill order is not too large.
+        assert!(ticks <= (HI_64 as u128), E_TICKS_OVERFLOW);
+        // Calculate quote units to fill order.
+        let quote_fill = ticks * (market_account_ref_mut.tick_size as u128);
+        // Mutably borrow orders tablist, inactive orders stack top,
+        // inbound asset ceiling, and outbound asset available fields,
+        // and assign inbound and outbound asset fill amounts, based on
+        // order side.
+        let (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
+             out_available_ref_mut, in_fill, out_fill) = if (side == ASK)
+             (&mut market_account_ref_mut.asks,
+              &mut market_account_ref_mut.asks_stack_top,
+              &mut market_account_ref_mut.quote_ceiling,
+              &mut market_account_ref_mut.base_available,
+              quote_fill, base_fill) else
+             (&mut market_account_ref_mut.bids,
+              &mut market_account_ref_mut.bids_stack_top,
+              &mut market_account_ref_mut.base_ceiling,
+              &mut market_account_ref_mut.quote_available,
+              base_fill, quote_fill);
+        // Assert no inbound asset overflow.
+        assert!((in_fill + (*in_ceiling_ref_mut as u128)) <= (HI_64 as u128),
+                E_OVERFLOW_ASSET_IN);
+        // Assert enough outbound asset to cover the fill, which also
+        // ensures outbound fill amount does not overflow.
+        assert!((out_fill <= (*out_available_ref_mut as u128)),
+                E_NOT_ENOUGH_ASSET_OUT);
+        // Update ceiling for inbound asset.
+        *in_ceiling_ref_mut = *in_ceiling_ref_mut + (in_fill as u64);
+        // Update available amount for outbound asset.
+        *out_available_ref_mut = *out_available_ref_mut - (out_fill as u64);
+        if (*stack_top_ref_mut == NIL) { // If empty inactive stack:
+            // Get one-indexed order access key for new order.
+            let order_access_key = tablist::length(orders_ref_mut);
+            // Allocate new order.
+            tablist::add(orders_ref_mut, order_access_key, Order{
+                market_order_id, size});
+        } else { // If inactive order stack not empty:
+            let order_ref_mut = // Mutably borrow order at top of stack.
+                tablist::borrow_mut(orders_ref_mut, *stack_top_ref_mut);
+            // Reassign stack top field to next in stack.
+            *stack_top_ref_mut = order_ref_mut.size;
+            // Reassign market order ID for active order.
+            order_ref_mut.market_order_id = market_order_id;
+            order_ref_mut.size = size; // Reassign order size field.
+        };
     }
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

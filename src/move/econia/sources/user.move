@@ -129,6 +129,10 @@ module econia::user {
     const E_OVERFLOW_ASSET_IN: u64 = 12;
     /// Not enough asset to trade away.
     const E_NOT_ENOUGH_ASSET_OUT: u64 = 13;
+    /// No change in order size.
+    const E_CHANGE_ORDER_NO_CHANGE: u64 = 14;
+    /// Market order ID mismatch with user's open order.
+    const E_INVALID_MARKET_ORDER_ID: u64 = 15;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -731,6 +735,17 @@ module econia::user {
     /// Updates asset counts, pushes order onto top of inactive orders
     /// stack and overwrites its fields accordingly.
     ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
+    /// * `size`: Order size, in lots.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `order_access_key`: Order access key for user order lookup.
+    /// * `market_order_id`: Market order ID for order book lookup.
+    ///
     /// # Terminology
     ///
     /// * The "inbound" asset is the asset that would have been received
@@ -738,21 +753,37 @@ module econia::user {
     /// * The "outbound" asset is the asset that would have been traded
     ///   away if the cancelled order had been filled.
     ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID mismatch with
+    ///   user's open order.
+    ///
     /// # Assumptions
     ///
     /// * Only called when also cancelling an order from the order book.
-    /// * User has an open order as specified: if order is cancelled
-    ///   from the book, then it had to have been placed on the book
-    ///   successfully to begin with.
+    /// * User has an open order under indicated market account with
+    ///   provided access key, but not necessarily with provided market
+    ///   order ID: if order is cancelled from the book, then it had to
+    ///   have been successfully placed on the book to begin with for
+    ///   the given access key. Market order IDs, however, are not
+    ///   maintained in order book state and so could be potentially
+    ///   passed erroneously.
     /// * `price` matches that encoded in market order ID from cancelled
     ///   order.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_bid()`
+    /// * `test_place_cancel_order_stack()`
     public(friend) fun cancel_order_internal(
         user_address: address,
         market_id: u64,
         custodian_id: u64,
         side: bool,
         price: u64,
-        order_access_key: u64
+        order_access_key: u64,
+        market_order_id: u128
     ) acquires MarketAccounts {
         // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
@@ -784,6 +815,9 @@ module econia::user {
         let order_ref_mut = // Mutably borrow order to remove.
             tablist::borrow_mut(orders_ref_mut, order_access_key);
         let size = order_ref_mut.size; // Store order's size field.
+        // Assert market order ID on order is as expected.
+        assert!(order_ref_mut.market_order_id == market_order_id,
+                E_INVALID_MARKET_ORDER_ID);
         // Clear out order's market order ID field.
         order_ref_mut.market_order_id = (NIL as u128);
         // Mark order's size field to indicate top of inactive stack.
@@ -797,7 +831,69 @@ module econia::user {
         // Calculate decrement amount for inbound ceiling field.
         let ceiling_decrement_amount = size * size_multiplier_ceiling;
         *in_ceiling_ref_mut = // Decrement ceiling field.
-            *in_ceiling_ref_mut + ceiling_decrement_amount;
+            *in_ceiling_ref_mut - ceiling_decrement_amount;
+    }
+
+    /// Change the size of a user's open order on given side.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
+    /// * `new_size`: New order size, in lots.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `order_access_key`: Order access key for user order lookup.
+    /// * `market_order_id`: Market order ID for order book lookup.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_CHANGE_ORDER_NO_CHANGE`: No change in order size.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also changing order size on the order book.
+    /// * User has an open order as specified: if order is changed on
+    ///   the book, then it had to have been placed on the book
+    ///   successfully to begin with.
+    /// * `price` matches that encoded in market order ID for changed
+    ///   order.
+    ///
+    /// # Testing
+    ///
+    /// * `test_change_order_size_internal_ask()`
+    /// * `test_change_order_size_internal_bid()`
+    public(friend) fun change_order_size_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        new_size: u64,
+        price: u64,
+        order_access_key: u64,
+        market_order_id: u128
+    ) acquires MarketAccounts {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let (orders_ref) = if (side == ASK)
+            &market_account_ref_mut.asks else &market_account_ref_mut.bids;
+        // Immutably borrow order.
+        let order_ref = tablist::borrow(orders_ref, order_access_key);
+        // Assert change in size.
+        assert!(order_ref.size != new_size, E_CHANGE_ORDER_NO_CHANGE);
+        // Cancel order with size to be changed.
+        cancel_order_internal(user_address, market_id, custodian_id, side,
+                              price, order_access_key, market_order_id);
+        // Place order with new size.
+        place_order_internal(user_address, market_id, custodian_id, side,
+                             new_size, price, market_order_id);
     }
 
     /// Place order in user's tablist of open orders on given side.
@@ -839,6 +935,12 @@ module econia::user {
     /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
     ///   received from trade.
     /// * `E_NOT_ENOUGH_ASSET_OUT`: Not enough asset to trade away.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_bid()`
+    /// * `test_place_cancel_order_stack()`
     public(friend) fun place_order_internal(
         user_address: address,
         market_id: u64,
@@ -903,7 +1005,7 @@ module econia::user {
         *out_available_ref_mut = *out_available_ref_mut - (out_fill as u64);
         if (*stack_top_ref_mut == NIL) { // If empty inactive stack:
             // Get one-indexed order access key for new order.
-            let order_access_key = tablist::length(orders_ref_mut);
+            let order_access_key = tablist::length(orders_ref_mut) + 1;
             // Allocate new order.
             tablist::add(orders_ref_mut, order_access_key, Order{
                 market_order_id, size});
@@ -1304,7 +1406,14 @@ module econia::user {
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    /// Custodian ID for pure coin test market with delegated custodian.
+    /// Base asset starting amount for testing.
+    const BASE_START: u64 = 7500000000;
+    #[test_only]
+    /// Quote asset starting amount for testing.
+    const QUOTE_START: u64 = 8000000000;
+
+    #[test_only]
+    /// Custodian ID for market with delegated custodian.
     const CUSTODIAN_ID: u64 = 123;
     #[test_only]
     /// Market ID for generic test market.
@@ -1313,8 +1422,28 @@ module econia::user {
     /// Market ID for pure coin test market.
     const MARKET_ID_PURE_COIN: u64 = 1;
     #[test_only]
-    /// Underwriter ID for generic test market.
+    /// From `registry::register_markets_test()`. Underwriter ID for
+    /// generic test market.
     const UNDERWRITER_ID: u64 = 7;
+
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const LOT_SIZE_PURE_COIN: u64 = 1;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const TICK_SIZE_PURE_COIN: u64 = 2;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const MIN_SIZE_PURE_COIN: u64 = 3;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const LOT_SIZE_GENERIC: u64 = 4;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const TICK_SIZE_GENERIC: u64 = 5;
+    #[test_only]
+    /// From `registry::register_markets_test()`.
+    const MIN_SIZE_GENERIC: u64 = 6;
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1338,6 +1467,66 @@ module econia::user {
     }
 
     #[test_only]
+    /// Get order access key at top of inactive order stack.
+    public fun get_inactive_stack_top_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+    ): u64
+    acquires MarketAccounts {
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Return corresponding stack top field.
+        if (side == ASK) market_account_ref.asks_stack_top else
+            market_account_ref.bids_stack_top
+    }
+
+    #[test_only]
+    /// Return next inactive order in inactive orders stack.
+    public fun get_next_inactive_order_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+        order_access_key: u64
+    ): u64
+    acquires MarketAccounts {
+        assert!(!is_order_active_test( // Assert order is inactive.
+            user_address, market_account_id, side, order_access_key), 0);
+        // Get order's size field, indicating next inactive order.
+        let (_, next) = get_order_fields_test(
+            user_address, market_account_id, side, order_access_key);
+        next // Return next inactive order access key.
+    }
+
+    #[test_only]
+    /// Return order fields for given order parameters.
+    public fun get_order_fields_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+        order_access_key: u64
+    ): (
+        u128,
+        u64
+    ) acquires MarketAccounts {
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let (orders_ref) = if (side == ASK)
+            &market_account_ref.asks else &market_account_ref.bids;
+        // Immutably borrow order.
+        let order_ref = tablist::borrow(orders_ref, order_access_key);
+        // Return order fields.
+        (order_ref.market_order_id, order_ref.size)
+    }
+
+    #[test_only]
     /// Return `true` if `user_adress` has an entry in `Collateral` for
     /// given `AssetType` and `market_account_id`.
     public fun has_collateral_test<
@@ -1354,6 +1543,26 @@ module econia::user {
             &borrow_global<Collateral<AssetType>>(user_address).map;
         // Return if table contains entry for market account ID.
         tablist::contains(collateral_map_ref, market_account_id)
+    }
+
+    #[test_only]
+    /// Check if user has allocated order for given parameters.
+    public fun has_order_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+        order_access_key: u64
+    ): bool
+    acquires MarketAccounts {
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let (orders_ref) = if (side == ASK)
+            &market_account_ref.asks else &market_account_ref.bids;
+        tablist::contains(orders_ref, order_access_key)
     }
 
     #[test_only]
@@ -1379,14 +1588,23 @@ module econia::user {
             &account::create_test_signer_cap(@user));
         // Create Aptos account.
         account::create_account_for_test(@user);
-        // Register a pure coin and a generic market, discarding most
+        // Register a pure coin and a generic market, storing most
         // returns.
-        let (market_id_pure_coin, _, _, _, _, _, market_id_generic, _, _, _, _,
+        let (market_id_pure_coin, _, lot_size_pure_coin, tick_size_pure_coin,
+             min_size_pure_coin, underwriter_id_pure_coin, market_id_generic,
+             _, lot_size_generic, tick_size_generic, min_size_generic,
              underwriter_id_generic) = registry::register_markets_test();
-        // Assert both market IDs and generic underwriter ID.
-        assert!(market_id_pure_coin    == MARKET_ID_PURE_COIN, 0);
-        assert!(market_id_generic      == MARKET_ID_GENERIC, 0);
-        assert!(underwriter_id_generic == UNDERWRITER_ID, 0);
+        // Assert market info.
+        assert!(market_id_pure_coin      == MARKET_ID_PURE_COIN, 0);
+        assert!(lot_size_pure_coin       == LOT_SIZE_PURE_COIN, 0);
+        assert!(tick_size_pure_coin      == TICK_SIZE_PURE_COIN, 0);
+        assert!(min_size_pure_coin       == MIN_SIZE_PURE_COIN, 0);
+        assert!(underwriter_id_pure_coin == NO_UNDERWRITER, 0);
+        assert!(market_id_generic        == MARKET_ID_GENERIC, 0);
+        assert!(lot_size_generic         == LOT_SIZE_GENERIC, 0);
+        assert!(tick_size_generic        == TICK_SIZE_GENERIC, 0);
+        assert!(min_size_generic         == MIN_SIZE_GENERIC, 0);
+        assert!(underwriter_id_generic   == UNDERWRITER_ID, 0);
         // Register self-custodied pure coin account.
         register_market_account<BC, QC>(
             &user, market_id_pure_coin, NO_CUSTODIAN);
@@ -1417,9 +1635,110 @@ module econia::user {
          market_account_id_generic_delegated)
     }
 
+    #[test_only]
+    /// Return `true` if order is active.
+    public fun is_order_active_test(
+        user_address: address,
+        market_account_id: u128,
+        side: bool,
+        order_access_key: u64
+    ): bool
+    acquires MarketAccounts {
+        // Get order's market order ID field.
+        let (market_order_id, _) = get_order_fields_test(
+            user_address, market_account_id, side, order_access_key);
+        market_order_id != (NIL as u128) // Return true if non-null ID.
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify state updates for changing ask size. Based on
+    /// `test_place_cancel_order_ask()`.
+    fun test_change_order_size_internal_ask()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let size_old         = size - 1;
+        let price            = 321;
+        let side             = ASK;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size_old, price, market_order_id);
+        change_order_size_internal( // Change order size.
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            order_access_key, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START - base_delta, 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
+    }
+
+    #[test]
+    /// Verify state updates for changing bid size. Based on
+    /// `test_place_cancel_order_bid()`.
+    fun test_change_order_size_internal_bid()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        register_market_accounts_test(); // Register test markets.
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let size_old         = size - 1;
+        let price            = 321;
+        let side             = BID;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size_old, price, market_order_id);
+        change_order_size_internal( // Change order size.
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, size, price,
+            order_access_key, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START + base_delta, 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START - quote_delta, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+    }
 
     #[test]
     #[expected_failure(abort_code = 3)]
@@ -1697,6 +2016,219 @@ module econia::user {
         assert!(get_custodian_id(market_account_id) == custodian_id, 0);
     }
 
+    #[test]
+    /// Verify valid state updates for placing and cancelling an ask.
+    fun test_place_cancel_order_ask()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let price            = 321;
+        let side             = ASK;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START - base_delta, 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START + quote_delta, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Assert order fields.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r == size, 0);
+        // Cancel order.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                              price, order_access_key, market_order_id);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == order_access_key, 0);
+        // Assert order marked inactive.
+        assert!(!is_order_active_test(
+            @user, market_account_id, side, order_access_key), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(@user, market_account_id, side,
+                                             order_access_key) == NIL, 0);
+    }
+
+    #[test]
+    /// Verify valid state updates for placing and cancelling a bid.
+    fun test_place_cancel_order_bid()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id  = 1234;
+        let size             = 789;
+        let price            = 321;
+        let side             = BID;
+        let order_access_key = 1;
+        // Calculate change in base asset and quote asset fields.
+        let base_delta = size * LOT_SIZE_PURE_COIN;
+        let quote_delta = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START + base_delta, 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START - quote_delta, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Assert order fields.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r == size, 0);
+        // Cancel order.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                              price, order_access_key, market_order_id);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == order_access_key, 0);
+        // Assert order marked inactive.
+        assert!(!is_order_active_test(
+            @user, market_account_id, side, order_access_key), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(@user, market_account_id, side,
+                                             order_access_key) == NIL, 0);
+    }
+
+    #[test]
+    /// Verify state updates for multiple pushes and pops from stack.
+    fun test_place_cancel_order_stack()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id_1  = 123;
+        let market_order_id_2  = 234;
+        let market_order_id_3  = 345;
+        let size             = MIN_SIZE_PURE_COIN;
+        let price            = 1;
+        let side             = BID;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Place two orders.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id_1);
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id_2);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == NIL, 0);
+        // Cancel first order.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                              price, 1, market_order_id_1);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == 1, 0);
+        // Cancel second order.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                              price, 2, market_order_id_2);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == 2, 0);
+        // Assert both orders marked inactive.
+        assert!(!is_order_active_test(@user, market_account_id, side, 1), 0);
+        assert!(!is_order_active_test(@user, market_account_id, side, 2), 0);
+        // Assert next inactive node fields.
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, 2) == 1, 0);
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, 1) == NIL, 0);
+        // Place an order
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id_3);
+        // Assert inactive stack top on given side.
+        assert!(get_inactive_stack_top_test(@user, market_account_id, side)
+                == 1, 0);
+        // Assert order fields.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, 2);
+        assert!(market_order_id_r == market_order_id_3, 0);
+        assert!(size_r == size, 0);
+    }
 
     #[test(user = @user)]
     #[expected_failure(abort_code = 0)]

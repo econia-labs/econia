@@ -1201,6 +1201,35 @@ module econia::registry {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// For `register_markets_test()`.
+    const LOT_SIZE_PURE_COIN: u64 = 1;
+    #[test_only]
+    /// For `register_markets_test()`.
+    const TICK_SIZE_PURE_COIN: u64 = 2;
+    #[test_only]
+    /// For `register_markets_test()`.
+    const MIN_SIZE_PURE_COIN: u64 = 3;
+    #[test_only]
+    /// For `register_markets_test()`.
+    const BASE_NAME_GENERIC_GENERIC: vector<u8> = b"Generic asset";
+    #[test_only]
+    /// For `register_markets_test()`.
+    const LOT_SIZE_GENERIC: u64 = 4;
+    #[test_only]
+    /// For `register_markets_test()`.
+    const TICK_SIZE_GENERIC: u64 = 5;
+    #[test_only]
+    /// For `register_markets_test()`.
+    const MIN_SIZE_GENERIC: u64 = 6;
+    #[test_only]
+    /// For `register_markets_test()`.
+    const UNDERWRITER_ID_GENERIC: u64 = 7;
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
@@ -1286,15 +1315,16 @@ module econia::registry {
         let fee = incentives::get_market_registration_fee();
         // Declare market parameters.
         let base_name_generic_pure_coin = string::utf8(b"");
-        let lot_size_pure_coin          = 1;
-        let tick_size_pure_coin         = 2;
-        let min_size_pure_coin          = 3;
+        let lot_size_pure_coin          = LOT_SIZE_PURE_COIN;
+        let tick_size_pure_coin         = TICK_SIZE_PURE_COIN;
+        let min_size_pure_coin          = MIN_SIZE_PURE_COIN;
         let underwriter_id_pure_coin    = NO_UNDERWRITER;
-        let base_name_generic_generic   = string::utf8(b"Generic asset");
-        let lot_size_generic            = 4;
-        let tick_size_generic           = 5;
-        let min_size_generic            = 6;
-        let underwriter_id_generic      = 7;
+        let base_name_generic_generic
+            = string::utf8(BASE_NAME_GENERIC_GENERIC);
+        let lot_size_generic            = LOT_SIZE_GENERIC;
+        let tick_size_generic           = TICK_SIZE_GENERIC;
+        let min_size_generic            = MIN_SIZE_GENERIC;
+        let underwriter_id_generic      = UNDERWRITER_ID_GENERIC;
         let underwriter_capability = // Get underwriter capability.
             get_underwriter_capability_test(underwriter_id_generic);
         // Register markets.

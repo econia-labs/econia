@@ -694,7 +694,7 @@ module econia::user {
             &borrow_global<MarketAccounts>(user_address).map;
         let market_account_id = // Get market account ID.
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        // Assert user has market account for given ID.
+        // Assert user has market account for given market account ID.
         assert!(table::contains(market_accounts_map_ref, market_account_id),
                 E_NO_MARKET_ACCOUNT);
         let market_account_ref = // Immutably borrow market account.
@@ -775,9 +775,10 @@ module econia::user {
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
         let market_account_id = // Get market account ID.
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        // Assert user has market account for given ID.
-        assert!(table::contains(market_accounts_map_ref_mut, market_account_id),
-                E_NO_MARKET_ACCOUNT);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref_mut, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
         let market_account_ref_mut = // Mutably borrow market account.
             table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
         // Get asset type info.
@@ -935,7 +936,7 @@ module econia::user {
 
     /// Withdraw an asset from a user's market account.
     ///
-    /// Update asset counts, withdraw optional coins as collateral.
+    /// Update asset counts, withdraw optional collateral coins.
     ///
     /// # Type parameters
     ///
@@ -953,7 +954,7 @@ module econia::user {
     ///
     /// # Returns
     ///
-    /// * `Option<Coin<AssetType>>`: Optional coins as collateral.
+    /// * `Option<Coin<AssetType>>`: Optional collateral coins.
     ///
     /// # Aborts
     ///
@@ -994,9 +995,10 @@ module econia::user {
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
         let market_account_id = // Get market account ID.
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        // Assert user has market account for given ID.
-        assert!(table::contains(market_accounts_map_ref_mut, market_account_id),
-                E_NO_MARKET_ACCOUNT);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref_mut, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
         let market_account_ref_mut = // Mutably borrow market account.
             table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
         // Get asset type info.

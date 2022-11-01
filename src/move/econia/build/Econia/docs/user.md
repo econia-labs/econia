@@ -1534,7 +1534,7 @@ Return asset counts for specified market account.
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
     <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given ID.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
     <b>assert</b>!(<a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id),
             <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
     <b>let</b> market_account_ref = // Immutably borrow market <a href="">account</a>.
@@ -1651,9 +1651,10 @@ does a corresponding collateral map entry.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
     <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given ID.
-    <b>assert</b>!(<a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id),
-            <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
+        <a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
     <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     // Get asset type info.
@@ -1888,7 +1889,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 
 Withdraw an asset from a user's market account.
 
-Update asset counts, withdraw optional coins as collateral.
+Update asset counts, withdraw optional collateral coins.
 
 
 <a name="@Type_parameters_45"></a>
@@ -1918,7 +1919,7 @@ withdrawing coins.
 ### Returns
 
 
-* <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional coins as collateral.
+* <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional collateral coins.
 
 
 <a name="@Aborts_48"></a>
@@ -1978,9 +1979,10 @@ indicated market, in the case of a generic asset withdrawal.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
     <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given ID.
-    <b>assert</b>!(<a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id),
-            <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
+        <a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
     <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     // Get asset type info.

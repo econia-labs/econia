@@ -887,7 +887,7 @@ module econia::user {
         let market_account_ref_mut = // Mutably borrow market account.
             table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
         // Immutably borrow corresponding orders tablist based on side.
-        let (orders_ref) = if (side == ASK)
+        let orders_ref = if (side == ASK)
             &market_account_ref_mut.asks else &market_account_ref_mut.bids;
         // Immutably borrow order.
         let order_ref = tablist::borrow(orders_ref, order_access_key);
@@ -899,6 +899,67 @@ module econia::user {
         // Place order with new size.
         place_order_internal(user_address, market_id, custodian_id, side,
                              new_size, price, market_order_id);
+    }
+
+    /// Return all active market order IDs for given market account.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which to check.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<u128>`: Vector of all active market order IDs for
+    ///   given market account and side, empty if none.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_active_market_order_ids_internal()`
+    /// * `test_get_active_market_order_ids_internal_no_account()`
+    /// * `test_get_active_market_order_ids_internal_no_accounts()`
+    public(friend) fun get_active_market_order_ids_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+    ): vector<u128>
+    acquires MarketAccounts {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Assert user has market account for given market account ID.
+        assert!(table::contains(market_accounts_map_ref, market_account_id),
+                E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Immutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let orders_ref = if (side == ASK)
+            &market_account_ref.asks else &market_account_ref.bids;
+        // Initialize empty vector of market order IDs.
+        let market_order_ids = vector::empty();
+        // Initialize 1-indexed loop counter and get number of orders.
+        let (i, n) = (1, tablist::length(orders_ref));
+        while (i <= n) { // Loop over all allocated orders.
+            // Immutably borrow order with given access key.
+            let order_ref = tablist::borrow(orders_ref, i);
+            // If order is active, push back its market order ID.
+            if (order_ref.market_order_id != (NIL as u128)) vector::push_back(
+                &mut market_order_ids, order_ref.market_order_id);
+            i = i + 1; // Increment loop counter.
+        };
+        market_order_ids // Return market order IDs.
     }
 
     /// Place order in user's tablist of open orders on given side.
@@ -1952,6 +2013,87 @@ module econia::user {
             @user, market_account_id_generic_self), 0);
         assert!(get_collateral_value_test<QC>(
             @user, market_account_id_generic_self) == 0, 0);
+    }
+
+    #[test]
+    /// Verify expected returns.
+    fun test_get_active_market_order_ids_internal()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id_1 = 123;
+        let market_order_id_2 = 234;
+        let market_order_id_3 = 345;
+        let market_order_id_4 = 456;
+        let size              = MIN_SIZE_PURE_COIN;
+        let price             = 1;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Assert empty returns.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK) == vector[], 0);
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == vector[], 0);
+        // Place three asks, then cancel second ask.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                             size, price, market_order_id_1);
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                             size, price, market_order_id_2);
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                             size, price, market_order_id_3);
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK,
+                              price, 2, market_order_id_2);
+        // Get expected market order IDs vector.
+        let expected = vector[market_order_id_1, market_order_id_3];
+        // Assert expected return.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, ASK) == expected, 0);
+        // Place single bid.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID,
+                             size, price, market_order_id_4);
+        // Get expected market order IDs vector.
+        expected = vector[market_order_id_4];
+        // Assert expected return.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == expected, 0);
+        // Cancel order.
+        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID,
+                              price, 1, market_order_id_4);
+        // Assert expected return.
+        assert!(get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID) == vector[], 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account resource.
+    fun test_get_active_market_order_ids_internal_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN + 10, CUSTODIAN_ID, BID);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts resource.
+    fun test_get_active_market_order_ids_internal_no_accounts()
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_active_market_order_ids_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, BID);
     }
 
     #[test]

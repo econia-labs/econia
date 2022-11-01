@@ -74,38 +74,43 @@
     -  [Aborts](#@Aborts_40)
     -  [Assumptions](#@Assumptions_41)
     -  [Testing](#@Testing_42)
--  [Function `place_order_internal`](#0xc0deb00c_user_place_order_internal)
+-  [Function `get_active_market_order_ids_internal`](#0xc0deb00c_user_get_active_market_order_ids_internal)
     -  [Parameters](#@Parameters_43)
-    -  [Terminology](#@Terminology_44)
-    -  [Assumptions](#@Assumptions_45)
-    -  [Aborts](#@Aborts_46)
-    -  [Expected value testing](#@Expected_value_testing_47)
-    -  [Failure testing](#@Failure_testing_48)
+    -  [Returns](#@Returns_44)
+    -  [Aborts](#@Aborts_45)
+    -  [Testing](#@Testing_46)
+-  [Function `place_order_internal`](#0xc0deb00c_user_place_order_internal)
+    -  [Parameters](#@Parameters_47)
+    -  [Terminology](#@Terminology_48)
+    -  [Assumptions](#@Assumptions_49)
+    -  [Aborts](#@Aborts_50)
+    -  [Expected value testing](#@Expected_value_testing_51)
+    -  [Failure testing](#@Failure_testing_52)
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Type parameters](#@Type_parameters_49)
-    -  [Parameters](#@Parameters_50)
-    -  [Aborts](#@Aborts_51)
-    -  [Assumptions](#@Assumptions_52)
-    -  [Testing](#@Testing_53)
--  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
-    -  [Type parameters](#@Type_parameters_54)
-    -  [Parameters](#@Parameters_55)
-    -  [Aborts](#@Aborts_56)
+    -  [Type parameters](#@Type_parameters_53)
+    -  [Parameters](#@Parameters_54)
+    -  [Aborts](#@Aborts_55)
+    -  [Assumptions](#@Assumptions_56)
     -  [Testing](#@Testing_57)
--  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
+-  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
     -  [Type parameters](#@Type_parameters_58)
     -  [Parameters](#@Parameters_59)
-    -  [Testing](#@Testing_60)
+    -  [Aborts](#@Aborts_60)
+    -  [Testing](#@Testing_61)
+-  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
+    -  [Type parameters](#@Type_parameters_62)
+    -  [Parameters](#@Parameters_63)
+    -  [Testing](#@Testing_64)
 -  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
-    -  [Type parameters](#@Type_parameters_61)
-    -  [Parameters](#@Parameters_62)
-    -  [Returns](#@Returns_63)
-    -  [Aborts](#@Aborts_64)
-    -  [Testing](#@Testing_65)
+    -  [Type parameters](#@Type_parameters_65)
+    -  [Parameters](#@Parameters_66)
+    -  [Returns](#@Returns_67)
+    -  [Aborts](#@Aborts_68)
+    -  [Testing](#@Testing_69)
 -  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
-    -  [Testing](#@Testing_66)
+    -  [Testing](#@Testing_70)
 -  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
-    -  [Testing](#@Testing_67)
+    -  [Testing](#@Testing_71)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -1759,7 +1764,7 @@ order.
 ### Failure testing
 
 
-* <code>test_cancel_order_interal_mismatch()</code>
+* <code>test_cancel_order_internal_mismatch()</code>
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, price: u64, order_access_key: u64, market_order_id: u128)
@@ -1914,7 +1919,7 @@ order.
     <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     // Immutably borrow corresponding orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a> based on side.
-    <b>let</b> (orders_ref) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
+    <b>let</b> orders_ref = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
         &market_account_ref_mut.asks <b>else</b> &market_account_ref_mut.bids;
     // Immutably borrow order.
     <b>let</b> order_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(orders_ref, order_access_key);
@@ -1926,6 +1931,103 @@ order.
     // Place order <b>with</b> new size.
     <a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>(user_address, market_id, custodian_id, side,
                          new_size, price, market_order_id);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_get_active_market_order_ids_internal"></a>
+
+## Function `get_active_market_order_ids_internal`
+
+Return all active market order IDs for given market account.
+
+
+<a name="@Parameters_43"></a>
+
+### Parameters
+
+
+* <code>user_address</code>: User address for market account.
+* <code>market_id</code>: Market ID for market account.
+* <code>custodian_id</code>: Custodian ID for market account.
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which to check.
+
+
+<a name="@Returns_44"></a>
+
+### Returns
+
+
+* <code><a href="">vector</a>&lt;u128&gt;</code>: Vector of all active market order IDs for
+given market account and side, empty if none.
+
+
+<a name="@Aborts_45"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a></code>: No market accounts resource found.
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
+
+
+<a name="@Testing_46"></a>
+
+### Testing
+
+
+* <code>test_get_active_market_order_ids_internal()</code>
+* <code>test_get_active_market_order_ids_internal_no_account()</code>
+* <code>test_get_active_market_order_ids_internal_no_accounts()</code>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_active_market_order_ids_internal">get_active_market_order_ids_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool): <a href="">vector</a>&lt;u128&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_active_market_order_ids_internal">get_active_market_order_ids_internal</a>(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    side: bool,
+): <a href="">vector</a>&lt;u128&gt;
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
+    // Immutably borrow market accounts map.
+    <b>let</b> market_accounts_map_ref =
+        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
+    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    <b>assert</b>!(<a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id),
+            <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    <b>let</b> market_account_ref = // Immutably borrow market <a href="">account</a>.
+        <a href="_borrow">table::borrow</a>(market_accounts_map_ref, market_account_id);
+    // Immutably borrow corresponding orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a> based on side.
+    <b>let</b> orders_ref = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
+        &market_account_ref.asks <b>else</b> &market_account_ref.bids;
+    // Initialize empty <a href="">vector</a> of market order IDs.
+    <b>let</b> market_order_ids = <a href="_empty">vector::empty</a>();
+    // Initialize 1-indexed <b>loop</b> counter and get number of orders.
+    <b>let</b> (i, n) = (1, <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(orders_ref));
+    <b>while</b> (i &lt;= n) { // Loop over all allocated orders.
+        // Immutably borrow order <b>with</b> given access key.
+        <b>let</b> order_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(orders_ref, i);
+        // If order is active, push back its market order ID.
+        <b>if</b> (order_ref.market_order_id != (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128)) <a href="_push_back">vector::push_back</a>(
+            &<b>mut</b> market_order_ids, order_ref.market_order_id);
+        i = i + 1; // Increment <b>loop</b> counter.
+    };
+    market_order_ids // Return market order IDs.
 }
 </code></pre>
 
@@ -1946,7 +2048,7 @@ Allocates a new order if the inactive order stack is empty,
 otherwise pops one off the top of the stack and overwrites it.
 
 
-<a name="@Parameters_43"></a>
+<a name="@Parameters_47"></a>
 
 ### Parameters
 
@@ -1960,7 +2062,7 @@ otherwise pops one off the top of the stack and overwrites it.
 * <code>market_order_id</code>: Market order ID for order book access.
 
 
-<a name="@Terminology_44"></a>
+<a name="@Terminology_48"></a>
 
 ### Terminology
 
@@ -1969,7 +2071,7 @@ otherwise pops one off the top of the stack and overwrites it.
 * The "outbound" asset is the asset traded away.
 
 
-<a name="@Assumptions_45"></a>
+<a name="@Assumptions_49"></a>
 
 ### Assumptions
 
@@ -1978,7 +2080,7 @@ otherwise pops one off the top of the stack and overwrites it.
 * <code>price</code> matches that encoded in <code>market_order_id</code>.
 
 
-<a name="@Aborts_46"></a>
+<a name="@Aborts_50"></a>
 
 ### Aborts
 
@@ -1994,7 +2096,7 @@ received from trade.
 * <code><a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Expected_value_testing_47"></a>
+<a name="@Expected_value_testing_51"></a>
 
 ### Expected value testing
 
@@ -2004,7 +2106,7 @@ received from trade.
 * <code>test_place_cancel_order_stack()</code>
 
 
-<a name="@Failure_testing_48"></a>
+<a name="@Failure_testing_52"></a>
 
 ### Failure testing
 
@@ -2013,8 +2115,8 @@ received from trade.
 * <code>test_place_order_internal_no_account()</code>
 * <code>test_place_order_internal_no_accounts()</code>
 * <code>test_place_order_internal_out_underflow()</code>
-* <code>test_place_order_internal_price_hi()</code>
 * <code>test_place_order_internal_price_0()</code>
+* <code>test_place_order_internal_price_hi()</code>
 * <code>test_place_order_internal_size_lo()</code>
 * <code>test_place_order_internal_ticks_overflow()</code>
 
@@ -2121,7 +2223,7 @@ Deposit an asset to a user's market account.
 Update asset counts, deposit optional coins as collateral.
 
 
-<a name="@Type_parameters_49"></a>
+<a name="@Type_parameters_53"></a>
 
 ### Type parameters
 
@@ -2130,7 +2232,7 @@ Update asset counts, deposit optional coins as collateral.
 if a generic asset.
 
 
-<a name="@Parameters_50"></a>
+<a name="@Parameters_54"></a>
 
 ### Parameters
 
@@ -2144,7 +2246,7 @@ if a generic asset.
 depositing coins.
 
 
-<a name="@Aborts_51"></a>
+<a name="@Aborts_55"></a>
 
 ### Aborts
 
@@ -2159,7 +2261,7 @@ asset ceiling.
 indicated market, in the case of a generic asset deposit.
 
 
-<a name="@Assumptions_52"></a>
+<a name="@Assumptions_56"></a>
 
 ### Assumptions
 
@@ -2169,7 +2271,7 @@ indicated market, in the case of a generic asset deposit.
 does a corresponding collateral map entry.
 
 
-<a name="@Testing_53"></a>
+<a name="@Testing_57"></a>
 
 ### Testing
 
@@ -2269,7 +2371,7 @@ Register market account entries for given market account info.
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_54"></a>
+<a name="@Type_parameters_58"></a>
 
 ### Type parameters
 
@@ -2278,7 +2380,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_55"></a>
+<a name="@Parameters_59"></a>
 
 ### Parameters
 
@@ -2291,7 +2393,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_56"></a>
+<a name="@Aborts_60"></a>
 
 ### Aborts
 
@@ -2299,7 +2401,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_57"></a>
+<a name="@Testing_61"></a>
 
 ### Testing
 
@@ -2384,7 +2486,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_58"></a>
+<a name="@Type_parameters_62"></a>
 
 ### Type parameters
 
@@ -2392,7 +2494,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_59"></a>
+<a name="@Parameters_63"></a>
 
 ### Parameters
 
@@ -2402,7 +2504,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_60"></a>
+<a name="@Testing_64"></a>
 
 ### Testing
 
@@ -2452,7 +2554,7 @@ Withdraw an asset from a user's market account.
 Update asset counts, withdraw optional collateral coins.
 
 
-<a name="@Type_parameters_61"></a>
+<a name="@Type_parameters_65"></a>
 
 ### Type parameters
 
@@ -2461,7 +2563,7 @@ Update asset counts, withdraw optional collateral coins.
 if a generic asset.
 
 
-<a name="@Parameters_62"></a>
+<a name="@Parameters_66"></a>
 
 ### Parameters
 
@@ -2474,7 +2576,7 @@ if a generic asset.
 withdrawing coins.
 
 
-<a name="@Returns_63"></a>
+<a name="@Returns_67"></a>
 
 ### Returns
 
@@ -2482,7 +2584,7 @@ withdrawing coins.
 * <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional collateral coins.
 
 
-<a name="@Aborts_64"></a>
+<a name="@Aborts_68"></a>
 
 ### Aborts
 
@@ -2497,7 +2599,7 @@ withdrawal.
 indicated market, in the case of a generic asset withdrawal.
 
 
-<a name="@Testing_65"></a>
+<a name="@Testing_69"></a>
 
 ### Testing
 
@@ -2596,7 +2698,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
 asset.
 
 
-<a name="@Testing_66"></a>
+<a name="@Testing_70"></a>
 
 ### Testing
 
@@ -2643,7 +2745,7 @@ asset.
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing coins.
 
 
-<a name="@Testing_67"></a>
+<a name="@Testing_71"></a>
 
 ### Testing
 

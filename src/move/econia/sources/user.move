@@ -671,6 +671,152 @@ module econia::user {
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Fill a user's order, routing collateral appropriately.
+    ///
+    /// Updates asset counts in a user's market account. Transfers
+    /// coins as needed between a user's collateral, and an external
+    /// source of coins passing through the matching engine. If a
+    /// complete fill, pushes the newly inactive order to the top of the
+    /// inactive orders stack for the given side.
+    ///
+    /// Should only be called by the matching engine, which has already
+    /// calculated the corresponding amount of assets to fill. If the
+    /// matching engine gets to this stage, then the user has an open
+    /// order as indicated with sufficient assets to fill it. Hence no
+    /// error checking.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for indicated market.
+    /// * `QuoteType`: Quote type for indicated market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side of the open order.
+    /// * `order_access_key`: The open order's access key.
+    /// * `fill_size`: The number of lots filled.
+    /// * `complete_fill`: `true` if order is completely filled.
+    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
+    ///   external base coins passing through the matching engine.
+    /// * `quote_coins_ref_mut`: Mutable reference to quote coins
+    ///   passing through the matching engine.
+    /// * `base_to_route`: Amount of base asset filled.
+    /// * `quote_to_route`: Amount of quote asset filled.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called by the matching engine as described above.
+    public(friend) fun fill_order_internal<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        order_access_key: u64,
+        fill_size: u64,
+        complete_fill: bool,
+        optional_base_coins_ref_mut: &mut Option<Coin<BaseType>>,
+        quote_coins_ref_mut: &mut Coin<QuoteType>,
+        base_to_route: u64,
+        quote_to_route: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        let ( // Mutably borrow corresponding orders tablist,
+            orders_ref_mut,
+            stack_top_ref_mut, // Inactive orders stack top,
+            asset_in, // Amount of inbound asset,
+            asset_in_total_ref_mut, // Inbound asset total field,
+            asset_in_available_ref_mut, // Available field,
+            asset_out, // Amount of outbound asset,
+            asset_out_total_ref_mut, // Outbound asset total field,
+            asset_out_ceiling_ref_mut, // And ceiling field.
+        ) = if (side == ASK) ( // If an ask is matched:
+            &mut market_account_ref_mut.asks,
+            &mut market_account_ref_mut.asks_stack_top,
+            quote_to_route,
+            &mut market_account_ref_mut.quote_total,
+            &mut market_account_ref_mut.quote_available,
+            base_to_route,
+            &mut market_account_ref_mut.base_total,
+            &mut market_account_ref_mut.base_ceiling,
+        ) else ( // If a bid is matched
+            &mut market_account_ref_mut.bids,
+            &mut market_account_ref_mut.bids_stack_top,
+            base_to_route,
+            &mut market_account_ref_mut.base_total,
+            &mut market_account_ref_mut.base_available,
+            quote_to_route,
+            &mut market_account_ref_mut.quote_total,
+            &mut market_account_ref_mut.quote_ceiling,
+        );
+        let order_ref_mut = // Mutably borrow corresponding order.
+            tablist::borrow_mut(orders_ref_mut, order_access_key);
+        if (complete_fill) { // If completely filling order:
+            // Clear out order's market order ID field.
+            order_ref_mut.market_order_id = (NIL as u128);
+            // Mark order's size field to indicate inactive stack top.
+            order_ref_mut.size = *stack_top_ref_mut;
+            // Reassign stack top field to indicate new inactive order.
+            *stack_top_ref_mut = order_access_key;
+        } else { // If only partially filling the order:
+            // Decrement amount still unfilled on order.
+            order_ref_mut.size = order_ref_mut.size - fill_size;
+        };
+        // Increment asset in total amount by asset in amount.
+        *asset_in_total_ref_mut = *asset_in_total_ref_mut + asset_in;
+        // Increment asset in available amount by asset in amount.
+        *asset_in_available_ref_mut = *asset_in_available_ref_mut + asset_in;
+        // Decrement asset out total amount by asset out amount.
+        *asset_out_total_ref_mut = *asset_out_total_ref_mut - asset_out;
+        // Decrement asset out ceiling amount by asset out amount.
+        *asset_out_ceiling_ref_mut = *asset_out_ceiling_ref_mut - asset_out;
+        // If base coins to route:
+        if (option::is_some(optional_base_coins_ref_mut)) {
+            // Mutably borrow base collateral map.
+            let collateral_map_ref_mut =
+                &mut borrow_global_mut<Collateral<BaseType>>(user_address).map;
+            let collateral_ref_mut = // Mutably borrow base collateral.
+                tablist::borrow_mut(collateral_map_ref_mut, market_account_id);
+            let base_coins_ref_mut = // Mutably borrow external coins.
+                option::borrow_mut(optional_base_coins_ref_mut);
+            // If filling as ask, merge to external coins those
+            // extracted from user's collateral. Else if a bid, merge to
+            // user's collateral those extracted from external coins.
+            if (side == ASK)
+                coin::merge(base_coins_ref_mut,
+                    coin::extract(collateral_ref_mut, base_to_route)) else
+                coin::merge(collateral_ref_mut,
+                    coin::extract(base_coins_ref_mut, base_to_route));
+        };
+        // Mutably borrow quote collateral map.
+        let collateral_map_ref_mut =
+            &mut borrow_global_mut<Collateral<QuoteType>>(user_address).map;
+        let collateral_ref_mut = // Mutably borrow quote collateral.
+            tablist::borrow_mut(collateral_map_ref_mut, market_account_id);
+        // If filling an ask, merge to user's collateral coins extracted
+        // from external coins. Else if a bid, merge to external coins
+        // those extracted from user's collateral.
+        if (side == ASK)
+            coin::merge(collateral_ref_mut,
+                coin::extract(quote_coins_ref_mut, quote_to_route)) else
+            coin::merge(quote_coins_ref_mut,
+                coin::extract(collateral_ref_mut, quote_to_route));
+    }
+
     /// Return asset counts for specified market account.
     ///
     /// # Parameters

@@ -8,8 +8,8 @@ Market and capability registration operations.
 Econia relies on a global market registry, which supports
 permissionless registration of markets, as well as capabilities.
 Custodian capabilities are required to approve order operations and
-coin withdrawals, while underwriter capabilities are required to
-approve generic asset amounts.
+withdrawals, while underwriter capabilities are required to approve
+generic asset amounts.
 
 The registry is paired with a recognized market list that tabulates
 a recognized market for select trading pairs. The recognized market
@@ -308,8 +308,8 @@ The below index is automatically generated from source code:
 ## Struct `CustodianCapability`
 
 Custodian capability required to approve order operations and
-coin withdrawals. Administered to third-party registrants who
-may store it as they wish.
+withdrawals. Administered to third-party registrants who may
+store it as they wish.
 
 
 <pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_CustodianCapability">CustodianCapability</a> <b>has</b> store
@@ -339,7 +339,8 @@ may store it as they wish.
 ## Resource `GenericAsset`
 
 Type flag for generic asset. Must be passed as base asset type
-argument for generic market operations.
+argument for generic market operations. Has key ability to
+restrict unexpected malicious attack vectors.
 
 
 <pre><code><b>struct</b> <a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a> <b>has</b> key

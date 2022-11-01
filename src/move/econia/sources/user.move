@@ -115,6 +115,8 @@ module econia::user {
     const E_DEPOSIT_OVERFLOW_ASSET_CEILING: u64 = 5;
     /// Underwriter is not valid for indicated market.
     const E_INVALID_UNDERWRITER: u64 = 6;
+    /// Too little available for withdrawal.
+    const E_WITHDRAW_TOO_LITTLE_AVAILABLE: u64 = 7;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -414,6 +416,104 @@ module econia::user {
         tablist::contains(custodians_map_ref, market_id)
     }
 
+    /// Wrapped call to `withdraw_coins()` for withdrawing under
+    /// authority of delegated custodian.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public fun withdraw_coins_custodian<
+        CoinType
+    >(
+        user_address: address,
+        market_id: u64,
+        amount: u64,
+        custodian_capability_ref: &CustodianCapability
+    ): Coin<CoinType>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        option::destroy_some(withdraw_asset<CoinType>(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            amount,
+            NO_UNDERWRITER))
+    }
+
+    /// Wrapped call to `withdraw_coins()` for withdrawing under
+    /// authority of signing user.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public fun withdraw_coins_user<
+        CoinType
+    >(
+        user: &signer,
+        market_id: u64,
+        amount: u64,
+    ): Coin<CoinType>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        option::destroy_some(withdraw_asset<CoinType>(
+            address_of(user),
+            market_id,
+            NO_CUSTODIAN,
+            amount,
+            NO_UNDERWRITER))
+    }
+
+    /// Wrapped call to `withdraw_generic_asset()` for withdrawing under
+    /// authority of delegated custodian.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public fun withdraw_generic_asset_custodian(
+        user_address: address,
+        market_id: u64,
+        amount: u64,
+        custodian_capability_ref: &CustodianCapability,
+        underwriter_capability_ref: &UnderwriterCapability
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        withdraw_generic_asset(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            amount,
+            underwriter_capability_ref)
+    }
+
+    /// Wrapped call to `withdraw_generic_asset()` for withdrawing under
+    /// authority of signing user.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public fun withdraw_generic_asset_user(
+        user: &signer,
+        market_id: u64,
+        amount: u64,
+        underwriter_capability_ref: &UnderwriterCapability
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        withdraw_generic_asset(
+            address_of(user),
+            market_id,
+            NO_CUSTODIAN,
+            amount,
+            underwriter_capability_ref)
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -517,6 +617,31 @@ module econia::user {
     {
         register_market_account<GenericAsset, QuoteType>(
             user, market_id, custodian_id);
+    }
+
+    #[cmd]
+    /// Wrapped call to `withdraw_coins_user()` for withdrawing from
+    /// market account to user's `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    public entry fun withdraw_to_coinstore<
+        CoinType
+    >(
+        user: &signer,
+        market_id: u64,
+        amount: u64,
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register coin store if user does not have one.
+        if (!coin::is_account_registered<CoinType>(address_of(user)))
+            coin::register<CoinType>(user);
+        // Deposit to coin store coins withdrawn from market account.
+        coin::deposit<CoinType>(address_of(user), withdraw_coins_user(
+            user, market_id, amount));
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -676,7 +801,12 @@ module econia::user {
         // Update available asset amount.
         *available_ref_mut = *available_ref_mut + amount;
         *ceiling_ref_mut = *ceiling_ref_mut + amount; // Update ceiling.
-        if (option::is_some(&optional_coins)) { // If asset is coin:
+        // If asset is generic:
+        if (asset_type == type_info::type_of<GenericAsset>()) {
+            assert!(underwriter_id == market_account_ref_mut.underwriter_id,
+                    E_INVALID_UNDERWRITER); // Assert underwriter ID.
+            option::destroy_none(optional_coins); // Destroy option.
+        } else { // If asset is coin:
             // Mutably borrow collateral map.
             let collateral_map_ref_mut = &mut borrow_global_mut<
                 Collateral<AssetType>>(user_address).map;
@@ -685,10 +815,6 @@ module econia::user {
                 collateral_map_ref_mut, market_account_id);
             coin::merge( // Merge optional coins into collateral.
                 collateral_ref_mut, option::destroy_some(optional_coins));
-        } else { // If asset is not coin:
-            assert!(underwriter_id == market_account_ref_mut.underwriter_id,
-                    E_INVALID_UNDERWRITER); // Assert underwriter ID.
-            option::destroy_none(optional_coins); // Destroy option.
         };
     }
 
@@ -807,6 +933,159 @@ module econia::user {
                      coin::zero<CoinType>());
     }
 
+    /// Withdraw an asset from a user's market account.
+    ///
+    /// Update asset counts, withdraw optional coins as collateral.
+    ///
+    /// # Type parameters
+    ///
+    /// * `AssetType`: Asset type to withdraw, `registry::GenericAsset`
+    ///   if a generic asset.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `amount`: Amount to withdraw.
+    /// * `underwriter_id`: Underwriter ID for market, ignored when
+    ///   withdrawing coins.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Coin<AssetType>>`: Optional coins as collateral.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    /// * `E_ASSET_NOT_IN_PAIR`: Asset type is not in trading pair for
+    ///    market.
+    /// * `E_WITHDRAW_TOO_LITTLE_AVAILABLE`: Too little available for
+    ///   withdrawal.
+    /// * `E_INVALID_UNDERWRITER`: Underwriter is not valid for
+    ///   indicated market, in the case of a generic asset withdrawal.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_asset_no_account()`
+    /// * `test_withdraw_asset_no_accounts()`
+    /// * `test_withdraw_asset_not_in_pair()`
+    /// * `test_withdraw_asset_underflow()`
+    /// * `test_withdraw_asset_underwriter()`
+    /// * `test_withdrawals()`
+    fun withdraw_asset<
+        AssetType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+        underwriter_id: u64
+    ): Option<Coin<AssetType>>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        // Assert user has market account for given ID.
+        assert!(table::contains(market_accounts_map_ref_mut, market_account_id),
+                E_NO_MARKET_ACCOUNT);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Get asset type info.
+        let asset_type = type_info::type_of<AssetType>();
+        // Get asset total, available, and ceiling amounts based on if
+        // asset is base or quote for trading pair, aborting if neither.
+        let (total_ref_mut, available_ref_mut, ceiling_ref_mut) =
+            if (asset_type == market_account_ref_mut.base_type) (
+                &mut market_account_ref_mut.base_total,
+                &mut market_account_ref_mut.base_available,
+                &mut market_account_ref_mut.base_ceiling
+            ) else if (asset_type == market_account_ref_mut.quote_type) (
+                &mut market_account_ref_mut.quote_total,
+                &mut market_account_ref_mut.quote_available,
+                &mut market_account_ref_mut.quote_ceiling
+            ) else abort E_ASSET_NOT_IN_PAIR;
+        // Assert enough asset available for withdraw.
+        assert!(amount <= *available_ref_mut, E_WITHDRAW_TOO_LITTLE_AVAILABLE);
+        *total_ref_mut = *total_ref_mut - amount; // Update total.
+        // Update available asset amount.
+        *available_ref_mut = *available_ref_mut - amount;
+        *ceiling_ref_mut = *ceiling_ref_mut - amount; // Update ceiling.
+        // Return based on if asset type. If is generic:
+        return if (asset_type == type_info::type_of<GenericAsset>()) {
+            assert!(underwriter_id == market_account_ref_mut.underwriter_id,
+                    E_INVALID_UNDERWRITER); // Assert underwriter ID.
+            option::none() // Return empty option.
+        } else { // If asset is coin:
+            // Mutably borrow collateral map.
+            let collateral_map_ref_mut = &mut borrow_global_mut<
+                Collateral<AssetType>>(user_address).map;
+            // Mutably borrow collateral for market account.
+            let collateral_ref_mut = tablist::borrow_mut(
+                collateral_map_ref_mut, market_account_id);
+            // Withdraw coin and return in an option.
+            option::some<Coin<AssetType>>(
+                coin::extract(collateral_ref_mut, amount))
+        }
+    }
+
+    /// Wrapped call to `withdraw_asset()` for withdrawing generic
+    /// asset.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    fun withdraw_generic_asset(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+        underwriter_capability_ref: &UnderwriterCapability
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        option::destroy_none(withdraw_asset<GenericAsset>(
+            user_address,
+            market_id,
+            custodian_id,
+            amount,
+            registry::get_underwriter_id(underwriter_capability_ref)))
+    }
+
+    /// Wrapped call to `withdraw_asset()` for withdrawing coins.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    fun withdraw_coins<
+        CoinType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+    ): Coin<CoinType>
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        option::destroy_some(withdraw_asset<CoinType>(
+            user_address,
+            market_id,
+            custodian_id,
+            amount,
+            NO_UNDERWRITER))
+    }
+
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -871,8 +1150,10 @@ module econia::user {
     /// * Pure coin self-custodied market account.
     /// * Pure coin market account with delegated custodian.
     /// * Generic self-custodian market account.
+    /// * Generic market account with delegated custodian.
     fun register_market_accounts_test(): (
         signer,
+        u128,
         u128,
         u128,
         u128
@@ -885,9 +1166,6 @@ module econia::user {
             &account::create_test_signer_cap(@user));
         // Create Aptos account.
         account::create_account_for_test(@user);
-        // Register coin store for test assets.
-        coin::register<BC>(&user);
-        coin::register<QC>(&user);
         // Register a pure coin and a generic market, discarding most
         // returns.
         let (market_id_pure_coin, _, _, _, _, _, market_id_generic, _, _, _, _,
@@ -896,16 +1174,20 @@ module econia::user {
         assert!(market_id_pure_coin    == MARKET_ID_PURE_COIN, 0);
         assert!(market_id_generic      == MARKET_ID_GENERIC, 0);
         assert!(underwriter_id_generic == UNDERWRITER_ID, 0);
-        // Register pure coin account.
+        // Register self-custodied pure coin account.
         register_market_account<BC, QC>(
             &user, market_id_pure_coin, NO_CUSTODIAN);
         // Set delegated custodian ID as registered.
         registry::set_registered_custodian_test(CUSTODIAN_ID);
-        register_market_account<BC, QC>( // Register delegated account.
+        // Register delegated custody pure coin account.
+        register_market_account<BC, QC>(
             &user, market_id_pure_coin, CUSTODIAN_ID);
-        // Register generic asset account.
+        // Register self-custodied generic asset account.
         register_market_account_generic_base<QC>(
             &user, market_id_generic, NO_CUSTODIAN);
+        // Register delegated custody generic asset account.
+        register_market_account_generic_base<QC>(
+            &user, market_id_generic, CUSTODIAN_ID);
         // Get market account IDs.
         let market_account_id_coin_self =
             get_market_account_id(market_id_pure_coin, NO_CUSTODIAN);
@@ -913,10 +1195,13 @@ module econia::user {
             get_market_account_id(market_id_pure_coin, CUSTODIAN_ID);
         let market_account_id_generic_self =
             get_market_account_id(market_id_generic  , NO_CUSTODIAN);
+        let market_account_id_generic_delegated =
+            get_market_account_id(market_id_generic  , CUSTODIAN_ID);
         (user, // Return signing user and market account IDs.
          market_account_id_coin_self,
          market_account_id_coin_delegated,
-         market_account_id_generic_self)
+         market_account_id_generic_self,
+         market_account_id_generic_delegated)
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1016,9 +1301,10 @@ module econia::user {
         let coin_amount = 700;
         let generic_amount = 500;
         // Get signing user and test market account IDs.
-        let (user, _,
-             market_account_id_coin_delegated,
-             market_account_id_generic_self) = register_market_accounts_test();
+        let (user, _, market_account_id_coin_delegated,
+                      market_account_id_generic_self, _) =
+             register_market_accounts_test();
+        coin::register<QC>(&user); // Register coin store.
         // Deposit coin asset to user's coin store.
         coin::deposit(@user, assets::mint_test<QC>(coin_amount));
         // Deposit to user's delegated pure coin market account.
@@ -1102,10 +1388,14 @@ module econia::user {
         let market_account_id_coin_delegated = get_market_account_id(
             MARKET_ID_PURE_COIN, CUSTODIAN_ID);
         let market_account_id_generic_self = get_market_account_id(
-            MARKET_ID_GENERIC, NO_CUSTODIAN);
+            MARKET_ID_GENERIC  , NO_CUSTODIAN);
+        let market_account_id_generic_delegated = get_market_account_id(
+            MARKET_ID_GENERIC  , CUSTODIAN_ID);
         // Assert empty returns.
         assert!(get_all_market_account_ids_for_market_id(
                 @user, MARKET_ID_PURE_COIN) == vector[], 0);
+        assert!(get_all_market_account_ids_for_market_id(
+                @user, MARKET_ID_GENERIC) == vector[], 0);
         assert!(get_all_market_account_ids_for_user(
                 @user) == vector[], 0);
         // Assert false returns.
@@ -1115,6 +1405,8 @@ module econia::user {
                 @user, market_account_id_coin_delegated), 0);
         assert!(!has_market_account_by_market_account_id(
                 @user, market_account_id_generic_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user, market_account_id_generic_delegated), 0);
         assert!(!has_market_account_by_market_id(
                 @user, MARKET_ID_PURE_COIN), 0);
         assert!(!has_market_account_by_market_id(
@@ -1137,12 +1429,14 @@ module econia::user {
                                   market_account_id_coin_delegated];
         assert!(get_all_market_account_ids_for_market_id(
                 @user, MARKET_ID_PURE_COIN) == expected_ids, 0);
-        expected_ids = vector[market_account_id_generic_self];
+        expected_ids = vector[market_account_id_generic_self,
+                              market_account_id_generic_delegated];
         assert!(get_all_market_account_ids_for_market_id(
                 @user, MARKET_ID_GENERIC) == expected_ids, 0);
         expected_ids = vector[market_account_id_coin_self,
                               market_account_id_coin_delegated,
-                              market_account_id_generic_self];
+                              market_account_id_generic_self,
+                              market_account_id_generic_delegated];
         assert!(get_all_market_account_ids_for_user(
                 @user) == expected_ids, 0);
         // Assert true returns.
@@ -1152,6 +1446,8 @@ module econia::user {
                 @user, market_account_id_coin_delegated), 0);
         assert!(has_market_account_by_market_account_id(
                 @user, market_account_id_generic_self), 0);
+        assert!(has_market_account_by_market_account_id(
+                @user, market_account_id_generic_delegated), 0);
         assert!(has_market_account_by_market_id(
                 @user, MARKET_ID_PURE_COIN), 0);
         assert!(has_market_account_by_market_id(
@@ -1163,6 +1459,8 @@ module econia::user {
                 @user_2, market_account_id_coin_delegated), 0);
         assert!(!has_market_account_by_market_account_id(
                 @user_2, market_account_id_generic_self), 0);
+        assert!(!has_market_account_by_market_account_id(
+                @user_2, market_account_id_generic_delegated), 0);
         assert!(!has_market_account_by_market_id(
                 @user_2, MARKET_ID_PURE_COIN), 0);
         assert!(!has_market_account_by_market_id(
@@ -1363,6 +1661,177 @@ module econia::user {
         assert!(market_account_ref.quote_total == 0, 0);
         assert!(market_account_ref.quote_available == 0, 0);
         assert!(market_account_ref.quote_ceiling == 0, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account.
+    fun test_withdraw_asset_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<BC>(&user, 0, 0));
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts.
+    fun test_withdraw_asset_no_accounts(
+        user: &signer
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<BC>(user, 0, 0));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for asset not in pair.
+    fun test_withdraw_asset_not_in_pair()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<UC>(&user, MARKET_ID_PURE_COIN, 0));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for not enough asset available to withdraw.
+    fun test_withdraw_asset_underflow()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        // Attempt invalid invocation, burning returned coins.
+        assets::burn(withdraw_coins_user<QC>(&user, MARKET_ID_PURE_COIN, 1));
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid underwriter.
+    fun test_withdraw_asset_underwriter()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        let (user, _, _, _, _) = register_market_accounts_test();
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID + 1);
+        // Attempt invalid invocation.
+        withdraw_generic_asset_user(&user, MARKET_ID_GENERIC, 0,
+                                    &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    /// Verify state updates for assorted withdrawal styles.
+    fun test_withdrawals()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Declare start amount parameters.
+        let amount_start_coin = 700;
+        let amount_start_generic = 500;
+        // Declare withdrawal amount parameters.
+        let amount_withdraw_coin_0 = 350;
+        let amount_withdraw_generic_0 = 450;
+        let amount_withdraw_coin_1 = 300;
+        let amount_withdraw_generic_1 = 400;
+        // Declare final amounts.
+        let amount_final_coin_0 = amount_start_coin - amount_withdraw_coin_0;
+        let amount_final_generic_0 = amount_start_generic
+                                     - amount_withdraw_generic_0;
+        let amount_final_coin_1 = amount_start_coin - amount_withdraw_coin_1;
+        let amount_final_generic_1 = amount_start_generic
+                                     - amount_withdraw_generic_1;
+        // Get signing user and test market account IDs.
+        let (user, _, _, market_account_id_generic_self,
+                         market_account_id_generic_delegated) =
+             register_market_accounts_test();
+        let custodian_capability = // Get custodian capability.
+            registry::get_custodian_capability_test(CUSTODIAN_ID);
+        let underwriter_capability = // Get underwriter capability.
+            registry::get_underwriter_capability_test(UNDERWRITER_ID);
+        // Deposit to both market accounts.
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                          assets::mint_test(amount_start_coin));
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, CUSTODIAN_ID,
+                          assets::mint_test(amount_start_coin));
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                              amount_start_generic, &underwriter_capability);
+        deposit_generic_asset(@user, MARKET_ID_GENERIC, CUSTODIAN_ID,
+                              amount_start_generic, &underwriter_capability);
+        // Withdraw coins to coin store under authority of signing user.
+        withdraw_to_coinstore<QC>(&user, MARKET_ID_GENERIC, 1);
+        withdraw_to_coinstore<QC>(&user, MARKET_ID_GENERIC,
+                                  amount_withdraw_coin_0 - 1);
+        // Assert coin store balance.
+        assert!(coin::balance<QC>(@user) == amount_withdraw_coin_0, 0);
+        // Withdraw coins under authority of delegated custodian.
+        let coins = withdraw_coins_custodian<QC>(
+            @user, MARKET_ID_GENERIC, amount_withdraw_coin_1,
+            &custodian_capability);
+        // Assert withdrawn coin value.
+        assert!(coin::value(&coins) == amount_withdraw_coin_1, 0);
+        assets::burn(coins); // Burn coins.
+        // Withdraw generic asset under authority of signing user.
+        withdraw_generic_asset_user(
+            &user, MARKET_ID_GENERIC, amount_withdraw_generic_0,
+            &underwriter_capability);
+        // Withdraw generic asset under authority of delegated
+        // custodian.
+        withdraw_generic_asset_custodian(
+            @user, MARKET_ID_GENERIC, amount_withdraw_generic_1,
+            &custodian_capability, &underwriter_capability);
+        // Assert state for self-custodied account.
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_user(&user, MARKET_ID_GENERIC);
+        assert!(base_total      == amount_final_generic_0, 0);
+        assert!(base_available  == amount_final_generic_0, 0);
+        assert!(base_ceiling    == amount_final_generic_0, 0);
+        assert!(quote_total     == amount_final_coin_0   , 0);
+        assert!(quote_available == amount_final_coin_0   , 0);
+        assert!(quote_ceiling   == amount_final_coin_0   , 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self) == amount_final_coin_0, 0);
+        // Assert state for delegated custody account.
+        let ( base_total,  base_available,  base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_custodian(
+                @user, MARKET_ID_GENERIC, &custodian_capability);
+        assert!(base_total      == amount_final_generic_1, 0);
+        assert!(base_available  == amount_final_generic_1, 0);
+        assert!(base_ceiling    == amount_final_generic_1, 0);
+        assert!(quote_total     == amount_final_coin_1   , 0);
+        assert!(quote_available == amount_final_coin_1   , 0);
+        assert!(quote_ceiling   == amount_final_coin_1   , 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_delegated), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_delegated) ==
+            amount_final_coin_1, 0);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

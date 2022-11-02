@@ -383,12 +383,12 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_61)
     -  [Aborts](#@Aborts_62)
     -  [Testing](#@Testing_63)
--  [Function `get_next_order_access_key_internal`](#0xc0deb00c_user_get_next_order_access_key_internal)
+-  [Function `get_active_market_order_ids_internal`](#0xc0deb00c_user_get_active_market_order_ids_internal)
     -  [Parameters](#@Parameters_64)
     -  [Returns](#@Returns_65)
     -  [Aborts](#@Aborts_66)
     -  [Testing](#@Testing_67)
--  [Function `get_active_market_order_ids_internal`](#0xc0deb00c_user_get_active_market_order_ids_internal)
+-  [Function `get_next_order_access_key_internal`](#0xc0deb00c_user_get_next_order_access_key_internal)
     -  [Parameters](#@Parameters_68)
     -  [Returns](#@Returns_69)
     -  [Aborts](#@Aborts_70)
@@ -426,9 +426,9 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_96)
     -  [Aborts](#@Aborts_97)
     -  [Testing](#@Testing_98)
--  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
-    -  [Testing](#@Testing_99)
 -  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Testing](#@Testing_99)
+-  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
     -  [Testing](#@Testing_100)
 
 
@@ -2566,15 +2566,11 @@ Return asset counts for specified market account.
 
 </details>
 
-<a name="0xc0deb00c_user_get_next_order_access_key_internal"></a>
+<a name="0xc0deb00c_user_get_active_market_order_ids_internal"></a>
 
-## Function `get_next_order_access_key_internal`
+## Function `get_active_market_order_ids_internal`
 
-Return order access key for next placed order.
-
-If inactive orders stack top is empty, will be next 1-indexed
-order access key to be allocated. Otherwise is order access key
-at top of inactive order stack.
+Return all active market order IDs for given market account.
 
 
 <a name="@Parameters_64"></a>
@@ -2585,8 +2581,7 @@ at top of inactive order stack.
 * <code>user_address</code>: User address for market account.
 * <code>market_id</code>: Market ID for market account.
 * <code>custodian_id</code>: Custodian ID for market account.
-* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which an order will be
-placed.
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which to check.
 
 
 <a name="@Returns_65"></a>
@@ -2594,7 +2589,8 @@ placed.
 ### Returns
 
 
-* <code>u64</code>: Order access key of next order to be placed.
+* <code><a href="">vector</a>&lt;u128&gt;</code>: Vector of all active market order IDs for
+given market account and side, empty if none.
 
 
 <a name="@Aborts_66"></a>
@@ -2607,96 +2603,6 @@ placed.
 
 
 <a name="@Testing_67"></a>
-
-### Testing
-
-
-* <code>test_get_next_order_access_key_internal_no_account()</code>
-* <code>test_get_next_order_access_key_internal_no_accounts()</code>
-* <code>test_place_cancel_order_ask()</code>
-* <code>test_place_cancel_order_stack()</code>
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>(
-    user_address: <b>address</b>,
-    market_id: u64,
-    custodian_id: u64,
-    side: bool
-): u64 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
-    <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
-    // Immutably borrow market accounts map.
-    <b>let</b> market_accounts_map_ref =
-        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
-        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
-        <a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
-    <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    <b>let</b> market_account_ref = // Mutably borrow market <a href="">account</a>.
-        <a href="_borrow">table::borrow</a>(market_accounts_map_ref, market_account_id);
-    // Get orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a> and inactive order stack top for side.
-    <b>let</b> (orders_ref, stack_top_ref) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
-        (&market_account_ref.asks, &market_account_ref.asks_stack_top) <b>else</b>
-        (&market_account_ref.bids, &market_account_ref.bids_stack_top);
-    // If empty inactive order stack, <b>return</b> 1-indexed order access
-    // key for order that will need <b>to</b> be allocated.
-    <b>if</b> (*stack_top_ref == <a href="user.md#0xc0deb00c_user_NIL">NIL</a>) <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(orders_ref) + 1 <b>else</b>
-        *stack_top_ref // Otherwise the top of the inactive stack.
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_user_get_active_market_order_ids_internal"></a>
-
-## Function `get_active_market_order_ids_internal`
-
-Return all active market order IDs for given market account.
-
-
-<a name="@Parameters_68"></a>
-
-### Parameters
-
-
-* <code>user_address</code>: User address for market account.
-* <code>market_id</code>: Market ID for market account.
-* <code>custodian_id</code>: Custodian ID for market account.
-* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which to check.
-
-
-<a name="@Returns_69"></a>
-
-### Returns
-
-
-* <code><a href="">vector</a>&lt;u128&gt;</code>: Vector of all active market order IDs for
-given market account and side, empty if none.
-
-
-<a name="@Aborts_70"></a>
-
-### Aborts
-
-
-* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a></code>: No market accounts resource found.
-* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
-
-
-<a name="@Testing_71"></a>
 
 ### Testing
 
@@ -2750,6 +2656,101 @@ given market account and side, empty if none.
         i = i + 1; // Increment <b>loop</b> counter.
     };
     market_order_ids // Return market order IDs.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_get_next_order_access_key_internal"></a>
+
+## Function `get_next_order_access_key_internal`
+
+Return order access key for next placed order.
+
+If inactive orders stack top is empty, will be next 1-indexed
+order access key to be allocated. Otherwise is order access key
+at top of inactive order stack.
+
+
+<a name="@Parameters_68"></a>
+
+### Parameters
+
+
+* <code>user_address</code>: User address for market account.
+* <code>market_id</code>: Market ID for market account.
+* <code>custodian_id</code>: Custodian ID for market account.
+* <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which an order will be
+placed.
+
+
+<a name="@Returns_69"></a>
+
+### Returns
+
+
+* <code>u64</code>: Order access key of next order to be placed.
+
+
+<a name="@Aborts_70"></a>
+
+### Aborts
+
+
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a></code>: No market accounts resource found.
+* <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
+
+
+<a name="@Testing_71"></a>
+
+### Testing
+
+
+* <code>test_get_next_order_access_key_internal_no_account()</code>
+* <code>test_get_next_order_access_key_internal_no_accounts()</code>
+* <code>test_place_cancel_order_ask()</code>
+* <code>test_place_cancel_order_stack()</code>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    side: bool
+): u64
+<b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
+    // Immutably borrow market accounts map.
+    <b>let</b> market_accounts_map_ref =
+        &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
+    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+        ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
+    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
+        <a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id);
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
+    <b>let</b> market_account_ref = // Mutably borrow market <a href="">account</a>.
+        <a href="_borrow">table::borrow</a>(market_accounts_map_ref, market_account_id);
+    // Get orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a> and inactive order stack top for side.
+    <b>let</b> (orders_ref, stack_top_ref) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
+        (&market_account_ref.asks, &market_account_ref.asks_stack_top) <b>else</b>
+        (&market_account_ref.bids, &market_account_ref.bids_stack_top);
+    // If empty inactive order stack, <b>return</b> 1-indexed order access
+    // key for order that will need <b>to</b> be allocated.
+    <b>if</b> (*stack_top_ref == <a href="user.md#0xc0deb00c_user_NIL">NIL</a>) <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(orders_ref) + 1 <b>else</b>
+        *stack_top_ref // Otherwise the top of the inactive stack.
 }
 </code></pre>
 
@@ -3289,6 +3290,8 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 
 ## Function `register_market_account_collateral_entry`
 
+Create collateral entry upon market account registration.
+
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 Does not check if collateral entry already exists for given
@@ -3501,54 +3504,6 @@ indicated market, in the case of a generic asset withdrawal.
 
 </details>
 
-<a name="0xc0deb00c_user_withdraw_generic_asset"></a>
-
-## Function `withdraw_generic_asset`
-
-Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing generic
-asset.
-
-
-<a name="@Testing_99"></a>
-
-### Testing
-
-
-* <code>test_withdrawals()</code>
-
-
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_generic_asset">withdraw_generic_asset</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, amount: u64, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_generic_asset">withdraw_generic_asset</a>(
-    user_address: <b>address</b>,
-    market_id: u64,
-    custodian_id: u64,
-    amount: u64,
-    underwriter_capability_ref: &UnderwriterCapability
-) <b>acquires</b>
-    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
-    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
-{
-    <a href="_destroy_none">option::destroy_none</a>(<a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;GenericAsset&gt;(
-        user_address,
-        market_id,
-        custodian_id,
-        amount,
-        <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">registry::get_underwriter_id</a>(underwriter_capability_ref)))
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_user_withdraw_coins"></a>
 
 ## Function `withdraw_coins`
@@ -3556,7 +3511,7 @@ asset.
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing coins.
 
 
-<a name="@Testing_100"></a>
+<a name="@Testing_99"></a>
 
 ### Testing
 
@@ -3591,6 +3546,54 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
         custodian_id,
         amount,
         <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>))
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_user_withdraw_generic_asset"></a>
+
+## Function `withdraw_generic_asset`
+
+Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing generic
+asset.
+
+
+<a name="@Testing_100"></a>
+
+### Testing
+
+
+* <code>test_withdrawals()</code>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_generic_asset">withdraw_generic_asset</a>(user_address: <b>address</b>, market_id: u64, custodian_id: u64, amount: u64, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="user.md#0xc0deb00c_user_withdraw_generic_asset">withdraw_generic_asset</a>(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    amount: u64,
+    underwriter_capability_ref: &UnderwriterCapability
+) <b>acquires</b>
+    <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
+    <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
+{
+    <a href="_destroy_none">option::destroy_none</a>(<a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;GenericAsset&gt;(
+        user_address,
+        market_id,
+        custodian_id,
+        amount,
+        <a href="registry.md#0xc0deb00c_registry_get_underwriter_id">registry::get_underwriter_id</a>(underwriter_capability_ref)))
 }
 </code></pre>
 

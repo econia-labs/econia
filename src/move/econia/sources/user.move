@@ -1372,64 +1372,6 @@ module econia::user {
          market_account_ref.quote_ceiling) // Return asset count fields.
     }
 
-    /// Return order access key for next placed order.
-    ///
-    /// If inactive orders stack top is empty, will be next 1-indexed
-    /// order access key to be allocated. Otherwise is order access key
-    /// at top of inactive order stack.
-    ///
-    /// # Parameters
-    ///
-    /// * `user_address`: User address for market account.
-    /// * `market_id`: Market ID for market account.
-    /// * `custodian_id`: Custodian ID for market account.
-    /// * `side`: `ASK` or `BID`, the side on which an order will be
-    ///   placed.
-    ///
-    /// # Returns
-    ///
-    /// * `u64`: Order access key of next order to be placed.
-    ///
-    /// # Aborts
-    ///
-    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
-    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
-    ///
-    /// # Testing
-    ///
-    /// * `test_get_next_order_access_key_internal_no_account()`
-    /// * `test_get_next_order_access_key_internal_no_accounts()`
-    /// * `test_place_cancel_order_ask()`
-    /// * `test_place_cancel_order_stack()`
-    public(friend) fun get_next_order_access_key_internal(
-        user_address: address,
-        market_id: u64,
-        custodian_id: u64,
-        side: bool
-    ): u64 acquires MarketAccounts {
-        // Assert user has market accounts resource.
-        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
-        // Immutably borrow market accounts map.
-        let market_accounts_map_ref =
-            &borrow_global<MarketAccounts>(user_address).map;
-        let market_account_id = // Get market account ID.
-            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        let has_market_account = // Check if user has market account.
-            table::contains(market_accounts_map_ref, market_account_id);
-        // Assert user has market account for given market account ID.
-        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
-        let market_account_ref = // Mutably borrow market account.
-            table::borrow(market_accounts_map_ref, market_account_id);
-        // Get orders tablist and inactive order stack top for side.
-        let (orders_ref, stack_top_ref) = if (side == ASK)
-            (&market_account_ref.asks, &market_account_ref.asks_stack_top) else
-            (&market_account_ref.bids, &market_account_ref.bids_stack_top);
-        // If empty inactive order stack, return 1-indexed order access
-        // key for order that will need to be allocated.
-        if (*stack_top_ref == NIL) tablist::length(orders_ref) + 1 else
-            *stack_top_ref // Otherwise the top of the inactive stack.
-    }
-
     /// Return all active market order IDs for given market account.
     ///
     /// # Parameters
@@ -1489,6 +1431,65 @@ module econia::user {
             i = i + 1; // Increment loop counter.
         };
         market_order_ids // Return market order IDs.
+    }
+
+    /// Return order access key for next placed order.
+    ///
+    /// If inactive orders stack top is empty, will be next 1-indexed
+    /// order access key to be allocated. Otherwise is order access key
+    /// at top of inactive order stack.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order will be
+    ///   placed.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Order access key of next order to be placed.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_next_order_access_key_internal_no_account()`
+    /// * `test_get_next_order_access_key_internal_no_accounts()`
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_stack()`
+    public(friend) fun get_next_order_access_key_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool
+    ): u64
+    acquires MarketAccounts {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Mutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Get orders tablist and inactive order stack top for side.
+        let (orders_ref, stack_top_ref) = if (side == ASK)
+            (&market_account_ref.asks, &market_account_ref.asks_stack_top) else
+            (&market_account_ref.bids, &market_account_ref.bids_stack_top);
+        // If empty inactive order stack, return 1-indexed order access
+        // key for order that will need to be allocated.
+        if (*stack_top_ref == NIL) tablist::length(orders_ref) + 1 else
+            *stack_top_ref // Otherwise the top of the inactive stack.
     }
 
     /// Place order in user's tablist of open orders on given side.
@@ -1867,6 +1868,8 @@ module econia::user {
         }
     }
 
+    /// Create collateral entry upon market account registration.
+    ///
     /// Inner function for `register_market_account()`.
     ///
     /// Does not check if collateral entry already exists for given
@@ -2011,30 +2014,6 @@ module econia::user {
         }
     }
 
-    /// Wrapped call to `withdraw_asset()` for withdrawing generic
-    /// asset.
-    ///
-    /// # Testing
-    ///
-    /// * `test_withdrawals()`
-    fun withdraw_generic_asset(
-        user_address: address,
-        market_id: u64,
-        custodian_id: u64,
-        amount: u64,
-        underwriter_capability_ref: &UnderwriterCapability
-    ) acquires
-        Collateral,
-        MarketAccounts
-    {
-        option::destroy_none(withdraw_asset<GenericAsset>(
-            user_address,
-            market_id,
-            custodian_id,
-            amount,
-            registry::get_underwriter_id(underwriter_capability_ref)))
-    }
-
     /// Wrapped call to `withdraw_asset()` for withdrawing coins.
     ///
     /// # Testing
@@ -2058,6 +2037,30 @@ module econia::user {
             custodian_id,
             amount,
             NO_UNDERWRITER))
+    }
+
+    /// Wrapped call to `withdraw_asset()` for withdrawing generic
+    /// asset.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdrawals()`
+    fun withdraw_generic_asset(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        amount: u64,
+        underwriter_capability_ref: &UnderwriterCapability
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        option::destroy_none(withdraw_asset<GenericAsset>(
+            user_address,
+            market_id,
+            custodian_id,
+            amount,
+            registry::get_underwriter_id(underwriter_capability_ref)))
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

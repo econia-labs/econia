@@ -1,4 +1,4 @@
-/// # Functions
+/// # Function index
 ///
 /// ## Public functions
 ///
@@ -57,6 +57,101 @@
 ///
 /// * `get_next_order_access_key_internal()`
 /// * `get_active_market_order_ids_internal()`
+///
+/// ## Dependency charts
+///
+/// The below dependency charts use `mermaid.js` syntax, which can be
+/// automatically rendered into a diagram (depending on the browser)
+/// when viewing the documentation file generated from source code. If
+/// a browser renders the diagrams with coloring that makes it difficult
+/// to read, try a different browser.
+///
+/// Deposits:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// deposit_coins --> deposit_asset
+///
+/// deposit_from_coinstore --> deposit_coins
+///
+/// deposit_assets_internal --> deposit_asset
+/// deposit_assets_internal --> deposit_coins
+///
+/// deposit_generic_asset --> deposit_asset
+/// deposit_generic_asset --> registry::get_underwriter_id
+///
+/// ```
+///
+/// Withdrawals:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// withdraw_generic_asset_user --> withdraw_generic_asset
+///
+/// withdraw_generic_asset_custodian --> withdraw_generic_asset
+/// withdraw_generic_asset_custodian --> registry::get_custodian_id
+///
+/// withdraw_coins_custodian --> withdraw_coins
+/// withdraw_coins_custodian --> registry::get_custodian_id
+///
+/// withdraw_coins_user --> withdraw_coins
+///
+/// withdraw_to_coinstore --> withdraw_coins_user
+///
+/// withdraw_generic_asset --> withdraw_asset
+/// withdraw_generic_asset --> registry::get_underwriter_id
+///
+/// withdraw_coins --> withdraw_asset
+///
+/// withdraw_assets_internal --> withdraw_asset
+/// withdraw_assets_internal --> withdraw_coins
+///
+/// ```
+///
+/// Asset count lookup:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// get_asset_counts_custodian --> get_asset_counts_internal
+/// get_asset_counts_custodian --> registry::get_custodian_id
+///
+/// get_asset_counts_user --> get_asset_counts_internal
+///
+/// ```
+///
+/// Market account registration:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// register_market_account --> registry::is_registered_custodian_id
+/// register_market_account --> register_market_account_account_entries
+/// register_market_account --> register_market_account_collateral_entry
+///
+/// register_market_account_generic_base --> register_market_account
+///
+/// register_market_account_account_entries -->
+///     registry::get_market_info_for_market_account
+///
+/// ```
+///
+/// Internal order management:
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// change_order_size_internal --> cancel_order_internal
+/// change_order_size_internal --> place_order_internal
+///
+/// ```
 ///
 /// # Complete DocGen index
 ///
@@ -520,12 +615,11 @@ module econia::user {
         Collateral,
         MarketAccounts
     {
-        option::destroy_some(withdraw_asset<CoinType>(
+        withdraw_coins<CoinType>(
             user_address,
             market_id,
             registry::get_custodian_id(custodian_capability_ref),
-            amount,
-            NO_UNDERWRITER))
+            amount)
     }
 
     /// Wrapped call to `withdraw_coins()` for withdrawing under
@@ -545,12 +639,11 @@ module econia::user {
         Collateral,
         MarketAccounts
     {
-        option::destroy_some(withdraw_asset<CoinType>(
+        withdraw_coins<CoinType>(
             address_of(user),
             market_id,
             NO_CUSTODIAN,
-            amount,
-            NO_UNDERWRITER))
+            amount)
     }
 
     /// Wrapped call to `withdraw_generic_asset()` for withdrawing under

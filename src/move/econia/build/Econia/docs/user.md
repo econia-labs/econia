@@ -4,9 +4,9 @@
 # Module `0xc0deb00c::user`
 
 
-<a name="@Functions_0"></a>
+<a name="@Function_index_0"></a>
 
-## Functions
+## Function index
 
 
 
@@ -80,7 +80,106 @@ Order identifiers:
 * <code><a href="user.md#0xc0deb00c_user_get_active_market_order_ids_internal">get_active_market_order_ids_internal</a>()</code>
 
 
-<a name="@Complete_DocGen_index_4"></a>
+<a name="@Dependency_charts_4"></a>
+
+### Dependency charts
+
+
+The below dependency charts use <code>mermaid.js</code> syntax, which can be
+automatically rendered into a diagram (depending on the browser)
+when viewing the documentation file generated from source code. If
+a browser renders the diagrams with coloring that makes it difficult
+to read, try a different browser.
+
+Deposits:
+
+```mermaid
+
+flowchart LR
+
+deposit_coins --> deposit_asset
+
+deposit_from_coinstore --> deposit_coins
+
+deposit_assets_internal --> deposit_asset
+deposit_assets_internal --> deposit_coins
+
+deposit_generic_asset --> deposit_asset
+deposit_generic_asset --> registry::get_underwriter_id
+
+```
+
+Withdrawals:
+
+```mermaid
+
+flowchart LR
+
+withdraw_generic_asset_user --> withdraw_generic_asset
+
+withdraw_generic_asset_custodian --> withdraw_generic_asset
+withdraw_generic_asset_custodian --> registry::get_custodian_id
+
+withdraw_coins_custodian --> withdraw_coins
+withdraw_coins_custodian --> registry::get_custodian_id
+
+withdraw_coins_user --> withdraw_coins
+
+withdraw_to_coinstore --> withdraw_coins_user
+
+withdraw_generic_asset --> withdraw_asset
+withdraw_generic_asset --> registry::get_underwriter_id
+
+withdraw_coins --> withdraw_asset
+
+withdraw_assets_internal --> withdraw_asset
+withdraw_assets_internal --> withdraw_coins
+
+```
+
+Asset count lookup:
+
+```mermaid
+
+flowchart LR
+
+get_asset_counts_custodian --> get_asset_counts_internal
+get_asset_counts_custodian --> registry::get_custodian_id
+
+get_asset_counts_user --> get_asset_counts_internal
+
+```
+
+Market account registration:
+
+```mermaid
+
+flowchart LR
+
+register_market_account --> registry::is_registered_custodian_id
+register_market_account --> register_market_account_account_entries
+register_market_account --> register_market_account_collateral_entry
+
+register_market_account_generic_base --> register_market_account
+
+register_market_account_account_entries -->
+registry::get_market_info_for_market_account
+
+```
+
+Internal order management:
+
+```mermaid
+
+flowchart LR
+
+change_order_size_internal --> cancel_order_internal
+change_order_size_internal --> place_order_internal
+
+```
+
+
+<a name="@Complete_DocGen_index_5"></a>
 
 ## Complete DocGen index
 
@@ -88,138 +187,139 @@ Order identifiers:
 The below index is automatically generated from source code:
 
 
--  [Functions](#@Functions_0)
+-  [Function index](#@Function_index_0)
     -  [Public functions](#@Public_functions_1)
     -  [Public entry functions](#@Public_entry_functions_2)
     -  [Public friend functions](#@Public_friend_functions_3)
--  [Complete DocGen index](#@Complete_DocGen_index_4)
+    -  [Dependency charts](#@Dependency_charts_4)
+-  [Complete DocGen index](#@Complete_DocGen_index_5)
 -  [Resource `Collateral`](#0xc0deb00c_user_Collateral)
 -  [Struct `MarketAccount`](#0xc0deb00c_user_MarketAccount)
 -  [Resource `MarketAccounts`](#0xc0deb00c_user_MarketAccounts)
 -  [Struct `Order`](#0xc0deb00c_user_Order)
--  [Constants](#@Constants_5)
+-  [Constants](#@Constants_6)
 -  [Function `deposit_coins`](#0xc0deb00c_user_deposit_coins)
-    -  [Testing](#@Testing_6)
--  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
     -  [Testing](#@Testing_7)
+-  [Function `deposit_generic_asset`](#0xc0deb00c_user_deposit_generic_asset)
+    -  [Testing](#@Testing_8)
 -  [Function `get_all_market_account_ids_for_market_id`](#0xc0deb00c_user_get_all_market_account_ids_for_market_id)
-    -  [Parameters](#@Parameters_8)
-    -  [Returns](#@Returns_9)
-    -  [Gas considerations](#@Gas_considerations_10)
-    -  [Testing](#@Testing_11)
+    -  [Parameters](#@Parameters_9)
+    -  [Returns](#@Returns_10)
+    -  [Gas considerations](#@Gas_considerations_11)
+    -  [Testing](#@Testing_12)
 -  [Function `get_all_market_account_ids_for_user`](#0xc0deb00c_user_get_all_market_account_ids_for_user)
-    -  [Parameters](#@Parameters_12)
-    -  [Returns](#@Returns_13)
-    -  [Gas considerations](#@Gas_considerations_14)
-    -  [Testing](#@Testing_15)
--  [Function `get_asset_counts_custodian`](#0xc0deb00c_user_get_asset_counts_custodian)
+    -  [Parameters](#@Parameters_13)
+    -  [Returns](#@Returns_14)
+    -  [Gas considerations](#@Gas_considerations_15)
     -  [Testing](#@Testing_16)
--  [Function `get_asset_counts_user`](#0xc0deb00c_user_get_asset_counts_user)
+-  [Function `get_asset_counts_custodian`](#0xc0deb00c_user_get_asset_counts_custodian)
     -  [Testing](#@Testing_17)
--  [Function `get_custodian_id`](#0xc0deb00c_user_get_custodian_id)
+-  [Function `get_asset_counts_user`](#0xc0deb00c_user_get_asset_counts_user)
     -  [Testing](#@Testing_18)
--  [Function `get_market_account_id`](#0xc0deb00c_user_get_market_account_id)
+-  [Function `get_custodian_id`](#0xc0deb00c_user_get_custodian_id)
     -  [Testing](#@Testing_19)
--  [Function `get_market_id`](#0xc0deb00c_user_get_market_id)
+-  [Function `get_market_account_id`](#0xc0deb00c_user_get_market_account_id)
     -  [Testing](#@Testing_20)
--  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
+-  [Function `get_market_id`](#0xc0deb00c_user_get_market_id)
     -  [Testing](#@Testing_21)
--  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
+-  [Function `has_market_account_by_market_account_id`](#0xc0deb00c_user_has_market_account_by_market_account_id)
     -  [Testing](#@Testing_22)
--  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
+-  [Function `has_market_account_by_market_id`](#0xc0deb00c_user_has_market_account_by_market_id)
     -  [Testing](#@Testing_23)
--  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
+-  [Function `withdraw_coins_custodian`](#0xc0deb00c_user_withdraw_coins_custodian)
     -  [Testing](#@Testing_24)
--  [Function `withdraw_generic_asset_custodian`](#0xc0deb00c_user_withdraw_generic_asset_custodian)
+-  [Function `withdraw_coins_user`](#0xc0deb00c_user_withdraw_coins_user)
     -  [Testing](#@Testing_25)
--  [Function `withdraw_generic_asset_user`](#0xc0deb00c_user_withdraw_generic_asset_user)
+-  [Function `withdraw_generic_asset_custodian`](#0xc0deb00c_user_withdraw_generic_asset_custodian)
     -  [Testing](#@Testing_26)
--  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
+-  [Function `withdraw_generic_asset_user`](#0xc0deb00c_user_withdraw_generic_asset_user)
     -  [Testing](#@Testing_27)
+-  [Function `deposit_from_coinstore`](#0xc0deb00c_user_deposit_from_coinstore)
+    -  [Testing](#@Testing_28)
 -  [Function `register_market_account`](#0xc0deb00c_user_register_market_account)
-    -  [Type parameters](#@Type_parameters_28)
-    -  [Parameters](#@Parameters_29)
-    -  [Aborts](#@Aborts_30)
-    -  [Testing](#@Testing_31)
--  [Function `register_market_account_generic_base`](#0xc0deb00c_user_register_market_account_generic_base)
+    -  [Type parameters](#@Type_parameters_29)
+    -  [Parameters](#@Parameters_30)
+    -  [Aborts](#@Aborts_31)
     -  [Testing](#@Testing_32)
--  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
+-  [Function `register_market_account_generic_base`](#0xc0deb00c_user_register_market_account_generic_base)
     -  [Testing](#@Testing_33)
+-  [Function `withdraw_to_coinstore`](#0xc0deb00c_user_withdraw_to_coinstore)
+    -  [Testing](#@Testing_34)
 -  [Function `cancel_order_internal`](#0xc0deb00c_user_cancel_order_internal)
-    -  [Parameters](#@Parameters_34)
-    -  [Terminology](#@Terminology_35)
-    -  [Aborts](#@Aborts_36)
-    -  [Assumptions](#@Assumptions_37)
-    -  [Expected value testing](#@Expected_value_testing_38)
-    -  [Failure testing](#@Failure_testing_39)
+    -  [Parameters](#@Parameters_35)
+    -  [Terminology](#@Terminology_36)
+    -  [Aborts](#@Aborts_37)
+    -  [Assumptions](#@Assumptions_38)
+    -  [Expected value testing](#@Expected_value_testing_39)
+    -  [Failure testing](#@Failure_testing_40)
 -  [Function `change_order_size_internal`](#0xc0deb00c_user_change_order_size_internal)
-    -  [Parameters](#@Parameters_40)
-    -  [Aborts](#@Aborts_41)
-    -  [Assumptions](#@Assumptions_42)
-    -  [Testing](#@Testing_43)
+    -  [Parameters](#@Parameters_41)
+    -  [Aborts](#@Aborts_42)
+    -  [Assumptions](#@Assumptions_43)
+    -  [Testing](#@Testing_44)
 -  [Function `deposit_assets_internal`](#0xc0deb00c_user_deposit_assets_internal)
-    -  [Type parameters](#@Type_parameters_44)
-    -  [Parameters](#@Parameters_45)
-    -  [Assumptions](#@Assumptions_46)
-    -  [Testing](#@Testing_47)
+    -  [Type parameters](#@Type_parameters_45)
+    -  [Parameters](#@Parameters_46)
+    -  [Assumptions](#@Assumptions_47)
+    -  [Testing](#@Testing_48)
 -  [Function `fill_order_internal`](#0xc0deb00c_user_fill_order_internal)
-    -  [Type parameters](#@Type_parameters_48)
-    -  [Parameters](#@Parameters_49)
-    -  [Returns](#@Returns_50)
-    -  [Assumptions](#@Assumptions_51)
-    -  [Testing](#@Testing_52)
+    -  [Type parameters](#@Type_parameters_49)
+    -  [Parameters](#@Parameters_50)
+    -  [Returns](#@Returns_51)
+    -  [Assumptions](#@Assumptions_52)
+    -  [Testing](#@Testing_53)
 -  [Function `get_asset_counts_internal`](#0xc0deb00c_user_get_asset_counts_internal)
-    -  [Parameters](#@Parameters_53)
-    -  [Returns](#@Returns_54)
-    -  [Aborts](#@Aborts_55)
-    -  [Testing](#@Testing_56)
+    -  [Parameters](#@Parameters_54)
+    -  [Returns](#@Returns_55)
+    -  [Aborts](#@Aborts_56)
+    -  [Testing](#@Testing_57)
 -  [Function `get_next_order_access_key_internal`](#0xc0deb00c_user_get_next_order_access_key_internal)
-    -  [Parameters](#@Parameters_57)
-    -  [Returns](#@Returns_58)
-    -  [Aborts](#@Aborts_59)
-    -  [Testing](#@Testing_60)
+    -  [Parameters](#@Parameters_58)
+    -  [Returns](#@Returns_59)
+    -  [Aborts](#@Aborts_60)
+    -  [Testing](#@Testing_61)
 -  [Function `get_active_market_order_ids_internal`](#0xc0deb00c_user_get_active_market_order_ids_internal)
-    -  [Parameters](#@Parameters_61)
-    -  [Returns](#@Returns_62)
-    -  [Aborts](#@Aborts_63)
-    -  [Testing](#@Testing_64)
+    -  [Parameters](#@Parameters_62)
+    -  [Returns](#@Returns_63)
+    -  [Aborts](#@Aborts_64)
+    -  [Testing](#@Testing_65)
 -  [Function `place_order_internal`](#0xc0deb00c_user_place_order_internal)
-    -  [Parameters](#@Parameters_65)
-    -  [Terminology](#@Terminology_66)
-    -  [Assumptions](#@Assumptions_67)
-    -  [Aborts](#@Aborts_68)
-    -  [Expected value testing](#@Expected_value_testing_69)
-    -  [Failure testing](#@Failure_testing_70)
+    -  [Parameters](#@Parameters_66)
+    -  [Terminology](#@Terminology_67)
+    -  [Assumptions](#@Assumptions_68)
+    -  [Aborts](#@Aborts_69)
+    -  [Expected value testing](#@Expected_value_testing_70)
+    -  [Failure testing](#@Failure_testing_71)
 -  [Function `withdraw_assets_internal`](#0xc0deb00c_user_withdraw_assets_internal)
-    -  [Type parameters](#@Type_parameters_71)
-    -  [Parameters](#@Parameters_72)
-    -  [Returns](#@Returns_73)
-    -  [Testing](#@Testing_74)
+    -  [Type parameters](#@Type_parameters_72)
+    -  [Parameters](#@Parameters_73)
+    -  [Returns](#@Returns_74)
+    -  [Testing](#@Testing_75)
 -  [Function `deposit_asset`](#0xc0deb00c_user_deposit_asset)
-    -  [Type parameters](#@Type_parameters_75)
-    -  [Parameters](#@Parameters_76)
-    -  [Aborts](#@Aborts_77)
-    -  [Assumptions](#@Assumptions_78)
-    -  [Testing](#@Testing_79)
+    -  [Type parameters](#@Type_parameters_76)
+    -  [Parameters](#@Parameters_77)
+    -  [Aborts](#@Aborts_78)
+    -  [Assumptions](#@Assumptions_79)
+    -  [Testing](#@Testing_80)
 -  [Function `register_market_account_account_entries`](#0xc0deb00c_user_register_market_account_account_entries)
-    -  [Type parameters](#@Type_parameters_80)
-    -  [Parameters](#@Parameters_81)
-    -  [Aborts](#@Aborts_82)
-    -  [Testing](#@Testing_83)
+    -  [Type parameters](#@Type_parameters_81)
+    -  [Parameters](#@Parameters_82)
+    -  [Aborts](#@Aborts_83)
+    -  [Testing](#@Testing_84)
 -  [Function `register_market_account_collateral_entry`](#0xc0deb00c_user_register_market_account_collateral_entry)
-    -  [Type parameters](#@Type_parameters_84)
-    -  [Parameters](#@Parameters_85)
-    -  [Testing](#@Testing_86)
+    -  [Type parameters](#@Type_parameters_85)
+    -  [Parameters](#@Parameters_86)
+    -  [Testing](#@Testing_87)
 -  [Function `withdraw_asset`](#0xc0deb00c_user_withdraw_asset)
-    -  [Type parameters](#@Type_parameters_87)
-    -  [Parameters](#@Parameters_88)
-    -  [Returns](#@Returns_89)
-    -  [Aborts](#@Aborts_90)
-    -  [Testing](#@Testing_91)
--  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
+    -  [Type parameters](#@Type_parameters_88)
+    -  [Parameters](#@Parameters_89)
+    -  [Returns](#@Returns_90)
+    -  [Aborts](#@Aborts_91)
     -  [Testing](#@Testing_92)
--  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+-  [Function `withdraw_generic_asset`](#0xc0deb00c_user_withdraw_generic_asset)
     -  [Testing](#@Testing_93)
+-  [Function `withdraw_coins`](#0xc0deb00c_user_withdraw_coins)
+    -  [Testing](#@Testing_94)
 
 
 <pre><code><b>use</b> <a href="">0x1::coin</a>;
@@ -464,7 +564,7 @@ An open order, either ask or bid.
 
 </details>
 
-<a name="@Constants_5"></a>
+<a name="@Constants_6"></a>
 
 ## Constants
 
@@ -718,7 +818,7 @@ Number of bits market ID is shifted in market account ID.
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing coins.
 
 
-<a name="@Testing_6"></a>
+<a name="@Testing_7"></a>
 
 ### Testing
 
@@ -767,7 +867,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_asset</a>()</code> for depositing generic asset.
 
 
-<a name="@Testing_7"></a>
+<a name="@Testing_8"></a>
 
 ### Testing
 
@@ -815,7 +915,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_asset">deposit_as
 Return all market account IDs associated with market ID.
 
 
-<a name="@Parameters_8"></a>
+<a name="@Parameters_9"></a>
 
 ### Parameters
 
@@ -824,7 +924,7 @@ Return all market account IDs associated with market ID.
 * <code>market_id</code>: Market ID to check market accounts for.
 
 
-<a name="@Returns_9"></a>
+<a name="@Returns_10"></a>
 
 ### Returns
 
@@ -833,7 +933,7 @@ Return all market account IDs associated with market ID.
 market, empty if no market accounts.
 
 
-<a name="@Gas_considerations_10"></a>
+<a name="@Gas_considerations_11"></a>
 
 ### Gas considerations
 
@@ -842,7 +942,7 @@ Loops over all elements within a vector that is itself a single
 item in global storage, and returns a vector via pass-by-value.
 
 
-<a name="@Testing_11"></a>
+<a name="@Testing_12"></a>
 
 ### Testing
 
@@ -901,7 +1001,7 @@ item in global storage, and returns a vector via pass-by-value.
 Return all of a user's market account IDs.
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -909,7 +1009,7 @@ Return all of a user's market account IDs.
 * <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user to check market account IDs for.
 
 
-<a name="@Returns_13"></a>
+<a name="@Returns_14"></a>
 
 ### Returns
 
@@ -918,7 +1018,7 @@ Return all of a user's market account IDs.
 no market accounts.
 
 
-<a name="@Gas_considerations_14"></a>
+<a name="@Gas_considerations_15"></a>
 
 ### Gas considerations
 
@@ -930,7 +1030,7 @@ read, incurring linearly-scaled vector operation costs. Returns
 a vector via pass-by-value.
 
 
-<a name="@Testing_15"></a>
+<a name="@Testing_16"></a>
 
 ### Testing
 
@@ -999,7 +1099,7 @@ Restricted to custodian for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_16"></a>
+<a name="@Testing_17"></a>
 
 ### Testing
 
@@ -1048,7 +1148,7 @@ Restricted to signing user for given market account to prevent
 excessive public queries and thus transaction collisions.
 
 
-<a name="@Testing_17"></a>
+<a name="@Testing_18"></a>
 
 ### Testing
 
@@ -1091,7 +1191,7 @@ excessive public queries and thus transaction collisions.
 Return custodian ID encoded in market account ID.
 
 
-<a name="@Testing_18"></a>
+<a name="@Testing_19"></a>
 
 ### Testing
 
@@ -1126,7 +1226,7 @@ Return custodian ID encoded in market account ID.
 Return market account ID with encoded market and custodian IDs.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_20"></a>
 
 ### Testing
 
@@ -1162,7 +1262,7 @@ Return market account ID with encoded market and custodian IDs.
 Return market ID encoded in market account ID.
 
 
-<a name="@Testing_20"></a>
+<a name="@Testing_21"></a>
 
 ### Testing
 
@@ -1198,7 +1298,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 given <code>market_account_id</code>.
 
 
-<a name="@Testing_21"></a>
+<a name="@Testing_22"></a>
 
 ### Testing
 
@@ -1242,7 +1342,7 @@ Return <code><b>true</b></code> if <code><a href="user.md#0xc0deb00c_user">user<
 registered with given <code>market_id</code>.
 
 
-<a name="@Testing_22"></a>
+<a name="@Testing_23"></a>
 
 ### Testing
 
@@ -1285,7 +1385,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_
 authority of delegated custodian.
 
 
-<a name="@Testing_23"></a>
+<a name="@Testing_24"></a>
 
 ### Testing
 
@@ -1314,12 +1414,11 @@ authority of delegated custodian.
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    <a href="_destroy_some">option::destroy_some</a>(<a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>&lt;CoinType&gt;(
         user_address,
         market_id,
         <a href="registry.md#0xc0deb00c_registry_get_custodian_id">registry::get_custodian_id</a>(custodian_capability_ref),
-        amount,
-        <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>))
+        amount)
 }
 </code></pre>
 
@@ -1335,7 +1434,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_
 authority of signing user.
 
 
-<a name="@Testing_24"></a>
+<a name="@Testing_25"></a>
 
 ### Testing
 
@@ -1363,12 +1462,11 @@ authority of signing user.
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    <a href="_destroy_some">option::destroy_some</a>(<a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>&lt;CoinType&gt;(
+    <a href="user.md#0xc0deb00c_user_withdraw_coins">withdraw_coins</a>&lt;CoinType&gt;(
         address_of(<a href="user.md#0xc0deb00c_user">user</a>),
         market_id,
         <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>,
-        amount,
-        <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>))
+        amount)
 }
 </code></pre>
 
@@ -1384,7 +1482,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset">w
 authority of delegated custodian.
 
 
-<a name="@Testing_25"></a>
+<a name="@Testing_26"></a>
 
 ### Testing
 
@@ -1432,7 +1530,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_generic_asset">w
 authority of signing user.
 
 
-<a name="@Testing_26"></a>
+<a name="@Testing_27"></a>
 
 ### Testing
 
@@ -1479,7 +1577,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_co
 <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_27"></a>
+<a name="@Testing_28"></a>
 
 ### Testing
 
@@ -1526,7 +1624,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_deposit_coins">deposit_co
 Register market account for indicated market and custodian.
 
 
-<a name="@Type_parameters_28"></a>
+<a name="@Type_parameters_29"></a>
 
 ### Type parameters
 
@@ -1537,7 +1635,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_29"></a>
+<a name="@Parameters_30"></a>
 
 ### Parameters
 
@@ -1548,7 +1646,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_30"></a>
+<a name="@Aborts_31"></a>
 
 ### Aborts
 
@@ -1557,7 +1655,7 @@ a generic asset, must be passed as <code><a href="registry.md#0xc0deb00c_registr
 registered.
 
 
-<a name="@Testing_31"></a>
+<a name="@Testing_32"></a>
 
 ### Testing
 
@@ -1617,7 +1715,7 @@ registered.
 Wrapped <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code> call for generic base asset.
 
 
-<a name="@Testing_32"></a>
+<a name="@Testing_33"></a>
 
 ### Testing
 
@@ -1661,7 +1759,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_coins_user">with
 market account to user's <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_33"></a>
+<a name="@Testing_34"></a>
 
 ### Testing
 
@@ -1724,7 +1822,7 @@ verify that they are not passing a malicious market order ID
 queue state).
 
 
-<a name="@Parameters_34"></a>
+<a name="@Parameters_35"></a>
 
 ### Parameters
 
@@ -1741,7 +1839,7 @@ an eviction, otherwise the market order ID encoded in the
 user's <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code>.
 
 
-<a name="@Terminology_35"></a>
+<a name="@Terminology_36"></a>
 
 ### Terminology
 
@@ -1752,7 +1850,7 @@ from a trade if the cancelled order had been filled.
 away if the cancelled order had been filled.
 
 
-<a name="@Aborts_36"></a>
+<a name="@Aborts_37"></a>
 
 ### Aborts
 
@@ -1761,7 +1859,7 @@ away if the cancelled order had been filled.
 user's open order.
 
 
-<a name="@Assumptions_37"></a>
+<a name="@Assumptions_38"></a>
 
 ### Assumptions
 
@@ -1782,7 +1880,7 @@ eviction.
 order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>.
 
 
-<a name="@Expected_value_testing_38"></a>
+<a name="@Expected_value_testing_39"></a>
 
 ### Expected value testing
 
@@ -1792,7 +1890,7 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
 * <code>test_place_cancel_order_stack()</code>
 
 
-<a name="@Failure_testing_39"></a>
+<a name="@Failure_testing_40"></a>
 
 ### Failure testing
 
@@ -1881,7 +1979,7 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
 Change the size of a user's open order on given side.
 
 
-<a name="@Parameters_40"></a>
+<a name="@Parameters_41"></a>
 
 ### Parameters
 
@@ -1896,7 +1994,7 @@ Change the size of a user's open order on given side.
 * <code>market_order_id</code>: Market order ID for order book lookup.
 
 
-<a name="@Aborts_41"></a>
+<a name="@Aborts_42"></a>
 
 ### Aborts
 
@@ -1904,7 +2002,7 @@ Change the size of a user's open order on given side.
 * <code><a href="user.md#0xc0deb00c_user_E_CHANGE_ORDER_NO_CHANGE">E_CHANGE_ORDER_NO_CHANGE</a></code>: No change in order size.
 
 
-<a name="@Assumptions_42"></a>
+<a name="@Assumptions_43"></a>
 
 ### Assumptions
 
@@ -1917,7 +2015,7 @@ successfully to begin with.
 order.
 
 
-<a name="@Testing_43"></a>
+<a name="@Testing_44"></a>
 
 ### Testing
 
@@ -1983,7 +2081,7 @@ Should only be called by the matching engine when matching from
 a user's market account.
 
 
-<a name="@Type_parameters_44"></a>
+<a name="@Type_parameters_45"></a>
 
 ### Type parameters
 
@@ -1992,7 +2090,7 @@ a user's market account.
 * <code>QuoteType</code>: Quote type for market.
 
 
-<a name="@Parameters_45"></a>
+<a name="@Parameters_46"></a>
 
 ### Parameters
 
@@ -2006,7 +2104,7 @@ a user's market account.
 * <code>underwriter_id</code>: Underwriter ID for market.
 
 
-<a name="@Assumptions_46"></a>
+<a name="@Assumptions_47"></a>
 
 ### Assumptions
 
@@ -2015,7 +2113,7 @@ a user's market account.
 <code>base_amount</code>.
 
 
-<a name="@Testing_47"></a>
+<a name="@Testing_48"></a>
 
 ### Testing
 
@@ -2078,7 +2176,7 @@ order as indicated with sufficient assets to fill it. Hence no
 error checking.
 
 
-<a name="@Type_parameters_48"></a>
+<a name="@Type_parameters_49"></a>
 
 ### Type parameters
 
@@ -2087,7 +2185,7 @@ error checking.
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_49"></a>
+<a name="@Parameters_50"></a>
 
 ### Parameters
 
@@ -2107,7 +2205,7 @@ matching engine.
 * <code>quote_to_route</code>: Amount of quote asset filled.
 
 
-<a name="@Returns_50"></a>
+<a name="@Returns_51"></a>
 
 ### Returns
 
@@ -2118,7 +2216,7 @@ through the matching engine.
 matching engine.
 
 
-<a name="@Assumptions_51"></a>
+<a name="@Assumptions_52"></a>
 
 ### Assumptions
 
@@ -2126,7 +2224,7 @@ matching engine.
 * Only called by the matching engine as described above.
 
 
-<a name="@Testing_52"></a>
+<a name="@Testing_53"></a>
 
 ### Testing
 
@@ -2270,7 +2368,7 @@ matching engine.
 Return asset counts for specified market account.
 
 
-<a name="@Parameters_53"></a>
+<a name="@Parameters_54"></a>
 
 ### Parameters
 
@@ -2280,7 +2378,7 @@ Return asset counts for specified market account.
 * <code>custodian_id</code>: Custodian ID for market account.
 
 
-<a name="@Returns_54"></a>
+<a name="@Returns_55"></a>
 
 ### Returns
 
@@ -2293,7 +2391,7 @@ Return asset counts for specified market account.
 * <code><a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>.quote_ceiling</code>
 
 
-<a name="@Aborts_55"></a>
+<a name="@Aborts_56"></a>
 
 ### Aborts
 
@@ -2302,7 +2400,7 @@ Return asset counts for specified market account.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_56"></a>
+<a name="@Testing_57"></a>
 
 ### Testing
 
@@ -2369,7 +2467,7 @@ order access key to be allocated. Otherwise is order access key
 at top of inactive order stack.
 
 
-<a name="@Parameters_57"></a>
+<a name="@Parameters_58"></a>
 
 ### Parameters
 
@@ -2381,7 +2479,7 @@ at top of inactive order stack.
 placed.
 
 
-<a name="@Returns_58"></a>
+<a name="@Returns_59"></a>
 
 ### Returns
 
@@ -2389,7 +2487,7 @@ placed.
 * <code>u64</code>: Order access key of next order to be placed.
 
 
-<a name="@Aborts_59"></a>
+<a name="@Aborts_60"></a>
 
 ### Aborts
 
@@ -2398,7 +2496,7 @@ placed.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_60"></a>
+<a name="@Testing_61"></a>
 
 ### Testing
 
@@ -2459,7 +2557,7 @@ placed.
 Return all active market order IDs for given market account.
 
 
-<a name="@Parameters_61"></a>
+<a name="@Parameters_62"></a>
 
 ### Parameters
 
@@ -2470,7 +2568,7 @@ Return all active market order IDs for given market account.
 * <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which to check.
 
 
-<a name="@Returns_62"></a>
+<a name="@Returns_63"></a>
 
 ### Returns
 
@@ -2479,7 +2577,7 @@ Return all active market order IDs for given market account.
 given market account and side, empty if none.
 
 
-<a name="@Aborts_63"></a>
+<a name="@Aborts_64"></a>
 
 ### Aborts
 
@@ -2488,7 +2586,7 @@ given market account and side, empty if none.
 * <code><a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a></code>: No market account resource found.
 
 
-<a name="@Testing_64"></a>
+<a name="@Testing_65"></a>
 
 ### Testing
 
@@ -2570,7 +2668,7 @@ required. Once an order book entry has been created, a market
 order ID will then be made available.
 
 
-<a name="@Parameters_65"></a>
+<a name="@Parameters_66"></a>
 
 ### Parameters
 
@@ -2584,7 +2682,7 @@ order ID will then be made available.
 * <code>market_order_id</code>: Market order ID for order book access.
 
 
-<a name="@Terminology_66"></a>
+<a name="@Terminology_67"></a>
 
 ### Terminology
 
@@ -2593,7 +2691,7 @@ order ID will then be made available.
 * The "outbound" asset is the asset traded away.
 
 
-<a name="@Assumptions_67"></a>
+<a name="@Assumptions_68"></a>
 
 ### Assumptions
 
@@ -2604,7 +2702,7 @@ order ID will then be made available.
 verified by <code><a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">get_next_order_access_key_internal</a>()</code>.
 
 
-<a name="@Aborts_68"></a>
+<a name="@Aborts_69"></a>
 
 ### Aborts
 
@@ -2618,7 +2716,7 @@ received from trade.
 * <code><a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Expected_value_testing_69"></a>
+<a name="@Expected_value_testing_70"></a>
 
 ### Expected value testing
 
@@ -2628,7 +2726,7 @@ received from trade.
 * <code>test_place_cancel_order_stack()</code>
 
 
-<a name="@Failure_testing_70"></a>
+<a name="@Failure_testing_71"></a>
 
 ### Failure testing
 
@@ -2738,7 +2836,7 @@ Should only be called by the matching engine when matching from
 a user's market account.
 
 
-<a name="@Type_parameters_71"></a>
+<a name="@Type_parameters_72"></a>
 
 ### Type parameters
 
@@ -2747,7 +2845,7 @@ a user's market account.
 * <code>QuoteType</code>: Quote type for market.
 
 
-<a name="@Parameters_72"></a>
+<a name="@Parameters_73"></a>
 
 ### Parameters
 
@@ -2760,7 +2858,7 @@ a user's market account.
 * <code>underwriter_id</code>: Underwriter ID for market.
 
 
-<a name="@Returns_73"></a>
+<a name="@Returns_74"></a>
 
 ### Returns
 
@@ -2770,7 +2868,7 @@ market account.
 * <code>&lt;Coin&lt;QuoteType&gt;</code>: Quote coins from user's market account.
 
 
-<a name="@Testing_74"></a>
+<a name="@Testing_75"></a>
 
 ### Testing
 
@@ -2826,7 +2924,7 @@ Deposit an asset to a user's market account.
 Update asset counts, deposit optional coins as collateral.
 
 
-<a name="@Type_parameters_75"></a>
+<a name="@Type_parameters_76"></a>
 
 ### Type parameters
 
@@ -2835,7 +2933,7 @@ Update asset counts, deposit optional coins as collateral.
 if a generic asset.
 
 
-<a name="@Parameters_76"></a>
+<a name="@Parameters_77"></a>
 
 ### Parameters
 
@@ -2849,7 +2947,7 @@ if a generic asset.
 depositing coins.
 
 
-<a name="@Aborts_77"></a>
+<a name="@Aborts_78"></a>
 
 ### Aborts
 
@@ -2864,7 +2962,7 @@ asset ceiling.
 indicated market, in the case of a generic asset deposit.
 
 
-<a name="@Assumptions_78"></a>
+<a name="@Assumptions_79"></a>
 
 ### Assumptions
 
@@ -2874,7 +2972,7 @@ indicated market, in the case of a generic asset deposit.
 does a corresponding collateral map entry.
 
 
-<a name="@Testing_79"></a>
+<a name="@Testing_80"></a>
 
 ### Testing
 
@@ -2974,7 +3072,7 @@ Register market account entries for given market account info.
 Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_80"></a>
+<a name="@Type_parameters_81"></a>
 
 ### Type parameters
 
@@ -2983,7 +3081,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code>QuoteType</code>: Quote type for indicated market.
 
 
-<a name="@Parameters_81"></a>
+<a name="@Parameters_82"></a>
 
 ### Parameters
 
@@ -2996,7 +3094,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 <code><a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a></code>.
 
 
-<a name="@Aborts_82"></a>
+<a name="@Aborts_83"></a>
 
 ### Aborts
 
@@ -3004,7 +3102,7 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 * <code><a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a></code>: Market account already exists.
 
 
-<a name="@Testing_83"></a>
+<a name="@Testing_84"></a>
 
 ### Testing
 
@@ -3089,7 +3187,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 <code><a href="user.md#0xc0deb00c_user_register_market_account">register_market_account</a>()</code>.
 
 
-<a name="@Type_parameters_84"></a>
+<a name="@Type_parameters_85"></a>
 
 ### Type parameters
 
@@ -3097,7 +3195,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>CoinType</code>: Phantom coin type for indicated market.
 
 
-<a name="@Parameters_85"></a>
+<a name="@Parameters_86"></a>
 
 ### Parameters
 
@@ -3107,7 +3205,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
 * <code>market_account_id</code>: Market account ID for given market.
 
 
-<a name="@Testing_86"></a>
+<a name="@Testing_87"></a>
 
 ### Testing
 
@@ -3157,7 +3255,7 @@ Withdraw an asset from a user's market account.
 Update asset counts, withdraw optional collateral coins.
 
 
-<a name="@Type_parameters_87"></a>
+<a name="@Type_parameters_88"></a>
 
 ### Type parameters
 
@@ -3166,7 +3264,7 @@ Update asset counts, withdraw optional collateral coins.
 if a generic asset.
 
 
-<a name="@Parameters_88"></a>
+<a name="@Parameters_89"></a>
 
 ### Parameters
 
@@ -3179,7 +3277,7 @@ if a generic asset.
 withdrawing coins.
 
 
-<a name="@Returns_89"></a>
+<a name="@Returns_90"></a>
 
 ### Returns
 
@@ -3187,7 +3285,7 @@ withdrawing coins.
 * <code>Option&lt;Coin&lt;AssetType&gt;&gt;</code>: Optional collateral coins.
 
 
-<a name="@Aborts_90"></a>
+<a name="@Aborts_91"></a>
 
 ### Aborts
 
@@ -3202,7 +3300,7 @@ withdrawal.
 indicated market, in the case of a generic asset withdrawal.
 
 
-<a name="@Testing_91"></a>
+<a name="@Testing_92"></a>
 
 ### Testing
 
@@ -3301,7 +3399,7 @@ Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_
 asset.
 
 
-<a name="@Testing_92"></a>
+<a name="@Testing_93"></a>
 
 ### Testing
 
@@ -3348,7 +3446,7 @@ asset.
 Wrapped call to <code><a href="user.md#0xc0deb00c_user_withdraw_asset">withdraw_asset</a>()</code> for withdrawing coins.
 
 
-<a name="@Testing_93"></a>
+<a name="@Testing_94"></a>
 
 ### Testing
 

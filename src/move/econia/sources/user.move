@@ -699,16 +699,29 @@ module econia::user {
     /// * `order_access_key`: The open order's access key.
     /// * `fill_size`: The number of lots filled.
     /// * `complete_fill`: `true` if order is completely filled.
-    /// * `optional_base_coins_ref_mut`: Mutable reference to optional
-    ///   external base coins passing through the matching engine.
-    /// * `quote_coins_ref_mut`: Mutable reference to quote coins
-    ///   passing through the matching engine.
+    /// * `optional_base_coins`: Optional external base coins passing
+    ///   through the matching engine.
+    /// * `quote_coins`: External quote coins passing through the
+    ///   matching engine.
     /// * `base_to_route`: Amount of base asset filled.
     /// * `quote_to_route`: Amount of quote asset filled.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Coin<BaseType>>`: Optional external base coins passing
+    ///   through the matching engine.
+    /// * `Coin<QuoteType>`: External quote coins passing through the
+    ///   matching engine.
     ///
     /// # Assumptions
     ///
     /// * Only called by the matching engine as described above.
+    ///
+    /// # Testing
+    ///
+    /// * `test_fill_order_internal_ask_complete_base_coin()`
+    /// * `test_fill_order_internal_bid_complete_base_coin()`
+    /// * `test_fill_order_internal_bid_partial_base_generic()`
     public(friend) fun fill_order_internal<
         BaseType,
         QuoteType
@@ -720,10 +733,13 @@ module econia::user {
         order_access_key: u64,
         fill_size: u64,
         complete_fill: bool,
-        optional_base_coins_ref_mut: &mut Option<Coin<BaseType>>,
-        quote_coins_ref_mut: &mut Coin<QuoteType>,
+        optional_base_coins: Option<Coin<BaseType>>,
+        quote_coins: Coin<QuoteType>,
         base_to_route: u64,
         quote_to_route: u64
+    ): (
+        Option<Coin<BaseType>>,
+        Coin<QuoteType>
     ) acquires
         Collateral,
         MarketAccounts
@@ -785,14 +801,14 @@ module econia::user {
         // Decrement asset out ceiling amount by asset out amount.
         *asset_out_ceiling_ref_mut = *asset_out_ceiling_ref_mut - asset_out;
         // If base coins to route:
-        if (option::is_some(optional_base_coins_ref_mut)) {
+        if (option::is_some(&optional_base_coins)) {
             // Mutably borrow base collateral map.
             let collateral_map_ref_mut =
                 &mut borrow_global_mut<Collateral<BaseType>>(user_address).map;
             let collateral_ref_mut = // Mutably borrow base collateral.
                 tablist::borrow_mut(collateral_map_ref_mut, market_account_id);
             let base_coins_ref_mut = // Mutably borrow external coins.
-                option::borrow_mut(optional_base_coins_ref_mut);
+                option::borrow_mut(&mut optional_base_coins);
             // If filling as ask, merge to external coins those
             // extracted from user's collateral. Else if a bid, merge to
             // user's collateral those extracted from external coins.
@@ -812,9 +828,11 @@ module econia::user {
         // those extracted from user's collateral.
         if (side == ASK)
             coin::merge(collateral_ref_mut,
-                coin::extract(quote_coins_ref_mut, quote_to_route)) else
-            coin::merge(quote_coins_ref_mut,
+                coin::extract(&mut quote_coins, quote_to_route)) else
+            coin::merge(&mut quote_coins,
                 coin::extract(collateral_ref_mut, quote_to_route));
+        // Return external optional base coins and quote coins.
+        (optional_base_coins, quote_coins)
     }
 
     /// Return asset counts for specified market account.
@@ -2159,6 +2177,238 @@ module econia::user {
             @user, market_account_id_generic_self), 0);
         assert!(get_collateral_value_test<QC>(
             @user, market_account_id_generic_self) == 0, 0);
+    }
+
+    #[test]
+    /// Verify state updates for:
+    ///
+    /// * Filling an ask.
+    /// * Fill is complete.
+    /// * Inactive stack top not null.
+    /// * Base asset is coin.
+    fun test_fill_order_internal_ask_complete_base_coin()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id            = 1234;
+        let size                       = 789;
+        let price                      = 321;
+        let side                       = ASK;
+        let complete_fill              = true;
+        let order_access_key_filled    = 1;
+        let order_access_key_cancelled = 2;
+        // Calculate base asset and quote asset fill amounts.
+        let base_fill = size * LOT_SIZE_PURE_COIN;
+        let quote_fill = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Place duplicate order then cancel, so stack is not empty.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            order_access_key_cancelled, market_order_id);
+        // Initialize external coins passing through matching engine.
+        let optional_base_coins = option::some(coin::zero());
+        let quote_coins = assets::mint_test(quote_fill);
+        // Fill order, storing base and quote coins for matching engine.
+        (optional_base_coins, quote_coins) = fill_order_internal<BC, QC>(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+            order_access_key_filled, size, complete_fill, optional_base_coins,
+            quote_coins, base_fill, quote_fill);
+        // Assert external coin values after order fill.
+        let base_coins = option::destroy_some(optional_base_coins);
+        assert!(coin::value(&base_coins) == base_fill, 0);
+        assert!(coin::value(&quote_coins) == 0, 0);
+        // Destroy external coins.
+        assets::burn(base_coins);
+        coin::destroy_zero(quote_coins);
+        // Assert inactive stack top.
+        assert!(get_inactive_stack_top_test(
+            @user, market_account_id, side) == order_access_key_filled, 0);
+        assert!(!is_order_active_test( // Assert order marked inactive.
+            @user, market_account_id, side, order_access_key_filled), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, order_access_key_filled)
+            == order_access_key_cancelled, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START - base_fill, 0);
+        assert!(base_available  == BASE_START - base_fill, 0);
+        assert!(base_ceiling    == BASE_START - base_fill, 0);
+        assert!(quote_total     == QUOTE_START + quote_fill, 0);
+        assert!(quote_available == QUOTE_START + quote_fill, 0);
+        assert!(quote_ceiling   == QUOTE_START + quote_fill, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id) == BASE_START - base_fill, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id) == QUOTE_START + quote_fill, 0);
+    }
+
+    #[test]
+    /// Verify state updates for:
+    ///
+    /// * Filling a bid.
+    /// * Fill is complete.
+    /// * Inactive stack top is null.
+    /// * Base asset is coin.
+    fun test_fill_order_internal_bid_complete_base_coin()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for pure coin
+        // market with delegated custodian.
+        let (_, _, market_account_id, _, _) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id            = 1234;
+        let size                       = 789;
+        let price                      = 321;
+        let side                       = BID;
+        let complete_fill              = true;
+        let order_access_key_filled    = 1;
+        // Calculate base asset and quote asset fill amounts.
+        let base_fill = size * LOT_SIZE_PURE_COIN;
+        let quote_fill = size * price * TICK_SIZE_PURE_COIN;
+        // Deposit starting base and quote coins.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Initialize external coins passing through matching engine.
+        let optional_base_coins = option::some(assets::mint_test(base_fill));
+        let quote_coins = coin::zero();
+        // Fill order, storing base and quote coins for matching engine.
+        (optional_base_coins, quote_coins) = fill_order_internal<BC, QC>(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+            order_access_key_filled, size, complete_fill, optional_base_coins,
+            quote_coins, base_fill, quote_fill);
+        // Assert external coin values after order fill.
+        let base_coins = option::destroy_some(optional_base_coins);
+        assert!(coin::value(&base_coins) == 0, 0);
+        assert!(coin::value(&quote_coins) == quote_fill, 0);
+        // Destroy external coins.
+        coin::destroy_zero(base_coins);
+        assets::burn(quote_coins);
+        // Assert inactive stack top.
+        assert!(get_inactive_stack_top_test(
+            @user, market_account_id, side) == order_access_key_filled, 0);
+        assert!(!is_order_active_test( // Assert order marked inactive.
+            @user, market_account_id, side, order_access_key_filled), 0);
+        // Assert next inactive node field.
+        assert!(get_next_inactive_order_test(
+            @user, market_account_id, side, order_access_key_filled)
+            == NIL, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START + base_fill, 0);
+        assert!(base_available  == BASE_START + base_fill, 0);
+        assert!(base_ceiling    == BASE_START + base_fill, 0);
+        assert!(quote_total     == QUOTE_START - quote_fill, 0);
+        assert!(quote_available == QUOTE_START - quote_fill, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_fill, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id) == BASE_START + base_fill, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id) == QUOTE_START - quote_fill, 0);
+    }
+
+    #[test]
+    /// Verify state updates for:
+    ///
+    /// * Filling a bid.
+    /// * Fill is not complete.
+    /// * Base asset is generic.
+    fun test_fill_order_internal_bid_partial_base_generic()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test markets, get market account ID for generic
+        // market with delegated custodian.
+        let (_, _, _, _, market_account_id) = register_market_accounts_test();
+        // Define order parameters.
+        let market_order_id            = 1234;
+        let size                       = 789;
+        let fill_size                  = size - 1;
+        let price                      = 321;
+        let side                       = BID;
+        let complete_fill              = false;
+        let order_access_key_filled    = 1;
+        // Calculate change in base ceiling and quote available if
+        // order were completely filled.
+        let base_ceiling_delta = size * LOT_SIZE_GENERIC;
+        let quote_available_delta = size * price * TICK_SIZE_GENERIC;
+        // Calculate base asset and quote asset fill amounts.
+        let base_fill = fill_size * LOT_SIZE_GENERIC;
+        let quote_fill = fill_size * price * TICK_SIZE_GENERIC;
+        // Deposit starting quote coins.
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        // Place order.
+        place_order_internal(@user, MARKET_ID_GENERIC, CUSTODIAN_ID, side,
+                             size, price, market_order_id);
+        // Initialize external coins passing through matching engine.
+        let optional_base_coins = option::none();
+        let quote_coins = coin::zero();
+        // Fill order, storing base and quote coins for matching engine.
+        (optional_base_coins, quote_coins) = fill_order_internal<
+            GenericAsset, QC>(@user, MARKET_ID_GENERIC, CUSTODIAN_ID, side,
+            order_access_key_filled, fill_size, complete_fill,
+            optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Assert quote coin values after order fill.
+        assert!(coin::value(&quote_coins) == quote_fill, 0);
+        // Destroy external coins.
+        option::destroy_none(optional_base_coins);
+        assets::burn(quote_coins);
+        // Assert inactive stack top.
+        assert!(get_inactive_stack_top_test(
+            @user, market_account_id, side) == NIL, 0);
+        assert!(is_order_active_test( // Assert order marked active.
+            @user, market_account_id, side, order_access_key_filled), 0);
+        // Assert order field returns.
+        let (market_order_id_r, size_r) = get_order_fields_test(
+            @user, market_account_id, side, order_access_key_filled);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r == size - fill_size, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_GENERIC, CUSTODIAN_ID);
+        assert!(base_total      == base_fill, 0);
+        assert!(base_available  == base_fill, 0);
+        assert!(base_ceiling    == base_ceiling_delta, 0);
+        assert!(quote_total     == QUOTE_START - quote_fill, 0);
+        assert!(quote_available == QUOTE_START - quote_available_delta, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_fill, 0);
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id) == QUOTE_START - quote_fill, 0);
     }
 
     #[test]

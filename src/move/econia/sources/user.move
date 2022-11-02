@@ -1,3 +1,83 @@
+/// User-side asset, collateral, and order management.
+///
+/// Contains data structures and functionality for tracking a user's
+/// assets and open orders. Upon market account registration, users can
+/// either preside over their own account, or delegate custody to a
+/// custodian who manage their orders and withdrawals. For each market,
+/// a user can open multiple market accounts, each with a unique
+/// custodian.
+///
+/// # General overview sections
+///
+/// [Architecture](#architecture)
+///
+/// * [Market account IDs](#market-account-IDs)
+/// * [Market accounts](#market-accounts)
+/// * [Orders and access keys](#orders-and-access-keys)
+/// * [Market order IDs](#market-order-IDs)
+///
+/// [Function index](#function-index)
+///
+/// * [Public functions](#public-functions)
+/// * [Public entry functions](#public-entry-functions)
+/// * [Public friend functions](#public-friend-functions)
+/// * [Dependency charts](#dependency-charts)
+///
+/// [Complete DocGen index](#complete-docgen-index)
+///
+/// # Architecture
+///
+/// ## Market account IDs
+///
+/// Markets, defined in the global registry, are assigned a 1-indexed
+/// `u64` market ID, as are custodians. The concatenated result of a
+/// market ID and a custodian ID is known as a market account ID, which
+/// is used as a key in assorted user-side lookup operations: the 64
+/// least-significant bits in a market account ID are the custodian ID
+/// for the given market account (`NIL` if no delegated custodian),
+/// while the 64 most-significant bits are the market ID. See
+/// `get_custodian_id()`, `get_market_account_id()`, and
+/// `get_market_id()` for implementation details.
+///
+/// ## Market accounts
+///
+/// When a user opens a market account, a `MarketAccount` entry is
+/// added to their `MarketAccounts`, and a coin entry is added to their
+/// `Collateral` for the given market's quote coin type. If the market's
+/// base asset is a coin, a `Collateral` entry is similarly created for
+/// the base coin type.
+///
+/// ## Orders and access keys
+///
+/// When users place an order on the order book, an `Order` is added to
+/// their corresponding `MarketAccount`. If they then cancel the order,
+/// the corresponding `Order` is not deallocated, but rather, marked
+/// "inactive" and pushed onto a stack of inactive orders for the
+/// corresponding side (`MarketAccount.asks_stack_top` or
+/// `MarketAccount.bids_stack_top`). Then, when a user places another
+/// order, rather than allocating a new `Order`, the inactive order at
+/// the top of the stack is popped off the stack and marked active.
+///
+/// This approach is motivated by global storage gas costs: as of the
+/// time of this writing, per-item creations cost approximately 16.7
+/// times as much as per-item writes, and there is no incentive to
+/// deallocate from memory. Hence the inactive stack paradigm allows
+/// for orders to be recycled in a way that reduces overall storage
+/// costs. In practice, however, this means that each `Order` is
+/// assigned a static "access key" that persists throughout subsequent
+/// active order states: if a user places an order, cancels the order,
+/// then places another order, the `Order` will have the same access key
+/// in each active instance. In other words, access keys are the lookup
+/// ID in the relevant `Order` data structure for the given side
+/// (`MarketAccount.asks` or `MarketAccount.bids`), and are not
+/// necessarily unique for orders across time.
+///
+/// ## Market order IDs
+///
+/// Market order IDs, however, are unique across time for a given market
+/// ID, and are tracked in a users' `Order.market_order_id`. A market
+/// order ID is a unique identifier for an order on a given order book.
+///
 /// # Function index
 ///
 /// ## Public functions

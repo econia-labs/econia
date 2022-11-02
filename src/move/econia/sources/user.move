@@ -1,3 +1,66 @@
+/// # Functions
+///
+/// ## Public functions
+///
+/// Asset transfer:
+///
+/// * `deposit_coins()`
+/// * `deposit_generic_asset()`
+/// * `withdraw_coins_custodian()`
+/// * `withdraw_coins_user()`
+/// * `withdraw_generic_asset_custodian()`
+/// * `withdraw_generic_asset_user()`
+///
+/// Market account lookup:
+///
+/// * `get_all_market_account_ids_for_market_id()`
+/// * `get_all_market_account_ids_for_user()`
+/// * `get_asset_counts_custodian()`
+/// * `get_asset_counts_user()`
+/// * `has_market_account_by_market_account_id()`
+/// * `has_market_account_by_market_id()`
+///
+/// Market account ID lookup:
+///
+/// * `get_custodian_id()`
+/// * `get_market_account_id()`
+/// * `get_market_id()`
+///
+/// ## Public entry functions
+///
+/// Asset transfer:
+///
+/// * `deposit_from_coinstore()`
+/// * `withdraw_to_coinstore()`
+///
+/// Account registration:
+///
+/// * `register_market_account()`
+/// * `register_market_account_generic_base()`
+///
+/// ## Public friend functions
+///
+/// Order management:
+///
+/// * `cancel_order_internal()`
+/// * `change_order_size_internal()`
+/// * `fill_order_internal()`
+/// * `place_order_internal()`
+///
+/// Asset management:
+///
+/// * `deposit_assets_internal()`
+/// * `get_asset_counts_internal()`
+/// * `withdraw_assets_internal()`
+///
+/// Order identifiers:
+///
+/// * `get_next_order_access_key_internal()`
+/// * `get_active_market_order_ids_internal()`
+///
+/// # Complete DocGen index
+///
+/// The below index is automatically generated from source code:
 module econia::user {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -260,53 +323,6 @@ module econia::user {
         market_account_ids // Return market account IDs.
     }
 
-    /// Wrapped call to `get_asset_counts_internal()` for custodian.
-    ///
-    /// Restricted to custodian for given market account to prevent
-    /// excessive public queries and thus transaction collisions.
-    ///
-    /// # Testing
-    ///
-    /// * `test_deposits()`
-    public fun get_asset_counts_custodian(
-        user_address: address,
-        market_id: u64,
-        custodian_capability_ref: &CustodianCapability
-    ): (
-        u64,
-        u64,
-        u64,
-        u64,
-        u64,
-        u64
-    ) acquires MarketAccounts {
-        get_asset_counts_internal(
-            user_address, market_id,
-            registry::get_custodian_id(custodian_capability_ref))
-    }
-
-    /// Wrapped call to `get_asset_counts_internal()` for signing user.
-    ///
-    /// Restricted to signing user for given market account to prevent
-    /// excessive public queries and thus transaction collisions.
-    ///
-    /// # Testing
-    ///
-    /// * `test_deposits()`
-    public fun get_asset_counts_user(
-        user: &signer,
-        market_id: u64
-    ): (
-        u64,
-        u64,
-        u64,
-        u64,
-        u64,
-        u64
-    ) acquires MarketAccounts {
-        get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
-    }
-
     /// Return all of a user's market account IDs.
     ///
     /// # Parameters
@@ -366,12 +382,59 @@ module econia::user {
         market_account_ids // Return market account IDs.
     }
 
+    /// Wrapped call to `get_asset_counts_internal()` for custodian.
+    ///
+    /// Restricted to custodian for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    public fun get_asset_counts_custodian(
+        user_address: address,
+        market_id: u64,
+        custodian_capability_ref: &CustodianCapability
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_asset_counts_internal(
+            user_address, market_id,
+            registry::get_custodian_id(custodian_capability_ref))
+    }
+
+    /// Wrapped call to `get_asset_counts_internal()` for signing user.
+    ///
+    /// Restricted to signing user for given market account to prevent
+    /// excessive public queries and thus transaction collisions.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposits()`
+    public fun get_asset_counts_user(
+        user: &signer,
+        market_id: u64
+    ): (
+        u64,
+        u64,
+        u64,
+        u64,
+        u64,
+        u64
+    ) acquires MarketAccounts {
+        get_asset_counts_internal(address_of(user), market_id, NO_CUSTODIAN)
+    }
+
     /// Return custodian ID encoded in market account ID.
     ///
     /// # Testing
     ///
     /// * `test_market_account_id_getters()`
-    fun get_custodian_id(
+    public fun get_custodian_id(
         market_account_id: u128
     ): u64 {
         ((market_account_id & (HI_64 as u128)) as u64)
@@ -382,7 +445,7 @@ module econia::user {
     /// # Testing
     ///
     /// * `test_market_account_id_getters()`
-    fun get_market_account_id(
+    public fun get_market_account_id(
         market_id: u64,
         custodian_id: u64
     ): u128 {
@@ -394,13 +457,13 @@ module econia::user {
     /// # Testing
     ///
     /// * `test_market_account_id_getters()`
-    fun get_market_id(
+    public fun get_market_id(
         market_account_id: u128
     ): u64 {
         (market_account_id >> SHIFT_MARKET_ID as u64)
     }
 
-    /// Return `true` if `user` has at market account registered with
+    /// Return `true` if `user` has market account registered with
     /// given `market_account_id`.
     ///
     /// # Testing
@@ -670,6 +733,198 @@ module econia::user {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Cancel order from a user's tablist of open orders on given side.
+    ///
+    /// Updates asset counts, pushes order onto top of inactive orders
+    /// stack, and overwrites its fields accordingly.
+    ///
+    /// Accepts as an argument a market order ID, which is checked
+    /// against the market order ID in the user's corresponding `Order`.
+    /// This check is bypassed when the market order ID is passed as
+    /// `NIL`, which should only happen when cancellation is motivated
+    /// by an eviction: market order IDs are not tracked in order book
+    /// state, so during an eviction, `cancel_order_internal()`
+    /// is simply called with a `NIL` market order ID argument.
+    /// Custodians or users who manually trigger order cancellations for
+    /// their own order do have to pass market order IDs, however, to
+    /// verify that they are not passing a malicious market order ID
+    /// (portions of which essentially function as pointers into AVL
+    /// queue state).
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
+    /// * `size`: Order size, in lots.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `order_access_key`: Order access key for user order lookup.
+    /// * `market_order_id`: `NIL` if order cancellation originates from
+    ///   an eviction, otherwise the market order ID encoded in the
+    ///   user's `Order`.
+    ///
+    /// # Terminology
+    ///
+    /// * The "inbound" asset is the asset that would have been received
+    ///   from a trade if the cancelled order had been filled.
+    /// * The "outbound" asset is the asset that would have been traded
+    ///   away if the cancelled order had been filled.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID mismatch with
+    ///   user's open order.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also cancelling an order from the order book.
+    /// * User has an open order under indicated market account with
+    ///   provided access key, but not necessarily with provided market
+    ///   order ID (if market order ID is not `NIL`): if order
+    ///   cancellation is manually actuated by a custodian or user,
+    ///   then it had to have been successfully placed on the book to
+    ///   begin with for the given access key. Market order IDs,
+    ///   however, are not maintained in order book state and so could
+    ///   be potentially be passed by a malicious user or custodian who
+    ///   intends to alter order book state per above.
+    /// * If market order ID is not `NIL`, is only called during an
+    ///   eviction.
+    /// * `price` matches that encoded in market order ID from cancelled
+    ///   order if market order ID is not `NIL`.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_bid()`
+    /// * `test_place_cancel_order_stack()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_cancel_order_internal_mismatch()`
+    public(friend) fun cancel_order_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        price: u64,
+        order_access_key: u64,
+        market_order_id: u128
+    ) acquires MarketAccounts {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Mutably borrow orders tablist, inactive orders stack top,
+        // inbound asset ceiling, and outbound asset available fields,
+        // and determine size multiplier for calculating change in
+        // available and ceiling fields, based on order side.
+        let (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
+             out_available_ref_mut, size_multiplier_ceiling,
+             size_multiplier_available) = if (side == ASK) (
+                &mut market_account_ref_mut.asks,
+                &mut market_account_ref_mut.asks_stack_top,
+                &mut market_account_ref_mut.quote_ceiling,
+                &mut market_account_ref_mut.base_available,
+                price * market_account_ref_mut.tick_size,
+                market_account_ref_mut.lot_size
+            ) else (
+                &mut market_account_ref_mut.bids,
+                &mut market_account_ref_mut.bids_stack_top,
+                &mut market_account_ref_mut.base_ceiling,
+                &mut market_account_ref_mut.quote_available,
+                market_account_ref_mut.lot_size,
+                price * market_account_ref_mut.tick_size);
+        let order_ref_mut = // Mutably borrow order to remove.
+            tablist::borrow_mut(orders_ref_mut, order_access_key);
+        let size = order_ref_mut.size; // Store order's size field.
+        // If passed market order ID is not null, assert that it is
+        // equal to market order ID in user's order.
+        if (market_order_id != (NIL as u128)) assert!(
+            order_ref_mut.market_order_id == market_order_id,
+            E_INVALID_MARKET_ORDER_ID);
+        // Clear out order's market order ID field.
+        order_ref_mut.market_order_id = (NIL as u128);
+        // Mark order's size field to indicate top of inactive stack.
+        order_ref_mut.size = *stack_top_ref_mut;
+        // Reassign stack top field to indicate newly inactive order.
+        *stack_top_ref_mut = order_access_key;
+        // Calculate increment amount for outbound available field.
+        let available_increment_amount = size * size_multiplier_available;
+        *out_available_ref_mut = // Increment available field.
+            *out_available_ref_mut + available_increment_amount;
+        // Calculate decrement amount for inbound ceiling field.
+        let ceiling_decrement_amount = size * size_multiplier_ceiling;
+        *in_ceiling_ref_mut = // Decrement ceiling field.
+            *in_ceiling_ref_mut - ceiling_decrement_amount;
+    }
+
+    /// Change the size of a user's open order on given side.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
+    /// * `new_size`: New order size, in lots.
+    /// * `price`: Order price, in ticks per lot.
+    /// * `order_access_key`: Order access key for user order lookup.
+    /// * `market_order_id`: Market order ID for order book lookup.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_CHANGE_ORDER_NO_CHANGE`: No change in order size.
+    ///
+    /// # Assumptions
+    ///
+    /// * Only called when also changing order size on the order book.
+    /// * User has an open order as specified: if order is changed on
+    ///   the book, then it had to have been placed on the book
+    ///   successfully to begin with.
+    /// * `price` matches that encoded in market order ID for changed
+    ///   order.
+    ///
+    /// # Testing
+    ///
+    /// * `test_change_order_size_internal_ask()`
+    /// * `test_change_order_size_internal_bid()`
+    /// * `test_change_order_size_internal_no_change()`
+    public(friend) fun change_order_size_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        new_size: u64,
+        price: u64,
+        order_access_key: u64,
+        market_order_id: u128
+    ) acquires MarketAccounts {
+        // Mutably borrow market accounts map.
+        let market_accounts_map_ref_mut =
+            &mut borrow_global_mut<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let market_account_ref_mut = // Mutably borrow market account.
+            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
+        // Immutably borrow corresponding orders tablist based on side.
+        let orders_ref = if (side == ASK)
+            &market_account_ref_mut.asks else &market_account_ref_mut.bids;
+        // Immutably borrow order.
+        let order_ref = tablist::borrow(orders_ref, order_access_key);
+        // Assert change in size.
+        assert!(order_ref.size != new_size, E_CHANGE_ORDER_NO_CHANGE);
+        // Cancel order with size to be changed.
+        cancel_order_internal(user_address, market_id, custodian_id, side,
+                              price, order_access_key, market_order_id);
+        // Place order with new size.
+        place_order_internal(user_address, market_id, custodian_id, side,
+                             new_size, price, market_order_id);
+    }
 
     /// Deposit base asset and quote coins when matching.
     ///
@@ -1000,198 +1255,6 @@ module econia::user {
         // key for order that will need to be allocated.
         if (*stack_top_ref == NIL) tablist::length(orders_ref) + 1 else
             *stack_top_ref // Otherwise the top of the inactive stack.
-    }
-
-    /// Cancel order from a user's tablist of open orders on given side.
-    ///
-    /// Updates asset counts, pushes order onto top of inactive orders
-    /// stack, and overwrites its fields accordingly.
-    ///
-    /// Accepts as an argument a market order ID, which is checked
-    /// against the market order ID in the user's corresponding `Order`.
-    /// This check is bypassed when the market order ID is passed as
-    /// `NIL`, which should only happen when cancellation is motivated
-    /// by an eviction: market order IDs are not tracked in order book
-    /// state, so during an eviction, `cancel_order_internal()`
-    /// is simply called with a `NIL` market order ID argument.
-    /// Custodians or users who manually trigger order cancellations for
-    /// their own order do have to pass market order IDs, however, to
-    /// verify that they are not passing a malicious market order ID
-    /// (portions of which essentially function as pointers into AVL
-    /// queue state).
-    ///
-    /// # Parameters
-    ///
-    /// * `user_address`: User address for market account.
-    /// * `market_id`: Market ID for market account.
-    /// * `custodian_id`: Custodian ID for market account.
-    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
-    /// * `size`: Order size, in lots.
-    /// * `price`: Order price, in ticks per lot.
-    /// * `order_access_key`: Order access key for user order lookup.
-    /// * `market_order_id`: `NIL` if order cancellation originates from
-    ///   an eviction, otherwise the market order ID encoded in the
-    ///   user's `Order`.
-    ///
-    /// # Terminology
-    ///
-    /// * The "inbound" asset is the asset that would have been received
-    ///   from a trade if the cancelled order had been filled.
-    /// * The "outbound" asset is the asset that would have been traded
-    ///   away if the cancelled order had been filled.
-    ///
-    /// # Aborts
-    ///
-    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID mismatch with
-    ///   user's open order.
-    ///
-    /// # Assumptions
-    ///
-    /// * Only called when also cancelling an order from the order book.
-    /// * User has an open order under indicated market account with
-    ///   provided access key, but not necessarily with provided market
-    ///   order ID (if market order ID is not `NIL`): if order
-    ///   cancellation is manually actuated by a custodian or user,
-    ///   then it had to have been successfully placed on the book to
-    ///   begin with for the given access key. Market order IDs,
-    ///   however, are not maintained in order book state and so could
-    ///   be potentially be passed by a malicious user or custodian who
-    ///   intends to alter order book state per above.
-    /// * If market order ID is not `NIL`, is only called during an
-    ///   eviction.
-    /// * `price` matches that encoded in market order ID from cancelled
-    ///   order if market order ID is not `NIL`.
-    ///
-    /// # Expected value testing
-    ///
-    /// * `test_place_cancel_order_ask()`
-    /// * `test_place_cancel_order_bid()`
-    /// * `test_place_cancel_order_stack()`
-    ///
-    /// # Failure testing
-    ///
-    /// * `test_cancel_order_internal_mismatch()`
-    public(friend) fun cancel_order_internal(
-        user_address: address,
-        market_id: u64,
-        custodian_id: u64,
-        side: bool,
-        price: u64,
-        order_access_key: u64,
-        market_order_id: u128
-    ) acquires MarketAccounts {
-        // Mutably borrow market accounts map.
-        let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(user_address).map;
-        let market_account_id = // Get market account ID.
-            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        let market_account_ref_mut = // Mutably borrow market account.
-            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
-        // Mutably borrow orders tablist, inactive orders stack top,
-        // inbound asset ceiling, and outbound asset available fields,
-        // and determine size multiplier for calculating change in
-        // available and ceiling fields, based on order side.
-        let (orders_ref_mut, stack_top_ref_mut, in_ceiling_ref_mut,
-             out_available_ref_mut, size_multiplier_ceiling,
-             size_multiplier_available) = if (side == ASK) (
-                &mut market_account_ref_mut.asks,
-                &mut market_account_ref_mut.asks_stack_top,
-                &mut market_account_ref_mut.quote_ceiling,
-                &mut market_account_ref_mut.base_available,
-                price * market_account_ref_mut.tick_size,
-                market_account_ref_mut.lot_size
-            ) else (
-                &mut market_account_ref_mut.bids,
-                &mut market_account_ref_mut.bids_stack_top,
-                &mut market_account_ref_mut.base_ceiling,
-                &mut market_account_ref_mut.quote_available,
-                market_account_ref_mut.lot_size,
-                price * market_account_ref_mut.tick_size);
-        let order_ref_mut = // Mutably borrow order to remove.
-            tablist::borrow_mut(orders_ref_mut, order_access_key);
-        let size = order_ref_mut.size; // Store order's size field.
-        // If passed market order ID is not null, assert that it is
-        // equal to market order ID in user's order.
-        if (market_order_id != (NIL as u128)) assert!(
-            order_ref_mut.market_order_id == market_order_id,
-            E_INVALID_MARKET_ORDER_ID);
-        // Clear out order's market order ID field.
-        order_ref_mut.market_order_id = (NIL as u128);
-        // Mark order's size field to indicate top of inactive stack.
-        order_ref_mut.size = *stack_top_ref_mut;
-        // Reassign stack top field to indicate newly inactive order.
-        *stack_top_ref_mut = order_access_key;
-        // Calculate increment amount for outbound available field.
-        let available_increment_amount = size * size_multiplier_available;
-        *out_available_ref_mut = // Increment available field.
-            *out_available_ref_mut + available_increment_amount;
-        // Calculate decrement amount for inbound ceiling field.
-        let ceiling_decrement_amount = size * size_multiplier_ceiling;
-        *in_ceiling_ref_mut = // Decrement ceiling field.
-            *in_ceiling_ref_mut - ceiling_decrement_amount;
-    }
-
-    /// Change the size of a user's open order on given side.
-    ///
-    /// # Parameters
-    ///
-    /// * `user_address`: User address for market account.
-    /// * `market_id`: Market ID for market account.
-    /// * `custodian_id`: Custodian ID for market account.
-    /// * `side`: `ASK` or `BID`, the side on which an order was placed.
-    /// * `new_size`: New order size, in lots.
-    /// * `price`: Order price, in ticks per lot.
-    /// * `order_access_key`: Order access key for user order lookup.
-    /// * `market_order_id`: Market order ID for order book lookup.
-    ///
-    /// # Aborts
-    ///
-    /// * `E_CHANGE_ORDER_NO_CHANGE`: No change in order size.
-    ///
-    /// # Assumptions
-    ///
-    /// * Only called when also changing order size on the order book.
-    /// * User has an open order as specified: if order is changed on
-    ///   the book, then it had to have been placed on the book
-    ///   successfully to begin with.
-    /// * `price` matches that encoded in market order ID for changed
-    ///   order.
-    ///
-    /// # Testing
-    ///
-    /// * `test_change_order_size_internal_ask()`
-    /// * `test_change_order_size_internal_bid()`
-    /// * `test_change_order_size_internal_no_change()`
-    public(friend) fun change_order_size_internal(
-        user_address: address,
-        market_id: u64,
-        custodian_id: u64,
-        side: bool,
-        new_size: u64,
-        price: u64,
-        order_access_key: u64,
-        market_order_id: u128
-    ) acquires MarketAccounts {
-        // Mutably borrow market accounts map.
-        let market_accounts_map_ref_mut =
-            &mut borrow_global_mut<MarketAccounts>(user_address).map;
-        let market_account_id = // Get market account ID.
-            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        let market_account_ref_mut = // Mutably borrow market account.
-            table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
-        // Immutably borrow corresponding orders tablist based on side.
-        let orders_ref = if (side == ASK)
-            &market_account_ref_mut.asks else &market_account_ref_mut.bids;
-        // Immutably borrow order.
-        let order_ref = tablist::borrow(orders_ref, order_access_key);
-        // Assert change in size.
-        assert!(order_ref.size != new_size, E_CHANGE_ORDER_NO_CHANGE);
-        // Cancel order with size to be changed.
-        cancel_order_internal(user_address, market_id, custodian_id, side,
-                              price, order_access_key, market_order_id);
-        // Place order with new size.
-        place_order_internal(user_address, market_id, custodian_id, side,
-                             new_size, price, market_order_id);
     }
 
     /// Return all active market order IDs for given market account.

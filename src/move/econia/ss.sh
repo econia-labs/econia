@@ -116,9 +116,9 @@ substitute_econia_address() {
 #
 # Should be run from inside Move package directory
 update_rev_hash() {
-    # Get hash of latest commit to aptos-core devnet branch
+    # Get hash of latest commit to aptos-core main branch
     hash=$(git ls-remote https://github.com/aptos-labs/aptos-core \
-        refs/heads/devnet | grep -o '^\w\+')
+        refs/heads/main | grep -o '^\w\+')
     # Update Move.toml to indicate new hash dependency
     python $build_py rev $hash $repo_root
 }

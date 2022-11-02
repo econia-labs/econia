@@ -916,6 +916,13 @@ module econia::user {
     ///
     /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
     /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    ///
+    /// # Testing
+    ///
+    /// * `test_get_next_order_access_key_internal_no_account()`
+    /// * `test_get_next_order_access_key_internal_no_accounts()`
+    /// * `test_place_cancel_order_ask()`
+    /// * `test_place_cancel_order_stack()`
     public(friend) fun get_next_order_access_key_internal(
         user_address: address,
         market_id: u64,
@@ -2567,6 +2574,29 @@ module econia::user {
     }
 
     #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for no market account.
+    fun test_get_next_order_access_key_internal_no_account()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Register test market accounts.
+        register_market_accounts_test();
+        // Attempt invalid invocation.
+        get_next_order_access_key_internal(@user, 0, 0, ASK);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for no market accounts.
+    fun test_get_next_order_access_key_internal_no_accounts()
+    acquires MarketAccounts {
+        // Attempt invalid invocation.
+        get_next_order_access_key_internal(@user, 0, 0, ASK);
+    }
+
+    #[test]
     /// Verify valid returns.
     fun test_market_account_getters()
     acquires
@@ -2676,7 +2706,8 @@ module econia::user {
     }
 
     #[test]
-    /// Verify valid state updates for placing and cancelling an ask.
+    /// Verify valid state updates for placing and cancelling an ask,
+    /// and next order access key lookup returns.
     fun test_place_cancel_order_ask()
     acquires
         Collateral,
@@ -2702,6 +2733,9 @@ module econia::user {
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
         // Place order.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id);
@@ -2719,6 +2753,9 @@ module econia::user {
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 2, 0);
         // Assert order fields.
         let (market_order_id_r, size_r) = get_order_fields_test(
             @user, market_account_id, side, order_access_key);
@@ -2727,6 +2764,9 @@ module econia::user {
         // Cancel order.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                               price, order_access_key, market_order_id);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
         // Assert asset counts.
         (base_total , base_available , base_ceiling,
          quote_total, quote_available, quote_ceiling) =
@@ -2824,7 +2864,8 @@ module econia::user {
     }
 
     #[test]
-    /// Verify state updates for multiple pushes and pops from stack.
+    /// Verify state updates for multiple pushes and pops from stack,
+    /// and next order access key lookup returns.
     fun test_place_cancel_order_stack()
     acquires
         Collateral,
@@ -2848,6 +2889,9 @@ module econia::user {
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
         // Place two orders.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id_1);
@@ -2856,18 +2900,27 @@ module econia::user {
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == NIL, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 3, 0);
         // Cancel first order.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                               price, 1, market_order_id_1);
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == 1, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
         // Cancel second order.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                               price, 2, market_order_id_2);
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == 2, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 2, 0);
         // Assert both orders marked inactive.
         assert!(!is_order_active_test(@user, market_account_id, side, 1), 0);
         assert!(!is_order_active_test(@user, market_account_id, side, 2), 0);
@@ -2882,6 +2935,9 @@ module econia::user {
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == 1, 0);
+        // Assert next order access key.
+        assert!(get_next_order_access_key_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
         // Assert order fields.
         let (market_order_id_r, size_r) = get_order_fields_test(
             @user, market_account_id, side, 2);

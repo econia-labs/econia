@@ -59,7 +59,7 @@ See `ss.sh` within a given directory for its available options
     aptos init
     ```
     * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`
-    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions)
+    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions, noting that building from binary can take up plenty of disk space inside of the `aptos-core` directory)
 
 
 1. Now you should be able to run all Move tests:
@@ -174,6 +174,8 @@ To clean up cache files and intermediate artifacts, consider the following tools
 
 In particular, if using a Mac [local Time Machine snapshots] of intermediate artifacts may lead to excessive "purgable" disk space should substantial time pass between backups.
 It is possible to disable snapshots as mentioned in the support thread, but backing up to Time Machine should also help purge snapshots of intermediate artifacts, once the above tools are invoked.
+
+Also consider deleting `~/.move` from time to time.
 
 ## Major filetypes
 

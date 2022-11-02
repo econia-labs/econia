@@ -2099,7 +2099,20 @@ placed.
 Cancel order from a user's tablist of open orders on given side.
 
 Updates asset counts, pushes order onto top of inactive orders
-stack and overwrites its fields accordingly.
+stack, and overwrites its fields accordingly.
+
+Accepts as an argument a market order ID, which is checked
+against the market order ID in the user's corresponding <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code>.
+This check is bypassed when the market order ID is passed as
+<code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>, which should only happen when cancellation is motivated
+by an eviction: market order IDs are not tracked in order book
+state, so during an eviction, <code><a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>()</code>
+is simply called with a <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code> market order ID argument.
+Custodians or users who manually trigger order cancellations for
+their own order do have to pass market order IDs, however, to
+verify that they are not passing a malicious market order ID
+(portions of which essentially function as pointers into AVL
+queue state).
 
 
 <a name="@Parameters_46"></a>
@@ -2114,7 +2127,9 @@ stack and overwrites its fields accordingly.
 * <code>size</code>: Order size, in lots.
 * <code>price</code>: Order price, in ticks per lot.
 * <code>order_access_key</code>: Order access key for user order lookup.
-* <code>market_order_id</code>: Market order ID for order book lookup.
+* <code>market_order_id</code>: <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code> if order cancellation originates from
+an eviction, otherwise the market order ID encoded in the
+user's <code><a href="user.md#0xc0deb00c_user_Order">Order</a></code>.
 
 
 <a name="@Terminology_47"></a>
@@ -2145,13 +2160,17 @@ user's open order.
 * Only called when also cancelling an order from the order book.
 * User has an open order under indicated market account with
 provided access key, but not necessarily with provided market
-order ID: if order is cancelled from the book, then it had to
-have been successfully placed on the book to begin with for
-the given access key. Market order IDs, however, are not
-maintained in order book state and so could be potentially
-passed erroneously.
+order ID (if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>): if order
+cancellation is manually actuated by a custodian or user,
+then it had to have been successfully placed on the book to
+begin with for the given access key. Market order IDs,
+however, are not maintained in order book state and so could
+be potentially be passed by a malicious user or custodian who
+intends to alter order book state per above.
+* If market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>, is only called during an
+eviction.
 * <code>price</code> matches that encoded in market order ID from cancelled
-order.
+order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL</a></code>.
 
 
 <a name="@Expected_value_testing_50"></a>
@@ -2220,9 +2239,11 @@ order.
     <b>let</b> order_ref_mut = // Mutably borrow order <b>to</b> remove.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, order_access_key);
     <b>let</b> size = order_ref_mut.size; // Store order's size field.
-    // Assert market order ID on order is <b>as</b> expected.
-    <b>assert</b>!(order_ref_mut.market_order_id == market_order_id,
-            <a href="user.md#0xc0deb00c_user_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+    // If passed market order ID is not null, <b>assert</b> that it is
+    // equal <b>to</b> market order ID in <a href="user.md#0xc0deb00c_user">user</a>'s order.
+    <b>if</b> (market_order_id != (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128)) <b>assert</b>!(
+        order_ref_mut.market_order_id == market_order_id,
+        <a href="user.md#0xc0deb00c_user_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
     // Clear out order's market order ID field.
     order_ref_mut.market_order_id = (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128);
     // Mark order's size field <b>to</b> indicate top of inactive stack.

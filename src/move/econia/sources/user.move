@@ -1005,7 +1005,20 @@ module econia::user {
     /// Cancel order from a user's tablist of open orders on given side.
     ///
     /// Updates asset counts, pushes order onto top of inactive orders
-    /// stack and overwrites its fields accordingly.
+    /// stack, and overwrites its fields accordingly.
+    ///
+    /// Accepts as an argument a market order ID, which is checked
+    /// against the market order ID in the user's corresponding `Order`.
+    /// This check is bypassed when the market order ID is passed as
+    /// `NIL`, which should only happen when cancellation is motivated
+    /// by an eviction: market order IDs are not tracked in order book
+    /// state, so during an eviction, `cancel_order_internal()`
+    /// is simply called with a `NIL` market order ID argument.
+    /// Custodians or users who manually trigger order cancellations for
+    /// their own order do have to pass market order IDs, however, to
+    /// verify that they are not passing a malicious market order ID
+    /// (portions of which essentially function as pointers into AVL
+    /// queue state).
     ///
     /// # Parameters
     ///
@@ -1016,7 +1029,9 @@ module econia::user {
     /// * `size`: Order size, in lots.
     /// * `price`: Order price, in ticks per lot.
     /// * `order_access_key`: Order access key for user order lookup.
-    /// * `market_order_id`: Market order ID for order book lookup.
+    /// * `market_order_id`: `NIL` if order cancellation originates from
+    ///   an eviction, otherwise the market order ID encoded in the
+    ///   user's `Order`.
     ///
     /// # Terminology
     ///
@@ -1035,13 +1050,17 @@ module econia::user {
     /// * Only called when also cancelling an order from the order book.
     /// * User has an open order under indicated market account with
     ///   provided access key, but not necessarily with provided market
-    ///   order ID: if order is cancelled from the book, then it had to
-    ///   have been successfully placed on the book to begin with for
-    ///   the given access key. Market order IDs, however, are not
-    ///   maintained in order book state and so could be potentially
-    ///   passed erroneously.
+    ///   order ID (if market order ID is not `NIL`): if order
+    ///   cancellation is manually actuated by a custodian or user,
+    ///   then it had to have been successfully placed on the book to
+    ///   begin with for the given access key. Market order IDs,
+    ///   however, are not maintained in order book state and so could
+    ///   be potentially be passed by a malicious user or custodian who
+    ///   intends to alter order book state per above.
+    /// * If market order ID is not `NIL`, is only called during an
+    ///   eviction.
     /// * `price` matches that encoded in market order ID from cancelled
-    ///   order.
+    ///   order if market order ID is not `NIL`.
     ///
     /// # Expected value testing
     ///
@@ -1091,9 +1110,11 @@ module econia::user {
         let order_ref_mut = // Mutably borrow order to remove.
             tablist::borrow_mut(orders_ref_mut, order_access_key);
         let size = order_ref_mut.size; // Store order's size field.
-        // Assert market order ID on order is as expected.
-        assert!(order_ref_mut.market_order_id == market_order_id,
-                E_INVALID_MARKET_ORDER_ID);
+        // If passed market order ID is not null, assert that it is
+        // equal to market order ID in user's order.
+        if (market_order_id != (NIL as u128)) assert!(
+            order_ref_mut.market_order_id == market_order_id,
+            E_INVALID_MARKET_ORDER_ID);
         // Clear out order's market order ID field.
         order_ref_mut.market_order_id = (NIL as u128);
         // Mark order's size field to indicate top of inactive stack.
@@ -2984,9 +3005,9 @@ module econia::user {
             @user, market_account_id, side, order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
-        // Cancel order.
+        // Evict order.
         cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              price, order_access_key, market_order_id);
+                              price, order_access_key, (NIL as u128));
         // Assert next order access key.
         assert!(get_next_order_access_key_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);

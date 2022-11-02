@@ -894,6 +894,57 @@ module econia::user {
          market_account_ref.quote_ceiling) // Return asset count fields.
     }
 
+    /// Return order access key for next placed order.
+    ///
+    /// If inactive orders stack top is empty, will be next 1-indexed
+    /// order access key to be allocated. Otherwise is order access key
+    /// at top of inactive order stack.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `side`: `ASK` or `BID`, the side on which an order will be
+    ///   placed.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Order access key of next order to be placed.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
+    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
+    public(friend) fun get_next_order_access_key_internal(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool
+    ): u64 acquires MarketAccounts {
+        // Assert user has market accounts resource.
+        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
+        // Immutably borrow market accounts map.
+        let market_accounts_map_ref =
+            &borrow_global<MarketAccounts>(user_address).map;
+        let market_account_id = // Get market account ID.
+            ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
+        let has_market_account = // Check if user has market account.
+            table::contains(market_accounts_map_ref, market_account_id);
+        // Assert user has market account for given market account ID.
+        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
+        let market_account_ref = // Mutably borrow market account.
+            table::borrow(market_accounts_map_ref, market_account_id);
+        // Get orders tablist and inactive order stack top for side.
+        let (orders_ref, stack_top_ref) = if (side == ASK)
+            (&market_account_ref.asks, &market_account_ref.asks_stack_top) else
+            (&market_account_ref.bids, &market_account_ref.bids_stack_top);
+        // If empty inactive order stack, return 1-indexed order access
+        // key for order that will need to be allocated.
+        if (*stack_top_ref == NIL) tablist::length(orders_ref) + 1 else
+            *stack_top_ref // Otherwise the top of the inactive stack.
+    }
+
     /// Cancel order from a user's tablist of open orders on given side.
     ///
     /// Updates asset counts, pushes order onto top of inactive orders
@@ -1134,6 +1185,14 @@ module econia::user {
     /// Allocates a new order if the inactive order stack is empty,
     /// otherwise pops one off the top of the stack and overwrites it.
     ///
+    /// Should only be called when attempting to place an order on the
+    /// order book. Since order book entries list order access keys for
+    /// each corresponding user, `get_next_order_access_key_internal()`
+    /// needs to be called when generating an entry on the order book:
+    /// to insert to the order book, an order access key is first
+    /// required. Once an order book entry has been created, a market
+    /// order ID will then be made available.
+    ///
     /// # Parameters
     ///
     /// * `user_address`: User address for market account.
@@ -1153,13 +1212,13 @@ module econia::user {
     ///
     /// * Only called when also placing an order on the order book.
     /// * `price` matches that encoded in `market_order_id`.
+    /// * Existence of corresponding market account has already been
+    ///   verified by `get_next_order_access_key_internal()`.
     ///
     /// # Aborts
     ///
     /// * `E_PRICE_0`: Price is zero.
     /// * `E_PRICE_TOO_HIGH`: Price exceeds maximum possible price.
-    /// * `E_NO_MARKET_ACCOUNTS`: No market accounts resource found.
-    /// * `E_NO_MARKET_ACCOUNT`: No market account resource found.
     /// * `E_SIZE_TOO_LOW`: Size is below minimum size for market.
     /// * `E_TICKS_OVERFLOW`: Ticks to fill order overflows a `u64`.
     /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
@@ -1175,8 +1234,6 @@ module econia::user {
     /// # Failure testing
     ///
     /// * `test_place_order_internal_in_overflow()`
-    /// * `test_place_order_internal_no_account()`
-    /// * `test_place_order_internal_no_accounts()`
     /// * `test_place_order_internal_out_underflow()`
     /// * `test_place_order_internal_price_0()`
     /// * `test_place_order_internal_price_hi()`
@@ -1194,17 +1251,11 @@ module econia::user {
         assert!(price > 0, E_PRICE_0); // Assert price is nonzero.
         // Assert price is not too high.
         assert!(price <= MAX_PRICE, E_PRICE_TOO_HIGH);
-        // Assert user has market accounts resource.
-        assert!(exists<MarketAccounts>(user_address), E_NO_MARKET_ACCOUNTS);
         // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
         let market_account_id = // Get market account ID.
             ((market_id as u128) << SHIFT_MARKET_ID) | (custodian_id as u128);
-        let has_market_account = // Check if user has market account.
-            table::contains(market_accounts_map_ref_mut, market_account_id);
-        // Assert user has market account for given market account ID.
-        assert!(has_market_account, E_NO_MARKET_ACCOUNT);
         let market_account_ref_mut = // Mutably borrow market account.
             table::borrow_mut(market_accounts_map_ref_mut, market_account_id);
         // Assert order size is greater than or equal to market minimum.
@@ -2862,42 +2913,6 @@ module econia::user {
         // Deposit max quote coins.
         deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
                           assets::mint_test(HI_64));
-        // Attempt invalid invocation.
-        place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                             size, price, market_order_id);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 3)]
-    /// Verify failure for no market account resource.
-    fun test_place_order_internal_no_account()
-    acquires
-        Collateral,
-        MarketAccounts
-    {
-        register_market_accounts_test(); // Register market accounts.
-        // Declare order parameters
-        let market_order_id  = 123;
-        let size             = MIN_SIZE_PURE_COIN;
-        let price            = MAX_PRICE;
-        let side             = ASK;
-        // Attempt invalid invocation.
-        place_order_internal(@user, MARKET_ID_GENERIC + 5, CUSTODIAN_ID, side,
-                             size, price, market_order_id);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 2)]
-    /// Verify failure for no market accounts resource.
-    fun test_place_order_internal_no_accounts()
-    acquires
-        MarketAccounts
-    {
-        // Declare order parameters
-        let market_order_id  = 123;
-        let size             = MIN_SIZE_PURE_COIN;
-        let price            = MAX_PRICE;
-        let side             = ASK;
         // Attempt invalid invocation.
         place_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
                              size, price, market_order_id);

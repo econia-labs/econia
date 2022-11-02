@@ -671,6 +671,56 @@ module econia::user {
 
     // Public friend functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Deposit base asset and quote coins when matching.
+    ///
+    /// Should only be called by the matching engine when matching from
+    /// a user's market account.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for market.
+    /// * `QuoteType`: Quote type for market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `base_amount`: Base asset amount to deposit.
+    /// * `optional_base_coins`: Optional base coins to deposit.
+    /// * `quote_coins`: Quote coins to deposit.
+    /// * `underwriter_id`: Underwriter ID for market.
+    ///
+    /// # Assumptions
+    ///
+    /// * If `optional_base_coins` is some, coin value is equal to
+    ///   `base_amount`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_withdraw_assets_internal()`
+    public(friend) fun deposit_assets_internal<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        base_amount: u64,
+        optional_base_coins: Option<Coin<BaseType>>,
+        quote_coins: Coin<QuoteType>,
+        underwriter_id: u64
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        deposit_asset<BaseType>( // Deposit base asset.
+            user_address, market_id, custodian_id, base_amount,
+            optional_base_coins, underwriter_id);
+        deposit_coins<QuoteType>( // Deposit quote coins.
+            user_address, market_id, custodian_id, quote_coins);
+    }
+
     /// Fill a user's order, routing collateral appropriately.
     ///
     /// Updates asset counts in a user's market account. Transfers
@@ -1317,6 +1367,59 @@ module econia::user {
             order_ref_mut.market_order_id = market_order_id;
             order_ref_mut.size = size; // Reassign order size field.
         };
+    }
+
+    /// Withdraw base asset and quote coins when matching.
+    ///
+    /// Should only be called by the matching engine when matching from
+    /// a user's market account.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for market.
+    /// * `QuoteType`: Quote type for market.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Market ID for market account.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `base_amount`: Base asset amount to withdraw.
+    /// * `quote_amount`: Quote asset amount to withdraw.
+    /// * `underwriter_id`: Underwriter ID for market.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Coin<BaseType>>`: Optional base coins from user's
+    ///   market account.
+    /// * `<Coin<QuoteType>`: Quote coins from user's market account.
+    ///
+    /// # Testing
+    ///
+    /// * `test_deposit_withdraw_assets_internal()`
+    public(friend) fun withdraw_assets_internal<
+        BaseType,
+        QuoteType,
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        base_amount: u64,
+        quote_amount: u64,
+        underwriter_id: u64
+    ): (
+        Option<Coin<BaseType>>,
+        Coin<QuoteType>
+    ) acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Return optional base coins, and quote coins per respective
+        // withdrawal functions.
+        (withdraw_asset<BaseType>(user_address, market_id, custodian_id,
+                                  base_amount, underwriter_id),
+         withdraw_coins<QuoteType>(user_address, market_id, custodian_id,
+                                   quote_amount))
     }
 
     // Public friend functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2173,6 +2276,126 @@ module econia::user {
                               1, &underwriter_capability);
         // Drop underwriter capability.
         registry::drop_underwriter_capability_test(underwriter_capability);
+    }
+
+    #[test]
+    /// Verify state updates, returns for pure coin and generic markets.
+    fun test_deposit_withdraw_assets_internal()
+    acquires
+        Collateral,
+        MarketAccounts
+    {
+        // Get test market account IDs.
+        let (_, _, market_account_id_coin_delegated,
+                   market_account_id_generic_self, _) =
+             register_market_accounts_test();
+        // Declare withdrawal amounts for each market accounts.
+        let base_amount_0  = 123;
+        let quote_amount_0 = 234;
+        let base_amount_1  = 345;
+        let quote_amount_1 = 456;
+        // Deposit starting base and quote asset to each account.
+        deposit_coins<BC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(BASE_START));
+        deposit_coins<QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID,
+                          assets::mint_test(QUOTE_START));
+        deposit_asset<GenericAsset>(
+            @user, MARKET_ID_GENERIC, NO_CUSTODIAN, BASE_START, option::none(),
+            UNDERWRITER_ID);
+        deposit_coins<QC>(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+                          assets::mint_test(QUOTE_START));
+        // Withdraw assets from pure coin market account.
+        let (optional_base_coins_0, quote_coins_0) = withdraw_assets_internal<
+            BC, QC>(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, base_amount_0,
+            quote_amount_0, NO_UNDERWRITER);
+        // Assert coin values.
+        assert!(coin::value(option::borrow(&optional_base_coins_0))
+                == base_amount_0, 0);
+        assert!(coin::value(&quote_coins_0) == quote_amount_0, 0);
+        // Assert asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START  - base_amount_0, 0);
+        assert!(base_available  == BASE_START  - base_amount_0, 0);
+        assert!(base_ceiling    == BASE_START  - base_amount_0, 0);
+        assert!(quote_total     == QUOTE_START - quote_amount_0, 0);
+        assert!(quote_available == QUOTE_START - quote_amount_0, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_amount_0, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id_coin_delegated)
+                == BASE_START - base_amount_0, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_coin_delegated)
+                 == QUOTE_START - quote_amount_0, 0);
+        // Deposit assets back to pure coin market account.
+        deposit_assets_internal<BC, QC>(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, base_amount_0,
+            optional_base_coins_0, quote_coins_0, NO_UNDERWRITER);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert collateral amounts.
+        assert!(get_collateral_value_test<BC>(
+            @user, market_account_id_coin_delegated) == BASE_START, 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_coin_delegated) == QUOTE_START, 0);
+        // Withdraw assets from generic market account.
+        let (optional_base_coins_1, quote_coins_1) = withdraw_assets_internal<
+            GenericAsset, QC>(@user, MARKET_ID_GENERIC, NO_CUSTODIAN,
+            base_amount_1, quote_amount_1, UNDERWRITER_ID);
+        // Assert no base asset.
+        assert!(option::is_none(&optional_base_coins_1), 0);
+        // Assert quote coin amount.
+        assert!(coin::value(&quote_coins_1) == quote_amount_1, 0);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_GENERIC, NO_CUSTODIAN);
+        assert!(base_total      == BASE_START  - base_amount_1, 0);
+        assert!(base_available  == BASE_START  - base_amount_1, 0);
+        assert!(base_ceiling    == BASE_START  - base_amount_1, 0);
+        assert!(quote_total     == QUOTE_START - quote_amount_1, 0);
+        assert!(quote_available == QUOTE_START - quote_amount_1, 0);
+        assert!(quote_ceiling   == QUOTE_START - quote_amount_1, 0);
+        // Assert collateral state.
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self)
+                 == QUOTE_START - quote_amount_1, 0);
+        // Deposit assets back to generic market account.
+        deposit_assets_internal<GenericAsset, QC>(
+            @user, MARKET_ID_GENERIC, NO_CUSTODIAN, base_amount_1,
+            optional_base_coins_1, quote_coins_1, UNDERWRITER_ID);
+        // Assert asset counts.
+        (base_total , base_available , base_ceiling,
+         quote_total, quote_available, quote_ceiling) =
+            get_asset_counts_internal(
+                @user, MARKET_ID_GENERIC, NO_CUSTODIAN);
+        assert!(base_total      == BASE_START , 0);
+        assert!(base_available  == BASE_START , 0);
+        assert!(base_ceiling    == BASE_START , 0);
+        assert!(quote_total     == QUOTE_START, 0);
+        assert!(quote_available == QUOTE_START, 0);
+        assert!(quote_ceiling   == QUOTE_START, 0);
+        // Assert collateral state.
+        assert!(!has_collateral_test<GenericAsset>(
+            @user, market_account_id_generic_self), 0);
+        assert!(get_collateral_value_test<QC>(
+            @user, market_account_id_generic_self)
+                 == QUOTE_START, 0);
     }
 
     #[test]

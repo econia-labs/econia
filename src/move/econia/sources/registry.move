@@ -201,11 +201,18 @@ module econia::registry {
         quote_type: TypeInfo,
         /// Number of base units exchanged per lot (when base asset is
         /// a coin, corresponds to `aptos_framework::coin::Coin.value`).
+        /// When selecting a lot size, note that prices are 32 bits.
         lot_size: u64,
         /// Number of quote coin units exchanged per tick (corresponds
-        /// to `aptos_framework::coin::Coin.value`).
+        /// to `aptos_framework::coin::Coin.value`). When selecting a
+        /// tick size, note that prices are 32 bits.
         tick_size: u64,
-        /// Minimum number of lots per order.
+        /// Minimum number of lots per order. When selecting a minimum
+        /// size, note that filling a large taker order will incur
+        /// additional gas costs for every additional maker order that
+        /// must be filled against. Hence a minimum size that is
+        /// excessively small will result in higher gas costs for
+        /// takers.
         min_size: u64,
         /// `NO_UNDERWRITER` if a pure coin market, otherwise ID of
         /// underwriter capability required to verify generic asset

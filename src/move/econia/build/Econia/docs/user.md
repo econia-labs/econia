@@ -2324,6 +2324,7 @@ matching engine.
 through the matching engine.
 * <code>Coin&lt;QuoteType&gt;</code>: External quote coins passing through the
 matching engine.
+* <code>u128</code>: Market order ID just filled against.
 
 
 <a name="@Assumptions_58"></a>
@@ -2344,7 +2345,7 @@ matching engine.
 * <code>test_fill_order_internal_bid_partial_base_generic()</code>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, order_access_key: u64, fill_size: u64, complete_fill: bool, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, base_to_route: u64, quote_to_route: u64): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="user.md#0xc0deb00c_user_fill_order_internal">fill_order_internal</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, order_access_key: u64, fill_size: u64, complete_fill: bool, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, base_to_route: u64, quote_to_route: u64): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u128)
 </code></pre>
 
 
@@ -2370,7 +2371,8 @@ matching engine.
     quote_to_route: u64
 ): (
     Option&lt;Coin&lt;BaseType&gt;&gt;,
-    Coin&lt;QuoteType&gt;
+    Coin&lt;QuoteType&gt;,
+    u128
 ) <b>acquires</b>
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
@@ -2412,6 +2414,8 @@ matching engine.
     );
     <b>let</b> order_ref_mut = // Mutably borrow corresponding order.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, order_access_key);
+    // Store <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    <b>let</b> market_order_id = order_ref_mut.market_order_id;
     <b>if</b> (complete_fill) { // If completely filling order:
         // Clear out order's <a href="market.md#0xc0deb00c_market">market</a> order ID field.
         order_ref_mut.market_order_id = (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128);
@@ -2462,8 +2466,8 @@ matching engine.
             <a href="_extract">coin::extract</a>(&<b>mut</b> quote_coins, quote_to_route)) <b>else</b>
         <a href="_merge">coin::merge</a>(&<b>mut</b> quote_coins,
             <a href="_extract">coin::extract</a>(collateral_ref_mut, quote_to_route));
-    // Return external optional base coins and quote coins.
-    (optional_base_coins, quote_coins)
+    // Return optional base coins, quote coins, and <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    (optional_base_coins, quote_coins, market_order_id)
 }
 </code></pre>
 

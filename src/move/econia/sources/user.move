@@ -1190,6 +1190,7 @@ module econia::user {
     ///   through the matching engine.
     /// * `Coin<QuoteType>`: External quote coins passing through the
     ///   matching engine.
+    /// * `u128`: Market order ID just filled against.
     ///
     /// # Assumptions
     ///
@@ -1217,7 +1218,8 @@ module econia::user {
         quote_to_route: u64
     ): (
         Option<Coin<BaseType>>,
-        Coin<QuoteType>
+        Coin<QuoteType>,
+        u128
     ) acquires
         Collateral,
         MarketAccounts
@@ -1259,6 +1261,8 @@ module econia::user {
         );
         let order_ref_mut = // Mutably borrow corresponding order.
             tablist::borrow_mut(orders_ref_mut, order_access_key);
+        // Store market order ID.
+        let market_order_id = order_ref_mut.market_order_id;
         if (complete_fill) { // If completely filling order:
             // Clear out order's market order ID field.
             order_ref_mut.market_order_id = (NIL as u128);
@@ -1309,8 +1313,8 @@ module econia::user {
                 coin::extract(&mut quote_coins, quote_to_route)) else
             coin::merge(&mut quote_coins,
                 coin::extract(collateral_ref_mut, quote_to_route));
-        // Return external optional base coins and quote coins.
-        (optional_base_coins, quote_coins)
+        // Return optional base coins, quote coins, and market order ID.
+        (optional_base_coins, quote_coins, market_order_id)
     }
 
     /// Return asset counts for specified market account.
@@ -2763,11 +2767,15 @@ module econia::user {
         // Initialize external coins passing through matching engine.
         let optional_base_coins = option::some(coin::zero());
         let quote_coins = assets::mint_test(quote_fill);
-        // Fill order, storing base and quote coins for matching engine.
-        (optional_base_coins, quote_coins) = fill_order_internal<BC, QC>(
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-            order_access_key_filled, size, complete_fill, optional_base_coins,
-            quote_coins, base_fill, quote_fill);
+        // Fill order, storing base and quote coins for matching engine,
+        // and market order ID.
+        (optional_base_coins, quote_coins, market_order_id) =
+            fill_order_internal<BC, QC>(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                order_access_key_filled, size, complete_fill,
+                optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Assert market order ID.
+        assert!(market_order_id == market_order_id, 0);
         // Assert external coin values after order fill.
         let base_coins = option::destroy_some(optional_base_coins);
         assert!(coin::value(&base_coins) == base_fill, 0);
@@ -2838,11 +2846,15 @@ module econia::user {
         // Initialize external coins passing through matching engine.
         let optional_base_coins = option::some(assets::mint_test(base_fill));
         let quote_coins = coin::zero();
-        // Fill order, storing base and quote coins for matching engine.
-        (optional_base_coins, quote_coins) = fill_order_internal<BC, QC>(
-            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-            order_access_key_filled, size, complete_fill, optional_base_coins,
-            quote_coins, base_fill, quote_fill);
+        // Fill order, storing base and quote coins for matching engine,
+        // and market order ID.
+        (optional_base_coins, quote_coins, market_order_id) =
+            fill_order_internal<BC, QC>(
+                @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
+                order_access_key_filled, size, complete_fill,
+                optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Assert market order ID.
+        assert!(market_order_id == market_order_id, 0);
         // Assert external coin values after order fill.
         let base_coins = option::destroy_some(optional_base_coins);
         assert!(coin::value(&base_coins) == 0, 0);
@@ -2915,11 +2927,15 @@ module econia::user {
         // Initialize external coins passing through matching engine.
         let optional_base_coins = option::none();
         let quote_coins = coin::zero();
-        // Fill order, storing base and quote coins for matching engine.
-        (optional_base_coins, quote_coins) = fill_order_internal<
-            GenericAsset, QC>(@user, MARKET_ID_GENERIC, CUSTODIAN_ID, side,
-            order_access_key_filled, fill_size, complete_fill,
-            optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Fill order, storing base and quote coins for matching engine,
+        // and market order ID.
+        (optional_base_coins, quote_coins, market_order_id) =
+            fill_order_internal<GenericAsset, QC>(
+                @user, MARKET_ID_GENERIC, CUSTODIAN_ID, side,
+                order_access_key_filled, fill_size, complete_fill,
+                optional_base_coins, quote_coins, base_fill, quote_fill);
+        // Assert market order ID.
+        assert!(market_order_id == market_order_id, 0);
         // Assert quote coin values after order fill.
         assert!(coin::value(&quote_coins) == quote_fill, 0);
         // Destroy external coins.

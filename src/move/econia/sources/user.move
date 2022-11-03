@@ -247,8 +247,8 @@ module econia::user {
     use econia::registry::{
         Self, CustodianCapability, GenericAsset, UnderwriterCapability};
     use std::option::{Self, Option};
-    use std::string::String;
     use std::signer::address_of;
+    use std::string::String;
     use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -277,7 +277,8 @@ module econia::user {
 
     /// Represents a user's open orders and asset counts for a given
     /// market account ID. Contains `registry::MarketInfo` field
-    /// duplicates to reduce global storage item queries.
+    /// duplicates to reduce global storage item queries against the
+    /// registry.
     struct MarketAccount has store {
         /// `registry::MarketInfo.base_type`.
         base_type: TypeInfo,

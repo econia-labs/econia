@@ -482,7 +482,8 @@ All of a user's collateral across all market accounts.
 
 Represents a user's open orders and asset counts for a given
 market account ID. Contains <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a></code> field
-duplicates to reduce global storage item queries.
+duplicates to reduce global storage item queries against the
+registry.
 
 
 <pre><code><b>struct</b> <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a> <b>has</b> store
@@ -679,6 +680,27 @@ An open order, either ask or bid.
 ## Constants
 
 
+<a name="0xc0deb00c_user_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 64, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_NIL"></a>
+
+Flag for null value when null defined as 0.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NIL">NIL</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_ASK"></a>
 
 Flag for ask side
@@ -706,27 +728,6 @@ in Python via <code>hex(int('1' * 32, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_HI_64"></a>
-
-<code>u64</code> bitmask with all bits set, generated in Python via
-<code>hex(int('1' * 64, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_HI_64">HI_64</a>: u64 = 18446744073709551615;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_NIL"></a>
-
-Flag for null value when null defined as 0.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NIL">NIL</a>: u64 = 0;
 </code></pre>
 
 

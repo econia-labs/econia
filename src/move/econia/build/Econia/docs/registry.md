@@ -1050,7 +1050,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_get_recognized_market
     <b>let</b> base_name_generic = <a href="_utf8">string::utf8</a>(b"");
     <b>let</b> trading_pair = // Pack trading pair.
         <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Get recognized market info.
+    // Get recognized <a href="market.md#0xc0deb00c_market">market</a> info.
     <a href="registry.md#0xc0deb00c_registry_get_recognized_market_info">get_recognized_market_info</a>(trading_pair)
 }
 </code></pre>
@@ -1161,7 +1161,7 @@ asset.
     <b>let</b> base_type = <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a>&gt;();
     <b>let</b> trading_pair = // Pack trading pair.
         <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Get recognized market info.
+    // Get recognized <a href="market.md#0xc0deb00c_market">market</a> info.
     <a href="registry.md#0xc0deb00c_registry_get_recognized_market_info">get_recognized_market_info</a>(trading_pair)
 }
 </code></pre>
@@ -1309,7 +1309,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market
     <b>let</b> base_name_generic = <a href="_utf8">string::utf8</a>(b"");
     <b>let</b> trading_pair = // Pack trading pair.
         <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Check <b>if</b> trading pair <b>has</b> recognized market.
+    // Check <b>if</b> trading pair <b>has</b> recognized <a href="market.md#0xc0deb00c_market">market</a>.
     <a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>(trading_pair)
 }
 </code></pre>
@@ -1409,7 +1409,7 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_has_recognized_market
     <b>let</b> base_type = <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a>&gt;();
     <b>let</b> trading_pair = // Pack trading pair.
         <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Check <b>if</b> trading pair <b>has</b> recognized market.
+    // Check <b>if</b> trading pair <b>has</b> recognized <a href="market.md#0xc0deb00c_market">market</a>.
     <a href="registry.md#0xc0deb00c_registry_has_recognized_market">has_recognized_market</a>(trading_pair)
 }
 </code></pre>
@@ -1649,9 +1649,9 @@ given trading pair.
     <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <b>let</b> markets_map_ref = // Immutably borrow markets map.
         &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).market_id_to_info;
-    // Immutably borrow info for market having given ID.
+    // Immutably borrow info for <a href="market.md#0xc0deb00c_market">market</a> having given ID.
     <b>let</b> market_info_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(markets_map_ref, market_id);
-    // Get recognized market info parameters.
+    // Get recognized <a href="market.md#0xc0deb00c_market">market</a> info parameters.
     <b>let</b> (base_type, base_name_generic, quote_type, lot_size, tick_size,
          min_size, underwriter_id) =
         (market_info_ref.base_type, market_info_ref.base_name_generic,
@@ -1660,7 +1660,7 @@ given trading pair.
          market_info_ref.underwriter_id);
     <b>let</b> trading_pair = // Pack trading pair.
         <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Pack recognized market info.
+    // Pack recognized <a href="market.md#0xc0deb00c_market">market</a> info.
     <b>let</b> recognized_market_info = <a href="registry.md#0xc0deb00c_registry_RecognizedMarketInfo">RecognizedMarketInfo</a>{
         market_id, lot_size, tick_size, min_size, underwriter_id};
     // Mutably borrow recognized markets resource.
@@ -1668,10 +1668,10 @@ given trading pair.
         <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_RecognizedMarkets">RecognizedMarkets</a>&gt;(@econia);
     // Mutably borrow recognized markets map.
     <b>let</b> recognized_map_ref_mut = &<b>mut</b> recognized_markets_ref_mut.map;
-    <b>assert</b>!( // Assert trading pair <b>has</b> a recognized market.
+    <b>assert</b>!( // Assert trading pair <b>has</b> a recognized <a href="market.md#0xc0deb00c_market">market</a>.
         <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(recognized_map_ref_mut, trading_pair),
         <a href="registry.md#0xc0deb00c_registry_E_NO_RECOGNIZED_MARKET">E_NO_RECOGNIZED_MARKET</a>);
-    <b>assert</b>!( // Assert market info is recognized for trading pair.
+    <b>assert</b>!( // Assert <a href="market.md#0xc0deb00c_market">market</a> info is recognized for trading pair.
         *<a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(recognized_map_ref_mut, trading_pair) ==
             recognized_market_info,
         <a href="registry.md#0xc0deb00c_registry_E_WRONG_RECOGNIZED_MARKET">E_WRONG_RECOGNIZED_MARKET</a>);
@@ -1680,7 +1680,7 @@ given trading pair.
     // Mutably borrow recognized markets events handle.
     <b>let</b> event_handle_ref_mut =
         &<b>mut</b> recognized_markets_ref_mut.recognized_market_events;
-    // Emit a recognized market <a href="">event</a>.
+    // Emit a recognized <a href="market.md#0xc0deb00c_market">market</a> <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(event_handle_ref_mut, <a href="registry.md#0xc0deb00c_registry_RecognizedMarketEvent">RecognizedMarketEvent</a>{
         trading_pair, recognized_market_info: <a href="_none">option::none</a>()});
 }
@@ -1725,9 +1725,9 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_remove_recognized_mar
     <b>let</b> n_markets = <a href="_length">vector::length</a>(&market_ids);
     <b>let</b> i = 0; // Declare <b>loop</b> counter.
     <b>while</b> (i &lt; n_markets) { // Loop over all markets in <a href="">vector</a>:
-        // Get market ID <b>to</b> remove.
+        // Get <a href="market.md#0xc0deb00c_market">market</a> ID <b>to</b> remove.
         <b>let</b> market_id = *<a href="_borrow">vector::borrow</a>(&market_ids, i);
-        // Remove <b>as</b> recognized market.
+        // Remove <b>as</b> recognized <a href="market.md#0xc0deb00c_market">market</a>.
         <a href="registry.md#0xc0deb00c_registry_remove_recognized_market">remove_recognized_market</a>(<a href="">account</a>, market_id);
         i = i + 1; // Increment <b>loop</b> counter.
     }
@@ -1809,9 +1809,9 @@ given trading pair.
     <b>assert</b>!(address_of(<a href="">account</a>) == @econia, <a href="registry.md#0xc0deb00c_registry_E_NOT_ECONIA">E_NOT_ECONIA</a>);
     <b>let</b> markets_map_ref = // Immutably borrow markets map.
         &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).market_id_to_info;
-    // Immutably borrow info for market having given ID.
+    // Immutably borrow info for <a href="market.md#0xc0deb00c_market">market</a> having given ID.
     <b>let</b> market_info_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(markets_map_ref, market_id);
-    // Get recognized market info parameters.
+    // Get recognized <a href="market.md#0xc0deb00c_market">market</a> info parameters.
     <b>let</b> (base_type, base_name_generic, quote_type, lot_size, tick_size,
          min_size, underwriter_id) =
         (market_info_ref.base_type, market_info_ref.base_name_generic,
@@ -1820,7 +1820,7 @@ given trading pair.
          market_info_ref.underwriter_id);
     <b>let</b> trading_pair = // Pack trading pair.
         <a href="registry.md#0xc0deb00c_registry_TradingPair">TradingPair</a>{base_type, base_name_generic, quote_type};
-    // Pack recognized market info.
+    // Pack recognized <a href="market.md#0xc0deb00c_market">market</a> info.
     <b>let</b> recognized_market_info = <a href="registry.md#0xc0deb00c_registry_RecognizedMarketInfo">RecognizedMarketInfo</a>{
         market_id, lot_size, tick_size, min_size, underwriter_id};
     // Mutably borrow recognized markets resource.
@@ -1836,12 +1836,12 @@ given trading pair.
     // Otherwise <b>update</b> existing entry.
     <b>else</b> *<a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(recognized_map_ref_mut, trading_pair) =
             recognized_market_info;
-    // Pack market info in an <a href="">option</a>.
+    // Pack <a href="market.md#0xc0deb00c_market">market</a> info in an <a href="">option</a>.
     <b>let</b> optional_market_info = <a href="_some">option::some</a>(recognized_market_info);
     // Mutably borrow recognized markets events handle.
     <b>let</b> event_handle_ref_mut =
         &<b>mut</b> recognized_markets_ref_mut.recognized_market_events;
-    // Emit a recognized market <a href="">event</a>.
+    // Emit a recognized <a href="market.md#0xc0deb00c_market">market</a> <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(event_handle_ref_mut, <a href="registry.md#0xc0deb00c_registry_RecognizedMarketEvent">RecognizedMarketEvent</a>{
         trading_pair, recognized_market_info: optional_market_info});
 }
@@ -1886,9 +1886,9 @@ Wrapper for <code><a href="registry.md#0xc0deb00c_registry_set_recognized_market
     <b>let</b> n_markets = <a href="_length">vector::length</a>(&market_ids);
     <b>let</b> i = 0; // Declare <b>loop</b> counter.
     <b>while</b> (i &lt; n_markets) { // Loop over all markets in <a href="">vector</a>:
-        // Get market ID <b>to</b> set.
+        // Get <a href="market.md#0xc0deb00c_market">market</a> ID <b>to</b> set.
         <b>let</b> market_id = *<a href="_borrow">vector::borrow</a>(&market_ids, i);
-        // Set <b>as</b> recognized market.
+        // Set <b>as</b> recognized <a href="market.md#0xc0deb00c_market">market</a>.
         <a href="registry.md#0xc0deb00c_registry_set_recognized_market">set_recognized_market</a>(<a href="">account</a>, market_id);
         i = i + 1; // Increment <b>loop</b> counter.
     }
@@ -1974,16 +1974,16 @@ against the registry.
 ) <b>acquires</b> <a href="registry.md#0xc0deb00c_registry_Registry">Registry</a> {
     <b>let</b> markets_map_ref = // Immutably borrow markets map.
         &<b>borrow_global</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia).market_id_to_info;
-    <b>assert</b>!( // Assert market ID corresponds <b>to</b> registered market.
+    <b>assert</b>!( // Assert <a href="market.md#0xc0deb00c_market">market</a> ID corresponds <b>to</b> registered <a href="market.md#0xc0deb00c_market">market</a>.
         <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(markets_map_ref, market_id),
         <a href="registry.md#0xc0deb00c_registry_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
-    // Immutably borrow market info for market ID.
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> info for <a href="market.md#0xc0deb00c_market">market</a> ID.
     <b>let</b> market_info_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(markets_map_ref, market_id);
     // Assert valid base asset type info.
     <b>assert</b>!(base_type == market_info_ref.base_type, <a href="registry.md#0xc0deb00c_registry_E_INVALID_BASE">E_INVALID_BASE</a>);
     // Assert valid quote asset type info.
     <b>assert</b>!(quote_type == market_info_ref.quote_type, <a href="registry.md#0xc0deb00c_registry_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
-    (market_info_ref.base_name_generic, // Return market info.
+    (market_info_ref.base_name_generic, // Return <a href="market.md#0xc0deb00c_market">market</a> info.
      market_info_ref.lot_size,
      market_info_ref.tick_size,
      market_info_ref.min_size,
@@ -2087,7 +2087,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
     // Assert base <a href="">coin</a> type is initialized.
     <b>assert</b>!(<a href="_is_coin_initialized">coin::is_coin_initialized</a>&lt;BaseCoinType&gt;(), <a href="registry.md#0xc0deb00c_registry_E_BASE_NOT_COIN">E_BASE_NOT_COIN</a>);
     // Add <b>to</b> the <a href="registry.md#0xc0deb00c_registry">registry</a> a corresponding entry, returning new
-    // market ID.
+    // <a href="market.md#0xc0deb00c_market">market</a> ID.
     <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;QuoteCoinType, UtilityCoinType&gt;(
         <a href="_type_of">type_info::type_of</a>&lt;BaseCoinType&gt;(), <a href="_utf8">string::utf8</a>(b""), lot_size,
         tick_size, min_size, <a href="registry.md#0xc0deb00c_registry_NO_UNDERWRITER">NO_UNDERWRITER</a>, utility_coins)
@@ -2161,7 +2161,7 @@ See inner function <code><a href="registry.md#0xc0deb00c_registry_register_marke
     // Get underwriter ID.
     <b>let</b> underwriter_id = underwriter_capability_ref.underwriter_id;
     // Add <b>to</b> the <a href="registry.md#0xc0deb00c_registry">registry</a> a corresponding entry, returning new
-    // market ID.
+    // <a href="market.md#0xc0deb00c_market">market</a> ID.
     <a href="registry.md#0xc0deb00c_registry_register_market_internal">register_market_internal</a>&lt;QuoteCoinType, UtilityCoinType&gt;(
         <a href="_type_of">type_info::type_of</a>&lt;<a href="registry.md#0xc0deb00c_registry_GenericAsset">GenericAsset</a>&gt;(), base_name_generic, lot_size,
         tick_size, min_size, underwriter_id, utility_coins)
@@ -2241,10 +2241,10 @@ market.
     // Assert is actually recognized.
     <b>assert</b>!(<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(recognized_map_ref, trading_pair),
             <a href="registry.md#0xc0deb00c_registry_E_NO_RECOGNIZED_MARKET">E_NO_RECOGNIZED_MARKET</a>);
-    // Immutably borrow corresponding recognized market info.
+    // Immutably borrow corresponding recognized <a href="market.md#0xc0deb00c_market">market</a> info.
     <b>let</b> recognized_market_info_ref =
         *<a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(recognized_map_ref, trading_pair);
-    // Return recognized market info.
+    // Return recognized <a href="market.md#0xc0deb00c_market">market</a> info.
     (recognized_market_info_ref.market_id,
      recognized_market_info_ref.lot_size,
      recognized_market_info_ref.tick_size,
@@ -2451,34 +2451,34 @@ for specified market info.
     <b>let</b> quote_type = <a href="_type_of">type_info::type_of</a>&lt;QuoteCoinType&gt;();
     // Assert base and quote type names are not the same.
     <b>assert</b>!(base_type != quote_type, <a href="registry.md#0xc0deb00c_registry_E_BASE_QUOTE_SAME">E_BASE_QUOTE_SAME</a>);
-    <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{ // Pack market info.
+    <b>let</b> market_info = <a href="registry.md#0xc0deb00c_registry_MarketInfo">MarketInfo</a>{ // Pack <a href="market.md#0xc0deb00c_market">market</a> info.
         base_type, base_name_generic, quote_type, lot_size, tick_size,
         min_size, underwriter_id};
     // Mutably borrow <a href="registry.md#0xc0deb00c_registry">registry</a>.
     <b>let</b> registry_ref_mut = <b>borrow_global_mut</b>&lt;<a href="registry.md#0xc0deb00c_registry_Registry">Registry</a>&gt;(@econia);
-    // Mutably borrow map from market info <b>to</b> market ID.
+    // Mutably borrow map from <a href="market.md#0xc0deb00c_market">market</a> info <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> ID.
     <b>let</b> info_to_id_ref_mut = &<b>mut</b> registry_ref_mut.market_info_to_id;
-    <b>assert</b>!( // Assert market not registered.
+    <b>assert</b>!( // Assert <a href="market.md#0xc0deb00c_market">market</a> not registered.
         !<a href="_contains">table::contains</a>(info_to_id_ref_mut, market_info),
         <a href="registry.md#0xc0deb00c_registry_E_MARKET_REGISTERED">E_MARKET_REGISTERED</a>);
-    // Mutably borrow map from market ID <b>to</b> market info.
+    // Mutably borrow map from <a href="market.md#0xc0deb00c_market">market</a> ID <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> info.
     <b>let</b> id_to_info_ref_mut = &<b>mut</b> registry_ref_mut.market_id_to_info;
-    // Get 1-indexed market ID.
+    // Get 1-indexed <a href="market.md#0xc0deb00c_market">market</a> ID.
     <b>let</b> market_id = <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(id_to_info_ref_mut) + 1;
-    // Register a market entry in map from market info <b>to</b> market ID.
+    // Register a <a href="market.md#0xc0deb00c_market">market</a> entry in map from <a href="market.md#0xc0deb00c_market">market</a> info <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> ID.
     <a href="_add">table::add</a>(info_to_id_ref_mut, market_info, market_id);
-    // Register a market entry in map from market ID <b>to</b> market info.
+    // Register a <a href="market.md#0xc0deb00c_market">market</a> entry in map from <a href="market.md#0xc0deb00c_market">market</a> ID <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> info.
     <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(id_to_info_ref_mut, market_id, market_info);
-    // Mutably borrow market registration events handle.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> registration events handle.
     <b>let</b> event_handle_ref_mut =
         &<b>mut</b> registry_ref_mut.market_registration_events;
-    // Emit a market registration <a href="">event</a>.
+    // Emit a <a href="market.md#0xc0deb00c_market">market</a> registration <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(event_handle_ref_mut, <a href="registry.md#0xc0deb00c_registry_MarketRegistrationEvent">MarketRegistrationEvent</a>{
         market_id, base_type, base_name_generic, quote_type, lot_size,
         tick_size, min_size, underwriter_id});
     <a href="incentives.md#0xc0deb00c_incentives_deposit_market_registration_utility_coins">incentives::deposit_market_registration_utility_coins</a>&lt;UtilityCoinType&gt;(
             utility_coins); // Deposit utility coins.
-    market_id // Return market ID.
+    market_id // Return <a href="market.md#0xc0deb00c_market">market</a> ID.
 }
 </code></pre>
 

@@ -679,6 +679,37 @@ An open order, either ask or bid.
 ## Constants
 
 
+<a name="0xc0deb00c_user_ASK"></a>
+
+Flag for ask side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_BID"></a>
+
+Flag for bid side
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_MAX_PRICE"></a>
+
+Maximum possible price that can be encoded in 32 bits. Generated
+in Python via <code>hex(int('1' * 32, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_HI_64"></a>
 
 <code>u64</code> bitmask with all bits set, generated in Python via
@@ -716,26 +747,6 @@ Underwriter ID flag for no underwriter.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>: u64 = 0;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_ASK"></a>
-
-Flag for ask side
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_ASK">ASK</a>: bool = <b>true</b>;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_BID"></a>
-
-Flag for bid side
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_BID">BID</a>: bool = <b>false</b>;
 </code></pre>
 
 
@@ -896,17 +907,6 @@ Too little available for withdrawal.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_WITHDRAW_TOO_LITTLE_AVAILABLE">E_WITHDRAW_TOO_LITTLE_AVAILABLE</a>: u64 = 7;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_MAX_PRICE"></a>
-
-Maximum possible price that can be encoded in 32 bits. Generated
-in Python via <code>hex(int('1' * 32, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
 </code></pre>
 
 
@@ -1075,28 +1075,28 @@ item in global storage, and returns a vector via pass-by-value.
 ): <a href="">vector</a>&lt;u128&gt;
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     <b>let</b> market_account_ids = <a href="_empty">vector::empty</a>(); // Init empty <a href="">vector</a>.
-    // Return empty <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no market accounts resource.
+    // Return empty <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> market_account_ids;
     <b>let</b> custodians_map_ref = // Immutably borrow custodians map.
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).custodians;
-    // Return empty <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no market accounts for given market.
+    // Return empty <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts for given <a href="market.md#0xc0deb00c_market">market</a>.
     <b>if</b> (!<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(custodians_map_ref, market_id))
         <b>return</b> market_account_ids;
-    // Immutably borrow list of custodians for given market.
+    // Immutably borrow list of custodians for given <a href="market.md#0xc0deb00c_market">market</a>.
     <b>let</b> custodians_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(custodians_map_ref, market_id);
     // Initialize <b>loop</b> counter and number of elements in <a href="">vector</a>.
     <b>let</b> (i, n_custodians) = (0, <a href="_length">vector::length</a>(custodians_ref));
     <b>while</b> (i &lt; n_custodians) { // Loop over all elements.
         // Get custodian ID.
         <b>let</b> custodian_id = *<a href="_borrow">vector::borrow</a>(custodians_ref, i);
-        // Get market <a href="">account</a> ID.
+        // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         <b>let</b> market_account_id = ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) |
                                 (custodian_id <b>as</b> u128);
-        // Push back onto ongoing market <a href="">account</a> ID <a href="">vector</a>.
+        // Push back onto ongoing <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID <a href="">vector</a>.
         <a href="_push_back">vector::push_back</a>(&<b>mut</b> market_account_ids, market_account_id);
         i = i + 1; // Increment <b>loop</b> counter
     };
-    market_account_ids // Return market <a href="">account</a> IDs.
+    market_account_ids // Return <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> IDs.
 }
 </code></pre>
 
@@ -1162,18 +1162,18 @@ a vector via pass-by-value.
 ): <a href="">vector</a>&lt;u128&gt;
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     <b>let</b> market_account_ids = <a href="_empty">vector::empty</a>(); // Init empty <a href="">vector</a>.
-    // Return empty <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no market accounts resource.
+    // Return empty <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> market_account_ids;
     <b>let</b> custodians_map_ref = // Immutably borrow custodians map.
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).custodians;
-    // Get market ID <a href="">option</a> at head of market ID list.
+    // Get <a href="market.md#0xc0deb00c_market">market</a> ID <a href="">option</a> at head of <a href="market.md#0xc0deb00c_market">market</a> ID list.
     <b>let</b> market_id_option = <a href="tablist.md#0xc0deb00c_tablist_get_head_key">tablist::get_head_key</a>(custodians_map_ref);
-    // While market IDs left <b>to</b> <b>loop</b> over:
+    // While <a href="market.md#0xc0deb00c_market">market</a> IDs left <b>to</b> <b>loop</b> over:
     <b>while</b> (<a href="_is_some">option::is_some</a>(&market_id_option)) {
-        // Get market ID.
+        // Get <a href="market.md#0xc0deb00c_market">market</a> ID.
         <b>let</b> market_id = *<a href="_borrow">option::borrow</a>(&market_id_option);
-        // Immutably borrow list of custodians for given market and
-        // next market ID <a href="">option</a> in list.
+        // Immutably borrow list of custodians for given <a href="market.md#0xc0deb00c_market">market</a> and
+        // next <a href="market.md#0xc0deb00c_market">market</a> ID <a href="">option</a> in list.
         <b>let</b> (custodians_ref, _, next) = <a href="tablist.md#0xc0deb00c_tablist_borrow_iterable">tablist::borrow_iterable</a>(
             custodians_map_ref, market_id);
         // Initialize <b>loop</b> counter and number of elements in <a href="">vector</a>.
@@ -1181,17 +1181,17 @@ a vector via pass-by-value.
         <b>while</b> (i &lt; n_custodians) { // Loop over all elements.
             // Get custodian ID.
             <b>let</b> custodian_id = *<a href="_borrow">vector::borrow</a>(custodians_ref, i);
-            <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+            <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
                 ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) |
                 (custodian_id <b>as</b> u128);
-            // Push back onto ongoing market <a href="">account</a> ID <a href="">vector</a>.
+            // Push back onto ongoing <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID <a href="">vector</a>.
             <a href="_push_back">vector::push_back</a>(&<b>mut</b> market_account_ids, market_account_id);
             i = i + 1; // Increment <b>loop</b> counter
         };
-        // Review next market ID <a href="">option</a> in list.
+        // Review next <a href="market.md#0xc0deb00c_market">market</a> ID <a href="">option</a> in list.
         market_id_option = next;
     };
-    market_account_ids // Return market <a href="">account</a> IDs.
+    market_account_ids // Return <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> IDs.
 }
 </code></pre>
 
@@ -1430,12 +1430,12 @@ given <code>market_account_id</code>.
     market_account_id: u128
 ): bool
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no market accounts resource.
+    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
-    // Immutably borrow market accounts map.
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map =
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).map;
-    // Return <b>if</b> map <b>has</b> entry for given market <a href="">account</a> ID.
+    // Return <b>if</b> map <b>has</b> entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <a href="_contains">table::contains</a>(market_accounts_map, market_account_id)
 }
 </code></pre>
@@ -1474,11 +1474,11 @@ registered with given <code>market_id</code>.
     market_id: u64
 ): bool
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no market accounts resource.
+    // Return <b>false</b> <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> no <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>)) <b>return</b> <b>false</b>;
     <b>let</b> custodians_map_ref = // Immutably borrow custodians map.
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>).custodians;
-    // Return <b>if</b> custodians map <b>has</b> entry for given market ID.
+    // Return <b>if</b> custodians map <b>has</b> entry for given <a href="market.md#0xc0deb00c_market">market</a> ID.
     <a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(custodians_map_ref, market_id)
 }
 </code></pre>
@@ -1799,9 +1799,9 @@ registered.
         <a href="registry.md#0xc0deb00c_registry_is_registered_custodian_id">registry::is_registered_custodian_id</a>(custodian_id),
         <a href="user.md#0xc0deb00c_user_E_UNREGISTERED_CUSTODIAN">E_UNREGISTERED_CUSTODIAN</a>);
     <b>let</b> user_address = address_of(<a href="user.md#0xc0deb00c_user">user</a>); // Get <a href="user.md#0xc0deb00c_user">user</a> <b>address</b>.
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Register market accounts map entries.
+    // Register <a href="market.md#0xc0deb00c_market">market</a> accounts map entries.
     <a href="user.md#0xc0deb00c_user_register_market_account_account_entries">register_market_account_account_entries</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, user_address, market_account_id, market_id, custodian_id);
     // If base asset is <a href="">coin</a>, register collateral entry.
@@ -1899,7 +1899,7 @@ market account to user's <code>aptos_framework::coin::CoinStore</code>.
     // Register <a href="">coin</a> store <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> does not have one.
     <b>if</b> (!<a href="_is_account_registered">coin::is_account_registered</a>&lt;CoinType&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>)))
         <a href="_register">coin::register</a>&lt;CoinType&gt;(<a href="user.md#0xc0deb00c_user">user</a>);
-    // Deposit <b>to</b> <a href="">coin</a> store coins withdrawn from market <a href="">account</a>.
+    // Deposit <b>to</b> <a href="">coin</a> store coins withdrawn from <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
     <a href="_deposit">coin::deposit</a>&lt;CoinType&gt;(address_of(<a href="user.md#0xc0deb00c_user">user</a>), <a href="user.md#0xc0deb00c_user_withdraw_coins_user">withdraw_coins_user</a>(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, amount));
 }
@@ -2026,12 +2026,12 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
     order_access_key: u64,
     market_order_id: u128
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Mutably borrow market accounts map.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     // Mutably borrow orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a>, inactive orders stack top,
     // inbound asset ceiling, and outbound asset available fields,
@@ -2056,12 +2056,12 @@ order if market order ID is not <code><a href="user.md#0xc0deb00c_user_NIL">NIL<
     <b>let</b> order_ref_mut = // Mutably borrow order <b>to</b> remove.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, order_access_key);
     <b>let</b> size = order_ref_mut.size; // Store order's size field.
-    // If passed market order ID is not null, <b>assert</b> that it is
-    // equal <b>to</b> market order ID in <a href="user.md#0xc0deb00c_user">user</a>'s order.
+    // If passed <a href="market.md#0xc0deb00c_market">market</a> order ID is not null, <b>assert</b> that it is
+    // equal <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> order ID in <a href="user.md#0xc0deb00c_user">user</a>'s order.
     <b>if</b> (market_order_id != (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128)) <b>assert</b>!(
         order_ref_mut.market_order_id == market_order_id,
         <a href="user.md#0xc0deb00c_user_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
-    // Clear out order's market order ID field.
+    // Clear out order's <a href="market.md#0xc0deb00c_market">market</a> order ID field.
     order_ref_mut.market_order_id = (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128);
     // Mark order's size field <b>to</b> indicate top of inactive stack.
     order_ref_mut.size = *stack_top_ref_mut;
@@ -2154,12 +2154,12 @@ order.
     order_access_key: u64,
     market_order_id: u128
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Mutably borrow market accounts map.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     // Immutably borrow corresponding orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a> based on side.
     <b>let</b> orders_ref = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
@@ -2375,12 +2375,12 @@ matching engine.
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    // Mutably borrow market accounts map.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     <b>let</b> ( // Mutably borrow corresponding orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a>,
         orders_ref_mut,
@@ -2413,7 +2413,7 @@ matching engine.
     <b>let</b> order_ref_mut = // Mutably borrow corresponding order.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, order_access_key);
     <b>if</b> (complete_fill) { // If completely filling order:
-        // Clear out order's market order ID field.
+        // Clear out order's <a href="market.md#0xc0deb00c_market">market</a> order ID field.
         order_ref_mut.market_order_id = (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128);
         // Mark order's size field <b>to</b> indicate inactive stack top.
         order_ref_mut.size = *stack_top_ref_mut;
@@ -2541,17 +2541,17 @@ Return asset counts for specified market account.
     u64,
     u64
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
-    // Immutably borrow market accounts map.
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref =
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <b>assert</b>!(<a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id),
             <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    <b>let</b> market_account_ref = // Immutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref = // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow">table::borrow</a>(market_accounts_map_ref, market_account_id);
     (market_account_ref.base_total,
      market_account_ref.base_available,
@@ -2628,34 +2628,34 @@ given market account and side, empty if none.
     side: bool,
 ): <a href="">vector</a>&lt;u128&gt;
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
-    // Immutably borrow market accounts map.
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref =
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <b>assert</b>!(<a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id),
             <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    <b>let</b> market_account_ref = // Immutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref = // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow">table::borrow</a>(market_accounts_map_ref, market_account_id);
     // Immutably borrow corresponding orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a> based on side.
     <b>let</b> orders_ref = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
         &market_account_ref.asks <b>else</b> &market_account_ref.bids;
-    // Initialize empty <a href="">vector</a> of market order IDs.
+    // Initialize empty <a href="">vector</a> of <a href="market.md#0xc0deb00c_market">market</a> order IDs.
     <b>let</b> market_order_ids = <a href="_empty">vector::empty</a>();
     // Initialize 1-indexed <b>loop</b> counter and get number of orders.
     <b>let</b> (i, n) = (1, <a href="tablist.md#0xc0deb00c_tablist_length">tablist::length</a>(orders_ref));
     <b>while</b> (i &lt;= n) { // Loop over all allocated orders.
         // Immutably borrow order <b>with</b> given access key.
         <b>let</b> order_ref = <a href="tablist.md#0xc0deb00c_tablist_borrow">tablist::borrow</a>(orders_ref, i);
-        // If order is active, push back its market order ID.
+        // If order is active, push back its <a href="market.md#0xc0deb00c_market">market</a> order ID.
         <b>if</b> (order_ref.market_order_id != (<a href="user.md#0xc0deb00c_user_NIL">NIL</a> <b>as</b> u128)) <a href="_push_back">vector::push_back</a>(
             &<b>mut</b> market_order_ids, order_ref.market_order_id);
         i = i + 1; // Increment <b>loop</b> counter.
     };
-    market_order_ids // Return market order IDs.
+    market_order_ids // Return <a href="market.md#0xc0deb00c_market">market</a> order IDs.
 }
 </code></pre>
 
@@ -2730,18 +2730,18 @@ placed.
     side: bool
 ): u64
 <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
-    // Immutably borrow market accounts map.
+    // Immutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref =
         &<b>borrow_global</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
+    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_contains">table::contains</a>(market_accounts_map_ref, market_account_id);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    <b>let</b> market_account_ref = // Mutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow">table::borrow</a>(market_accounts_map_ref, market_account_id);
     // Get orders <a href="tablist.md#0xc0deb00c_tablist">tablist</a> and inactive order stack top for side.
     <b>let</b> (orders_ref, stack_top_ref) = <b>if</b> (side == <a href="user.md#0xc0deb00c_user_ASK">ASK</a>)
@@ -2871,14 +2871,14 @@ received from trade.
     <b>assert</b>!(price &gt; 0, <a href="user.md#0xc0deb00c_user_E_PRICE_0">E_PRICE_0</a>); // Assert price is nonzero.
     // Assert price is not too high.
     <b>assert</b>!(price &lt;= <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>, <a href="user.md#0xc0deb00c_user_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
-    // Mutably borrow market accounts map.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
-    // Assert order size is greater than or equal <b>to</b> market minimum.
+    // Assert order size is greater than or equal <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> minimum.
     <b>assert</b>!(size &gt;= market_account_ref_mut.min_size, <a href="user.md#0xc0deb00c_user_E_SIZE_TOO_LOW">E_SIZE_TOO_LOW</a>);
     <b>let</b> base_fill = // Calculate base units needed <b>to</b> fill order.
         (size <b>as</b> u128) * (market_account_ref_mut.lot_size <b>as</b> u128);
@@ -2926,7 +2926,7 @@ received from trade.
             <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(orders_ref_mut, *stack_top_ref_mut);
         // Reassign stack top field <b>to</b> next in stack.
         *stack_top_ref_mut = order_ref_mut.size;
-        // Reassign market order ID for active order.
+        // Reassign <a href="market.md#0xc0deb00c_market">market</a> order ID for active order.
         order_ref_mut.market_order_id = market_order_id;
         order_ref_mut.size = size; // Reassign order size field.
     };
@@ -3118,18 +3118,18 @@ does a corresponding collateral map entry.
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
-    // Mutably borrow market accounts map.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
+    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     // Get asset type info.
     <b>let</b> asset_type = <a href="_type_of">type_info::type_of</a>&lt;AssetType&gt;();
@@ -3161,7 +3161,7 @@ does a corresponding collateral map entry.
         // Mutably borrow collateral map.
         <b>let</b> collateral_map_ref_mut = &<b>mut</b> <b>borrow_global_mut</b>&lt;
             <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;AssetType&gt;&gt;(user_address).map;
-        // Mutably borrow collateral for market <a href="">account</a>.
+        // Mutably borrow collateral for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <b>let</b> collateral_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
             collateral_map_ref_mut, market_account_id);
         <a href="_merge">coin::merge</a>( // Merge optional coins into collateral.
@@ -3243,22 +3243,22 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
 ) <b>acquires</b> <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a> {
     <b>let</b> (base_type, quote_type) = // Get base and quote types.
         (<a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(), <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;());
-    // Get market info.
+    // Get <a href="market.md#0xc0deb00c_market">market</a> info.
     <b>let</b> (base_name_generic, lot_size, tick_size, min_size, underwriter_id)
         = <a href="registry.md#0xc0deb00c_registry_get_market_info_for_market_account">registry::get_market_info_for_market_account</a>(
             market_id, base_type, quote_type);
-    // If <a href="user.md#0xc0deb00c_user">user</a> does not have a market accounts map initialized:
+    // If <a href="user.md#0xc0deb00c_user">user</a> does not have a <a href="market.md#0xc0deb00c_market">market</a> accounts map initialized:
     <b>if</b> (!<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address))
         // Pack an empty one and <b>move</b> it <b>to</b> their <a href="">account</a>
         <b>move_to</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(<a href="user.md#0xc0deb00c_user">user</a>, <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>{
             map: <a href="_new">table::new</a>(), custodians: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>()});
-    // Mutably borrow market accounts map.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>assert</b>!( // Assert no entry <b>exists</b> for given market <a href="">account</a> ID.
+    <b>assert</b>!( // Assert no entry <b>exists</b> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         !<a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id),
         <a href="user.md#0xc0deb00c_user_E_EXISTS_MARKET_ACCOUNT">E_EXISTS_MARKET_ACCOUNT</a>);
-    <a href="_add">table::add</a>( // Add empty market <a href="">account</a> for market <a href="">account</a> ID.
+    <a href="_add">table::add</a>( // Add empty <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         market_accounts_map_ref_mut, market_account_id, <a href="user.md#0xc0deb00c_user_MarketAccount">MarketAccount</a>{
             base_type, base_name_generic, quote_type, lot_size, tick_size,
             min_size, underwriter_id, asks: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>(),
@@ -3267,16 +3267,16 @@ Inner function for <code><a href="user.md#0xc0deb00c_user_register_market_accoun
             quote_total: 0, quote_available: 0, quote_ceiling: 0});
     <b>let</b> custodians_ref_mut = // Mutably borrow custodians maps.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).custodians;
-    // If custodians map <b>has</b> no entry for given market ID:
+    // If custodians map <b>has</b> no entry for given <a href="market.md#0xc0deb00c_market">market</a> ID:
     <b>if</b> (!<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(custodians_ref_mut, market_id)) {
         // Add new entry indicating new custodian ID.
         <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(custodians_ref_mut, market_id,
                      <a href="_singleton">vector::singleton</a>(custodian_id));
-    } <b>else</b> { // If already entry for given market ID:
-        // Mutably borrow <a href="">vector</a> of custodians for given market.
+    } <b>else</b> { // If already entry for given <a href="market.md#0xc0deb00c_market">market</a> ID:
+        // Mutably borrow <a href="">vector</a> of custodians for given <a href="market.md#0xc0deb00c_market">market</a>.
         <b>let</b> market_custodians_ref_mut =
             <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(custodians_ref_mut, market_id);
-        // Push back custodian ID for given market <a href="">account</a>.
+        // Push back custodian ID for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_push_back">vector::push_back</a>(market_custodians_ref_mut, custodian_id);
     }
 }
@@ -3349,7 +3349,7 @@ performed by <code>register_market_account_accounts_entries()</code> in
             map: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>()});
     <b>let</b> collateral_map_ref_mut = // Mutably borrow collateral map.
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;CoinType&gt;&gt;(user_address).map;
-    // Add an empty entry for given market <a href="">account</a> ID.
+    // Add an empty entry for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(collateral_map_ref_mut, market_account_id,
                  <a href="_zero">coin::zero</a>&lt;CoinType&gt;());
 }
@@ -3448,18 +3448,18 @@ indicated market, in the case of a generic asset withdrawal.
     <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>,
     <a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>
 {
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market accounts resource.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> accounts resource.
     <b>assert</b>!(<b>exists</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address), <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>);
-    // Mutably borrow market accounts map.
+    // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> accounts map.
     <b>let</b> market_accounts_map_ref_mut =
         &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="user.md#0xc0deb00c_user_MarketAccounts">MarketAccounts</a>&gt;(user_address).map;
-    <b>let</b> market_account_id = // Get market <a href="">account</a> ID.
+    <b>let</b> market_account_id = // Get <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
         ((market_id <b>as</b> u128) &lt;&lt; <a href="user.md#0xc0deb00c_user_SHIFT_MARKET_ID">SHIFT_MARKET_ID</a>) | (custodian_id <b>as</b> u128);
-    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a>.
+    <b>let</b> has_market_account = // Check <b>if</b> <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_contains">table::contains</a>(market_accounts_map_ref_mut, market_account_id);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> market <a href="">account</a> for given market <a href="">account</a> ID.
+    // Assert <a href="user.md#0xc0deb00c_user">user</a> <b>has</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> for given <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a> ID.
     <b>assert</b>!(has_market_account, <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNT">E_NO_MARKET_ACCOUNT</a>);
-    <b>let</b> market_account_ref_mut = // Mutably borrow market <a href="">account</a>.
+    <b>let</b> market_account_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <a href="_borrow_mut">table::borrow_mut</a>(market_accounts_map_ref_mut, market_account_id);
     // Get asset type info.
     <b>let</b> asset_type = <a href="_type_of">type_info::type_of</a>&lt;AssetType&gt;();
@@ -3490,7 +3490,7 @@ indicated market, in the case of a generic asset withdrawal.
         // Mutably borrow collateral map.
         <b>let</b> collateral_map_ref_mut = &<b>mut</b> <b>borrow_global_mut</b>&lt;
             <a href="user.md#0xc0deb00c_user_Collateral">Collateral</a>&lt;AssetType&gt;&gt;(user_address).map;
-        // Mutably borrow collateral for market <a href="">account</a>.
+        // Mutably borrow collateral for <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
         <b>let</b> collateral_ref_mut = <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(
             collateral_map_ref_mut, market_account_id);
         // Withdraw <a href="">coin</a> and <b>return</b> in an <a href="">option</a>.

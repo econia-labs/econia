@@ -3,24 +3,6 @@ module econia::structs {
 
     // market.move >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    struct MakerEvent has drop, store {
-        market_id: u64
-        side: bool
-        order_id: u128,
-        maker: address,
-        custodian_id: u64
-        /// `ADD`, `CHANGE`, `CANCEL`
-        type: u8
-        size_delta: u64,
-    }
-
-    struct Order has store {
-        size: u64,
-        user: address,
-        custodian_id: u64
-        order_access_key: u64
-    }
-
     struct OrderBook has store {
         base_type: TypeInfo,
         base_name_generic: String,
@@ -39,16 +21,6 @@ module econia::structs {
 
     struct OrderBooks has key {
         map: TableList<u64, OrderBook>
-    }
-
-    struct TakerEvent has drop, store {
-        market_id: u64
-        side: bool
-        order_id: u128,
-        maker: address,
-        /// Of maker
-        custodian_id: u64
-        size: u64
     }
 
     // market.move <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

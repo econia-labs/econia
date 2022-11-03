@@ -7,11 +7,18 @@
 
 -  [Struct `MakerEvent`](#0xc0deb00c_market_MakerEvent)
 -  [Struct `Order`](#0xc0deb00c_market_Order)
+-  [Struct `OrderBook`](#0xc0deb00c_market_OrderBook)
+-  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Constants](#@Constants_0)
 
 
-<pre><code></code></pre>
+<pre><code><b>use</b> <a href="">0x1::event</a>;
+<b>use</b> <a href="">0x1::string</a>;
+<b>use</b> <a href="">0x1::type_info</a>;
+<b>use</b> <a href="avl_queue.md#0xc0deb00c_avl_queue">0xc0deb00c::avl_queue</a>;
+<b>use</b> <a href="tablist.md#0xc0deb00c_tablist">0xc0deb00c::tablist</a>;
+</code></pre>
 
 
 
@@ -124,6 +131,131 @@ An order on the order book.
 </dt>
 <dd>
  User-side access key for storage-optimized lookup.
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_market_OrderBook"></a>
+
+## Struct `OrderBook`
+
+An order book for a given market. Contains
+<code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a></code> field duplicates to reduce global storage
+item queries against the registry.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a> <b>has</b> store
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>base_type: <a href="_TypeInfo">type_info::TypeInfo</a></code>
+</dt>
+<dd>
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.base_type</code>.
+</dd>
+<dt>
+<code>base_name_generic: <a href="_String">string::String</a></code>
+</dt>
+<dd>
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.base_name_generic</code>.
+</dd>
+<dt>
+<code>quote_type: <a href="_TypeInfo">type_info::TypeInfo</a></code>
+</dt>
+<dd>
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.quote_type</code>.
+</dd>
+<dt>
+<code>lot_size: u64</code>
+</dt>
+<dd>
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.lot_size</code>.
+</dd>
+<dt>
+<code>tick_size: u64</code>
+</dt>
+<dd>
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.tick_size</code>.
+</dd>
+<dt>
+<code>min_size: u64</code>
+</dt>
+<dd>
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code>.
+</dd>
+<dt>
+<code>underwriter_id: u64</code>
+</dt>
+<dd>
+ <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.underwriter_id</code>.
+</dd>
+<dt>
+<code>asks: <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
+</dt>
+<dd>
+ Asks AVL queue.
+</dd>
+<dt>
+<code>bids: <a href="avl_queue.md#0xc0deb00c_avl_queue_AVLqueue">avl_queue::AVLqueue</a>&lt;<a href="market.md#0xc0deb00c_market_Order">market::Order</a>&gt;</code>
+</dt>
+<dd>
+ Bids AVL queue.
+</dd>
+<dt>
+<code>counter: u64</code>
+</dt>
+<dd>
+ Cumulative number of maker orders placed on book.
+</dd>
+<dt>
+<code>maker_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="market.md#0xc0deb00c_market_MakerEvent">market::MakerEvent</a>&gt;</code>
+</dt>
+<dd>
+ Event handle for maker events.
+</dd>
+<dt>
+<code>taker_events: <a href="_EventHandle">event::EventHandle</a>&lt;<a href="market.md#0xc0deb00c_market_TakerEvent">market::TakerEvent</a>&gt;</code>
+</dt>
+<dd>
+ Event handle for taker events.
+</dd>
+</dl>
+
+
+</details>
+
+<a name="0xc0deb00c_market_OrderBooks"></a>
+
+## Resource `OrderBooks`
+
+Order book map for all Econia order books.
+
+
+<pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> <b>has</b> key
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
+<code>map: <a href="tablist.md#0xc0deb00c_tablist_Tablist">tablist::Tablist</a>&lt;u64, <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>&gt;</code>
+</dt>
+<dd>
+ Map from market ID to corresponding order book. Enables
+ off-chain iterated indexing by market ID.
 </dd>
 </dl>
 

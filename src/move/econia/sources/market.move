@@ -1,5 +1,15 @@
 module econia::market {
 
+    // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    use aptos_framework::event::EventHandle;
+    use aptos_framework::type_info::TypeInfo;
+    use econia::avl_queue::AVLqueue;
+    use econia::tablist::Tablist;
+    use std::string::String;
+
+    // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Emitted when a maker order is placed, cancelled, or its size is
@@ -36,6 +46,44 @@ module econia::market {
         /// User-side access key for storage-optimized lookup.
         order_access_key: u64
     }
+
+    /// An order book for a given market. Contains
+    /// `registry::MarketInfo` field duplicates to reduce global storage
+    /// item queries against the registry.
+    struct OrderBook has store {
+        /// `registry::MarketInfo.base_type`.
+        base_type: TypeInfo,
+        /// `registry::MarketInfo.base_name_generic`.
+        base_name_generic: String,
+        /// `registry::MarketInfo.quote_type`.
+        quote_type: TypeInfo,
+        /// `registry::MarketInfo.lot_size`.
+        lot_size: u64,
+        /// `registry::MarketInfo.tick_size`.
+        tick_size: u64,
+        /// `registry::MarketInfo.min_size`.
+        min_size: u64,
+        /// `registry::MarketInfo.underwriter_id`.
+        underwriter_id: u64,
+        /// Asks AVL queue.
+        asks: AVLqueue<Order>,
+        /// Bids AVL queue.
+        bids: AVLqueue<Order>,
+        /// Cumulative number of maker orders placed on book.
+        counter: u64,
+        /// Event handle for maker events.
+        maker_events: EventHandle<MakerEvent>,
+        /// Event handle for taker events.
+        taker_events: EventHandle<TakerEvent>
+    }
+
+    /// Order book map for all Econia order books.
+    struct OrderBooks has key {
+        /// Map from market ID to corresponding order book. Enables
+        /// off-chain iterated indexing by market ID.
+        map: Tablist<u64, OrderBook>
+    }
+
 
     /// Emitted when a taker order fills against a maker order. If a
     /// taker order fills against multiple maker orders, a separate

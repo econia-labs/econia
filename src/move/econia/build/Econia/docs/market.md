@@ -11,6 +11,7 @@
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Constants](#@Constants_0)
+-  [Function `init_module`](#0xc0deb00c_market_init_module)
 
 
 <pre><code><b>use</b> <a href="">0x1::event</a>;
@@ -387,3 +388,33 @@ Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.t
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_PLACE">PLACE</a>: u8 = 2;
 </code></pre>
+
+
+
+<a name="0xc0deb00c_market_init_module"></a>
+
+## Function `init_module`
+
+Initialize the order books map upon module publication.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_init_module">init_module</a>(econia: &<a href="">signer</a>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_init_module">init_module</a>(
+    econia: &<a href="">signer</a>
+) {
+    // Initialize order books map.
+    <b>move_to</b>(econia, <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>{map: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>()})
+}
+</code></pre>
+
+
+
+</details>

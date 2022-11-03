@@ -1291,14 +1291,13 @@ module econia::registry {
 
     #[test_only]
     /// Initialize registry for testing.
-    public fun init_test() {
-        // Get signer for Econia account.
-        let econia = account::create_signer_with_capability(
-            &account::create_test_signer_cap(@econia));
-        // Create Aptos-style account for Econia.
-        account::create_account_for_test(@econia);
+    public fun init_test():
+    signer {
+        // Create Aptos-style account for Econia, storing signer.
+        let econia = account::create_account_for_test(@econia);
         init_module(&econia); // Init registry.
-        incentives::init_test(); // Init incentives
+        incentives::init_test(); // Init incentives.
+        econia // Return Econia signer.
     }
 
     #[test_only]

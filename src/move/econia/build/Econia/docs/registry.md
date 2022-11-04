@@ -960,7 +960,7 @@ Custodian ID flag for no custodian.
 
 <a name="0xc0deb00c_registry_NO_UNDERWRITER"></a>
 
-Underwriter ID flag for no custodian.
+Underwriter ID flag for no underwriter.
 
 
 <pre><code><b>const</b> <a href="registry.md#0xc0deb00c_registry_NO_UNDERWRITER">NO_UNDERWRITER</a>: u64 = 0;

@@ -157,6 +157,7 @@ module econia::registry {
     // Friends >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     friend econia::user;
+    friend econia::market;
 
     // Friends <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -361,7 +362,7 @@ module econia::registry {
     const MIN_CHARACTERS_GENERIC: u64 = 4;
     /// Custodian ID flag for no custodian.
     const NO_CUSTODIAN: u64 = 0;
-    /// Underwriter ID flag for no custodian.
+    /// Underwriter ID flag for no underwriter.
     const NO_UNDERWRITER: u64 = 0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1291,13 +1292,11 @@ module econia::registry {
 
     #[test_only]
     /// Initialize registry for testing.
-    public fun init_test():
-    signer {
+    public fun init_test() {
         // Create Aptos-style account for Econia, storing signer.
         let econia = account::create_account_for_test(@econia);
         init_module(&econia); // Init registry.
         incentives::init_test(); // Init incentives.
-        econia // Return Econia signer.
     }
 
     #[test_only]

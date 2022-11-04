@@ -2,18 +2,24 @@ module econia::market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    use aptos_framework::account;
+    use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::EventHandle;
-    use aptos_framework::type_info::TypeInfo;
-    use econia::avl_queue::AVLqueue;
+    use aptos_framework::type_info::{Self, TypeInfo};
+    use econia::avl_queue::{Self, AVLqueue};
+    use econia::incentives;
+    use econia::registry::{Self, GenericAsset, UnderwriterCapability};
+    use econia::resource_account;
     use econia::tablist::{Self, Tablist};
-    use std::string::String;
+    use std::signer::address_of;
+    use std::string::{Self, String};
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
-    use econia::registry;
+    use econia::assets::{Self, BC, QC, UC};
 
     // Test-only uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -116,9 +122,8 @@ module econia::market {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Maximum possible price that can be encoded in 32 bits. Generated
-    /// in Python via `hex(int('1' * 32, 2))`.
-    const MAX_PRICE: u64 = 0xffffffff;
+    /// Ascending AVL queue flag, for asks AVL queue.
+    const ASCENDING: bool = true;
     /// Flag for ask side
     const ASK: bool = true;
     /// Flag for bid side
@@ -127,23 +132,230 @@ module econia::market {
     const CANCEL: u8 = 0;
     /// Flag for `MakerEvent.type` when order size is changed.
     const CHANGE: u8 = 1;
+    /// Descending AVL queue flag, for bids AVL queue.
+    const DESCENDING: bool = false;
+    /// Maximum possible price that can be encoded in 32 bits. Generated
+    /// in Python via `hex(int('1' * 32, 2))`.
+    const MAX_PRICE: u64 = 0xffffffff;
+    /// Underwriter ID flag for no underwriter.
+    const NO_UNDERWRITER: u64 = 0;
     /// Flag for `MakerEvent.type` when order is placed.
     const PLACE: u8 = 2;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Wrapped call to `register_market_base_coin()` for paying utility
+    /// coins from an `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_markets()`
+    public entry fun register_market_base_coin_from_coinstore<
+        BaseType,
+        QuoteType,
+        UtilityType
+    >(
+        user: &signer,
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64
+    ) acquires OrderBooks {
+        // Get market registration fee, denominated in utility coins.
+        let fee = incentives::get_market_registration_fee();
+        // Register market with base coin, paying fees from coin store.
+        register_market_base_coin<BaseType, QuoteType, UtilityType>(
+            lot_size, tick_size, min_size, coin::withdraw(user, fee));
+    }
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Register pure coin market, return resultant market ID.
+    ///
+    /// See inner function `register_market()`.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base coin type for market.
+    /// * `QuoteType`: Quote coin type for market.
+    /// * `UtilityType`: Utility coin type, specified at
+    ///   `incentives::IncentiveParameters.utility_coin_type_info`.
+    ///
+    /// # Parameters
+    ///
+    /// * `lot_size`: `registry::MarketInfo.lot_size` for market.
+    /// * `tick_size`: `registry::MarketInfo.tick_size` for market.
+    /// * `min_size`: `registry::MarketInfo.min_size` for market.
+    /// * `utility_coins`: Utility coins paid to register a market. See
+    ///   `incentives::IncentiveParameters.market_registration_fee`.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Market ID for new market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_markets()`
+    public fun register_market_base_coin<
+        BaseType,
+        QuoteType,
+        UtilityType
+    >(
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64,
+        utility_coins: Coin<UtilityType>
+    ): u64
+    acquires OrderBooks {
+        // Register market in global registry, storing market ID.
+        let market_id = registry::register_market_base_coin_internal<
+            BaseType, QuoteType, UtilityType>(lot_size, tick_size, min_size,
+            utility_coins);
+        // Register order book and quote coin fee store, return market
+        // ID.
+        register_market<BaseType, QuoteType>(
+            market_id, string::utf8(b""), lot_size, tick_size, min_size,
+            NO_UNDERWRITER)
+    }
+
+    /// Register generic market, return resultant market ID.
+    ///
+    /// See inner function `register_market()`.
+    ///
+    /// Generic base name restrictions described at
+    /// `registry::register_market_base_generic_internal()`.
+    ///
+    /// # Type parameters
+    ///
+    /// * `QuoteType`: Quote coin type for market.
+    /// * `UtilityType`: Utility coin type, specified at
+    ///   `incentives::IncentiveParameters.utility_coin_type_info`.
+    ///
+    /// # Parameters
+    ///
+    /// * `base_name_generic`: `registry::MarketInfo.base_name_generic`
+    ///   for market.
+    /// * `lot_size`: `registry::MarketInfo.lot_size` for market.
+    /// * `tick_size`: `registry::MarketInfo.tick_size` for market.
+    /// * `min_size`: `registry::MarketInfo.min_size` for market.
+    /// * `utility_coins`: Utility coins paid to register a market. See
+    ///   `incentives::IncentiveParameters.market_registration_fee`.
+    /// * `underwriter_capability_ref`: Immutable reference to market
+    ///   underwriter capability.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Market ID for new market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_markets()`
+    public fun register_market_base_generic<
+        QuoteType,
+        UtilityType
+    >(
+        base_name_generic: String,
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64,
+        utility_coins: Coin<UtilityType>,
+        underwriter_capability_ref: &UnderwriterCapability
+    ): u64
+    acquires OrderBooks {
+        // Register market in global registry, storing market ID.
+        let market_id = registry::register_market_base_generic_internal<
+            QuoteType, UtilityType>(base_name_generic, lot_size, tick_size,
+            min_size, underwriter_capability_ref, utility_coins);
+        // Register order book and quote coin fee store, return market
+        // ID.
+        register_market<GenericAsset, QuoteType>(
+            market_id, base_name_generic, lot_size, tick_size, min_size,
+            registry::get_underwriter_id(underwriter_capability_ref))
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    /// Register order book, fee store under Econia resource account.
+    ///
+    /// Should only be called by `register_market_base_coin()` or
+    /// `register_market_base_generic()`.
+    ///
+    /// See `registry::MarketInfo` for commentary on lot size, tick
+    /// size, minimum size, and 32-bit prices.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for market.
+    /// * `QuoteType`: Quote coin type for market.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID for new market.
+    /// * `base_name_generic`: `registry::MarketInfo.base_name_generic`
+    ///   for market.
+    /// * `lot_size`: `registry::MarketInfo.lot_size` for market.
+    /// * `tick_size`: `registry::MarketInfo.tick_size` for market.
+    /// * `min_size`: `registry::MarketInfo.min_size` for market.
+    /// * `underwriter_id`: `registry::MarketInfo.min_size` for market.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Market ID for new market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_markets()`
+    fun register_market<
+        BaseType,
+        QuoteType
+    >(
+        market_id: u64,
+        base_name_generic: String,
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64,
+        underwriter_id: u64
+    ): u64
+    acquires OrderBooks {
+        // Get Econia resource account signer.
+        let resource_account = resource_account::get_signer();
+        // Get resource account address.
+        let resource_address = address_of(&resource_account);
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        // Add order book entry to order books map.
+        tablist::add(order_books_map_ref_mut, market_id, OrderBook{
+            base_type: type_info::type_of<BaseType>(),
+            base_name_generic,
+            quote_type: type_info::type_of<QuoteType>(),
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id,
+            asks: avl_queue::new<Order>(ASCENDING, 0, 0),
+            bids: avl_queue::new<Order>(DESCENDING, 0, 0),
+            counter: 0,
+            maker_events:
+                account::new_event_handle<MakerEvent>(&resource_account),
+            taker_events:
+                account::new_event_handle<TakerEvent>(&resource_account)});
+        // Register an Econia fee store entry for market quote coin.
+        incentives::register_econia_fee_store_entry<QuoteType>(market_id);
+        market_id // Return market ID.
+    }
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Initialize the order books map upon module publication.
-    fun init_module(
-        econia: &signer
-    ) {
-        // Initialize order books map.
-        move_to(econia, OrderBooks{map: tablist::new()})
+    fun init_module() {
+        // Get Econia resource account signer.
+        let resource_account = resource_account::get_signer();
+        // Initialize order books map under resource account.
+        move_to(&resource_account, OrderBooks{map: tablist::new()})
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -154,10 +366,156 @@ module econia::market {
     /// Initialize module for testing.
     public fun init_test() {
         // Init registry, storing Econia account signer.
-        let econia = registry::init_test();
-        init_module(&econia); // Init module.
+        registry::init_test();
+        init_module(); // Init module.
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Test-only constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test_only]
+    /// Custodian ID for market with delegated custodian.
+    const CUSTODIAN_ID: u64 = 123;
+    #[test_only]
+    /// Market ID for pure coin test market.
+    const MARKET_ID_COIN: u64 = 1;
+    #[test_only]
+    /// Market ID for generic test market.
+    const MARKET_ID_GENERIC: u64 = 2;
+    #[test_only]
+    /// Underwriter ID for generic test market.
+    const UNDERWRITER_ID: u64 = 321;
+
+    #[test_only]
+    /// Lot size for pure coin test market.
+    const LOT_SIZE_COIN: u64 = 2;
+    #[test_only]
+    /// Tick size for pure coin test market.
+    const TICK_SIZE_COIN: u64 = 3;
+    #[test_only]
+    /// Minimum size for pure coin test market.
+    const MIN_SIZE_COIN: u64 = 4;
+    #[test_only]
+    /// Base name for generic test market.
+    const BASE_NAME_GENERIC: vector<u8> = b"Generic asset";
+    #[test_only]
+    /// Lot size for generic test market.
+    const LOT_SIZE_GENERIC: u64 = 5;
+    #[test_only]
+    /// Tick size for generic test market.
+    const TICK_SIZE_GENERIC: u64 = 6;
+    #[test_only]
+    /// Minimum size for generic test market.
+    const MIN_SIZE_GENERIC: u64 = 7;
+    #[test_only]
+    /// Underwriter ID for generic test market.
+    const UNDERWRITER_ID_GENERIC: u64 = 7;
+
+    // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Assert state updates and returns for:
+    ///
+    /// 1. Registering pure coin market from coin store.
+    /// 2. Registering generic market.
+    /// 3. Registering pure coin market, not from coin store.
+    fun test_register_markets()
+    acquires OrderBooks {
+        init_test(); // Init for testing.
+        // Get market registration fee, denominated in utility coins.
+        let fee = incentives::get_market_registration_fee();
+        // Create user account.
+        let user = account::create_account_for_test(@user);
+        coin::register<UC>(&user); // Register user coin store.
+        // Deposit utility coins required to cover fee.
+        coin::deposit<UC>(@user, assets::mint_test(fee));
+        // Register pure coin market from coinstore.
+        register_market_base_coin_from_coinstore<BC, QC, UC>(
+            &user, LOT_SIZE_COIN, TICK_SIZE_COIN, MIN_SIZE_COIN);
+        // Get market info returns from registry.
+        let (base_name_generic_r, lot_size_r, tick_size_r, min_size_r,
+             underwriter_id_r) = registry::get_market_info_for_market_account(
+                MARKET_ID_COIN, type_info::type_of<BC>(),
+                type_info::type_of<QC>());
+        // Assert registry market info returns.
+        assert!(base_name_generic_r == string::utf8(b""), 0);
+        assert!(lot_size_r          == LOT_SIZE_COIN, 0);
+        assert!(tick_size_r         == TICK_SIZE_COIN, 0);
+        assert!(min_size_r          == MIN_SIZE_COIN, 0);
+        assert!(underwriter_id_r    == NO_UNDERWRITER, 0);
+        // Assert fee store with corresponding market ID is empty.
+        assert!(incentives::get_econia_fee_store_balance_test<QC>(
+            MARKET_ID_COIN) == 0, 0);
+        let order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_account::get_address()).map;
+        let order_book_ref = // Immutably borrow order book.
+            tablist::borrow(order_books_map_ref, MARKET_ID_COIN);
+        // Assert order book state.
+        assert!(order_book_ref.base_type == type_info::type_of<BC>(), 0);
+        assert!(order_book_ref.base_name_generic == string::utf8(b""), 0);
+        assert!(order_book_ref.quote_type == type_info::type_of<QC>(), 0);
+        assert!(order_book_ref.lot_size == LOT_SIZE_COIN, 0);
+        assert!(order_book_ref.tick_size == TICK_SIZE_COIN, 0);
+        assert!(order_book_ref.min_size == MIN_SIZE_COIN, 0);
+        assert!(order_book_ref.underwriter_id == NO_UNDERWRITER, 0);
+        assert!(avl_queue::is_empty(&order_book_ref.asks), 0);
+        assert!(avl_queue::is_ascending(&order_book_ref.asks), 0);
+        assert!(avl_queue::is_empty(&order_book_ref.bids), 0);
+        assert!(!avl_queue::is_ascending(&order_book_ref.bids), 0);
+        assert!(order_book_ref.counter == 0, 0);
+        let underwriter_capability = registry::get_underwriter_capability_test(
+            UNDERWRITER_ID); // Get market underwriter capability.
+        // Register generic market, storing market ID.
+        let market_id = register_market_base_generic<QC, UC>(
+            string::utf8(BASE_NAME_GENERIC), LOT_SIZE_GENERIC,
+            TICK_SIZE_GENERIC, MIN_SIZE_GENERIC, assets::mint_test<UC>(fee),
+            &underwriter_capability);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
+        // Assert market ID.
+        assert!(market_id == MARKET_ID_GENERIC, 0);
+        // Get market info returns from registry.
+        (base_name_generic_r, lot_size_r, tick_size_r, min_size_r,
+         underwriter_id_r) = registry::get_market_info_for_market_account(
+            MARKET_ID_GENERIC, type_info::type_of<GenericAsset>(),
+            type_info::type_of<QC>());
+        // Assert registry market info returns.
+        assert!(base_name_generic_r == string::utf8(BASE_NAME_GENERIC), 0);
+        assert!(lot_size_r          == LOT_SIZE_GENERIC, 0);
+        assert!(tick_size_r         == TICK_SIZE_GENERIC, 0);
+        assert!(min_size_r          == MIN_SIZE_GENERIC, 0);
+        assert!(underwriter_id_r    == UNDERWRITER_ID, 0);
+        // Assert fee store with corresponding market ID is empty.
+        assert!(incentives::get_econia_fee_store_balance_test<QC>(
+            MARKET_ID_GENERIC) == 0, 0);
+        order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_account::get_address()).map;
+        order_book_ref = // Immutably borrow order book.
+            tablist::borrow(order_books_map_ref, MARKET_ID_GENERIC);
+        // Assert order book state.
+        assert!(order_book_ref.base_type ==
+                type_info::type_of<GenericAsset>(), 0);
+        assert!(order_book_ref.base_name_generic ==
+                string::utf8(BASE_NAME_GENERIC), 0);
+        assert!(order_book_ref.quote_type == type_info::type_of<QC>(), 0);
+        assert!(order_book_ref.lot_size == LOT_SIZE_GENERIC, 0);
+        assert!(order_book_ref.tick_size == TICK_SIZE_GENERIC, 0);
+        assert!(order_book_ref.min_size == MIN_SIZE_GENERIC, 0);
+        assert!(order_book_ref.underwriter_id == UNDERWRITER_ID, 0);
+        assert!(avl_queue::is_empty(&order_book_ref.asks), 0);
+        assert!(avl_queue::is_ascending(&order_book_ref.asks), 0);
+        assert!(avl_queue::is_empty(&order_book_ref.bids), 0);
+        assert!(!avl_queue::is_ascending(&order_book_ref.bids), 0);
+        assert!(order_book_ref.counter == 0, 0);
+        // Assert market ID return for registering pure coin market not
+        // from coin store.
+        assert!(register_market_base_coin<QC, BC, UC>(
+            1, 1, 1, assets::mint_test<UC>(fee)) == 3, 0);
+    }
+
+    // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 }

@@ -701,6 +701,26 @@ Flag for null value when null defined as 0.
 
 
 
+<a name="0xc0deb00c_user_NO_CUSTODIAN"></a>
+
+Custodian ID flag for no custodian.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_NO_UNDERWRITER"></a>
+
+Underwriter ID flag for no underwriter.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_ASK"></a>
 
 Flag for ask side
@@ -728,26 +748,6 @@ in Python via <code>hex(int('1' * 32, 2))</code>.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_NO_CUSTODIAN"></a>
-
-Custodian ID flag for no custodian.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_NO_UNDERWRITER"></a>
-
-Underwriter ID flag for no underwriter.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_NO_UNDERWRITER">NO_UNDERWRITER</a>: u64 = 0;
 </code></pre>
 
 

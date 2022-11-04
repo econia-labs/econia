@@ -21,12 +21,14 @@
 /// [Public function index](#public-function-index)
 ///
 /// * [Capability management](#capability-management)
+/// * [Integrator fee store setup](#integrator-fee-store-setup)
 /// * [Recognized market lookup](#recognized-market-lookup)
 /// * [Recognized market management](#recognized-market-management)
 ///
 /// [Dependency charts](#dependency-charts)
 ///
 /// * [Capability registration](#capability-registration)
+/// * [Fee store registration](#fee-store-registration)
 /// * [Recognized market getters](#recognized-market-getters)
 /// * [Recognized market setters](#recognized-market-setters)
 /// * [Internal market registration](#internal-market-registration)
@@ -41,6 +43,12 @@
 /// * `get_underwriter_id()`
 /// * `register_custodian_capability()`
 /// * `register_underwriter_capability()`
+///
+/// ## Integrator fee store setup
+///
+/// * `register_integrator_fee_store()`
+/// * `register_integrator_fee_store_base_tier()`
+/// * `register_integrator_fee_store_from_coinstore()`
 ///
 /// ## Recognized market lookup
 ///
@@ -80,6 +88,19 @@
 ///     incentives::deposit_custodian_registration_utility_coins
 /// register_underwriter_capability -->
 ///     incentives::deposit_underwriter_registration_utility_coins
+///
+/// ```
+///
+/// ## Fee store registration
+///
+/// ```mermaid
+///
+/// flowchart LR
+///
+/// register_integrator_fee_store_base_tier -->
+///     register_integrator_fee_store
+/// register_integrator_fee_store_from_coinstore -->
+///     register_integrator_fee_store
 ///
 /// ```
 ///
@@ -621,6 +642,55 @@ module econia::registry {
         CustodianCapability{custodian_id}
     }
 
+    /// Register integrator fee store to given tier on given market.
+    ///
+    /// # Type parameters
+    ///
+    /// * `QuoteCoinType`: The quote coin type for market.
+    /// * `UtilityCoinType`: The utility coin type.
+    ///
+    /// # Parameters
+    ///
+    /// * `integrator`: Integrator account.
+    /// * `market_id`: Market ID for corresponding market.
+    /// * `tier`: `incentives::IntegratorFeeStore` tier to activate to.
+    /// * `utility_coins`: Utility coins paid to activate to given tier.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ID`: No such registered market ID.
+    /// * `E_INVALID_QUOTE`: Invalid quote coin type for market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_integrator_fee_store_invalid_market_id()`
+    /// * `test_register_integrator_fee_store_invalid_quote()`
+    /// * `test_register_integrator_fee_stores()`
+    public fun register_integrator_fee_store<
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        integrator: &signer,
+        market_id: u64,
+        tier: u8,
+        utility_coins: Coin<UtilityCoinType>
+    ) acquires Registry {
+        let market_map_ref = // Immutably borrow markets map.
+            &borrow_global<Registry>(@econia).market_id_to_info;
+        // Assert market ID is registered.
+        assert!(tablist::contains(market_map_ref, market_id),
+                E_INVALID_MARKET_ID);
+        // Immutably borrow market info.
+        let market_info_ref = tablist::borrow(market_map_ref, market_id);
+        // Assert quote type.
+        assert!(market_info_ref.quote_type ==
+                type_info::type_of<QuoteCoinType>(), E_INVALID_QUOTE);
+        // Register an integrator fee store at integrator's account.
+        incentives::register_integrator_fee_store<
+            QuoteCoinType, UtilityCoinType>(integrator, market_id, tier,
+            utility_coins);
+    }
+
     /// Return a unique `UnderwriterCapability`.
     ///
     /// Increment the number of registered underwriters, then issue a
@@ -649,6 +719,44 @@ module econia::registry {
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Wrapped call to `register_integrator_fee_store()` for activating
+    /// to base tier, which does not require utility coins.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_integrator_fee_stores()`
+    public entry fun register_integrator_fee_store_base_tier<
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        integrator: &signer,
+        market_id: u64,
+    ) acquires Registry {
+        register_integrator_fee_store<QuoteCoinType, UtilityCoinType>(
+            integrator, market_id, 0, coin::zero<UtilityCoinType>());
+    }
+
+    #[cmd]
+    /// Wrapped call to `register_integrator_fee_store()` for paying
+    /// utility coins from an `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_integrator_fee_stores()`
+    public entry fun register_integrator_fee_store_from_coinstore<
+        QuoteCoinType,
+        UtilityCoinType
+    >(
+        integrator: &signer,
+        market_id: u64,
+        tier: u8
+    ) acquires Registry {
+        register_integrator_fee_store<QuoteCoinType, UtilityCoinType>(
+            integrator, market_id, tier, coin::withdraw<UtilityCoinType>(
+                integrator, incentives::get_tier_activation_fee(tier)));
+    }
 
     #[cmd]
     /// Remove market having given ID from recognized markets list.
@@ -1549,6 +1657,62 @@ module econia::registry {
         drop_underwriter_capability_test(underwriter_capability);
         // Assert no custodian flag not marked as registered.
         assert!(!is_registered_custodian_id(NO_CUSTODIAN), 0);
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for no such market ID.
+    fun test_register_integrator_fee_store_invalid_market_id(
+        user: &signer
+    ) acquires Registry {
+        init_test(); // Initialize for testing.
+        // Attempt invalid invocation.
+        register_integrator_fee_store<QC, UC>(user, 1, 1, coin::zero());
+    }
+
+    #[test(user = @user)]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for invalid quote coin.
+    fun test_register_integrator_fee_store_invalid_quote(
+        user: &signer
+    ) acquires Registry {
+        register_markets_test(); // Register test markets.
+        // Attempt invalid invocation.
+        register_integrator_fee_store<UC, UC>(user, 1, 1, coin::zero());
+    }
+
+    #[test]
+    /// Verify successful registration.
+    fun test_register_integrator_fee_stores()
+    acquires Registry {
+        register_markets_test(); // Register test markets.
+        // Create integrator accounts.
+        let integrator_0 = account::create_account_for_test(@user_0);
+        let integrator_1 = account::create_account_for_test(@user_1);
+        // Register utility coin stores.
+        coin::register<UC>(&integrator_0);
+        coin::register<UC>(&integrator_1);
+        // Deposit utility coins.
+        coin::deposit<UC>(@user_0, assets::mint_test(10000000000000000));
+        coin::deposit<UC>(@user_0, assets::mint_test(10000000000000000));
+        // Register first integrator to base tier on first market.
+        register_integrator_fee_store_base_tier<QC, UC>(&integrator_0, 1);
+        // Assert activation tier.
+        assert!(incentives::get_integrator_fee_store_tier_test<QC>(@user_0, 1)
+                == 0, 0);
+        // Register first integrator to tier 1 on second market.
+        register_integrator_fee_store_from_coinstore<QC, UC>(
+            &integrator_0, 2, 1);
+        // Assert activation tier.
+        assert!(incentives::get_integrator_fee_store_tier_test<QC>(@user_0, 2)
+                == 1, 0);
+        // Register second integrator to base 0 on second market with
+        // redundant call to coinstore version function.
+        register_integrator_fee_store_from_coinstore<QC, UC>(
+            &integrator_1, 2, 0);
+        // Assert activation tier.
+        assert!(incentives::get_integrator_fee_store_tier_test<QC>(@user_1, 2)
+                == 0, 0);
     }
 
     #[test]

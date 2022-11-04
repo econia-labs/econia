@@ -6,6 +6,8 @@
 ///
 /// # General overview sections
 ///
+/// [Incentive model](#incentive-model)
+///
 /// [Functions](#functions)
 ///
 /// * [Public getters](#public-getters)
@@ -22,6 +24,45 @@
 /// * [Match operations](#match-operations)
 ///
 /// [Complete DocGen index](#complete-docgen-index)
+///
+/// # Incentive model
+///
+/// As a permissionless system, Econia mitigates denial-of-service (DOS)
+/// attacks by charging utility coins for assorted operations. Econia
+/// also charges taker fees, denominated in the quote coin for a given
+/// market, which are distributed between integrators and Econia. The
+/// share of taker fees distributed between an integrator and Econia,
+/// for a given market, is determined by the "tier" to which the
+/// integrator has "activated" their fee store: when the matching engine
+/// fills a taker order, the integrator who facilitated the transaction
+/// has a portion of taker fees deposited to their fee store, and Econia
+/// gets the rest, with the split thereof determined by the integrator's
+/// fee store tier for the given market.
+///
+/// Hence Econia involves 5 major incentive parameters, defined at
+/// `IncentiveParameters`:
+///
+/// 1. The utility coin type.
+/// 2. The fee, denominated in the utility coin, to register a market.
+/// 3. The fee, denominated in the utility coin, to register as an
+///    underwriter for a generic market.
+/// 4. The fee, denominated in the utility coin, to register as
+///    custodian.
+/// 5. The taker fee divisor, denoting the portion of quote coins for a
+///    particular trade, paid by the taker, to be split between the
+///    integrator who facilitated the trade, and Econia.
+///
+/// `IncentiveParameters` also includes a vector of
+/// `IntegratorFeeStoreTierParameters`, which define 3 parameters per
+/// tier:
+///
+/// 1. The taker fee divisor, denoting the portion of quote coins for a
+///    particular trade, paid by the taker, to be collected by an
+///    integrator whose fee store is activated to the given tier.
+/// 2. The cumulative fee, denominated in the utility coin, to activate
+///    to the given tier.
+/// 3. The fee, denominated in the utility coin, to withdraw quote coins
+///    collected as fees, from an integrator's fee store.
 ///
 /// # Functions
 ///

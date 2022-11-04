@@ -435,6 +435,8 @@ module econia::incentives {
     const E_ECONIA_FEE_STORE_OVERFLOW: u64 = 21;
     /// Depositing to a utility coin store would result in an overflow.
     const E_UTILITY_COIN_STORE_OVERFLOW: u64 = 22;
+    /// There is no tier with given number.
+    const E_INVALID_TIER: u64 = 23;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -552,6 +554,7 @@ module econia::incentives {
     ///
     /// # Testing
     ///
+    /// * `test_get_fee_share_divisor_invalid_tier()`
     /// * `test_init_update_get_incentives()`
     public fun get_fee_share_divisor(
         tier: u8
@@ -562,6 +565,9 @@ module econia::incentives {
         let integrator_fee_store_tiers_ref =
             &borrow_global<IncentiveParameters>(@econia).
                 integrator_fee_store_tiers;
+        // Assert provided 0-indexed tier number is within range.
+        assert!((tier as u64) < vector::length(integrator_fee_store_tiers_ref),
+                E_INVALID_TIER);
         // Borrow immutable reference to indicated tier parameters.
         let integrator_fee_store_tier_ref = vector::borrow(
             integrator_fee_store_tiers_ref, (tier as u64));
@@ -615,7 +621,7 @@ module econia::incentives {
     public fun get_n_fee_store_tiers():
     u64
     acquires IncentiveParameters {
-        // Borrow immutable reference to integrator fee store teirs
+        // Borrow immutable reference to integrator fee store tiers
         // vector.
         let integrator_fee_store_tiers_ref =
             &borrow_global<IncentiveParameters>(@econia).
@@ -639,17 +645,21 @@ module econia::incentives {
     ///
     /// # Testing
     ///
+    /// * `test_get_tier_activation_fee_invalid_tier()`
     /// * `test_init_update_get_incentives()`
     public fun get_tier_activation_fee(
         tier: u8
     ): u64
     acquires IncentiveParameters {
-        // Borrow immutable reference to integrator fee store teirs
+        // Borrow immutable reference to integrator fee store tiers
         // vector.
         let integrator_fee_store_tiers_ref =
             &borrow_global<IncentiveParameters>(@econia).
                 integrator_fee_store_tiers;
-        // Borrow immutable refernce to given tier.
+        // Assert provided 0-indexed tier number is within range.
+        assert!((tier as u64) < vector::length(integrator_fee_store_tiers_ref),
+                E_INVALID_TIER);
+        // Borrow immutable reference to given tier.
         let integrator_fee_store_tier_ref = vector::borrow(
             integrator_fee_store_tiers_ref, (tier as u64));
         // Return its activation fee.
@@ -661,6 +671,7 @@ module econia::incentives {
     ///
     /// # Testing
     ///
+    /// * `test_get_tier_withdrawal_fee_invalid_tier()`
     /// * `test_init_update_get_incentives()`
     public fun get_tier_withdrawal_fee(
         tier: u8
@@ -671,6 +682,9 @@ module econia::incentives {
         let integrator_fee_store_tiers_ref =
             &borrow_global<IncentiveParameters>(@econia).
                 integrator_fee_store_tiers;
+        // Assert provided 0-indexed tier number is within range.
+        assert!((tier as u64) < vector::length(integrator_fee_store_tiers_ref),
+                E_INVALID_TIER);
         // Borrow immutable refernce to given tier.
         let integrator_fee_store_tier_ref = vector::borrow(
             integrator_fee_store_tiers_ref, (tier as u64));
@@ -2109,6 +2123,33 @@ module econia::incentives {
             TAKER_FEE_DIVISOR, &integrator_fee_store_tiers, false);
     }
 
+    #[test_only]
+    /// Return `true` if `integrator` has an `IntegratorFeeStore` for
+    /// given `QuoteCoinType` and `market_id`.
+    ///
+    /// # Restrictions
+    ///
+    /// * Restricted to test-only to prevent excessive public queries
+    ///   and thus transaction collisions.
+    public fun has_integrator_fee_store_test<QuoteCoinType>(
+        integrator: address,
+        market_id: u64
+    ): bool
+    acquires
+        IntegratorFeeStores
+    {
+        // Return false if integrator does not have integrator fee
+        // stores map for given quote coin type.
+        if (!exists<IntegratorFeeStores<QuoteCoinType>>(integrator))
+            return false;
+        // Immutably borrow integrator fee stores map.
+        let integrator_fee_stores_map_ref =
+            &borrow_global<IntegratorFeeStores<QuoteCoinType>>(integrator).map;
+        // Return true if integrator fee stores map has entry for given
+        // market ID.
+        tablist::contains(integrator_fee_stores_map_ref, market_id)
+    }
+
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2228,6 +2269,40 @@ module econia::incentives {
         // Attempt invalid query.
         get_cost_to_upgrade_integrator_fee_store<QC, UC>(
             integrator, market_id, tier);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 23)]
+    /// Verify failure for invalid tier number.
+    fun test_get_fee_share_divisor_invalid_tier()
+    acquires IncentiveParameters {
+        init_test(); // Init for testing.
+        // Get maximum 0-indexed tier number.
+        let max_tier_number = (get_n_fee_store_tiers() as u8) - 1;
+        // Attempt invalid invocation.
+        get_fee_share_divisor(max_tier_number + 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 23)]
+    fun test_get_tier_activation_fee_invalid_tier()
+    acquires IncentiveParameters {
+        init_test(); // Init for testing.
+        // Get maximum 0-indexed tier number.
+        let max_tier_number = (get_n_fee_store_tiers() as u8) - 1;
+        // Attempt invalid invocation.
+        get_tier_activation_fee(max_tier_number + 1);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 23)]
+    fun test_get_tier_withdrawal_fee_invalid_tier()
+    acquires IncentiveParameters {
+        init_test(); // Init for testing.
+        // Get maximum 0-indexed tier number.
+        let max_tier_number = (get_n_fee_store_tiers() as u8) - 1;
+        // Attempt invalid invocation.
+        get_tier_withdrawal_fee(max_tier_number + 1);
     }
 
     #[test(econia = @econia)]

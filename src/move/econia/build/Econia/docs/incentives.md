@@ -847,6 +847,16 @@ overflow.
 
 
 
+<a name="0xc0deb00c_incentives_E_INVALID_TIER"></a>
+
+There is no tier with given number.
+
+
+<pre><code><b>const</b> <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_TIER">E_INVALID_TIER</a>: u64 = 23;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_incentives_E_INVALID_UTILITY_COIN_TYPE"></a>
 
 Type is not the utility coin type.
@@ -1310,6 +1320,7 @@ Return integrator fee share divisor for <code>tier</code>.
 ### Testing
 
 
+* <code>test_get_fee_share_divisor_invalid_tier()</code>
 * <code>test_init_update_get_incentives()</code>
 
 
@@ -1331,6 +1342,9 @@ Return integrator fee share divisor for <code>tier</code>.
     <b>let</b> integrator_fee_store_tiers_ref =
         &<b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).
             integrator_fee_store_tiers;
+    // Assert provided 0-indexed tier number is within range.
+    <b>assert</b>!((tier <b>as</b> u64) &lt; <a href="_length">vector::length</a>(integrator_fee_store_tiers_ref),
+            <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_TIER">E_INVALID_TIER</a>);
     // Borrow immutable reference <b>to</b> indicated tier parameters.
     <b>let</b> integrator_fee_store_tier_ref = <a href="_borrow">vector::borrow</a>(
         integrator_fee_store_tiers_ref, (tier <b>as</b> u64));
@@ -1456,7 +1470,7 @@ Return number of fee store tiers.
 <pre><code><b>public</b> <b>fun</b> <a href="incentives.md#0xc0deb00c_incentives_get_n_fee_store_tiers">get_n_fee_store_tiers</a>():
 u64
 <b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
-    // Borrow immutable reference <b>to</b> integrator fee store teirs
+    // Borrow immutable reference <b>to</b> integrator fee store tiers
     // <a href="">vector</a>.
     <b>let</b> integrator_fee_store_tiers_ref =
         &<b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).
@@ -1517,6 +1531,7 @@ Return fee to activate an <code><a href="incentives.md#0xc0deb00c_incentives_Int
 ### Testing
 
 
+* <code>test_get_tier_activation_fee_invalid_tier()</code>
 * <code>test_init_update_get_incentives()</code>
 
 
@@ -1533,12 +1548,15 @@ Return fee to activate an <code><a href="incentives.md#0xc0deb00c_incentives_Int
     tier: u8
 ): u64
 <b>acquires</b> <a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a> {
-    // Borrow immutable reference <b>to</b> integrator fee store teirs
+    // Borrow immutable reference <b>to</b> integrator fee store tiers
     // <a href="">vector</a>.
     <b>let</b> integrator_fee_store_tiers_ref =
         &<b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).
             integrator_fee_store_tiers;
-    // Borrow immutable refernce <b>to</b> given tier.
+    // Assert provided 0-indexed tier number is within range.
+    <b>assert</b>!((tier <b>as</b> u64) &lt; <a href="_length">vector::length</a>(integrator_fee_store_tiers_ref),
+            <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_TIER">E_INVALID_TIER</a>);
+    // Borrow immutable reference <b>to</b> given tier.
     <b>let</b> integrator_fee_store_tier_ref = <a href="_borrow">vector::borrow</a>(
         integrator_fee_store_tiers_ref, (tier <b>as</b> u64));
     // Return its activation fee.
@@ -1563,6 +1581,7 @@ given <code>tier</code>.
 ### Testing
 
 
+* <code>test_get_tier_withdrawal_fee_invalid_tier()</code>
 * <code>test_init_update_get_incentives()</code>
 
 
@@ -1584,6 +1603,9 @@ given <code>tier</code>.
     <b>let</b> integrator_fee_store_tiers_ref =
         &<b>borrow_global</b>&lt;<a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a>&gt;(@econia).
             integrator_fee_store_tiers;
+    // Assert provided 0-indexed tier number is within range.
+    <b>assert</b>!((tier <b>as</b> u64) &lt; <a href="_length">vector::length</a>(integrator_fee_store_tiers_ref),
+            <a href="incentives.md#0xc0deb00c_incentives_E_INVALID_TIER">E_INVALID_TIER</a>);
     // Borrow immutable refernce <b>to</b> given tier.
     <b>let</b> integrator_fee_store_tier_ref = <a href="_borrow">vector::borrow</a>(
         integrator_fee_store_tiers_ref, (tier <b>as</b> u64));

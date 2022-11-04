@@ -50,7 +50,8 @@ integrator has "activated" their fee store: when the matching engine
 fills a taker order, the integrator who facilitated the transaction
 has a portion of taker fees deposited to their fee store, and Econia
 gets the rest, with the split thereof determined by the integrator's
-fee store tier for the given market.
+fee store tier for the given market. Econia does not charge taker
+fees.
 
 Hence Econia involves 5 major incentive parameters, defined at
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">IncentiveParameters</a></code>:
@@ -79,7 +80,14 @@ collected as fees, from an integrator's fee store.
 
 Upon module publication, the Econia "genesis parameters" are
 set according to hard-coded values via <code><a href="incentives.md#0xc0deb00c_incentives_init_module">init_module</a>()</code>. Later, the
-parameters can be updated via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
+parameters can be updated via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>, so long
+as the number of tiers is not reduced and other minor restrictions
+are met. For an implementation-exact description of restrictions and
+corresponding abort codes, see:
+
+* <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_range_check_inputs">set_incentive_parameters_range_check_inputs</a>()</code>
+* <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters_parse_tiers_vector">set_incentive_parameters_parse_tiers_vector</a>()</code>
 
 
 <a name="@Functions_2"></a>

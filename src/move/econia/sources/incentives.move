@@ -37,7 +37,8 @@
 /// fills a taker order, the integrator who facilitated the transaction
 /// has a portion of taker fees deposited to their fee store, and Econia
 /// gets the rest, with the split thereof determined by the integrator's
-/// fee store tier for the given market.
+/// fee store tier for the given market. Econia does not charge taker
+/// fees.
 ///
 /// Hence Econia involves 5 major incentive parameters, defined at
 /// `IncentiveParameters`:
@@ -66,7 +67,14 @@
 ///
 /// Upon module publication, the Econia "genesis parameters" are
 /// set according to hard-coded values via `init_module()`. Later, the
-/// parameters can be updated via `set_incentive_parameters()`.
+/// parameters can be updated via `set_incentive_parameters()`, so long
+/// as the number of tiers is not reduced and other minor restrictions
+/// are met. For an implementation-exact description of restrictions and
+/// corresponding abort codes, see:
+///
+/// * `set_incentive_parameters()`
+/// * `set_incentive_parameters_range_check_inputs()`
+/// * `set_incentive_parameters_parse_tiers_vector()`
 ///
 /// # Functions
 ///

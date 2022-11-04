@@ -53,7 +53,11 @@
 ///
 /// * `update_incentives()`
 /// * `upgrade_integrator_fee_store_via_coinstore()`
+/// * `withdraw_econia_fees_all_to_coin_store()`
+/// * `withdraw_econia_fees_to_coin_store()`
 /// * `withdraw_integrator_fees_via_coinstores()`
+/// * `withdraw_utility_coins_all_to_coin_store()`
+/// * `withdraw_utility_coins_to_coin_store()`
 ///
 /// ## Public friend functions
 ///
@@ -97,17 +101,29 @@
 ///
 /// flowchart LR
 ///
-/// withdraw_econia_fees --> withdraw_econia_fees_internal
-/// withdraw_econia_fees_all --> withdraw_econia_fees_internal
-/// withdraw_econia_fees_internal --> resource_account::get_address
-/// withdraw_utility_coins --> withdraw_utility_coins_internal
-/// withdraw_utility_coins_all --> withdraw_utility_coins_internal
-/// withdraw_utility_coins_internal --> resource_account::get_address
-/// register_econia_fee_store_entry --> resource_account::get_signer
 /// deposit_utility_coins --> resource_account::get_address
 /// deposit_utility_coins --> range_check_coin_merge
 /// deposit_utility_coins_verified --> verify_utility_coin_type
 /// deposit_utility_coins_verified --> deposit_utility_coins
+/// withdraw_utility_coins --> withdraw_utility_coins_internal
+/// withdraw_utility_coins_all --> withdraw_utility_coins_internal
+/// withdraw_utility_coins_all_to_coin_store -->
+///     withdraw_utility_coins_to_coin_store_internal
+/// withdraw_utility_coins_to_coin_store -->
+///     withdraw_utility_coins_to_coin_store_internal
+/// withdraw_utility_coins_to_coin_store_internal -->
+///     withdraw_utility_coins_internal
+/// withdraw_utility_coins_internal --> resource_account::get_address
+/// withdraw_econia_fees --> withdraw_econia_fees_internal
+/// withdraw_econia_fees_all --> withdraw_econia_fees_internal
+/// withdraw_econia_fees_internal --> resource_account::get_address
+/// withdraw_econia_fees_all_to_coin_store -->
+///     withdraw_econia_fees_to_coin_store_internal
+/// withdraw_econia_fees_to_coin_store -->
+///     withdraw_econia_fees_to_coin_store_internal
+/// withdraw_econia_fees_to_coin_store_internal -->
+///     withdraw_econia_fees_internal
+/// register_econia_fee_store_entry --> resource_account::get_signer
 ///
 /// ```
 ///
@@ -118,17 +134,17 @@
 /// flowchart LR
 ///
 /// deposit_custodian_registration_utility_coins -->
-///     deposit_utility_coins_verified
-/// deposit_custodian_registration_utility_coins -->
 ///     get_custodian_registration_fee
+/// deposit_custodian_registration_utility_coins -->
+///     deposit_utility_coins_verified
+/// deposit_underwriter_registration_utility_coins -->
+///     get_underwriter_registration_fee
+/// deposit_underwriter_registration_utility_coins --->
+///     deposit_utility_coins_verified
 /// deposit_market_registration_utility_coins -->
 ///     deposit_utility_coins_verified
 /// deposit_market_registration_utility_coins -->
 ///     get_market_registration_fee
-/// deposit_underwriter_registration_utility_coins -->
-///     deposit_utility_coins_verified
-/// deposit_underwriter_registration_utility_coins -->
-///     get_underwriter_registration_fee
 ///
 /// ```
 ///
@@ -138,18 +154,21 @@
 ///
 /// flowchart LR
 ///
-/// upgrade_integrator_fee_store --> deposit_utility_coins_verified
-/// withdraw_integrator_fees --> deposit_utility_coins_verified
-/// withdraw_integrator_fees --> get_tier_withdrawal_fee
-/// upgrade_integrator_fee_store_via_coinstore -->
-///     upgrade_integrator_fee_store
 /// withdraw_integrator_fees_via_coinstores -->
 ///     get_integrator_withdrawal_fee
-/// withdraw_integrator_fees_via_coinstores -->
-///     withdraw_integrator_fees
-/// register_integrator_fee_store -->
-///     deposit_utility_coins_verified
+/// get_integrator_withdrawal_fee --> get_tier_withdrawal_fee
+/// withdraw_integrator_fees_via_coinstores --> withdraw_integrator_fees
+/// withdraw_integrator_fees --> get_tier_withdrawal_fee
+/// withdraw_integrator_fees --> deposit_utility_coins_verified
+/// register_integrator_fee_store ---> deposit_utility_coins_verified
 /// register_integrator_fee_store --> get_tier_activation_fee
+/// upgrade_integrator_fee_store_via_coinstore -->
+///     upgrade_integrator_fee_store
+/// upgrade_integrator_fee_store_via_coinstore -->
+///     get_cost_to_upgrade_integrator_fee_store
+/// upgrade_integrator_fee_store --> deposit_utility_coins_verified
+/// upgrade_integrator_fee_store -->
+///     get_cost_to_upgrade_integrator_fee_store
 ///
 /// ```
 ///
@@ -883,6 +902,41 @@ module econia::incentives {
     }
 
     #[cmd]
+    /// Wrapped call to `withdraw_econia_fees_to_coin_store_internal()`,
+    /// similar to `withdraw_econia_fees_all()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_to_coin_store_econia()`
+    public entry fun withdraw_econia_fees_all_to_coin_store<QuoteCoinType>(
+        econia: &signer,
+        market_id: u64,
+    ) acquires
+        EconiaFeeStore
+    {
+        withdraw_econia_fees_to_coin_store_internal<QuoteCoinType>(
+            econia, market_id, true, 0);
+    }
+
+    #[cmd]
+    /// Wrapped call to `withdraw_econia_fees_to_coin_store_internal()`,
+    /// similar to `withdraw_econia_fees()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_to_coin_store_econia()`
+    public entry fun withdraw_econia_fees_to_coin_store<QuoteCoinType>(
+        econia: &signer,
+        market_id: u64,
+        amount: u64
+    ) acquires
+        EconiaFeeStore
+    {
+        withdraw_econia_fees_to_coin_store_internal<QuoteCoinType>(
+            econia, market_id, false, amount);
+    }
+
+    #[cmd]
     /// Wrapped call to `get_withdraw_integrator_fees()`, for paying
     /// utility coins from an `aptos_framework::Coin::CoinStore` and
     /// depositing quote coins to one too.
@@ -929,6 +983,39 @@ module econia::incentives {
             coin::register<QuoteCoinType>(integrator);
         // Deposit quote coins to integrator quote coin store.
         coin::deposit(address_of(integrator), quote_coins);
+    }
+
+    #[cmd]
+    /// Wrapped `withdraw_utility_coins_to_coin_store_internal()` call,
+    /// similar to `withdraw_utility_coins_all()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_to_coin_store_econia()`
+    public entry fun withdraw_utility_coins_all_to_coin_store<UtilityCoinType>(
+        econia: &signer,
+    ) acquires
+        UtilityCoinStore
+    {
+        withdraw_utility_coins_to_coin_store_internal<UtilityCoinType>(
+            econia, true, 0);
+    }
+
+    #[cmd]
+    /// Wrapped `withdraw_utility_coins_to_coin_store_internal()` call,
+    /// similar to `withdraw_utility_coins()`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_to_coin_store_econia()`
+    public entry fun withdraw_utility_coins_to_coin_store<UtilityCoinType>(
+        econia: &signer,
+        amount: u64
+    ) acquires
+        UtilityCoinStore
+    {
+        withdraw_utility_coins_to_coin_store_internal<UtilityCoinType>(
+            econia, false, amount);
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1784,6 +1871,30 @@ module econia::incentives {
             coin::extract(fee_coins_ref_mut, amount)
     }
 
+    /// Wrapped call to `withdraw_econia_fees_internal()`, for
+    /// depositing withdrawn coins to an
+    /// `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_to_coin_store_econia()`
+    fun withdraw_econia_fees_to_coin_store_internal<QuoteCoinType>(
+        econia: &signer,
+        market_id: u64,
+        all: bool,
+        amount: u64
+    ) acquires EconiaFeeStore {
+        // Withdraw coins from fee store, verifying Econia signer.
+        let coins = withdraw_econia_fees_internal<QuoteCoinType>(
+            econia, market_id, all, amount);
+        // If Econia does not have coin store for coin type:
+        if (!coin::is_account_registered<QuoteCoinType>(@econia))
+            // Register one.
+            coin::register<QuoteCoinType>(econia);
+        // Deposit quote coins to coin store under Econia account.
+        coin::deposit(@econia, coins);
+    }
+
     /// Withdraw all utility coins from the `UtilityCoinStore` if `all`
     /// is `true`, otherwise withdraw `amount` (which may corresond to
     /// all coins), aborting if `account` is not Econia.
@@ -1811,6 +1922,29 @@ module econia::incentives {
         if (all) coin::extract_all(utility_coins_ref_mut) else
             // Else extract specified amount and return.
             coin::extract(utility_coins_ref_mut, amount)
+    }
+
+    /// Wrapped call to `withdraw_utility_coins_internal()`, for
+    /// depositing withdrawn coins to an
+    /// `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_withdraw_to_coin_store_econia()`
+    fun withdraw_utility_coins_to_coin_store_internal<UtilityCoinType>(
+        econia: &signer,
+        all: bool,
+        amount: u64
+    ) acquires UtilityCoinStore {
+        // Withdraw coins from fee store, verifying Econia signer.
+        let coins = withdraw_utility_coins_internal<UtilityCoinType>(
+            econia, all, amount);
+        // If Econia does not have coin store for coin type:
+        if (!coin::is_account_registered<UtilityCoinType>(@econia))
+            // Register one.
+            coin::register<UtilityCoinType>(econia);
+        // Deposit utility coins to coin store under Econia account.
+        coin::deposit(@econia, coins);
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2640,6 +2774,55 @@ module econia::incentives {
         // Attempt invalid invocation.
         let fees = withdraw_econia_fees<UC>(account, 0, 0);
         assets::burn(fees); // Burn fees.
+    }
+
+    #[test]
+    /// Verify state updates for withdrawing to a standard coin store,
+    /// from Econia's fee and utility coin stores.
+    fun test_withdraw_to_coin_store_econia()
+    acquires
+        EconiaFeeStore,
+        IncentiveParameters,
+        UtilityCoinStore
+    {
+        init_test(); // Init incentives.
+        // Declare coin amounts, mock market ID.
+        let utility_coin_amount = 123;
+        let fee_coin_amount = 321;
+        let market_id = 456;
+        // Deposit utility coins.
+        deposit_utility_coins<UC>(
+            assets::mint_test(utility_coin_amount));
+        // Register Econia account.
+        let econia = account::create_account_for_test(@econia);
+        // Withdraw 1 coin, registering coin store.
+        withdraw_utility_coins_to_coin_store<UC>(&econia, 1);
+        // Assert coin store balance.
+        assert!(coin::balance<UC>(@econia) == 1, 0);
+        // Withdraw remaining coins.
+        withdraw_utility_coins_all_to_coin_store<UC>(&econia,);
+        // Assert coin store balance.
+        assert!(coin::balance<UC>(@econia) == utility_coin_amount, 0);
+        // Register Econia fee store.
+        register_econia_fee_store_entry<QC>(market_id);
+        // Mutably borrow Econia fee store map for quote coin type.
+        let econia_fee_store_map_ref_mut =
+            &mut borrow_global_mut<EconiaFeeStore<QC>>(
+                resource_account::get_address()).map;
+        // Borrow mutable reference to fees for given market ID.
+        let econia_fee_store_coins_ref_mut = tablist::borrow_mut(
+            econia_fee_store_map_ref_mut, market_id);
+        // Merge simulated fees into the fee store.
+        coin::merge(econia_fee_store_coins_ref_mut,
+                    assets::mint_test<QC>(fee_coin_amount));
+        // Withdraw 1 coin, registering coin store.
+        withdraw_econia_fees_to_coin_store<QC>(&econia, market_id, 1);
+        // Assert coin store balance.
+        assert!(coin::balance<QC>(@econia) == 1, 0);
+        // Withdraw remaining coins.
+        withdraw_econia_fees_all_to_coin_store<QC>(&econia, market_id);
+        // Assert coin store balance.
+        assert!(coin::balance<QC>(@econia) == fee_coin_amount, 0);
     }
 
     #[test(account = @user)]

@@ -97,7 +97,6 @@ module econia::market {
         map: Tablist<u64, OrderBook>
     }
 
-
     /// Emitted when a taker order fills against a maker order. If a
     /// taker order fills against multiple maker orders, a separate
     /// event is emitted for each one.
@@ -120,20 +119,45 @@ module econia::market {
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// Maximum base fill amount specified as 0.
+    const E_MAX_BASE_0: u64 = 0;
+    /// Maximum quote fill amount specified as 0.
+    const E_MAX_QUOTE_0: u64 = 1;
+    /// Minimum base fill amount larger than maximum base fill amount.
+    const E_MIN_BASE_EXCEEDS_MAX: u64 = 2;
+    /// Minimum quote fill amount larger than maximum quote fill amount.
+    const E_MIN_QUOTE_EXCEEDS_MAX: u64 = 3;
+    /// Filling order would overflow asset received from trade.
+    const E_OVERFLOW_ASSET_IN: u64 = 4;
+    /// Not enough asset to trade away.
+    const E_NOT_ENOUGH_ASSET_OUT: u64 = 5;
+
+    // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Ascending AVL queue flag, for asks AVL queue.
     const ASCENDING: bool = true;
-    /// Flag for ask side
+    /// Flag for ask side. Equal to `BUY`, since taker buys fill against
+    /// maker asks.
     const ASK: bool = true;
-    /// Flag for bid side
+    /// Flag for bid side. Equal to `SELL` since taker sells fill
+    /// against maker bids.
     const BID: bool = false;
+    /// Flag for buy direction. Equal to `ASK`, since taker buys fill
+    /// against maker asks.
+    const BUY: bool = true;
     /// Flag for `MakerEvent.type` when order is cancelled.
     const CANCEL: u8 = 0;
     /// Flag for `MakerEvent.type` when order size is changed.
     const CHANGE: u8 = 1;
     /// Descending AVL queue flag, for bids AVL queue.
     const DESCENDING: bool = false;
+    /// `u64` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 64, 2))`.
+    const HI_64: u64 = 0xffffffffffffffff;
     /// Maximum possible price that can be encoded in 32 bits. Generated
     /// in Python via `hex(int('1' * 32, 2))`.
     const MAX_PRICE: u64 = 0xffffffff;
@@ -141,6 +165,9 @@ module econia::market {
     const NO_UNDERWRITER: u64 = 0;
     /// Flag for `MakerEvent.type` when order is placed.
     const PLACE: u8 = 2;
+    /// Flag for sell direction. Equal to `BID`, since taker sells fill
+    /// against maker bids.
+    const SELL: bool = false;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -358,6 +385,102 @@ module econia::market {
         move_to(&resource_account, OrderBooks{map: tablist::new()})
     }
 
+    /// Range check minimum and maximum asset fill amounts.
+    ///
+    /// Should be called before `match()`.
+    ///
+    /// # Terminology
+    ///
+    /// * "Inbound asset" is asset received by taker during a match:
+    ///   base if a buy (filling against asks), quote if a sell (filling
+    ///   against bids).
+    /// * "Outbound asset" is asset traded away by taker during a match:
+    ///   quote if a buy (filling against asks), base if a sell (filling
+    ///   against bids).
+    /// * "Available asset" is the amount the taker already has on hand
+    ///   for either base or quote (`user::MarketAccount.base_available`
+    ///   or `user::MarketAccount.quote_available` when matching from a
+    ///   taker's market account).
+    /// * "Asset ceiling" is the amount that the available asset amount
+    ///   could increase to beyond its present amount, even if the
+    ///   indicated match were not filled. When matching from a taker's
+    ///   market account, corresponds to either
+    ///   `user::MarketAccount.base_ceiling` or
+    ///   `user::MarketAccount.quote_ceiling`. When matching from a
+    ///   taker's coin store or from standaline coins, is the same as
+    ///   the available amount.
+    ///
+    /// # Parameters
+    ///
+    /// * `side`: `ASK` or `SELL`, the side against which a taker order
+    ///   would match.
+    /// * `min_base`: Minimum number of base units to fill.
+    /// * `max_base`: Maximum number of base units to fill.
+    /// * `min_quote`: Minimum number of quote units to fill.
+    /// * `max_quote`: Maximum number of quote units to fill.
+    /// * `base_available`: Taker's available base asset amount.
+    /// * `base_ceiling`: Taker's base asset ceiling, only checked when
+    ///   `SIDE` is `ASK` (a taker buy).
+    /// * `quote_available`: Taker's available quote asset amount.
+    /// * `quote_ceiling`: Taker's quote asset ceiling, only checked
+    ///   when `SIDE` is `BID` (a taker sell).
+    ///
+    /// # Aborts
+    ///
+    /// * `E_MAX_BASE_0`: Maximum base fill amount specified as 0.
+    /// * `E_MAX_QUOTE_0`: Maximum quote fill amount specified as 0.
+    /// * `E_MIN_BASE_EXCEEDS_MAX`: Minimum base fill amount is larger
+    ///   than maximum base fill amount.
+    /// * `E_MIN_QUOTE_EXCEEDS_MAX`: Minimum quote fill amount is larger
+    ///   than maximum quote fill amount.
+    /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
+    ///   received from trade.
+    /// * `E_NOT_ENOUGH_ASSET_OUT`: Not enough asset to trade away.
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_match_range_check_fills_asset_in_buy()`
+    /// * `test_match_range_check_fills_asset_in_sell()`
+    /// * `test_match_range_check_fills_asset_out_buy()`
+    /// * `test_match_range_check_fills_asset_out_sell()`
+    /// * `test_match_range_check_fills_base_0()`
+    /// * `test_match_range_check_fills_min_base_exceeds_max()`
+    /// * `test_match_range_check_fills_min_quote_exceeds_max()`
+    /// * `test_match_range_check_fills_quote_0()`
+    fun match_range_check_fills(
+        side: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        base_available: u64,
+        base_ceiling: u64,
+        quote_available: u64,
+        quote_ceiling: u64
+    ) {
+        // Assert nonzero max base fill amount.
+        assert!(max_base > 0, E_MAX_BASE_0);
+        // Assert nonzero max quote fill amount.
+        assert!(max_quote > 0, E_MAX_QUOTE_0);
+        // Assert minimum base less than or equal to maximum.
+        assert!(min_base <= max_base, E_MIN_BASE_EXCEEDS_MAX);
+        // Assert minimum quote less than or equal to maximum.
+        assert!(min_quote <= max_quote, E_MIN_QUOTE_EXCEEDS_MAX);
+        // Get inbound asset ceiling and max fill amount, outbound
+        // asset available and max fill amount. If filling against asks:
+        let (in_ceiling, in_max, out_available, out_max) = if (side == ASK)
+            // A market buy, so getting base and trading away quote.
+            (base_ceiling, max_base, quote_available, max_quote) else
+            // Else a sell, so getting quote and trading away base.
+            (quote_ceiling, max_quote, base_available, max_base);
+        // Calculate maximum possible inbound asset ceiling post-match.
+        let in_ceiling_max = (in_ceiling as u128) + (in_max as u128);
+        // Assert max possible inbound asset ceiling does not overflow.
+        assert!(in_ceiling_max <= (HI_64 as u128), E_OVERFLOW_ASSET_IN);
+        // Assert enough outbound asset to cover max fill amount.
+        assert!(out_max <= out_available, E_NOT_ENOUGH_ASSET_OUT);
+    }
+
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -415,6 +538,166 @@ module econia::market {
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for overflowing asset in for a buy.
+    fun test_match_range_check_fills_asset_in_buy() {
+        // Declare inputs.
+        let side = BUY;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = HI_64;
+        let quote_available = 0;
+        let quote_ceiling = HI_64;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 4)]
+    /// Verify failure for overflowing asset in for a sell.
+    fun test_match_range_check_fills_asset_in_sell() {
+        // Declare inputs.
+        let side = SELL;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = HI_64;
+        let quote_available = 0;
+        let quote_ceiling = HI_64;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for underflowing asset out for a buy.
+    fun test_match_range_check_fills_asset_out_buy() {
+        // Declare inputs.
+        let side = BUY;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = 1;
+        let quote_available = 0;
+        let quote_ceiling = 1;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 5)]
+    /// Verify failure for underflowing asset out for a sell.
+    fun test_match_range_check_fills_asset_out_sell() {
+        // Declare inputs.
+        let side = SELL;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = 1;
+        let quote_available = 0;
+        let quote_ceiling = 1;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 0)]
+    /// Verify failure for max base specified as 0.
+    fun test_match_range_check_fills_base_0() {
+        // Declare inputs.
+        let side = SELL;
+        let min_base = 0;
+        let max_base = 0;
+        let min_quote = 0;
+        let max_quote = 0;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 2)]
+    /// Verify failure for min base exceeds max
+    fun test_match_range_check_fills_min_base_exceeds_max() {
+        // Declare inputs.
+        let side = SELL;
+        let min_base = 2;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 3)]
+    /// Verify failure for min quote exceeds max
+    fun test_match_range_check_fills_min_quote_exceeds_max() {
+        // Declare inputs.
+        let side = SELL;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 2;
+        let max_quote = 1;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 1)]
+    /// Verify failure for max quote specified as 0.
+    fun test_match_range_check_fills_quote_0() {
+        // Declare inputs.
+        let side = SELL;
+        let min_base = 0;
+        let max_base = 1;
+        let min_quote = 0;
+        let max_quote = 0;
+        let base_available = 0;
+        let base_ceiling = 0;
+        let quote_available = 0;
+        let quote_ceiling = 0;
+        // Attempt invalid invocation.
+        match_range_check_fills(
+            side, min_base, max_base, min_quote, max_quote, base_available,
+            base_ceiling, quote_available, quote_ceiling);
+    }
 
     #[test]
     /// Assert state updates and returns for:

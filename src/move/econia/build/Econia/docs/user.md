@@ -741,6 +741,26 @@ Flag for bid side
 
 
 
+<a name="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT"></a>
+
+Not enough asset to trade away.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>: u64 = 13;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
+
+Filling order would overflow asset received from trade.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>: u64 = 12;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_MAX_PRICE"></a>
 
 Maximum possible price that can be encoded in 32 bits. Generated
@@ -812,16 +832,6 @@ Underwriter is not valid for indicated market.
 
 
 
-<a name="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT"></a>
-
-Not enough asset to trade away.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>: u64 = 13;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
 
 No market account resource found.
@@ -838,16 +848,6 @@ No market accounts resource found.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 2;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
-
-Filling order would overflow asset received from trade.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>: u64 = 12;
 </code></pre>
 
 

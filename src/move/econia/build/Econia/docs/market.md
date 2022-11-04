@@ -29,6 +29,11 @@
     -  [Returns](#@Returns_12)
     -  [Testing](#@Testing_13)
 -  [Function `init_module`](#0xc0deb00c_market_init_module)
+-  [Function `match_range_check_fills`](#0xc0deb00c_market_match_range_check_fills)
+    -  [Terminology](#@Terminology_14)
+    -  [Parameters](#@Parameters_15)
+    -  [Aborts](#@Aborts_16)
+    -  [Failure testing](#@Failure_testing_17)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -373,6 +378,39 @@ Descending AVL queue flag, for bids AVL queue.
 
 
 
+<a name="0xc0deb00c_market_HI_64"></a>
+
+<code>u64</code> bitmask with all bits set, generated in Python via
+<code>hex(int('1' * 64, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>: u64 = 18446744073709551615;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_BUY"></a>
+
+Flag for buy direction. Equal to <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>, since taker buys fill
+against maker asks.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BUY">BUY</a>: bool = <b>true</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_SELL"></a>
+
+Flag for sell direction. Equal to <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, since taker sells fill
+against maker bids.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SELL">SELL</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_NO_UNDERWRITER"></a>
 
 Underwriter ID flag for no underwriter.
@@ -385,7 +423,8 @@ Underwriter ID flag for no underwriter.
 
 <a name="0xc0deb00c_market_ASK"></a>
 
-Flag for ask side
+Flag for ask side. Equal to <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, since taker buys fill against
+maker asks.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_ASK">ASK</a>: bool = <b>true</b>;
@@ -395,7 +434,8 @@ Flag for ask side
 
 <a name="0xc0deb00c_market_BID"></a>
 
-Flag for bid side
+Flag for bid side. Equal to <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code> since taker sells fill
+against maker bids.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>: bool = <b>false</b>;
@@ -419,6 +459,66 @@ Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.t
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a>: u8 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_MAX_BASE_0"></a>
+
+Maximum base fill amount specified as 0.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MAX_BASE_0">E_MAX_BASE_0</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_MAX_QUOTE_0"></a>
+
+Maximum quote fill amount specified as 0.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MAX_QUOTE_0">E_MAX_QUOTE_0</a>: u64 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_MIN_BASE_EXCEEDS_MAX"></a>
+
+Minimum base fill amount larger than maximum base fill amount.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MIN_BASE_EXCEEDS_MAX">E_MIN_BASE_EXCEEDS_MAX</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX"></a>
+
+Minimum quote fill amount larger than maximum quote fill amount.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX">E_MIN_QUOTE_EXCEEDS_MAX</a>: u64 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT"></a>
+
+Not enough asset to trade away.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>: u64 = 5;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_OVERFLOW_ASSET_IN"></a>
+
+Filling order would overflow asset received from trade.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>: u64 = 4;
 </code></pre>
 
 
@@ -792,6 +892,138 @@ Initialize the order books map upon module publication.
     <b>let</b> <a href="">resource_account</a> = resource_account::get_signer();
     // Initialize order books map under resource <a href="">account</a>.
     <b>move_to</b>(&<a href="">resource_account</a>, <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>{map: <a href="tablist.md#0xc0deb00c_tablist_new">tablist::new</a>()})
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_match_range_check_fills"></a>
+
+## Function `match_range_check_fills`
+
+Range check minimum and maximum asset fill amounts.
+
+Should be called before <code>match()</code>.
+
+
+<a name="@Terminology_14"></a>
+
+### Terminology
+
+
+* "Inbound asset" is asset received by taker during a match:
+base if a buy (filling against asks), quote if a sell (filling
+against bids).
+* "Outbound asset" is asset traded away by taker during a match:
+quote if a buy (filling against asks), base if a sell (filling
+against bids).
+* "Available asset" is the amount the taker already has on hand
+for either base or quote (<code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.base_available</code>
+or <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_available</code> when matching from a
+taker's market account).
+* "Asset ceiling" is the amount that the available asset amount
+could increase to beyond its present amount, even if the
+indicated match were not filled. When matching from a taker's
+market account, corresponds to either
+<code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.base_ceiling</code> or
+<code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_ceiling</code>. When matching from a
+taker's coin store or from standaline coins, is the same as
+the available amount.
+
+
+<a name="@Parameters_15"></a>
+
+### Parameters
+
+
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>, the side against which a taker order
+would match.
+* <code>min_base</code>: Minimum number of base units to fill.
+* <code>max_base</code>: Maximum number of base units to fill.
+* <code>min_quote</code>: Minimum number of quote units to fill.
+* <code>max_quote</code>: Maximum number of quote units to fill.
+* <code>base_available</code>: Taker's available base asset amount.
+* <code>base_ceiling</code>: Taker's base asset ceiling, only checked when
+<code>SIDE</code> is <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> (a taker buy).
+* <code>quote_available</code>: Taker's available quote asset amount.
+* <code>quote_ceiling</code>: Taker's quote asset ceiling, only checked
+when <code>SIDE</code> is <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code> (a taker sell).
+
+
+<a name="@Aborts_16"></a>
+
+### Aborts
+
+
+* <code><a href="market.md#0xc0deb00c_market_E_MAX_BASE_0">E_MAX_BASE_0</a></code>: Maximum base fill amount specified as 0.
+* <code><a href="market.md#0xc0deb00c_market_E_MAX_QUOTE_0">E_MAX_QUOTE_0</a></code>: Maximum quote fill amount specified as 0.
+* <code><a href="market.md#0xc0deb00c_market_E_MIN_BASE_EXCEEDS_MAX">E_MIN_BASE_EXCEEDS_MAX</a></code>: Minimum base fill amount is larger
+than maximum base fill amount.
+* <code><a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX">E_MIN_QUOTE_EXCEEDS_MAX</a></code>: Minimum quote fill amount is larger
+than maximum quote fill amount.
+* <code><a href="market.md#0xc0deb00c_market_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a></code>: Filling order would overflow asset
+received from trade.
+* <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
+
+
+<a name="@Failure_testing_17"></a>
+
+### Failure testing
+
+
+* <code>test_match_range_check_fills_asset_in_buy()</code>
+* <code>test_match_range_check_fills_asset_in_sell()</code>
+* <code>test_match_range_check_fills_asset_out_buy()</code>
+* <code>test_match_range_check_fills_asset_out_sell()</code>
+* <code>test_match_range_check_fills_base_0()</code>
+* <code>test_match_range_check_fills_min_base_exceeds_max()</code>
+* <code>test_match_range_check_fills_min_quote_exceeds_max()</code>
+* <code>test_match_range_check_fills_quote_0()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_range_check_fills">match_range_check_fills</a>(side: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, base_available: u64, base_ceiling: u64, quote_available: u64, quote_ceiling: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_range_check_fills">match_range_check_fills</a>(
+    side: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    base_available: u64,
+    base_ceiling: u64,
+    quote_available: u64,
+    quote_ceiling: u64
+) {
+    // Assert nonzero max base fill amount.
+    <b>assert</b>!(max_base &gt; 0, <a href="market.md#0xc0deb00c_market_E_MAX_BASE_0">E_MAX_BASE_0</a>);
+    // Assert nonzero max quote fill amount.
+    <b>assert</b>!(max_quote &gt; 0, <a href="market.md#0xc0deb00c_market_E_MAX_QUOTE_0">E_MAX_QUOTE_0</a>);
+    // Assert minimum base less than or equal <b>to</b> maximum.
+    <b>assert</b>!(min_base &lt;= max_base, <a href="market.md#0xc0deb00c_market_E_MIN_BASE_EXCEEDS_MAX">E_MIN_BASE_EXCEEDS_MAX</a>);
+    // Assert minimum quote less than or equal <b>to</b> maximum.
+    <b>assert</b>!(min_quote &lt;= max_quote, <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX">E_MIN_QUOTE_EXCEEDS_MAX</a>);
+    // Get inbound asset ceiling and max fill amount, outbound
+    // asset available and max fill amount. If filling against asks:
+    <b>let</b> (in_ceiling, in_max, out_available, out_max) = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+        // A <a href="market.md#0xc0deb00c_market">market</a> buy, so getting base and trading away quote.
+        (base_ceiling, max_base, quote_available, max_quote) <b>else</b>
+        // Else a sell, so getting quote and trading away base.
+        (quote_ceiling, max_quote, base_available, max_base);
+    // Calculate maximum possible inbound asset ceiling <b>post</b>-match.
+    <b>let</b> in_ceiling_max = (in_ceiling <b>as</b> u128) + (in_max <b>as</b> u128);
+    // Assert max possible inbound asset ceiling does not overflow.
+    <b>assert</b>!(in_ceiling_max &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>);
+    // Assert enough outbound asset <b>to</b> cover max fill amount.
+    <b>assert</b>!(out_max &lt;= out_available, <a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>);
 }
 </code></pre>
 

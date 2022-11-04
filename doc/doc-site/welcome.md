@@ -22,7 +22,7 @@ Then try out the Econia [APIs](api/index.md), and let's see what we can build to
 
 ## Account listings
 
-As of 2022-10-21, Econia is initialized on the Aptos devnet and testnet at the following accounts:
+As of 2022-11-04, Econia is initialized on the Aptos devnet and testnet at the following accounts:
 
 | Network | Account                                                              |
 |---------|----------------------------------------------------------------------|

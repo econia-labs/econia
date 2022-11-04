@@ -15,4 +15,4 @@ user_3 = '0x5678'
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = '83641d3f083762f31700060e5e95fbb1cbc28bf0'
+rev = '5ca8a7a5ce0f65ff44cd6ad1485543467d5782f6'

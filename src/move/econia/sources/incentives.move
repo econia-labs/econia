@@ -64,6 +64,10 @@
 /// 3. The fee, denominated in the utility coin, to withdraw quote coins
 ///    collected as fees, from an integrator's fee store.
 ///
+/// Upon module publication, the Econia "genesis parameters" are
+/// set according to hard-coded values via `init_module()`. Later, the
+/// parameters can be updated via `set_incentive_parameters()`.
+///
 /// # Functions
 ///
 /// ## Public getters

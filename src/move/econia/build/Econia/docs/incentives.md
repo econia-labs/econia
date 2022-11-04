@@ -77,6 +77,10 @@ to the given tier.
 3. The fee, denominated in the utility coin, to withdraw quote coins
 collected as fees, from an integrator's fee store.
 
+Upon module publication, the Econia "genesis parameters" are
+set according to hard-coded values via <code><a href="incentives.md#0xc0deb00c_incentives_init_module">init_module</a>()</code>. Later, the
+parameters can be updated via <code><a href="incentives.md#0xc0deb00c_incentives_set_incentive_parameters">set_incentive_parameters</a>()</code>.
+
 
 <a name="@Functions_2"></a>
 

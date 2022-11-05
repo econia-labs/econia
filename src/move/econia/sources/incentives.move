@@ -442,12 +442,13 @@ module econia::incentives {
 
     // Constants >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Buy direction flag.
+    /// Buy direction flag, as defined in `market.move`.
     const BUY: bool = true;
     /// Index of fee share in vectorized representation of an
     /// `IntegratorFeeStoreTierParameters`.
     const FEE_SHARE_DIVISOR_INDEX: u64 = 0;
-    /// `u64` bitmask with all bits set
+    /// `u64` bitmask with all bits set, generated in Python via
+    /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
     /// Maximum number of integrator fee store tiers is largest number
     /// that can fit in a `u8`.
@@ -457,9 +458,9 @@ module econia::incentives {
     /// Minimum possible flat fee, required to disincentivize excessive
     /// bogus transactions.
     const MIN_FEE: u64 = 1;
-    /// Number of fields in an `IntegratorFeeStoreTierParameters`
+    /// Number of fields in an `IntegratorFeeStoreTierParameters`.
     const N_TIER_FIELDS: u64 = 3;
-    /// Sell direction flag.
+    /// Sell direction flag, as defined in `market.move`.
     const SELL: bool = false;
     /// Index of tier activation fee in vectorized representation of an
     /// `IntegratorFeeStoreTierParameters`.
@@ -1110,7 +1111,13 @@ module econia::incentives {
     ///   for example `@0x0` or `@econia`, in the service of diverting
     ///   all fees to Econia.
     /// * `quote_fill`: Amount of Quote coins filled during taker match.
-    /// * `quote_coins_ref_mut`: Quote coins to withdraw fees from.
+    /// * `quote_coins`: Quote coins to withdraw fees from.
+    ///
+    /// # Returns
+    ///
+    /// * `coin::Coin<QuoteCoinType>`: Remaining quote coins after fees
+    ///   assessed.
+    /// * `u64`: Amount of fees assessed.
     ///
     /// # Aborts
     ///
@@ -1130,7 +1137,10 @@ module econia::incentives {
         market_id: u64,
         integrator_address: address,
         quote_fill: u64,
-        quote_coins_ref_mut: &mut coin::Coin<QuoteCoinType>
+        quote_coins: coin::Coin<QuoteCoinType>,
+    ): (
+        coin::Coin<QuoteCoinType>,
+        u64
     ) acquires
         EconiaFeeStore,
         IncentiveParameters,
@@ -1138,6 +1148,8 @@ module econia::incentives {
     {
         // Declare tracker for amount of fees collected by integrator.
         let integrator_fee_share = 0;
+        // Calculate total taker fee.
+        let total_fee = quote_fill / get_taker_fee_divisor();
         // If integrator fee stores map for quote coin type exists at
         // indicated integrator address:
         if (exists<IntegratorFeeStores<QuoteCoinType>>(integrator_address)) {
@@ -1164,8 +1176,8 @@ module econia::incentives {
                     integrator_fee_share, &integrator_fee_store_ref_mut.coins,
                     E_INTEGRATOR_FEE_STORE_OVERFLOW);
                 // Extract resultant amount from supplied quote coins.
-                let integrator_fees = coin::extract(quote_coins_ref_mut,
-                    integrator_fee_share);
+                let integrator_fees =
+                    coin::extract(&mut quote_coins, integrator_fee_share);
                 // Merge the fees into the corresponding fee store.
                 coin::merge(&mut integrator_fee_store_ref_mut.coins,
                     integrator_fees);
@@ -1173,10 +1185,9 @@ module econia::incentives {
         }; // Integrator fee share has been assessed.
         // Fee share remaining for Econia is the total taker fee amount
         // less the integrator fee share.
-        let econia_fee_share = quote_fill / get_taker_fee_divisor() -
-            integrator_fee_share;
+        let econia_fee_share = total_fee - integrator_fee_share;
         // Extract resultant amount from supplied quote coins.
-        let econia_fees = coin::extract(quote_coins_ref_mut, econia_fee_share);
+        let econia_fees = coin::extract(&mut quote_coins, econia_fee_share);
         // Get fee account address.
         let fee_account_address = resource_account::get_address();
         // Borrow mutable reference to Econia fee store map for given
@@ -1193,6 +1204,7 @@ module econia::incentives {
             E_ECONIA_FEE_STORE_OVERFLOW);
         // Merge the Econia fees into the fee store.
         coin::merge(econia_fee_store_coins_ref_mut, econia_fees);
+        (quote_coins, total_fee) // Return coins, fee paid.
     }
 
     /// Get max quote coin match amount, per user input and fee divisor.
@@ -2477,8 +2489,10 @@ module econia::incentives {
         // Mint enough quote coins to cover taker fees for fill 0.
         let quote_coins = assets::mint_test(taker_fees_0);
         // Assess fees on fill 0.
-        assess_taker_fees<QC>(market_id_0, @user, quote_fill_0,
-            &mut quote_coins);
+        let (quote_coins, taker_fees) = assess_taker_fees<QC>(
+            market_id_0, @user, quote_fill_0, quote_coins);
+        // Assert fee amount.
+        assert!(taker_fees == taker_fees_0, 0);
         // Destroy empty coins, asserting that all taker fees assessed.
         coin::destroy_zero(quote_coins);
         assert!(get_econia_fee_store_balance_test<QC>(market_id_0) ==
@@ -2488,8 +2502,10 @@ module econia::incentives {
         // Mint enough quote coins to cover taker fees for fill 1.
         quote_coins = assets::mint_test(econia_fees_1);
         // Assess fees on fill 1.
-        assess_taker_fees<QC>(market_id_1, @econia, quote_fill_1,
-            &mut quote_coins);
+        (quote_coins, taker_fees) = assess_taker_fees<QC>(
+            market_id_1, @econia, quote_fill_1, quote_coins);
+        // Assert fee amount.
+        assert!(taker_fees == econia_fees_1, 0);
         // Destroy empty coins, asserting that all taker fees assessed.
         coin::destroy_zero(quote_coins);
         assert!(get_econia_fee_store_balance_test<QC>(market_id_1) ==
@@ -2497,8 +2513,10 @@ module econia::incentives {
         // Mint enough quote coins to cover taker fees for fill 2.
         quote_coins = assets::mint_test(econia_fees_2);
         // Assess fees on fill 2.
-        assess_taker_fees<QC>(market_id_2, @user, quote_fill_2,
-            &mut quote_coins);
+        (quote_coins, taker_fees) = assess_taker_fees<QC>(
+            market_id_2, @user, quote_fill_2, quote_coins);
+        // Assert fee amount.
+        assert!(taker_fees == econia_fees_2, 0);
         // Destroy empty coins, asserting that all taker fees assessed.
         coin::destroy_zero(quote_coins);
         assert!(get_econia_fee_store_balance_test<QC>(market_id_2) ==

@@ -385,6 +385,30 @@ module econia::market {
         move_to(&resource_account, OrderBooks{map: tablist::new()})
     }
 
+/*
+    fun match<
+        BaseType,
+        QuoteType
+    >(
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+        optional_base_coins: Option<Coin<BaseType>>,
+        quote_coins: Coin<QuoteType>,
+    ): (
+        u64, // Base filled
+        u64, // Quote filled (fees inclusive)
+        u64 // Fees paid
+    ) {
+        (0, 0, 0) //
+    }
+*/
+
     /// Range check minimum and maximum asset fill amounts.
     ///
     /// Should be called before `match()`.

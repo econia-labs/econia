@@ -2430,7 +2430,7 @@ determined based on their tier for the given market.
 intentionally marked an address known not to be an integrator,
 for example <code>@0x0</code> or <code>@econia</code>, in the service of diverting
 all fees to Econia.
-* <code>quote_fill</code>: Amount of Quote coins filled during taker match.
+* <code>quote_fill</code>: Amount of quote coins filled during taker match.
 * <code>quote_coins</code>: Quote coins to withdraw fees from.
 
 

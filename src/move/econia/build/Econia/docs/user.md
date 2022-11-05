@@ -741,37 +741,6 @@ Flag for bid side
 
 
 
-<a name="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT"></a>
-
-Not enough asset to trade away.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>: u64 = 13;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
-
-Filling order would overflow asset received from trade.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>: u64 = 12;
-</code></pre>
-
-
-
-<a name="0xc0deb00c_user_MAX_PRICE"></a>
-
-Maximum possible price that can be encoded in 32 bits. Generated
-in Python via <code>hex(int('1' * 32, 2))</code>.
-
-
-<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_user_E_ASSET_NOT_IN_PAIR"></a>
 
 Asset type is not in trading pair for market.
@@ -832,6 +801,16 @@ Underwriter is not valid for indicated market.
 
 
 
+<a name="0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT"></a>
+
+Not enough asset to trade away.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>: u64 = 13;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_user_E_NO_MARKET_ACCOUNT"></a>
 
 No market account resource found.
@@ -848,6 +827,16 @@ No market accounts resource found.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_NO_MARKET_ACCOUNTS">E_NO_MARKET_ACCOUNTS</a>: u64 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_E_OVERFLOW_ASSET_IN"></a>
+
+Filling order would overflow asset received from trade.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>: u64 = 12;
 </code></pre>
 
 
@@ -908,6 +897,17 @@ Too little available for withdrawal.
 
 
 <pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_E_WITHDRAW_TOO_LITTLE_AVAILABLE">E_WITHDRAW_TOO_LITTLE_AVAILABLE</a>: u64 = 7;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_user_MAX_PRICE"></a>
+
+Maximum possible price that can be encoded in 32 bits. Generated
+in Python via <code>hex(int('1' * 32, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="user.md#0xc0deb00c_user_MAX_PRICE">MAX_PRICE</a>: u64 = 4294967295;
 </code></pre>
 
 

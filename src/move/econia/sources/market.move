@@ -4,13 +4,15 @@ module econia::market {
 
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::event::EventHandle;
+    use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::avl_queue::{Self, AVLqueue};
     use econia::incentives;
     use econia::registry::{Self, GenericAsset, UnderwriterCapability};
     use econia::resource_account;
     use econia::tablist::{Self, Tablist};
+    use econia::user;
+    use std::option::{Self, Option};
     use std::signer::address_of;
     use std::string::{Self, String};
 
@@ -32,8 +34,8 @@ module econia::market {
         market_id: u64,
         /// `ASK` or `BID`, the side of the maker order.
         side: bool,
-        /// Order ID, unique to given market.
-        order_id: u128,
+        /// Market order ID, unique within given market.
+        market_order_id: u128,
         /// Address of user holding maker order.
         user: address,
         /// For given maker, ID of custodian required to approve order
@@ -105,9 +107,9 @@ module econia::market {
         market_id: u64,
         /// `ASK` or `BID`, the side of the maker order.
         side: bool,
-        /// Order ID, unique to given market, of maker order just filled
-        /// against.
-        order_id: u128,
+        /// Order ID, unique within given market, of maker order just
+        /// filled against.
+        market_order_id: u128,
         /// Address of user holding maker order.
         maker: address,
         /// For given maker, ID of custodian required to approve order
@@ -133,6 +135,16 @@ module econia::market {
     const E_OVERFLOW_ASSET_IN: u64 = 4;
     /// Not enough asset to trade away.
     const E_NOT_ENOUGH_ASSET_OUT: u64 = 5;
+    /// No market with given ID.
+    const E_INVALID_MARKET_ID: u64 = 6;
+    /// Base asset type is invalid.
+    const E_INVALID_BASE: u64 = 7;
+    /// Quote asset type is invalid.
+    const E_INVALID_QUOTE: u64 = 8;
+    /// Minimum base asset trade amount not met.
+    const E_MIN_BASE_NOT_TRADED: u64 = 9;
+    /// Minimum quote coin trade amount not met.
+    const E_MIN_QUOTE_NOT_TRADED: u64 = 10;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -385,7 +397,15 @@ module econia::market {
         move_to(&resource_account, OrderBooks{map: tablist::new()})
     }
 
-/*
+    /// # Type Parameters
+    ///
+    /// # Parameters
+    ///
+    /// # Emits
+    ///
+    /// # Aborts
+    ///
+    /// # Returns
     fun match<
         BaseType,
         QuoteType
@@ -401,13 +421,114 @@ module econia::market {
         optional_base_coins: Option<Coin<BaseType>>,
         quote_coins: Coin<QuoteType>,
     ): (
+        Option<Coin<BaseType>>,
+        Coin<QuoteType>,
         u64, // Base filled
-        u64, // Quote filled (fees inclusive)
+        u64, // Quote paid if buy, received if sell
         u64 // Fees paid
-    ) {
-        (0, 0, 0) //
+    ) acquires OrderBooks {
+        let side = direction; // Get corresponding side bool flag.
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref_mut, market_id),
+                E_INVALID_MARKET_ID);
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        assert!(type_info::type_of<BaseType>() == // Assert base type.
+                order_book_ref_mut.base_type, E_INVALID_BASE);
+        assert!(type_info::type_of<QuoteType>() == // Assert quote type.
+                order_book_ref_mut.quote_type, E_INVALID_QUOTE);
+        let (lot_size, tick_size) = (order_book_ref_mut.lot_size,
+            order_book_ref_mut.tick_size); // Get lot and tick sizes.
+        // Get max quote match for direction.
+        let max_quote_match = incentives::calculate_max_quote_match(
+            direction, incentives::get_taker_fee_divisor(), max_quote);
+        // Calculate max amounts of lots and ticks to fill.
+        let (max_lots, max_ticks) =
+            (max_base / lot_size, max_quote_match / tick_size);
+        // Initialize counters for number of lots and ticks to fill.
+        let (lots_until_max, ticks_until_max) = (max_lots, max_ticks);
+        // Mutably borrow corresponding orders AVL queue.
+        let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
+            else &mut order_book_ref_mut.bids;
+        let market_order_id; // Declare market order ID, assigned later.
+        // While there are orders to match against:
+        while (!avl_queue::is_empty(orders_ref_mut)) {
+            let price = // Get price of order at head of AVL queue.
+                *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
+            // Break if price too high to buy at or too low to sell at.
+            if (((direction == BUY ) && (price > limit_price)) ||
+                ((direction == SELL) && (price < limit_price))) break;
+            // Calculate max number of lots that could be filled
+            // at order price, limited by ticks left to fill until max.
+            let max_fill_size_ticks = ticks_until_max / price;
+            // Max fill size is lesser of tick-limited fill size and
+            // lot-limited fill size.
+            let max_fill_size = if (max_fill_size_ticks < lots_until_max)
+                max_fill_size_ticks else lots_until_max;
+            // Mutably borrow order at head of AVL queue.
+            let order_ref_mut = avl_queue::borrow_head_mut(orders_ref_mut);
+            // Get fill size and if a complete fill against book.
+            let (fill_size, complete_fill) =
+                // If max fill size is less than order size, fill size
+                // is max fill size and is an incomplete fill. Else
+                // order gets completely filled.
+                if (max_fill_size < order_ref_mut.size)
+                   (max_fill_size, false) else (order_ref_mut.size, true);
+            if (fill_size == 0) break; // Break if not lots to fill.
+            let ticks_filled = fill_size * price; // Get ticks filled.
+            // Decrement counter for lots to fill until max reached.
+            lots_until_max = lots_until_max - fill_size;
+            // Decrement counter for ticks to fill until max reached.
+            ticks_until_max = ticks_until_max - ticks_filled;
+            // Get order maker, maker's custodian ID, and event size.
+            let (maker, custodian_id, size) =
+                (order_ref_mut.user, order_ref_mut.custodian_id, fill_size);
+            // Fill matched order user side, storing market order ID.
+            (optional_base_coins, quote_coins, market_order_id) =
+                user::fill_order_internal<BaseType, QuoteType>(
+                    maker, market_id, custodian_id, side,
+                    order_ref_mut.order_access_key, fill_size,
+                    complete_fill, optional_base_coins, quote_coins,
+                    fill_size * lot_size, ticks_filled * tick_size);
+            // Emit corresponding taker event.
+            event::emit_event(&mut order_book_ref_mut.taker_events, TakerEvent{
+                market_id, side, market_order_id, maker, custodian_id, size});
+            if (complete_fill) { // If order on book completely filled:
+                let avlq_access_key = // Get AVL queue access key.
+                    ((market_order_id & (HI_64 as u128)) as u64);
+                // Remove order from AVL queue.
+                let order = avl_queue::remove(orders_ref_mut, avlq_access_key);
+                let Order{size: _, user: _, custodian_id: _,
+                          order_access_key: _} = order; // Unpack order.
+                // Break out of loop if no more lots or ticks to fill.
+                if ((lots_until_max == 0) || (ticks_until_max == 0)) break
+            } else { // If order on book not completely filled:
+                // Decrement order size by amount filled.
+                order_ref_mut.size = order_ref_mut.size - fill_size;
+                break // Stop matching.
+            }
+        }; // Done looping over head of AVL queue for given side.
+        let (base_fill, quote_fill) = // Calculate base and quote fills.
+            (((max_lots  - lots_until_max ) * lot_size),
+             ((max_ticks - ticks_until_max) * tick_size));
+        // Assess taker fees, storing taker fees paid.
+        let (quote_coins, fees_paid) = incentives::assess_taker_fees<
+            QuoteType>(market_id, integrator, quote_fill, quote_coins);
+        // If a buy, taker pays quote required for fills, and additional
+        // fee assessed after matching. If a sell, taker receives quote
+        // from fills, then has a portion assessed as fees.
+        let quote_delta = if (direction == BUY) quote_fill + fees_paid
+            else quote_fill - fees_paid;
+        // Assert minimum base asset trade amount met.
+        assert!(base_fill >= min_base, E_MIN_BASE_NOT_TRADED);
+        // Assert minimum quote coin trade amount met.
+        assert!(quote_delta >= min_quote, E_MIN_QUOTE_NOT_TRADED);
+        (optional_base_coins, quote_coins, base_fill, quote_delta, fees_paid)
     }
-*/
 
     /// Range check minimum and maximum asset fill amounts.
     ///

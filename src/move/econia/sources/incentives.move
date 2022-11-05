@@ -1110,7 +1110,7 @@ module econia::incentives {
     ///   intentionally marked an address known not to be an integrator,
     ///   for example `@0x0` or `@econia`, in the service of diverting
     ///   all fees to Econia.
-    /// * `quote_fill`: Amount of Quote coins filled during taker match.
+    /// * `quote_fill`: Amount of quote coins filled during taker match.
     /// * `quote_coins`: Quote coins to withdraw fees from.
     ///
     /// # Returns

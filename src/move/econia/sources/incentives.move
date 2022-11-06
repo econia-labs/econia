@@ -422,21 +422,19 @@ module econia::incentives {
     /// An update to the incentive parameters set indicates a reduction
     /// in fee store tiers.
     const E_FEWER_TIERS: u64 = 16;
-    /// Maximum amount of quote coins to match overflows a `u64`.
-    const E_MAX_QUOTE_MATCH_OVERFLOW: u64 = 17;
     /// The cost to activate to tier 0 is nonzero.
-    const E_FIRST_TIER_ACTIVATION_FEE_NONZERO: u64 = 18;
+    const E_FIRST_TIER_ACTIVATION_FEE_NONZERO: u64 = 17;
     /// Custodian registration fee is less than the minimum.
-    const E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 19;
+    const E_UNDERWRITER_REGISTRATION_FEE_LESS_THAN_MIN: u64 = 18;
     /// Depositing to an integrator fee store would result in an
     /// overflow.
-    const E_INTEGRATOR_FEE_STORE_OVERFLOW: u64 = 20;
+    const E_INTEGRATOR_FEE_STORE_OVERFLOW: u64 = 19;
     /// Depositing to an Econia fee store would result in an overflow.
-    const E_ECONIA_FEE_STORE_OVERFLOW: u64 = 21;
+    const E_ECONIA_FEE_STORE_OVERFLOW: u64 = 20;
     /// Depositing to a utility coin store would result in an overflow.
-    const E_UTILITY_COIN_STORE_OVERFLOW: u64 = 22;
+    const E_UTILITY_COIN_STORE_OVERFLOW: u64 = 21;
     /// There is no tier with given number.
-    const E_INVALID_TIER: u64 = 23;
+    const E_INVALID_TIER: u64 = 22;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1209,22 +1207,16 @@ module econia::incentives {
 
     /// Get max quote coin match amount, per user input and fee divisor.
     ///
-    /// # User input
-    ///
     /// Whether a taker buy or sell, users specify a maximum quote coin
     /// amount when initiating the transaction. This amount indicates
     /// the maximum amount of quote coins they are willing to spend in
     /// the case of a taker buy, and the maximum amount of quote coins
-    /// they are willing to receive in the case of a taker sell.
+    /// they are willing to receive in the case of a taker sell. The
+    /// user-specified amount is not inclusive of fees, however, which
+    /// are assessed after matching concludes. Hence it is necessary to
+    /// calculate a maximum quote match amount prior to matching.
     ///
-    /// # Matching
-    ///
-    /// The user-specified amount is inclusive of fees, however, and the
-    /// matching engine does not manage fees. Instead it accepts a
-    /// maximum amount of quote coins to match (or more specifically,
-    /// ticks), with fees assessed after matching concludes:
-    ///
-    /// ## Example buy
+    /// # Example buy
     ///
     /// * Taker is willing to spend 105 quote coins.
     /// * Fee is 5% (divisor of 20).
@@ -1233,7 +1225,7 @@ module econia::incentives {
     /// * 5% fee then assessed, withdrawn from takers's quote coins.
     /// * Taker has spent 105 quote coins.
     ///
-    /// ## Example sell
+    /// # Example sell
     ///
     /// * Taker is willing to receive 100 quote coins.
     /// * Fee is 4% (divisor of 25).
@@ -1244,9 +1236,10 @@ module econia::incentives {
     ///
     /// # Variables
     ///
-    /// Hence, the relationship between user-indicated maxmum quote coin
+    /// The relationship between user-indicated maximum quote coin trade
     /// amount, taker fee divisor, and the amount of quote coins matched
     /// can be described with the following variables:
+    ///
     /// * $\Delta_t$: Change in quote coins seen by taker.
     /// * $d_t$: Taker fee divisor.
     /// * $q_m$: Quote coins matched.
@@ -1274,6 +1267,28 @@ module econia::incentives {
     ///
     /// $$ q_m = \frac{d_t \Delta_t}{d_t - 1}$$
     ///
+    /// # Overflow correction
+    ///
+    /// Per above, if a taker specifies that they are willing to receive
+    /// `HI_64` coins during a sell, the corresponding max quote match
+    /// amount will overflow a `u64`, since more than `HI_64` quote
+    /// coins will need to be matched before a fee is assessed. Hence if
+    /// the maximum quote match amount for a sell is calculated to be
+    /// in excess of `HI_64`, the maximum quote match amount is simply
+    /// corrected to `HI_64`. Here, the maximum user-specified amount
+    /// that will not require such correction, $\Delta_{t, m}$ , is
+    /// defined in terms of the maximum possible quote match amount
+    /// $q_{m, m} = 2^{63} - 1$ (`HI_64`), and the taker fee divisor:
+    ///
+    /// $$ \Delta_{t, m} + \frac{q_{m, m}}{d_t} = q_{m, m} $$
+    ///
+    /// $$ \Delta_{t, m} = q_{m, m} - \frac{q_{m, m}}{d_t} $$
+    ///
+    /// Such an overflow correction does not apply in the case of a
+    /// taker buy because the maximum quote match amount is strictly
+    /// smaller than the user-specified change in quote coins (the
+    /// amount of quote coins the taker is willing to spend).
+    ///
     /// # Parameters
     ///
     /// * `direction`: `BUY` or `SELL`.
@@ -1289,12 +1304,6 @@ module econia::incentives {
     ///
     /// * Taker fee divisor is greater than 1.
     ///
-    /// # Aborts
-    ///
-    /// * `E_MAX_QUOTE_MATCH_OVERFLOW`: Maximum amount to match does not
-    ///   fit in a `u64`, which should only be possible in the case of a
-    ///   `SELL`.
-    ///
     /// # Testing
     ///
     /// * `test_calculate_max_quote_match()`
@@ -1302,7 +1311,7 @@ module econia::incentives {
     public(friend) fun calculate_max_quote_match(
         direction: bool,
         taker_fee_divisor: u64,
-        max_quote_delta_user: u64,
+        max_quote_delta_user: u64
     ): u64 {
         // Calculate numerator for both buy and sell equations.
         let numerator = (taker_fee_divisor as u128) *
@@ -1313,10 +1322,9 @@ module econia::incentives {
             (taker_fee_divisor - 1 as u128);
         // Calculate maximum quote coins to match.
         let max_quote_match = numerator / denominator;
-        // Assert maximum quote to match fits in a u64.
-        assert!(max_quote_match <= (HI_64 as u128),
-            E_MAX_QUOTE_MATCH_OVERFLOW);
-        (max_quote_match as u64) // Return maximum quote match value.
+        // Return corrected sell overflow match amount if needed,
+        if (max_quote_match > (HI_64 as u128)) HI_64 else
+            (max_quote_match as u64) // Else max quote match amount.
     }
 
     /// Deposit `coins` of `UtilityCoinType`, verifying that the proper
@@ -2192,16 +2200,42 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 17)]
-    /// Verify failure for overflowing quote match amount.
+    /// Verify correction for overflowing quote match amount.
     fun test_calculate_max_quote_match_overflow() {
         // Declare matching parameters.
         let direction = SELL;
-        let taker_fee_divisor = 20;
-        let max_quote_delta_user = HI_64;
-        // Attempt invalid invocation.
-        calculate_max_quote_match(
+        // Define taker fee divisor as a power of two to avoid
+        // truncation.
+        let taker_fee_divisor = 16;
+        let max_quote_delta_user = HI_64 - HI_64 / taker_fee_divisor;
+        // Calculate max quote match value for critical amount.
+        let max_quote_match = calculate_max_quote_match(
             direction, taker_fee_divisor, max_quote_delta_user);
+        // Assert calculated amount.
+        assert!(max_quote_match == HI_64, 0);
+        // Calculate max quote match value for one more than critical
+        // amount.
+        max_quote_match = calculate_max_quote_match(
+            direction, taker_fee_divisor, max_quote_delta_user + 1);
+        // Assert corrected amount.
+        assert!(max_quote_match == HI_64, 0);
+        // Calculate max quote match value for highest possible input.
+        max_quote_match = calculate_max_quote_match(
+            direction, taker_fee_divisor, HI_64);
+        // Assert corrected amount.
+        assert!(max_quote_match == HI_64, 0);
+        // Calculate max quote match value for one less than critical
+        // amount.
+        max_quote_match = calculate_max_quote_match(
+            direction, taker_fee_divisor, max_quote_delta_user - 1);
+        // Calculate expected return.
+        let max_quote_match_expected = ((taker_fee_divisor as u128) *
+             ((max_quote_delta_user - 1) as u128)) /
+             ((taker_fee_divisor - 1) as u128);
+        // Assert expected return below max possible u64.
+        assert!(max_quote_match_expected < (HI_64 as u128), 0);
+        // Assert expected return.
+        assert!(max_quote_match == (max_quote_match_expected as u64), 0);
     }
 
     #[test]
@@ -2284,7 +2318,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 23)]
+    #[expected_failure(abort_code = 22)]
     /// Verify failure for invalid tier number.
     fun test_get_fee_share_divisor_invalid_tier()
     acquires IncentiveParameters {
@@ -2296,7 +2330,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 23)]
+    #[expected_failure(abort_code = 22)]
     fun test_get_tier_activation_fee_invalid_tier()
     acquires IncentiveParameters {
         init_test(); // Init for testing.
@@ -2307,7 +2341,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 23)]
+    #[expected_failure(abort_code = 22)]
     fun test_get_tier_withdrawal_fee_invalid_tier()
     acquires IncentiveParameters {
         init_test(); // Init for testing.
@@ -2568,7 +2602,7 @@ module econia::incentives {
     }
 
     #[test]
-    #[expected_failure(abort_code = 18)]
+    #[expected_failure(abort_code = 17)]
     /// Verify failure for nonzero activation fee on first tier.
     fun test_set_incentive_params_parse_tiers_vec_activate_0() {
         // Declare mock inputs.
@@ -2782,7 +2816,7 @@ module econia::incentives {
     }
 
     #[test(econia = @econia)]
-    #[expected_failure(abort_code = 19)]
+    #[expected_failure(abort_code = 18)]
     /// Verify failure for underwriter registration fee too low.
     fun test_set_incentive_params_range_check_inputs_underwriter(
         econia: &signer

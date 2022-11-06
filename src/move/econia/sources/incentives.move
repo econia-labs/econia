@@ -362,25 +362,37 @@ module econia::incentives {
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Genesis parameter.
-    const MARKET_REGISTRATION_FEE: u64 = 1000;
+    const MARKET_REGISTRATION_FEE: u64 = 1354769398;
     /// Genesis parameter.
-    const UNDERWRITER_REGISTRATION_FEE: u64 = 500;
+    const UNDERWRITER_REGISTRATION_FEE: u64 = 338692349;
     /// Genesis parameter.
-    const CUSTODIAN_REGISTRATION_FEE: u64 = 100;
+    const CUSTODIAN_REGISTRATION_FEE: u64 = 135476940;
     /// Genesis parameter.
     const TAKER_FEE_DIVISOR: u64 = 2000;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_0: u64 = 4000;
+    const FEE_SHARE_DIVISOR_0: u64 = 10000;
     /// Genesis parameter.
-    const FEE_SHARE_DIVISOR_1: u64 = 3000;
+    const FEE_SHARE_DIVISOR_1: u64 = 5000;
+    /// Genesis parameter.
+    const FEE_SHARE_DIVISOR_2: u64 = 4000;
+    /// Genesis parameter.
+    const FEE_SHARE_DIVISOR_3: u64 = 3333;
     /// Genesis parameter.
     const TIER_ACTIVATION_FEE_0: u64 = 0;
     /// Genesis parameter.
-    const TIER_ACTIVATION_FEE_1: u64 = 225;
+    const TIER_ACTIVATION_FEE_1: u64 = 1354769398;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_0: u64 = 10;
+    const TIER_ACTIVATION_FEE_2: u64 = 13547693979;
     /// Genesis parameter.
-    const WITHDRAWAL_FEE_1: u64 = 5;
+    const TIER_ACTIVATION_FEE_3: u64 = 135476939793;
+    /// Genesis parameter.
+    const WITHDRAWAL_FEE_0: u64 = 135476940;
+    /// Genesis parameter.
+    const WITHDRAWAL_FEE_1: u64 = 67738470;
+    /// Genesis parameter.
+    const WITHDRAWAL_FEE_2: u64 = 33869235;
+    /// Genesis parameter.
+    const WITHDRAWAL_FEE_3: u64 = 13547694;
 
     // Genesis parameters >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -1548,17 +1560,18 @@ module econia::incentives {
     {
         // Vectorize fee store tier parameters.
         let integrator_fee_store_tiers = vector[
-            vector[
-                FEE_SHARE_DIVISOR_0,
-                TIER_ACTIVATION_FEE_0,
-                WITHDRAWAL_FEE_0
-            ],
-            vector[
-                FEE_SHARE_DIVISOR_1,
-                TIER_ACTIVATION_FEE_1,
-                WITHDRAWAL_FEE_1
-            ]
-        ];
+            vector[FEE_SHARE_DIVISOR_0,
+                   TIER_ACTIVATION_FEE_0,
+                   WITHDRAWAL_FEE_0],
+            vector[FEE_SHARE_DIVISOR_1,
+                   TIER_ACTIVATION_FEE_1,
+                   WITHDRAWAL_FEE_1],
+            vector[FEE_SHARE_DIVISOR_2,
+                   TIER_ACTIVATION_FEE_2,
+                   WITHDRAWAL_FEE_2],
+            vector[FEE_SHARE_DIVISOR_3,
+                   TIER_ACTIVATION_FEE_3,
+                   WITHDRAWAL_FEE_3]];
         // Set incentive parameters for the first time.
         set_incentive_parameters<AptosCoin>(econia,
             MARKET_REGISTRATION_FEE, UNDERWRITER_REGISTRATION_FEE,
@@ -2370,15 +2383,23 @@ module econia::incentives {
         assert!(get_custodian_registration_fee() ==
             CUSTODIAN_REGISTRATION_FEE, 0);
         assert!(get_taker_fee_divisor() == TAKER_FEE_DIVISOR, 0);
-        assert!(get_n_fee_store_tiers() == 2, 0);
+        assert!(get_n_fee_store_tiers() == 4, 0);
         assert!(get_fee_share_divisor((0 as u8)) == FEE_SHARE_DIVISOR_0, 0);
         assert!(get_fee_share_divisor((1 as u8)) == FEE_SHARE_DIVISOR_1, 0);
+        assert!(get_fee_share_divisor((2 as u8)) == FEE_SHARE_DIVISOR_2, 0);
+        assert!(get_fee_share_divisor((3 as u8)) == FEE_SHARE_DIVISOR_3, 0);
         assert!(get_tier_activation_fee((0 as u8)) ==
             TIER_ACTIVATION_FEE_0, 0);
         assert!(get_tier_activation_fee((1 as u8)) ==
             TIER_ACTIVATION_FEE_1, 0);
+        assert!(get_tier_activation_fee((2 as u8)) ==
+            TIER_ACTIVATION_FEE_2, 0);
+        assert!(get_tier_activation_fee((3 as u8)) ==
+            TIER_ACTIVATION_FEE_3, 0);
         assert!(get_tier_withdrawal_fee((0 as u8)) == WITHDRAWAL_FEE_0, 0);
         assert!(get_tier_withdrawal_fee((1 as u8)) == WITHDRAWAL_FEE_1, 0);
+        assert!(get_tier_withdrawal_fee((2 as u8)) == WITHDRAWAL_FEE_2, 0);
+        assert!(get_tier_withdrawal_fee((3 as u8)) == WITHDRAWAL_FEE_3, 0);
         assert!(exists<UtilityCoinStore<AptosCoin>>(
             resource_account::get_address()), 0);
         // Update incentive parameters.
@@ -2392,15 +2413,26 @@ module econia::incentives {
         let fee_share_divisor_1 = fee_share_divisor_0 - 1;
         let tier_activation_fee_1 = tier_activation_fee_0 + 1;
         let withdrawal_fee_1 = withdrawal_fee_0 - 1;
+        let fee_share_divisor_2 = fee_share_divisor_1 - 1;
+        let tier_activation_fee_2 = tier_activation_fee_1 + 1;
+        let withdrawal_fee_2 = withdrawal_fee_1 - 1;
+        let fee_share_divisor_3 = fee_share_divisor_2 - 1;
+        let tier_activation_fee_3 = tier_activation_fee_2 + 1;
+        let withdrawal_fee_3 = withdrawal_fee_2 - 1;
         // Vectorize fee store tier parameters.
-        let tier_0 = vector::singleton(fee_share_divisor_0);
-        vector::push_back(&mut tier_0, tier_activation_fee_0);
-        vector::push_back(&mut tier_0, withdrawal_fee_0);
-        let tier_1 = vector::singleton(fee_share_divisor_1);
-        vector::push_back(&mut tier_1, tier_activation_fee_1);
-        vector::push_back(&mut tier_1, withdrawal_fee_1);
-        let integrator_fee_store_tiers = vector::singleton(tier_0);
-        vector::push_back(&mut integrator_fee_store_tiers, tier_1);
+        let integrator_fee_store_tiers = vector[
+            vector[fee_share_divisor_0,
+                   tier_activation_fee_0,
+                   withdrawal_fee_0],
+            vector[fee_share_divisor_1,
+                   tier_activation_fee_1,
+                   withdrawal_fee_1],
+            vector[fee_share_divisor_2,
+                   tier_activation_fee_2,
+                   withdrawal_fee_2],
+            vector[fee_share_divisor_3,
+                   tier_activation_fee_3,
+                   withdrawal_fee_3]];
         // Update incentives.
         update_incentives<QC>(econia, market_registration_fee,
             underwriter_registration_fee, custodian_registration_fee,
@@ -2414,15 +2446,22 @@ module econia::incentives {
         assert!(get_custodian_registration_fee() ==
             custodian_registration_fee, 0);
         assert!(get_taker_fee_divisor() == taker_fee_divisor, 0);
-        assert!(get_n_fee_store_tiers() == 2, 0);
         assert!(get_fee_share_divisor((0 as u8)) == fee_share_divisor_0, 0);
+        assert!(get_fee_share_divisor((1 as u8)) == fee_share_divisor_1, 0);
+        assert!(get_fee_share_divisor((2 as u8)) == fee_share_divisor_2, 0);
+        assert!(get_fee_share_divisor((3 as u8)) == fee_share_divisor_3, 0);
         assert!(get_tier_activation_fee((0 as u8)) ==
             tier_activation_fee_0, 0);
-        assert!(get_tier_withdrawal_fee((0 as u8)) == withdrawal_fee_0, 0);
-        assert!(get_fee_share_divisor((1 as u8)) == fee_share_divisor_1, 0);
         assert!(get_tier_activation_fee((1 as u8)) ==
             tier_activation_fee_1, 0);
+        assert!(get_tier_activation_fee((2 as u8)) ==
+            tier_activation_fee_2, 0);
+        assert!(get_tier_activation_fee((3 as u8)) ==
+            tier_activation_fee_3, 0);
+        assert!(get_tier_withdrawal_fee((0 as u8)) == withdrawal_fee_0, 0);
         assert!(get_tier_withdrawal_fee((1 as u8)) == withdrawal_fee_1, 0);
+        assert!(get_tier_withdrawal_fee((2 as u8)) == withdrawal_fee_2, 0);
+        assert!(get_tier_withdrawal_fee((3 as u8)) == withdrawal_fee_3, 0);
         assert!(
             exists<UtilityCoinStore<QC>>(resource_account::get_address()), 0);
     }

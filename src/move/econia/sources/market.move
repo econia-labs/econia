@@ -443,9 +443,11 @@ module econia::market {
                 order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         let (lot_size, tick_size) = (order_book_ref_mut.lot_size,
             order_book_ref_mut.tick_size); // Get lot and tick sizes.
-        // Get max quote match for direction.
+        // Get taker fee divisor.
+        let taker_fee_divisor = incentives::get_taker_fee_divisor();
+        // Get max quote coins to match.
         let max_quote_match = incentives::calculate_max_quote_match(
-            direction, incentives::get_taker_fee_divisor(), max_quote);
+            direction, taker_fee_divisor, max_quote);
         // Calculate max amounts of lots and ticks to fill.
         let (max_lots, max_ticks) =
             (max_base / lot_size, max_quote_match / tick_size);
@@ -517,7 +519,8 @@ module econia::market {
              ((max_ticks - ticks_until_max) * tick_size));
         // Assess taker fees, storing taker fees paid.
         let (quote_coins, fees_paid) = incentives::assess_taker_fees<
-            QuoteType>(market_id, integrator, quote_fill, quote_coins);
+            QuoteType>(market_id, integrator, taker_fee_divisor, quote_fill,
+            quote_coins);
         // If a buy, taker pays quote required for fills, and additional
         // fee assessed after matching. If a sell, taker receives quote
         // from fills, then has a portion assessed as fees.

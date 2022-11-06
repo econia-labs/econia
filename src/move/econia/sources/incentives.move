@@ -463,8 +463,10 @@ module econia::incentives {
     /// Maximum number of integrator fee store tiers is largest number
     /// that can fit in a `u8`.
     const MAX_INTEGRATOR_FEE_STORE_TIERS: u64 = 0xff;
-    /// Minimum possible divisor for avoiding divide-by-zero error.
-    const MIN_DIVISOR: u64 = 1;
+    /// Minimum possible divisor for avoiding divide-by-zero error,
+    /// including during denominator calculation for a `SELL` in
+    /// `calculate_max_quote_match()`.
+    const MIN_DIVISOR: u64 = 2;
     /// Minimum possible flat fee, required to disincentivize excessive
     /// bogus transactions.
     const MIN_FEE: u64 = 1;
@@ -1120,6 +1122,7 @@ module econia::incentives {
     ///   intentionally marked an address known not to be an integrator,
     ///   for example `@0x0` or `@econia`, in the service of diverting
     ///   all fees to Econia.
+    /// * `taker_fee_divisor`: Taker fee divisor.
     /// * `quote_fill`: Amount of quote coins filled during taker match.
     /// * `quote_coins`: Quote coins to withdraw fees from.
     ///
@@ -1140,12 +1143,17 @@ module econia::incentives {
     /// * `E_ECONIA_FEE_STORE_OVERFLOW`: Depositing to Econia fee store
     ///   would result in an overflow per above.
     ///
+    /// # Assumptions
+    ///
+    /// * `taker_fee_divisor` is nonzero.
+    ///
     /// Testing
     ///
     /// * `test_register_assess_withdraw()`
     public(friend) fun assess_taker_fees<QuoteCoinType>(
         market_id: u64,
         integrator_address: address,
+        taker_fee_divisor: u64,
         quote_fill: u64,
         quote_coins: coin::Coin<QuoteCoinType>,
     ): (
@@ -1159,7 +1167,7 @@ module econia::incentives {
         // Declare tracker for amount of fees collected by integrator.
         let integrator_fee_share = 0;
         // Calculate total taker fee.
-        let total_fee = quote_fill / get_taker_fee_divisor();
+        let total_fee = quote_fill / taker_fee_divisor;
         // If integrator fee stores map for quote coin type exists at
         // indicated integrator address:
         if (exists<IntegratorFeeStores<QuoteCoinType>>(integrator_address)) {
@@ -2518,9 +2526,11 @@ module econia::incentives {
     {
         init_test(); // Init incentives.
         // Declare market IDs.
-        let (market_id_0, market_id_1, market_id_2) = (0, 1, 2); // Declare market IDs.
+        let (market_id_0, market_id_1, market_id_2) = (0, 1, 2);
         // Declare integrator fee store tiers.
         let (tier_0, tier_1) = (0, 1);
+        // Get taker fee divisor.
+        let taker_fee_divisor = get_taker_fee_divisor();
         // Declare utility coin balance after integrator registration.
         let utility_coin_balance_0 = get_tier_activation_fee(tier_0) +
             get_tier_activation_fee(tier_1);
@@ -2531,17 +2541,17 @@ module econia::incentives {
         // Calculate integrator fee share for fill 0.
         let integrator_fees_0 = quote_fill_0 / get_fee_share_divisor(tier_0);
         // Calculate taker fees assessed on fill 0.
-        let taker_fees_0 = quote_fill_0 / get_taker_fee_divisor();
+        let taker_fees_0 = quote_fill_0 / taker_fee_divisor;
         // Calculate Econia fees assessed on fill 0.
         let econia_fees_0 = taker_fees_0 - integrator_fees_0;
         let quote_fill_1 = 54321; // Declare quote fill amount, fill 1.
         // Declare Econia fees for fill 1, where integrator does not
         // have a fee stores map for given quote coin types
-        let econia_fees_1 = quote_fill_1 / get_taker_fee_divisor();
+        let econia_fees_1 = quote_fill_1 / taker_fee_divisor;
         let quote_fill_2 = 23456; // Declare quote fill amount, fill 2.
         // Declare Econia fees for fill 2, where integrator does not
         // have a fee store for given market ID.
-        let econia_fees_2 = quote_fill_2 / get_taker_fee_divisor();
+        let econia_fees_2 = quote_fill_2 / taker_fee_divisor;
         // Register an Econia fee store for all markets.
         register_econia_fee_store_entry<QC>(market_id_0);
         register_econia_fee_store_entry<QC>(market_id_1);
@@ -2563,7 +2573,7 @@ module econia::incentives {
         let quote_coins = assets::mint_test(taker_fees_0);
         // Assess fees on fill 0.
         let (quote_coins, taker_fees) = assess_taker_fees<QC>(
-            market_id_0, @user, quote_fill_0, quote_coins);
+            market_id_0, @user, taker_fee_divisor, quote_fill_0, quote_coins);
         // Assert fee amount.
         assert!(taker_fees == taker_fees_0, 0);
         // Destroy empty coins, asserting that all taker fees assessed.
@@ -2576,7 +2586,8 @@ module econia::incentives {
         quote_coins = assets::mint_test(econia_fees_1);
         // Assess fees on fill 1.
         (quote_coins, taker_fees) = assess_taker_fees<QC>(
-            market_id_1, @econia, quote_fill_1, quote_coins);
+            market_id_1, @econia, taker_fee_divisor, quote_fill_1,
+            quote_coins);
         // Assert fee amount.
         assert!(taker_fees == econia_fees_1, 0);
         // Destroy empty coins, asserting that all taker fees assessed.
@@ -2587,7 +2598,7 @@ module econia::incentives {
         quote_coins = assets::mint_test(econia_fees_2);
         // Assess fees on fill 2.
         (quote_coins, taker_fees) = assess_taker_fees<QC>(
-            market_id_2, @user, quote_fill_2, quote_coins);
+            market_id_2, @user, taker_fee_divisor, quote_fill_2, quote_coins);
         // Assert fee amount.
         assert!(taker_fees == econia_fees_2, 0);
         // Destroy empty coins, asserting that all taker fees assessed.
@@ -2872,7 +2883,7 @@ module econia::incentives {
         econia: &signer
     ) {
         // Attempt invalid invocation.
-        set_incentive_parameters_range_check_inputs(econia, 1, 1, 1, 1,
+        set_incentive_parameters_range_check_inputs(econia, 1, 1, 1, 2,
             &vector::empty());
     }
 
@@ -2893,7 +2904,7 @@ module econia::incentives {
             i = i + 1; // Increment loop counter.
         };
         // Attempt invalid invocation.
-        set_incentive_parameters_range_check_inputs(econia, 1, 1, 1, 1,
+        set_incentive_parameters_range_check_inputs(econia, 1, 1, 1, 2,
             &integrator_fee_store_tiers);
     }
 

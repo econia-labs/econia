@@ -1038,9 +1038,11 @@ Initialize the order books map upon module publication.
             order_book_ref_mut.quote_type, <a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
     <b>let</b> (lot_size, tick_size) = (order_book_ref_mut.lot_size,
         order_book_ref_mut.tick_size); // Get lot and tick sizes.
-    // Get max quote match for direction.
+    // Get taker fee divisor.
+    <b>let</b> taker_fee_divisor = <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">incentives::get_taker_fee_divisor</a>();
+    // Get max quote coins <b>to</b> match.
     <b>let</b> max_quote_match = <a href="incentives.md#0xc0deb00c_incentives_calculate_max_quote_match">incentives::calculate_max_quote_match</a>(
-        direction, <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">incentives::get_taker_fee_divisor</a>(), max_quote);
+        direction, taker_fee_divisor, max_quote);
     // Calculate max amounts of lots and ticks <b>to</b> fill.
     <b>let</b> (max_lots, max_ticks) =
         (max_base / lot_size, max_quote_match / tick_size);
@@ -1112,7 +1114,8 @@ Initialize the order books map upon module publication.
          ((max_ticks - ticks_until_max) * tick_size));
     // Assess taker fees, storing taker fees paid.
     <b>let</b> (quote_coins, fees_paid) = <a href="incentives.md#0xc0deb00c_incentives_assess_taker_fees">incentives::assess_taker_fees</a>&lt;
-        QuoteType&gt;(market_id, integrator, quote_fill, quote_coins);
+        QuoteType&gt;(market_id, integrator, taker_fee_divisor, quote_fill,
+        quote_coins);
     // If a buy, taker pays quote required for fills, and additional
     // fee assessed after matching. If a sell, taker receives quote
     // from fills, then <b>has</b> a portion assessed <b>as</b> fees.

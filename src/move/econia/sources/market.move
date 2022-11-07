@@ -27,8 +27,8 @@ module econia::market {
 
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Emitted when a maker order is placed, cancelled, or its size is
-    /// manually changed.
+    /// Emitted when a maker order is placed, cancelled, evicted, or its
+    /// size is manually changed.
     struct MakerEvent has drop, store {
         /// Market ID of corresponding market.
         market_id: u64,
@@ -41,11 +41,11 @@ module econia::market {
         /// For given maker, ID of custodian required to approve order
         /// operations and withdrawals on given market account.
         custodian_id: u64,
-        /// `CANCEL`, `CHANGE`, or `PLACE`, the maker operation.
+        /// `CANCEL`, `CHANGE`, `EVICT`, or `PLACE`, the event type.
         type: u8,
         /// The size, in lots, on the book after an order has been
         /// placed or its size has been manually changed. Else the size
-        /// on the book before the order was cancelled.
+        /// on the book before the order was cancelled or evicted.
         size: u64
     }
 
@@ -185,6 +185,8 @@ module econia::market {
     const CHANGE: u8 = 1;
     /// Descending AVL queue flag, for bids AVL queue.
     const DESCENDING: bool = false;
+    /// Flag for `MakerEvent.type` when order is evicted.
+    const EVICT: u8 = 2;
     /// Flag for fill-or-abort order restriction.
     const FILL_OR_ABORT: u8 = 1;
     /// `u64` bitmask with all bits set, generated in Python via
@@ -206,7 +208,7 @@ module econia::market {
     /// Underwriter ID flag for no underwriter.
     const NO_UNDERWRITER: u64 = 0;
     /// Flag for `MakerEvent.type` when order is placed.
-    const PLACE: u8 = 2;
+    const PLACE: u8 = 3;
     /// Flag for post-or-abort order restriction.
     const POST_OR_ABORT: u8 = 3;
     /// Flag for sell direction. Equal to `BID`, since taker sells fill

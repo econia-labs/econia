@@ -65,8 +65,8 @@
 
 ## Struct `MakerEvent`
 
-Emitted when a maker order is placed, cancelled, or its size is
-manually changed.
+Emitted when a maker order is placed, cancelled, evicted, or its
+size is manually changed.
 
 
 <pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a> <b>has</b> drop, store
@@ -114,7 +114,7 @@ manually changed.
 <code>type: u8</code>
 </dt>
 <dd>
- <code><a href="market.md#0xc0deb00c_market_CANCEL">CANCEL</a></code>, <code><a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a></code>, or <code><a href="market.md#0xc0deb00c_market_PLACE">PLACE</a></code>, the maker operation.
+ <code><a href="market.md#0xc0deb00c_market_CANCEL">CANCEL</a></code>, <code><a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a></code>, <code><a href="market.md#0xc0deb00c_market_EVICT">EVICT</a></code>, or <code><a href="market.md#0xc0deb00c_market_PLACE">PLACE</a></code>, the event type.
 </dd>
 <dt>
 <code>size: u64</code>
@@ -122,7 +122,7 @@ manually changed.
 <dd>
  The size, in lots, on the book after an order has been
  placed or its size has been manually changed. Else the size
- on the book before the order was cancelled.
+ on the book before the order was cancelled or evicted.
 </dd>
 </dl>
 
@@ -564,6 +564,16 @@ Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.t
 
 
 
+<a name="0xc0deb00c_market_EVICT"></a>
+
+Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.type</code> when order is evicted.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_EVICT">EVICT</a>: u8 = 2;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_INVALID_RESTRICTION"></a>
 
 Invalid restriction flag.
@@ -749,7 +759,7 @@ Number of restriction flags.
 Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.type</code> when order is placed.
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_PLACE">PLACE</a>: u8 = 2;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_PLACE">PLACE</a>: u8 = 3;
 </code></pre>
 
 
@@ -1175,7 +1185,7 @@ Initialize the order books map upon module publication.
 
 
 Taker address may be passed as <code><a href="market.md#0xc0deb00c_market_TAKER_ADDRESS_UNKNOWN">TAKER_ADDRESS_UNKNOWN</a></code> when a
-swap from a coin on hand.
+swap from a coin on hand or generic swap.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)

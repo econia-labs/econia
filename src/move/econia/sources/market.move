@@ -145,9 +145,9 @@ module econia::market {
     const E_MIN_BASE_NOT_TRADED: u64 = 9;
     /// Minimum quote coin trade amount not met.
     const E_MIN_QUOTE_NOT_TRADED: u64 = 10;
-    /// Limit order price specified as 0.
+    /// Order price specified as 0.
     const E_PRICE_0: u64 = 11;
-    /// Limit order price exceeds maximum allowable price.
+    /// Order price exceeds maximum allowable price.
     const E_PRICE_TOO_HIGH: u64 = 12;
     /// Post-or-abort limit order price crosses spread.
     const E_POST_OR_ABORT_CROSSES_SPREAD: u64 = 13;
@@ -161,6 +161,8 @@ module econia::market {
     const E_SIZE_PRICE_QUOTE_OVERFLOW: u64 = 17;
     /// Invalid restriction flag.
     const E_INVALID_RESTRICTION: u64 = 18;
+    /// Taker and maker have same address.
+    const E_SELF_MATCH: u64 = 19;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -190,15 +192,19 @@ module econia::market {
     const HI_64: u64 = 0xffffffffffffffff;
     /// Flag for immediate-or-cancel order restriction.
     const IMMEDIATE_OR_CANCEL: u8 = 2;
+    /// Flag for maximum base/quote amount to trade max possible.
+    const MAX_POSSIBLE: u64 = 0;
     /// Maximum possible price that can be encoded in 32 bits. Generated
     /// in Python via `hex(int('1' * 32, 2))`.
     const MAX_PRICE: u64 = 0xffffffff;
-    /// Flag for null value when null defined as 0.
-    const NIL: u64 = 0;
-    /// Underwriter ID flag for no underwriter.
-    const NO_UNDERWRITER: u64 = 0;
     /// Number of restriction flags.
     const N_RESTRICTIONS: u8 = 3;
+    /// Flag for null value when null defined as 0.
+    const NIL: u64 = 0;
+    /// Flag for no order restriction.
+    const NO_RESTRICTION: u8 = 0;
+    /// Underwriter ID flag for no underwriter.
+    const NO_UNDERWRITER: u64 = 0;
     /// Flag for `MakerEvent.type` when order is placed.
     const PLACE: u8 = 2;
     /// Flag for post-or-abort order restriction.
@@ -209,6 +215,8 @@ module econia::market {
     /// Number of bits maker order counter is shifted in a market order
     /// ID.
     const SHIFT_COUNTER: u8 = 64;
+    /// Taker address flag for when taker is unknown.
+    const TAKER_ADDRESS_UNKNOWN: address = @0x0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -435,12 +443,16 @@ module econia::market {
     /// # Aborts
     ///
     /// # Returns
+    ///
+    /// Taker address may be passed as `TAKER_ADDRESS_UNKNOWN` when a
+    /// swap from a coin on hand or generic swap.
     fun match<
         BaseType,
         QuoteType
     >(
         market_id: u64,
         order_book_ref_mut: &mut OrderBook,
+        taker: address,
         integrator: address,
         direction: bool,
         min_base: u64,
@@ -497,7 +509,7 @@ module econia::market {
                 // order gets completely filled.
                 if (max_fill_size < order_ref_mut.size)
                    (max_fill_size, false) else (order_ref_mut.size, true);
-            if (fill_size == 0) break; // Break if not lots to fill.
+            if (fill_size == 0) break; // Break if no lots to fill.
             let ticks_filled = fill_size * price; // Get ticks filled.
             // Decrement counter for lots to fill until max reached.
             lots_until_max = lots_until_max - fill_size;
@@ -506,6 +518,8 @@ module econia::market {
             // Get order maker, maker's custodian ID, and event size.
             let (maker, custodian_id, size) =
                 (order_ref_mut.user, order_ref_mut.custodian_id, fill_size);
+            // Assert no self match.
+            assert!(maker != taker, E_SELF_MATCH);
             // Fill matched order user side, storing market order ID.
             (optional_base_coins, quote_coins, market_order_id) =
                 user::fill_order_internal<BaseType, QuoteType>(
@@ -640,8 +654,8 @@ module econia::market {
         // Match against order book, storing modified asset inputs,
         // base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-            = match(market_id, order_book_ref_mut, integrator, direction,
-                    min_base, max_base, min_quote, max_quote, price,
+            = match(market_id, order_book_ref_mut, user_address, integrator,
+                    direction, min_base, max_base, min_quote, max_quote, price,
                     optional_base_coins, quote_coins);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
@@ -686,15 +700,17 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64,
+        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
         min_quote: u64,
-        max_quote: u64,
+        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
         limit_price: u64,
     ): (
         u64, // Base traded by user.
         u64, // Quote traded by user.
         u64 // Fees paid
     ) acquires OrderBooks {
+        // Assert price is not too high.
+        assert!(limit_price <= MAX_PRICE, E_PRICE_TOO_HIGH);
         // Get user's available and ceiling asset counts.
         let (_, base_available, base_ceiling, _, quote_available,
              quote_ceiling) = user::get_asset_counts_internal(
@@ -708,6 +724,16 @@ module econia::market {
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
         // Get market underwriter ID.
         let underwriter_id = order_book_ref_mut.underwriter_id;
+        // If max base to trade flagged as max possible and a buy,
+        // update to max amount that can be bought. If a sell, update
+        // to all available to sell.
+        if (max_base == MAX_POSSIBLE) max_base = if (direction == BUY)
+            (HI_64 - base_ceiling) else (base_available);
+        // If max quote to trade flagged as max possible and a buy,
+        // update to max amount that can spend. If a sell, update
+        // to max amount that can receive when selling.
+        if (max_quote == MAX_POSSIBLE) max_base = if (direction == BUY)
+            (quote_available) else (HI_64 - quote_ceiling);
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_available, base_ceiling, quote_available, quote_ceiling);
@@ -724,9 +750,9 @@ module econia::market {
         // Match against order book, storing modified asset inputs,
         // base and quote trade amounts, and quote fees paid.
         let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-            = match(market_id, order_book_ref_mut, integrator, direction,
-                    min_base, max_base, min_quote, max_quote, limit_price,
-                    optional_base_coins, quote_coins);
+            = match(market_id, order_book_ref_mut, user_address, integrator,
+                    direction, min_base, max_base, min_quote, max_quote,
+                    limit_price, optional_base_coins, quote_coins);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
             base_withdraw - base_traded;
@@ -738,7 +764,7 @@ module econia::market {
         (base_traded, quote_traded, fees)
     }
 
-    /// Range check minimum and maximum asset fill amounts.
+    /// Range check minimum and maximum asset trade amounts.
     ///
     /// Should be called before `match()`.
     ///

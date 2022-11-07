@@ -515,7 +515,7 @@ Filling order would overflow asset received from trade.
 
 <a name="0xc0deb00c_market_E_PRICE_0"></a>
 
-Limit order price specified as 0.
+Order price specified as 0.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_PRICE_0">E_PRICE_0</a>: u64 = 11;
@@ -525,7 +525,7 @@ Limit order price specified as 0.
 
 <a name="0xc0deb00c_market_E_PRICE_TOO_HIGH"></a>
 
-Limit order price exceeds maximum allowable price.
+Order price exceeds maximum allowable price.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>: u64 = 12;
@@ -644,6 +644,16 @@ Post-or-abort limit order price crosses spread.
 
 
 
+<a name="0xc0deb00c_market_E_SELF_MATCH"></a>
+
+Taker and maker have same address.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SELF_MATCH">E_SELF_MATCH</a>: u64 = 19;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_SIZE_BASE_OVERFLOW"></a>
 
 Limit order size results in base asset amount overflow.
@@ -704,6 +714,26 @@ Flag for immediate-or-cancel order restriction.
 
 
 
+<a name="0xc0deb00c_market_MAX_POSSIBLE"></a>
+
+Flag for maximum base/quote amount to trade max possible.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>: u64 = 0;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_NO_RESTRICTION"></a>
+
+Flag for no order restriction.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a>: u8 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_N_RESTRICTIONS"></a>
 
 Number of restriction flags.
@@ -741,6 +771,16 @@ ID.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>: u8 = 64;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_TAKER_ADDRESS_UNKNOWN"></a>
+
+Taker address flag for when taker is unknown.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_TAKER_ADDRESS_UNKNOWN">TAKER_ADDRESS_UNKNOWN</a>: <b>address</b> = 0;
 </code></pre>
 
 
@@ -1134,8 +1174,11 @@ Initialize the order books map upon module publication.
 ### Returns
 
 
+Taker address may be passed as <code><a href="market.md#0xc0deb00c_market_TAKER_ADDRESS_UNKNOWN">TAKER_ADDRESS_UNKNOWN</a></code> when a
+swap from a coin on hand.
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;(market_id: u64, order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">market::OrderBook</a>, taker: <b>address</b>, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
 </code></pre>
 
 
@@ -1150,6 +1193,7 @@ Initialize the order books map upon module publication.
 &gt;(
     market_id: u64,
     order_book_ref_mut: &<b>mut</b> <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>,
+    taker: <b>address</b>,
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
@@ -1206,7 +1250,7 @@ Initialize the order books map upon module publication.
             // order gets completely filled.
             <b>if</b> (max_fill_size &lt; order_ref_mut.size)
                (max_fill_size, <b>false</b>) <b>else</b> (order_ref_mut.size, <b>true</b>);
-        <b>if</b> (fill_size == 0) <b>break</b>; // Break <b>if</b> not lots <b>to</b> fill.
+        <b>if</b> (fill_size == 0) <b>break</b>; // Break <b>if</b> no lots <b>to</b> fill.
         <b>let</b> ticks_filled = fill_size * price; // Get ticks filled.
         // Decrement counter for lots <b>to</b> fill until max reached.
         lots_until_max = lots_until_max - fill_size;
@@ -1215,6 +1259,8 @@ Initialize the order books map upon module publication.
         // Get order maker, maker's custodian ID, and <a href="">event</a> size.
         <b>let</b> (maker, custodian_id, size) =
             (order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, order_ref_mut.custodian_id, fill_size);
+        // Assert no self match.
+        <b>assert</b>!(maker != taker, <a href="market.md#0xc0deb00c_market_E_SELF_MATCH">E_SELF_MATCH</a>);
         // Fill matched order <a href="user.md#0xc0deb00c_user">user</a> side, storing <a href="market.md#0xc0deb00c_market">market</a> order ID.
         (optional_base_coins, quote_coins, market_order_id) =
             <a href="user.md#0xc0deb00c_user_fill_order_internal">user::fill_order_internal</a>&lt;BaseType, QuoteType&gt;(
@@ -1268,7 +1314,6 @@ Initialize the order books map upon module publication.
 
 ## Function `place_limit_order`
 
-Assert if restriction out of bounds? E.g. restriction = 457?
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
@@ -1370,8 +1415,8 @@ Assert if restriction out of bounds? E.g. restriction = 457?
     // Match against order book, storing modified asset inputs,
     // base and quote trade amounts, and quote fees paid.
     <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-        = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, integrator, direction,
-                min_base, max_base, min_quote, max_quote, price,
+        = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address, integrator,
+                direction, min_base, max_base, min_quote, max_quote, price,
                 optional_base_coins, quote_coins);
     // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
     <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
@@ -1436,15 +1481,17 @@ Assert if restriction out of bounds? E.g. restriction = 457?
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64,
+    max_base: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
     min_quote: u64,
-    max_quote: u64,
+    max_quote: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
     limit_price: u64,
 ): (
     u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a>.
     u64, // Quote traded by <a href="user.md#0xc0deb00c_user">user</a>.
     u64 // Fees paid
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Assert price is not too high.
+    <b>assert</b>!(limit_price &lt;= <a href="market.md#0xc0deb00c_market_MAX_PRICE">MAX_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
     // Get <a href="user.md#0xc0deb00c_user">user</a>'s available and ceiling asset counts.
     <b>let</b> (_, base_available, base_ceiling, _, quote_available,
          quote_ceiling) = <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">user::get_asset_counts_internal</a>(
@@ -1458,6 +1505,16 @@ Assert if restriction out of bounds? E.g. restriction = 457?
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
     // Get <a href="market.md#0xc0deb00c_market">market</a> underwriter ID.
     <b>let</b> underwriter_id = order_book_ref_mut.underwriter_id;
+    // If max base <b>to</b> trade flagged <b>as</b> max possible and a buy,
+    // <b>update</b> <b>to</b> max amount that can be bought. If a sell, <b>update</b>
+    // <b>to</b> all available <b>to</b> sell.
+    <b>if</b> (max_base == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>) max_base = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+        (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - base_ceiling) <b>else</b> (base_available);
+    // If max quote <b>to</b> trade flagged <b>as</b> max possible and a buy,
+    // <b>update</b> <b>to</b> max amount that can spend. If a sell, <b>update</b>
+    // <b>to</b> max amount that can receive when selling.
+    <b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>) max_base = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+        (quote_available) <b>else</b> (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling);
     <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
         direction, min_base, max_base, min_quote, max_quote,
         base_available, base_ceiling, quote_available, quote_ceiling);
@@ -1474,9 +1531,9 @@ Assert if restriction out of bounds? E.g. restriction = 457?
     // Match against order book, storing modified asset inputs,
     // base and quote trade amounts, and quote fees paid.
     <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-        = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, integrator, direction,
-                min_base, max_base, min_quote, max_quote, limit_price,
-                optional_base_coins, quote_coins);
+        = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address, integrator,
+                direction, min_base, max_base, min_quote, max_quote,
+                limit_price, optional_base_coins, quote_coins);
     // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
     <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
         base_withdraw - base_traded;
@@ -1497,7 +1554,7 @@ Assert if restriction out of bounds? E.g. restriction = 457?
 
 ## Function `range_check_trade`
 
-Range check minimum and maximum asset fill amounts.
+Range check minimum and maximum asset trade amounts.
 
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 

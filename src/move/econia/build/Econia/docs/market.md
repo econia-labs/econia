@@ -42,6 +42,7 @@
     -  [Parameters](#@Parameters_20)
     -  [Returns](#@Returns_21)
     -  [Testing](#@Testing_22)
+-  [Function `swap`](#0xc0deb00c_market_swap)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -489,6 +490,16 @@ against maker bids.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>: bool = <b>false</b>;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_INVALID_UNDERWRITER"></a>
+
+Underwriter is not valid for indicated market.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_UNDERWRITER">E_INVALID_UNDERWRITER</a>: u64 = 21;
 </code></pre>
 
 
@@ -1736,6 +1747,72 @@ for market.
     // Register an Econia fee store entry for <a href="market.md#0xc0deb00c_market">market</a> quote <a href="">coin</a>.
     <a href="incentives.md#0xc0deb00c_incentives_register_econia_fee_store_entry">incentives::register_econia_fee_store_entry</a>&lt;QuoteType&gt;(market_id);
     market_id // Return <a href="market.md#0xc0deb00c_market">market</a> ID.
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_swap"></a>
+
+## Function `swap`
+
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(market_id: u64, underwriter_id: u64, taker: <b>address</b>, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    market_id: u64,
+    underwriter_id: u64, // Pass <a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a> <b>if</b> no check needed
+    taker: <b>address</b>,
+    integrator: <b>address</b>,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64,
+    optional_base_coins: Option&lt;Coin&lt;BaseType&gt;&gt;,
+    quote_coins: Coin&lt;QuoteType&gt;
+): (
+    Option&lt;Coin&lt;BaseType&gt;&gt;,
+    Coin&lt;QuoteType&gt;,
+    u64,
+    u64,
+    u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
+    <b>let</b> resource_address = resource_account::get_address();
+    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    // Assert order books map <b>has</b> order book <b>with</b> given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>assert</b>!(<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(order_books_map_ref_mut, market_id),
+            <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
+    <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
+        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    // If passed an underwriter ID, verify it matches <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>if</b> (underwriter_id != <a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a>)
+        <b>assert</b>!(underwriter_id == order_book_ref_mut.underwriter_id,
+                <a href="market.md#0xc0deb00c_market_E_INVALID_UNDERWRITER">E_INVALID_UNDERWRITER</a>);
+    <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;() // Assert base type.
+            == order_book_ref_mut.base_type, <a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a>);
+    <b>assert</b>!(<a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;() // Assert quote type.
+            == order_book_ref_mut.quote_type, <a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a>);
+    <a href="market.md#0xc0deb00c_market_match">match</a>&lt;BaseType, QuoteType&gt;( // Match against order book.
+        market_id, order_book_ref_mut, taker, integrator, direction,
+        min_base, max_base, min_quote, max_quote, limit_price,
+        optional_base_coins, quote_coins)
 }
 </code></pre>
 

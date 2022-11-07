@@ -165,6 +165,8 @@ module econia::market {
     const E_SELF_MATCH: u64 = 19;
     /// No room to insert order with such low price-time priority.
     const E_PRICE_TIME_PRIORITY_TOO_LOW: u64 = 20;
+    /// Underwriter is not valid for indicated market.
+    const E_INVALID_UNDERWRITER: u64 = 21;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -895,6 +897,52 @@ module econia::market {
         // Register an Econia fee store entry for market quote coin.
         incentives::register_econia_fee_store_entry<QuoteType>(market_id);
         market_id // Return market ID.
+    }
+
+    fun swap<
+        BaseType,
+        QuoteType
+    >(
+        market_id: u64,
+        underwriter_id: u64, // Pass NO_UNDERWRITER if no check needed
+        taker: address,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+        optional_base_coins: Option<Coin<BaseType>>,
+        quote_coins: Coin<QuoteType>
+    ): (
+        Option<Coin<BaseType>>,
+        Coin<QuoteType>,
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref_mut, market_id),
+                E_INVALID_MARKET_ID);
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // If passed an underwriter ID, verify it matches market.
+        if (underwriter_id != NO_UNDERWRITER)
+            assert!(underwriter_id == order_book_ref_mut.underwriter_id,
+                    E_INVALID_UNDERWRITER);
+        assert!(type_info::type_of<BaseType>() // Assert base type.
+                == order_book_ref_mut.base_type, E_INVALID_BASE);
+        assert!(type_info::type_of<QuoteType>() // Assert quote type.
+                == order_book_ref_mut.quote_type, E_INVALID_QUOTE);
+        match<BaseType, QuoteType>( // Match against order book.
+            market_id, order_book_ref_mut, taker, integrator, direction,
+            min_base, max_base, min_quote, max_quote, limit_price,
+            optional_base_coins, quote_coins)
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

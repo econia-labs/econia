@@ -35,8 +35,9 @@
     -  [Emits](#@Emits_16)
     -  [Aborts](#@Aborts_17)
     -  [Returns](#@Returns_18)
--  [Function `match_from_market_account`](#0xc0deb00c_market_match_from_market_account)
--  [Function `match_range_check_trade`](#0xc0deb00c_market_match_range_check_trade)
+-  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+-  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
+-  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
     -  [Terminology](#@Terminology_19)
     -  [Parameters](#@Parameters_20)
     -  [Aborts](#@Aborts_21)
@@ -398,6 +399,16 @@ Descending AVL queue flag, for bids AVL queue.
 
 
 
+<a name="0xc0deb00c_market_NIL"></a>
+
+Flag for null value when null defined as 0.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NIL">NIL</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_BUY"></a>
 
 Flag for buy direction. Equal to <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>, since taker buys fill
@@ -502,6 +513,26 @@ Filling order would overflow asset received from trade.
 
 
 
+<a name="0xc0deb00c_market_E_PRICE_0"></a>
+
+Limit order price specified as 0.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_PRICE_0">E_PRICE_0</a>: u64 = 11;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_PRICE_TOO_HIGH"></a>
+
+Limit order price exceeds maximum allowable price.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>: u64 = 12;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_MAX_PRICE"></a>
 
 Maximum possible price that can be encoded in 32 bits. Generated
@@ -533,9 +564,19 @@ Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.t
 
 
 
+<a name="0xc0deb00c_market_E_INVALID_RESTRICTION"></a>
+
+Invalid restriction flag.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a>: u64 = 18;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_MAX_BASE_0"></a>
 
-Maximum base fill amount specified as 0.
+Maximum base trade amount specified as 0.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MAX_BASE_0">E_MAX_BASE_0</a>: u64 = 0;
@@ -545,7 +586,7 @@ Maximum base fill amount specified as 0.
 
 <a name="0xc0deb00c_market_E_MAX_QUOTE_0"></a>
 
-Maximum quote fill amount specified as 0.
+Maximum quote trade amount specified as 0.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MAX_QUOTE_0">E_MAX_QUOTE_0</a>: u64 = 1;
@@ -555,7 +596,7 @@ Maximum quote fill amount specified as 0.
 
 <a name="0xc0deb00c_market_E_MIN_BASE_EXCEEDS_MAX"></a>
 
-Minimum base fill amount larger than maximum base fill amount.
+Minimum base trade amount exceeds maximum base trade amount.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MIN_BASE_EXCEEDS_MAX">E_MIN_BASE_EXCEEDS_MAX</a>: u64 = 2;
@@ -575,7 +616,7 @@ Minimum base asset trade amount not met.
 
 <a name="0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX"></a>
 
-Minimum quote fill amount larger than maximum quote fill amount.
+Minimum quote trade amount exceeds maximum quote trade amount.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX">E_MIN_QUOTE_EXCEEDS_MAX</a>: u64 = 3;
@@ -593,12 +634,113 @@ Minimum quote coin trade amount not met.
 
 
 
+<a name="0xc0deb00c_market_E_POST_OR_ABORT_CROSSES_SPREAD"></a>
+
+Post-or-abort limit order price crosses spread.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_POST_OR_ABORT_CROSSES_SPREAD">E_POST_OR_ABORT_CROSSES_SPREAD</a>: u64 = 13;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_SIZE_BASE_OVERFLOW"></a>
+
+Limit order size results in base asset amount overflow.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_BASE_OVERFLOW">E_SIZE_BASE_OVERFLOW</a>: u64 = 15;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_SIZE_PRICE_QUOTE_OVERFLOW"></a>
+
+Limit order size and price results in quote amount overflow.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_QUOTE_OVERFLOW">E_SIZE_PRICE_QUOTE_OVERFLOW</a>: u64 = 17;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_SIZE_PRICE_TICKS_OVERFLOW"></a>
+
+Limit order size and price results in ticks amount overflow.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_TICKS_OVERFLOW">E_SIZE_PRICE_TICKS_OVERFLOW</a>: u64 = 16;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_SIZE_TOO_SMALL"></a>
+
+Limit order size does not meet minimum size for market.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a>: u64 = 14;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_FILL_OR_ABORT"></a>
+
+Flag for fill-or-abort order restriction.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>: u8 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_IMMEDIATE_OR_CANCEL"></a>
+
+Flag for immediate-or-cancel order restriction.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>: u8 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_N_RESTRICTIONS"></a>
+
+Number of restriction flags.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_N_RESTRICTIONS">N_RESTRICTIONS</a>: u8 = 3;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_PLACE"></a>
 
 Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.type</code> when order is placed.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_PLACE">PLACE</a>: u8 = 2;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_POST_OR_ABORT"></a>
+
+Flag for post-or-abort order restriction.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a>: u8 = 3;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_SHIFT_COUNTER"></a>
+
+Number of bits maker order counter is shifted in a market order
+ID.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>: u8 = 64;
 </code></pre>
 
 
@@ -1122,13 +1264,14 @@ Initialize the order books map upon module publication.
 
 </details>
 
-<a name="0xc0deb00c_market_match_from_market_account"></a>
+<a name="0xc0deb00c_market_place_limit_order"></a>
 
-## Function `match_from_market_account`
+## Function `place_limit_order`
+
+Assert if restriction out of bounds? E.g. restriction = 457?
 
 
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
 </code></pre>
 
 
@@ -1137,7 +1280,153 @@ Initialize the order books map upon module publication.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_from_market_account">match_from_market_account</a>&lt;
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
+    BaseType,
+    QuoteType,
+&gt;(
+    user_address: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    integrator: <b>address</b>,
+    side: bool,
+    size: u64, // In lots
+    price: u64, // In ticks per lot
+    restriction: u8
+): (
+    u128, // Market order ID, <b>if</b> <a href="">any</a>.
+    u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u64, // Quote traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u64 // Fees paid <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Assert valid order restriction flag.
+    <b>assert</b>!(restriction &lt;= <a href="market.md#0xc0deb00c_market_N_RESTRICTIONS">N_RESTRICTIONS</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a>);
+    <b>assert</b>!(price != 0, <a href="market.md#0xc0deb00c_market_E_PRICE_0">E_PRICE_0</a>); // Assert nonzero price.
+    // Assert price is not too high.
+    <b>assert</b>!(price &lt;= <a href="market.md#0xc0deb00c_market_MAX_PRICE">MAX_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
+    // Get <a href="user.md#0xc0deb00c_user">user</a>'s available and ceiling asset counts.
+    <b>let</b> (_, base_available, base_ceiling, _, quote_available,
+         quote_ceiling) = <a href="user.md#0xc0deb00c_user_get_asset_counts_internal">user::get_asset_counts_internal</a>(
+            user_address, market_id, custodian_id);
+    // If asset count check does not <b>abort</b>, then <a href="market.md#0xc0deb00c_market">market</a> <b>exists</b>, so
+    // get <b>address</b> of resource <a href="">account</a> for borrowing order book.
+    <b>let</b> resource_address = resource_account::get_address();
+    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
+        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    // Assert order size is at least minimum size for <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>assert</b>!(size &gt;= order_book_ref_mut.min_size, <a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a>);
+    // Get <a href="market.md#0xc0deb00c_market">market</a> underwriter ID.
+    <b>let</b> underwriter_id = order_book_ref_mut.underwriter_id;
+    // <a href="market.md#0xc0deb00c_market_Order">Order</a> crosses spread <b>if</b> an ask and would trail behind bids
+    // AVL queue head, or <b>if</b> a bid and would trail behind asks AVL
+    // queue head.
+    <b>let</b> crosses_spread = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
+        !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.bids, price) <b>else</b>
+        !<a href="avl_queue.md#0xc0deb00c_avl_queue_would_update_head">avl_queue::would_update_head</a>(&order_book_ref_mut.asks, price);
+    // Assert order does not cross spread <b>if</b> <b>post</b>-or-<b>abort</b>.
+    <b>assert</b>!(!((restriction == <a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a>) && crosses_spread),
+            <a href="market.md#0xc0deb00c_market_E_POST_OR_ABORT_CROSSES_SPREAD">E_POST_OR_ABORT_CROSSES_SPREAD</a>);
+    // Calculate base asset amount corresponding <b>to</b> size in lots.
+    <b>let</b> base = (size <b>as</b> u128) * (order_book_ref_mut.lot_size <b>as</b> u128);
+    // Assert corresponding base asset amount fits in a u64.
+    <b>assert</b>!(base &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_SIZE_BASE_OVERFLOW">E_SIZE_BASE_OVERFLOW</a>);
+    // Calculate tick amount corresonding <b>to</b> size in lots.
+    <b>let</b> ticks = (size <b>as</b> u128) * (price <b>as</b> u128);
+    // Assert corresponding tick amount fits in a u64.
+    <b>assert</b>!(ticks &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_TICKS_OVERFLOW">E_SIZE_PRICE_TICKS_OVERFLOW</a>);
+    // Calculate amount of quote required <b>to</b> fill size at price.
+    <b>let</b> quote = ticks * (order_book_ref_mut.tick_size <b>as</b> u128);
+    // Assert corresponding quote amount fits in a u64.
+    <b>assert</b>!(quote &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_QUOTE_OVERFLOW">E_SIZE_PRICE_QUOTE_OVERFLOW</a>);
+    // Max base <b>to</b> trade during taker match against book is
+    // calculated amount.
+    <b>let</b> max_base = (base <b>as</b> u64);
+    // Min base <b>to</b> trade during taker match against book is
+    // calculated amount <b>if</b> a fill-or-<b>abort</b> order, otherwise there
+    // is no minimum.
+    <b>let</b> min_base = <b>if</b> (restriction == <a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>) (base <b>as</b> u64) <b>else</b> 0;
+    <b>let</b> min_quote = 0; // Not need <b>min</b> quote since have <b>min</b> base.
+    // If an ask that crosses the spread, max quote <b>to</b> trade during
+    // taker match is max amount that can fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> max_quote = <b>if</b> (<a href="market.md#0xc0deb00c_market_ASK">ASK</a> && crosses_spread) (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling) <b>else</b>
+        (quote <b>as</b> u64); // Else is amount from size and price.
+    // If order side is bid, fills across spread against asks <b>as</b> a
+    // taker buy, <b>else</b> against bids <b>as</b> a taker sell.
+    <b>let</b> direction = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_BID">BID</a>) <a href="market.md#0xc0deb00c_market_BUY">BUY</a> <b>else</b> <a href="market.md#0xc0deb00c_market_SELL">SELL</a>;
+    <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
+        direction, min_base, max_base, min_quote, max_quote,
+        base_available, base_ceiling, quote_available, quote_ceiling);
+    // Calculate max base and quote <b>to</b> withdraw. If a buy:
+    <b>let</b> (base_withdraw, quote_withdraw) = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+        // Withdraw quote <b>to</b> buy base, <b>else</b> sell base for quote.
+        (0, max_quote) <b>else</b> (max_base, 0);
+    // Withdraw optional base coins and quote coins for match,
+    // verifying base type and quote type for <a href="market.md#0xc0deb00c_market">market</a>.
+    <b>let</b> (optional_base_coins, quote_coins) =
+        <a href="user.md#0xc0deb00c_user_withdraw_assets_internal">user::withdraw_assets_internal</a>&lt;BaseType, QuoteType&gt;(
+            user_address, market_id, custodian_id, base_withdraw,
+            quote_withdraw, underwriter_id);
+    // Match against order book, storing modified asset inputs,
+    // base and quote trade amounts, and quote fees paid.
+    <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+        = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, integrator, direction,
+                min_base, max_base, min_quote, max_quote, price,
+                optional_base_coins, quote_coins);
+    // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
+        base_withdraw - base_traded;
+    // Deposit <a href="assets.md#0xc0deb00c_assets">assets</a> back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    <a href="user.md#0xc0deb00c_user_deposit_assets_internal">user::deposit_assets_internal</a>&lt;BaseType, QuoteType&gt;(
+        user_address, market_id, custodian_id, base_deposit,
+        optional_base_coins, quote_coins, underwriter_id);
+    // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> no size left <b>as</b> a maker.
+    <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) || (base_traded == min_base))
+        <b>return</b> ((<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), base_traded, quote_traded, fees);
+    // Update size <b>to</b> amount left <b>to</b> fill after matching <b>as</b> taker.
+    size = size - (base_traded / order_book_ref_mut.lot_size);
+    // Get next order access key for <a href="user.md#0xc0deb00c_user">user</a>-side order placement.
+    <b>let</b> order_access_key = <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">user::get_next_order_access_key_internal</a>(
+        user_address, market_id, custodian_id, side);
+    // Get orders AVL queue for maker side.
+    <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks <b>else</b>
+        &<b>mut</b> order_book_ref_mut.bids;
+    // Insert <b>to</b> AVL queue, storing correspoinding access key.
+    <b>let</b> avlq_access_key = <a href="avl_queue.md#0xc0deb00c_avl_queue_insert">avl_queue::insert</a>(orders_ref_mut, price, <a href="market.md#0xc0deb00c_market_Order">Order</a>{
+        size, <a href="user.md#0xc0deb00c_user">user</a>: user_address, custodian_id, order_access_key});
+    // Get <a href="market.md#0xc0deb00c_market">market</a> order ID from AVL queue access key, maker counter.
+    <b>let</b> market_order_id = (avlq_access_key <b>as</b> u128) |
+        ((order_book_ref_mut.counter <b>as</b> u128) &lt;&lt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>);
+    // Increment maker counter.
+    order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+    <a href="user.md#0xc0deb00c_user_place_order_internal">user::place_order_internal</a>( // Place order <a href="user.md#0xc0deb00c_user">user</a>-side.
+        user_address, market_id, custodian_id, side, size, price,
+        market_order_id);
+    // Return <a href="market.md#0xc0deb00c_market">market</a> order ID and taker trade amounts.
+    <b>return</b> (market_order_id, base_traded, quote_traded, fees)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_market_order"></a>
+
+## Function `place_market_order`
+
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;
     BaseType,
     QuoteType
 &gt;(
@@ -1169,7 +1458,7 @@ Initialize the order books map upon module publication.
         <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
     // Get <a href="market.md#0xc0deb00c_market">market</a> underwriter ID.
     <b>let</b> underwriter_id = order_book_ref_mut.underwriter_id;
-    <a href="market.md#0xc0deb00c_market_match_range_check_trade">match_range_check_trade</a>( // Range check trade amounts.
+    <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
         direction, min_base, max_base, min_quote, max_quote,
         base_available, base_ceiling, quote_available, quote_ceiling);
     // Calculate max base and quote <b>to</b> withdraw. If a buy:
@@ -1204,9 +1493,9 @@ Initialize the order books map upon module publication.
 
 </details>
 
-<a name="0xc0deb00c_market_match_range_check_trade"></a>
+<a name="0xc0deb00c_market_range_check_trade"></a>
 
-## Function `match_range_check_trade`
+## Function `range_check_trade`
 
 Range check minimum and maximum asset fill amounts.
 
@@ -1278,17 +1567,17 @@ received from trade.
 ### Failure testing
 
 
-* <code>test_match_range_check_trade_asset_in_buy()</code>
-* <code>test_match_range_check_trade_asset_in_sell()</code>
-* <code>test_match_range_check_trade_asset_out_buy()</code>
-* <code>test_match_range_check_trade_asset_out_sell()</code>
-* <code>test_match_range_check_trade_base_0()</code>
-* <code>test_match_range_check_trade_min_base_exceeds_max()</code>
-* <code>test_match_range_check_trade_min_quote_exceeds_max()</code>
-* <code>test_match_range_check_trade_quote_0()</code>
+* <code>test_range_check_trade_asset_in_buy()</code>
+* <code>test_range_check_trade_asset_in_sell()</code>
+* <code>test_range_check_trade_asset_out_buy()</code>
+* <code>test_range_check_trade_asset_out_sell()</code>
+* <code>test_range_check_trade_base_0()</code>
+* <code>test_range_check_trade_min_base_exceeds_max()</code>
+* <code>test_range_check_trade_min_quote_exceeds_max()</code>
+* <code>test_range_check_trade_quote_0()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_range_check_trade">match_range_check_trade</a>(side: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, base_available: u64, base_ceiling: u64, quote_available: u64, quote_ceiling: u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>(side: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, base_available: u64, base_ceiling: u64, quote_available: u64, quote_ceiling: u64)
 </code></pre>
 
 
@@ -1297,7 +1586,7 @@ received from trade.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_match_range_check_trade">match_range_check_trade</a>(
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>(
     side: bool,
     min_base: u64,
     max_base: u64,

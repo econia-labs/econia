@@ -123,13 +123,13 @@ module econia::market {
 
     // Error codes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// Maximum base fill amount specified as 0.
+    /// Maximum base trade amount specified as 0.
     const E_MAX_BASE_0: u64 = 0;
-    /// Maximum quote fill amount specified as 0.
+    /// Maximum quote trade amount specified as 0.
     const E_MAX_QUOTE_0: u64 = 1;
-    /// Minimum base fill amount larger than maximum base fill amount.
+    /// Minimum base trade amount exceeds maximum base trade amount.
     const E_MIN_BASE_EXCEEDS_MAX: u64 = 2;
-    /// Minimum quote fill amount larger than maximum quote fill amount.
+    /// Minimum quote trade amount exceeds maximum quote trade amount.
     const E_MIN_QUOTE_EXCEEDS_MAX: u64 = 3;
     /// Filling order would overflow asset received from trade.
     const E_OVERFLOW_ASSET_IN: u64 = 4;
@@ -145,6 +145,22 @@ module econia::market {
     const E_MIN_BASE_NOT_TRADED: u64 = 9;
     /// Minimum quote coin trade amount not met.
     const E_MIN_QUOTE_NOT_TRADED: u64 = 10;
+    /// Limit order price specified as 0.
+    const E_PRICE_0: u64 = 11;
+    /// Limit order price exceeds maximum allowable price.
+    const E_PRICE_TOO_HIGH: u64 = 12;
+    /// Post-or-abort limit order price crosses spread.
+    const E_POST_OR_ABORT_CROSSES_SPREAD: u64 = 13;
+    /// Limit order size does not meet minimum size for market.
+    const E_SIZE_TOO_SMALL: u64 = 14;
+    /// Limit order size results in base asset amount overflow.
+    const E_SIZE_BASE_OVERFLOW: u64 = 15;
+    /// Limit order size and price results in ticks amount overflow.
+    const E_SIZE_PRICE_TICKS_OVERFLOW: u64 = 16;
+    /// Limit order size and price results in quote amount overflow.
+    const E_SIZE_PRICE_QUOTE_OVERFLOW: u64 = 17;
+    /// Invalid restriction flag.
+    const E_INVALID_RESTRICTION: u64 = 18;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -167,19 +183,32 @@ module econia::market {
     const CHANGE: u8 = 1;
     /// Descending AVL queue flag, for bids AVL queue.
     const DESCENDING: bool = false;
+    /// Flag for fill-or-abort order restriction.
+    const FILL_OR_ABORT: u8 = 1;
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
+    /// Flag for immediate-or-cancel order restriction.
+    const IMMEDIATE_OR_CANCEL: u8 = 2;
     /// Maximum possible price that can be encoded in 32 bits. Generated
     /// in Python via `hex(int('1' * 32, 2))`.
     const MAX_PRICE: u64 = 0xffffffff;
+    /// Flag for null value when null defined as 0.
+    const NIL: u64 = 0;
     /// Underwriter ID flag for no underwriter.
     const NO_UNDERWRITER: u64 = 0;
+    /// Number of restriction flags.
+    const N_RESTRICTIONS: u8 = 3;
     /// Flag for `MakerEvent.type` when order is placed.
     const PLACE: u8 = 2;
+    /// Flag for post-or-abort order restriction.
+    const POST_OR_ABORT: u8 = 3;
     /// Flag for sell direction. Equal to `BID`, since taker sells fill
     /// against maker bids.
     const SELL: bool = false;
+    /// Number of bits maker order counter is shifted in a market order
+    /// ID.
+    const SHIFT_COUNTER: u8 = 64;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -521,7 +550,133 @@ module econia::market {
         (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid)
     }
 
-    fun match_from_market_account<
+    fun place_limit_order<
+        BaseType,
+        QuoteType,
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64, // In lots
+        price: u64, // In ticks per lot
+        restriction: u8
+    ): (
+        u128, // Market order ID, if any.
+        u64, // Base traded by user as a taker, if any.
+        u64, // Quote traded by user as a taker, if any.
+        u64 // Fees paid as a taker, if any.
+    ) acquires OrderBooks {
+        // Assert valid order restriction flag.
+        assert!(restriction <= N_RESTRICTIONS, E_INVALID_RESTRICTION);
+        assert!(price != 0, E_PRICE_0); // Assert nonzero price.
+        // Assert price is not too high.
+        assert!(price <= MAX_PRICE, E_PRICE_TOO_HIGH);
+        // Get user's available and ceiling asset counts.
+        let (_, base_available, base_ceiling, _, quote_available,
+             quote_ceiling) = user::get_asset_counts_internal(
+                user_address, market_id, custodian_id);
+        // If asset count check does not abort, then market exists, so
+        // get address of resource account for borrowing order book.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Assert order size is at least minimum size for market.
+        assert!(size >= order_book_ref_mut.min_size, E_SIZE_TOO_SMALL);
+        // Get market underwriter ID.
+        let underwriter_id = order_book_ref_mut.underwriter_id;
+        // Order crosses spread if an ask and would trail behind bids
+        // AVL queue head, or if a bid and would trail behind asks AVL
+        // queue head.
+        let crosses_spread = if (side == ASK)
+            !avl_queue::would_update_head(&order_book_ref_mut.bids, price) else
+            !avl_queue::would_update_head(&order_book_ref_mut.asks, price);
+        // Assert order does not cross spread if post-or-abort.
+        assert!(!((restriction == POST_OR_ABORT) && crosses_spread),
+                E_POST_OR_ABORT_CROSSES_SPREAD);
+        // Calculate base asset amount corresponding to size in lots.
+        let base = (size as u128) * (order_book_ref_mut.lot_size as u128);
+        // Assert corresponding base asset amount fits in a u64.
+        assert!(base <= (HI_64 as u128), E_SIZE_BASE_OVERFLOW);
+        // Calculate tick amount corresonding to size in lots.
+        let ticks = (size as u128) * (price as u128);
+        // Assert corresponding tick amount fits in a u64.
+        assert!(ticks <= (HI_64 as u128), E_SIZE_PRICE_TICKS_OVERFLOW);
+        // Calculate amount of quote required to fill size at price.
+        let quote = ticks * (order_book_ref_mut.tick_size as u128);
+        // Assert corresponding quote amount fits in a u64.
+        assert!(quote <= (HI_64 as u128), E_SIZE_PRICE_QUOTE_OVERFLOW);
+        // Max base to trade during taker match against book is
+        // calculated amount.
+        let max_base = (base as u64);
+        // Min base to trade during taker match against book is
+        // calculated amount if a fill-or-abort order, otherwise there
+        // is no minimum.
+        let min_base = if (restriction == FILL_OR_ABORT) (base as u64) else 0;
+        let min_quote = 0; // Not need min quote since have min base.
+        // If an ask that crosses the spread, max quote to trade during
+        // taker match is max amount that can fit in market account.
+        let max_quote = if (ASK && crosses_spread) (HI_64 - quote_ceiling) else
+            (quote as u64); // Else is amount from size and price.
+        // If order side is bid, fills across spread against asks as a
+        // taker buy, else against bids as a taker sell.
+        let direction = if (side == BID) BUY else SELL;
+        range_check_trade( // Range check trade amounts.
+            direction, min_base, max_base, min_quote, max_quote,
+            base_available, base_ceiling, quote_available, quote_ceiling);
+        // Calculate max base and quote to withdraw. If a buy:
+        let (base_withdraw, quote_withdraw) = if (direction == BUY)
+            // Withdraw quote to buy base, else sell base for quote.
+            (0, max_quote) else (max_base, 0);
+        // Withdraw optional base coins and quote coins for match,
+        // verifying base type and quote type for market.
+        let (optional_base_coins, quote_coins) =
+            user::withdraw_assets_internal<BaseType, QuoteType>(
+                user_address, market_id, custodian_id, base_withdraw,
+                quote_withdraw, underwriter_id);
+        // Match against order book, storing modified asset inputs,
+        // base and quote trade amounts, and quote fees paid.
+        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+            = match(market_id, order_book_ref_mut, integrator, direction,
+                    min_base, max_base, min_quote, max_quote, price,
+                    optional_base_coins, quote_coins);
+        // Calculate amount of base deposited back to market account.
+        let base_deposit = if (direction == BUY) base_traded else
+            base_withdraw - base_traded;
+        // Deposit assets back to user's market account.
+        user::deposit_assets_internal<BaseType, QuoteType>(
+            user_address, market_id, custodian_id, base_deposit,
+            optional_base_coins, quote_coins, underwriter_id);
+        // Return without market order ID if no size left as a maker.
+        if ((restriction == IMMEDIATE_OR_CANCEL) || (base_traded == min_base))
+            return ((NIL as u128), base_traded, quote_traded, fees);
+        // Update size to amount left to fill after matching as taker.
+        size = size - (base_traded / order_book_ref_mut.lot_size);
+        // Get next order access key for user-side order placement.
+        let order_access_key = user::get_next_order_access_key_internal(
+            user_address, market_id, custodian_id, side);
+        // Get orders AVL queue for maker side.
+        let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
+            &mut order_book_ref_mut.bids;
+        // Insert to AVL queue, storing correspoinding access key.
+        let avlq_access_key = avl_queue::insert(orders_ref_mut, price, Order{
+            size, user: user_address, custodian_id, order_access_key});
+        // Get market order ID from AVL queue access key, maker counter.
+        let market_order_id = (avlq_access_key as u128) |
+            ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
+        // Increment maker counter.
+        order_book_ref_mut.counter = order_book_ref_mut.counter + 1;
+        user::place_order_internal( // Place order user-side.
+            user_address, market_id, custodian_id, side, size, price,
+            market_order_id);
+        // Return market order ID and taker trade amounts.
+        return (market_order_id, base_traded, quote_traded, fees)
+    }
+
+    fun place_market_order<
         BaseType,
         QuoteType
     >(
@@ -553,7 +708,7 @@ module econia::market {
             tablist::borrow_mut(order_books_map_ref_mut, market_id);
         // Get market underwriter ID.
         let underwriter_id = order_book_ref_mut.underwriter_id;
-        match_range_check_trade( // Range check trade amounts.
+        range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_available, base_ceiling, quote_available, quote_ceiling);
         // Calculate max base and quote to withdraw. If a buy:
@@ -637,15 +792,15 @@ module econia::market {
     ///
     /// # Failure testing
     ///
-    /// * `test_match_range_check_trade_asset_in_buy()`
-    /// * `test_match_range_check_trade_asset_in_sell()`
-    /// * `test_match_range_check_trade_asset_out_buy()`
-    /// * `test_match_range_check_trade_asset_out_sell()`
-    /// * `test_match_range_check_trade_base_0()`
-    /// * `test_match_range_check_trade_min_base_exceeds_max()`
-    /// * `test_match_range_check_trade_min_quote_exceeds_max()`
-    /// * `test_match_range_check_trade_quote_0()`
-    fun match_range_check_trade(
+    /// * `test_range_check_trade_asset_in_buy()`
+    /// * `test_range_check_trade_asset_in_sell()`
+    /// * `test_range_check_trade_asset_out_buy()`
+    /// * `test_range_check_trade_asset_out_sell()`
+    /// * `test_range_check_trade_base_0()`
+    /// * `test_range_check_trade_min_base_exceeds_max()`
+    /// * `test_range_check_trade_min_quote_exceeds_max()`
+    /// * `test_range_check_trade_quote_0()`
+    fun range_check_trade(
         side: bool,
         min_base: u64,
         max_base: u64,
@@ -740,7 +895,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for overflowing asset in for a buy.
-    fun test_match_range_check_trade_asset_in_buy() {
+    fun test_range_check_trade_asset_in_buy() {
         // Declare inputs.
         let side = BUY;
         let min_base = 0;
@@ -752,7 +907,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = HI_64;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -760,7 +915,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for overflowing asset in for a sell.
-    fun test_match_range_check_trade_asset_in_sell() {
+    fun test_range_check_trade_asset_in_sell() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -772,7 +927,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = HI_64;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -780,7 +935,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for underflowing asset out for a buy.
-    fun test_match_range_check_trade_asset_out_buy() {
+    fun test_range_check_trade_asset_out_buy() {
         // Declare inputs.
         let side = BUY;
         let min_base = 0;
@@ -792,7 +947,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 1;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -800,7 +955,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for underflowing asset out for a sell.
-    fun test_match_range_check_trade_asset_out_sell() {
+    fun test_range_check_trade_asset_out_sell() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -812,7 +967,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 1;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -820,7 +975,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for max base specified as 0.
-    fun test_match_range_check_trade_base_0() {
+    fun test_range_check_trade_base_0() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -832,7 +987,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -840,7 +995,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for min base exceeds max
-    fun test_match_range_check_trade_min_base_exceeds_max() {
+    fun test_range_check_trade_min_base_exceeds_max() {
         // Declare inputs.
         let side = SELL;
         let min_base = 2;
@@ -852,7 +1007,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -860,7 +1015,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for min quote exceeds max
-    fun test_match_range_check_trade_min_quote_exceeds_max() {
+    fun test_range_check_trade_min_quote_exceeds_max() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -872,7 +1027,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -880,7 +1035,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for max quote specified as 0.
-    fun test_match_range_check_trade_quote_0() {
+    fun test_range_check_trade_quote_0() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -892,7 +1047,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_trade(
+        range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }

@@ -23,25 +23,25 @@
     -  [Parameters](#@Parameters_7)
     -  [Returns](#@Returns_8)
     -  [Testing](#@Testing_9)
--  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_10)
-    -  [Parameters](#@Parameters_11)
-    -  [Returns](#@Returns_12)
-    -  [Testing](#@Testing_13)
 -  [Function `init_module`](#0xc0deb00c_market_init_module)
 -  [Function `match`](#0xc0deb00c_market_match)
-    -  [Type Parameters](#@Type_Parameters_14)
-    -  [Parameters](#@Parameters_15)
-    -  [Emits](#@Emits_16)
-    -  [Aborts](#@Aborts_17)
-    -  [Returns](#@Returns_18)
+    -  [Type Parameters](#@Type_Parameters_10)
+    -  [Parameters](#@Parameters_11)
+    -  [Emits](#@Emits_12)
+    -  [Aborts](#@Aborts_13)
+    -  [Returns](#@Returns_14)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_19)
+    -  [Terminology](#@Terminology_15)
+    -  [Parameters](#@Parameters_16)
+    -  [Aborts](#@Aborts_17)
+    -  [Failure testing](#@Failure_testing_18)
+-  [Function `register_market`](#0xc0deb00c_market_register_market)
+    -  [Type parameters](#@Type_parameters_19)
     -  [Parameters](#@Parameters_20)
-    -  [Aborts](#@Aborts_21)
-    -  [Failure testing](#@Failure_testing_22)
+    -  [Returns](#@Returns_21)
+    -  [Testing](#@Testing_22)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1038,111 +1038,6 @@ underwriter capability.
 
 </details>
 
-<a name="0xc0deb00c_market_register_market"></a>
-
-## Function `register_market`
-
-Register order book, fee store under Econia resource account.
-
-Should only be called by <code><a href="market.md#0xc0deb00c_market_register_market_base_coin">register_market_base_coin</a>()</code> or
-<code><a href="market.md#0xc0deb00c_market_register_market_base_generic">register_market_base_generic</a>()</code>.
-
-See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a></code> for commentary on lot size, tick
-size, minimum size, and 32-bit prices.
-
-
-<a name="@Type_parameters_10"></a>
-
-### Type parameters
-
-
-* <code>BaseType</code>: Base type for market.
-* <code>QuoteType</code>: Quote coin type for market.
-
-
-<a name="@Parameters_11"></a>
-
-### Parameters
-
-
-* <code>market_id</code>: Market ID for new market.
-* <code>base_name_generic</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.base_name_generic</code>
-for market.
-* <code>lot_size</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.lot_size</code> for market.
-* <code>tick_size</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.tick_size</code> for market.
-* <code>min_size</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
-* <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
-
-
-<a name="@Returns_12"></a>
-
-### Returns
-
-
-* <code>u64</code>: Market ID for new market.
-
-
-<a name="@Testing_13"></a>
-
-### Testing
-
-
-* <code>test_register_markets()</code>
-
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseType, QuoteType&gt;(market_id: u64, base_name_generic: <a href="_String">string::String</a>, lot_size: u64, tick_size: u64, min_size: u64, underwriter_id: u64): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;
-    BaseType,
-    QuoteType
-&gt;(
-    market_id: u64,
-    base_name_generic: String,
-    lot_size: u64,
-    tick_size: u64,
-    min_size: u64,
-    underwriter_id: u64
-): u64
-<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    // Get Econia resource <a href="">account</a> <a href="">signer</a>.
-    <b>let</b> <a href="">resource_account</a> = resource_account::get_signer();
-    // Get resource <a href="">account</a> <b>address</b>.
-    <b>let</b> resource_address = address_of(&<a href="">resource_account</a>);
-    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
-    // Add order book entry <b>to</b> order books map.
-    <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(order_books_map_ref_mut, market_id, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>{
-        base_type: <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(),
-        base_name_generic,
-        quote_type: <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;(),
-        lot_size,
-        tick_size,
-        min_size,
-        underwriter_id,
-        asks: <a href="avl_queue.md#0xc0deb00c_avl_queue_new">avl_queue::new</a>&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;(<a href="market.md#0xc0deb00c_market_ASCENDING">ASCENDING</a>, 0, 0),
-        bids: <a href="avl_queue.md#0xc0deb00c_avl_queue_new">avl_queue::new</a>&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;(<a href="market.md#0xc0deb00c_market_DESCENDING">DESCENDING</a>, 0, 0),
-        counter: 0,
-        maker_events:
-            <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>&gt;(&<a href="">resource_account</a>),
-        taker_events:
-            <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a>&gt;(&<a href="">resource_account</a>)});
-    // Register an Econia fee store entry for <a href="market.md#0xc0deb00c_market">market</a> quote <a href="">coin</a>.
-    <a href="incentives.md#0xc0deb00c_incentives_register_econia_fee_store_entry">incentives::register_econia_fee_store_entry</a>&lt;QuoteType&gt;(market_id);
-    market_id // Return <a href="market.md#0xc0deb00c_market">market</a> ID.
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_market_init_module"></a>
 
 ## Function `init_module`
@@ -1176,31 +1071,31 @@ Initialize the order books map upon module publication.
 ## Function `match`
 
 
-<a name="@Type_Parameters_14"></a>
+<a name="@Type_Parameters_10"></a>
 
 ### Type Parameters
 
 
 
-<a name="@Parameters_15"></a>
+<a name="@Parameters_11"></a>
 
 ### Parameters
 
 
 
-<a name="@Emits_16"></a>
+<a name="@Emits_12"></a>
 
 ### Emits
 
 
 
-<a name="@Aborts_17"></a>
+<a name="@Aborts_13"></a>
 
 ### Aborts
 
 
 
-<a name="@Returns_18"></a>
+<a name="@Returns_14"></a>
 
 ### Returns
 
@@ -1620,7 +1515,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_19"></a>
+<a name="@Terminology_15"></a>
 
 ### Terminology
 
@@ -1645,7 +1540,7 @@ taker's <code>aptos_framework::coin::CoinStore</code> or from standaline
 assets, is the same as the available amount.
 
 
-<a name="@Parameters_20"></a>
+<a name="@Parameters_16"></a>
 
 ### Parameters
 
@@ -1664,7 +1559,7 @@ would match.
 when <code>SIDE</code> is <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code> (a taker sell).
 
 
-<a name="@Aborts_21"></a>
+<a name="@Aborts_17"></a>
 
 ### Aborts
 
@@ -1680,7 +1575,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_22"></a>
+<a name="@Failure_testing_18"></a>
 
 ### Failure testing
 
@@ -1736,6 +1631,111 @@ received from trade.
     <b>assert</b>!(in_ceiling_max &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a>);
     // Assert enough outbound asset <b>to</b> cover max trade amount.
     <b>assert</b>!(out_max &lt;= out_available, <a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a>);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_register_market"></a>
+
+## Function `register_market`
+
+Register order book, fee store under Econia resource account.
+
+Should only be called by <code><a href="market.md#0xc0deb00c_market_register_market_base_coin">register_market_base_coin</a>()</code> or
+<code><a href="market.md#0xc0deb00c_market_register_market_base_generic">register_market_base_generic</a>()</code>.
+
+See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a></code> for commentary on lot size, tick
+size, minimum size, and 32-bit prices.
+
+
+<a name="@Type_parameters_19"></a>
+
+### Type parameters
+
+
+* <code>BaseType</code>: Base type for market.
+* <code>QuoteType</code>: Quote coin type for market.
+
+
+<a name="@Parameters_20"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: Market ID for new market.
+* <code>base_name_generic</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.base_name_generic</code>
+for market.
+* <code>lot_size</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.lot_size</code> for market.
+* <code>tick_size</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.tick_size</code> for market.
+* <code>min_size</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
+* <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
+
+
+<a name="@Returns_21"></a>
+
+### Returns
+
+
+* <code>u64</code>: Market ID for new market.
+
+
+<a name="@Testing_22"></a>
+
+### Testing
+
+
+* <code>test_register_markets()</code>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;BaseType, QuoteType&gt;(market_id: u64, base_name_generic: <a href="_String">string::String</a>, lot_size: u64, tick_size: u64, min_size: u64, underwriter_id: u64): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_register_market">register_market</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    market_id: u64,
+    base_name_generic: String,
+    lot_size: u64,
+    tick_size: u64,
+    min_size: u64,
+    underwriter_id: u64
+): u64
+<b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Get Econia resource <a href="">account</a> <a href="">signer</a>.
+    <b>let</b> <a href="">resource_account</a> = resource_account::get_signer();
+    // Get resource <a href="">account</a> <b>address</b>.
+    <b>let</b> resource_address = address_of(&<a href="">resource_account</a>);
+    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    // Add order book entry <b>to</b> order books map.
+    <a href="tablist.md#0xc0deb00c_tablist_add">tablist::add</a>(order_books_map_ref_mut, market_id, <a href="market.md#0xc0deb00c_market_OrderBook">OrderBook</a>{
+        base_type: <a href="_type_of">type_info::type_of</a>&lt;BaseType&gt;(),
+        base_name_generic,
+        quote_type: <a href="_type_of">type_info::type_of</a>&lt;QuoteType&gt;(),
+        lot_size,
+        tick_size,
+        min_size,
+        underwriter_id,
+        asks: <a href="avl_queue.md#0xc0deb00c_avl_queue_new">avl_queue::new</a>&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;(<a href="market.md#0xc0deb00c_market_ASCENDING">ASCENDING</a>, 0, 0),
+        bids: <a href="avl_queue.md#0xc0deb00c_avl_queue_new">avl_queue::new</a>&lt;<a href="market.md#0xc0deb00c_market_Order">Order</a>&gt;(<a href="market.md#0xc0deb00c_market_DESCENDING">DESCENDING</a>, 0, 0),
+        counter: 0,
+        maker_events:
+            <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>&gt;(&<a href="">resource_account</a>),
+        taker_events:
+            <a href="_new_event_handle">account::new_event_handle</a>&lt;<a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a>&gt;(&<a href="">resource_account</a>)});
+    // Register an Econia fee store entry for <a href="market.md#0xc0deb00c_market">market</a> quote <a href="">coin</a>.
+    <a href="incentives.md#0xc0deb00c_incentives_register_econia_fee_store_entry">incentives::register_econia_fee_store_entry</a>&lt;QuoteType&gt;(market_id);
+    market_id // Return <a href="market.md#0xc0deb00c_market">market</a> ID.
 }
 </code></pre>
 

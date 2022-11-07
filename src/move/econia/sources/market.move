@@ -362,75 +362,6 @@ module econia::market {
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    /// Register order book, fee store under Econia resource account.
-    ///
-    /// Should only be called by `register_market_base_coin()` or
-    /// `register_market_base_generic()`.
-    ///
-    /// See `registry::MarketInfo` for commentary on lot size, tick
-    /// size, minimum size, and 32-bit prices.
-    ///
-    /// # Type parameters
-    ///
-    /// * `BaseType`: Base type for market.
-    /// * `QuoteType`: Quote coin type for market.
-    ///
-    /// # Parameters
-    ///
-    /// * `market_id`: Market ID for new market.
-    /// * `base_name_generic`: `registry::MarketInfo.base_name_generic`
-    ///   for market.
-    /// * `lot_size`: `registry::MarketInfo.lot_size` for market.
-    /// * `tick_size`: `registry::MarketInfo.tick_size` for market.
-    /// * `min_size`: `registry::MarketInfo.min_size` for market.
-    /// * `underwriter_id`: `registry::MarketInfo.min_size` for market.
-    ///
-    /// # Returns
-    ///
-    /// * `u64`: Market ID for new market.
-    ///
-    /// # Testing
-    ///
-    /// * `test_register_markets()`
-    fun register_market<
-        BaseType,
-        QuoteType
-    >(
-        market_id: u64,
-        base_name_generic: String,
-        lot_size: u64,
-        tick_size: u64,
-        min_size: u64,
-        underwriter_id: u64
-    ): u64
-    acquires OrderBooks {
-        // Get Econia resource account signer.
-        let resource_account = resource_account::get_signer();
-        // Get resource account address.
-        let resource_address = address_of(&resource_account);
-        let order_books_map_ref_mut = // Mutably borrow order books map.
-            &mut borrow_global_mut<OrderBooks>(resource_address).map;
-        // Add order book entry to order books map.
-        tablist::add(order_books_map_ref_mut, market_id, OrderBook{
-            base_type: type_info::type_of<BaseType>(),
-            base_name_generic,
-            quote_type: type_info::type_of<QuoteType>(),
-            lot_size,
-            tick_size,
-            min_size,
-            underwriter_id,
-            asks: avl_queue::new<Order>(ASCENDING, 0, 0),
-            bids: avl_queue::new<Order>(DESCENDING, 0, 0),
-            counter: 0,
-            maker_events:
-                account::new_event_handle<MakerEvent>(&resource_account),
-            taker_events:
-                account::new_event_handle<TakerEvent>(&resource_account)});
-        // Register an Econia fee store entry for market quote coin.
-        incentives::register_econia_fee_store_entry<QuoteType>(market_id);
-        market_id // Return market ID.
-    }
-
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Initialize the order books map upon module publication.
@@ -895,6 +826,75 @@ module econia::market {
         assert!(in_ceiling_max <= (HI_64 as u128), E_OVERFLOW_ASSET_IN);
         // Assert enough outbound asset to cover max trade amount.
         assert!(out_max <= out_available, E_NOT_ENOUGH_ASSET_OUT);
+    }
+
+    /// Register order book, fee store under Econia resource account.
+    ///
+    /// Should only be called by `register_market_base_coin()` or
+    /// `register_market_base_generic()`.
+    ///
+    /// See `registry::MarketInfo` for commentary on lot size, tick
+    /// size, minimum size, and 32-bit prices.
+    ///
+    /// # Type parameters
+    ///
+    /// * `BaseType`: Base type for market.
+    /// * `QuoteType`: Quote coin type for market.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Market ID for new market.
+    /// * `base_name_generic`: `registry::MarketInfo.base_name_generic`
+    ///   for market.
+    /// * `lot_size`: `registry::MarketInfo.lot_size` for market.
+    /// * `tick_size`: `registry::MarketInfo.tick_size` for market.
+    /// * `min_size`: `registry::MarketInfo.min_size` for market.
+    /// * `underwriter_id`: `registry::MarketInfo.min_size` for market.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Market ID for new market.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_markets()`
+    fun register_market<
+        BaseType,
+        QuoteType
+    >(
+        market_id: u64,
+        base_name_generic: String,
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64,
+        underwriter_id: u64
+    ): u64
+    acquires OrderBooks {
+        // Get Econia resource account signer.
+        let resource_account = resource_account::get_signer();
+        // Get resource account address.
+        let resource_address = address_of(&resource_account);
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        // Add order book entry to order books map.
+        tablist::add(order_books_map_ref_mut, market_id, OrderBook{
+            base_type: type_info::type_of<BaseType>(),
+            base_name_generic,
+            quote_type: type_info::type_of<QuoteType>(),
+            lot_size,
+            tick_size,
+            min_size,
+            underwriter_id,
+            asks: avl_queue::new<Order>(ASCENDING, 0, 0),
+            bids: avl_queue::new<Order>(DESCENDING, 0, 0),
+            counter: 0,
+            maker_events:
+                account::new_event_handle<MakerEvent>(&resource_account),
+            taker_events:
+                account::new_event_handle<TakerEvent>(&resource_account)});
+        // Register an Econia fee store entry for market quote coin.
+        incentives::register_econia_fee_store_entry<QuoteType>(market_id);
+        market_id // Return market ID.
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

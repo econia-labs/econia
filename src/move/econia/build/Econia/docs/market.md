@@ -654,6 +654,16 @@ Post-or-abort limit order price crosses spread.
 
 
 
+<a name="0xc0deb00c_market_E_PRICE_TIME_PRIORITY_TOO_LOW"></a>
+
+No room to insert order with such low price-time priority.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_PRICE_TIME_PRIORITY_TOO_LOW">E_PRICE_TIME_PRIORITY_TOO_LOW</a>: u64 = 20;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_E_SELF_MATCH"></a>
 
 Taker and maker have same address.
@@ -710,6 +720,17 @@ Flag for fill-or-abort order restriction.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>: u8 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_HI_PRICE"></a>
+
+All bits set in integer of width required to encode price.
+Generated in Python via <code>hex(int('1' * 32, 2))</code>.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>: u64 = 4294967295;
 </code></pre>
 
 
@@ -1326,7 +1347,7 @@ swap from a coin on hand or generic swap.
 
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, critical_height: u8): (u128, u64, u64, u64)
 </code></pre>
 
 
@@ -1346,7 +1367,8 @@ swap from a coin on hand or generic swap.
     side: bool,
     size: u64, // In lots
     price: u64, // In ticks per lot
-    restriction: u8
+    restriction: u8,
+    critical_height: u8
 ): (
     u128, // Market order ID, <b>if</b> <a href="">any</a>.
     u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
@@ -1446,10 +1468,17 @@ swap from a coin on hand or generic swap.
     // Get orders AVL queue for maker side.
     <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks <b>else</b>
         &<b>mut</b> order_book_ref_mut.bids;
-    // Insert <b>to</b> AVL queue, storing correspoinding access key.
-    <b>let</b> avlq_access_key = <a href="avl_queue.md#0xc0deb00c_avl_queue_insert">avl_queue::insert</a>(orders_ref_mut, price, <a href="market.md#0xc0deb00c_market_Order">Order</a>{
-        size, <a href="user.md#0xc0deb00c_user">user</a>: user_address, custodian_id, order_access_key});
-    // Get <a href="market.md#0xc0deb00c_market">market</a> order ID from AVL queue access key, maker counter.
+    // Declare order <b>to</b> insert <b>to</b> book.
+    <b>let</b> order = <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, <a href="user.md#0xc0deb00c_user">user</a>: user_address, custodian_id,
+                      order_access_key};
+    // Get new AVL queue access key, evictee access key, and evictee
+    // value by attempting <b>to</b> insert for given critical height.
+    <b>let</b> (avlq_access_key, evictee_access_key, evictee_value) =
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_insert_check_eviction">avl_queue::insert_check_eviction</a>(
+            orders_ref_mut, price, order, critical_height);
+    // Assert that order could be inserted <b>to</b> AVL queue.
+    <b>assert</b>!(avlq_access_key != <a href="market.md#0xc0deb00c_market_NIL">NIL</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TIME_PRIORITY_TOO_LOW">E_PRICE_TIME_PRIORITY_TOO_LOW</a>);
+    // Get <a href="market.md#0xc0deb00c_market">market</a> order ID from AVL queue access key, counter.
     <b>let</b> market_order_id = (avlq_access_key <b>as</b> u128) |
         ((order_book_ref_mut.counter <b>as</b> u128) &lt;&lt; <a href="market.md#0xc0deb00c_market_SHIFT_COUNTER">SHIFT_COUNTER</a>);
     // Increment maker counter.
@@ -1457,6 +1486,28 @@ swap from a coin on hand or generic swap.
     <a href="user.md#0xc0deb00c_user_place_order_internal">user::place_order_internal</a>( // Place order <a href="user.md#0xc0deb00c_user">user</a>-side.
         user_address, market_id, custodian_id, side, size, price,
         market_order_id);
+    // Emit a maker place <a href="">event</a>.
+    <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
+        market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>: user_address,
+        custodian_id, type: <a href="market.md#0xc0deb00c_market_PLACE">PLACE</a>, size});
+    <b>if</b> (evictee_access_key == <a href="market.md#0xc0deb00c_market_NIL">NIL</a>) { // If no eviction required:
+        // Destroy empty evictee value <a href="">option</a>.
+        <a href="_destroy_none">option::destroy_none</a>(evictee_value);
+    } <b>else</b> { // If had <b>to</b> evict order at AVL queue tail:
+        // Unpack evicted order, storing fields for <a href="">event</a>.
+        <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, order_access_key} =
+            <a href="_destroy_some">option::destroy_some</a>(evictee_value);
+        // Get price of cancelled order.
+        <b>let</b> price_cancel = evictee_access_key & <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>;
+        // Cancel order <a href="user.md#0xc0deb00c_user">user</a>-side, storing its <a href="market.md#0xc0deb00c_market">market</a> order ID.
+        <b>let</b> market_order_id_cancel = <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(
+            <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, price_cancel,
+            order_access_key, (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128));
+        // Emit a maker evict <a href="">event</a>.
+        <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
+            market_id, side, market_order_id: market_order_id_cancel, <a href="user.md#0xc0deb00c_user">user</a>,
+            custodian_id, type: <a href="market.md#0xc0deb00c_market_EVICT">EVICT</a>, size});
+    };
     // Return <a href="market.md#0xc0deb00c_market">market</a> order ID and taker trade amounts.
     <b>return</b> (market_order_id, base_traded, quote_traded, fees)
 }

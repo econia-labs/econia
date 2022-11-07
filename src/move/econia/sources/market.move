@@ -163,6 +163,8 @@ module econia::market {
     const E_INVALID_RESTRICTION: u64 = 18;
     /// Taker and maker have same address.
     const E_SELF_MATCH: u64 = 19;
+    /// No room to insert order with such low price-time priority.
+    const E_PRICE_TIME_PRIORITY_TOO_LOW: u64 = 20;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -192,6 +194,9 @@ module econia::market {
     /// `u64` bitmask with all bits set, generated in Python via
     /// `hex(int('1' * 64, 2))`.
     const HI_64: u64 = 0xffffffffffffffff;
+    /// All bits set in integer of width required to encode price.
+    /// Generated in Python via `hex(int('1' * 32, 2))`.
+    const HI_PRICE: u64 = 0xffffffff;
     /// Flag for immediate-or-cancel order restriction.
     const IMMEDIATE_OR_CANCEL: u8 = 2;
     /// Flag for maximum base/quote amount to trade max possible.
@@ -577,7 +582,8 @@ module econia::market {
         side: bool,
         size: u64, // In lots
         price: u64, // In ticks per lot
-        restriction: u8
+        restriction: u8,
+        critical_height: u8
     ): (
         u128, // Market order ID, if any.
         u64, // Base traded by user as a taker, if any.
@@ -677,10 +683,17 @@ module econia::market {
         // Get orders AVL queue for maker side.
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks else
             &mut order_book_ref_mut.bids;
-        // Insert to AVL queue, storing correspoinding access key.
-        let avlq_access_key = avl_queue::insert(orders_ref_mut, price, Order{
-            size, user: user_address, custodian_id, order_access_key});
-        // Get market order ID from AVL queue access key, maker counter.
+        // Declare order to insert to book.
+        let order = Order{size, user: user_address, custodian_id,
+                          order_access_key};
+        // Get new AVL queue access key, evictee access key, and evictee
+        // value by attempting to insert for given critical height.
+        let (avlq_access_key, evictee_access_key, evictee_value) =
+            avl_queue::insert_check_eviction(
+                orders_ref_mut, price, order, critical_height);
+        // Assert that order could be inserted to AVL queue.
+        assert!(avlq_access_key != NIL, E_PRICE_TIME_PRIORITY_TOO_LOW);
+        // Get market order ID from AVL queue access key, counter.
         let market_order_id = (avlq_access_key as u128) |
             ((order_book_ref_mut.counter as u128) << SHIFT_COUNTER);
         // Increment maker counter.
@@ -688,6 +701,28 @@ module econia::market {
         user::place_order_internal( // Place order user-side.
             user_address, market_id, custodian_id, side, size, price,
             market_order_id);
+        // Emit a maker place event.
+        event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
+            market_id, side, market_order_id, user: user_address,
+            custodian_id, type: PLACE, size});
+        if (evictee_access_key == NIL) { // If no eviction required:
+            // Destroy empty evictee value option.
+            option::destroy_none(evictee_value);
+        } else { // If had to evict order at AVL queue tail:
+            // Unpack evicted order, storing fields for event.
+            let Order{size, user, custodian_id, order_access_key} =
+                option::destroy_some(evictee_value);
+            // Get price of cancelled order.
+            let price_cancel = evictee_access_key & HI_PRICE;
+            // Cancel order user-side, storing its market order ID.
+            let market_order_id_cancel = user::cancel_order_internal(
+                user, market_id, custodian_id, side, price_cancel,
+                order_access_key, (NIL as u128));
+            // Emit a maker evict event.
+            event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
+                market_id, side, market_order_id: market_order_id_cancel, user,
+                custodian_id, type: EVICT, size});
+        };
         // Return market order ID and taker trade amounts.
         return (market_order_id, base_traded, quote_traded, fees)
     }

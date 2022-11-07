@@ -945,6 +945,10 @@ module econia::user {
     ///   an eviction, otherwise the market order ID encoded in the
     ///   user's `Order`.
     ///
+    /// # Returns
+    ///
+    /// * `u128`: Market order ID for corresponding order.
+    ///
     /// # Terminology
     ///
     /// * The "inbound" asset is the asset that would have been received
@@ -955,7 +959,7 @@ module econia::user {
     /// # Aborts
     ///
     /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID mismatch with
-    ///   user's open order.
+    ///   user's open order, when market order ID not passed as `NIL`.
     ///
     /// # Assumptions
     ///
@@ -991,7 +995,8 @@ module econia::user {
         price: u64,
         order_access_key: u64,
         market_order_id: u128
-    ) acquires MarketAccounts {
+    ): u128
+    acquires MarketAccounts {
         // Mutably borrow market accounts map.
         let market_accounts_map_ref_mut =
             &mut borrow_global_mut<MarketAccounts>(user_address).map;
@@ -1022,11 +1027,13 @@ module econia::user {
         let order_ref_mut = // Mutably borrow order to remove.
             tablist::borrow_mut(orders_ref_mut, order_access_key);
         let size = order_ref_mut.size; // Store order's size field.
-        // If passed market order ID is not null, assert that it is
+        // If passed market order ID is null, reassign its value to the
+        // market order ID encoded in the order. Else assert that it is
         // equal to market order ID in user's order.
-        if (market_order_id != (NIL as u128)) assert!(
-            order_ref_mut.market_order_id == market_order_id,
-            E_INVALID_MARKET_ORDER_ID);
+        if (market_order_id == (NIL as u128))
+            market_order_id = order_ref_mut.market_order_id else
+            assert!(order_ref_mut.market_order_id == market_order_id,
+                    E_INVALID_MARKET_ORDER_ID);
         // Clear out order's market order ID field.
         order_ref_mut.market_order_id = (NIL as u128);
         // Mark order's size field to indicate top of inactive stack.
@@ -1041,6 +1048,7 @@ module econia::user {
         let ceiling_decrement_amount = size * size_multiplier_ceiling;
         *in_ceiling_ref_mut = // Decrement ceiling field.
             *in_ceiling_ref_mut - ceiling_decrement_amount;
+        market_order_id // Return market order ID.
     }
 
     /// Change the size of a user's open order on given side.
@@ -3267,9 +3275,12 @@ module econia::user {
             @user, market_account_id, side, order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
-        // Evict order.
-        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              price, order_access_key, (NIL as u128));
+        // Evict order, storing returned market order ID.
+        market_order_id_r = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            order_access_key, (NIL as u128));
+        // Assert returned market order ID.
+        assert!(market_order_id_r == market_order_id, 0);
         // Assert next order access key.
         assert!(get_next_order_access_key_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
@@ -3344,9 +3355,12 @@ module econia::user {
             @user, market_account_id, side, order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
-        // Cancel order.
-        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              price, order_access_key, market_order_id);
+        // Cancel order, storing returned market order ID.
+        market_order_id_r = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price,
+            order_access_key, market_order_id);
+        // Assert returned market order ID.
+        assert!(market_order_id_r == market_order_id, 0);
         // Assert asset counts.
         (base_total , base_available , base_ceiling,
          quote_total, quote_available, quote_ceiling) =
@@ -3409,18 +3423,24 @@ module econia::user {
         // Assert next order access key.
         assert!(get_next_order_access_key_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 3, 0);
-        // Cancel first order.
-        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              price, 1, market_order_id_1);
+        // Cancel first order, storing market order ID.
+        let market_order_id = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price, 1,
+            market_order_id_1);
+        // Assert returned market order ID.
+        assert!(market_order_id == market_order_id_1, 0);
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == 1, 0);
         // Assert next order access key.
         assert!(get_next_order_access_key_internal(
             @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side) == 1, 0);
-        // Cancel second order.
-        cancel_order_internal(@user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side,
-                              price, 2, market_order_id_2);
+        // Cancel second order, storting market order ID.
+        market_order_id = cancel_order_internal(
+            @user, MARKET_ID_PURE_COIN, CUSTODIAN_ID, side, price, 2,
+            market_order_id_2);
+        // Assert returned market order ID.
+        assert!(market_order_id == market_order_id_2, 0);
         // Assert inactive stack top on given side.
         assert!(get_inactive_stack_top_test(@user, market_account_id, side)
                 == 2, 0);

@@ -411,6 +411,7 @@ module econia::market {
         QuoteType
     >(
         market_id: u64,
+        order_book_ref_mut: &mut OrderBook,
         integrator: address,
         direction: bool,
         min_base: u64,
@@ -423,24 +424,11 @@ module econia::market {
     ): (
         Option<Coin<BaseType>>,
         Coin<QuoteType>,
-        u64, // Base filled
-        u64, // Quote paid if buy, received if sell
+        u64, // Base traded by taker.
+        u64, // Quote traded by taker.
         u64 // Fees paid
-    ) acquires OrderBooks {
+    ) {
         let side = direction; // Get corresponding side bool flag.
-        // Get address of resource account where order books are stored.
-        let resource_address = resource_account::get_address();
-        let order_books_map_ref_mut = // Mutably borrow order books map.
-            &mut borrow_global_mut<OrderBooks>(resource_address).map;
-        // Assert order books map has order book with given market ID.
-        assert!(tablist::contains(order_books_map_ref_mut, market_id),
-                E_INVALID_MARKET_ID);
-        let order_book_ref_mut = // Mutably borrow market order book.
-            tablist::borrow_mut(order_books_map_ref_mut, market_id);
-        assert!(type_info::type_of<BaseType>() == // Assert base type.
-                order_book_ref_mut.base_type, E_INVALID_BASE);
-        assert!(type_info::type_of<QuoteType>() == // Assert quote type.
-                order_book_ref_mut.quote_type, E_INVALID_QUOTE);
         let (lot_size, tick_size) = (order_book_ref_mut.lot_size,
             order_book_ref_mut.tick_size); // Get lot and tick sizes.
         // Get taker fee divisor.
@@ -524,13 +512,75 @@ module econia::market {
         // If a buy, taker pays quote required for fills, and additional
         // fee assessed after matching. If a sell, taker receives quote
         // from fills, then has a portion assessed as fees.
-        let quote_delta = if (direction == BUY) quote_fill + fees_paid
+        let quote_traded = if (direction == BUY) quote_fill + fees_paid
             else quote_fill - fees_paid;
         // Assert minimum base asset trade amount met.
         assert!(base_fill >= min_base, E_MIN_BASE_NOT_TRADED);
         // Assert minimum quote coin trade amount met.
-        assert!(quote_delta >= min_quote, E_MIN_QUOTE_NOT_TRADED);
-        (optional_base_coins, quote_coins, base_fill, quote_delta, fees_paid)
+        assert!(quote_traded >= min_quote, E_MIN_QUOTE_NOT_TRADED);
+        (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid)
+    }
+
+    fun match_from_market_account<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+    ): (
+        u64, // Base traded by user.
+        u64, // Quote traded by user.
+        u64 // Fees paid
+    ) acquires OrderBooks {
+        // Get user's available and ceiling asset counts.
+        let (_, base_available, base_ceiling, _, quote_available,
+             quote_ceiling) = user::get_asset_counts_internal(
+                user_address, market_id, custodian_id);
+        // If asset count check does not abort, then market exists, so
+        // get address of resource account for borrowing order book.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Get market underwriter ID.
+        let underwriter_id = order_book_ref_mut.underwriter_id;
+        match_range_check_trade( // Range check trade amounts.
+            direction, min_base, max_base, min_quote, max_quote,
+            base_available, base_ceiling, quote_available, quote_ceiling);
+        // Calculate max base and quote to withdraw. If a buy:
+        let (base_withdraw, quote_withdraw) = if (direction == BUY)
+            // Withdraw quote to buy base, else sell base for quote.
+            (0, max_quote) else (max_base, 0);
+        // Withdraw optional base coins and quote coins for match,
+        // verifying base type and quote type for market.
+        let (optional_base_coins, quote_coins) =
+            user::withdraw_assets_internal<BaseType, QuoteType>(
+                user_address, market_id, custodian_id, base_withdraw,
+                quote_withdraw, underwriter_id);
+        // Match against order book, storing modified asset inputs,
+        // base and quote trade amounts, and quote fees paid.
+        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+            = match(market_id, order_book_ref_mut, integrator, direction,
+                    min_base, max_base, min_quote, max_quote, limit_price,
+                    optional_base_coins, quote_coins);
+        // Calculate amount of base deposited back to market account.
+        let base_deposit = if (direction == BUY) base_traded else
+            base_withdraw - base_traded;
+        // Deposit assets back to user's market account.
+        user::deposit_assets_internal<BaseType, QuoteType>(
+            user_address, market_id, custodian_id, base_deposit,
+            optional_base_coins, quote_coins, underwriter_id);
+        // Return base and quote traded by user, fees paid.
+        (base_traded, quote_traded, fees)
     }
 
     /// Range check minimum and maximum asset fill amounts.
@@ -555,17 +605,17 @@ module econia::market {
     ///   market account, corresponds to either
     ///   `user::MarketAccount.base_ceiling` or
     ///   `user::MarketAccount.quote_ceiling`. When matching from a
-    ///   taker's coin store or from standaline coins, is the same as
-    ///   the available amount.
+    ///   taker's `aptos_framework::coin::CoinStore` or from standaline
+    ///   assets, is the same as the available amount.
     ///
     /// # Parameters
     ///
     /// * `side`: `ASK` or `SELL`, the side against which a taker order
     ///   would match.
-    /// * `min_base`: Minimum number of base units to fill.
-    /// * `max_base`: Maximum number of base units to fill.
-    /// * `min_quote`: Minimum number of quote units to fill.
-    /// * `max_quote`: Maximum number of quote units to fill.
+    /// * `min_base`: Minimum number of base units to trade.
+    /// * `max_base`: Maximum number of base units to trade.
+    /// * `min_quote`: Minimum number of quote units to trade.
+    /// * `max_quote`: Maximum number of quote units to trade.
     /// * `base_available`: Taker's available base asset amount.
     /// * `base_ceiling`: Taker's base asset ceiling, only checked when
     ///   `SIDE` is `ASK` (a taker buy).
@@ -575,27 +625,27 @@ module econia::market {
     ///
     /// # Aborts
     ///
-    /// * `E_MAX_BASE_0`: Maximum base fill amount specified as 0.
-    /// * `E_MAX_QUOTE_0`: Maximum quote fill amount specified as 0.
-    /// * `E_MIN_BASE_EXCEEDS_MAX`: Minimum base fill amount is larger
-    ///   than maximum base fill amount.
-    /// * `E_MIN_QUOTE_EXCEEDS_MAX`: Minimum quote fill amount is larger
-    ///   than maximum quote fill amount.
+    /// * `E_MAX_BASE_0`: Maximum base trade amount specified as 0.
+    /// * `E_MAX_QUOTE_0`: Maximum quote trade amount specified as 0.
+    /// * `E_MIN_BASE_EXCEEDS_MAX`: Minimum base trade amount is larger
+    ///   than maximum base trade amount.
+    /// * `E_MIN_QUOTE_EXCEEDS_MAX`: Minimum quote trade amount is
+    ///   larger than maximum quote tade amount.
     /// * `E_OVERFLOW_ASSET_IN`: Filling order would overflow asset
     ///   received from trade.
     /// * `E_NOT_ENOUGH_ASSET_OUT`: Not enough asset to trade away.
     ///
     /// # Failure testing
     ///
-    /// * `test_match_range_check_fills_asset_in_buy()`
-    /// * `test_match_range_check_fills_asset_in_sell()`
-    /// * `test_match_range_check_fills_asset_out_buy()`
-    /// * `test_match_range_check_fills_asset_out_sell()`
-    /// * `test_match_range_check_fills_base_0()`
-    /// * `test_match_range_check_fills_min_base_exceeds_max()`
-    /// * `test_match_range_check_fills_min_quote_exceeds_max()`
-    /// * `test_match_range_check_fills_quote_0()`
-    fun match_range_check_fills(
+    /// * `test_match_range_check_trade_asset_in_buy()`
+    /// * `test_match_range_check_trade_asset_in_sell()`
+    /// * `test_match_range_check_trade_asset_out_buy()`
+    /// * `test_match_range_check_trade_asset_out_sell()`
+    /// * `test_match_range_check_trade_base_0()`
+    /// * `test_match_range_check_trade_min_base_exceeds_max()`
+    /// * `test_match_range_check_trade_min_quote_exceeds_max()`
+    /// * `test_match_range_check_trade_quote_0()`
+    fun match_range_check_trade(
         side: bool,
         min_base: u64,
         max_base: u64,
@@ -606,16 +656,16 @@ module econia::market {
         quote_available: u64,
         quote_ceiling: u64
     ) {
-        // Assert nonzero max base fill amount.
+        // Assert nonzero max base trade amount.
         assert!(max_base > 0, E_MAX_BASE_0);
-        // Assert nonzero max quote fill amount.
+        // Assert nonzero max quote trade amount.
         assert!(max_quote > 0, E_MAX_QUOTE_0);
         // Assert minimum base less than or equal to maximum.
         assert!(min_base <= max_base, E_MIN_BASE_EXCEEDS_MAX);
         // Assert minimum quote less than or equal to maximum.
         assert!(min_quote <= max_quote, E_MIN_QUOTE_EXCEEDS_MAX);
-        // Get inbound asset ceiling and max fill amount, outbound
-        // asset available and max fill amount. If filling against asks:
+        // Get inbound asset ceiling and max trade amount, outbound
+        // asset available and max trade amount. If buying (asks side):
         let (in_ceiling, in_max, out_available, out_max) = if (side == ASK)
             // A market buy, so getting base and trading away quote.
             (base_ceiling, max_base, quote_available, max_quote) else
@@ -625,7 +675,7 @@ module econia::market {
         let in_ceiling_max = (in_ceiling as u128) + (in_max as u128);
         // Assert max possible inbound asset ceiling does not overflow.
         assert!(in_ceiling_max <= (HI_64 as u128), E_OVERFLOW_ASSET_IN);
-        // Assert enough outbound asset to cover max fill amount.
+        // Assert enough outbound asset to cover max trade amount.
         assert!(out_max <= out_available, E_NOT_ENOUGH_ASSET_OUT);
     }
 
@@ -690,7 +740,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for overflowing asset in for a buy.
-    fun test_match_range_check_fills_asset_in_buy() {
+    fun test_match_range_check_trade_asset_in_buy() {
         // Declare inputs.
         let side = BUY;
         let min_base = 0;
@@ -702,7 +752,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = HI_64;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -710,7 +760,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 4)]
     /// Verify failure for overflowing asset in for a sell.
-    fun test_match_range_check_fills_asset_in_sell() {
+    fun test_match_range_check_trade_asset_in_sell() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -722,7 +772,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = HI_64;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -730,7 +780,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for underflowing asset out for a buy.
-    fun test_match_range_check_fills_asset_out_buy() {
+    fun test_match_range_check_trade_asset_out_buy() {
         // Declare inputs.
         let side = BUY;
         let min_base = 0;
@@ -742,7 +792,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 1;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -750,7 +800,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 5)]
     /// Verify failure for underflowing asset out for a sell.
-    fun test_match_range_check_fills_asset_out_sell() {
+    fun test_match_range_check_trade_asset_out_sell() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -762,7 +812,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 1;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -770,7 +820,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for max base specified as 0.
-    fun test_match_range_check_fills_base_0() {
+    fun test_match_range_check_trade_base_0() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -782,7 +832,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -790,7 +840,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 2)]
     /// Verify failure for min base exceeds max
-    fun test_match_range_check_fills_min_base_exceeds_max() {
+    fun test_match_range_check_trade_min_base_exceeds_max() {
         // Declare inputs.
         let side = SELL;
         let min_base = 2;
@@ -802,7 +852,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -810,7 +860,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 3)]
     /// Verify failure for min quote exceeds max
-    fun test_match_range_check_fills_min_quote_exceeds_max() {
+    fun test_match_range_check_trade_min_quote_exceeds_max() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -822,7 +872,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }
@@ -830,7 +880,7 @@ module econia::market {
     #[test]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for max quote specified as 0.
-    fun test_match_range_check_fills_quote_0() {
+    fun test_match_range_check_trade_quote_0() {
         // Declare inputs.
         let side = SELL;
         let min_base = 0;
@@ -842,7 +892,7 @@ module econia::market {
         let quote_available = 0;
         let quote_ceiling = 0;
         // Attempt invalid invocation.
-        match_range_check_fills(
+        match_range_check_trade(
             side, min_base, max_base, min_quote, max_quote, base_available,
             base_ceiling, quote_available, quote_ceiling);
     }

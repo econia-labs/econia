@@ -225,7 +225,7 @@ module econia::market {
     /// ID.
     const SHIFT_COUNTER: u8 = 64;
     /// Taker address flag for when taker is unknown.
-    const TAKER_ADDRESS_UNKNOWN: address = @0x0;
+    const UNKNOWN_TAKER: address = @0x0;
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -253,6 +253,27 @@ module econia::market {
         // Register market with base coin, paying fees from coin store.
         register_market_base_coin<BaseType, QuoteType, UtilityType>(
             lot_size, tick_size, min_size, coin::withdraw(user, fee));
+    }
+
+    #[cmd]
+    /// Public entry function wrapper for `swap_between_coinstores()`.
+    public entry fun swap_between_coinstores_entry<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64, // Can be MAX_POSSIBLE.
+        min_quote: u64,
+        max_quote: u64, // Can be MAX_POSSIBLE.
+        limit_price: u64
+    ) acquires OrderBooks {
+        swap_between_coinstores<BaseType, QuoteType>(
+            user, market_id, integrator, direction, min_base, max_base,
+            min_quote, max_quote, limit_price);
     }
 
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -362,6 +383,168 @@ module econia::market {
             registry::get_underwriter_id(underwriter_capability_ref))
     }
 
+    public fun swap_between_coinstores<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64, // Can be MAX_POSSIBLE.
+        min_quote: u64,
+        max_quote: u64, // Can be MAX_POSSIBLE.
+        limit_price: u64
+    ): (
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
+        let user_address = address_of(user); // Get user address.
+        // Register base coin store if user does not have one.
+        if (!coin::is_account_registered<BaseType>(user_address))
+            coin::register<BaseType>(user);
+        // Register quote coin store if user does not have one.
+        if (!coin::is_account_registered<QuoteType>(user_address))
+            coin::register<QuoteType>(user);
+        let (base_value, quote_value) = // Get coin value amounts.
+            (coin::balance<BaseType>(user_address),
+             coin::balance<QuoteType>(user_address));
+        // If max base to trade flagged as max possible, update it:
+        if (max_base == MAX_POSSIBLE) max_base = if (direction == BUY)
+            // If a buy, max to trade is amount that can fit in
+            // coin store, else is the amount in the coin store.
+            (HI_64 - base_value) else (base_value);
+        // If max quote to trade flagged as max possible, update it:
+        if (max_quote == MAX_POSSIBLE) max_quote = if (direction == BUY)
+            // If a buy, max to trade is amount in coin store, else is
+            // the amount that could fit in the coin store.
+            (quote_value) else (HI_64 - quote_value);
+        range_check_trade( // Range check trade amounts.
+            direction, min_base, max_base, min_quote, max_quote,
+            base_value, base_value, quote_value, quote_value);
+        // Get option-wrapped base coins and quote coins for matching:
+        let (optional_base_coins, quote_coins) = if (direction == BUY)
+            // If a buy, need no base but need max quote.
+            (option::some(coin::zero<BaseType>()),
+             coin::withdraw<QuoteType>(user, max_quote)) else
+            // If a sell, need max base but not quote.
+            (option::some(coin::withdraw<BaseType>(user, max_base)),
+             coin::zero<QuoteType>());
+        // Swap against order book, storing modified coin inputs, base
+        // and quote trade amounts, and quote fees paid.
+        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+            = swap(market_id, NO_UNDERWRITER, user_address, integrator,
+                   direction, min_base, max_base, min_quote, max_quote,
+                   limit_price, optional_base_coins, quote_coins);
+        // Deposit base coins back to user's coin store.
+        coin::deposit(user_address, option::destroy_some(optional_base_coins));
+        // Deposit quote coins back to user's coin store.
+        coin::deposit(user_address, quote_coins);
+        (base_traded, quote_traded, fees) // Return match results.
+    }
+
+    /// # Terminology
+    ///
+    /// * "Inbound" and "outbound"
+    public fun swap_coins<
+        BaseType,
+        QuoteType
+    >(
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64, // Ignored if a sell. Can be MAX_POSSIBLE if a buy.
+        min_quote: u64,
+        max_quote: u64, // Ignored if a buy. Can be MAX_POSSIBLE if a sell.
+        limit_price: u64,
+        base_coins: Coin<BaseType>,
+        quote_coins: Coin<QuoteType>
+    ): (
+        Coin<BaseType>,
+        Coin<QuoteType>,
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
+        let (base_value, quote_value) = // Get coin value amounts.
+            (coin::value(&base_coins), coin::value(&quote_coins));
+        // If a sell, max base to trade is amount passed in.
+        if (direction == SELL) max_base = base_value else
+            // Otherwise if a buy and max base amount passed as max
+            // possible flag, update to max that can be bought.
+            if (max_base == MAX_POSSIBLE) max_base = HI_64 - base_value;
+        // If a buy, max quote to trade is amount passed in.
+        if (direction == BUY) max_quote = quote_value else
+            // Otherwise if a sell and max quote amount passed as max
+            // possible flag, update to max that can be received.
+            if (max_quote == MAX_POSSIBLE) max_quote = HI_64 - quote_value;
+        range_check_trade( // Range check trade amounts.
+            direction, min_base, max_base, min_quote, max_quote,
+            base_value, base_value, quote_value, quote_value);
+        // Swap against order book, storing modified coin inputs, base
+        // and quote trade amounts, and quote fees paid.
+        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+            = swap(market_id, NO_UNDERWRITER, UNKNOWN_TAKER, integrator,
+                   direction, min_base, max_base, min_quote, max_quote,
+                   limit_price, option::some(base_coins), quote_coins);
+        // Unpack base coins from option, return remaining match values.
+        (option::destroy_some(optional_base_coins), quote_coins, base_traded,
+         quote_traded, fees)
+    }
+
+    public fun swap_generic<
+        QuoteType
+    >(
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64, // Can be MAX posible.
+        min_quote: u64,
+        max_quote: u64, // Ignored if a buy. Can be MAX_POSSIBLE if a sell.
+        limit_price: u64,
+        quote_coins: Coin<QuoteType>,
+        underwriter_capability_ref: &UnderwriterCapability
+    ): (
+        Coin<QuoteType>,
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
+        let underwriter_id = // Get underwriter ID.
+            registry::get_underwriter_id(underwriter_capability_ref);
+        // Get quote coin value.
+        let quote_value = coin::value(&quote_coins);
+        // If max base to trade flagged as max possible, update it to
+        // the max amount that can fit in a u64.
+        if (max_base == MAX_POSSIBLE) max_base = HI_64;
+        // Effective base value on hand is 0 if buying, else max base to
+        // trade if sellf.
+        let base_value = if (direction == BUY) 0 else max_base;
+        // If a buy, max quote to trade is amount passed in.
+        if (direction == BUY) max_quote = quote_value else
+            // Otherwise if a sell and max quote amount passed as max
+            // possible flag, update to max that can be received.
+            if (max_quote == MAX_POSSIBLE) max_quote = HI_64 - quote_value;
+        range_check_trade( // Range check trade amounts.
+            direction, min_base, max_base, min_quote, max_quote,
+            base_value, base_value, quote_value, quote_value);
+        // Swap against order book, storing modified quote coin input,
+        // base and quote trade amounts, and quote fees paid.
+        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+            = swap(market_id, underwriter_id, UNKNOWN_TAKER, integrator,
+                   direction, min_base, max_base, min_quote, max_quote,
+                   limit_price, option::none(), quote_coins);
+        // Destroy empty base coin option.
+        option::destroy_none<Coin<GenericAsset>>(optional_base_coins);
+        // Return quote coins, amount of base traded, amount of quote
+        // traded, and quote fees paid.
+        (quote_coins, base_traded, quote_traded, fees)
+    }
+
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -384,7 +567,7 @@ module econia::market {
     ///
     /// # Returns
     ///
-    /// Taker address may be passed as `TAKER_ADDRESS_UNKNOWN` when a
+    /// Taker address may be passed as `UNKNOWN_TAKER` when a
     /// swap from a coin on hand or generic swap.
     fun match<
         BaseType,
@@ -409,6 +592,8 @@ module econia::market {
         u64, // Quote traded by taker.
         u64 // Fees paid
     ) {
+        // Assert price is not too high.
+        assert!(limit_price <= MAX_PRICE, E_PRICE_TOO_HIGH);
         let side = direction; // Get corresponding side bool flag.
         let (lot_size, tick_size) = (order_book_ref_mut.lot_size,
             order_book_ref_mut.tick_size); // Get lot and tick sizes.
@@ -679,8 +864,6 @@ module econia::market {
         u64, // Quote traded by user.
         u64 // Fees paid
     ) acquires OrderBooks {
-        // Assert price is not too high.
-        assert!(limit_price <= MAX_PRICE, E_PRICE_TOO_HIGH);
         // Get user's available and ceiling asset counts.
         let (_, base_available, base_ceiling, _, quote_available,
              quote_ceiling) = user::get_asset_counts_internal(
@@ -756,7 +939,7 @@ module econia::market {
     ///   market account, corresponds to either
     ///   `user::MarketAccount.base_ceiling` or
     ///   `user::MarketAccount.quote_ceiling`. When matching from a
-    ///   taker's `aptos_framework::coin::CoinStore` or from standaline
+    ///   taker's `aptos_framework::coin::CoinStore` or from standalone
     ///   assets, is the same as the available amount.
     ///
     /// # Parameters

@@ -8,7 +8,8 @@ module econia::market {
     use aptos_framework::type_info::{Self, TypeInfo};
     use econia::avl_queue::{Self, AVLqueue};
     use econia::incentives;
-    use econia::registry::{Self, GenericAsset, UnderwriterCapability};
+    use econia::registry::{
+        Self, CustodianCapability, GenericAsset, UnderwriterCapability};
     use econia::resource_account;
     use econia::tablist::{Self, Tablist};
     use econia::user;
@@ -187,6 +188,8 @@ module econia::market {
     const CANCEL: u8 = 0;
     /// Flag for `MakerEvent.type` when order size is changed.
     const CHANGE: u8 = 1;
+    /// Critical tree height above which evictions may take place.
+    const CRITICAL_HEIGHT: u8 = 9;
     /// Descending AVL queue flag, for bids AVL queue.
     const DESCENDING: bool = false;
     /// Flag for `MakerEvent.type` when order is evicted.
@@ -210,6 +213,8 @@ module econia::market {
     const N_RESTRICTIONS: u8 = 3;
     /// Flag for null value when null defined as 0.
     const NIL: u64 = 0;
+    /// Custodian ID flag for no custodian.
+    const NO_CUSTODIAN: u64 = 0;
     /// Flag for no order restriction.
     const NO_RESTRICTION: u8 = 0;
     /// Underwriter ID flag for no underwriter.
@@ -230,6 +235,24 @@ module econia::market {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Public entry function wrapper for `place_limit_order_user()`.
+    public entry fun place_limit_order_user_entry<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64, // In lots
+        price: u64, // In ticks per lot
+        restriction: u8,
+    ) acquires OrderBooks {
+        place_limit_order_user<BaseType, QuoteType>(
+            user, market_id, integrator, side, size, price, restriction);
+    }
 
     #[cmd]
     /// Wrapped call to `register_market_base_coin()` for paying utility
@@ -279,6 +302,73 @@ module econia::market {
     // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    public fun place_limit_order_custodian<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64, // In lots
+        price: u64, // In ticks per lot
+        restriction: u8,
+        custodian_capability_ref: &CustodianCapability
+    ): (
+        u128, // Market order ID, if any.
+        u64, // Base traded by user as a taker, if any.
+        u64, // Quote traded by user as a taker, if any.
+        u64 // Fees paid as a taker, if any.
+    ) acquires OrderBooks {
+        place_limit_order<
+            BaseType,
+            QuoteType
+        >(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            CRITICAL_HEIGHT
+        )
+    }
+
+    public fun place_limit_order_user<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64, // In lots
+        price: u64, // In ticks per lot
+        restriction: u8,
+    ): (
+        u128, // Market order ID, if any.
+        u64, // Base traded by user as a taker, if any.
+        u64, // Quote traded by user as a taker, if any.
+        u64 // Fees paid as a taker, if any.
+    ) acquires OrderBooks {
+        place_limit_order<
+            BaseType,
+            QuoteType
+        >(
+            address_of(user),
+            market_id,
+            NO_CUSTODIAN,
+            integrator,
+            side,
+            size,
+            price,
+            restriction,
+            CRITICAL_HEIGHT
+        )
+    }
 
     /// Register pure coin market, return resultant market ID.
     ///

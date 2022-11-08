@@ -11,9 +11,12 @@
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Constants](#@Constants_0)
+-  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
 -  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
     -  [Testing](#@Testing_1)
 -  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
+-  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
+-  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
 -  [Function `register_market_base_coin`](#0xc0deb00c_market_register_market_base_coin)
     -  [Type parameters](#@Type_parameters_2)
     -  [Parameters](#@Parameters_3)
@@ -467,6 +470,16 @@ Quote asset type is invalid.
 
 
 
+<a name="0xc0deb00c_market_NO_CUSTODIAN"></a>
+
+Custodian ID flag for no custodian.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>: u64 = 0;
+</code></pre>
+
+
+
 <a name="0xc0deb00c_market_NO_UNDERWRITER"></a>
 
 Underwriter ID flag for no underwriter.
@@ -576,6 +589,16 @@ Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.t
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a>: u8 = 1;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_CRITICAL_HEIGHT"></a>
+
+Critical tree height above which evictions may take place.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_CRITICAL_HEIGHT">CRITICAL_HEIGHT</a>: u8 = 9;
 </code></pre>
 
 
@@ -832,6 +855,43 @@ Taker address flag for when taker is unknown.
 
 
 
+<a name="0xc0deb00c_market_place_limit_order_user_entry"></a>
+
+## Function `place_limit_order_user_entry`
+
+Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    integrator: <b>address</b>,
+    side: bool,
+    size: u64, // In lots
+    price: u64, // In ticks per lot
+    restriction: u8,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, side, size, price, restriction);
+}
+</code></pre>
+
+
+
+</details>
+
 <a name="0xc0deb00c_market_register_market_base_coin_from_coinstore"></a>
 
 ## Function `register_market_base_coin_from_coinstore`
@@ -912,6 +972,113 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
     <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseType, QuoteType&gt;(
         <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
         min_quote, max_quote, limit_price);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order_custodian"></a>
+
+## Function `place_limit_order_custodian`
+
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u128, u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    user_address: <b>address</b>,
+    market_id: u64,
+    integrator: <b>address</b>,
+    side: bool,
+    size: u64, // In lots
+    price: u64, // In ticks per lot
+    restriction: u8,
+    custodian_capability_ref: &CustodianCapability
+): (
+    u128, // Market order ID, <b>if</b> <a href="">any</a>.
+    u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u64, // Quote traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u64 // Fees paid <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
+        BaseType,
+        QuoteType
+    &gt;(
+        user_address,
+        market_id,
+        <a href="registry.md#0xc0deb00c_registry_get_custodian_id">registry::get_custodian_id</a>(custodian_capability_ref),
+        integrator,
+        side,
+        size,
+        price,
+        restriction,
+        <a href="market.md#0xc0deb00c_market_CRITICAL_HEIGHT">CRITICAL_HEIGHT</a>
+    )
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order_user"></a>
+
+## Function `place_limit_order_user`
+
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    integrator: <b>address</b>,
+    side: bool,
+    size: u64, // In lots
+    price: u64, // In ticks per lot
+    restriction: u8,
+): (
+    u128, // Market order ID, <b>if</b> <a href="">any</a>.
+    u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u64, // Quote traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u64 // Fees paid <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
+        BaseType,
+        QuoteType
+    &gt;(
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
+        market_id,
+        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        integrator,
+        side,
+        size,
+        price,
+        restriction,
+        <a href="market.md#0xc0deb00c_market_CRITICAL_HEIGHT">CRITICAL_HEIGHT</a>
+    )
 }
 </code></pre>
 

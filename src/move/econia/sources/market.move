@@ -168,6 +168,12 @@ module econia::market {
     const E_PRICE_TIME_PRIORITY_TOO_LOW: u64 = 20;
     /// Underwriter invalid for given market.
     const E_INVALID_UNDERWRITER: u64 = 21;
+    /// Market order ID invalid.
+    const E_INVALID_MARKET_ORDER_ID: u64 = 22;
+    /// Custodian not authorized for operation.
+    const E_INVALID_CUSTODIAN: u64 = 23;
+    /// Wrong user for cancel operation.
+    const E_CANCEL_USER_MISMATCH: u64 = 24;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -232,6 +238,23 @@ module econia::market {
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Public entry function wrapper for `cancel_order()` for
+    /// cancelling order under authority of signing user.
+    public entry fun cancel_order_user(
+        maker: &signer,
+        market_id: u64,
+        side: bool,
+        market_order_id: u128
+    ) acquires OrderBooks {
+        cancel_order(
+            address_of(maker),
+            market_id,
+            side,
+            NO_CUSTODIAN,
+            market_order_id);
+    }
 
     #[cmd]
     /// Public entry function wrapper for `place_limit_order_user()`.
@@ -321,6 +344,23 @@ module econia::market {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Public function wrapper for `cancel_order()` for cancelling
+    /// order under authority of delegated custodian.
+    public fun cancel_order_custodian(
+        user_address: address,
+        market_id: u64,
+        side: bool,
+        market_order_id: u128,
+        custodian_capability_ref: &CustodianCapability
+    ) acquires OrderBooks {
+        cancel_order(
+            user_address,
+            market_id,
+            side,
+            registry::get_custodian_id(custodian_capability_ref),
+            market_order_id);
+    }
+
     /// Public function wrapper for `place_limit_order()` for placing
     /// order under authority of delegated custodian.
     public fun place_limit_order_custodian<
@@ -353,8 +393,7 @@ module econia::market {
             size,
             price,
             restriction,
-            CRITICAL_HEIGHT
-        )
+            CRITICAL_HEIGHT)
     }
 
     /// Public function wrapper for `place_limit_order()` for placing
@@ -388,8 +427,7 @@ module econia::market {
             size,
             price,
             restriction,
-            CRITICAL_HEIGHT
-        )
+            CRITICAL_HEIGHT)
     }
 
     /// Public function wrapper for `place_market_order()` for placing
@@ -423,8 +461,7 @@ module econia::market {
             max_base,
             min_quote,
             max_quote,
-            limit_price
-        )
+            limit_price)
     }
 
     /// Public function wrapper for `place_market_order()` for placing
@@ -457,8 +494,7 @@ module econia::market {
             max_base,
             min_quote,
             max_quote,
-            limit_price
-        )
+            limit_price)
     }
 
     /// Register pure coin market, return resultant market ID.
@@ -829,6 +865,68 @@ module econia::market {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Cancel maker order on order book and in user's market account.
+    ///
+    /// # Parameters
+    ///
+    /// * `maker`: Address of user holding maker order.
+    /// * `market_id`: Market ID of market.
+    /// * `side`: `ASK` or `BID`, the maker order side.
+    /// * `custodian_id`: Market account custodian ID.
+    /// * `market_order_id`: Market order ID of order on order book.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID passed as `NIL`.
+    /// * `E_INVALID_MARKET_ID`: No market with given ID.
+    /// * `E_CANCEL_USER_MISMATCH`: Mismatch between `maker` and order
+    ///   on book having given market order ID.
+    /// * `E_INVALID_CUSTODIAN`: Mismatch between `custodian_id` and
+    ///   custodian ID of order on order book having market order ID.
+    ///
+    /// # Emits
+    ///
+    /// * `MakerEvent`: Information about the maker order cancelled.
+    fun cancel_order(
+        maker: address,
+        market_id: u64,
+        side: bool,
+        custodian_id: u64,
+        market_order_id: u128
+    ) acquires OrderBooks {
+        // Assert market order ID not passed as reserved null flag.
+        assert!(market_order_id != (NIL as u128), E_INVALID_MARKET_ORDER_ID);
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref_mut, market_id),
+                E_INVALID_MARKET_ID);
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Mutably borrow corresponding orders AVL queue.
+        let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
+            else &mut order_book_ref_mut.bids;
+        // Get AVL queue access key from market order ID.
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Remove order from AVL queue, storing its fields.
+        let Order{size, user, custodian_id: order_custodian, order_access_key}
+            = avl_queue::remove(orders_ref_mut, avlq_access_key);
+        // Assert user holding order matches passed maker address.
+        assert!(maker == user, E_CANCEL_USER_MISMATCH);
+        // Assert passed custodian ID matches that from order.
+        assert!(custodian_id == order_custodian, E_INVALID_CUSTODIAN);
+        let price = avlq_access_key & HI_PRICE; // Get order price.
+        // Cancel order user-side, thus verifying market order ID.
+        user::cancel_order_internal(maker, market_id, custodian_id, side,
+                                    price, order_access_key, market_order_id);
+        let type = CANCEL; // Declare maker event type.
+        // Emit a maker cancel event.
+        event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
+            market_id, side, market_order_id, user, custodian_id, type, size});
+    }
+
     /// Initialize the order books map upon module publication.
     fun init_module() {
         // Get Econia resource account signer.
@@ -1125,10 +1223,10 @@ module econia::market {
     ///
     /// # Emits
     ///
-    /// * `TakerEvent`: Information about the user's taker order placed
+    /// * `MakerEvent`: Information about the user's maker order placed
     ///   on the order book, if one was placed.
-    /// * `TakerEvent`: Information about the taker order evicted from
-    ///   the order book, if required to fit user's taker order on the
+    /// * `MakerEvent`: Information about the maker order evicted from
+    ///   the order book, if required to fit user's maker order on the
     ///   book.
     ///
     /// # Restrictions

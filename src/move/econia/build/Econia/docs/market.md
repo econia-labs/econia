@@ -439,8 +439,7 @@ Flag for null value when null defined as 0.
 
 <a name="0xc0deb00c_market_BUY"></a>
 
-Flag for buy direction. Equal to <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code>, since taker buys fill
-against maker asks.
+Flag for buy direction.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BUY">BUY</a>: bool = <b>true</b>;
@@ -450,8 +449,7 @@ against maker asks.
 
 <a name="0xc0deb00c_market_SELL"></a>
 
-Flag for sell direction. Equal to <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, since taker sells fill
-against maker bids.
+Flag for sell direction.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_SELL">SELL</a>: bool = <b>false</b>;
@@ -511,8 +509,7 @@ Underwriter ID flag for no underwriter.
 
 <a name="0xc0deb00c_market_ASK"></a>
 
-Flag for ask side. Equal to <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>, since taker buys fill against
-maker asks.
+Flag for ask side.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_ASK">ASK</a>: bool = <b>true</b>;
@@ -522,8 +519,7 @@ maker asks.
 
 <a name="0xc0deb00c_market_BID"></a>
 
-Flag for bid side. Equal to <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code> since taker sells fill
-against maker bids.
+Flag for bid side.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>: bool = <b>false</b>;
@@ -1851,7 +1847,8 @@ conditions are then checked.
 ) {
     // Assert price is not too high.
     <b>assert</b>!(limit_price &lt;= <a href="market.md#0xc0deb00c_market_MAX_PRICE">MAX_PRICE</a>, <a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a>);
-    <b>let</b> side = direction; // Get corresponding side bool flag.
+    // Taker buy fills against asks, sell against bids.
+    <b>let</b> side = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) <a href="market.md#0xc0deb00c_market_ASK">ASK</a> <b>else</b> <a href="market.md#0xc0deb00c_market_BID">BID</a>;
     <b>let</b> (lot_size, tick_size) = (order_book_ref_mut.lot_size,
         order_book_ref_mut.tick_size); // Get lot and tick sizes.
     // Get taker fee divisor.
@@ -1943,6 +1940,7 @@ conditions are then checked.
     <b>assert</b>!(base_fill &gt;= min_base, <a href="market.md#0xc0deb00c_market_E_MIN_BASE_NOT_TRADED">E_MIN_BASE_NOT_TRADED</a>);
     // Assert minimum quote <a href="">coin</a> trade amount met.
     <b>assert</b>!(quote_traded &gt;= min_quote, <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_NOT_TRADED">E_MIN_QUOTE_NOT_TRADED</a>);
+    // Return optional base <a href="">coin</a>, quote coins, trade amounts.
     (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid)
 }
 </code></pre>
@@ -2068,7 +2066,28 @@ the given order side to determine if the spread is crossed, and
 if so, order aborts if restriction is post-or-abort.
 
 The amount of base units, ticks, and quote units required to
-fill the order size are checked for overflow conditions.
+fill the order size are checked for overflow conditions, and
+corresponding trade amounts are calculated for range checking.
+If the order crosses the spread, base and quote assets are
+withdrawn from the user's market account and passed through the
+matching engine, deposited back to the user's market account,
+and remaining order size to fill is updated. If restriction is
+immediate-or-cancel or if no size left to fill after optional
+matching as a taker, returns without placing a maker order.
+
+The user's next order access key is checked, and a corresponding
+order is inserted to the order book. If the order's price time
+priority is too low to fit on the book, the order aborts. Else
+a market order ID is constructed from the AVL queue access key
+just generated upon insertion, and the order book counter is
+updated. An order is placed user-side, and a taker event is
+emitted for the new order on the book.
+
+If insertion did not result in an eviction, the empty optional
+evictee value is destroyed. Otherwise, the evicted order is
+unpacked and its price is extracted, then it is cancelled from
+the corresponding user's market account, and its market order
+ID is emitted in a maker evict event.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, critical_height: u8): (u128, u64, u64, u64)
@@ -2140,51 +2159,58 @@ fill the order size are checked for overflow conditions.
     <b>let</b> quote = ticks * (order_book_ref_mut.tick_size <b>as</b> u128);
     // Assert corresponding quote amount fits in a u64.
     <b>assert</b>!(quote &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_QUOTE_OVERFLOW">E_SIZE_PRICE_QUOTE_OVERFLOW</a>);
-    // Max base <b>to</b> trade during taker match against book is
-    // calculated amount.
+    // Max base <b>to</b> trade is amount calculated from size, lot size.
     <b>let</b> max_base = (base <b>as</b> u64);
-    // Min base <b>to</b> trade during taker match against book is max base
-    // <b>if</b> a fill-or-<b>abort</b> order, otherwise there is no minimum.
+    // If a fill-or-<b>abort</b> order, must fill <b>as</b> a taker order <b>with</b>
+    // a minimum trade amount equal <b>to</b> max base. Else no <b>min</b>.
     <b>let</b> min_base = <b>if</b> (restriction == <a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>) (max_base) <b>else</b> 0;
-    <b>let</b> min_quote = 0; // Not need <b>min</b> quote since have <b>min</b> base.
+    // No need <b>to</b> specify <b>min</b> quote <b>if</b> filling <b>as</b> a taker order
+    // since <b>min</b> base is specified.
+    <b>let</b> min_quote = 0;
     // If an ask that crosses the spread, max quote <b>to</b> trade during
-    // taker match is max amount that can fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+    // taker match is max amount that can fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>,
+    // since order will fill <b>as</b> a taker sell at prices that are at
+    // least <b>as</b> high <b>as</b> the specified order price (<a href="user.md#0xc0deb00c_user">user</a> will receive
+    // more quote than calculated from order size and price).
     <b>let</b> max_quote = <b>if</b> (<a href="market.md#0xc0deb00c_market_ASK">ASK</a> && crosses_spread) (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling) <b>else</b>
         (quote <b>as</b> u64); // Else is amount from size and price.
-    // If order side is bid, fills across spread against asks <b>as</b> a
-    // taker buy, <b>else</b> against bids <b>as</b> a taker sell.
-    <b>let</b> direction = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_BID">BID</a>) <a href="market.md#0xc0deb00c_market_BUY">BUY</a> <b>else</b> <a href="market.md#0xc0deb00c_market_SELL">SELL</a>;
+    // If an ask, trade direction <b>to</b> range check is sell, <b>else</b> buy.
+    <b>let</b> direction = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) <a href="market.md#0xc0deb00c_market_SELL">SELL</a> <b>else</b> <a href="market.md#0xc0deb00c_market_BUY">BUY</a>;
     <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
         direction, min_base, max_base, min_quote, max_quote,
         base_available, base_ceiling, quote_available, quote_ceiling);
-    // Calculate max base and quote <b>to</b> withdraw. If a buy:
-    <b>let</b> (base_withdraw, quote_withdraw) = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
-        // Withdraw quote <b>to</b> buy base, <b>else</b> sell base for quote.
-        (0, max_quote) <b>else</b> (max_base, 0);
-    // Withdraw optional base coins and quote coins for match,
-    // verifying base type and quote type for <a href="market.md#0xc0deb00c_market">market</a>.
-    <b>let</b> (optional_base_coins, quote_coins) =
-        <a href="user.md#0xc0deb00c_user_withdraw_assets_internal">user::withdraw_assets_internal</a>&lt;BaseType, QuoteType&gt;(
-            user_address, market_id, custodian_id, base_withdraw,
-            quote_withdraw, underwriter_id);
-    // Match against order book, storing modified asset inputs,
-    // base and quote trade amounts, and quote fees paid.
-    <b>let</b> (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-        = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address, integrator,
-                direction, min_base, max_base, min_quote, max_quote, price,
-                optional_base_coins, quote_coins);
-    // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
-    <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
-        base_withdraw - base_traded;
-    // Deposit <a href="assets.md#0xc0deb00c_assets">assets</a> back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
-    <a href="user.md#0xc0deb00c_user_deposit_assets_internal">user::deposit_assets_internal</a>&lt;BaseType, QuoteType&gt;(
-        user_address, market_id, custodian_id, base_deposit,
-        optional_base_coins, quote_coins, underwriter_id);
-    // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> no size left <b>as</b> a maker.
-    <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) || (base_traded == max_base))
+    // Assume no <a href="assets.md#0xc0deb00c_assets">assets</a> traded <b>as</b> a taker.
+    <b>let</b> (base_traded, quote_traded, fees) = (0, 0, 0);
+    <b>if</b> (crosses_spread) { // If order price crosses spread:
+        // Calculate max base and quote <b>to</b> withdraw. If a buy:
+        <b>let</b> (base_withdraw, quote_withdraw) = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+            // Withdraw quote <b>to</b> buy base, <b>else</b> sell base for quote.
+            (0, max_quote) <b>else</b> (max_base, 0);
+        // Withdraw optional base coins and quote coins for match,
+        // verifying base type and quote type for <a href="market.md#0xc0deb00c_market">market</a>.
+        <b>let</b> (optional_base_coins, quote_coins) =
+            <a href="user.md#0xc0deb00c_user_withdraw_assets_internal">user::withdraw_assets_internal</a>&lt;BaseType, QuoteType&gt;(
+                user_address, market_id, custodian_id, base_withdraw,
+                quote_withdraw, underwriter_id);
+        // Match against order book, storing modified asset inputs,
+        // base and quote trade amounts, and quote fees paid.
+        (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+            = <a href="market.md#0xc0deb00c_market_match">match</a>(market_id, order_book_ref_mut, user_address,
+                    integrator, direction, min_base, max_base, min_quote,
+                    max_quote, price, optional_base_coins, quote_coins);
+        // Calculate amount of base deposited back <b>to</b> <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+        <b>let</b> base_deposit = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) base_traded <b>else</b>
+            base_withdraw - base_traded;
+        // Deposit <a href="assets.md#0xc0deb00c_assets">assets</a> back <b>to</b> <a href="user.md#0xc0deb00c_user">user</a>'s <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+        <a href="user.md#0xc0deb00c_user_deposit_assets_internal">user::deposit_assets_internal</a>&lt;BaseType, QuoteType&gt;(
+            user_address, market_id, custodian_id, base_deposit,
+            optional_base_coins, quote_coins, underwriter_id);
+        // Update size <b>to</b> amount left <b>to</b> fill after taker match.
+        size = size - (base_traded / order_book_ref_mut.lot_size);
+    }; // Done <b>with</b> optional matching <b>as</b> a taker across the spread.
+    // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> no size left <b>to</b> fill.
+    <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) || size == 0)
         <b>return</b> ((<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), base_traded, quote_traded, fees);
-    // Update size <b>to</b> amount left <b>to</b> fill after matching <b>as</b> taker.
-    size = size - (base_traded / order_book_ref_mut.lot_size);
     // Get next order access key for <a href="user.md#0xc0deb00c_user">user</a>-side order placement.
     <b>let</b> order_access_key = <a href="user.md#0xc0deb00c_user_get_next_order_access_key_internal">user::get_next_order_access_key_internal</a>(
         user_address, market_id, custodian_id, side);

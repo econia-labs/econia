@@ -175,14 +175,11 @@ module econia::market {
 
     /// Ascending AVL queue flag, for asks AVL queue.
     const ASCENDING: bool = true;
-    /// Flag for ask side. Equal to `BUY`, since taker buys fill against
-    /// maker asks.
+    /// Flag for ask side.
     const ASK: bool = true;
-    /// Flag for bid side. Equal to `SELL` since taker sells fill
-    /// against maker bids.
+    /// Flag for bid side.
     const BID: bool = false;
-    /// Flag for buy direction. Equal to `ASK`, since taker buys fill
-    /// against maker asks.
+    /// Flag for buy direction.
     const BUY: bool = true;
     /// Flag for `MakerEvent.type` when order is cancelled.
     const CANCEL: u8 = 0;
@@ -223,8 +220,7 @@ module econia::market {
     const PLACE: u8 = 3;
     /// Flag for post-or-abort order restriction.
     const POST_OR_ABORT: u8 = 3;
-    /// Flag for sell direction. Equal to `BID`, since taker sells fill
-    /// against maker bids.
+    /// Flag for sell direction.
     const SELL: bool = false;
     /// Number of bits maker order counter is shifted in a market order
     /// ID.
@@ -866,7 +862,8 @@ module econia::market {
     ) {
         // Assert price is not too high.
         assert!(limit_price <= MAX_PRICE, E_PRICE_TOO_HIGH);
-        let side = direction; // Get corresponding side bool flag.
+        // Taker buy fills against asks, sell against bids.
+        let side = if (direction == BUY) ASK else BID;
         let (lot_size, tick_size) = (order_book_ref_mut.lot_size,
             order_book_ref_mut.tick_size); // Get lot and tick sizes.
         // Get taker fee divisor.
@@ -958,6 +955,7 @@ module econia::market {
         assert!(base_fill >= min_base, E_MIN_BASE_NOT_TRADED);
         // Assert minimum quote coin trade amount met.
         assert!(quote_traded >= min_quote, E_MIN_QUOTE_NOT_TRADED);
+        // Return optional base coin, quote coins, trade amounts.
         (optional_base_coins, quote_coins, base_fill, quote_traded, fees_paid)
     }
 
@@ -1046,7 +1044,28 @@ module econia::market {
     /// if so, order aborts if restriction is post-or-abort.
     ///
     /// The amount of base units, ticks, and quote units required to
-    /// fill the order size are checked for overflow conditions.
+    /// fill the order size are checked for overflow conditions, and
+    /// corresponding trade amounts are calculated for range checking.
+    /// If the order crosses the spread, base and quote assets are
+    /// withdrawn from the user's market account and passed through the
+    /// matching engine, deposited back to the user's market account,
+    /// and remaining order size to fill is updated. If restriction is
+    /// immediate-or-cancel or if no size left to fill after optional
+    /// matching as a taker, returns without placing a maker order.
+    ///
+    /// The user's next order access key is checked, and a corresponding
+    /// order is inserted to the order book. If the order's price time
+    /// priority is too low to fit on the book, the order aborts. Else
+    /// a market order ID is constructed from the AVL queue access key
+    /// just generated upon insertion, and the order book counter is
+    /// updated. An order is placed user-side, and a taker event is
+    /// emitted for the new order on the book.
+    ///
+    /// If insertion did not result in an eviction, the empty optional
+    /// evictee value is destroyed. Otherwise, the evicted order is
+    /// unpacked and its price is extracted, then it is cancelled from
+    /// the corresponding user's market account, and its market order
+    /// ID is emitted in a maker evict event.
     fun place_limit_order<
         BaseType,
         QuoteType,
@@ -1107,51 +1126,58 @@ module econia::market {
         let quote = ticks * (order_book_ref_mut.tick_size as u128);
         // Assert corresponding quote amount fits in a u64.
         assert!(quote <= (HI_64 as u128), E_SIZE_PRICE_QUOTE_OVERFLOW);
-        // Max base to trade during taker match against book is
-        // calculated amount.
+        // Max base to trade is amount calculated from size, lot size.
         let max_base = (base as u64);
-        // Min base to trade during taker match against book is max base
-        // if a fill-or-abort order, otherwise there is no minimum.
+        // If a fill-or-abort order, must fill as a taker order with
+        // a minimum trade amount equal to max base. Else no min.
         let min_base = if (restriction == FILL_OR_ABORT) (max_base) else 0;
-        let min_quote = 0; // Not need min quote since have min base.
+        // No need to specify min quote if filling as a taker order
+        // since min base is specified.
+        let min_quote = 0;
         // If an ask that crosses the spread, max quote to trade during
-        // taker match is max amount that can fit in market account.
+        // taker match is max amount that can fit in market account,
+        // since order will fill as a taker sell at prices that are at
+        // least as high as the specified order price (user will receive
+        // more quote than calculated from order size and price).
         let max_quote = if (ASK && crosses_spread) (HI_64 - quote_ceiling) else
             (quote as u64); // Else is amount from size and price.
-        // If order side is bid, fills across spread against asks as a
-        // taker buy, else against bids as a taker sell.
-        let direction = if (side == BID) BUY else SELL;
+        // If an ask, trade direction to range check is sell, else buy.
+        let direction = if (side == ASK) SELL else BUY;
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_available, base_ceiling, quote_available, quote_ceiling);
-        // Calculate max base and quote to withdraw. If a buy:
-        let (base_withdraw, quote_withdraw) = if (direction == BUY)
-            // Withdraw quote to buy base, else sell base for quote.
-            (0, max_quote) else (max_base, 0);
-        // Withdraw optional base coins and quote coins for match,
-        // verifying base type and quote type for market.
-        let (optional_base_coins, quote_coins) =
-            user::withdraw_assets_internal<BaseType, QuoteType>(
-                user_address, market_id, custodian_id, base_withdraw,
-                quote_withdraw, underwriter_id);
-        // Match against order book, storing modified asset inputs,
-        // base and quote trade amounts, and quote fees paid.
-        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-            = match(market_id, order_book_ref_mut, user_address, integrator,
-                    direction, min_base, max_base, min_quote, max_quote, price,
-                    optional_base_coins, quote_coins);
-        // Calculate amount of base deposited back to market account.
-        let base_deposit = if (direction == BUY) base_traded else
-            base_withdraw - base_traded;
-        // Deposit assets back to user's market account.
-        user::deposit_assets_internal<BaseType, QuoteType>(
-            user_address, market_id, custodian_id, base_deposit,
-            optional_base_coins, quote_coins, underwriter_id);
-        // Return without market order ID if no size left as a maker.
-        if ((restriction == IMMEDIATE_OR_CANCEL) || (base_traded == max_base))
+        // Assume no assets traded as a taker.
+        let (base_traded, quote_traded, fees) = (0, 0, 0);
+        if (crosses_spread) { // If order price crosses spread:
+            // Calculate max base and quote to withdraw. If a buy:
+            let (base_withdraw, quote_withdraw) = if (direction == BUY)
+                // Withdraw quote to buy base, else sell base for quote.
+                (0, max_quote) else (max_base, 0);
+            // Withdraw optional base coins and quote coins for match,
+            // verifying base type and quote type for market.
+            let (optional_base_coins, quote_coins) =
+                user::withdraw_assets_internal<BaseType, QuoteType>(
+                    user_address, market_id, custodian_id, base_withdraw,
+                    quote_withdraw, underwriter_id);
+            // Match against order book, storing modified asset inputs,
+            // base and quote trade amounts, and quote fees paid.
+            (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
+                = match(market_id, order_book_ref_mut, user_address,
+                        integrator, direction, min_base, max_base, min_quote,
+                        max_quote, price, optional_base_coins, quote_coins);
+            // Calculate amount of base deposited back to market account.
+            let base_deposit = if (direction == BUY) base_traded else
+                base_withdraw - base_traded;
+            // Deposit assets back to user's market account.
+            user::deposit_assets_internal<BaseType, QuoteType>(
+                user_address, market_id, custodian_id, base_deposit,
+                optional_base_coins, quote_coins, underwriter_id);
+            // Update size to amount left to fill after taker match.
+            size = size - (base_traded / order_book_ref_mut.lot_size);
+        }; // Done with optional matching as a taker across the spread.
+        // Return without market order ID if no size left to fill.
+        if ((restriction == IMMEDIATE_OR_CANCEL) || size == 0)
             return ((NIL as u128), base_traded, quote_traded, fees);
-        // Update size to amount left to fill after matching as taker.
-        size = size - (base_traded / order_book_ref_mut.lot_size);
         // Get next order access key for user-side order placement.
         let order_access_key = user::get_next_order_access_key_internal(
             user_address, market_id, custodian_id, side);

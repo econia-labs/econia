@@ -201,8 +201,9 @@ module econia::market {
     const HI_PRICE: u64 = 0xffffffff;
     /// Flag for immediate-or-cancel order restriction.
     const IMMEDIATE_OR_CANCEL: u8 = 2;
-    /// Flag for maximum base/quote amount to trade max possible.
-    const MAX_POSSIBLE: u64 = 0;
+    /// Flag to trade max possible asset amount: `u64` bitmask with all
+    /// bits set, generated in Python via `hex(int('1' * 64, 2))`.
+    const MAX_POSSIBLE: u64 = 0xffffffffffffffff;
     /// Maximum possible price that can be encoded in 32 bits. Generated
     /// in Python via `hex(int('1' * 32, 2))`.
     const MAX_PRICE: u64 = 0xffffffff;
@@ -242,8 +243,8 @@ module econia::market {
         market_id: u64,
         integrator: address,
         side: bool,
-        size: u64, // In lots
-        price: u64, // In ticks per lot
+        size: u64,
+        price: u64,
         restriction: u8,
     ) acquires OrderBooks {
         place_limit_order_user<BaseType, QuoteType>(
@@ -261,9 +262,9 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_quote: u64,
         limit_price: u64,
     ) acquires OrderBooks {
         place_market_order_user<BaseType, QuoteType>(
@@ -306,9 +307,9 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Can be MAX_POSSIBLE.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Can be MAX_POSSIBLE.
+        max_quote: u64,
         limit_price: u64
     ) acquires OrderBooks {
         swap_between_coinstores<BaseType, QuoteType>(
@@ -437,9 +438,9 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_quote: u64,
         limit_price: u64,
     ): (
         u64,

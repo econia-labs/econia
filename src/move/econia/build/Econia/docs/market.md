@@ -810,10 +810,11 @@ Flag for immediate-or-cancel order restriction.
 
 <a name="0xc0deb00c_market_MAX_POSSIBLE"></a>
 
-Flag for maximum base/quote amount to trade max possible.
+Flag to trade max possible asset amount: <code>u64</code> bitmask with all
+bits set, generated in Python via <code>hex(int('1' * 64, 2))</code>.
 
 
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>: u64 = 0;
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>: u64 = 18446744073709551615;
 </code></pre>
 
 
@@ -903,8 +904,8 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
     market_id: u64,
     integrator: <b>address</b>,
     side: bool,
-    size: u64, // In lots
-    price: u64, // In ticks per lot
+    size: u64,
+    price: u64,
     restriction: u8,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(
@@ -941,9 +942,9 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
+    max_base: u64,
     min_quote: u64,
-    max_quote: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
+    max_quote: u64,
     limit_price: u64,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(
@@ -1028,9 +1029,9 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64, // Can be <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>.
+    max_base: u64,
     min_quote: u64,
-    max_quote: u64, // Can be <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>.
+    max_quote: u64,
     limit_price: u64
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseType, QuoteType&gt;(
@@ -1235,9 +1236,9 @@ order under authority of signing user.
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
+    max_base: u64,
     min_quote: u64,
-    max_quote: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
+    max_quote: u64,
     limit_price: u64,
 ): (
     u64,

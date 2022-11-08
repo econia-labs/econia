@@ -740,6 +740,7 @@ module econia::market {
     /// # Type Parameters
     ///
     /// * `BaseType`: Base asset type for market.
+    ///   `registry::GenericAsset` if a generic market.
     /// * `QuoteType`: Quote coin type for market.
     ///
     /// # Parameters
@@ -807,11 +808,11 @@ module econia::market {
     /// * `E_MIN_QUOTE_NOT_TRADED`: Minimum quote asset trade amount
     ///   requirement not met.
     ///
-    /// # Algorithm summary
+    /// # Algorithm description
     ///
     /// After checking price, lot size, and tick size, the taker fee
-    /// divisor is used to calculate the maximum quote coin match amount
-    /// for the given direction. Maximum lot and tick fill amounts are
+    /// divisor is used to calculate the max quote coin match amount
+    /// for the given direction. Max lot and tick fill amounts are
     /// calculated, and counters are initiated for the number of lots
     /// and ticks to fill until reaching the max permitted amount. The
     /// corresponding AVL queue is borrowed, and loopwise matching
@@ -819,27 +820,27 @@ module econia::market {
     ///
     /// The price of the order at the head of the AVL queue is compared
     /// against the limit price, and the loop breaks if the limit price
-    /// condition is not met. Then the maximum fill size is calculated
-    /// based on the number of ticks left to fill until max and the
-    /// price for the given order, and compared against the number of
-    /// lots to fill until max. The lesser of the two is taken as the
-    /// max fill size, and compared against the order size to determine
-    /// the fill size and if a complete fill takes place. If no size can
-    /// be filled the loop breaks, otherwise the number of ticks is
-    /// calculated, and lots and ticks until max counters are updated.
-    /// The self-match condition is checked, then the order is filled
-    /// user side and a taker event is emittted. If there was a complete
-    /// fill, the maker order is removed from the head of the AVL queue
-    /// and the loop breaks if there are not lots or ticks left to fill.
-    /// If the order was not completely filled, the order size on the
-    /// order book is updated, and the loop breaks.
+    /// condition is not met. Then the max fill size is calculated based
+    /// on the number of ticks left to fill until max and the price for
+    /// the given order, and compared against the number of lots to fill
+    /// until max. The lesser of the two is taken as the max fill size,
+    /// and compared against the order size to determine the fill size
+    /// and if a complete fill takes place. If no size can be filled the
+    /// loop breaks, otherwise the number of ticks is calculated, and
+    /// lots and ticks until max counters are updated. The self-match
+    /// condition is checked, then the order is filled user side and a
+    /// taker event is emittted. If there was a complete fill, the maker
+    /// order is removed from the head of the AVL queue and the loop
+    /// breaks if there are not lots or ticks left to fill. If the
+    /// order was not completely filled, the order size on the order
+    /// book is updated, and the loop breaks.
     ///
     /// After loopwise matching, base and quote fill amounts are
     /// calculated, then taker fees are assesed. If a buy, the traded
     /// quote amount is calculated as the quote fill amount plus fees
     /// paid, and if a sell, the traded quote amount is calculated as
-    /// the quote fill amount minus fees paid. Minimum base and quote
-    /// trade conditions are then checked.
+    /// the quote fill amount minus fees paid. Min base and quote trade
+    /// conditions are then checked.
     fun match<
         BaseType,
         QuoteType
@@ -1116,6 +1117,53 @@ module econia::market {
         return (market_order_id, base_traded, quote_traded, fees)
     }
 
+    /// Place market order against order book from user market account.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `BaseType`: Same as for `match()`.
+    /// * `QuoteType`: Same as for `match()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `user_address`: User address for market account.
+    /// * `market_id`: Same as for `match()`.
+    /// * `custodian_id`: Custodian ID for market account.
+    /// * `integrator`: Same as for `match()`.
+    /// * `direction`: Same as for `match()`.
+    /// * `min_base`: Same as for `match()`.
+    /// * `max_base`: Same as for `match()`. May be passed as
+    ///   `MAX_POSSIBLE` to trade maximum possible amount for market
+    ///   account.
+    /// * `min_quote`: Same as for `match()`.
+    /// * `max_quote`: Same as for `match()`. May be passed as
+    ///   `MAX_POSSIBLE` to trade maximum possible amount for market
+    ///   account.
+    /// * `limit_price`: Same as for `match()`.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Base asset trade amount, same as for `match()`
+    /// * `u64`: Quote coin trade amount, same as for `match()`
+    /// * `u64`: Quote coin fees paid, same as for `match()`
+    ///
+    /// # Algorithm description
+    ///
+    /// Checks user's available and ceiling asset counts, thus verifying
+    /// that market exists for given market ID. Mutably borrows order
+    /// book for market and gets underwriter ID, then checks max base
+    /// and quote trade amount inputs. If flagged as max possible, max
+    /// base is updated to max amount possible for market account state,
+    /// as for max quote. Trade amounts are range checked, and withdraw
+    /// amounts are calculated based on the direction: if a buy, max
+    /// quote is withdrawn but no base, and if a sell, max base but no
+    /// quote is withdrawn from user's market account.
+    ///
+    /// Assets are withdrawn from the user's market account, thus
+    /// verifying the base and quote type for the market. The amount of
+    /// base asset to deposit back to the user's market account is
+    /// calculated, then base and quote assets are deposited back to the
+    /// user's market account.
     fun place_market_order<
         BaseType,
         QuoteType
@@ -1126,14 +1174,14 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_quote: u64,
         limit_price: u64,
     ): (
-        u64, // Base traded by user.
-        u64, // Quote traded by user.
-        u64 // Fees paid
+        u64,
+        u64,
+        u64
     ) acquires OrderBooks {
         // Get user's available and ceiling asset counts.
         let (_, base_available, base_ceiling, _, quote_available,

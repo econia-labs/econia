@@ -43,26 +43,33 @@
     -  [Aborts](#@Aborts_15)
     -  [Algorithm description](#@Algorithm_description_16)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
--  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
     -  [Type Parameters](#@Type_Parameters_17)
     -  [Parameters](#@Parameters_18)
     -  [Returns](#@Returns_19)
-    -  [Algorithm description](#@Algorithm_description_20)
+    -  [Aborts](#@Aborts_20)
+    -  [Emits](#@Emits_21)
+    -  [Restrictions](#@Restrictions_22)
+    -  [Algorithm description](#@Algorithm_description_23)
+-  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
+    -  [Type Parameters](#@Type_Parameters_24)
+    -  [Parameters](#@Parameters_25)
+    -  [Returns](#@Returns_26)
+    -  [Algorithm description](#@Algorithm_description_27)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_21)
-    -  [Parameters](#@Parameters_22)
-    -  [Aborts](#@Aborts_23)
-    -  [Failure testing](#@Failure_testing_24)
+    -  [Terminology](#@Terminology_28)
+    -  [Parameters](#@Parameters_29)
+    -  [Aborts](#@Aborts_30)
+    -  [Failure testing](#@Failure_testing_31)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_25)
-    -  [Parameters](#@Parameters_26)
-    -  [Returns](#@Returns_27)
-    -  [Testing](#@Testing_28)
+    -  [Type parameters](#@Type_parameters_32)
+    -  [Parameters](#@Parameters_33)
+    -  [Returns](#@Returns_34)
+    -  [Testing](#@Testing_35)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_29)
-    -  [Parameters](#@Parameters_30)
-    -  [Returns](#@Returns_31)
-    -  [Aborts](#@Aborts_32)
+    -  [Type Parameters](#@Type_Parameters_36)
+    -  [Parameters](#@Parameters_37)
+    -  [Returns](#@Returns_38)
+    -  [Aborts](#@Aborts_39)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1948,6 +1955,120 @@ conditions are then checked.
 
 ## Function `place_limit_order`
 
+Place limit order against order book from user market account.
+
+
+<a name="@Type_Parameters_17"></a>
+
+### Type Parameters
+
+
+* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Parameters_18"></a>
+
+### Parameters
+
+
+* <code>user_address</code>: User address for market account.
+* <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>custodian_id</code>: Custodian ID for market account.
+* <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, only receives fees if
+order fills across the spread.
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the maker side on which to place an
+order.
+* <code>size</code>: The size, in lots, to fill.
+* <code>price</code>: The limit order price, in ticks per lot.
+* <code>restriction</code>: <code><a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a></code>,
+<code><a href="market.md#0xc0deb00c_market_POST_OR_ABORT">POST_OR_ABORT</a></code>, or <code><a href="market.md#0xc0deb00c_market_NO_RESTRICTION">NO_RESTRICTION</a></code>.
+* <code>critical_height</code>: The AVL queue height above which evictions
+may take place. Should only be passed as <code><a href="market.md#0xc0deb00c_market_CRITICAL_HEIGHT">CRITICAL_HEIGHT</a></code>.
+Accepted as an argument to simplify testing.
+
+
+<a name="@Returns_19"></a>
+
+### Returns
+
+
+* <code>u128</code>: Market order ID of limit order placed on book, if one
+was placed. Else <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
+* <code>u64</code>: Base asset trade amount as a taker, same as for
+<code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, if order fills across the spread.
+* <code>u64</code>: Quote asset trade amount as a taker, same as for
+<code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, if order fills across the spread.
+* <code>u64</code>: Quote coin fees paid as a taker, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>,
+if order fills across the spread.
+
+
+<a name="@Aborts_20"></a>
+
+### Aborts
+
+
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a></code>: Invalid restriction flag.
+* <code><a href="market.md#0xc0deb00c_market_E_PRICE_0">E_PRICE_0</a></code>: Order price specified as 0.
+* <code><a href="market.md#0xc0deb00c_market_E_PRICE_TOO_HIGH">E_PRICE_TOO_HIGH</a></code>: Order price exceeds maximum allowed
+price.
+* <code><a href="market.md#0xc0deb00c_market_E_SIZE_TOO_SMALL">E_SIZE_TOO_SMALL</a></code>: Limit order size does not meet minimum
+size for market.
+* <code><a href="market.md#0xc0deb00c_market_E_POST_OR_ABORT_CROSSES_SPREAD">E_POST_OR_ABORT_CROSSES_SPREAD</a></code>: Post-or-abort price crosses
+the spread.
+* <code><a href="market.md#0xc0deb00c_market_E_SIZE_BASE_OVERFLOW">E_SIZE_BASE_OVERFLOW</a></code>: The product of order size and market
+lot size results in a base asset unit overflow.
+* <code><a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_TICKS_OVERFLOW">E_SIZE_PRICE_TICKS_OVERFLOW</a></code>: The product of order size and
+price results in a tick amount overflow.
+* <code><a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_QUOTE_OVERFLOW">E_SIZE_PRICE_QUOTE_OVERFLOW</a></code>: The product of order size,
+price, and market tick size results in a quote asset unit
+overflow.
+* <code><a href="market.md#0xc0deb00c_market_E_PRICE_TIME_PRIORITY_TOO_LOW">E_PRICE_TIME_PRIORITY_TOO_LOW</a></code>: Order would result in lowest
+price-time priority if inserted to AVL queue, but AVL queue
+does not have room for any more orders.
+
+
+<a name="@Emits_21"></a>
+
+### Emits
+
+
+* <code><a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a></code>: Information about the user's taker order placed
+on the order book, if one was placed.
+* <code><a href="market.md#0xc0deb00c_market_TakerEvent">TakerEvent</a></code>: Information about the taker order evicted from
+the order book, if required to fit user's taker order on the
+book.
+
+
+<a name="@Restrictions_22"></a>
+
+### Restrictions
+
+
+* A post-or-abort order aborts if its price crosses the spread.
+* A fill-or-abort order aborts if it is not completely filled
+as a taker order. Here, a corresponding minimum base trade
+amount is passed to <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, which aborts if the minimum
+amount is not filled.
+* An immediate-or-cancel order fills as a taker if possible,
+then returns.
+
+
+<a name="@Algorithm_description_23"></a>
+
+### Algorithm description
+
+
+Order restriction and price are checked, then user's available
+and ceiling asset counts are checked, verifying that the given
+market exists. The corresponding order book is borrowed, the
+order size is checked against the min size for the market, and
+the market underwriter ID is checked. The price is checked for
+the given order side to determine if the spread is crossed, and
+if so, order aborts if restriction is post-or-abort.
+
+The amount of base units, ticks, and quote units required to
+fill the order size are checked for overflow conditions.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, critical_height: u8): (u128, u64, u64, u64)
@@ -1968,15 +2089,15 @@ conditions are then checked.
     custodian_id: u64,
     integrator: <b>address</b>,
     side: bool,
-    size: u64, // In lots
-    price: u64, // In ticks per lot
+    size: u64,
+    price: u64,
     restriction: u8,
     critical_height: u8
 ): (
-    u128, // Market order ID, <b>if</b> <a href="">any</a>.
-    u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
-    u64, // Quote traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
-    u64 // Fees paid <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u128,
+    u64,
+    u64,
+    u64
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     // Assert valid order restriction flag.
     <b>assert</b>!(restriction &lt;= <a href="market.md#0xc0deb00c_market_N_RESTRICTIONS">N_RESTRICTIONS</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a>);
@@ -2022,10 +2143,9 @@ conditions are then checked.
     // Max base <b>to</b> trade during taker match against book is
     // calculated amount.
     <b>let</b> max_base = (base <b>as</b> u64);
-    // Min base <b>to</b> trade during taker match against book is
-    // calculated amount <b>if</b> a fill-or-<b>abort</b> order, otherwise there
-    // is no minimum.
-    <b>let</b> min_base = <b>if</b> (restriction == <a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>) (base <b>as</b> u64) <b>else</b> 0;
+    // Min base <b>to</b> trade during taker match against book is max base
+    // <b>if</b> a fill-or-<b>abort</b> order, otherwise there is no minimum.
+    <b>let</b> min_base = <b>if</b> (restriction == <a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>) (max_base) <b>else</b> 0;
     <b>let</b> min_quote = 0; // Not need <b>min</b> quote since have <b>min</b> base.
     // If an ask that crosses the spread, max quote <b>to</b> trade during
     // taker match is max amount that can fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
@@ -2061,7 +2181,7 @@ conditions are then checked.
         user_address, market_id, custodian_id, base_deposit,
         optional_base_coins, quote_coins, underwriter_id);
     // Return without <a href="market.md#0xc0deb00c_market">market</a> order ID <b>if</b> no size left <b>as</b> a maker.
-    <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) || (base_traded == min_base))
+    <b>if</b> ((restriction == <a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a>) || (base_traded == max_base))
         <b>return</b> ((<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), base_traded, quote_traded, fees);
     // Update size <b>to</b> amount left <b>to</b> fill after matching <b>as</b> taker.
     size = size - (base_traded / order_book_ref_mut.lot_size);
@@ -2127,7 +2247,7 @@ conditions are then checked.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_17"></a>
+<a name="@Type_Parameters_24"></a>
 
 ### Type Parameters
 
@@ -2136,7 +2256,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_18"></a>
+<a name="@Parameters_25"></a>
 
 ### Parameters
 
@@ -2157,17 +2277,17 @@ account.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_19"></a>
+<a name="@Returns_26"></a>
 
 ### Returns
 
 
-* <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+* <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Algorithm_description_20"></a>
+<a name="@Algorithm_description_27"></a>
 
 ### Algorithm description
 
@@ -2284,53 +2404,51 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_21"></a>
+<a name="@Terminology_28"></a>
 
 ### Terminology
 
 
-* "Inbound asset" is asset received by taker during a match:
-base if a buy (filling against asks), quote if a sell (filling
-against bids).
-* "Outbound asset" is asset traded away by taker during a match:
-quote if a buy (filling against asks), base if a sell (filling
-against bids).
-* "Available asset" is the amount the taker already has on hand
-for either base or quote (<code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.base_available</code>
-or <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_available</code> when matching from a
-taker's market account).
+* "Inbound asset" is asset received by user.
+* "Outbound asset" is asset traded away by by user.
+* "Available asset" is the the user's holdings for either base
+or quote. When trading from a user's market account,
+corresponds to either <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.base_available</code> or
+<code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_available</code>. When trading from a
+user's <code>aptos_framework::coin::CoinStore</code> or from standalone
+coins, corresponds to coin value.
 * "Asset ceiling" is the amount that the available asset amount
 could increase to beyond its present amount, even if the
-indicated match were not filled. When matching from a taker's
+indicated trade were not executed. When tradin from a user's
 market account, corresponds to either
 <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.base_ceiling</code> or
-<code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_ceiling</code>. When matching from a
-taker's <code>aptos_framework::coin::CoinStore</code> or from standalone
-assets, is the same as the available amount.
+<code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_ceiling</code>. When trading from a
+user's <code>aptos_framework::coin::CoinStore</code> or from standalone
+coins, is the same as available amount.
 
 
-<a name="@Parameters_22"></a>
+<a name="@Parameters_29"></a>
 
 ### Parameters
 
 
-* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the side against which a taker order
-would match. Alternatively can be passed as <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>,
-the taker order direction, since these <code>bool</code> flags have the
-same value as the side that the direction matches against.
-* <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>base_available</code>: Taker's available base asset amount.
-* <code>base_ceiling</code>: Taker's base asset ceiling, only checked when
-<code>SIDE</code> is <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> (a taker buy).
-* <code>quote_available</code>: Taker's available quote asset amount.
-* <code>quote_ceiling</code>: Taker's quote asset ceiling, only checked
-when <code>SIDE</code> is <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code> (a taker sell).
+* <code>direction</code>: <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code> or <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
+* <code>min_base</code>: Minimum amount of change in base holdings after
+trade.
+* <code>max_base</code>: Maximum amount of change in base holdings after
+trade.
+* <code>min_quote</code>: Minimum amount of change in quote holdings after
+trade.
+* <code>max_quote</code>: Maximum amount of change in quote holdings after
+trade.
+* <code>base_available</code>: Available base asset amount.
+* <code>base_ceiling</code>: Base asset ceiling, only checked when a <code><a href="market.md#0xc0deb00c_market_BUY">BUY</a></code>.
+* <code>quote_available</code>: Available quote asset amount.
+* <code>quote_ceiling</code>: Quote asset ceiling, only checked when a
+<code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_23"></a>
+<a name="@Aborts_30"></a>
 
 ### Aborts
 
@@ -2346,7 +2464,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_24"></a>
+<a name="@Failure_testing_31"></a>
 
 ### Failure testing
 
@@ -2361,7 +2479,7 @@ received from trade.
 * <code>test_range_check_trade_quote_0()</code>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>(side: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, base_available: u64, base_ceiling: u64, quote_available: u64, quote_ceiling: u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>(direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, base_available: u64, base_ceiling: u64, quote_available: u64, quote_ceiling: u64)
 </code></pre>
 
 
@@ -2371,7 +2489,7 @@ received from trade.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>(
-    side: bool,
+    direction: bool,
     min_base: u64,
     max_base: u64,
     min_quote: u64,
@@ -2390,12 +2508,13 @@ received from trade.
     // Assert minimum quote less than or equal <b>to</b> maximum.
     <b>assert</b>!(min_quote &lt;= max_quote, <a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX">E_MIN_QUOTE_EXCEEDS_MAX</a>);
     // Get inbound asset ceiling and max trade amount, outbound
-    // asset available and max trade amount. If buying (asks side):
-    <b>let</b> (in_ceiling, in_max, out_available, out_max) = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)
-        // A <a href="market.md#0xc0deb00c_market">market</a> buy, so getting base and trading away quote.
-        (base_ceiling, max_base, quote_available, max_quote) <b>else</b>
-        // Else a sell, so getting quote and trading away base.
-        (quote_ceiling, max_quote, base_available, max_base);
+    // asset available and max trade amount.
+    <b>let</b> (in_ceiling, in_max, out_available, out_max) =
+        <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) // If trade is in buy direction:
+            // Getting base and trading away quote.
+            (base_ceiling, max_base, quote_available, max_quote) <b>else</b>
+            // Else a sell, so getting quote and trading away base.
+            (quote_ceiling, max_quote, base_available, max_base);
     // Calculate maximum possible inbound asset ceiling <b>post</b>-match.
     <b>let</b> in_ceiling_max = (in_ceiling <b>as</b> u128) + (in_max <b>as</b> u128);
     // Assert max possible inbound asset ceiling does not overflow.
@@ -2422,7 +2541,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_25"></a>
+<a name="@Type_parameters_32"></a>
 
 ### Type parameters
 
@@ -2431,7 +2550,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_26"></a>
+<a name="@Parameters_33"></a>
 
 ### Parameters
 
@@ -2445,7 +2564,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_27"></a>
+<a name="@Returns_34"></a>
 
 ### Returns
 
@@ -2453,7 +2572,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_28"></a>
+<a name="@Testing_35"></a>
 
 ### Testing
 
@@ -2521,7 +2640,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_29"></a>
+<a name="@Type_Parameters_36"></a>
 
 ### Type Parameters
 
@@ -2530,7 +2649,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_30"></a>
+<a name="@Parameters_37"></a>
 
 ### Parameters
 
@@ -2551,7 +2670,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_31"></a>
+<a name="@Returns_38"></a>
 
 ### Returns
 
@@ -2560,12 +2679,12 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>Coin&lt;QuoteType&gt;</code>: Updted quote coin holdings, same as for
 <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+* <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_32"></a>
+<a name="@Aborts_39"></a>
 
 ### Aborts
 

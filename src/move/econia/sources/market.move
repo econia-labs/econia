@@ -252,7 +252,7 @@ module econia::market {
 
     #[cmd]
     /// Public entry function wrapper for `place_market_order_user()`.
-    public fun place_market_order_user_entry<
+    public entry fun place_market_order_user_entry<
         BaseType,
         QuoteType
     >(
@@ -320,6 +320,8 @@ module econia::market {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Public function wrapper for `place_limit_order()` for placing
+    /// order under authority of delegated custodian.
     public fun place_limit_order_custodian<
         BaseType,
         QuoteType
@@ -328,15 +330,15 @@ module econia::market {
         market_id: u64,
         integrator: address,
         side: bool,
-        size: u64, // In lots
-        price: u64, // In ticks per lot
+        size: u64,
+        price: u64,
         restriction: u8,
         custodian_capability_ref: &CustodianCapability
     ): (
-        u128, // Market order ID, if any.
-        u64, // Base traded by user as a taker, if any.
-        u64, // Quote traded by user as a taker, if any.
-        u64 // Fees paid as a taker, if any.
+        u128,
+        u64,
+        u64,
+        u64
     ) acquires OrderBooks {
         place_limit_order<
             BaseType,
@@ -354,6 +356,8 @@ module econia::market {
         )
     }
 
+    /// Public function wrapper for `place_limit_order()` for placing
+    /// order under authority of signing user.
     public fun place_limit_order_user<
         BaseType,
         QuoteType
@@ -362,14 +366,14 @@ module econia::market {
         market_id: u64,
         integrator: address,
         side: bool,
-        size: u64, // In lots
-        price: u64, // In ticks per lot
+        size: u64,
+        price: u64,
         restriction: u8,
     ): (
-        u128, // Market order ID, if any.
-        u64, // Base traded by user as a taker, if any.
-        u64, // Quote traded by user as a taker, if any.
-        u64 // Fees paid as a taker, if any.
+        u128,
+        u64,
+        u64,
+        u64
     ) acquires OrderBooks {
         place_limit_order<
             BaseType,
@@ -387,6 +391,8 @@ module econia::market {
         )
     }
 
+    /// Public function wrapper for `place_market_order()` for placing
+    /// order under authority of delegated custodian.
     public fun place_market_order_custodian<
         BaseType,
         QuoteType
@@ -396,9 +402,9 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        max_quote: u64,
         limit_price: u64,
         custodian_capability_ref: &CustodianCapability
     ): (
@@ -420,6 +426,8 @@ module econia::market {
         )
     }
 
+    /// Public function wrapper for `place_market_order()` for placing
+    /// order under authority of signing user.
     public fun place_market_order_user<
         BaseType,
         QuoteType
@@ -555,6 +563,36 @@ module econia::market {
             registry::get_underwriter_id(underwriter_capability_ref))
     }
 
+    /// Swap against the order book between a user's coin stores.
+    ///
+    /// Initializes an `aptos_framework::coin::CoinStore` for each coin
+    /// type that does not yet have one.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `BaseType`: Same as for `match()`.
+    /// * `QuoteType`: Same as for `match()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `user`: Account of swapping user.
+    /// * `market_id`: Same as for `match()`.
+    /// * `integrator`: Same as for `match()`.
+    /// * `direction`: Same as for `match()`.
+    /// * `min_base`: Same as for `match()`.
+    /// * `max_base`: Same as for `match()`. If passed as `MAX_POSSIBLE`
+    ///   will attempt to trade maximum possible amount for coin store.
+    /// * `min_quote`: Same as for `match()`.
+    /// * `max_quote`: Same as for `match()`. If passed as
+    ///   `MAX_POSSIBLE` will attempt to trade maximum possible amount
+    ///   for coin store.
+    /// * `limit_price`: Same as for `match()`.
+    ///
+    /// # Returns
+    ///
+    /// * `u64`: Base asset trade amount, same as for `match()`.
+    /// * `u64`: Quote coin trade amount, same as for `match()`.
+    /// * `u64`: Quote coin fees paid, same as for `match()`.
     public fun swap_between_coinstores<
         BaseType,
         QuoteType
@@ -564,9 +602,9 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Can be MAX_POSSIBLE.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Can be MAX_POSSIBLE.
+        max_quote: u64,
         limit_price: u64
     ): (
         u64,
@@ -617,11 +655,47 @@ module econia::market {
         (base_traded, quote_traded, fees) // Return match results.
     }
 
-    /// Swap standalone coins
+    /// Swap standalone coins against the order book.
     ///
+    /// # Type Parameters
+    ///
+    /// * `BaseType`: Same as for `match()`.
+    /// * `QuoteType`: Same as for `match()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Same as for `match()`.
+    /// * `integrator`: Same as for `match()`.
+    /// * `direction`: Same as for `match()`.
+    /// * `min_base`: Same as for `match()`.
+    /// * `max_base`: Same as for `match()`. Ignored if a sell. Else if
+    ///   passed as `MAX_POSSIBLE` will attempt to trade maximum
+    ///   possible amount for passed coin holdings.
+    /// * `min_quote`: Same as for `match()`.
+    /// * `max_quote`: Same as for `match()`. Ignored if a buy. Else if
+    ///   passed as `MAX_POSSIBLE` will attempt to trade maximum
+    ///   possible amount for passed coin holdings.
+    /// * `limit_price`: Same as for `match()`.
+    /// * `base_coins`: Same as `optional_base_coins` for `match()`, but
+    ///   unpacked.
+    /// * `quote_coins`: Same as for `match()`.
+    ///
+    /// # Returns
+    ///
+    /// * `Coin<BaseType>`: Updated base coin holdings, same as for
+    ///   `match()` but unpacked.
+    /// * `Coin<QuoteType>`: Updated quote coin holdings, same as for
+    ///   `match()`.
+    /// * `u64`: Base coin trade amount, same as for `match()`.
+    /// * `u64`: Quote coin trade amount, same as for `match()`.
+    /// * `u64`: Quote coin fees paid, same as for `match()`.
+
     /// # Terminology
     ///
-    /// * "Inbound" and "outbound"
+    /// * The "inbound" asset is the asset received from a trade: base
+    ///   coins in the case of a buy, quote coins in the case of a sell.
+    /// * The "outbound" asset is the asset traded away: quote coins in
+    ///   the case of a buy, base coins in the case of a sell.
     public fun swap_coins<
         BaseType,
         QuoteType
@@ -630,9 +704,9 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Ignored if a sell. Can be MAX_POSSIBLE if a buy.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Ignored if a buy. Can be MAX_POSSIBLE if a sell.
+        max_quote: u64,
         limit_price: u64,
         base_coins: Coin<BaseType>,
         quote_coins: Coin<QuoteType>
@@ -669,6 +743,37 @@ module econia::market {
          quote_traded, fees)
     }
 
+    /// Swap against the order book for a generic market, under
+    /// authority of market underwriter.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `QuoteType`: Same as for `match()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Same as for `match()`.
+    /// * `integrator`: Same as for `match()`.
+    /// * `direction`: Same as for `match()`.
+    /// * `min_base`: Same as for `match()`.
+    /// * `max_base`: Same as for `match()`. If passed as `MAX_POSSIBLE`
+    ///   will attempt to trade maximum possible amount.
+    /// * `min_quote`: Same as for `match()`.
+    /// * `max_quote`: Same as for `match()`. Ignored if a buy. Else if
+    ///   passed as `MAX_POSSIBLE` will attempt to trade maximum
+    ///   possible amount for passed coin holdings.
+    /// * `limit_price`: Same as for `match()`.
+    /// * `quote_coins`: Same as for `match()`.
+    /// * `underwriter_capability_ref`: Immutable reference to
+    ///   underwriter capability for given market.
+    ///
+    /// # Returns
+    ///
+    /// * `Coin<QuoteType>`: Updated quote coin holdings, same as for
+    ///   `match()`.
+    /// * `u64`: Base asset trade amount, same as for `match()`.
+    /// * `u64`: Quote coin trade amount, same as for `match()`.
+    /// * `u64`: Quote coin fees paid, same as for `match()`.
     public fun swap_generic<
         QuoteType
     >(
@@ -676,9 +781,9 @@ module econia::market {
         integrator: address,
         direction: bool,
         min_base: u64,
-        max_base: u64, // Can be MAX posible.
+        max_base: u64,
         min_quote: u64,
-        max_quote: u64, // Ignored if a buy. Can be MAX_POSSIBLE if a sell.
+        max_quote: u64,
         limit_price: u64,
         quote_coins: Coin<QuoteType>,
         underwriter_capability_ref: &UnderwriterCapability
@@ -696,7 +801,7 @@ module econia::market {
         // the max amount that can fit in a u64.
         if (max_base == MAX_POSSIBLE) max_base = HI_64;
         // Effective base value on hand is 0 if buying, else max base to
-        // trade if sellf.
+        // trade if selling.
         let base_value = if (direction == BUY) 0 else max_base;
         // If a buy, max quote to trade is amount passed in.
         if (direction == BUY) max_quote = quote_value else
@@ -963,8 +1068,10 @@ module econia::market {
     ///
     /// # Type Parameters
     ///
-    /// * `BaseType`: Same as for `match()`.
-    /// * `QuoteType`: Same as for `match()`.
+    /// * `BaseType`: Same as for `match()`. Ignored unless order fills
+    ///   across the spread as a taker.
+    /// * `QuoteType`: Same as for `match()`. Ignored unless order fills
+    ///   across the spread as a taker.
     ///
     /// # Parameters
     ///
@@ -973,8 +1080,8 @@ module econia::market {
     /// * `custodian_id`: Custodian ID for market account.
     /// * `integrator`: Same as for `match()`, only receives fees if
     ///   order fills across the spread.
-    /// * `side`: `ASK` or `BID`, the maker side on which to place an
-    ///   order.
+    /// * `side`: `ASK` or `BID`, the side on which to place an order as
+    ///   a maker.
     /// * `size`: The size, in lots, to fill.
     /// * `price`: The limit order price, in ticks per lot.
     /// * `restriction`: `FILL_OR_ABORT`, `IMMEDIATE_OR_CANCEL`,
@@ -1243,13 +1350,13 @@ module econia::market {
     /// * `integrator`: Same as for `match()`.
     /// * `direction`: Same as for `match()`.
     /// * `min_base`: Same as for `match()`.
-    /// * `max_base`: Same as for `match()`. May be passed as
-    ///   `MAX_POSSIBLE` to trade maximum possible amount for market
+    /// * `max_base`: Same as for `match()`. If passed as `MAX_POSSIBLE`
+    ///   will attempt to trade maximum possible amount for market
     ///   account.
     /// * `min_quote`: Same as for `match()`.
-    /// * `max_quote`: Same as for `match()`. May be passed as
-    ///   `MAX_POSSIBLE` to trade maximum possible amount for market
-    ///   account.
+    /// * `max_quote`: Same as for `match()`. If passed as
+    ///   `MAX_POSSIBLE` will attempt to trade maximum possible amount
+    ///   for market account.
     /// * `limit_price`: Same as for `match()`.
     ///
     /// # Returns
@@ -1541,7 +1648,7 @@ module econia::market {
     ///
     /// * `Option<Coin<BaseType>>`: Optional updated base coin holdings,
     ///   same as for `match()`.
-    /// * `Coin<QuoteType>`: Updted quote coin holdings, same as for
+    /// * `Coin<QuoteType>`: Updated quote coin holdings, same as for
     ///   `match()`.
     /// * `u64`: Base asset trade amount, same as for `match()`.
     /// * `u64`: Quote coin trade amount, same as for `match()`.

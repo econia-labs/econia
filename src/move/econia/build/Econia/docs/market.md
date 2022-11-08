@@ -31,45 +31,54 @@
     -  [Returns](#@Returns_8)
     -  [Testing](#@Testing_9)
 -  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
+    -  [Type Parameters](#@Type_Parameters_10)
+    -  [Parameters](#@Parameters_11)
+    -  [Returns](#@Returns_12)
 -  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
-    -  [Terminology](#@Terminology_10)
+    -  [Type Parameters](#@Type_Parameters_13)
+    -  [Parameters](#@Parameters_14)
+    -  [Returns](#@Returns_15)
+    -  [Terminology](#@Terminology_16)
 -  [Function `swap_generic`](#0xc0deb00c_market_swap_generic)
--  [Function `init_module`](#0xc0deb00c_market_init_module)
--  [Function `match`](#0xc0deb00c_market_match)
-    -  [Type Parameters](#@Type_Parameters_11)
-    -  [Parameters](#@Parameters_12)
-    -  [Returns](#@Returns_13)
-    -  [Emits](#@Emits_14)
-    -  [Aborts](#@Aborts_15)
-    -  [Algorithm description](#@Algorithm_description_16)
--  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
     -  [Type Parameters](#@Type_Parameters_17)
     -  [Parameters](#@Parameters_18)
     -  [Returns](#@Returns_19)
-    -  [Aborts](#@Aborts_20)
-    -  [Emits](#@Emits_21)
-    -  [Restrictions](#@Restrictions_22)
-    -  [Algorithm description](#@Algorithm_description_23)
+-  [Function `init_module`](#0xc0deb00c_market_init_module)
+-  [Function `match`](#0xc0deb00c_market_match)
+    -  [Type Parameters](#@Type_Parameters_20)
+    -  [Parameters](#@Parameters_21)
+    -  [Returns](#@Returns_22)
+    -  [Emits](#@Emits_23)
+    -  [Aborts](#@Aborts_24)
+    -  [Algorithm description](#@Algorithm_description_25)
+-  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
+    -  [Type Parameters](#@Type_Parameters_26)
+    -  [Parameters](#@Parameters_27)
+    -  [Returns](#@Returns_28)
+    -  [Aborts](#@Aborts_29)
+    -  [Emits](#@Emits_30)
+    -  [Restrictions](#@Restrictions_31)
+    -  [Algorithm description](#@Algorithm_description_32)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_24)
-    -  [Parameters](#@Parameters_25)
-    -  [Returns](#@Returns_26)
-    -  [Algorithm description](#@Algorithm_description_27)
+    -  [Type Parameters](#@Type_Parameters_33)
+    -  [Parameters](#@Parameters_34)
+    -  [Returns](#@Returns_35)
+    -  [Algorithm description](#@Algorithm_description_36)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_28)
-    -  [Parameters](#@Parameters_29)
-    -  [Aborts](#@Aborts_30)
-    -  [Failure testing](#@Failure_testing_31)
--  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_32)
-    -  [Parameters](#@Parameters_33)
-    -  [Returns](#@Returns_34)
-    -  [Testing](#@Testing_35)
--  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_36)
-    -  [Parameters](#@Parameters_37)
-    -  [Returns](#@Returns_38)
+    -  [Terminology](#@Terminology_37)
+    -  [Parameters](#@Parameters_38)
     -  [Aborts](#@Aborts_39)
+    -  [Failure testing](#@Failure_testing_40)
+-  [Function `register_market`](#0xc0deb00c_market_register_market)
+    -  [Type parameters](#@Type_parameters_41)
+    -  [Parameters](#@Parameters_42)
+    -  [Returns](#@Returns_43)
+    -  [Testing](#@Testing_44)
+-  [Function `swap`](#0xc0deb00c_market_swap)
+    -  [Type Parameters](#@Type_Parameters_45)
+    -  [Parameters](#@Parameters_46)
+    -  [Returns](#@Returns_47)
+    -  [Aborts](#@Aborts_48)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -923,7 +932,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;
     BaseType,
     QuoteType
 &gt;(
@@ -1038,6 +1047,8 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
 
 ## Function `place_limit_order_custodian`
 
+Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code> for placing
+order under authority of delegated custodian.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u128, u64, u64, u64)
@@ -1057,15 +1068,15 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
     market_id: u64,
     integrator: <b>address</b>,
     side: bool,
-    size: u64, // In lots
-    price: u64, // In ticks per lot
+    size: u64,
+    price: u64,
     restriction: u8,
     custodian_capability_ref: &CustodianCapability
 ): (
-    u128, // Market order ID, <b>if</b> <a href="">any</a>.
-    u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
-    u64, // Quote traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
-    u64 // Fees paid <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u128,
+    u64,
+    u64,
+    u64
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
         BaseType,
@@ -1092,6 +1103,8 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
 
 ## Function `place_limit_order_user`
 
+Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code> for placing
+order under authority of signing user.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
@@ -1111,14 +1124,14 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
     market_id: u64,
     integrator: <b>address</b>,
     side: bool,
-    size: u64, // In lots
-    price: u64, // In ticks per lot
+    size: u64,
+    price: u64,
     restriction: u8,
 ): (
-    u128, // Market order ID, <b>if</b> <a href="">any</a>.
-    u64, // Base traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
-    u64, // Quote traded by <a href="user.md#0xc0deb00c_user">user</a> <b>as</b> a taker, <b>if</b> <a href="">any</a>.
-    u64 // Fees paid <b>as</b> a taker, <b>if</b> <a href="">any</a>.
+    u128,
+    u64,
+    u64,
+    u64
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>&lt;
         BaseType,
@@ -1145,6 +1158,8 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
 
 ## Function `place_market_order_custodian`
 
+Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code> for placing
+order under authority of delegated custodian.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64, u64)
@@ -1165,9 +1180,9 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
+    max_base: u64,
     min_quote: u64,
-    max_quote: u64, // Pass <b>as</b> <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>to</b> trade max possible.
+    max_quote: u64,
     limit_price: u64,
     custodian_capability_ref: &CustodianCapability
 ): (
@@ -1198,6 +1213,8 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
 
 ## Function `place_market_order_user`
 
+Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code> for placing
+order under authority of signing user.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
@@ -1425,6 +1442,48 @@ underwriter capability.
 
 ## Function `swap_between_coinstores`
 
+Swap against the order book between a user's coin stores.
+
+Initializes an <code>aptos_framework::coin::CoinStore</code> for each coin
+type that does not yet have one.
+
+
+<a name="@Type_Parameters_10"></a>
+
+### Type Parameters
+
+
+* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Parameters_11"></a>
+
+### Parameters
+
+
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Account of swapping user.
+* <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>
+will attempt to trade maximum possible amount for coin store.
+* <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as
+<code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum possible amount
+for coin store.
+* <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Returns_12"></a>
+
+### Returns
+
+
+* <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
@@ -1445,9 +1504,9 @@ underwriter capability.
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64, // Can be <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>.
+    max_base: u64,
     min_quote: u64,
-    max_quote: u64, // Can be <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>.
+    max_quote: u64,
     limit_price: u64
 ): (
     u64,
@@ -1507,15 +1566,62 @@ underwriter capability.
 
 ## Function `swap_coins`
 
-Swap standalone coins
+Swap standalone coins against the order book.
 
 
-<a name="@Terminology_10"></a>
+<a name="@Type_Parameters_13"></a>
+
+### Type Parameters
+
+
+* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Parameters_14"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored if a sell. Else if
+passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum
+possible amount for passed coin holdings.
+* <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored if a buy. Else if
+passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum
+possible amount for passed coin holdings.
+* <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>base_coins</code>: Same as <code>optional_base_coins</code> for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, but
+unpacked.
+* <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Returns_15"></a>
+
+### Returns
+
+
+* <code>Coin&lt;BaseType&gt;</code>: Updated base coin holdings, same as for
+<code><a href="market.md#0xc0deb00c_market_match">match</a>()</code> but unpacked.
+* <code>Coin&lt;QuoteType&gt;</code>: Updated quote coin holdings, same as for
+<code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Base coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+<a name="@Terminology_16"></a>
 
 ### Terminology
 
 
-* "Inbound" and "outbound"
+* The "inbound" asset is the asset received from a trade: base
+coins in the case of a buy, quote coins in the case of a sell.
+* The "outbound" asset is the asset traded away: quote coins in
+the case of a buy, base coins in the case of a sell.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>&lt;BaseType, QuoteType&gt;(market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, base_coins: <a href="_Coin">coin::Coin</a>&lt;BaseType&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
@@ -1535,9 +1641,9 @@ Swap standalone coins
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64, // Ignored <b>if</b> a sell. Can be <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>if</b> a buy.
+    max_base: u64,
     min_quote: u64,
-    max_quote: u64, // Ignored <b>if</b> a buy. Can be <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>if</b> a sell.
+    max_quote: u64,
     limit_price: u64,
     base_coins: Coin&lt;BaseType&gt;,
     quote_coins: Coin&lt;QuoteType&gt;
@@ -1583,6 +1689,49 @@ Swap standalone coins
 
 ## Function `swap_generic`
 
+Swap against the order book for a generic market, under
+authority of market underwriter.
+
+
+<a name="@Type_Parameters_17"></a>
+
+### Type Parameters
+
+
+* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Parameters_18"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>
+will attempt to trade maximum possible amount.
+* <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored if a buy. Else if
+passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum
+possible amount for passed coin holdings.
+* <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>underwriter_capability_ref</code>: Immutable reference to
+underwriter capability for given market.
+
+
+<a name="@Returns_19"></a>
+
+### Returns
+
+
+* <code>Coin&lt;QuoteType&gt;</code>: Updated quote coin holdings, same as for
+<code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;QuoteType&gt;(market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>): (<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
@@ -1601,9 +1750,9 @@ Swap standalone coins
     integrator: <b>address</b>,
     direction: bool,
     min_base: u64,
-    max_base: u64, // Can be MAX posible.
+    max_base: u64,
     min_quote: u64,
-    max_quote: u64, // Ignored <b>if</b> a buy. Can be <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a> <b>if</b> a sell.
+    max_quote: u64,
     limit_price: u64,
     quote_coins: Coin&lt;QuoteType&gt;,
     underwriter_capability_ref: &UnderwriterCapability
@@ -1621,7 +1770,7 @@ Swap standalone coins
     // the max amount that can fit in a u64.
     <b>if</b> (max_base == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>) max_base = <a href="market.md#0xc0deb00c_market_HI_64">HI_64</a>;
     // Effective base value on hand is 0 <b>if</b> buying, <b>else</b> max base <b>to</b>
-    // trade <b>if</b> sellf.
+    // trade <b>if</b> selling.
     <b>let</b> base_value = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) 0 <b>else</b> max_base;
     // If a buy, max quote <b>to</b> trade is amount passed in.
     <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>) max_quote = quote_value <b>else</b>
@@ -1684,7 +1833,7 @@ Initialize the order books map upon module publication.
 Match a taker order against the order book.
 
 
-<a name="@Type_Parameters_11"></a>
+<a name="@Type_Parameters_20"></a>
 
 ### Type Parameters
 
@@ -1694,7 +1843,7 @@ Match a taker order against the order book.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_12"></a>
+<a name="@Parameters_21"></a>
 
 ### Parameters
 
@@ -1735,7 +1884,7 @@ decremented if <code>direction</code> is <code><a href="market.md#0xc0deb00c_mar
 <code>direction</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Returns_13"></a>
+<a name="@Returns_22"></a>
 
 ### Returns
 
@@ -1752,7 +1901,7 @@ net change in taker's quote coin holdings.
 * <code>u64</code>: Amount of quote coin fees paid.
 
 
-<a name="@Emits_14"></a>
+<a name="@Emits_23"></a>
 
 ### Emits
 
@@ -1761,7 +1910,7 @@ net change in taker's quote coin holdings.
 emitted for each separate maker order that is filled against.
 
 
-<a name="@Aborts_15"></a>
+<a name="@Aborts_24"></a>
 
 ### Aborts
 
@@ -1775,7 +1924,7 @@ requirement not met.
 requirement not met.
 
 
-<a name="@Algorithm_description_16"></a>
+<a name="@Algorithm_description_25"></a>
 
 ### Algorithm description
 
@@ -1956,16 +2105,18 @@ conditions are then checked.
 Place limit order against order book from user market account.
 
 
-<a name="@Type_Parameters_17"></a>
+<a name="@Type_Parameters_26"></a>
 
 ### Type Parameters
 
 
-* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored unless order fills
+across the spread as a taker.
+* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored unless order fills
+across the spread as a taker.
 
 
-<a name="@Parameters_18"></a>
+<a name="@Parameters_27"></a>
 
 ### Parameters
 
@@ -1975,8 +2126,8 @@ Place limit order against order book from user market account.
 * <code>custodian_id</code>: Custodian ID for market account.
 * <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>, only receives fees if
 order fills across the spread.
-* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the maker side on which to place an
-order.
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the side on which to place an order as
+a maker.
 * <code>size</code>: The size, in lots, to fill.
 * <code>price</code>: The limit order price, in ticks per lot.
 * <code>restriction</code>: <code><a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a></code>, <code><a href="market.md#0xc0deb00c_market_IMMEDIATE_OR_CANCEL">IMMEDIATE_OR_CANCEL</a></code>,
@@ -1986,7 +2137,7 @@ may take place. Should only be passed as <code><a href="market.md#0xc0deb00c_mar
 Accepted as an argument to simplify testing.
 
 
-<a name="@Returns_19"></a>
+<a name="@Returns_28"></a>
 
 ### Returns
 
@@ -2001,7 +2152,7 @@ was placed. Else <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 if order fills across the spread.
 
 
-<a name="@Aborts_20"></a>
+<a name="@Aborts_29"></a>
 
 ### Aborts
 
@@ -2026,7 +2177,7 @@ price-time priority if inserted to AVL queue, but AVL queue
 does not have room for any more orders.
 
 
-<a name="@Emits_21"></a>
+<a name="@Emits_30"></a>
 
 ### Emits
 
@@ -2038,7 +2189,7 @@ the order book, if required to fit user's taker order on the
 book.
 
 
-<a name="@Restrictions_22"></a>
+<a name="@Restrictions_31"></a>
 
 ### Restrictions
 
@@ -2052,7 +2203,7 @@ amount is not filled.
 then returns.
 
 
-<a name="@Algorithm_description_23"></a>
+<a name="@Algorithm_description_32"></a>
 
 ### Algorithm description
 
@@ -2273,7 +2424,7 @@ ID is emitted in a maker evict event.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_24"></a>
+<a name="@Type_Parameters_33"></a>
 
 ### Type Parameters
 
@@ -2282,7 +2433,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_34"></a>
 
 ### Parameters
 
@@ -2293,17 +2444,17 @@ Place market order against order book from user market account.
 * <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. May be passed as
-<code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> to trade maximum possible amount for market
+* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>
+will attempt to trade maximum possible amount for market
 account.
 * <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. May be passed as
-<code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> to trade maximum possible amount for market
-account.
+* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as
+<code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum possible amount
+for market account.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_26"></a>
+<a name="@Returns_35"></a>
 
 ### Returns
 
@@ -2313,7 +2464,7 @@ account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Algorithm_description_27"></a>
+<a name="@Algorithm_description_36"></a>
 
 ### Algorithm description
 
@@ -2430,7 +2581,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_28"></a>
+<a name="@Terminology_37"></a>
 
 ### Terminology
 
@@ -2453,7 +2604,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_29"></a>
+<a name="@Parameters_38"></a>
 
 ### Parameters
 
@@ -2474,7 +2625,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_30"></a>
+<a name="@Aborts_39"></a>
 
 ### Aborts
 
@@ -2490,7 +2641,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_31"></a>
+<a name="@Failure_testing_40"></a>
 
 ### Failure testing
 
@@ -2567,7 +2718,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_32"></a>
+<a name="@Type_parameters_41"></a>
 
 ### Type parameters
 
@@ -2576,7 +2727,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_33"></a>
+<a name="@Parameters_42"></a>
 
 ### Parameters
 
@@ -2590,7 +2741,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_34"></a>
+<a name="@Returns_43"></a>
 
 ### Returns
 
@@ -2598,7 +2749,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_35"></a>
+<a name="@Testing_44"></a>
 
 ### Testing
 
@@ -2666,7 +2817,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_36"></a>
+<a name="@Type_Parameters_45"></a>
 
 ### Type Parameters
 
@@ -2675,7 +2826,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_37"></a>
+<a name="@Parameters_46"></a>
 
 ### Parameters
 
@@ -2696,21 +2847,21 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_38"></a>
+<a name="@Returns_47"></a>
 
 ### Returns
 
 
 * <code>Option&lt;Coin&lt;BaseType&gt;&gt;</code>: Optional updated base coin holdings,
 same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>Coin&lt;QuoteType&gt;</code>: Updted quote coin holdings, same as for
+* <code>Coin&lt;QuoteType&gt;</code>: Updated quote coin holdings, same as for
 <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_39"></a>
+<a name="@Aborts_48"></a>
 
 ### Aborts
 

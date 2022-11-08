@@ -166,7 +166,7 @@ module econia::market {
     const E_SELF_MATCH: u64 = 19;
     /// No room to insert order with such low price-time priority.
     const E_PRICE_TIME_PRIORITY_TOO_LOW: u64 = 20;
-    /// Underwriter is not valid for indicated market.
+    /// Underwriter invalid for given market.
     const E_INVALID_UNDERWRITER: u64 = 21;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1403,12 +1403,52 @@ module econia::market {
         market_id // Return market ID.
     }
 
+    /// Match a taker's swap order against order book for given market.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `BaseType`: Same as for `match()`.
+    /// * `QuoteType`: Same as for `match()`.
+    ///
+    /// # Parameters
+    ///
+    /// * `market_id`: Same as for `match()`.
+    /// * `underwriter_id`: ID of underwriter to verify if `BaseType`
+    ///   is `registry::GenericAsset`, else may be passed as
+    ///   `NO_UNDERWRITER`.
+    /// * `taker`: Same as for `match()`.
+    /// * `integrator`: Same as for `match()`.
+    /// * `direction`: Same as for `match()`.
+    /// * `min_base`: Same as for `match()`.
+    /// * `max_base`: Same as for `match()`.
+    /// * `min_quote`: Same as for `match()`.
+    /// * `max_quote`: Same as for `match()`.
+    /// * `limit_price`: Same as for `match()`.
+    /// * `optional_base_coins`: Same as for `match()`.
+    /// * `quote_coins`: Same as for `match()`.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<Coin<BaseType>>`: Optional updated base coin holdings,
+    ///   same as for `match()`.
+    /// * `Coin<QuoteType>`: Updted quote coin holdings, same as for
+    ///   `match()`.
+    /// * `u64`: Base asset trade amount, same as for `match()`
+    /// * `u64`: Quote coin trade amount, same as for `match()`
+    /// * `u64`: Quote coin fees paid, same as for `match()`
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ID`: No market with given ID.
+    /// * `E_INVALID_UNDERWRITER`: Underwriter invalid for given market.
+    /// * `E_INVALID_BASE`: Base asset type is invalid.
+    /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
     fun swap<
         BaseType,
         QuoteType
     >(
         market_id: u64,
-        underwriter_id: u64, // Pass NO_UNDERWRITER if no check needed
+        underwriter_id: u64,
         taker: address,
         integrator: address,
         direction: bool,

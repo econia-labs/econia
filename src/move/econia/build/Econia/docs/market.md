@@ -59,6 +59,10 @@
     -  [Returns](#@Returns_27)
     -  [Testing](#@Testing_28)
 -  [Function `swap`](#0xc0deb00c_market_swap)
+    -  [Type Parameters](#@Type_Parameters_29)
+    -  [Parameters](#@Parameters_30)
+    -  [Returns](#@Returns_31)
+    -  [Aborts](#@Aborts_32)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -522,7 +526,7 @@ against maker bids.
 
 <a name="0xc0deb00c_market_E_INVALID_UNDERWRITER"></a>
 
-Underwriter is not valid for indicated market.
+Underwriter invalid for given market.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_UNDERWRITER">E_INVALID_UNDERWRITER</a>: u64 = 21;
@@ -2514,6 +2518,62 @@ for market.
 
 ## Function `swap`
 
+Match a taker's swap order against order book for given market.
+
+
+<a name="@Type_Parameters_29"></a>
+
+### Type Parameters
+
+
+* <code>BaseType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Parameters_30"></a>
+
+### Parameters
+
+
+* <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>underwriter_id</code>: ID of underwriter to verify if <code>BaseType</code>
+is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::GenericAsset</a></code>, else may be passed as
+<code><a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a></code>.
+* <code>taker</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>optional_base_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Returns_31"></a>
+
+### Returns
+
+
+* <code>Option&lt;Coin&lt;BaseType&gt;&gt;</code>: Optional updated base coin holdings,
+same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>Coin&lt;QuoteType&gt;</code>: Updted quote coin holdings, same as for
+<code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+* <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+* <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+* <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+
+
+<a name="@Aborts_32"></a>
+
+### Aborts
+
+
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_UNDERWRITER">E_INVALID_UNDERWRITER</a></code>: Underwriter invalid for given market.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_BASE">E_INVALID_BASE</a></code>: Base asset type is invalid.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_swap">swap</a>&lt;BaseType, QuoteType&gt;(market_id: u64, underwriter_id: u64, taker: <b>address</b>, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, optional_base_coins: <a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Option">option::Option</a>&lt;<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
@@ -2530,7 +2590,7 @@ for market.
     QuoteType
 &gt;(
     market_id: u64,
-    underwriter_id: u64, // Pass <a href="market.md#0xc0deb00c_market_NO_UNDERWRITER">NO_UNDERWRITER</a> <b>if</b> no check needed
+    underwriter_id: u64,
     taker: <b>address</b>,
     integrator: <b>address</b>,
     direction: bool,

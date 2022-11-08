@@ -142,9 +142,9 @@ module econia::market {
     const E_INVALID_BASE: u64 = 7;
     /// Quote asset type is invalid.
     const E_INVALID_QUOTE: u64 = 8;
-    /// Minimum base asset trade amount not met.
+    /// Minimum base asset trade amount requirement not met.
     const E_MIN_BASE_NOT_TRADED: u64 = 9;
-    /// Minimum quote coin trade amount not met.
+    /// Minimum quote coin trade amount requirement not met.
     const E_MIN_QUOTE_NOT_TRADED: u64 = 10;
     /// Order price specified as 0.
     const E_PRICE_0: u64 = 11;
@@ -621,6 +621,8 @@ module econia::market {
         (base_traded, quote_traded, fees) // Return match results.
     }
 
+    /// Swap standalone coins
+    ///
     /// # Terminology
     ///
     /// * "Inbound" and "outbound"
@@ -733,18 +735,111 @@ module econia::market {
         move_to(&resource_account, OrderBooks{map: tablist::new()})
     }
 
+    /// Match a taker order against the order book.
+    ///
     /// # Type Parameters
+    ///
+    /// * `BaseType`: Base asset type for market.
+    /// * `QuoteType`: Quote coin type for market.
     ///
     /// # Parameters
     ///
-    /// # Emits
-    ///
-    /// # Aborts
+    /// * `market_id`: Market ID of market.
+    /// * `order_book_ref_mut`: Mutable reference to market order book.
+    /// * `taker`: Address of taker whose order is matched. May be
+    ///   passed as `UNKNOWN_TAKER` when taker order originates from
+    ///   a standalone coin swap or a generic swap.
+    /// * `integrator`: The integrator for the taker order, who collects
+    ///   a portion of taker fees at their
+    ///   `incentives::IntegratorFeeStore` for the given market. May be
+    ///   passed as an address known not to be an integrator, for
+    ///   example `@0x0` or `@econia`, in the service of diverting all
+    ///   fees to Econia.
+    /// * `direction`: `BUY` or `SELL`, from the taker's perspective. If
+    ///   a `BUY`, fills against asks, else against bids.
+    /// * `min_base`: Minimum base asset units to be traded by taker,
+    ///   either received or traded away.
+    /// * `max_base`: Maximum base asset units to be traded by taker,
+    ///   either received or traded away.
+    /// * `min_quote`: Minimum quote asset units to be traded by taker,
+    ///   either received or traded away. Exclusive of fees: refers to
+    ///   the net change in taker's quote holdings after the match.
+    /// * `max_quote`: Maximum quote asset units to be traded by taker,
+    ///   either received or traded away. Exclusive of fees: refers to
+    ///   the net change in taker's quote holdings after the match.
+    /// * `limit_price`: If direction is `BUY`, the price above which
+    ///   matching should halt. If direction is `SELL`, the price below
+    ///   which matching should halt. Can be passed as `HI_PRICE` if a
+    ///   `BUY` or `0` if a `SELL` to approve matching at any price.
+    /// * `optional_base_coins`: None if `BaseType` is
+    ///   `registry::GenericAsset` (market is generic), else base coin
+    ///   holdings for pure coin market, which are incremented if
+    ///   `direction` is `BUY` and decremented if `direction` is `SELL`.
+    /// * `quote_coins`: Quote coin holdings for market, which are
+    ///   decremented if `direction` is `BUY` and incremented if
+    ///   `direction` is `SELL`.
     ///
     /// # Returns
     ///
-    /// Taker address may be passed as `UNKNOWN_TAKER` when a
-    /// swap from a coin on hand or generic swap.
+    /// * `Option<Coin<BaseType>>`: None if `BaseType` is
+    ///   `registry::GenericAsset`, else updated `optional_base_coins`
+    ///   holdings after matching.
+    /// * `Coin<QuoteType>`: Updated `quote_coins` holdings after
+    ///   matching.
+    /// * `u64`: Base asset amount traded by taker: net change in
+    ///   taker's base holdings.
+    /// * `u64`: Quote coin amount traded by taker, exclusive of fees:
+    ///   net change in taker's quote coin holdings.
+    /// * `u64`: Amount of quote coin fees paid.
+    ///
+    /// # Emits
+    ///
+    /// * `TakerEvent`: Information about a fill against a maker order,
+    ///   emitted for each separate maker order that is filled against.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_PRICE_TOO_HIGH`: Order price exceeds maximum allowable
+    ///   price.
+    /// * `E_SELF_MATCH`: Taker and a matched maker have same address.
+    /// * `E_MIN_BASE_NOT_TRADED`: Minimum base asset trade amount
+    ///   requirement not met.
+    /// * `E_MIN_QUOTE_NOT_TRADED`: Minimum quote asset trade amount
+    ///   requirement not met.
+    ///
+    /// # Algorithm summary
+    ///
+    /// After checking price, lot size, and tick size, the taker fee
+    /// divisor is used to calculate the maximum quote coin match amount
+    /// for the given direction. Maximum lot and tick fill amounts are
+    /// calculated, and counters are initiated for the number of lots
+    /// and ticks to fill until reaching the max permitted amount. The
+    /// corresponding AVL queue is borrowed, and loopwise matching
+    /// executes against the head of the queue as long as it is empty:
+    ///
+    /// The price of the order at the head of the AVL queue is compared
+    /// against the limit price, and the loop breaks if the limit price
+    /// condition is not met. Then the maximum fill size is calculated
+    /// based on the number of ticks left to fill until max and the
+    /// price for the given order, and compared against the number of
+    /// lots to fill until max. The lesser of the two is taken as the
+    /// max fill size, and compared against the order size to determine
+    /// the fill size and if a complete fill takes place. If no size can
+    /// be filled the loop breaks, otherwise the number of ticks is
+    /// calculated, and lots and ticks until max counters are updated.
+    /// The self-match condition is checked, then the order is filled
+    /// user side and a taker event is emittted. If there was a complete
+    /// fill, the maker order is removed from the head of the AVL queue
+    /// and the loop breaks if there are not lots or ticks left to fill.
+    /// If the order was not completely filled, the order size on the
+    /// order book is updated, and the loop breaks.
+    ///
+    /// After loopwise matching, base and quote fill amounts are
+    /// calculated, then taker fees are assesed. If a buy, the traded
+    /// quote amount is calculated as the quote fill amount plus fees
+    /// paid, and if a sell, the traded quote amount is calculated as
+    /// the quote fill amount minus fees paid. Minimum base and quote
+    /// trade conditions are then checked.
     fun match<
         BaseType,
         QuoteType
@@ -764,9 +859,9 @@ module econia::market {
     ): (
         Option<Coin<BaseType>>,
         Coin<QuoteType>,
-        u64, // Base traded by taker.
-        u64, // Quote traded by taker.
-        u64 // Fees paid
+        u64,
+        u64,
+        u64
     ) {
         // Assert price is not too high.
         assert!(limit_price <= MAX_PRICE, E_PRICE_TOO_HIGH);
@@ -786,7 +881,6 @@ module econia::market {
         // Mutably borrow corresponding orders AVL queue.
         let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
             else &mut order_book_ref_mut.bids;
-        let market_order_id; // Declare market order ID, assigned later.
         // While there are orders to match against:
         while (!avl_queue::is_empty(orders_ref_mut)) {
             let price = // Get price of order at head of AVL queue.
@@ -821,6 +915,7 @@ module econia::market {
                 (order_ref_mut.user, order_ref_mut.custodian_id, fill_size);
             // Assert no self match.
             assert!(maker != taker, E_SELF_MATCH);
+            let market_order_id; // Declare return assignment variable.
             // Fill matched order user side, storing market order ID.
             (optional_base_coins, quote_coins, market_order_id) =
                 user::fill_order_internal<BaseType, QuoteType>(
@@ -1120,12 +1215,14 @@ module econia::market {
     ///
     /// # Parameters
     ///
-    /// * `side`: `ASK` or `SELL`, the side against which a taker order
-    ///   would match.
-    /// * `min_base`: Minimum number of base units to trade.
-    /// * `max_base`: Maximum number of base units to trade.
-    /// * `min_quote`: Minimum number of quote units to trade.
-    /// * `max_quote`: Maximum number of quote units to trade.
+    /// * `side`: `ASK` or `BID`, the side against which a taker order
+    ///   would match. Alternatively can be passed as `BUY` or `SELL`,
+    ///   the taker order direction, since these `bool` flags have the
+    ///   same value as the side that the direction matches against.
+    /// * `min_base`: Same as for `match()`.
+    /// * `max_base`: Same as for `match()`.
+    /// * `min_quote`: Same as for `match()`.
+    /// * `max_quote`: Same as for `match()`.
     /// * `base_available`: Taker's available base asset amount.
     /// * `base_ceiling`: Taker's base asset ceiling, only checked when
     ///   `SIDE` is `ASK` (a taker buy).

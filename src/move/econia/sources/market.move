@@ -255,6 +255,27 @@ module econia::market {
     }
 
     #[cmd]
+    /// Public entry function wrapper for `place_market_order_user()`.
+    public fun place_market_order_user_entry<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        min_quote: u64,
+        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        limit_price: u64,
+    ) acquires OrderBooks {
+        place_market_order_user<BaseType, QuoteType>(
+            user, market_id, integrator, direction, min_base, max_base,
+            min_quote, max_quote, limit_price);
+    }
+
+    #[cmd]
     /// Wrapped call to `register_market_base_coin()` for paying utility
     /// coins from an `aptos_framework::coin::CoinStore`.
     ///
@@ -367,6 +388,71 @@ module econia::market {
             price,
             restriction,
             CRITICAL_HEIGHT
+        )
+    }
+
+    public fun place_market_order_custodian<
+        BaseType,
+        QuoteType
+    >(
+        user_address: address,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        min_quote: u64,
+        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        limit_price: u64,
+        custodian_capability_ref: &CustodianCapability
+    ): (
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
+        place_market_order<BaseType, QuoteType>(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            integrator,
+            direction,
+            min_base,
+            max_base,
+            min_quote,
+            max_quote,
+            limit_price
+        )
+    }
+
+    public fun place_market_order_user<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        min_quote: u64,
+        max_quote: u64, // Pass as MAX_POSSIBLE to trade max possible.
+        limit_price: u64,
+    ): (
+        u64,
+        u64,
+        u64
+    ) acquires OrderBooks {
+        place_market_order<BaseType, QuoteType>(
+            address_of(user),
+            market_id,
+            NO_CUSTODIAN,
+            integrator,
+            direction,
+            min_base,
+            max_base,
+            min_quote,
+            max_quote,
+            limit_price
         )
     }
 

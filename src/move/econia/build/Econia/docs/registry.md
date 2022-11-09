@@ -461,7 +461,12 @@ Information about a market.
 <dd>
  Number of quote coin units exchanged per tick (corresponds
  to <code>aptos_framework::coin::Coin.value</code>). When selecting a
- tick size, note that prices are 32 bits.
+ tick size, note that prices are 32 bits. The suggested tick
+ size is 5 basis points, or 0.05% of nominal price, which
+ will ensure sufficient granularity as well as price level
+ coverage. If an inappropriately small tick size is chosen,
+ price level coverage may become insufficient during market
+ volatility.
 </dd>
 <dt>
 <code>min_size: u64</code>

@@ -1,3 +1,5 @@
+# Matching
+
 ```mermaid
 
 flowchart LR
@@ -50,4 +52,21 @@ swap_coins ---> range_check_trade
 
 swap ---> match
 
+```
+
+# Cancels
+
+```mermaid
+
+flowchart LR
+
+cancel_all_orders_custodian --> cancel_all_orders
+
+cancel_order_custodian --> cancel_order
+
+cancel_all_orders_user --> cancel_all_orders
+
+cancel_order_user --> cancel_order
+
+cancel_all_orders --> cancel_order
 ```

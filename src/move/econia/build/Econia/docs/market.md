@@ -1755,7 +1755,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_can
 cancelling orders under authority of signing user.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(maker: &<a href="">signer</a>, market_id: u64, side: bool)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, side: bool)
 </code></pre>
 
 
@@ -1765,12 +1765,12 @@ cancelling orders under authority of signing user.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(
-    maker: &<a href="">signer</a>,
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_id: u64,
     side: bool,
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>(
-        address_of(maker),
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
         market_id,
         <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         side);
@@ -1789,7 +1789,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_can
 cancelling order under authority of signing user.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>(maker: &<a href="">signer</a>, market_id: u64, side: bool, market_order_id: u128)
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, side: bool, market_order_id: u128)
 </code></pre>
 
 
@@ -1799,13 +1799,13 @@ cancelling order under authority of signing user.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>(
-    maker: &<a href="">signer</a>,
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
     market_id: u64,
     side: bool,
     market_order_id: u128
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(
-        address_of(maker),
+        address_of(<a href="user.md#0xc0deb00c_user">user</a>),
         market_id,
         <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
         side,
@@ -1993,13 +1993,13 @@ Cancel all of a user's open maker orders.
 ### Parameters
 
 
-* <code>maker</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
 * <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
 * <code>custodian_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
 * <code>side</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>(maker: <b>address</b>, market_id: u64, custodian_id: u64, side: bool)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64, side: bool)
 </code></pre>
 
 
@@ -2009,19 +2009,19 @@ Cancel all of a user's open maker orders.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>(
-    maker: <b>address</b>,
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_id: u64,
     custodian_id: u64,
     side: bool
 ) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
     // Get <a href="user.md#0xc0deb00c_user">user</a>'s active <a href="market.md#0xc0deb00c_market">market</a> order IDs.
     <b>let</b> market_order_ids = <a href="user.md#0xc0deb00c_user_get_active_market_order_ids_internal">user::get_active_market_order_ids_internal</a>(
-        maker, market_id, custodian_id, side);
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side);
     // Get number of <a href="market.md#0xc0deb00c_market">market</a> order IDs, init <b>loop</b> index variable.
     <b>let</b> (n_orders, i) = (<a href="_length">vector::length</a>(&market_order_ids), 0);
     <b>while</b> (i &lt; n_orders) { // Loop over all active orders.
         // Cancel <a href="market.md#0xc0deb00c_market">market</a> order for current iteration.
-        <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(maker, market_id, custodian_id, side,
+        <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side,
                      *<a href="_borrow">vector::borrow</a>(&market_order_ids, i));
         i = i + 1; // Increment <b>loop</b> counter.
     }
@@ -2044,7 +2044,7 @@ Cancel maker order on order book and in user's market account.
 ### Parameters
 
 
-* <code>maker</code>: Address of user holding maker order.
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user holding maker order.
 * <code>market_id</code>: Market ID of market.
 * <code>custodian_id</code>: Market account custodian ID.
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the maker order side.
@@ -2058,7 +2058,7 @@ Cancel maker order on order book and in user's market account.
 
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID passed as <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
-* <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code>maker</code> and user for order
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code><a href="user.md#0xc0deb00c_user">user</a></code> and user for order
 on book having given market order ID.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a></code>: Mismatch between <code>custodian_id</code> and
 custodian ID of order on order book having market order ID.
@@ -2072,7 +2072,7 @@ custodian ID of order on order book having market order ID.
 * <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code>: Information about the maker order cancelled.
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(maker: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, market_order_id: u128)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, market_order_id: u128)
 </code></pre>
 
 
@@ -2082,7 +2082,7 @@ custodian ID of order on order book having market order ID.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(
-    maker: <b>address</b>,
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_id: u64,
     custodian_id: u64,
     side: bool,
@@ -2105,15 +2105,16 @@ custodian ID of order on order book having market order ID.
     // Get AVL queue access key from <a href="market.md#0xc0deb00c_market">market</a> order ID.
     <b>let</b> avlq_access_key = ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
     // Remove order from AVL queue, storing its fields.
-    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id: order_custodian, order_access_key}
-        = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
+    <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, <a href="user.md#0xc0deb00c_user">user</a>: order_user, custodian_id: order_custodian_id,
+              order_access_key} = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut,
+                                                    avlq_access_key);
     // Assert passed maker <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.
-    <b>assert</b>!(maker == <a href="user.md#0xc0deb00c_user">user</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>);
+    <b>assert</b>!(<a href="user.md#0xc0deb00c_user">user</a> == order_user, <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>);
     // Assert passed custodian ID matches that from order.
-    <b>assert</b>!(custodian_id == order_custodian, <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
+    <b>assert</b>!(custodian_id == order_custodian_id, <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
     <b>let</b> price = avlq_access_key & <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>; // Get order price.
     // Cancel order <a href="user.md#0xc0deb00c_user">user</a>-side, thus verifying <a href="market.md#0xc0deb00c_market">market</a> order ID.
-    <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(maker, market_id, custodian_id, side,
+    <a href="user.md#0xc0deb00c_user_cancel_order_internal">user::cancel_order_internal</a>(<a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side,
                                 price, order_access_key, market_order_id);
     <b>let</b> type = <a href="market.md#0xc0deb00c_market_CANCEL">CANCEL</a>; // Declare maker <a href="">event</a> type.
     // Emit a maker cancel <a href="">event</a>.
@@ -2138,7 +2139,7 @@ Change maker order size on book and in user's market account.
 ### Parameters
 
 
-* <code>maker</code>: Address of user holding maker order.
+* <code><a href="user.md#0xc0deb00c_user">user</a></code>: Address of user holding maker order.
 * <code>market_id</code>: Market ID of market.
 * <code>custodian_id</code>: Market account custodian ID.
 * <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the maker order side.
@@ -2153,7 +2154,7 @@ Change maker order size on book and in user's market account.
 
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID passed as <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
-* <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code>maker</code> and user for order
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code><a href="user.md#0xc0deb00c_user">user</a></code> and user for order
 on book having given market order ID.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a></code>: Mismatch between <code>custodian_id</code> and
 custodian ID of order on order book having market order ID.
@@ -2167,7 +2168,7 @@ custodian ID of order on order book having market order ID.
 * <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code>: Information about the changed maker order.
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>(maker: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, market_order_id: u128, new_size: u64)
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, market_order_id: u128, new_size: u64)
 </code></pre>
 
 
@@ -2177,7 +2178,7 @@ custodian ID of order on order book having market order ID.
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>(
-    maker: <b>address</b>,
+    <a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>,
     market_id: u64,
     custodian_id: u64,
     side: bool,
@@ -2202,8 +2203,8 @@ custodian ID of order on order book having market order ID.
     <b>let</b> avlq_access_key = ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
     <b>let</b> order_ref_mut = // Mutably borrow order on order book.
         <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_mut">avl_queue::borrow_mut</a>(orders_ref_mut, avlq_access_key);
-    // Assert passed maker <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.
-    <b>assert</b>!(maker == order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>);
+    // Assert passed <a href="user.md#0xc0deb00c_user">user</a> <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.
+    <b>assert</b>!(<a href="user.md#0xc0deb00c_user">user</a> == order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>);
     // Assert passed custodian ID matches that from order.
     <b>assert</b>!(custodian_id == order_ref_mut.custodian_id,
             <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
@@ -2211,12 +2212,13 @@ custodian ID of order on order book having market order ID.
     // Change order size <a href="user.md#0xc0deb00c_user">user</a>-side, thus verifying <a href="market.md#0xc0deb00c_market">market</a> order ID
     // and new size.
     <a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>(
-        maker, market_id, custodian_id, side, new_size, price,
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, custodian_id, side, new_size, price,
         order_ref_mut.order_access_key, market_order_id);
+    // Declare order size, maker <a href="">event</a> type.
+    <b>let</b> (size, type) = (order_ref_mut.size, <a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a>);
     // Emit a maker change <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
-        market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>: maker, custodian_id,
-        type: <a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a>, size: new_size});
+        market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, type, size});
 }
 </code></pre>
 

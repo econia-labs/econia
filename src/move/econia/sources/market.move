@@ -780,12 +780,12 @@ module econia::market {
     /// Public entry function wrapper for `cancel_all_orders()` for
     /// cancelling orders under authority of signing user.
     public entry fun cancel_all_orders_user(
-        maker: &signer,
+        user: &signer,
         market_id: u64,
         side: bool,
     ) acquires OrderBooks {
         cancel_all_orders(
-            address_of(maker),
+            address_of(user),
             market_id,
             NO_CUSTODIAN,
             side);
@@ -795,13 +795,13 @@ module econia::market {
     /// Public entry function wrapper for `cancel_order()` for
     /// cancelling order under authority of signing user.
     public entry fun cancel_order_user(
-        maker: &signer,
+        user: &signer,
         market_id: u64,
         side: bool,
         market_order_id: u128
     ) acquires OrderBooks {
         cancel_order(
-            address_of(maker),
+            address_of(user),
             market_id,
             NO_CUSTODIAN,
             side,
@@ -900,24 +900,24 @@ module econia::market {
     ///
     /// # Parameters
     ///
-    /// * `maker`: Same as for `cancel_order()`.
+    /// * `user`: Same as for `cancel_order()`.
     /// * `market_id`: Same as for `cancel_order()`.
     /// * `custodian_id`: Same as for `cancel_order()`.
     /// * `side`: Same as for `cancel_order()`.
     fun cancel_all_orders(
-        maker: address,
+        user: address,
         market_id: u64,
         custodian_id: u64,
         side: bool
     ) acquires OrderBooks {
         // Get user's active market order IDs.
         let market_order_ids = user::get_active_market_order_ids_internal(
-            maker, market_id, custodian_id, side);
+            user, market_id, custodian_id, side);
         // Get number of market order IDs, init loop index variable.
         let (n_orders, i) = (vector::length(&market_order_ids), 0);
         while (i < n_orders) { // Loop over all active orders.
             // Cancel market order for current iteration.
-            cancel_order(maker, market_id, custodian_id, side,
+            cancel_order(user, market_id, custodian_id, side,
                          *vector::borrow(&market_order_ids, i));
             i = i + 1; // Increment loop counter.
         }
@@ -927,7 +927,7 @@ module econia::market {
     ///
     /// # Parameters
     ///
-    /// * `maker`: Address of user holding maker order.
+    /// * `user`: Address of user holding maker order.
     /// * `market_id`: Market ID of market.
     /// * `custodian_id`: Market account custodian ID.
     /// * `side`: `ASK` or `BID`, the maker order side.
@@ -937,7 +937,7 @@ module econia::market {
     ///
     /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID passed as `NIL`.
     /// * `E_INVALID_MARKET_ID`: No market with given ID.
-    /// * `E_INVALID_USER`: Mismatch between `maker` and user for order
+    /// * `E_INVALID_USER`: Mismatch between `user` and user for order
     ///   on book having given market order ID.
     /// * `E_INVALID_CUSTODIAN`: Mismatch between `custodian_id` and
     ///   custodian ID of order on order book having market order ID.
@@ -946,7 +946,7 @@ module econia::market {
     ///
     /// * `MakerEvent`: Information about the maker order cancelled.
     fun cancel_order(
-        maker: address,
+        user: address,
         market_id: u64,
         custodian_id: u64,
         side: bool,
@@ -969,15 +969,16 @@ module econia::market {
         // Get AVL queue access key from market order ID.
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
         // Remove order from AVL queue, storing its fields.
-        let Order{size, user, custodian_id: order_custodian, order_access_key}
-            = avl_queue::remove(orders_ref_mut, avlq_access_key);
+        let Order{size, user: order_user, custodian_id: order_custodian_id,
+                  order_access_key} = avl_queue::remove(orders_ref_mut,
+                                                        avlq_access_key);
         // Assert passed maker address is user holding order.
-        assert!(maker == user, E_INVALID_USER);
+        assert!(user == order_user, E_INVALID_USER);
         // Assert passed custodian ID matches that from order.
-        assert!(custodian_id == order_custodian, E_INVALID_CUSTODIAN);
+        assert!(custodian_id == order_custodian_id, E_INVALID_CUSTODIAN);
         let price = avlq_access_key & HI_PRICE; // Get order price.
         // Cancel order user-side, thus verifying market order ID.
-        user::cancel_order_internal(maker, market_id, custodian_id, side,
+        user::cancel_order_internal(user, market_id, custodian_id, side,
                                     price, order_access_key, market_order_id);
         let type = CANCEL; // Declare maker event type.
         // Emit a maker cancel event.
@@ -989,7 +990,7 @@ module econia::market {
     ///
     /// # Parameters
     ///
-    /// * `maker`: Address of user holding maker order.
+    /// * `user`: Address of user holding maker order.
     /// * `market_id`: Market ID of market.
     /// * `custodian_id`: Market account custodian ID.
     /// * `side`: `ASK` or `BID`, the maker order side.
@@ -1000,7 +1001,7 @@ module econia::market {
     ///
     /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID passed as `NIL`.
     /// * `E_INVALID_MARKET_ID`: No market with given ID.
-    /// * `E_INVALID_USER`: Mismatch between `maker` and user for order
+    /// * `E_INVALID_USER`: Mismatch between `user` and user for order
     ///   on book having given market order ID.
     /// * `E_INVALID_CUSTODIAN`: Mismatch between `custodian_id` and
     ///   custodian ID of order on order book having market order ID.
@@ -1009,7 +1010,7 @@ module econia::market {
     ///
     /// * `MakerEvent`: Information about the changed maker order.
     fun change_order_size(
-        maker: address,
+        user: address,
         market_id: u64,
         custodian_id: u64,
         side: bool,
@@ -1034,8 +1035,8 @@ module econia::market {
         let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
         let order_ref_mut = // Mutably borrow order on order book.
             avl_queue::borrow_mut(orders_ref_mut, avlq_access_key);
-        // Assert passed maker address is user holding order.
-        assert!(maker == order_ref_mut.user, E_INVALID_USER);
+        // Assert passed user address is user holding order.
+        assert!(user == order_ref_mut.user, E_INVALID_USER);
         // Assert passed custodian ID matches that from order.
         assert!(custodian_id == order_ref_mut.custodian_id,
                 E_INVALID_CUSTODIAN);
@@ -1043,12 +1044,13 @@ module econia::market {
         // Change order size user-side, thus verifying market order ID
         // and new size.
         user::change_order_size_internal(
-            maker, market_id, custodian_id, side, new_size, price,
+            user, market_id, custodian_id, side, new_size, price,
             order_ref_mut.order_access_key, market_order_id);
+        // Declare order size, maker event type.
+        let (size, type) = (order_ref_mut.size, CHANGE);
         // Emit a maker change event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
-            market_id, side, market_order_id, user: maker, custodian_id,
-            type: CHANGE, size: new_size});
+            market_id, side, market_order_id, user, custodian_id, type, size});
     }
 
     /// Initialize the order books map upon module publication.

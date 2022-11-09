@@ -250,10 +250,10 @@
 /// | `swap_between_coinstores()`      | None                        |
 /// | `swap_coins()`                   | None                        |
 /// | `swap_generic()`                 | None                        |
-/// | `match()`                        | `swap()`, `swap_generic()`  |
+/// | `match()`                   | `swap_coins()`, `swap_generic()` |
 /// | `place_limit_order()`            | `place_limit_order_user()`  |
 /// | `place_market_order()`           | `place_market_order_user()` |
-/// | `swap()`                         | `swap()`, `swap_generic()`  |
+/// | `swap()`                    | `swap_coins()`, `swap_generic()` |
 ///
 /// ## Invocation proxies
 ///

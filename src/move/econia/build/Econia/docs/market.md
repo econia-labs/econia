@@ -11,13 +11,6 @@
 -  [Resource `OrderBooks`](#0xc0deb00c_market_OrderBooks)
 -  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Constants](#@Constants_0)
--  [Function `cancel_all_orders_user`](#0xc0deb00c_market_cancel_all_orders_user)
--  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
--  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
--  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
--  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
-    -  [Testing](#@Testing_1)
--  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
 -  [Function `cancel_all_orders_custodian`](#0xc0deb00c_market_cancel_all_orders_custodian)
 -  [Function `cancel_order_custodian`](#0xc0deb00c_market_cancel_order_custodian)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
@@ -25,28 +18,35 @@
 -  [Function `place_market_order_custodian`](#0xc0deb00c_market_place_market_order_custodian)
 -  [Function `place_market_order_user`](#0xc0deb00c_market_place_market_order_user)
 -  [Function `register_market_base_coin`](#0xc0deb00c_market_register_market_base_coin)
-    -  [Type parameters](#@Type_parameters_2)
-    -  [Parameters](#@Parameters_3)
-    -  [Returns](#@Returns_4)
-    -  [Testing](#@Testing_5)
+    -  [Type parameters](#@Type_parameters_1)
+    -  [Parameters](#@Parameters_2)
+    -  [Returns](#@Returns_3)
+    -  [Testing](#@Testing_4)
 -  [Function `register_market_base_generic`](#0xc0deb00c_market_register_market_base_generic)
-    -  [Type parameters](#@Type_parameters_6)
-    -  [Parameters](#@Parameters_7)
-    -  [Returns](#@Returns_8)
-    -  [Testing](#@Testing_9)
+    -  [Type parameters](#@Type_parameters_5)
+    -  [Parameters](#@Parameters_6)
+    -  [Returns](#@Returns_7)
+    -  [Testing](#@Testing_8)
 -  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
-    -  [Type Parameters](#@Type_Parameters_10)
-    -  [Parameters](#@Parameters_11)
-    -  [Returns](#@Returns_12)
+    -  [Type Parameters](#@Type_Parameters_9)
+    -  [Parameters](#@Parameters_10)
+    -  [Returns](#@Returns_11)
 -  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
-    -  [Type Parameters](#@Type_Parameters_13)
-    -  [Parameters](#@Parameters_14)
-    -  [Returns](#@Returns_15)
-    -  [Terminology](#@Terminology_16)
+    -  [Type Parameters](#@Type_Parameters_12)
+    -  [Parameters](#@Parameters_13)
+    -  [Returns](#@Returns_14)
+    -  [Terminology](#@Terminology_15)
 -  [Function `swap_generic`](#0xc0deb00c_market_swap_generic)
-    -  [Type Parameters](#@Type_Parameters_17)
-    -  [Parameters](#@Parameters_18)
-    -  [Returns](#@Returns_19)
+    -  [Type Parameters](#@Type_Parameters_16)
+    -  [Parameters](#@Parameters_17)
+    -  [Returns](#@Returns_18)
+-  [Function `cancel_all_orders_user`](#0xc0deb00c_market_cancel_all_orders_user)
+-  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
+-  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
+-  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
+-  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
+    -  [Testing](#@Testing_19)
+-  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
 -  [Function `cancel_all_orders`](#0xc0deb00c_market_cancel_all_orders)
     -  [Parameters](#@Parameters_20)
 -  [Function `cancel_order`](#0xc0deb00c_market_cancel_order)
@@ -920,240 +920,6 @@ Taker address flag for when taker is unknown.
 
 
 
-<a name="0xc0deb00c_market_cancel_all_orders_user"></a>
-
-## Function `cancel_all_orders_user`
-
-Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code> for
-cancelling orders under authority of signing user.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(maker: &<a href="">signer</a>, market_id: u64, side: bool)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(
-    maker: &<a href="">signer</a>,
-    market_id: u64,
-    side: bool,
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>(
-        address_of(maker),
-        market_id,
-        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
-        side);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_market_cancel_order_user"></a>
-
-## Function `cancel_order_user`
-
-Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code> for
-cancelling order under authority of signing user.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>(maker: &<a href="">signer</a>, market_id: u64, side: bool, market_order_id: u128)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>(
-    maker: &<a href="">signer</a>,
-    market_id: u64,
-    side: bool,
-    market_order_id: u128
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(
-        address_of(maker),
-        market_id,
-        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
-        side,
-        market_order_id);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_market_place_limit_order_user_entry"></a>
-
-## Function `place_limit_order_user_entry`
-
-Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;
-    BaseType,
-    QuoteType
-&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    market_id: u64,
-    integrator: <b>address</b>,
-    side: bool,
-    size: u64,
-    price: u64,
-    restriction: u8,
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, side, size, price, restriction);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_market_place_market_order_user_entry"></a>
-
-## Function `place_market_order_user_entry`
-
-Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;
-    BaseType,
-    QuoteType
-&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    market_id: u64,
-    integrator: <b>address</b>,
-    direction: bool,
-    min_base: u64,
-    max_base: u64,
-    min_quote: u64,
-    max_quote: u64,
-    limit_price: u64,
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
-        min_quote, max_quote, limit_price);
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_market_register_market_base_coin_from_coinstore"></a>
-
-## Function `register_market_base_coin_from_coinstore`
-
-Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_coin">register_market_base_coin</a>()</code> for paying utility
-coins from an <code>aptos_framework::coin::CoinStore</code>.
-
-
-<a name="@Testing_1"></a>
-
-### Testing
-
-
-* <code>test_register_markets()</code>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore">register_market_base_coin_from_coinstore</a>&lt;BaseType, QuoteType, UtilityType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, lot_size: u64, tick_size: u64, min_size: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore">register_market_base_coin_from_coinstore</a>&lt;
-    BaseType,
-    QuoteType,
-    UtilityType
-&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    lot_size: u64,
-    tick_size: u64,
-    min_size: u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    // Get <a href="market.md#0xc0deb00c_market">market</a> registration fee, denominated in utility coins.
-    <b>let</b> fee = <a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">incentives::get_market_registration_fee</a>();
-    // Register <a href="market.md#0xc0deb00c_market">market</a> <b>with</b> base <a href="">coin</a>, paying fees from <a href="">coin</a> store.
-    <a href="market.md#0xc0deb00c_market_register_market_base_coin">register_market_base_coin</a>&lt;BaseType, QuoteType, UtilityType&gt;(
-        lot_size, tick_size, min_size, <a href="_withdraw">coin::withdraw</a>(<a href="user.md#0xc0deb00c_user">user</a>, fee));
-}
-</code></pre>
-
-
-
-</details>
-
-<a name="0xc0deb00c_market_swap_between_coinstores_entry"></a>
-
-## Function `swap_between_coinstores_entry`
-
-Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>&lt;
-    BaseType,
-    QuoteType
-&gt;(
-    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
-    market_id: u64,
-    integrator: <b>address</b>,
-    direction: bool,
-    min_base: u64,
-    max_base: u64,
-    min_quote: u64,
-    max_quote: u64,
-    limit_price: u64
-) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
-    <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseType, QuoteType&gt;(
-        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
-        min_quote, max_quote, limit_price);
-}
-</code></pre>
-
-
-
-</details>
-
 <a name="0xc0deb00c_market_cancel_all_orders_custodian"></a>
 
 ## Function `cancel_all_orders_custodian`
@@ -1451,7 +1217,7 @@ Register pure coin market, return resultant market ID.
 See inner function <code><a href="market.md#0xc0deb00c_market_register_market">register_market</a>()</code>.
 
 
-<a name="@Type_parameters_2"></a>
+<a name="@Type_parameters_1"></a>
 
 ### Type parameters
 
@@ -1462,7 +1228,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.utility_coin_type_info</code>.
 
 
-<a name="@Parameters_3"></a>
+<a name="@Parameters_2"></a>
 
 ### Parameters
 
@@ -1474,7 +1240,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.market_registration_fee</code>.
 
 
-<a name="@Returns_4"></a>
+<a name="@Returns_3"></a>
 
 ### Returns
 
@@ -1482,7 +1248,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_5"></a>
+<a name="@Testing_4"></a>
 
 ### Testing
 
@@ -1538,7 +1304,7 @@ Generic base name restrictions described at
 <code><a href="registry.md#0xc0deb00c_registry_register_market_base_generic_internal">registry::register_market_base_generic_internal</a>()</code>.
 
 
-<a name="@Type_parameters_6"></a>
+<a name="@Type_parameters_5"></a>
 
 ### Type parameters
 
@@ -1548,7 +1314,7 @@ Generic base name restrictions described at
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.utility_coin_type_info</code>.
 
 
-<a name="@Parameters_7"></a>
+<a name="@Parameters_6"></a>
 
 ### Parameters
 
@@ -1564,7 +1330,7 @@ for market.
 underwriter capability.
 
 
-<a name="@Returns_8"></a>
+<a name="@Returns_7"></a>
 
 ### Returns
 
@@ -1572,7 +1338,7 @@ underwriter capability.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_9"></a>
+<a name="@Testing_8"></a>
 
 ### Testing
 
@@ -1627,7 +1393,7 @@ Initializes an <code>aptos_framework::coin::CoinStore</code> for each coin
 type that does not yet have one.
 
 
-<a name="@Type_Parameters_10"></a>
+<a name="@Type_Parameters_9"></a>
 
 ### Type Parameters
 
@@ -1636,7 +1402,7 @@ type that does not yet have one.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_11"></a>
+<a name="@Parameters_10"></a>
 
 ### Parameters
 
@@ -1655,7 +1421,7 @@ for coin store.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_12"></a>
+<a name="@Returns_11"></a>
 
 ### Returns
 
@@ -1748,7 +1514,7 @@ for coin store.
 Swap standalone coins against the order book.
 
 
-<a name="@Type_Parameters_13"></a>
+<a name="@Type_Parameters_12"></a>
 
 ### Type Parameters
 
@@ -1757,7 +1523,7 @@ Swap standalone coins against the order book.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_14"></a>
+<a name="@Parameters_13"></a>
 
 ### Parameters
 
@@ -1779,7 +1545,7 @@ unpacked.
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_15"></a>
+<a name="@Returns_14"></a>
 
 ### Returns
 
@@ -1792,7 +1558,7 @@ unpacked.
 * <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
-<a name="@Terminology_16"></a>
+<a name="@Terminology_15"></a>
 
 ### Terminology
 
@@ -1872,7 +1638,7 @@ Swap against the order book for a generic market, under
 authority of market underwriter.
 
 
-<a name="@Type_Parameters_17"></a>
+<a name="@Type_Parameters_16"></a>
 
 ### Type Parameters
 
@@ -1880,7 +1646,7 @@ authority of market underwriter.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_18"></a>
+<a name="@Parameters_17"></a>
 
 ### Parameters
 
@@ -1901,7 +1667,7 @@ possible amount for passed coin holdings.
 underwriter capability for given market.
 
 
-<a name="@Returns_19"></a>
+<a name="@Returns_18"></a>
 
 ### Returns
 
@@ -1970,6 +1736,240 @@ underwriter capability for given market.
     // Return quote coins, amount of base traded, amount of quote
     // traded, and quote fees paid.
     (quote_coins, base_traded, quote_traded, fees)
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_all_orders_user"></a>
+
+## Function `cancel_all_orders_user`
+
+Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code> for
+cancelling orders under authority of signing user.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(maker: &<a href="">signer</a>, market_id: u64, side: bool)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(
+    maker: &<a href="">signer</a>,
+    market_id: u64,
+    side: bool,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>(
+        address_of(maker),
+        market_id,
+        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        side);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_cancel_order_user"></a>
+
+## Function `cancel_order_user`
+
+Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code> for
+cancelling order under authority of signing user.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>(maker: &<a href="">signer</a>, market_id: u64, side: bool, market_order_id: u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>(
+    maker: &<a href="">signer</a>,
+    market_id: u64,
+    side: bool,
+    market_order_id: u128
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>(
+        address_of(maker),
+        market_id,
+        <a href="market.md#0xc0deb00c_market_NO_CUSTODIAN">NO_CUSTODIAN</a>,
+        side,
+        market_order_id);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_limit_order_user_entry"></a>
+
+## Function `place_limit_order_user_entry`
+
+Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    integrator: <b>address</b>,
+    side: bool,
+    size: u64,
+    price: u64,
+    restriction: u8,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, side, size, price, restriction);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_place_market_order_user_entry"></a>
+
+## Function `place_market_order_user_entry`
+
+Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    integrator: <b>address</b>,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64,
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
+        min_quote, max_quote, limit_price);
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_register_market_base_coin_from_coinstore"></a>
+
+## Function `register_market_base_coin_from_coinstore`
+
+Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_coin">register_market_base_coin</a>()</code> for paying utility
+coins from an <code>aptos_framework::coin::CoinStore</code>.
+
+
+<a name="@Testing_19"></a>
+
+### Testing
+
+
+* <code>test_register_markets()</code>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore">register_market_base_coin_from_coinstore</a>&lt;BaseType, QuoteType, UtilityType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, lot_size: u64, tick_size: u64, min_size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_register_market_base_coin_from_coinstore">register_market_base_coin_from_coinstore</a>&lt;
+    BaseType,
+    QuoteType,
+    UtilityType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    lot_size: u64,
+    tick_size: u64,
+    min_size: u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Get <a href="market.md#0xc0deb00c_market">market</a> registration fee, denominated in utility coins.
+    <b>let</b> fee = <a href="incentives.md#0xc0deb00c_incentives_get_market_registration_fee">incentives::get_market_registration_fee</a>();
+    // Register <a href="market.md#0xc0deb00c_market">market</a> <b>with</b> base <a href="">coin</a>, paying fees from <a href="">coin</a> store.
+    <a href="market.md#0xc0deb00c_market_register_market_base_coin">register_market_base_coin</a>&lt;BaseType, QuoteType, UtilityType&gt;(
+        lot_size, tick_size, min_size, <a href="_withdraw">coin::withdraw</a>(<a href="user.md#0xc0deb00c_user">user</a>, fee));
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_swap_between_coinstores_entry"></a>
+
+## Function `swap_between_coinstores_entry`
+
+Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>&lt;
+    BaseType,
+    QuoteType
+&gt;(
+    <a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>,
+    market_id: u64,
+    integrator: <b>address</b>,
+    direction: bool,
+    min_base: u64,
+    max_base: u64,
+    min_quote: u64,
+    max_quote: u64,
+    limit_price: u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseType, QuoteType&gt;(
+        <a href="user.md#0xc0deb00c_user">user</a>, market_id, integrator, direction, min_base, max_base,
+        min_quote, max_quote, limit_price);
 }
 </code></pre>
 

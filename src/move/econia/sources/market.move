@@ -238,126 +238,6 @@ module econia::market {
 
     // Constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-    #[cmd]
-    /// Public entry function wrapper for `cancel_all_orders()` for
-    /// cancelling orders under authority of signing user.
-    public entry fun cancel_all_orders_user(
-        maker: &signer,
-        market_id: u64,
-        side: bool,
-    ) acquires OrderBooks {
-        cancel_all_orders(
-            address_of(maker),
-            market_id,
-            NO_CUSTODIAN,
-            side);
-    }
-
-    #[cmd]
-    /// Public entry function wrapper for `cancel_order()` for
-    /// cancelling order under authority of signing user.
-    public entry fun cancel_order_user(
-        maker: &signer,
-        market_id: u64,
-        side: bool,
-        market_order_id: u128
-    ) acquires OrderBooks {
-        cancel_order(
-            address_of(maker),
-            market_id,
-            NO_CUSTODIAN,
-            side,
-            market_order_id);
-    }
-
-    #[cmd]
-    /// Public entry function wrapper for `place_limit_order_user()`.
-    public entry fun place_limit_order_user_entry<
-        BaseType,
-        QuoteType
-    >(
-        user: &signer,
-        market_id: u64,
-        integrator: address,
-        side: bool,
-        size: u64,
-        price: u64,
-        restriction: u8,
-    ) acquires OrderBooks {
-        place_limit_order_user<BaseType, QuoteType>(
-            user, market_id, integrator, side, size, price, restriction);
-    }
-
-    #[cmd]
-    /// Public entry function wrapper for `place_market_order_user()`.
-    public entry fun place_market_order_user_entry<
-        BaseType,
-        QuoteType
-    >(
-        user: &signer,
-        market_id: u64,
-        integrator: address,
-        direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64,
-    ) acquires OrderBooks {
-        place_market_order_user<BaseType, QuoteType>(
-            user, market_id, integrator, direction, min_base, max_base,
-            min_quote, max_quote, limit_price);
-    }
-
-    #[cmd]
-    /// Wrapped call to `register_market_base_coin()` for paying utility
-    /// coins from an `aptos_framework::coin::CoinStore`.
-    ///
-    /// # Testing
-    ///
-    /// * `test_register_markets()`
-    public entry fun register_market_base_coin_from_coinstore<
-        BaseType,
-        QuoteType,
-        UtilityType
-    >(
-        user: &signer,
-        lot_size: u64,
-        tick_size: u64,
-        min_size: u64
-    ) acquires OrderBooks {
-        // Get market registration fee, denominated in utility coins.
-        let fee = incentives::get_market_registration_fee();
-        // Register market with base coin, paying fees from coin store.
-        register_market_base_coin<BaseType, QuoteType, UtilityType>(
-            lot_size, tick_size, min_size, coin::withdraw(user, fee));
-    }
-
-    #[cmd]
-    /// Public entry function wrapper for `swap_between_coinstores()`.
-    public entry fun swap_between_coinstores_entry<
-        BaseType,
-        QuoteType
-    >(
-        user: &signer,
-        market_id: u64,
-        integrator: address,
-        direction: bool,
-        min_base: u64,
-        max_base: u64,
-        min_quote: u64,
-        max_quote: u64,
-        limit_price: u64
-    ) acquires OrderBooks {
-        swap_between_coinstores<BaseType, QuoteType>(
-            user, market_id, integrator, direction, min_base, max_base,
-            min_quote, max_quote, limit_price);
-    }
-
-    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Public function wrapper for `cancel_all_orders()` for cancelling
@@ -893,6 +773,126 @@ module econia::market {
     }
 
     // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[cmd]
+    /// Public entry function wrapper for `cancel_all_orders()` for
+    /// cancelling orders under authority of signing user.
+    public entry fun cancel_all_orders_user(
+        maker: &signer,
+        market_id: u64,
+        side: bool,
+    ) acquires OrderBooks {
+        cancel_all_orders(
+            address_of(maker),
+            market_id,
+            NO_CUSTODIAN,
+            side);
+    }
+
+    #[cmd]
+    /// Public entry function wrapper for `cancel_order()` for
+    /// cancelling order under authority of signing user.
+    public entry fun cancel_order_user(
+        maker: &signer,
+        market_id: u64,
+        side: bool,
+        market_order_id: u128
+    ) acquires OrderBooks {
+        cancel_order(
+            address_of(maker),
+            market_id,
+            NO_CUSTODIAN,
+            side,
+            market_order_id);
+    }
+
+    #[cmd]
+    /// Public entry function wrapper for `place_limit_order_user()`.
+    public entry fun place_limit_order_user_entry<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        side: bool,
+        size: u64,
+        price: u64,
+        restriction: u8,
+    ) acquires OrderBooks {
+        place_limit_order_user<BaseType, QuoteType>(
+            user, market_id, integrator, side, size, price, restriction);
+    }
+
+    #[cmd]
+    /// Public entry function wrapper for `place_market_order_user()`.
+    public entry fun place_market_order_user_entry<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64,
+    ) acquires OrderBooks {
+        place_market_order_user<BaseType, QuoteType>(
+            user, market_id, integrator, direction, min_base, max_base,
+            min_quote, max_quote, limit_price);
+    }
+
+    #[cmd]
+    /// Wrapped call to `register_market_base_coin()` for paying utility
+    /// coins from an `aptos_framework::coin::CoinStore`.
+    ///
+    /// # Testing
+    ///
+    /// * `test_register_markets()`
+    public entry fun register_market_base_coin_from_coinstore<
+        BaseType,
+        QuoteType,
+        UtilityType
+    >(
+        user: &signer,
+        lot_size: u64,
+        tick_size: u64,
+        min_size: u64
+    ) acquires OrderBooks {
+        // Get market registration fee, denominated in utility coins.
+        let fee = incentives::get_market_registration_fee();
+        // Register market with base coin, paying fees from coin store.
+        register_market_base_coin<BaseType, QuoteType, UtilityType>(
+            lot_size, tick_size, min_size, coin::withdraw(user, fee));
+    }
+
+    #[cmd]
+    /// Public entry function wrapper for `swap_between_coinstores()`.
+    public entry fun swap_between_coinstores_entry<
+        BaseType,
+        QuoteType
+    >(
+        user: &signer,
+        market_id: u64,
+        integrator: address,
+        direction: bool,
+        min_base: u64,
+        max_base: u64,
+        min_quote: u64,
+        max_quote: u64,
+        limit_price: u64
+    ) acquires OrderBooks {
+        swap_between_coinstores<BaseType, QuoteType>(
+            user, market_id, integrator, direction, min_base, max_base,
+            min_quote, max_quote, limit_price);
+    }
+
+    // Public entry functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 

@@ -16,6 +16,7 @@ module econia::market {
     use std::option::{Self, Option};
     use std::signer::address_of;
     use std::string::{Self, String};
+    use std::vector;
 
     // Uses <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -240,6 +241,21 @@ module econia::market {
     // Public entry functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[cmd]
+    /// Public entry function wrapper for `cancel_all_orders()` for
+    /// cancelling orders under authority of signing user.
+    public entry fun cancel_all_orders_user(
+        maker: &signer,
+        market_id: u64,
+        side: bool,
+    ) acquires OrderBooks {
+        cancel_all_orders(
+            address_of(maker),
+            market_id,
+            NO_CUSTODIAN,
+            side);
+    }
+
+    #[cmd]
     /// Public entry function wrapper for `cancel_order()` for
     /// cancelling order under authority of signing user.
     public entry fun cancel_order_user(
@@ -251,8 +267,8 @@ module econia::market {
         cancel_order(
             address_of(maker),
             market_id,
-            side,
             NO_CUSTODIAN,
+            side,
             market_order_id);
     }
 
@@ -344,6 +360,21 @@ module econia::market {
 
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Public function wrapper for `cancel_all_orders()` for cancelling
+    /// orders under authority of delegated custodian.
+    public fun cancel_all_orders_custodian(
+        user_address: address,
+        market_id: u64,
+        side: bool,
+        custodian_capability_ref: &CustodianCapability
+    ) acquires OrderBooks {
+        cancel_all_orders(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            side);
+    }
+
     /// Public function wrapper for `cancel_order()` for cancelling
     /// order under authority of delegated custodian.
     public fun cancel_order_custodian(
@@ -356,8 +387,8 @@ module econia::market {
         cancel_order(
             user_address,
             market_id,
-            side,
             registry::get_custodian_id(custodian_capability_ref),
+            side,
             market_order_id);
     }
 
@@ -865,14 +896,41 @@ module econia::market {
 
     // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+    /// Cancel all of a user's open maker orders.
+    ///
+    /// # Parameters
+    ///
+    /// * `maker`: Same as for `cancel_order()`.
+    /// * `market_id`: Same as for `cancel_order()`.
+    /// * `custodian_id`: Same as for `cancel_order()`.
+    /// * `side`: Same as for `cancel_order()`.
+    fun cancel_all_orders(
+        maker: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool
+    ) acquires OrderBooks {
+        // Get user's active market order IDs.
+        let market_order_ids = user::get_active_market_order_ids_internal(
+            maker, market_id, custodian_id, side);
+        // Get number of market order IDs, init loop index variable.
+        let (n_orders, i) = (vector::length(&market_order_ids), 0);
+        while (i < n_orders) { // Loop over all active orders.
+            // Cancel market order for current iteration.
+            cancel_order(maker, market_id, custodian_id, side,
+                         *vector::borrow(&market_order_ids, i));
+            i = i + 1; // Increment loop counter.
+        }
+    }
+
     /// Cancel maker order on order book and in user's market account.
     ///
     /// # Parameters
     ///
     /// * `maker`: Address of user holding maker order.
     /// * `market_id`: Market ID of market.
-    /// * `side`: `ASK` or `BID`, the maker order side.
     /// * `custodian_id`: Market account custodian ID.
+    /// * `side`: `ASK` or `BID`, the maker order side.
     /// * `market_order_id`: Market order ID of order on order book.
     ///
     /// # Aborts
@@ -890,8 +948,8 @@ module econia::market {
     fun cancel_order(
         maker: address,
         market_id: u64,
-        side: bool,
         custodian_id: u64,
+        side: bool,
         market_order_id: u128
     ) acquires OrderBooks {
         // Assert market order ID not passed as reserved null flag.

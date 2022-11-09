@@ -272,6 +272,25 @@ module econia::market {
             market_order_id);
     }
 
+    /// Public function wrapper for `change_order_size()` for changing
+    /// order size under authority of delegated custodian.
+    public fun change_order_size_custodian(
+        user_address: address,
+        market_id: u64,
+        side: bool,
+        market_order_id: u128,
+        new_size: u64,
+        custodian_capability_ref: &CustodianCapability
+    ) acquires OrderBooks {
+        change_order_size(
+            user_address,
+            market_id,
+            registry::get_custodian_id(custodian_capability_ref),
+            side,
+            market_order_id,
+            new_size);
+    }
+
     /// Public function wrapper for `place_limit_order()` for placing
     /// order under authority of delegated custodian.
     public fun place_limit_order_custodian<
@@ -806,6 +825,25 @@ module econia::market {
             NO_CUSTODIAN,
             side,
             market_order_id);
+    }
+
+    #[cmd]
+    /// Public entry function wrapper for `change_order_size()` for
+    /// changing order size under authority of signing user.
+    public entry fun change_order_size_user(
+        user: &signer,
+        market_id: u64,
+        side: bool,
+        market_order_id: u128,
+        new_size: u64
+    ) acquires OrderBooks {
+        change_order_size(
+            address_of(user),
+            market_id,
+            NO_CUSTODIAN,
+            side,
+            market_order_id,
+            new_size);
     }
 
     #[cmd]
@@ -1938,8 +1976,7 @@ module econia::market {
     #[test_only]
     /// Initialize module for testing.
     public fun init_test() {
-        // Init registry, storing Econia account signer.
-        registry::init_test();
+        registry::init_test(); // Init registry.
         init_module(); // Init module.
     }
 

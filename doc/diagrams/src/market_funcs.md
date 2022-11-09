@@ -69,4 +69,31 @@ cancel_all_orders_user --> cancel_all_orders
 cancel_order_user --> cancel_order
 
 cancel_all_orders --> cancel_order
+
+```
+
+# Changing size
+
+```mermaid
+
+flowchart LR
+
+change_order_size_custodian --> change_order_size
+
+change_order_size_user --> change_order_size
+
+```
+
+# Market registration
+
+```mermaid
+
+flowchart LR
+
+register_market_base_coin --> register_market
+
+register_market_base_generic --> register_market
+
+register_market_base_coin_from_coinstore --> register_market_base_coin
+
 ```

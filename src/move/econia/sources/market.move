@@ -20,7 +20,8 @@
 ///
 /// register_market_base_generic --> register_market
 ///
-/// register_market_base_coin_from_coinstore --> register_market_base_coin
+/// register_market_base_coin_from_coinstore -->
+///     register_market_base_coin
 ///
 /// ```
 ///
@@ -210,6 +211,95 @@
 ///
 /// ```
 ///
+/// # Order management testing
+///
+/// While market registration functions can be simply tested on their
+/// own, order management functions are more efficiently tested through
+/// integrated tests that verify multiple logical branches, returns,
+/// and state updates for each test. Abort tests, however, must still be
+/// tested individually for each function.
+///
+/// ## Functions with aborts
+///
+/// Order management functions with aborts include:
+///
+/// * `cancel_order()`
+/// * `change_order_size()`
+/// * `match()`
+/// * `place_limit_order()`
+/// * `range_check_trade()`
+/// * `swap()`
+///
+/// ## Return proxies
+///
+/// Various order management functions have returns, and verifying the
+/// returns of some functions verifies the returns of associated inner
+/// functions. For example, the collective verification of the returns
+/// of `swap_coins()` and `swap_generic()` verifies the returns of both
+/// `swap()` and `match()`, such that the combination of `swap_coins()`
+/// and `swap_generic()` can be considered a "return proxy" of both
+/// `swap()` and of `match()`. Hence the most efficient test suite
+/// involves return verification for the minimal return proxy set:
+///
+/// | Function                         | Return proxy                |
+/// |----------------------------------|-----------------------------|
+/// | `place_limit_order_custodian()`  | None                        |
+/// | `place_limit_order_user()`       | None                        |
+/// | `place_market_order_custodian()` | None                        |
+/// | `place_market_order_user()`      | None                        |
+/// | `swap_between_coinstores()`      | None                        |
+/// | `swap_coins()`                   | None                        |
+/// | `swap_generic()`                 | None                        |
+/// | `match()`                        | `swap()`, `swap_generic()`  |
+/// | `place_limit_order()`            | `place_limit_order_user()`  |
+/// | `place_market_order()`           | `place_market_order_user()` |
+/// | `swap()`                         | `swap()`, `swap_generic()`  |
+///
+/// ## Invocation proxies
+///
+/// Similarly, verifying the invocation of some functions verifies the
+/// invocation of associated inner functions. For example,
+/// `cancel_all_orders_user()` can be considered an invocation proxy
+/// of `cancel_all_orders()` and of `cancel_order()`. Here, to provide
+/// 100% invocation coverage, only functions at the top of the
+/// dependency stack must be verified. This includes:
+///
+/// * `place_limit_order_user_entry()`
+/// * `place_limit_order_custodian()`
+/// * `place_market_order_user_entry()`
+/// * `place_market_order_custodian()`
+/// * `swap_between_coinstores_entry()`
+/// * `swap_coins()`
+/// * `swap_generic()`
+/// * `change_order_size_custodian()`
+/// * `change_order_size_user()`
+/// * `cancel_order_custodian()`
+/// * `cancel_order_user()`
+/// * `cancel_all_orders_custodian()`
+/// * `cancel_all_orders_user()`
+///
+/// ## Branching functions
+///
+/// Tests with logical branches include:
+///
+/// * `swap_between_coinstores()`
+/// * `swap_coins()`
+/// * `swap_generic()`
+/// * `cancel_all_orders()`
+/// * `cancel_order()`
+/// * `change_order_size()`
+/// * `match()`
+/// * `place_limit_order()`
+/// * `place_market_order()`
+/// * `range_check_trade()`
+/// * `swap()`
+///
+/// See each function for a breakdown of its logical branches and how
+/// they are tested.
+///
+/// # Complete DocGen index
+///
+/// The below index is automatically generated from source code:
 module econia::market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

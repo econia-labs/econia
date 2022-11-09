@@ -1059,7 +1059,8 @@ module econia::user {
     /// * `market_id`: Market ID for market account.
     /// * `custodian_id`: Custodian ID for market account.
     /// * `side`: `ASK` or `BID`, the side on which an order was placed.
-    /// * `new_size`: New order size, in lots.
+    /// * `new_size`: New order size, in lots, checked during inner call
+    ///   to `place_order_internal()`.
     /// * `price`: Order price, in ticks per lot.
     /// * `order_access_key`: Order access key for user order lookup.
     /// * `market_order_id`: Market order ID for order book lookup.
@@ -1071,9 +1072,9 @@ module econia::user {
     /// # Assumptions
     ///
     /// * Only called when also changing order size on the order book.
-    /// * User has an open order as specified: if order is changed on
-    ///   the book, then it had to have been placed on the book
-    ///   successfully to begin with.
+    /// * User has an open order under indicated market account with
+    ///   provided access key, but not necessarily with provided market
+    ///   order ID, which is checked in `cancel_order_internal()`.
     /// * `price` matches that encoded in market order ID for changed
     ///   order.
     ///

@@ -53,42 +53,46 @@
     -  [Parameters](#@Parameters_21)
     -  [Aborts](#@Aborts_22)
     -  [Emits](#@Emits_23)
+-  [Function `change_order_size`](#0xc0deb00c_market_change_order_size)
+    -  [Parameters](#@Parameters_24)
+    -  [Aborts](#@Aborts_25)
+    -  [Emits](#@Emits_26)
 -  [Function `init_module`](#0xc0deb00c_market_init_module)
 -  [Function `match`](#0xc0deb00c_market_match)
-    -  [Type Parameters](#@Type_Parameters_24)
-    -  [Parameters](#@Parameters_25)
-    -  [Returns](#@Returns_26)
-    -  [Emits](#@Emits_27)
-    -  [Aborts](#@Aborts_28)
-    -  [Algorithm description](#@Algorithm_description_29)
+    -  [Type Parameters](#@Type_Parameters_27)
+    -  [Parameters](#@Parameters_28)
+    -  [Returns](#@Returns_29)
+    -  [Emits](#@Emits_30)
+    -  [Aborts](#@Aborts_31)
+    -  [Algorithm description](#@Algorithm_description_32)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Type Parameters](#@Type_Parameters_30)
-    -  [Parameters](#@Parameters_31)
-    -  [Returns](#@Returns_32)
-    -  [Aborts](#@Aborts_33)
-    -  [Emits](#@Emits_34)
-    -  [Restrictions](#@Restrictions_35)
-    -  [Algorithm description](#@Algorithm_description_36)
+    -  [Type Parameters](#@Type_Parameters_33)
+    -  [Parameters](#@Parameters_34)
+    -  [Returns](#@Returns_35)
+    -  [Aborts](#@Aborts_36)
+    -  [Emits](#@Emits_37)
+    -  [Restrictions](#@Restrictions_38)
+    -  [Algorithm description](#@Algorithm_description_39)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_37)
-    -  [Parameters](#@Parameters_38)
-    -  [Returns](#@Returns_39)
-    -  [Algorithm description](#@Algorithm_description_40)
+    -  [Type Parameters](#@Type_Parameters_40)
+    -  [Parameters](#@Parameters_41)
+    -  [Returns](#@Returns_42)
+    -  [Algorithm description](#@Algorithm_description_43)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_41)
-    -  [Parameters](#@Parameters_42)
-    -  [Aborts](#@Aborts_43)
-    -  [Failure testing](#@Failure_testing_44)
+    -  [Terminology](#@Terminology_44)
+    -  [Parameters](#@Parameters_45)
+    -  [Aborts](#@Aborts_46)
+    -  [Failure testing](#@Failure_testing_47)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_45)
-    -  [Parameters](#@Parameters_46)
-    -  [Returns](#@Returns_47)
-    -  [Testing](#@Testing_48)
+    -  [Type parameters](#@Type_parameters_48)
+    -  [Parameters](#@Parameters_49)
+    -  [Returns](#@Returns_50)
+    -  [Testing](#@Testing_51)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_49)
-    -  [Parameters](#@Parameters_50)
-    -  [Returns](#@Returns_51)
-    -  [Aborts](#@Aborts_52)
+    -  [Type Parameters](#@Type_Parameters_52)
+    -  [Parameters](#@Parameters_53)
+    -  [Returns](#@Returns_54)
+    -  [Aborts](#@Aborts_55)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -657,16 +661,6 @@ Flag for <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>.t
 
 
 
-<a name="0xc0deb00c_market_E_CANCEL_USER_MISMATCH"></a>
-
-Wrong user for cancel operation.
-
-
-<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_CANCEL_USER_MISMATCH">E_CANCEL_USER_MISMATCH</a>: u64 = 24;
-</code></pre>
-
-
-
 <a name="0xc0deb00c_market_E_INVALID_CUSTODIAN"></a>
 
 Custodian not authorized for operation.
@@ -683,6 +677,16 @@ Invalid restriction flag.
 
 
 <pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_RESTRICTION">E_INVALID_RESTRICTION</a>: u64 = 18;
+</code></pre>
+
+
+
+<a name="0xc0deb00c_market_E_INVALID_USER"></a>
+
+Invalid user indicated for operation.
+
+
+<pre><code><b>const</b> <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>: u64 = 24;
 </code></pre>
 
 
@@ -2054,7 +2058,7 @@ Cancel maker order on order book and in user's market account.
 
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID passed as <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
-* <code><a href="market.md#0xc0deb00c_market_E_CANCEL_USER_MISMATCH">E_CANCEL_USER_MISMATCH</a></code>: Mismatch between <code>maker</code> and order
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code>maker</code> and user for order
 on book having given market order ID.
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a></code>: Mismatch between <code>custodian_id</code> and
 custodian ID of order on order book having market order ID.
@@ -2103,8 +2107,8 @@ custodian ID of order on order book having market order ID.
     // Remove order from AVL queue, storing its fields.
     <b>let</b> <a href="market.md#0xc0deb00c_market_Order">Order</a>{size, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id: order_custodian, order_access_key}
         = <a href="avl_queue.md#0xc0deb00c_avl_queue_remove">avl_queue::remove</a>(orders_ref_mut, avlq_access_key);
-    // Assert <a href="user.md#0xc0deb00c_user">user</a> holding order matches passed maker <b>address</b>.
-    <b>assert</b>!(maker == <a href="user.md#0xc0deb00c_user">user</a>, <a href="market.md#0xc0deb00c_market_E_CANCEL_USER_MISMATCH">E_CANCEL_USER_MISMATCH</a>);
+    // Assert passed maker <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.
+    <b>assert</b>!(maker == <a href="user.md#0xc0deb00c_user">user</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>);
     // Assert passed custodian ID matches that from order.
     <b>assert</b>!(custodian_id == order_custodian, <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
     <b>let</b> price = avlq_access_key & <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>; // Get order price.
@@ -2115,6 +2119,104 @@ custodian ID of order on order book having market order ID.
     // Emit a maker cancel <a href="">event</a>.
     <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
         market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>, custodian_id, type, size});
+}
+</code></pre>
+
+
+
+</details>
+
+<a name="0xc0deb00c_market_change_order_size"></a>
+
+## Function `change_order_size`
+
+Change maker order size on book and in user's market account.
+
+
+<a name="@Parameters_24"></a>
+
+### Parameters
+
+
+* <code>maker</code>: Address of user holding maker order.
+* <code>market_id</code>: Market ID of market.
+* <code>custodian_id</code>: Market account custodian ID.
+* <code>side</code>: <code><a href="market.md#0xc0deb00c_market_ASK">ASK</a></code> or <code><a href="market.md#0xc0deb00c_market_BID">BID</a></code>, the maker order side.
+* <code>market_order_id</code>: Market order ID of order on order book.
+* <code>new_size</code>: The new order size to change to.
+
+
+<a name="@Aborts_25"></a>
+
+### Aborts
+
+
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a></code>: Market order ID passed as <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a></code>: No market with given ID.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a></code>: Mismatch between <code>maker</code> and user for order
+on book having given market order ID.
+* <code><a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a></code>: Mismatch between <code>custodian_id</code> and
+custodian ID of order on order book having market order ID.
+
+
+<a name="@Emits_26"></a>
+
+### Emits
+
+
+* <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code>: Information about the changed maker order.
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>(maker: <b>address</b>, market_id: u64, custodian_id: u64, side: bool, market_order_id: u128, new_size: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>(
+    maker: <b>address</b>,
+    market_id: u64,
+    custodian_id: u64,
+    side: bool,
+    market_order_id: u128,
+    new_size: u64
+) <b>acquires</b> <a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a> {
+    // Assert <a href="market.md#0xc0deb00c_market">market</a> order ID not passed <b>as</b> reserved null flag.
+    <b>assert</b>!(market_order_id != (<a href="market.md#0xc0deb00c_market_NIL">NIL</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ORDER_ID">E_INVALID_MARKET_ORDER_ID</a>);
+    // Get <b>address</b> of resource <a href="">account</a> <b>where</b> order books are stored.
+    <b>let</b> resource_address = resource_account::get_address();
+    <b>let</b> order_books_map_ref_mut = // Mutably borrow order books map.
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="market.md#0xc0deb00c_market_OrderBooks">OrderBooks</a>&gt;(resource_address).map;
+    // Assert order books map <b>has</b> order book <b>with</b> given <a href="market.md#0xc0deb00c_market">market</a> ID.
+    <b>assert</b>!(<a href="tablist.md#0xc0deb00c_tablist_contains">tablist::contains</a>(order_books_map_ref_mut, market_id),
+            <a href="market.md#0xc0deb00c_market_E_INVALID_MARKET_ID">E_INVALID_MARKET_ID</a>);
+    <b>let</b> order_book_ref_mut = // Mutably borrow <a href="market.md#0xc0deb00c_market">market</a> order book.
+        <a href="tablist.md#0xc0deb00c_tablist_borrow_mut">tablist::borrow_mut</a>(order_books_map_ref_mut, market_id);
+    // Mutably borrow corresponding orders AVL queue.
+    <b>let</b> orders_ref_mut = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) &<b>mut</b> order_book_ref_mut.asks
+        <b>else</b> &<b>mut</b> order_book_ref_mut.bids;
+    // Get AVL queue access key from <a href="market.md#0xc0deb00c_market">market</a> order ID.
+    <b>let</b> avlq_access_key = ((market_order_id & (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128)) <b>as</b> u64);
+    <b>let</b> order_ref_mut = // Mutably borrow order on order book.
+        <a href="avl_queue.md#0xc0deb00c_avl_queue_borrow_mut">avl_queue::borrow_mut</a>(orders_ref_mut, avlq_access_key);
+    // Assert passed maker <b>address</b> is <a href="user.md#0xc0deb00c_user">user</a> holding order.
+    <b>assert</b>!(maker == order_ref_mut.<a href="user.md#0xc0deb00c_user">user</a>, <a href="market.md#0xc0deb00c_market_E_INVALID_USER">E_INVALID_USER</a>);
+    // Assert passed custodian ID matches that from order.
+    <b>assert</b>!(custodian_id == order_ref_mut.custodian_id,
+            <a href="market.md#0xc0deb00c_market_E_INVALID_CUSTODIAN">E_INVALID_CUSTODIAN</a>);
+    <b>let</b> price = avlq_access_key & <a href="market.md#0xc0deb00c_market_HI_PRICE">HI_PRICE</a>; // Get order price.
+    // Change order size <a href="user.md#0xc0deb00c_user">user</a>-side, thus verifying <a href="market.md#0xc0deb00c_market">market</a> order ID
+    // and new size.
+    <a href="user.md#0xc0deb00c_user_change_order_size_internal">user::change_order_size_internal</a>(
+        maker, market_id, custodian_id, side, new_size, price,
+        order_ref_mut.order_access_key, market_order_id);
+    // Emit a maker change <a href="">event</a>.
+    <a href="_emit_event">event::emit_event</a>(&<b>mut</b> order_book_ref_mut.maker_events, <a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a>{
+        market_id, side, market_order_id, <a href="user.md#0xc0deb00c_user">user</a>: maker, custodian_id,
+        type: <a href="market.md#0xc0deb00c_market_CHANGE">CHANGE</a>, size: new_size});
 }
 </code></pre>
 
@@ -2157,7 +2259,7 @@ Initialize the order books map upon module publication.
 Match a taker order against the order book.
 
 
-<a name="@Type_Parameters_24"></a>
+<a name="@Type_Parameters_27"></a>
 
 ### Type Parameters
 
@@ -2167,7 +2269,7 @@ Match a taker order against the order book.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_28"></a>
 
 ### Parameters
 
@@ -2208,7 +2310,7 @@ decremented if <code>direction</code> is <code><a href="market.md#0xc0deb00c_mar
 <code>direction</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Returns_26"></a>
+<a name="@Returns_29"></a>
 
 ### Returns
 
@@ -2225,7 +2327,7 @@ net change in taker's quote coin holdings.
 * <code>u64</code>: Amount of quote coin fees paid.
 
 
-<a name="@Emits_27"></a>
+<a name="@Emits_30"></a>
 
 ### Emits
 
@@ -2234,7 +2336,7 @@ net change in taker's quote coin holdings.
 emitted for each separate maker order that is filled against.
 
 
-<a name="@Aborts_28"></a>
+<a name="@Aborts_31"></a>
 
 ### Aborts
 
@@ -2248,7 +2350,7 @@ requirement not met.
 requirement not met.
 
 
-<a name="@Algorithm_description_29"></a>
+<a name="@Algorithm_description_32"></a>
 
 ### Algorithm description
 
@@ -2429,7 +2531,7 @@ conditions are then checked.
 Place limit order against order book from user market account.
 
 
-<a name="@Type_Parameters_30"></a>
+<a name="@Type_Parameters_33"></a>
 
 ### Type Parameters
 
@@ -2440,7 +2542,7 @@ across the spread as a taker.
 across the spread as a taker.
 
 
-<a name="@Parameters_31"></a>
+<a name="@Parameters_34"></a>
 
 ### Parameters
 
@@ -2461,7 +2563,7 @@ may take place. Should only be passed as <code><a href="market.md#0xc0deb00c_mar
 Accepted as an argument to simplify testing.
 
 
-<a name="@Returns_32"></a>
+<a name="@Returns_35"></a>
 
 ### Returns
 
@@ -2476,7 +2578,7 @@ was placed. Else <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 if order fills across the spread.
 
 
-<a name="@Aborts_33"></a>
+<a name="@Aborts_36"></a>
 
 ### Aborts
 
@@ -2501,7 +2603,7 @@ price-time priority if inserted to AVL queue, but AVL queue
 does not have room for any more orders.
 
 
-<a name="@Emits_34"></a>
+<a name="@Emits_37"></a>
 
 ### Emits
 
@@ -2513,7 +2615,7 @@ the order book, if required to fit user's maker order on the
 book.
 
 
-<a name="@Restrictions_35"></a>
+<a name="@Restrictions_38"></a>
 
 ### Restrictions
 
@@ -2527,7 +2629,7 @@ amount is not filled.
 then returns.
 
 
-<a name="@Algorithm_description_36"></a>
+<a name="@Algorithm_description_39"></a>
 
 ### Algorithm description
 
@@ -2748,7 +2850,7 @@ ID is emitted in a maker evict event.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_37"></a>
+<a name="@Type_Parameters_40"></a>
 
 ### Type Parameters
 
@@ -2757,7 +2859,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_38"></a>
+<a name="@Parameters_41"></a>
 
 ### Parameters
 
@@ -2778,7 +2880,7 @@ for market account.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_39"></a>
+<a name="@Returns_42"></a>
 
 ### Returns
 
@@ -2788,7 +2890,7 @@ for market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Algorithm_description_40"></a>
+<a name="@Algorithm_description_43"></a>
 
 ### Algorithm description
 
@@ -2905,7 +3007,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_41"></a>
+<a name="@Terminology_44"></a>
 
 ### Terminology
 
@@ -2928,7 +3030,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_42"></a>
+<a name="@Parameters_45"></a>
 
 ### Parameters
 
@@ -2949,7 +3051,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_43"></a>
+<a name="@Aborts_46"></a>
 
 ### Aborts
 
@@ -2965,7 +3067,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_44"></a>
+<a name="@Failure_testing_47"></a>
 
 ### Failure testing
 
@@ -3042,7 +3144,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_45"></a>
+<a name="@Type_parameters_48"></a>
 
 ### Type parameters
 
@@ -3051,7 +3153,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_46"></a>
+<a name="@Parameters_49"></a>
 
 ### Parameters
 
@@ -3065,7 +3167,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_47"></a>
+<a name="@Returns_50"></a>
 
 ### Returns
 
@@ -3073,7 +3175,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_48"></a>
+<a name="@Testing_51"></a>
 
 ### Testing
 
@@ -3141,7 +3243,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_49"></a>
+<a name="@Type_Parameters_52"></a>
 
 ### Type Parameters
 
@@ -3150,7 +3252,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_50"></a>
+<a name="@Parameters_53"></a>
 
 ### Parameters
 
@@ -3171,7 +3273,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_51"></a>
+<a name="@Returns_54"></a>
 
 ### Returns
 
@@ -3185,7 +3287,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_52"></a>
+<a name="@Aborts_55"></a>
 
 ### Aborts
 

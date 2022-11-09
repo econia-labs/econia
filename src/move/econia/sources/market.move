@@ -173,8 +173,8 @@ module econia::market {
     const E_INVALID_MARKET_ORDER_ID: u64 = 22;
     /// Custodian not authorized for operation.
     const E_INVALID_CUSTODIAN: u64 = 23;
-    /// Wrong user for cancel operation.
-    const E_CANCEL_USER_MISMATCH: u64 = 24;
+    /// Invalid user indicated for operation.
+    const E_INVALID_USER: u64 = 24;
 
     // Error codes <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -937,7 +937,7 @@ module econia::market {
     ///
     /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID passed as `NIL`.
     /// * `E_INVALID_MARKET_ID`: No market with given ID.
-    /// * `E_CANCEL_USER_MISMATCH`: Mismatch between `maker` and order
+    /// * `E_INVALID_USER`: Mismatch between `maker` and user for order
     ///   on book having given market order ID.
     /// * `E_INVALID_CUSTODIAN`: Mismatch between `custodian_id` and
     ///   custodian ID of order on order book having market order ID.
@@ -971,8 +971,8 @@ module econia::market {
         // Remove order from AVL queue, storing its fields.
         let Order{size, user, custodian_id: order_custodian, order_access_key}
             = avl_queue::remove(orders_ref_mut, avlq_access_key);
-        // Assert user holding order matches passed maker address.
-        assert!(maker == user, E_CANCEL_USER_MISMATCH);
+        // Assert passed maker address is user holding order.
+        assert!(maker == user, E_INVALID_USER);
         // Assert passed custodian ID matches that from order.
         assert!(custodian_id == order_custodian, E_INVALID_CUSTODIAN);
         let price = avlq_access_key & HI_PRICE; // Get order price.
@@ -983,6 +983,72 @@ module econia::market {
         // Emit a maker cancel event.
         event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
             market_id, side, market_order_id, user, custodian_id, type, size});
+    }
+
+    /// Change maker order size on book and in user's market account.
+    ///
+    /// # Parameters
+    ///
+    /// * `maker`: Address of user holding maker order.
+    /// * `market_id`: Market ID of market.
+    /// * `custodian_id`: Market account custodian ID.
+    /// * `side`: `ASK` or `BID`, the maker order side.
+    /// * `market_order_id`: Market order ID of order on order book.
+    /// * `new_size`: The new order size to change to.
+    ///
+    /// # Aborts
+    ///
+    /// * `E_INVALID_MARKET_ORDER_ID`: Market order ID passed as `NIL`.
+    /// * `E_INVALID_MARKET_ID`: No market with given ID.
+    /// * `E_INVALID_USER`: Mismatch between `maker` and user for order
+    ///   on book having given market order ID.
+    /// * `E_INVALID_CUSTODIAN`: Mismatch between `custodian_id` and
+    ///   custodian ID of order on order book having market order ID.
+    ///
+    /// # Emits
+    ///
+    /// * `MakerEvent`: Information about the changed maker order.
+    fun change_order_size(
+        maker: address,
+        market_id: u64,
+        custodian_id: u64,
+        side: bool,
+        market_order_id: u128,
+        new_size: u64
+    ) acquires OrderBooks {
+        // Assert market order ID not passed as reserved null flag.
+        assert!(market_order_id != (NIL as u128), E_INVALID_MARKET_ORDER_ID);
+        // Get address of resource account where order books are stored.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        // Assert order books map has order book with given market ID.
+        assert!(tablist::contains(order_books_map_ref_mut, market_id),
+                E_INVALID_MARKET_ID);
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Mutably borrow corresponding orders AVL queue.
+        let orders_ref_mut = if (side == ASK) &mut order_book_ref_mut.asks
+            else &mut order_book_ref_mut.bids;
+        // Get AVL queue access key from market order ID.
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        let order_ref_mut = // Mutably borrow order on order book.
+            avl_queue::borrow_mut(orders_ref_mut, avlq_access_key);
+        // Assert passed maker address is user holding order.
+        assert!(maker == order_ref_mut.user, E_INVALID_USER);
+        // Assert passed custodian ID matches that from order.
+        assert!(custodian_id == order_ref_mut.custodian_id,
+                E_INVALID_CUSTODIAN);
+        let price = avlq_access_key & HI_PRICE; // Get order price.
+        // Change order size user-side, thus verifying market order ID
+        // and new size.
+        user::change_order_size_internal(
+            maker, market_id, custodian_id, side, new_size, price,
+            order_ref_mut.order_access_key, market_order_id);
+        // Emit a maker change event.
+        event::emit_event(&mut order_book_ref_mut.maker_events, MakerEvent{
+            market_id, side, market_order_id, user: maker, custodian_id,
+            type: CHANGE, size: new_size});
     }
 
     /// Initialize the order books map upon module publication.

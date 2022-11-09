@@ -2112,7 +2112,8 @@ Change the size of a user's open order on given side.
 * <code>market_id</code>: Market ID for market account.
 * <code>custodian_id</code>: Custodian ID for market account.
 * <code>side</code>: <code><a href="user.md#0xc0deb00c_user_ASK">ASK</a></code> or <code><a href="user.md#0xc0deb00c_user_BID">BID</a></code>, the side on which an order was placed.
-* <code>new_size</code>: New order size, in lots.
+* <code>new_size</code>: New order size, in lots, checked during inner call
+to <code><a href="user.md#0xc0deb00c_user_place_order_internal">place_order_internal</a>()</code>.
 * <code>price</code>: Order price, in ticks per lot.
 * <code>order_access_key</code>: Order access key for user order lookup.
 * <code>market_order_id</code>: Market order ID for order book lookup.
@@ -2132,9 +2133,9 @@ Change the size of a user's open order on given side.
 
 
 * Only called when also changing order size on the order book.
-* User has an open order as specified: if order is changed on
-the book, then it had to have been placed on the book
-successfully to begin with.
+* User has an open order under indicated market account with
+provided access key, but not necessarily with provided market
+order ID, which is checked in <code><a href="user.md#0xc0deb00c_user_cancel_order_internal">cancel_order_internal</a>()</code>.
 * <code>price</code> matches that encoded in market order ID for changed
 order.
 

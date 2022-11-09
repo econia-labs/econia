@@ -6,7 +6,11 @@
 /// a browser renders the diagrams with coloring that makes it difficult
 /// to read, try a different browser.
 ///
-/// ## Market registration
+/// ## Internal dependencies
+///
+/// These charts describe dependencies between `market` functions.
+///
+/// Market registration:
 ///
 /// ```mermaid
 ///
@@ -20,7 +24,7 @@
 ///
 /// ```
 ///
-/// ## Placing orders
+/// Placing orders:
 ///
 /// ```mermaid
 ///
@@ -76,7 +80,7 @@
 ///
 /// ```
 ///
-/// ## Changing order size
+/// Changing order size:
 ///
 /// ```mermaid
 ///
@@ -88,7 +92,7 @@
 ///
 /// ```
 ///
-/// ## Cancelling orders
+/// Cancelling orders:
 ///
 /// ```mermaid
 ///
@@ -106,7 +110,13 @@
 ///
 /// ```
 ///
-/// ## Other Econia modules
+/// ## External module dependencies
+///
+/// These charts describe `market` function dependencies on functions
+/// from other Econia modules, other than `avl_queue` and `tablist`,
+/// which are essentially data structure libraries.
+///
+/// `incentives`:
 ///
 /// ``` mermaid
 ///
@@ -115,21 +125,19 @@
 /// register_market_base_coin_from_coinstore -->
 ///     incentives::get_market_registration_fee
 ///
+/// register_market --> incentives::register_econia_fee_store_entry
+///
 /// match --> incentives::get_taker_fee_divisor
 /// match --> incentives::calculate_max_quote_match
 /// match --> incentives::assess_taker_fees
 ///
-/// register_market --> incentives::register_econia_fee_store_entry
+/// ```
 ///
-/// cancel_all_orders_custodian --> registry::get_custodian_id
+/// `registry`:
 ///
-/// cancel_order_custodian --> registry::get_custodian_id
+/// ``` mermaid
 ///
-/// change_order_size_custodian --> registry::get_custodian_id
-///
-/// place_limit_order_custodian --> registry::get_custodian_id
-///
-/// place_market_order_custodian --> registry::get_custodian_id
+/// flowchart LR
 ///
 /// register_market_base_coin -->
 ///     registry::register_market_base_coin_internal
@@ -139,29 +147,47 @@
 /// register_market_base_generic -->
 ///     registry::get_underwriter_id
 ///
+/// place_limit_order_custodian --> registry::get_custodian_id
+///
+/// place_market_order_custodian --> registry::get_custodian_id
+///
 /// swap_generic --> registry::get_underwriter_id
 ///
-/// cancel_order --> resource_account::get_address
+/// change_order_size_custodian --> registry::get_custodian_id
 ///
-/// change_order_size --> resource_account::get_address
+/// cancel_order_custodian --> registry::get_custodian_id
+///
+/// cancel_all_orders_custodian --> registry::get_custodian_id
+///
+/// ```
+///
+/// `resource_account`:
+///
+/// ``` mermaid
+///
+/// flowchart LR
 ///
 /// init_module --> resource_account::get_signer
+///
+/// register_market --> resource_account::get_signer
 ///
 /// place_limit_order --> resource_account::get_address
 ///
 /// place_market_order --> resource_account::get_address
 ///
-/// register_market --> resource_account::get_signer
-///
 /// swap --> resource_account::get_address
 ///
-/// cancel_all_orders --> user::get_active_market_order_ids_internal
+/// change_order_size --> resource_account::get_address
 ///
-/// cancel_order --> user::cancel_order_internal
+/// cancel_order --> resource_account::get_address
 ///
-/// change_order_size --> user::change_order_size_internal
+/// ```
 ///
-/// match --> user::fill_order_internal
+/// `user`:
+///
+/// ``` mermaid
+///
+/// flowchart LR
 ///
 /// place_limit_order --> user::get_asset_counts_internal
 /// place_limit_order --> user::withdraw_assets_internal
@@ -173,6 +199,14 @@
 /// place_market_order --> user::get_asset_counts_internal
 /// place_market_order --> user::withdraw_assets_internal
 /// place_market_order --> user::deposit_assets_internal
+///
+/// match --> user::fill_order_internal
+///
+/// change_order_size --> user::change_order_size_internal
+///
+/// cancel_order --> user::cancel_order_internal
+///
+/// cancel_all_orders --> user::get_active_market_order_ids_internal
 ///
 /// ```
 ///

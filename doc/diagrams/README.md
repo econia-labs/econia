@@ -30,4 +30,4 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 [GitHub]:                https://github.com
 [mermaid.live]:          https://mermaid.live
 [modules.md]:            src/modules.md
-[matching-engine.md]:    src/matching-engine.md
+[matching-engine.md]:    src/scraps/matching-engine.md

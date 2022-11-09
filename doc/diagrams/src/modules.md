@@ -4,18 +4,25 @@
 
 flowchart TD
 
-    user --> critbit
-    user --> open_table
-    user --> order_id
-    user --> |friend| registry
-    user --> |test-only| assets
+    incentives --> tablist
+    incentives --> |friend| resource_account
+    incentives --> |test-only| assets
+
+    registry --> |friend| incentives
+    registry --> tablist
     registry --> |test-only| assets
-    order_id --> |test-only| critbit
-    market --> critbit
-    market --> open_table
-    market --> order_id
+
+    market --> avl_queue
+    market --> |friend| incentives
     market --> |friend| registry
+    market --> |friend| resource_account
+    market --> tablist
     market --> |friend| user
     market --> |test-only| assets
+
+    user --> |friend| registry
+    user --> tablist
+    user --> |test-only| assets
+    user --> |test-only| avl_queue
 
 ```

@@ -17,6 +17,7 @@
 /// register_market_base_generic --> register_market
 ///
 /// register_market_base_coin_from_coinstore --> register_market_base_coin
+///
 /// ```
 ///
 /// ## Placing orders
@@ -86,6 +87,7 @@
 /// change_order_size_user --> change_order_size
 ///
 /// ```
+///
 /// ## Cancelling orders
 ///
 /// ```mermaid
@@ -103,6 +105,77 @@
 /// cancel_all_orders --> cancel_order
 ///
 /// ```
+///
+/// ## Other Econia modules
+///
+/// ``` mermaid
+///
+/// flowchart LR
+///
+/// register_market_base_coin_from_coinstore -->
+///     incentives::get_market_registration_fee
+///
+/// match --> incentives::get_taker_fee_divisor
+/// match --> incentives::calculate_max_quote_match
+/// match --> incentives::assess_taker_fees
+///
+/// register_market --> incentives::register_econia_fee_store_entry
+///
+/// cancel_all_orders_custodian --> registry::get_custodian_id
+///
+/// cancel_order_custodian --> registry::get_custodian_id
+///
+/// change_order_size_custodian --> registry::get_custodian_id
+///
+/// place_limit_order_custodian --> registry::get_custodian_id
+///
+/// place_market_order_custodian --> registry::get_custodian_id
+///
+/// register_market_base_coin -->
+///     registry::register_market_base_coin_internal
+///
+/// register_market_base_generic -->
+///     registry::register_market_base_generic_internal
+/// register_market_base_generic -->
+///     registry::get_underwriter_id
+///
+/// swap_generic --> registry::get_underwriter_id
+///
+/// cancel_order --> resource_account::get_address
+///
+/// change_order_size --> resource_account::get_address
+///
+/// init_module --> resource_account::get_signer
+///
+/// place_limit_order --> resource_account::get_address
+///
+/// place_market_order --> resource_account::get_address
+///
+/// register_market --> resource_account::get_signer
+///
+/// swap --> resource_account::get_address
+///
+/// cancel_all_orders --> user::get_active_market_order_ids_internal
+///
+/// cancel_order --> user::cancel_order_internal
+///
+/// change_order_size --> user::change_order_size_internal
+///
+/// match --> user::fill_order_internal
+///
+/// place_limit_order --> user::get_asset_counts_internal
+/// place_limit_order --> user::withdraw_assets_internal
+/// place_limit_order --> user::deposit_assets_internal
+/// place_limit_order --> user::get_next_order_access_key_internal
+/// place_limit_order --> user::place_order_internal
+/// place_limit_order --> user::cancel_order_internal
+///
+/// place_market_order --> user::get_asset_counts_internal
+/// place_market_order --> user::withdraw_assets_internal
+/// place_market_order --> user::deposit_assets_internal
+///
+/// ```
+///
 module econia::market {
 
     // Uses >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

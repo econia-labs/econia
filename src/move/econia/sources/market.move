@@ -221,14 +221,14 @@
 ///
 /// ## Functions with aborts
 ///
-/// Order management functions with aborts include:
+/// Function aborts to test:
 ///
-/// * `cancel_order()`
-/// * `change_order_size()`
-/// * `match()`
-/// * `place_limit_order()`
-/// * `range_check_trade()`
-/// * `swap()`
+/// * [ ] `cancel_order()`
+/// * [ ] `change_order_size()`
+/// * [ ] `match()`
+/// * [ ] `place_limit_order()`
+/// * [ ] `range_check_trade()`
+/// * [ ] `swap()`
 ///
 /// ## Return proxies
 ///
@@ -255,6 +255,16 @@
 /// | `place_market_order()`           | `place_market_order_user()` |
 /// | `swap()`                    | `swap_coins()`, `swap_generic()` |
 ///
+/// Function returns to test:
+///
+/// * [ ] `place_limit_order_custodian()`
+/// * [ ] `place_limit_order_user()`
+/// * [ ] `place_market_order_custodian()`
+/// * [ ] `place_market_order_user()`
+/// * [ ] `swap_between_coinstores()`
+/// * [ ] `swap_coins()`
+/// * [ ] `swap_generic()`
+///
 /// ## Invocation proxies
 ///
 /// Similarly, verifying the invocation of some functions verifies the
@@ -262,37 +272,39 @@
 /// `cancel_all_orders_user()` can be considered an invocation proxy
 /// of `cancel_all_orders()` and of `cancel_order()`. Here, to provide
 /// 100% invocation coverage, only functions at the top of the
-/// dependency stack must be verified. This includes:
+/// dependency stack must be verified.
 ///
-/// * `place_limit_order_user_entry()`
-/// * `place_limit_order_custodian()`
-/// * `place_market_order_user_entry()`
-/// * `place_market_order_custodian()`
-/// * `swap_between_coinstores_entry()`
-/// * `swap_coins()`
-/// * `swap_generic()`
-/// * `change_order_size_custodian()`
-/// * `change_order_size_user()`
-/// * `cancel_order_custodian()`
-/// * `cancel_order_user()`
-/// * `cancel_all_orders_custodian()`
-/// * `cancel_all_orders_user()`
+/// Function invocations to test:
+///
+/// * [ ] `place_limit_order_user_entry()`
+/// * [ ] `place_limit_order_custodian()`
+/// * [ ] `place_market_order_user_entry()`
+/// * [ ] `place_market_order_custodian()`
+/// * [ ] `swap_between_coinstores_entry()`
+/// * [ ] `swap_coins()`
+/// * [ ] `swap_generic()`
+/// * [ ] `change_order_size_custodian()`
+/// * [ ] `change_order_size_user()`
+/// * [ ] `cancel_order_custodian()`
+/// * [ ] `cancel_order_user()`
+/// * [ ] `cancel_all_orders_custodian()`
+/// * [ ] `cancel_all_orders_user()`
 ///
 /// ## Branching functions
 ///
-/// Tests with logical branches include:
+/// Functions with logical branches to test:
 ///
-/// * `swap_between_coinstores()`
-/// * `swap_coins()`
-/// * `swap_generic()`
-/// * `cancel_all_orders()`
-/// * `cancel_order()`
-/// * `change_order_size()`
-/// * `match()`
-/// * `place_limit_order()`
-/// * `place_market_order()`
-/// * `range_check_trade()`
-/// * `swap()`
+/// * [ ] `swap_between_coinstores()`
+/// * [ ] `swap_coins()`
+/// * [ ] `swap_generic()`
+/// * [ ] `cancel_all_orders()`
+/// * [ ] `cancel_order()`
+/// * [ ] `change_order_size()`
+/// * [ ] `match()`
+/// * [ ] `place_limit_order()`
+/// * [ ] `place_market_order()`
+/// * [ ] `range_check_trade()`
+/// * [ ] `swap()`
 ///
 /// See each function for a breakdown of its logical branches and how
 /// they are tested.

@@ -246,14 +246,14 @@ tested individually for each function.
 ### Functions with aborts
 
 
-Order management functions with aborts include:
+Function aborts to test:
 
-* <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
 
 <a name="@Return_proxies_5"></a>
@@ -284,6 +284,16 @@ involves return verification for the minimal return proxy set:
 | <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code>           | <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code> |
 | <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>                    | <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>, <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code> |
 
+Function returns to test:
+
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
+
 
 <a name="@Invocation_proxies_6"></a>
 
@@ -295,21 +305,23 @@ invocation of associated inner functions. For example,
 <code><a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>()</code> can be considered an invocation proxy
 of <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code> and of <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>. Here, to provide
 100% invocation coverage, only functions at the top of the
-dependency stack must be verified. This includes:
+dependency stack must be verified.
 
-* <code><a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_change_order_size_custodian">change_order_size_custodian</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_change_order_size_user">change_order_size_user</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_cancel_order_custodian">cancel_order_custodian</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_cancel_all_orders_custodian">cancel_all_orders_custodian</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>()</code>
+Function invocations to test:
+
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size_custodian">change_order_size_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size_user">change_order_size_user</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_cancel_order_custodian">cancel_order_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_cancel_order_user">cancel_order_user</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_cancel_all_orders_custodian">cancel_all_orders_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>()</code>
 
 
 <a name="@Branching_functions_7"></a>
@@ -317,19 +329,19 @@ dependency stack must be verified. This includes:
 ### Branching functions
 
 
-Tests with logical branches include:
+Functions with logical branches to test:
 
-* <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
-* <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
 See each function for a breakdown of its logical branches and how
 they are tested.

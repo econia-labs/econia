@@ -5,12 +5,11 @@ upgrade_policy = 'compatible'
 
 [addresses]
 econia = '0xc0deb00c9154b6b64db01eeb77d08255300315e1fa35b687d384a703f6034fbd'
-# Mock users for unit tests
+# Mock addresses for testing.
 user = '0x1234'
 user_0 = '0x2345'
 user_1 = '0x3456'
-user_2 = '0x4567'
-user_3 = '0x5678'
+integrator = '0x4567'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'

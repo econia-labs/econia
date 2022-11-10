@@ -303,7 +303,7 @@
 /// * [ ] `match()`
 /// * [ ] `place_limit_order()`
 /// * [ ] `place_market_order()`
-/// * [ ] `range_check_trade()`
+/// * [x] `range_check_trade()`
 /// * [ ] `swap()`
 ///
 /// See each function for a breakdown of its logical branches and how
@@ -874,6 +874,20 @@ module econia::market {
     /// * `u64`: Base asset trade amount, same as for `match()`.
     /// * `u64`: Quote coin trade amount, same as for `match()`.
     /// * `u64`: Quote coin fees paid, same as for `match()`.
+    ///
+    /// # Logical branches
+    ///
+    /// Some logical branch syntax is repeated. Statements are thus
+    /// presented in chronological order with additional disambiguators
+    /// as appropriate.
+    ///
+    /// 1. `if (!coin::is_account_registered<BaseType>(user_address))`
+    /// 2. `if (!coin::is_account_registered<QuoteType>(user_address)`
+    /// 3. `if (max_base == MAX_POSSIBLE)`
+    /// 4. `if (direction == BUY)`
+    /// 5. `if (max_quote == MAX_POSSIBLE)`
+    /// 6. `if (direction == BUY)` (`... quote_value`)
+    /// 7. `if (direction == BUY)` (`... option::some(coin::zero<...`)
     public fun swap_between_coinstores<
         BaseType,
         QuoteType
@@ -906,12 +920,12 @@ module econia::market {
         if (max_base == MAX_POSSIBLE) max_base = if (direction == BUY)
             // If a buy, max to trade is amount that can fit in
             // coin store, else is the amount in the coin store.
-            (HI_64 - base_value) else (base_value);
+            (HI_64 - base_value) else base_value;
         // If max quote to trade flagged as max possible, update it:
         if (max_quote == MAX_POSSIBLE) max_quote = if (direction == BUY)
             // If a buy, max to trade is amount in coin store, else is
             // the amount that could fit in the coin store.
-            (quote_value) else (HI_64 - quote_value);
+            quote_value else (HI_64 - quote_value);
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_value, base_value, quote_value, quote_value);
@@ -970,13 +984,20 @@ module econia::market {
     /// * `u64`: Base coin trade amount, same as for `match()`.
     /// * `u64`: Quote coin trade amount, same as for `match()`.
     /// * `u64`: Quote coin fees paid, same as for `match()`.
-
+    ///
     /// # Terminology
     ///
     /// * The "inbound" asset is the asset received from a trade: base
     ///   coins in the case of a buy, quote coins in the case of a sell.
     /// * The "outbound" asset is the asset traded away: quote coins in
     ///   the case of a buy, base coins in the case of a sell.
+    ///
+    /// # Logical branches
+    ///
+    /// 1. `if (direction == SELL)`
+    /// 2. `if (max_base == MAX_POSSIBLE)`
+    /// 3. `if (direction == BUY)`
+    /// 4. `if (max_quote == MAX_POSSIBLE)`
     public fun swap_coins<
         BaseType,
         QuoteType
@@ -1004,12 +1025,12 @@ module econia::market {
         if (direction == SELL) max_base = base_value else
             // Otherwise if a buy and max base amount passed as max
             // possible flag, update to max that can be bought.
-            if (max_base == MAX_POSSIBLE) max_base = HI_64 - base_value;
+            if (max_base == MAX_POSSIBLE) max_base = (HI_64 - base_value);
         // If a buy, max quote to trade is amount passed in.
         if (direction == BUY) max_quote = quote_value else
             // Otherwise if a sell and max quote amount passed as max
             // possible flag, update to max that can be received.
-            if (max_quote == MAX_POSSIBLE) max_quote = HI_64 - quote_value;
+            if (max_quote == MAX_POSSIBLE) max_quote = (HI_64 - quote_value);
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_value, base_value, quote_value, quote_value);
@@ -1055,6 +1076,17 @@ module econia::market {
     /// * `u64`: Base asset trade amount, same as for `match()`.
     /// * `u64`: Quote coin trade amount, same as for `match()`.
     /// * `u64`: Quote coin fees paid, same as for `match()`.
+    ///
+    /// # Logical branches
+    ///
+    /// Some logical branch syntax is repeated. Statements are thus
+    /// presented in chronological order with additional disambiguators
+    /// as appropriate.
+    ///
+    /// 1. `if (max_base == MAX_POSSIBLE)`
+    /// 2. `if (direction == BUY)` (`... 0`)
+    /// 3. `if (direction == BUY)` (`... max_quote`)
+    /// 4. `if (max_quote == MAX_POSSIBLE)`
     public fun swap_generic<
         QuoteType
     >(
@@ -1256,6 +1288,10 @@ module econia::market {
     /// * `market_id`: Same as for `cancel_order()`.
     /// * `custodian_id`: Same as for `cancel_order()`.
     /// * `side`: Same as for `cancel_order()`.
+    ///
+    /// # Logical branches
+    ///
+    /// 1. `while (i < n_orders)`
     fun cancel_all_orders(
         user: address,
         market_id: u64,
@@ -1297,6 +1333,10 @@ module econia::market {
     /// # Emits
     ///
     /// * `MakerEvent`: Information about the maker order cancelled.
+    ///
+    /// # Logical branches
+    ///
+    /// 1. `if (side == ASK)`
     fun cancel_order(
         user: address,
         market_id: u64,
@@ -1361,6 +1401,10 @@ module econia::market {
     /// # Emits
     ///
     /// * `MakerEvent`: Information about the changed maker order.
+    ///
+    /// # Logical branches
+    ///
+    /// * `if (side == ASK)`
     fun change_order_size(
         user: address,
         market_id: u64,
@@ -1519,6 +1563,26 @@ module econia::market {
     /// paid, and if a sell, the traded quote amount is calculated as
     /// the quote fill amount minus fees paid. Min base and quote trade
     /// conditions are then checked.
+    ///
+    /// # Logical branches
+    ///
+    /// Some logical branch syntax is repeated. Statements are thus
+    /// presented in chronological order for disambiguation.
+    ///
+    /// 1. `if (direction == BUY)`
+    /// 2. `if (side == ASK)`
+    /// 3. `while (!avl_queue::is_empty(orders_ref_mut))`
+    /// 4. `... (direction == BUY )`
+    /// 5. `... (price > limit_price)`
+    /// 6. `... (direction == SELL)`
+    /// 7. `... (price < limit_price)`
+    /// 8. `if (max_fill_size_ticks < lots_until_max)`
+    /// 9. `if (max_fill_size < order_ref_mut.size)`
+    /// 10. `if (fill_size == 0)`
+    /// 11. `if (complete_fill)`
+    /// 12. `... (lots_until_max == 0)`
+    /// 13. `... (ticks_until_max == 0)`
+    /// 14. `if (direction == BUY)`
     fun match<
         BaseType,
         QuoteType
@@ -1631,8 +1695,8 @@ module econia::market {
         // If a buy, taker pays quote required for fills, and additional
         // fee assessed after matching. If a sell, taker receives quote
         // from fills, then has a portion assessed as fees.
-        let quote_traded = if (direction == BUY) quote_fill + fees_paid
-            else quote_fill - fees_paid;
+        let quote_traded = if (direction == BUY) (quote_fill + fees_paid)
+            else (quote_fill - fees_paid);
         // Assert minimum base asset trade amount met.
         assert!(base_fill >= min_base, E_MIN_BASE_NOT_TRADED);
         // Assert minimum quote coin trade amount met.
@@ -1750,6 +1814,25 @@ module econia::market {
     /// unpacked and its price is extracted, then it is cancelled from
     /// the corresponding user's market account, and its market order
     /// ID is emitted in a maker evict event.
+    ///
+    /// # Logical branches
+    ///
+    /// Some logical branch syntax is repeated. Statements are thus
+    /// presented in chronological order with additional disambiguators
+    /// as appropriate.
+    ///
+    /// 1. `if (side == ASK)`
+    /// 2. `if (restriction == FILL_OR_ABORT)`
+    /// 3. `... ASK`
+    /// 4. `... crosses_spread`
+    /// 5. `if (side == ASK)`
+    /// 6. `if (crosses_spread)`
+    /// 7. `if (direction == BUY)` (`... (0, max_quote)`)
+    /// 8. `if (direction == BUY)` (`... base_traded`)
+    /// 9. `... (restriction == IMMEDIATE_OR_CANCEL)`
+    /// 10. `... (size == 0)`
+    /// 11. `if (side == ASK)`
+    /// 12. `if (evictee_access_key == NIL)`
     fun place_limit_order<
         BaseType,
         QuoteType,
@@ -1860,7 +1943,7 @@ module econia::market {
             size = size - (base_traded / order_book_ref_mut.lot_size);
         }; // Done with optional matching as a taker across the spread.
         // Return without market order ID if no size left to fill.
-        if ((restriction == IMMEDIATE_OR_CANCEL) || size == 0)
+        if ((restriction == IMMEDIATE_OR_CANCEL) || (size == 0))
             return ((NIL as u128), base_traded, quote_traded, fees);
         // Get next order access key for user-side order placement.
         let order_access_key = user::get_next_order_access_key_internal(
@@ -1959,6 +2042,20 @@ module econia::market {
     /// base asset to deposit back to the user's market account is
     /// calculated, then base and quote assets are deposited back to the
     /// user's market account.
+    ///
+    /// # Logical branches
+    ///
+    /// Some logical branch syntax is repeated. Statements are thus
+    /// presented in chronological order with additional disambiguators
+    /// as appropriate.
+    ///
+    ///
+    /// 1. `if (max_base == MAX_POSSIBLE)`
+    /// 2. `if (direction == BUY)`
+    /// 3. `if (max_quote == MAX_POSSIBLE)`
+    /// 4. `if (direction == BUY)` (`... quote_available`)
+    /// 5. `if (direction == BUY)` (`... (0, max_quote)`)
+    /// 6. `if (direction == BUY)` (`... base_traded`)
     fun place_market_order<
         BaseType,
         QuoteType
@@ -1995,12 +2092,12 @@ module econia::market {
         // update to max amount that can be bought. If a sell, update
         // to all available to sell.
         if (max_base == MAX_POSSIBLE) max_base = if (direction == BUY)
-            (HI_64 - base_ceiling) else (base_available);
+            (HI_64 - base_ceiling) else base_available;
         // If max quote to trade flagged as max possible and a buy,
         // update to max amount that can spend. If a sell, update
         // to max amount that can receive when selling.
         if (max_quote == MAX_POSSIBLE) max_base = if (direction == BUY)
-            (quote_available) else (HI_64 - quote_ceiling);
+            quote_available else (HI_64 - quote_ceiling);
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_available, base_ceiling, quote_available, quote_ceiling);
@@ -2022,7 +2119,7 @@ module econia::market {
                     limit_price, optional_base_coins, quote_coins);
         // Calculate amount of base deposited back to market account.
         let base_deposit = if (direction == BUY) base_traded else
-            base_withdraw - base_traded;
+            (base_withdraw - base_traded);
         // Deposit assets back to user's market account.
         user::deposit_assets_internal<BaseType, QuoteType>(
             user_address, market_id, custodian_id, base_deposit,
@@ -2237,6 +2334,10 @@ module econia::market {
     /// * `E_INVALID_UNDERWRITER`: Underwriter invalid for given market.
     /// * `E_INVALID_BASE`: Base asset type is invalid.
     /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
+    ///
+    /// # Logical branches
+    ///
+    /// 1. `if (underwriter_id != NO_UNDERWRITER)`
     fun swap<
         BaseType,
         QuoteType
@@ -2309,7 +2410,7 @@ module econia::market {
     const MARKET_ID_GENERIC: u64 = 2;
     #[test_only]
     /// Underwriter ID for generic test market.
-    const UNDERWRITER_ID: u64 = 321;
+    const UNDERWRITER_ID: u64 = 456;
 
     #[test_only]
     /// Lot size for pure coin test market.
@@ -2332,9 +2433,6 @@ module econia::market {
     #[test_only]
     /// Minimum size for generic test market.
     const MIN_SIZE_GENERIC: u64 = 7;
-    #[test_only]
-    /// Underwriter ID for generic test market.
-    const UNDERWRITER_ID_GENERIC: u64 = 7;
 
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 

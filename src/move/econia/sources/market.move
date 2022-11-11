@@ -886,7 +886,7 @@ module econia::market {
     /// * `u64`: Quote coin trade amount, same as for `match()`.
     /// * `u64`: Quote coin fees paid, same as for `match()`.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// Some logical branch syntax is repeated. Statements are thus
     /// presented in chronological order with additional disambiguators
@@ -1003,7 +1003,7 @@ module econia::market {
     /// * The "outbound" asset is the asset traded away: quote coins in
     ///   the case of a buy, base coins in the case of a sell.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// 1. `if (direction == SELL)`
     /// 2. `if (max_base == MAX_POSSIBLE)`
@@ -1088,7 +1088,7 @@ module econia::market {
     /// * `u64`: Quote coin trade amount, same as for `match()`.
     /// * `u64`: Quote coin fees paid, same as for `match()`.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// Some logical branch syntax is repeated. Statements are thus
     /// presented in chronological order with additional disambiguators
@@ -1300,7 +1300,7 @@ module econia::market {
     /// * `custodian_id`: Same as for `cancel_order()`.
     /// * `side`: Same as for `cancel_order()`.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// 1. `while (i < n_orders)`
     fun cancel_all_orders(
@@ -1345,7 +1345,7 @@ module econia::market {
     ///
     /// * `MakerEvent`: Information about the maker order cancelled.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// 1. `if (side == ASK)`
     fun cancel_order(
@@ -1413,7 +1413,7 @@ module econia::market {
     ///
     /// * `MakerEvent`: Information about the changed maker order.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// 1. `if (side == ASK)`
     fun change_order_size(
@@ -1575,7 +1575,7 @@ module econia::market {
     /// the quote fill amount minus fees paid. Min base and quote trade
     /// conditions are then checked.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// Some logical branch syntax is repeated. Statements are thus
     /// presented in chronological order for disambiguation.
@@ -1802,7 +1802,8 @@ module econia::market {
     /// order size is checked against the min size for the market, and
     /// the market underwriter ID is checked. The price is checked for
     /// the given order side to determine if the spread is crossed, and
-    /// if so, order aborts if restriction is post-or-abort.
+    /// if not, order aborts if restriction is fill-or-abort. If spread
+    /// is not crossed, order aborts if restriction is post-or-abort.
     ///
     /// The amount of base units, ticks, and quote units required to
     /// fill the order size are checked for overflow conditions, and
@@ -1828,48 +1829,31 @@ module econia::market {
     /// the corresponding user's market account, and its market order
     /// ID is emitted in a maker evict event.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// Some logical branch syntax is repeated. Statements are thus
     /// presented in chronological order with additional disambiguators
     /// as appropriate.
     ///
     /// 1. `if (side == ASK)`
-    /// * [x] `true`: `test_place_limit_order_no_cross_ask_user()`
-    /// * [x] `false`: `test_place_limit_order_no_cross_bid_custodian()`
     /// 2. `if (restriction == FILL_OR_ABORT)`
-    /// * [ ] `true`:
-    /// * [x] `false`: `test_place_limit_order_no_cross_ask_user()`
     /// 3. `... (side == ASK)`
-    /// * [x] `true`: `test_place_limit_order_no_cross_ask_user()`
-    /// * [x] `false`: `test_place_limit_order_no_cross_ask_user()`
     /// 4. `... crosses_spread`
-    /// * [ ] `true`:
-    /// * [x] `false`: `test_place_limit_order_no_cross_ask_user()`
     /// 5. `if (side == ASK)`
-    /// * [x] `true`: `test_place_limit_order_no_cross_ask_user()`
-    /// * [x] `false`: `test_place_limit_order_no_cross_bid_user()`
     /// 6. `if (crosses_spread)`
-    /// * [ ] `true`:
-    /// * [x] `false`: `test_place_limit_order_no_cross_ask_user()`
     /// 7. `if (direction == BUY)` (`... (0, max_quote)`)
-    /// * [ ] `true`:
-    /// * [ ] `false`:
     /// 8. `if (direction == BUY)` (`... base_traded`)
-    /// * [ ] `true`:
-    /// * [ ] `false`:
     /// 9. `... (restriction == IMMEDIATE_OR_CANCEL)`
-    /// * [ ] `true`:
-    /// * [x] `false`: `test_place_limit_order_no_cross_ask_user()`
     /// 10. `... (size == 0)`
-    /// * [ ] `true`:
-    /// * [x] `false`: `test_place_limit_order_no_cross_ask_user()`
     /// 11. `if (side == ASK)`
-    /// * [x] `true`: `test_place_limit_order_no_cross_ask_user()`
-    /// * [x] `false`: `test_place_limit_order_no_cross_bid_custodian()`
     /// 12. `if (evictee_access_key == NIL)`
-    /// * [x] `true`: `test_place_limit_order_no_cross_ask_user()`
-    /// * [x] `false`: `test_place_limit_order_evict()`
+    ///
+    /// # Testing
+    ///
+    /// * `test_place_limit_order_evict()`
+    /// * `test_place_limit_order_crosses_ask_exact()`
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_custodian()`
     fun place_limit_order<
         BaseType,
         QuoteType,
@@ -2084,7 +2068,7 @@ module econia::market {
     /// calculated, then base and quote assets are deposited back to the
     /// user's market account.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// Some logical branch syntax is repeated. Statements are thus
     /// presented in chronological order with additional disambiguators
@@ -2376,7 +2360,7 @@ module econia::market {
     /// * `E_INVALID_BASE`: Base asset type is invalid.
     /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
     ///
-    /// # Logical branch testing
+    /// # Logical branches
     ///
     /// 1. `if (underwriter_id != NO_UNDERWRITER)`
     fun swap<
@@ -2547,6 +2531,9 @@ module econia::market {
     /// Custodian ID for market account with delegated custodian.
     const CUSTODIAN_ID_USER_1: u64 = 234;
     #[test_only]
+    /// Integrator fee store tier for test market.
+    const INTEGRATOR_TIER: u8 = 0;
+    #[test_only]
     /// Market ID for pure coin test market.
     const MARKET_ID_COIN: u64 = 1;
     #[test_only]
@@ -2690,6 +2677,93 @@ module econia::market {
         assert!(quote_ceiling   == quote_deposit, 0);
     }
 
+    #[test]
+    /// Verify state updates, returns, for placing ask that fills
+    /// completely and exactly across the spread, under authority of
+    /// signing user.
+    fun test_place_limit_order_crosses_ask_exact()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order paramaters from taker's perspective, with
+        // price set to product of divisors to prevent truncation later.
+        let side             = ASK; // Taker sell.
+        let size             = MIN_SIZE_COIN;
+        let base             = size * LOT_SIZE_COIN;
+        let price            = integrator_divisor * taker_divisor;
+        let quote            = size * price * TICK_SIZE_COIN;
+        let integrator_share = quote / integrator_divisor;
+        let econia_share     = quote / taker_divisor - integrator_share;
+        let fee              = integrator_share + econia_share;
+        let quote_trade      = quote - fee;
+        let restriction      = NO_RESTRICTION;
+        // Deposit to user's accounts asset amounts that fill them just
+        // up to max or down to min after the trade, for user 0 holding
+        // maker order.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - base));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote));
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - quote_trade));
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
+            restriction);
+        // Get user-side order access key for later.
+        let (_, _, _, order_access_key_0) = get_order_fields_test(
+            MARKET_ID_COIN, !side, market_order_id_0);
+        // Place taker order.
+        let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
+            place_limit_order_user<BC, QC>(
+                &user_1, MARKET_ID_COIN, @integrator, side, size, price,
+                restriction);
+        // Assert returns.
+        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(base_trade_r      == base, 0);
+        assert!(quote_trade_r     == quote_trade, 0);
+        assert!(fee_r             == fee, 0);
+        // Assert user-side order fields for filled maker order.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, !side, order_access_key_0);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == HI_64, 0);
+        assert!(base_available  == HI_64, 0);
+        assert!(base_ceiling    == HI_64, 0);
+        assert!(quote_total     == 0, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == 0, 0);
+        // Assert takers's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == 0, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == 0, 0);
+        assert!(quote_total     == HI_64, 0);
+        assert!(quote_available == HI_64, 0);
+        assert!(quote_ceiling   == HI_64, 0);
+        // Assert integrator fee share.
+        assert!(incentives::get_integrator_fee_store_balance_test<QC>(
+            @integrator, MARKET_ID_COIN) == integrator_share, 0);
+        // Assert Econia fee share.
+        assert!(incentives::get_econia_fee_store_balance_test<QC>(
+            MARKET_ID_COIN) == econia_share, 0);
+    }
 
     #[test]
     /// Verify state updates, returns, for placing ask that does not

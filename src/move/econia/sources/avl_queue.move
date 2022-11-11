@@ -4549,7 +4549,7 @@ module econia::avl_queue {
 
     #[test_only]
     /// Immutably borrow value option having given node ID.
-    fun borrow_value_option_test<V>(
+    public fun borrow_value_option_test<V>(
         avlq_ref: &AVLqueue<V>,
         node_id: u64
     ): &Option<V> {
@@ -4576,7 +4576,7 @@ module econia::avl_queue {
     /// # Testing
     ///
     /// * `test_access_key_getters()`
-    fun get_access_key_list_node_id_test(
+    public fun get_access_key_list_node_id_test(
         access_key: u64
     ): u64 {
         (access_key >> SHIFT_ACCESS_LIST_NODE_ID) & HI_NODE_ID

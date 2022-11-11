@@ -2450,6 +2450,7 @@ module econia::market {
         market_id: u64
     ): u64
     acquires OrderBooks {
+        // Get address of resource account having order books.
         let resource_address = resource_account::get_address();
         let order_books_map_ref = // Immutably borrow order books map.
             &borrow_global<OrderBooks>(resource_address).map;
@@ -2518,6 +2519,36 @@ module econia::market {
         registry::register_integrator_fee_store_base_tier<QC, UC>(
             &integrator, MARKET_ID_GENERIC);
         (user_0, user_1) // Return account signers.
+    }
+
+    #[test_only]
+    /// Return true if AVL list node having list node ID enocded in
+    /// market order ID is active
+    public fun is_list_node_order_active(
+        market_id: u64,
+        side: bool,
+        market_order_id: u128
+    ): bool
+    acquires OrderBooks {
+        // Get address of resource account having order books.
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref = // Immutably borrow order books map.
+            &borrow_global<OrderBooks>(resource_address).map;
+        let order_book_ref = // Immutably borrow market order book.
+            tablist::borrow(order_books_map_ref, market_id);
+        // Immutably borrow corresponding orders AVL queue.
+        let orders_ref = if (side == ASK) &order_book_ref.asks else
+            &order_book_ref.bids;
+        // Get AVL queue access key from market order ID.
+        let avlq_access_key = ((market_order_id & (HI_64 as u128)) as u64);
+        // Get list node ID from AVL queue acces key.
+        let list_node_id = avl_queue::get_access_key_list_node_id_test(
+            avlq_access_key);
+        // Immutably borrow order value option.
+        let value_option_ref = avl_queue::borrow_value_option_test(
+            orders_ref, list_node_id);
+        // Return if is some.
+        option::is_some(value_option_ref)
     }
 
     // Test-only functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -2719,6 +2750,8 @@ module econia::market {
         // Get user-side order access key for later.
         let (_, _, _, order_access_key_0) = get_order_fields_test(
             MARKET_ID_COIN, !side, market_order_id_0);
+        assert!(is_list_node_order_active( // Assert order is active.
+            MARKET_ID_COIN, !side, market_order_id_0), 0);
         // Place taker order.
         let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
             place_limit_order_user<BC, QC>(
@@ -2732,6 +2765,8 @@ module econia::market {
         // Assert user-side order fields for filled maker order.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, !side, order_access_key_0);
+        assert!(!is_list_node_order_active( // Assert order is inactive.
+            MARKET_ID_COIN, !side, market_order_id_0), 0);
         // No market order ID.
         assert!(market_order_id_r == (NIL as u128), 0);
         assert!(size_r == NIL, 0); // Bottom of inactive stack.

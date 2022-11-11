@@ -651,8 +651,10 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// * `test_place_limit_order_no_cross_ask_user()`
     /// * `test_place_limit_order_evict()`
+    /// * `test_place_limit_order_crosses_ask_exact()`
+    /// * `test_place_limit_order_no_cross_ask_user()`
+    /// * `test_place_limit_order_no_cross_bid_user()`
     public fun place_limit_order_user<
         BaseType,
         QuoteType
@@ -1794,6 +1796,12 @@ module econia::market {
     /// * An immediate-or-cancel order fills as a taker if possible,
     ///   then returns.
     ///
+    /// # Minimum size
+    ///
+    /// * If order partially fills as a taker and there is still size
+    ///   left as a maker, minimum order size condition must be met
+    ///   again for the maker portion.
+    ///
     /// # Algorithm description
     ///
     /// Order restriction and price are checked, then user's available
@@ -1837,9 +1845,9 @@ module econia::market {
     ///
     /// 1. `if (side == ASK)`
     /// 2. `if (restriction == FILL_OR_ABORT)`
-    /// 3. `... (side == ASK)`
-    /// 4. `... crosses_spread`
-    /// 5. `if (side == ASK)`
+    /// 3. `if (crosses_spread)`  (`... if (side == ASK)`)
+    /// 4. `if (side == ASK)` (`... (HI_64 - quote_ceiling)`)
+    /// 5. `if (side == ASK)` (`... SELL`)
     /// 6. `if (crosses_spread)`
     /// 7. `if (direction == BUY)` (`... (0, max_quote)`)
     /// 8. `if (direction == BUY)` (`... base_traded`)
@@ -1852,6 +1860,7 @@ module econia::market {
     ///
     /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_crosses_ask_exact()`
+    /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_no_cross_ask_user()`
     /// * `test_place_limit_order_no_cross_bid_custodian()`
     fun place_limit_order<
@@ -1925,14 +1934,26 @@ module econia::market {
         // No need to specify min quote if filling as a taker order
         // since min base is specified.
         let min_quote = 0;
-        // If an ask that crosses the spread, max quote to trade during
-        // taker match is max amount that can fit in market account,
-        // since order will fill as a taker sell at prices that are at
-        // least as high as the specified order price (user will receive
-        // more quote than calculated from order size and price). Else
-        // max quote to trade is amount from size and price.
-        let max_quote = if ((side == ASK) && crosses_spread)
-            (HI_64 - quote_ceiling) else (quote as u64);
+        // Get max quote to trade. If price crosses spread:
+        let max_quote = if (crosses_spread) { // If fills as taker:
+            if (side == ASK) { // If an ask, filling as taker sell:
+                // Order will fill at prices that are at least as high
+                // as specified order price, and user will recieve more
+                // quote than calculated from order size and price.
+                // Hence max quote to trade is amount that will fit in
+                // market account.
+                (HI_64 - quote_ceiling)
+            // If a bid, filling as a taker buy, will have to pay at
+            // least as much as from order size and price, plus fees.
+            } else {
+                // Get taker fee divisor
+                let taker_fee_divisor = incentives::get_taker_fee_divisor();
+                // Max quote is amount from size and price, with fees.
+                ((quote as u64) + ((quote as u64) / taker_fee_divisor))
+            }
+        } else { // If no portion of order fills as a taker:
+            (quote as u64) // Max quote is amount from size and price.
+        };
         // If an ask, trade direction to range check is sell, else buy.
         let direction = if (side == ASK) SELL else BUY;
         range_check_trade( // Range check trade amounts.
@@ -2762,11 +2783,12 @@ module econia::market {
         assert!(base_trade_r      == base, 0);
         assert!(quote_trade_r     == quote_trade, 0);
         assert!(fee_r             == fee, 0);
+        // Assert order is inactive on the order book.
+        assert!(!is_list_node_order_active(
+            MARKET_ID_COIN, !side, market_order_id_0), 0);
         // Assert user-side order fields for filled maker order.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, !side, order_access_key_0);
-        assert!(!is_list_node_order_active( // Assert order is inactive.
-            MARKET_ID_COIN, !side, market_order_id_0), 0);
         // No market order ID.
         assert!(market_order_id_r == (NIL as u128), 0);
         assert!(size_r == NIL, 0); // Bottom of inactive stack.
@@ -2792,6 +2814,100 @@ module econia::market {
         assert!(quote_total     == HI_64, 0);
         assert!(quote_available == HI_64, 0);
         assert!(quote_ceiling   == HI_64, 0);
+        // Assert integrator fee share.
+        assert!(incentives::get_integrator_fee_store_balance_test<QC>(
+            @integrator, MARKET_ID_COIN) == integrator_share, 0);
+        // Assert Econia fee share.
+        assert!(incentives::get_econia_fee_store_balance_test<QC>(
+            MARKET_ID_COIN) == econia_share, 0);
+    }
+
+    #[test]
+    /// Verify state updates, returns, for placing bid that fills
+    /// completely and exactly across the spread, under authority of
+    /// signing user. Mirror of
+    /// `test_place_limit_order_crosses_ask_exact()`.
+    fun test_place_limit_order_crosses_bid_exact()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order paramaters from taker's perspective, with
+        // price set to product of divisors to prevent truncation later.
+        let side             = BID; // Taker buy.
+        let size             = MIN_SIZE_COIN;
+        let base             = size * LOT_SIZE_COIN;
+        let price            = integrator_divisor * taker_divisor;
+        let quote            = size * price * TICK_SIZE_COIN;
+        let integrator_share = quote / integrator_divisor;
+        let econia_share     = quote / taker_divisor - integrator_share;
+        let fee              = integrator_share + econia_share;
+        let quote_trade      = quote + fee;
+        let restriction      = NO_RESTRICTION;
+        // Deposit to user's accounts asset amounts that fill them just
+        // up to max or down to min after the trade, for user 0 holding
+        // maker order.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - quote));
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - base));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_trade));
+        // Place maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
+            restriction);
+        // Get user-side order access key for later.
+        let (_, _, _, order_access_key_0) = get_order_fields_test(
+            MARKET_ID_COIN, !side, market_order_id_0);
+        assert!(is_list_node_order_active( // Assert order is active.
+            MARKET_ID_COIN, !side, market_order_id_0), 0);
+        // Place taker order.
+        let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
+            place_limit_order_user<BC, QC>(
+                &user_1, MARKET_ID_COIN, @integrator, side, size, price,
+                restriction);
+        // Assert returns.
+        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(base_trade_r      == base, 0);
+        assert!(quote_trade_r     == quote_trade, 0);
+        assert!(fee_r             == fee, 0);
+        // Assert order is inactive on the order book.
+        assert!(!is_list_node_order_active(
+            MARKET_ID_COIN, !side, market_order_id_0), 0);
+        // Assert user-side order fields for filled maker order.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, !side, order_access_key_0);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == 0, 0);
+        assert!(base_available  == 0, 0);
+        assert!(base_ceiling    == 0, 0);
+        assert!(quote_total     == HI_64, 0);
+        assert!(quote_available == HI_64, 0);
+        assert!(quote_ceiling   == HI_64, 0);
+        // Assert takers's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == HI_64, 0);
+        assert!(base_available  == HI_64, 0);
+        assert!(base_ceiling    == HI_64, 0);
+        assert!(quote_total     == 0, 0);
+        assert!(quote_available == 0, 0);
+        assert!(quote_ceiling   == 0, 0);
         // Assert integrator fee share.
         assert!(incentives::get_integrator_fee_store_balance_test<QC>(
             @integrator, MARKET_ID_COIN) == integrator_share, 0);

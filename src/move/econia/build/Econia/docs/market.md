@@ -442,31 +442,32 @@ The below index is automatically generated from source code:
     -  [Aborts](#@Aborts_54)
     -  [Emits](#@Emits_55)
     -  [Restrictions](#@Restrictions_56)
-    -  [Algorithm description](#@Algorithm_description_57)
-    -  [Logical branches](#@Logical_branches_58)
-    -  [Testing](#@Testing_59)
+    -  [Minimum size](#@Minimum_size_57)
+    -  [Algorithm description](#@Algorithm_description_58)
+    -  [Logical branches](#@Logical_branches_59)
+    -  [Testing](#@Testing_60)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_60)
-    -  [Parameters](#@Parameters_61)
-    -  [Returns](#@Returns_62)
-    -  [Algorithm description](#@Algorithm_description_63)
-    -  [Logical branches](#@Logical_branches_64)
+    -  [Type Parameters](#@Type_Parameters_61)
+    -  [Parameters](#@Parameters_62)
+    -  [Returns](#@Returns_63)
+    -  [Algorithm description](#@Algorithm_description_64)
+    -  [Logical branches](#@Logical_branches_65)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_65)
-    -  [Parameters](#@Parameters_66)
-    -  [Aborts](#@Aborts_67)
-    -  [Failure testing](#@Failure_testing_68)
+    -  [Terminology](#@Terminology_66)
+    -  [Parameters](#@Parameters_67)
+    -  [Aborts](#@Aborts_68)
+    -  [Failure testing](#@Failure_testing_69)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_69)
-    -  [Parameters](#@Parameters_70)
-    -  [Returns](#@Returns_71)
-    -  [Testing](#@Testing_72)
+    -  [Type parameters](#@Type_parameters_70)
+    -  [Parameters](#@Parameters_71)
+    -  [Returns](#@Returns_72)
+    -  [Testing](#@Testing_73)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_73)
-    -  [Parameters](#@Parameters_74)
-    -  [Returns](#@Returns_75)
-    -  [Aborts](#@Aborts_76)
-    -  [Logical branches](#@Logical_branches_77)
+    -  [Type Parameters](#@Type_Parameters_74)
+    -  [Parameters](#@Parameters_75)
+    -  [Returns](#@Returns_76)
+    -  [Aborts](#@Aborts_77)
+    -  [Logical branches](#@Logical_branches_78)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1495,8 +1496,10 @@ order under authority of signing user.
 ### Testing
 
 
-* <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_evict()</code>
+* <code>test_place_limit_order_crosses_ask_exact()</code>
+* <code>test_place_limit_order_no_cross_ask_user()</code>
+* <code>test_place_limit_order_no_cross_bid_user()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
@@ -3204,7 +3207,17 @@ amount is not filled.
 then returns.
 
 
-<a name="@Algorithm_description_57"></a>
+<a name="@Minimum_size_57"></a>
+
+### Minimum size
+
+
+* If order partially fills as a taker and there is still size
+left as a maker, minimum order size condition must be met
+again for the maker portion.
+
+
+<a name="@Algorithm_description_58"></a>
 
 ### Algorithm description
 
@@ -3243,7 +3256,7 @@ the corresponding user's market account, and its market order
 ID is emitted in a maker evict event.
 
 
-<a name="@Logical_branches_58"></a>
+<a name="@Logical_branches_59"></a>
 
 ### Logical branches
 
@@ -3254,9 +3267,9 @@ as appropriate.
 
 1. <code><b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)</code>
 2. <code><b>if</b> (restriction == <a href="market.md#0xc0deb00c_market_FILL_OR_ABORT">FILL_OR_ABORT</a>)</code>
-3. <code>... (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)</code>
-4. <code>... crosses_spread</code>
-5. <code><b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)</code>
+3. <code><b>if</b> (crosses_spread)</code>  (<code>... <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)</code>)
+4. <code><b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)</code> (<code>... (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling)</code>)
+5. <code><b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>)</code> (<code>... <a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>)
 6. <code><b>if</b> (crosses_spread)</code>
 7. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code> (<code>... (0, max_quote)</code>)
 8. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code> (<code>... base_traded</code>)
@@ -3266,13 +3279,14 @@ as appropriate.
 12. <code><b>if</b> (evictee_access_key == <a href="market.md#0xc0deb00c_market_NIL">NIL</a>)</code>
 
 
-<a name="@Testing_59"></a>
+<a name="@Testing_60"></a>
 
 ### Testing
 
 
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_crosses_ask_exact()</code>
+* <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
 
@@ -3357,14 +3371,26 @@ as appropriate.
     // No need <b>to</b> specify <b>min</b> quote <b>if</b> filling <b>as</b> a taker order
     // since <b>min</b> base is specified.
     <b>let</b> min_quote = 0;
-    // If an ask that crosses the spread, max quote <b>to</b> trade during
-    // taker match is max amount that can fit in <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>,
-    // since order will fill <b>as</b> a taker sell at prices that are at
-    // least <b>as</b> high <b>as</b> the specified order price (<a href="user.md#0xc0deb00c_user">user</a> will receive
-    // more quote than calculated from order size and price). Else
-    // max quote <b>to</b> trade is amount from size and price.
-    <b>let</b> max_quote = <b>if</b> ((side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) && crosses_spread)
-        (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling) <b>else</b> (quote <b>as</b> u64);
+    // Get max quote <b>to</b> trade. If price crosses spread:
+    <b>let</b> max_quote = <b>if</b> (crosses_spread) { // If fills <b>as</b> taker:
+        <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) { // If an ask, filling <b>as</b> taker sell:
+            // <a href="market.md#0xc0deb00c_market_Order">Order</a> will fill at prices that are at least <b>as</b> high
+            // <b>as</b> specified order price, and <a href="user.md#0xc0deb00c_user">user</a> will recieve more
+            // quote than calculated from order size and price.
+            // Hence max quote <b>to</b> trade is amount that will fit in
+            // <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
+            (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling)
+        // If a bid, filling <b>as</b> a taker buy, will have <b>to</b> pay at
+        // least <b>as</b> much <b>as</b> from order size and price, plus fees.
+        } <b>else</b> {
+            // Get taker fee divisor
+            <b>let</b> taker_fee_divisor = <a href="incentives.md#0xc0deb00c_incentives_get_taker_fee_divisor">incentives::get_taker_fee_divisor</a>();
+            // Max quote is amount from size and price, <b>with</b> fees.
+            ((quote <b>as</b> u64) + ((quote <b>as</b> u64) / taker_fee_divisor))
+        }
+    } <b>else</b> { // If no portion of order fills <b>as</b> a taker:
+        (quote <b>as</b> u64) // Max quote is amount from size and price.
+    };
     // If an ask, trade direction <b>to</b> range check is sell, <b>else</b> buy.
     <b>let</b> direction = <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) <a href="market.md#0xc0deb00c_market_SELL">SELL</a> <b>else</b> <a href="market.md#0xc0deb00c_market_BUY">BUY</a>;
     <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
@@ -3464,7 +3490,7 @@ as appropriate.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_60"></a>
+<a name="@Type_Parameters_61"></a>
 
 ### Type Parameters
 
@@ -3473,7 +3499,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_61"></a>
+<a name="@Parameters_62"></a>
 
 ### Parameters
 
@@ -3494,7 +3520,7 @@ for market account.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_62"></a>
+<a name="@Returns_63"></a>
 
 ### Returns
 
@@ -3504,7 +3530,7 @@ for market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Algorithm_description_63"></a>
+<a name="@Algorithm_description_64"></a>
 
 ### Algorithm description
 
@@ -3526,7 +3552,7 @@ calculated, then base and quote assets are deposited back to the
 user's market account.
 
 
-<a name="@Logical_branches_64"></a>
+<a name="@Logical_branches_65"></a>
 
 ### Logical branches
 
@@ -3639,7 +3665,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_65"></a>
+<a name="@Terminology_66"></a>
 
 ### Terminology
 
@@ -3662,7 +3688,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_66"></a>
+<a name="@Parameters_67"></a>
 
 ### Parameters
 
@@ -3683,7 +3709,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_67"></a>
+<a name="@Aborts_68"></a>
 
 ### Aborts
 
@@ -3699,7 +3725,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_68"></a>
+<a name="@Failure_testing_69"></a>
 
 ### Failure testing
 
@@ -3776,7 +3802,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_69"></a>
+<a name="@Type_parameters_70"></a>
 
 ### Type parameters
 
@@ -3785,7 +3811,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_70"></a>
+<a name="@Parameters_71"></a>
 
 ### Parameters
 
@@ -3799,7 +3825,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_71"></a>
+<a name="@Returns_72"></a>
 
 ### Returns
 
@@ -3807,7 +3833,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_72"></a>
+<a name="@Testing_73"></a>
 
 ### Testing
 
@@ -3875,7 +3901,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_73"></a>
+<a name="@Type_Parameters_74"></a>
 
 ### Type Parameters
 
@@ -3884,7 +3910,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_74"></a>
+<a name="@Parameters_75"></a>
 
 ### Parameters
 
@@ -3905,7 +3931,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_75"></a>
+<a name="@Returns_76"></a>
 
 ### Returns
 
@@ -3919,7 +3945,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_76"></a>
+<a name="@Aborts_77"></a>
 
 ### Aborts
 
@@ -3930,7 +3956,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Logical_branches_77"></a>
+<a name="@Logical_branches_78"></a>
 
 ### Logical branches
 

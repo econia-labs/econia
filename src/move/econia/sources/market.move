@@ -2511,8 +2511,8 @@ module econia::market {
     #[test_only]
     /// Initialize module for testing.
     public fun init_test() {
-        registry::init_test(); // Init registry.
-        init_module(); // Init module.
+        let econia = registry::init_test(); // Init registry.
+        init_module(&econia); // Init module.
     }
 
     #[test_only]

@@ -610,7 +610,7 @@ module econia::market {
     /// Public function wrapper for `place_limit_order()` for placing
     /// order under authority of delegated custodian.
     ///
-    /// # Testing
+    /// # Invocation and return testing
     ///
     /// * `test_place_limit_order_no_cross_bid_custodian()`
     public fun place_limit_order_custodian<
@@ -649,7 +649,7 @@ module econia::market {
     /// Public function wrapper for `place_limit_order()` for placing
     /// order under authority of signing user.
     ///
-    /// # Testing
+    /// # Invocation and return testing
     ///
     /// * `test_place_limit_order_crosses_ask_exact()`
     /// * `test_place_limit_order_crosses_ask_partial()`
@@ -2115,13 +2115,19 @@ module econia::market {
     /// presented in chronological order with additional disambiguators
     /// as appropriate.
     ///
-    ///
     /// 1. `if (max_base == MAX_POSSIBLE)`
     /// 2. `if (direction == BUY)`
     /// 3. `if (max_quote == MAX_POSSIBLE)`
     /// 4. `if (direction == BUY)` (`... quote_available`)
     /// 5. `if (direction == BUY)` (`... (0, max_quote)`)
     /// 6. `if (direction == BUY)` (`... base_traded`)
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_place_market_order_max_base_buy_user()` TODO
+    /// * `test_place_market_order_max_base_sell_custodian()` TODO
+    /// * `test_place_market_order_max_quote_buy_custodian()` TODO
+    /// * `test_place_market_order_max_quote_sell_user()` TODO
     fun place_market_order<
         BaseType,
         QuoteType
@@ -3588,6 +3594,30 @@ module econia::market {
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
             price, restriction, critical_height);
     }
+
+/*
+    #[test]
+    /// Verify state updates, returns for market buy when user specifies
+    /// max possible base trade amount, under authority of signing
+    /// user.
+    fun test_place_market_order_max_base_buy_user()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order paramaters with price set to product of
+        // divisors to prevent truncation later.
+
+        //^^ Actually need the product?
+        let size_post = MIN_SIZE_COIN +
+        let size_match =
+    }
+*/
 
     #[test]
     #[expected_failure(abort_code = 4)]

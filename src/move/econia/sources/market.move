@@ -2642,111 +2642,21 @@ module econia::market {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
-    /// Verify state updates, returns, for placing limit order that
-    /// evicts another user's order.
-    fun test_place_limit_order_evict()
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for base overflow.
+    fun test_place_limit_order_base_overflow()
     acquires OrderBooks {
-        // Initialize markets, users, and an integrator.
-        let (user_0, user_1) = init_markets_users_integrator_test();
         // Declare order parameters.
-        let side        = ASK;
-        let size_0      = MIN_SIZE_COIN;
-        let size_1      = size_0 + 1;
-        let size_2      = size_1 + 1;
-        let price_0     = 123;
-        let price_1     = price_0 - 1;
-        let price_2     = price_1 - 1;
+        let side = ASK;
+        let size = HI_64 / LOT_SIZE_COIN + 1;
+        let price = MAX_PRICE;
         let restriction = NO_RESTRICTION;
-        // Declare min base and max quote to deposit.
-        let base_deposit  = HI_64 / 2;
-        let quote_deposit = HI_64 / 2;
-        // Declare critical height.
-        let critical_height = 0;
-        // Deposit base and quote coins to each user's account.
-        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(base_deposit));
-        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(quote_deposit));
-        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(base_deposit));
-        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(quote_deposit));
-        // Place a single order by user 0.
-        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
-            &user_0, MARKET_ID_COIN, @integrator, side, size_0, price_0,
-            restriction);
-        // Place a single order by user 1, with better price-time
-        // priority, taking tree height to 1.
-        let (market_order_id_1, _, _, _) = place_limit_order_user<BC, QC>(
-            &user_1, MARKET_ID_COIN, @integrator, side, size_1, price_1,
-            restriction);
-        // Assert order fields for first placed order.
-        let (size_r, user_r, custodian_id_r, order_access_key_0) =
-            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
-        // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_0, 0);
-        assert!(user_r == @user_0, 0);
-        assert!(custodian_id_r == NO_CUSTODIAN, 0);
-        // Assert user-side order fields.
-        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
-            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_0);
-        assert!(market_order_id_r == market_order_id_0, 0);
-        assert!(size_r == size_0, 0);
-        // Assert order fields for second placed order.
-        let (size_r, user_r, custodian_id_r, order_access_key_1) =
-            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_1);
-        // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_1, 0);
-        assert!(user_r == @user_1, 0);
-        assert!(custodian_id_r == NO_CUSTODIAN, 0);
-        // Assert user-side order fields.
-        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
-            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_1);
-        assert!(market_order_id_r == market_order_id_1, 0);
-        assert!(size_r == size_1, 0);
-        // Place another order by user 1, with better price-time
-        // priority, evicting user 0's order for low critical height.
-        let (market_order_id_2, _, _, _) = place_limit_order<BC, QC>(
-            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size_2,
-            price_2, restriction, critical_height);
-        // Assert order fields for third placed order.
-        let (size_r, user_r, custodian_id_r, order_access_key_2) =
-            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_2);
-        // Assert field returns except access key, used for user lookup.
-        assert!(size_r == size_2, 0);
-        assert!(user_r == @user_1, 0);
-        assert!(custodian_id_r == NO_CUSTODIAN, 0);
-        // Assert user-side order fields.
-        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
-            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_2);
-        assert!(market_order_id_r == market_order_id_2, 0);
-        assert!(size_r == size_2, 0);
-        // Assert order fields returned the same when attempting to
-        // look up using the evicted order ID, since the same AVL queue
-        // list node ID is re-used.
-        let (size_r, user_r, custodian_id_r, order_access_key_r) =
-            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
-        assert!(size_r == size_2, 0);
-        assert!(user_r == @user_1, 0);
-        assert!(custodian_id_r == NO_CUSTODIAN, 0);
-        assert!(order_access_key_r == order_access_key_2, 0);
-        // Assert user-side order fields for inactive evicted order.
-        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
-            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_0);
-        // No market order ID.
-        assert!(market_order_id_r == (NIL as u128), 0);
-        assert!(size_r == NIL, 0); // Bottom of inactive stack.
-        // Assert evictee's asset counts.
-        let (base_total , base_available , base_ceiling,
-             quote_total, quote_available, quote_ceiling) =
-            user::get_asset_counts_internal(
-                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
-        assert!(base_total      == base_deposit , 0);
-        assert!(base_available  == base_deposit , 0);
-        assert!(base_ceiling    == base_deposit , 0);
-        assert!(quote_total     == quote_deposit, 0);
-        assert!(quote_available == quote_deposit, 0);
-        assert!(quote_ceiling   == quote_deposit, 0);
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
     }
 
     #[test]
@@ -2840,24 +2750,6 @@ module econia::market {
         // Assert Econia fee share.
         assert!(incentives::get_econia_fee_store_balance_test<QC>(
             MARKET_ID_COIN) == econia_share, 0);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 15)]
-    /// Verify failure for base overflow.
-    fun test_place_limit_order_base_overflow()
-    acquires OrderBooks {
-        // Declare order parameters.
-        let side = ASK;
-        let size = HI_64 / LOT_SIZE_COIN + 1;
-        let price = MAX_PRICE;
-        let restriction = NO_RESTRICTION;
-        let critical_height = CRITICAL_HEIGHT;
-        // Initialize markets, users, and an integrator.
-        init_markets_users_integrator_test();
-        place_limit_order<BC, QC>( // Attempt invalid invocation.
-            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
-            price, restriction, critical_height);
     }
 
     #[test]
@@ -3220,6 +3112,114 @@ module econia::market {
     }
 
     #[test]
+    /// Verify state updates, returns, for placing limit order that
+    /// evicts another user's order.
+    fun test_place_limit_order_evict()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side        = ASK;
+        let size_0      = MIN_SIZE_COIN;
+        let size_1      = size_0 + 1;
+        let size_2      = size_1 + 1;
+        let price_0     = 123;
+        let price_1     = price_0 - 1;
+        let price_2     = price_1 - 1;
+        let restriction = NO_RESTRICTION;
+        // Declare min base and max quote to deposit.
+        let base_deposit  = HI_64 / 2;
+        let quote_deposit = HI_64 / 2;
+        // Declare critical height.
+        let critical_height = 0;
+        // Deposit base and quote coins to each user's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit));
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit));
+        // Place a single order by user 0.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, side, size_0, price_0,
+            restriction);
+        // Place a single order by user 1, with better price-time
+        // priority, taking tree height to 1.
+        let (market_order_id_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &user_1, MARKET_ID_COIN, @integrator, side, size_1, price_1,
+            restriction);
+        // Assert order fields for first placed order.
+        let (size_r, user_r, custodian_id_r, order_access_key_0) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r == size_0, 0);
+        assert!(user_r == @user_0, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_0);
+        assert!(market_order_id_r == market_order_id_0, 0);
+        assert!(size_r == size_0, 0);
+        // Assert order fields for second placed order.
+        let (size_r, user_r, custodian_id_r, order_access_key_1) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_1);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r == size_1, 0);
+        assert!(user_r == @user_1, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_1);
+        assert!(market_order_id_r == market_order_id_1, 0);
+        assert!(size_r == size_1, 0);
+        // Place another order by user 1, with better price-time
+        // priority, evicting user 0's order for low critical height.
+        let (market_order_id_2, _, _, _) = place_limit_order<BC, QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size_2,
+            price_2, restriction, critical_height);
+        // Assert order fields for third placed order.
+        let (size_r, user_r, custodian_id_r, order_access_key_2) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_2);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r == size_2, 0);
+        assert!(user_r == @user_1, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        // Assert user-side order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_2);
+        assert!(market_order_id_r == market_order_id_2, 0);
+        assert!(size_r == size_2, 0);
+        // Assert order fields returned the same when attempting to
+        // look up using the evicted order ID, since the same AVL queue
+        // list node ID is re-used.
+        let (size_r, user_r, custodian_id_r, order_access_key_r) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id_0);
+        assert!(size_r == size_2, 0);
+        assert!(user_r == @user_1, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        assert!(order_access_key_r == order_access_key_2, 0);
+        // Assert user-side order fields for inactive evicted order.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key_0);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
+        // Assert evictee's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_deposit , 0);
+        assert!(base_available  == base_deposit , 0);
+        assert!(base_ceiling    == base_deposit , 0);
+        assert!(quote_total     == quote_deposit, 0);
+        assert!(quote_available == quote_deposit, 0);
+        assert!(quote_ceiling   == quote_deposit, 0);
+    }
+
+    #[test]
     #[expected_failure(abort_code = 25)]
     /// Verify failure for not crossing spread when fill-or-abort.
     fun test_place_limit_order_fill_or_abort_not_cross()
@@ -3437,6 +3437,37 @@ module econia::market {
     }
 
     #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for not crossing spread as post-or-abort.
+    fun test_place_limit_order_post_or_abort_crosses()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Declare order paramaters.
+        let side             = ASK; // Taker sell.
+        let size             = MIN_SIZE_COIN;
+        let price            = 789;
+        let restriction      = POST_OR_ABORT;
+        // Deposit sufficient coins as collateral.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(0));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(0));
+        // Place maker order.
+        place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
+            POST_OR_ABORT);
+        // Place limit order that can not fill.
+        place_limit_order_user<BC, QC>(
+            &user_1, MARKET_ID_COIN, @integrator, side, size, price,
+            restriction);
+    }
+
+    #[test]
     #[expected_failure(abort_code = 12)]
     /// Verify failure for invalid price.
     fun test_place_limit_order_price_hi()
@@ -3538,37 +3569,6 @@ module econia::market {
         place_limit_order<BC, QC>( // Attempt invalid invocation.
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
             price, restriction, critical_height);
-    }
-
-    #[test]
-    #[expected_failure(abort_code = 13)]
-    /// Verify failure for not crossing spread as post-or-abort.
-    fun test_place_limit_order_post_or_abort_crosses()
-    acquires OrderBooks {
-        // Initialize markets, users, and an integrator.
-        let (user_0, user_1) = init_markets_users_integrator_test();
-        // Declare order paramaters.
-        let side             = ASK; // Taker sell.
-        let size             = MIN_SIZE_COIN;
-        let price            = 789;
-        let restriction      = POST_OR_ABORT;
-        // Deposit sufficient coins as collateral.
-        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(0));
-        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(HI_64));
-        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(HI_64));
-        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
-                                assets::mint_test(0));
-        // Place maker order.
-        place_limit_order_user<BC, QC>(
-            &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
-            POST_OR_ABORT);
-        // Place limit order that can not fill.
-        place_limit_order_user<BC, QC>(
-            &user_1, MARKET_ID_COIN, @integrator, side, size, price,
-            restriction);
     }
 
     #[test]

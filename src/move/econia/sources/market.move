@@ -226,8 +226,8 @@
 /// * [ ] `cancel_order()`
 /// * [ ] `change_order_size()`
 /// * [ ] `match()`
-/// * [ ] `place_limit_order()`
-/// * [ ] `range_check_trade()`
+/// * [x] `place_limit_order()`
+/// * [x] `range_check_trade()`
 /// * [ ] `swap()`
 ///
 /// ## Return proxies
@@ -257,8 +257,8 @@
 ///
 /// Function returns to test:
 ///
-/// * [ ] `place_limit_order_custodian()`
-/// * [ ] `place_limit_order_user()`
+/// * [x] `place_limit_order_custodian()`
+/// * [x] `place_limit_order_user()`
 /// * [ ] `place_market_order_custodian()`
 /// * [ ] `place_market_order_user()`
 /// * [ ] `swap_between_coinstores()`
@@ -301,7 +301,7 @@
 /// * [ ] `cancel_order()`
 /// * [ ] `change_order_size()`
 /// * [ ] `match()`
-/// * [ ] `place_limit_order()`
+/// * [x] `place_limit_order()`
 /// * [ ] `place_market_order()`
 /// * [x] `range_check_trade()`
 /// * [ ] `swap()`
@@ -651,12 +651,12 @@ module econia::market {
     ///
     /// # Testing
     ///
-    /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_crosses_ask_exact()`
     /// * `test_place_limit_order_crosses_ask_partial()`
     /// * `test_place_limit_order_crosses_ask_partial_cancel()`
     /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_crosses_bid_partial()`
+    /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_no_cross_ask_user()`
     public fun place_limit_order_user<
         BaseType,
@@ -1861,14 +1861,28 @@ module econia::market {
     ///
     /// # Expected value testing
     ///
-    /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_crosses_ask_exact()`
     /// * `test_place_limit_order_crosses_ask_partial()`
     /// * `test_place_limit_order_crosses_ask_partial_cancel()`
     /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_crosses_bid_partial()`
+    /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_no_cross_ask_user()`
     /// * `test_place_limit_order_no_cross_bid_custodian()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_place_limit_order_base_overflow()`
+    /// * `test_place_limit_order_fill_or_abort_not_cross()`
+    /// * `test_place_limit_order_fill_or_abort_partial()`
+    /// * `test_place_limit_order_invalid_restriction()`
+    /// * `test_place_limit_order_no_price()`
+    /// * `test_place_limit_order_post_or_abort_crosses()`
+    /// * `test_place_limit_order_price_hi()`
+    /// * `test_place_limit_order_price_time_priority_low()`
+    /// * `test_place_limit_order_quote_overflow()`
+    /// * `test_place_limit_order_size_lo()`
+    /// * `test_place_limit_order_ticks_overflow()`
     fun place_limit_order<
         BaseType,
         QuoteType,
@@ -2829,6 +2843,24 @@ module econia::market {
     }
 
     #[test]
+    #[expected_failure(abort_code = 15)]
+    /// Verify failure for base overflow.
+    fun test_place_limit_order_base_overflow()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = HI_64 / LOT_SIZE_COIN + 1;
+        let price = MAX_PRICE;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
     /// Verify state updates, returns for placing ask that fills
     /// partially across the spread, under authority of signing user.
     /// Based on `test_place_limit_order_crosses_ask_exact()`
@@ -3188,6 +3220,77 @@ module econia::market {
     }
 
     #[test]
+    #[expected_failure(abort_code = 25)]
+    /// Verify failure for not crossing spread when fill-or-abort.
+    fun test_place_limit_order_fill_or_abort_not_cross()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = MIN_SIZE_COIN;
+        let price = MAX_PRICE;
+        let restriction = FILL_OR_ABORT;
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Deposit base and quote coins to maker's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for not filling completely across spread when
+    /// fill-or-abort.
+    fun test_place_limit_order_fill_or_abort_partial()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Declare order paramaters.
+        let side             = ASK; // Taker sell.
+        let size             = MIN_SIZE_COIN;
+        let price            = 789;
+        let restriction      = FILL_OR_ABORT;
+        // Deposit sufficient coins as collateral.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(0));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(0));
+        // Place maker order.
+        place_limit_order_user_entry<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
+            POST_OR_ABORT);
+        // Place limit order that can not fill.
+        place_limit_order_user<BC, QC>(
+            &user_1, MARKET_ID_COIN, @integrator, side, size + 1, price,
+            restriction);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 18)]
+    /// Verify failure for invalid restriction.
+    fun test_place_limit_order_invalid_restriction()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = 123;
+        let price = 123;
+        let restriction = N_RESTRICTIONS + 1;
+        let critical_height = CRITICAL_HEIGHT;
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
     /// Verify state updates, returns, for placing ask that does not
     /// cross the spread, under authority of signing user.
     fun test_place_limit_order_no_cross_ask_user()
@@ -3315,6 +3418,175 @@ module econia::market {
             order_access_key);
         assert!(market_order_id_r == market_order_id, 0);
         assert!(size_r == size, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 11)]
+    /// Verify failure for invalid price.
+    fun test_place_limit_order_no_price()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = 123;
+        let price = 0;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for invalid price.
+    fun test_place_limit_order_price_hi()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = 123;
+        let price = MAX_PRICE + 1;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 20)]
+    /// Verify failure for unable to insert to AVL queue. Modeled off
+    /// `test_place_limit_order_evict()`.
+    fun test_place_limit_order_price_time_priority_low()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side        = ASK;
+        let size_0      = MIN_SIZE_COIN;
+        let size_1      = size_0 + 1;
+        let size_2      = size_1 + 1;
+        let price_0     = 123;
+        let price_1     = price_0 - 1;
+        let price_2     = price_0;
+        let restriction = NO_RESTRICTION;
+        // Declare min base and max quote to deposit.
+        let base_deposit  = HI_64 / 2;
+        let quote_deposit = HI_64 / 2;
+        // Declare critical height.
+        let critical_height = 0;
+        // Deposit base and quote coins to each user's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit));
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit));
+        // Place a single order by user 0.
+        place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, side, size_0, price_0,
+            restriction);
+        // Place a single order by user 1, with better price-time
+        // priority, taking tree height to 1.
+        place_limit_order_user<BC, QC>(
+            &user_1, MARKET_ID_COIN, @integrator, side, size_1, price_1,
+            restriction);
+        // Place another order by user 1, with worse price-time than
+        // AVL queue tail.
+        place_limit_order<BC, QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size_2,
+            price_2, restriction, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 17)]
+    /// Verify failure for quote overflow.
+    fun test_place_limit_order_quote_overflow()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = HI_64 / LOT_SIZE_COIN;
+        let price = HI_64 / size;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 14)]
+    /// Verify failure for invalid size.
+    fun test_place_limit_order_size_lo()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = MIN_SIZE_COIN - 1;
+        let price = MAX_PRICE;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Deposit base and quote coins to user's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0,
+                                assets::mint_test(HI_64));
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 13)]
+    /// Verify failure for not crossing spread as post-or-abort.
+    fun test_place_limit_order_post_or_abort_crosses()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Declare order paramaters.
+        let side             = ASK; // Taker sell.
+        let size             = MIN_SIZE_COIN;
+        let price            = 789;
+        let restriction      = POST_OR_ABORT;
+        // Deposit sufficient coins as collateral.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(0));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(0));
+        // Place maker order.
+        place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
+            POST_OR_ABORT);
+        // Place limit order that can not fill.
+        place_limit_order_user<BC, QC>(
+            &user_1, MARKET_ID_COIN, @integrator, side, size, price,
+            restriction);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 16)]
+    /// Verify failure for ticks overflow.
+    fun test_place_limit_order_ticks_overflow()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side = ASK;
+        let size = HI_64 / LOT_SIZE_COIN;
+        let price = HI_64 / size + 1;
+        let restriction = NO_RESTRICTION;
+        let critical_height = CRITICAL_HEIGHT;
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        place_limit_order<BC, QC>( // Attempt invalid invocation.
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
+            price, restriction, critical_height);
     }
 
     #[test]

@@ -1498,6 +1498,9 @@ order under authority of signing user.
 
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_crosses_ask_exact()</code>
+* <code>test_place_limit_order_crosses_ask_partial()</code>
+* <code>test_place_limit_order_crosses_bid_exact()</code>
+* <code>test_place_limit_order_crosses_bid_partial()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_bid_user()</code>
 
@@ -3288,6 +3291,7 @@ as appropriate.
 * <code>test_place_limit_order_crosses_ask_exact()</code>
 * <code>test_place_limit_order_crosses_ask_partial()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
+* <code>test_place_limit_order_crosses_bid_partial()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
 

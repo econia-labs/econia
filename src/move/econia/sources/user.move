@@ -2132,6 +2132,21 @@ module econia::user {
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
+    /// Like `get_collateral_value_test()`, but accepts market id and
+    /// custodian ID.
+    public fun get_collateral_value_simple_test<
+        CoinType
+    >(
+        user_address: address,
+        market_id: u64,
+        custodian_id: u64
+    ): u64
+    acquires Collateral {
+        get_collateral_value_test<CoinType>(
+            user_address, get_market_account_id(market_id, custodian_id))
+    }
+
+    #[test_only]
     /// Return `Coin.value` of entry in `Collateral` for given
     /// `user_address`, `AssetType` and `market_account_id`.
     public fun get_collateral_value_test<

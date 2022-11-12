@@ -2741,6 +2741,11 @@ module econia::market {
         assert!(quote_total     == 0, 0);
         assert!(quote_available == 0, 0);
         assert!(quote_ceiling   == 0, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
         // Assert takers's asset counts.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -2752,6 +2757,11 @@ module econia::market {
         assert!(quote_total     == HI_64, 0);
         assert!(quote_available == HI_64, 0);
         assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
         // Assert integrator fee share.
         assert!(incentives::get_integrator_fee_store_balance_test<QC>(
             @integrator, MARKET_ID_COIN) == integrator_share, 0);
@@ -2838,6 +2848,11 @@ module econia::market {
         assert!(quote_total     == 0, 0);
         assert!(quote_available == 0, 0);
         assert!(quote_ceiling   == 0, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
         // Assert asset counts of partial maker/taker.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -2849,6 +2864,11 @@ module econia::market {
         assert!(quote_total     == HI_64 - quote_post, 0);
         assert!(quote_available == HI_64 - quote_post, 0);
         assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == base_post, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64 - quote_post, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
@@ -2926,6 +2946,11 @@ module econia::market {
         assert!(quote_total     == HI_64 - quote_post, 0);
         assert!(quote_available == HI_64 - quote_post, 0);
         assert!(quote_ceiling   == HI_64 - quote_post, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == base_post, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64 - quote_post, 0);
     }
 
     #[test]
@@ -3003,6 +3028,11 @@ module econia::market {
         assert!(quote_total     == HI_64, 0);
         assert!(quote_available == HI_64, 0);
         assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
         // Assert takers's asset counts.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -3014,6 +3044,11 @@ module econia::market {
         assert!(quote_total     == 0, 0);
         assert!(quote_available == 0, 0);
         assert!(quote_ceiling   == 0, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
         // Assert integrator fee share.
         assert!(incentives::get_integrator_fee_store_balance_test<QC>(
             @integrator, MARKET_ID_COIN) == integrator_share, 0);
@@ -3101,6 +3136,11 @@ module econia::market {
         assert!(quote_total     == HI_64, 0);
         assert!(quote_available == HI_64, 0);
         assert!(quote_ceiling   == HI_64, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == 0, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64, 0);
         // Assert asset counts of partial maker/taker.
         let (base_total , base_available , base_ceiling,
              quote_total, quote_available, quote_ceiling) =
@@ -3112,6 +3152,12 @@ module econia::market {
         assert!(quote_total     == quote_max - quote_trade, 0);
         assert!(quote_available == quote_max - quote_trade - quote_post, 0);
         assert!(quote_ceiling   == quote_max - quote_trade, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN) == HI_64 - base_post, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_1, MARKET_ID_COIN, NO_CUSTODIAN)
+            == quote_max - quote_trade, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
@@ -3225,6 +3271,11 @@ module econia::market {
         assert!(quote_total     == quote_deposit, 0);
         assert!(quote_available == quote_deposit, 0);
         assert!(quote_ceiling   == quote_deposit, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == base_deposit, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == quote_deposit, 0);
     }
 
     #[test]
@@ -3353,6 +3404,11 @@ module econia::market {
         assert!(quote_total     == quote_deposit, 0);
         assert!(quote_available == quote_deposit, 0);
         assert!(quote_ceiling   == HI_64        , 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == base_deposit, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == quote_deposit, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
@@ -3420,6 +3476,11 @@ module econia::market {
         assert!(quote_total     == quote_deposit, 0);
         assert!(quote_available == 0            , 0);
         assert!(quote_ceiling   == quote_deposit, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0) == base_deposit, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0) == quote_deposit, 0);
         // Assert user-side order fields.
         let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
             @user_0, MARKET_ID_COIN, CUSTODIAN_ID_USER_0, side,

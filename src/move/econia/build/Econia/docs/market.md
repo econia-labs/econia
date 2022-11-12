@@ -2788,7 +2788,7 @@ custodian ID of order on order book having market order ID.
 Initialize the order books map upon module publication.
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_init_module">init_module</a>()
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_init_module">init_module</a>(_econia: &<a href="">signer</a>)
 </code></pre>
 
 
@@ -2797,7 +2797,9 @@ Initialize the order books map upon module publication.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_init_module">init_module</a>() {
+<pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_init_module">init_module</a>(
+    _econia: &<a href="">signer</a>
+) {
     // Get Econia resource <a href="">account</a> <a href="">signer</a>.
     <b>let</b> <a href="">resource_account</a> = resource_account::get_signer();
     // Initialize order books map under resource <a href="">account</a>.

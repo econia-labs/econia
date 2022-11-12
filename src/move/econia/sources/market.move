@@ -1466,7 +1466,9 @@ module econia::market {
     }
 
     /// Initialize the order books map upon module publication.
-    fun init_module() {
+    fun init_module(
+        _econia: &signer
+    ) {
         // Get Econia resource account signer.
         let resource_account = resource_account::get_signer();
         // Initialize order books map under resource account.

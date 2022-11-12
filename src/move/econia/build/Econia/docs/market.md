@@ -312,7 +312,7 @@ Function invocations to test:
 * [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>()</code>
-* [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
+* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
@@ -1499,10 +1499,10 @@ order under authority of signing user.
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_crosses_ask_exact()</code>
 * <code>test_place_limit_order_crosses_ask_partial()</code>
+* <code>test_place_limit_order_crosses_ask_partial_cancel()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_crosses_bid_partial()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
-* <code>test_place_limit_order_no_cross_bid_user()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8): (u128, u64, u64, u64)
@@ -3290,6 +3290,7 @@ as appropriate.
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_crosses_ask_exact()</code>
 * <code>test_place_limit_order_crosses_ask_partial()</code>
+* <code>test_place_limit_order_crosses_ask_partial_cancel()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_crosses_bid_partial()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>

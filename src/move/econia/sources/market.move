@@ -279,7 +279,7 @@
 /// * [ ] `place_limit_order_user_entry()`
 /// * [x] `place_limit_order_custodian()`
 /// * [ ] `place_market_order_user_entry()`
-/// * [x] `place_market_order_custodian()`
+/// * [ ] `place_market_order_custodian()`
 /// * [ ] `swap_between_coinstores_entry()`
 /// * [ ] `swap_coins()`
 /// * [ ] `swap_generic()`
@@ -654,10 +654,10 @@ module econia::market {
     /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_crosses_ask_exact()`
     /// * `test_place_limit_order_crosses_ask_partial()`
+    /// * `test_place_limit_order_crosses_ask_partial_cancel()`
     /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_crosses_bid_partial()`
     /// * `test_place_limit_order_no_cross_ask_user()`
-    /// * `test_place_limit_order_no_cross_bid_user()`
     public fun place_limit_order_user<
         BaseType,
         QuoteType
@@ -1864,6 +1864,7 @@ module econia::market {
     /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_crosses_ask_exact()`
     /// * `test_place_limit_order_crosses_ask_partial()`
+    /// * `test_place_limit_order_crosses_ask_partial_cancel()`
     /// * `test_place_limit_order_crosses_bid_exact()`
     /// * `test_place_limit_order_crosses_bid_partial()`
     /// * `test_place_limit_order_no_cross_ask_user()`
@@ -2863,7 +2864,8 @@ module econia::market {
                                 assets::mint_test(HI_64 - base_match));
         user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(quote_match));
-        // Deposit to second maker's account similarly.
+        // Deposit to second maker's account similarly, for meeting
+        // range checks.
         user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(base));
         user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
@@ -2920,6 +2922,78 @@ module econia::market {
             @user_1, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
         assert!(market_order_id_r == market_order_id_1, 0);
         assert!(size_r == size_post, 0);
+    }
+
+    #[test]
+    /// Verify state updates, returns for placing immediate-or-cancel
+    /// ask that fills partially across the spread, under authority of
+    /// signing user. Based on
+    /// `test_place_limit_order_crosses_ask_partial()`.
+    fun test_place_limit_order_crosses_ask_partial_cancel()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (user_0, user_1) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare order paramaters with price set to product of
+        // divisors to prevent truncation later.
+        let side             = ASK; // Taker sell.
+        let size_match       = MIN_SIZE_COIN + 123;
+        let size_post        = MIN_SIZE_COIN + 456;
+        let size             = size_match + size_post;
+        let base_match       = size_match * LOT_SIZE_COIN;
+        let base_post        = size_post * LOT_SIZE_COIN;
+        let base             = base_match + base_post;
+        let price            = integrator_divisor * taker_divisor;
+        let quote_match      = size_match * price * TICK_SIZE_COIN;
+        let quote_post       = size_post * price * TICK_SIZE_COIN;
+        let integrator_share = quote_match / integrator_divisor;
+        let econia_share     = quote_match / taker_divisor - integrator_share;
+        let fee              = integrator_share + econia_share;
+        let quote_trade      = quote_match - fee;
+        let quote_total      = quote_trade + quote_post;
+        let restriction      = IMMEDIATE_OR_CANCEL;
+        // Deposit to first maker's account enough to impinge on min
+        // and max amounts after fill.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - base_match));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_match));
+        // Deposit to second maker's account similarly.
+        user::deposit_coins<BC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base));
+        user::deposit_coins<QC>(@user_1, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(HI_64 - quote_total));
+        // Place first maker order.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &user_0, MARKET_ID_COIN, @integrator, !side, size_match, price,
+            POST_OR_ABORT);
+        // Place immediate-or-cancel order.
+        let (market_order_id_1, base_trade_r, quote_trade_r, fee_r) =
+            place_limit_order_user<BC, QC>(
+                &user_1, MARKET_ID_COIN, @integrator, side, size, price,
+                restriction);
+        // Assert returns
+        assert!(market_order_id_1 == (NIL as u128), 0);
+        assert!(base_trade_r      == base_match, 0);
+        assert!(quote_trade_r     == quote_trade, 0);
+        assert!(fee_r             == fee, 0);
+        // Assert filled order inactive.
+        assert!(!is_list_node_order_active(
+            MARKET_ID_COIN, !side, market_order_id_0), 0);
+        // Assert asset counts of taker.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_1, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_post, 0);
+        assert!(base_available  == base_post, 0);
+        assert!(base_ceiling    == base_post, 0);
+        assert!(quote_total     == HI_64 - quote_post, 0);
+        assert!(quote_available == HI_64 - quote_post, 0);
+        assert!(quote_ceiling   == HI_64 - quote_post, 0);
     }
 
     #[test]

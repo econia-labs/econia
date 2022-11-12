@@ -3147,28 +3147,28 @@ module econia::user {
             MARKET_ID_GENERIC  , CUSTODIAN_ID);
         // Assert empty returns.
         assert!(get_all_market_account_ids_for_market_id(
-                @user_0, MARKET_ID_PURE_COIN) == vector[], 0);
+                @user, MARKET_ID_PURE_COIN) == vector[], 0);
         assert!(get_all_market_account_ids_for_market_id(
-                @user_0, MARKET_ID_GENERIC) == vector[], 0);
+                @user, MARKET_ID_GENERIC) == vector[], 0);
         assert!(get_all_market_account_ids_for_user(
-                @user_0) == vector[], 0);
+                @user) == vector[], 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(
-                @user_0, market_account_id_coin_self), 0);
+                @user, market_account_id_coin_self), 0);
         assert!(!has_market_account_by_market_account_id(
-                @user_0, market_account_id_coin_delegated), 0);
+                @user, market_account_id_coin_delegated), 0);
         assert!(!has_market_account_by_market_account_id(
-                @user_0, market_account_id_generic_self), 0);
+                @user, market_account_id_generic_self), 0);
         assert!(!has_market_account_by_market_account_id(
-                @user_0, market_account_id_generic_delegated), 0);
+                @user, market_account_id_generic_delegated), 0);
         assert!(!has_market_account_by_market_id(
-                @user_0, MARKET_ID_PURE_COIN), 0);
+                @user, MARKET_ID_PURE_COIN), 0);
         assert!(!has_market_account_by_market_id(
-                @user_0, MARKET_ID_GENERIC), 0);
+                @user, MARKET_ID_GENERIC), 0);
         register_market_accounts_test(); // Register market accounts.
         // Assert empty returns.
         assert!(get_all_market_account_ids_for_market_id(
-                @user_0, 123) == vector[], 0);
+                @user, 123) == vector[], 0);
         // Get signer for another test user account.
         let user_1 = account::create_signer_with_capability(
             &account::create_test_signer_cap(@user_1));
@@ -3182,30 +3182,30 @@ module econia::user {
         let expected_ids = vector[market_account_id_coin_self,
                                   market_account_id_coin_delegated];
         assert!(get_all_market_account_ids_for_market_id(
-                @user_0, MARKET_ID_PURE_COIN) == expected_ids, 0);
+                @user, MARKET_ID_PURE_COIN) == expected_ids, 0);
         expected_ids = vector[market_account_id_generic_self,
                               market_account_id_generic_delegated];
         assert!(get_all_market_account_ids_for_market_id(
-                @user_0, MARKET_ID_GENERIC) == expected_ids, 0);
+                @user, MARKET_ID_GENERIC) == expected_ids, 0);
         expected_ids = vector[market_account_id_coin_self,
                               market_account_id_coin_delegated,
                               market_account_id_generic_self,
                               market_account_id_generic_delegated];
         assert!(get_all_market_account_ids_for_user(
-                @user_0) == expected_ids, 0);
+                @user) == expected_ids, 0);
         // Assert true returns.
         assert!(has_market_account_by_market_account_id(
-                @user_0, market_account_id_coin_self), 0);
+                @user, market_account_id_coin_self), 0);
         assert!(has_market_account_by_market_account_id(
-                @user_0, market_account_id_coin_delegated), 0);
+                @user, market_account_id_coin_delegated), 0);
         assert!(has_market_account_by_market_account_id(
-                @user_0, market_account_id_generic_self), 0);
+                @user, market_account_id_generic_self), 0);
         assert!(has_market_account_by_market_account_id(
-                @user_0, market_account_id_generic_delegated), 0);
+                @user, market_account_id_generic_delegated), 0);
         assert!(has_market_account_by_market_id(
-                @user_0, MARKET_ID_PURE_COIN), 0);
+                @user, MARKET_ID_PURE_COIN), 0);
         assert!(has_market_account_by_market_id(
-                @user_0, MARKET_ID_GENERIC), 0);
+                @user, MARKET_ID_GENERIC), 0);
         // Assert false returns.
         assert!(!has_market_account_by_market_account_id(
                 @user_1, market_account_id_coin_self), 0);

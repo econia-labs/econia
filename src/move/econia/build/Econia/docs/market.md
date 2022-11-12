@@ -2874,7 +2874,7 @@ holdings after matching.
 matching.
 * <code>u64</code>: Base asset amount traded by taker: net change in
 taker's base holdings.
-* <code>u64</code>: Quote coin amount traded by taker, exclusive of fees:
+* <code>u64</code>: Quote coin amount traded by taker, inclusive of fees:
 net change in taker's quote coin holdings.
 * <code>u64</code>: Amount of quote coin fees paid.
 
@@ -3286,6 +3286,7 @@ as appropriate.
 
 * <code>test_place_limit_order_evict()</code>
 * <code>test_place_limit_order_crosses_ask_exact()</code>
+* <code>test_place_limit_order_crosses_ask_partial()</code>
 * <code>test_place_limit_order_crosses_bid_exact()</code>
 * <code>test_place_limit_order_no_cross_ask_user()</code>
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>

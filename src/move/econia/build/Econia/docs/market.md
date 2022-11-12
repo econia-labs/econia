@@ -445,7 +445,7 @@ The below index is automatically generated from source code:
     -  [Minimum size](#@Minimum_size_57)
     -  [Algorithm description](#@Algorithm_description_58)
     -  [Logical branches](#@Logical_branches_59)
-    -  [Testing](#@Testing_60)
+    -  [Expected value testing](#@Expected_value_testing_60)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
     -  [Type Parameters](#@Type_Parameters_61)
     -  [Parameters](#@Parameters_62)
@@ -3282,9 +3282,9 @@ as appropriate.
 12. <code><b>if</b> (evictee_access_key == <a href="market.md#0xc0deb00c_market_NIL">NIL</a>)</code>
 
 
-<a name="@Testing_60"></a>
+<a name="@Expected_value_testing_60"></a>
 
-### Testing
+### Expected value testing
 
 
 * <code>test_place_limit_order_evict()</code>

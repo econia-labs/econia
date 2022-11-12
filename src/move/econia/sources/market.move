@@ -1859,7 +1859,7 @@ module econia::market {
     /// 11. `if (side == ASK)`
     /// 12. `if (evictee_access_key == NIL)`
     ///
-    /// # Testing
+    /// # Expected value testing
     ///
     /// * `test_place_limit_order_evict()`
     /// * `test_place_limit_order_crosses_ask_exact()`
@@ -2758,7 +2758,7 @@ module econia::market {
         let econia_share     = quote / taker_divisor - integrator_share;
         let fee              = integrator_share + econia_share;
         let quote_trade      = quote - fee;
-        let restriction      = NO_RESTRICTION;
+        let restriction      = FILL_OR_ABORT;
         // Deposit to user's accounts asset amounts that fill them just
         // up to max or down to min after the trade, for user 0 holding
         // maker order.
@@ -2773,7 +2773,7 @@ module econia::market {
         // Place maker order.
         let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
             &user_0, MARKET_ID_COIN, @integrator, !side, size, price,
-            restriction);
+            POST_OR_ABORT);
         // Get user-side order access key for later.
         let (_, _, _, order_access_key_0) = get_order_fields_test(
             MARKET_ID_COIN, !side, market_order_id_0);

@@ -288,7 +288,7 @@ Function returns to test:
 
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
@@ -312,7 +312,7 @@ Function invocations to test:
 * [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
@@ -343,8 +343,7 @@ Functions with logical branches to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
-See each function for a breakdown of its logical branches and how
-they are tested.
+See each function for its logical branches.
 
 
 <a name="@Complete_DocGen_index_8"></a>
@@ -1569,6 +1568,7 @@ order under authority of delegated custodian.
 
 
 * <code>test_place_market_order_max_base_sell_custodian()</code>
+* <code>test_place_market_order_max_quote_buy_custodian()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>): (u64, u64, u64)
@@ -3622,7 +3622,7 @@ as appropriate.
 
 * <code>test_place_market_order_max_base_buy_user()</code>
 * <code>test_place_market_order_max_base_sell_custodian()</code>
-* <code>test_place_market_order_max_quote_buy_custodian()</code> TODO
+* <code>test_place_market_order_max_quote_buy_custodian()</code>
 * <code>test_place_market_order_max_quote_sell_user()</code> TODO
 
 
@@ -3675,7 +3675,7 @@ as appropriate.
     // If max quote <b>to</b> trade flagged <b>as</b> max possible and a buy,
     // <b>update</b> <b>to</b> max amount that can spend. If a sell, <b>update</b>
     // <b>to</b> max amount that can receive when selling.
-    <b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>) max_base = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
+    <b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>) max_quote = <b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)
         quote_available <b>else</b> (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> - quote_ceiling);
     <a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>( // Range check trade amounts.
         direction, min_base, max_base, min_quote, max_quote,

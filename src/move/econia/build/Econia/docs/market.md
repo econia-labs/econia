@@ -339,7 +339,7 @@ Functions with logical branches to test:
 * [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
@@ -1631,6 +1631,7 @@ order under authority of signing user.
 
 
 * <code>test_place_market_order_max_base_buy_user()</code>
+* <code>test_place_market_order_max_quote_sell_user()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)
@@ -3623,7 +3624,7 @@ as appropriate.
 * <code>test_place_market_order_max_base_buy_user()</code>
 * <code>test_place_market_order_max_base_sell_custodian()</code>
 * <code>test_place_market_order_max_quote_buy_custodian()</code>
-* <code>test_place_market_order_max_quote_sell_user()</code> TODO
+* <code>test_place_market_order_max_quote_sell_user()</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_place_market_order">place_market_order</a>&lt;BaseType, QuoteType&gt;(user_address: <b>address</b>, market_id: u64, custodian_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)

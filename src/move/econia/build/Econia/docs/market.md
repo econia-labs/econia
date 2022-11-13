@@ -1927,6 +1927,9 @@ as appropriate.
 
 
 * <code>test_swap_between_coinstores_max_possible_base_buy()</code>
+* <code>test_swap_between_coinstores_max_possible_base_sell()</code>
+* <code>test_swap_between_coinstores_max_possible_quote_buy()</code>
+* <code>test_swap_between_coinstores_max_possible_quote_sell()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64): (u64, u64, u64)

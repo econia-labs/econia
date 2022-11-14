@@ -213,11 +213,11 @@
 ///
 /// # Order management testing
 ///
-/// While market registration functions can be simply tested on their
-/// own, order management functions are more efficiently tested through
-/// integrated tests that verify multiple logical branches, returns,
-/// and state updates for each test. Abort tests, however, must still be
-/// tested individually for each function.
+/// While market registration functions can be simply verified with
+/// straightforward tests, order management functions are more
+/// comprehensively tested through integrated tests that verify multiple
+/// logical branches, returns, and state updates. Aborts are tested
+/// individually for each function.
 ///
 /// ## Functions with aborts
 ///
@@ -243,17 +243,17 @@
 ///
 /// | Function                         | Return proxy                |
 /// |----------------------------------|-----------------------------|
+/// | `match()`                   | `swap_coins()`, `swap_generic()` |
+/// | `place_limit_order()`            | `place_limit_order_user()`  |
 /// | `place_limit_order_custodian()`  | None                        |
 /// | `place_limit_order_user()`       | None                        |
+/// | `place_market_order()`           | `place_market_order_user()` |
 /// | `place_market_order_custodian()` | None                        |
 /// | `place_market_order_user()`      | None                        |
+/// | `swap()`                    | `swap_coins()`, `swap_generic()` |
 /// | `swap_between_coinstores()`      | None                        |
 /// | `swap_coins()`                   | None                        |
 /// | `swap_generic()`                 | None                        |
-/// | `match()`                   | `swap_coins()`, `swap_generic()` |
-/// | `place_limit_order()`            | `place_limit_order_user()`  |
-/// | `place_market_order()`           | `place_market_order_user()` |
-/// | `swap()`                    | `swap_coins()`, `swap_generic()` |
 ///
 /// Function returns to test:
 ///
@@ -276,6 +276,12 @@
 ///
 /// Function invocations to test:
 ///
+/// * [ ] `cancel_all_orders_custodian()`
+/// * [ ] `cancel_all_orders_user()`
+/// * [ ] `cancel_order_custodian()`
+/// * [ ] `cancel_order_user()`
+/// * [ ] `change_order_size_custodian()`
+/// * [ ] `change_order_size_user()`
 /// * [x] `place_limit_order_user_entry()`
 /// * [x] `place_limit_order_custodian()`
 /// * [x] `place_market_order_user_entry()`
@@ -283,20 +289,11 @@
 /// * [x] `swap_between_coinstores_entry()`
 /// * [x] `swap_coins()`
 /// * [x] `swap_generic()`
-/// * [ ] `change_order_size_custodian()`
-/// * [ ] `change_order_size_user()`
-/// * [ ] `cancel_order_custodian()`
-/// * [ ] `cancel_order_user()`
-/// * [ ] `cancel_all_orders_custodian()`
-/// * [ ] `cancel_all_orders_user()`
 ///
 /// ## Branching functions
 ///
 /// Functions with logical branches to test:
 ///
-/// * [x] `swap_between_coinstores()`
-/// * [x] `swap_coins()`
-/// * [x] `swap_generic()`
 /// * [ ] `cancel_all_orders()`
 /// * [ ] `cancel_order()`
 /// * [ ] `change_order_size()`
@@ -304,6 +301,9 @@
 /// * [x] `place_limit_order()`
 /// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
+/// * [x] `swap_between_coinstores()`
+/// * [x] `swap_coins()`
+/// * [x] `swap_generic()`
 /// * [ ] `swap()`
 ///
 /// See each function for its logical branches.

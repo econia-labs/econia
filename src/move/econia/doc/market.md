@@ -290,7 +290,7 @@ Function returns to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 
@@ -394,29 +394,26 @@ The below index is automatically generated from source code:
     -  [Type Parameters](#@Type_Parameters_22)
     -  [Parameters](#@Parameters_23)
     -  [Returns](#@Returns_24)
-    -  [Logical branches](#@Logical_branches_25)
-    -  [Testing](#@Testing_26)
+    -  [Testing](#@Testing_25)
 -  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
-    -  [Type Parameters](#@Type_Parameters_27)
-    -  [Parameters](#@Parameters_28)
-    -  [Returns](#@Returns_29)
-    -  [Terminology](#@Terminology_30)
-    -  [Logical branches](#@Logical_branches_31)
-    -  [Testing](#@Testing_32)
+    -  [Type Parameters](#@Type_Parameters_26)
+    -  [Parameters](#@Parameters_27)
+    -  [Returns](#@Returns_28)
+    -  [Terminology](#@Terminology_29)
+    -  [Testing](#@Testing_30)
 -  [Function `swap_generic`](#0xc0deb00c_market_swap_generic)
-    -  [Type Parameters](#@Type_Parameters_33)
-    -  [Parameters](#@Parameters_34)
-    -  [Returns](#@Returns_35)
-    -  [Logical branches](#@Logical_branches_36)
+    -  [Type Parameters](#@Type_Parameters_31)
+    -  [Parameters](#@Parameters_32)
+    -  [Returns](#@Returns_33)
 -  [Function `cancel_all_orders_user`](#0xc0deb00c_market_cancel_all_orders_user)
 -  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
 -  [Function `change_order_size_user`](#0xc0deb00c_market_change_order_size_user)
 -  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
 -  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
 -  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
-    -  [Testing](#@Testing_37)
+    -  [Testing](#@Testing_34)
 -  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
-    -  [Invocation testing](#@Invocation_testing_38)
+    -  [Invocation testing](#@Invocation_testing_35)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1312,25 +1309,7 @@ for coin store.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Logical_branches_25"></a>
-
-### Logical branches
-
-
-Some logical branch syntax is repeated. Statements are thus
-presented in chronological order with additional disambiguators
-as appropriate.
-
-1. <code><b>if</b> (!<a href="_is_account_registered">coin::is_account_registered</a>&lt;BaseType&gt;(user_address))</code>
-2. <code><b>if</b> (!<a href="_is_account_registered">coin::is_account_registered</a>&lt;QuoteType&gt;(user_address)</code>
-3. <code><b>if</b> (max_base == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>)</code>
-4. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code>
-5. <code><b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>)</code>
-6. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code> (<code>... quote_value</code>)
-7. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code> (<code>... <a href="_some">option::some</a>(<a href="_zero">coin::zero</a>&lt;...</code>)
-
-
-<a name="@Testing_26"></a>
+<a name="@Testing_25"></a>
 
 ### Testing
 
@@ -1364,7 +1343,7 @@ intermediate quote match overflow that could occur prior to fee
 assessment.
 
 
-<a name="@Type_Parameters_27"></a>
+<a name="@Type_Parameters_26"></a>
 
 ### Type Parameters
 
@@ -1373,7 +1352,7 @@ assessment.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_28"></a>
+<a name="@Parameters_27"></a>
 
 ### Parameters
 
@@ -1395,7 +1374,7 @@ unpacked.
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_29"></a>
+<a name="@Returns_28"></a>
 
 ### Returns
 
@@ -1409,7 +1388,7 @@ unpacked.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_30"></a>
+<a name="@Terminology_29"></a>
 
 ### Terminology
 
@@ -1420,18 +1399,7 @@ coins in the case of a buy, quote coins in the case of a sell.
 the case of a buy, base coins in the case of a sell.
 
 
-<a name="@Logical_branches_31"></a>
-
-### Logical branches
-
-
-1. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_SELL">SELL</a>)</code>
-2. <code><b>if</b> (max_base == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>)</code>
-3. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code>
-4. <code><b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>)</code>
-
-
-<a name="@Testing_32"></a>
+<a name="@Testing_30"></a>
 
 ### Testing
 
@@ -1457,7 +1425,7 @@ Swap against the order book for a generic market, under
 authority of market underwriter.
 
 
-<a name="@Type_Parameters_33"></a>
+<a name="@Type_Parameters_31"></a>
 
 ### Type Parameters
 
@@ -1465,7 +1433,7 @@ authority of market underwriter.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_34"></a>
+<a name="@Parameters_32"></a>
 
 ### Parameters
 
@@ -1486,7 +1454,7 @@ possible amount for passed coin holdings.
 underwriter capability for given market.
 
 
-<a name="@Returns_35"></a>
+<a name="@Returns_33"></a>
 
 ### Returns
 
@@ -1496,21 +1464,6 @@ underwriter capability for given market.
 * <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-
-
-<a name="@Logical_branches_36"></a>
-
-### Logical branches
-
-
-Some logical branch syntax is repeated. Statements are thus
-presented in chronological order with additional disambiguators
-as appropriate.
-
-1. <code><b>if</b> (max_base == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>)</code>
-2. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code> (<code>... 0</code>)
-3. <code><b>if</b> (direction == <a href="market.md#0xc0deb00c_market_BUY">BUY</a>)</code> (<code>... max_quote</code>)
-4. <code><b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>)</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;QuoteType&gt;(market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>): (<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
@@ -1589,7 +1542,7 @@ Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_
 coins from an <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_37"></a>
+<a name="@Testing_34"></a>
 
 ### Testing
 
@@ -1609,7 +1562,7 @@ coins from an <code>aptos_framework::coin::CoinStore</code>.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
 
 
-<a name="@Invocation_testing_38"></a>
+<a name="@Invocation_testing_35"></a>
 
 ### Invocation testing
 

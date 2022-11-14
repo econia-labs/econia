@@ -66,7 +66,7 @@ See `ss.sh` within a given directory for its available options
 
     ```zsh
     # From inside Econia repository root directory
-    s mp # Navigate to Move package
+    cd src/move/econia # Navigate to Move package
     s ta # Run all tests
     INCLUDING DEPENDENCY AptosFramework
     INCLUDING DEPENDENCY MoveNursery

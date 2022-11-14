@@ -292,7 +292,7 @@ Function returns to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 
 
 <a name="@Invocation_proxies_6"></a>
@@ -315,7 +315,7 @@ Function invocations to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size_custodian">change_order_size_custodian</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size_user">change_order_size_user</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_cancel_order_custodian">cancel_order_custodian</a>()</code>
@@ -333,7 +333,7 @@ Functions with logical branches to test:
 
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size">change_order_size</a>()</code>
@@ -405,15 +405,16 @@ The below index is automatically generated from source code:
     -  [Type Parameters](#@Type_Parameters_31)
     -  [Parameters](#@Parameters_32)
     -  [Returns](#@Returns_33)
+    -  [Testing](#@Testing_34)
 -  [Function `cancel_all_orders_user`](#0xc0deb00c_market_cancel_all_orders_user)
 -  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
 -  [Function `change_order_size_user`](#0xc0deb00c_market_change_order_size_user)
 -  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
 -  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
 -  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
-    -  [Testing](#@Testing_34)
+    -  [Testing](#@Testing_35)
 -  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
-    -  [Invocation testing](#@Invocation_testing_35)
+    -  [Invocation testing](#@Invocation_testing_36)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1424,6 +1425,11 @@ the case of a buy, base coins in the case of a sell.
 Swap against the order book for a generic market, under
 authority of market underwriter.
 
+Passes all quote coins to matching engine if a buy. If a sell,
+does not pass any quote coins to matching engine, to avoid
+intermediate quote match overflow that could occur prior to fee
+assessment.
+
 
 <a name="@Type_Parameters_31"></a>
 
@@ -1442,8 +1448,7 @@ authority of market underwriter.
 * <code>integrator</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>direction</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>min_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
-* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. If passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code>
-will attempt to trade maximum possible amount.
+* <code>max_base</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>min_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>max_quote</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>. Ignored if a buy. Else if
 passed as <code><a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a></code> will attempt to trade maximum
@@ -1464,6 +1469,18 @@ underwriter capability for given market.
 * <code>u64</code>: Base asset trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Quote coin trade amount, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
+
+
+<a name="@Testing_34"></a>
+
+### Testing
+
+
+* <code>test_swap_generic_buy_base_limiting()</code>
+* <code>test_swap_generic_buy_quote_limiting()</code>
+* <code>test_swap_generic_sell_max_quote_limiting()</code>
+* <code>test_swap_generic_sell_no_max_base_limiting()</code>
+* <code>test_swap_generic_sell_no_max_quote_limiting()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>&lt;QuoteType&gt;(market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, underwriter_capability_ref: &<a href="registry.md#0xc0deb00c_registry_UnderwriterCapability">registry::UnderwriterCapability</a>): (<a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
@@ -1542,7 +1559,7 @@ Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_
 coins from an <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_34"></a>
+<a name="@Testing_35"></a>
 
 ### Testing
 
@@ -1562,7 +1579,7 @@ coins from an <code>aptos_framework::coin::CoinStore</code>.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
 
 
-<a name="@Invocation_testing_35"></a>
+<a name="@Invocation_testing_36"></a>
 
 ### Invocation testing
 

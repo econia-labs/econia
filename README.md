@@ -53,11 +53,6 @@ See `ss.sh` within a given directory for its available options
 
 1. Then [install the `aptos` CLI]
 
-    ```zsh
-    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos --branch devnet
-    aptos config set-global-config --config-type global
-    aptos init
-    ```
     * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`
     * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions, noting that building from binary can take up plenty of disk space inside of the `aptos-core` directory)
 

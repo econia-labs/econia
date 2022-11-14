@@ -291,7 +291,7 @@ Function returns to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 
 
@@ -314,7 +314,7 @@ Function invocations to test:
 * [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores_entry">swap_between_coinstores_entry</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size_custodian">change_order_size_custodian</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_change_order_size_user">change_order_size_user</a>()</code>
@@ -332,7 +332,7 @@ Function invocations to test:
 Functions with logical branches to test:
 
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>
@@ -1440,8 +1440,8 @@ the case of a buy, base coins in the case of a sell.
 * <code>test_swap_coins_buy_no_max_quote_limiting()</code>
 * <code>test_swap_coins_buy_no_max_base_limiting()</code>
 * <code>test_swap_coins_sell_max_quote_limiting()</code>
-* <code>test_swap_coins_sell_no_max_base_limiting()</code> TODO
-* <code>test_swap_coins_sell_no_max_quote_limiting()</code> TODO
+* <code>test_swap_coins_sell_no_max_base_limiting()</code>
+* <code>test_swap_coins_sell_no_max_quote_limiting()</code>
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>&lt;BaseType, QuoteType&gt;(market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, base_coins: <a href="_Coin">coin::Coin</a>&lt;BaseType&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)

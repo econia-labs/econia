@@ -147,14 +147,14 @@ elif test $1 = ca; then conda activate econia
 
 # Clean up temp files and terminal
 elif test $1 = cl; then
-    move sandbox clean
+    aptos move clean
     clear
 
 # Build documentation
 elif test $1 = d; then
     conda activate econia # Activate Econia conda environment
     substitute_econia_address docgen # Substitute docgen address
-    move build --doc # Build docs
+    aptos move document # Build docs
     substitute_econia_address official # Substitute official address
 
 # Go back to Econia project repository root
@@ -182,7 +182,7 @@ elif test $1 = pc; then
     update_rev_hash # Update revision hash for devnet dependency
     substitute_econia_address docgen # Substitute docgen address
     aptos move test -i 1000000 # Run all tests
-    move build --doc # Build docs
+    aptos move document # Build docs
     substitute_econia_address official # Substitute official address
 
 # Publish bytecode using official devnet address
@@ -216,8 +216,8 @@ elif test $1 = s_; then
     conda activate econia # Activate Econia conda environment
     substitute_econia_address _ # Subsitute generic address
 
-# Run aptos CLI test on all modules, rebuild documentation
-elif test $1 = ta; then aptos move test -i 1000000; move build --doc
+# Run aptos CLI test on all modules
+elif test $1 = ta; then aptos move test -i 1000000
 
 # Run aptos CLI test with filter and passed argument
 elif test $1 = tf; then aptos move test --filter $2 -i 1000000
@@ -228,7 +228,7 @@ elif test $1 = wd; then
     conda activate econia # Activate Econia conda environment
     # Substitute docgen address into Move.toml
     substitute_econia_address docgen
-    ls sources/*.move | entr move build --doc
+    ls sources/*.move | entr aptos move document
 
 # Watch source code and run a specific test if it changes
 # May require `brew install entr` beforehand

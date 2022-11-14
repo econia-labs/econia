@@ -75,14 +75,7 @@ See `ss.sh` within a given directory for its available options
     Running Move unit tests
     ...
     ```
-1. Then install the `move` CLI:
-
-    ```zsh
-    cargo install --git https://github.com/move-language/move move-cli
-    ```
-
-1. Now you should be able to build the Move documentation:
-
+1. Then try building the Move documentation:
 
     ```zsh
     # Still within Move package
@@ -92,8 +85,6 @@ See `ss.sh` within a given directory for its available options
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Econia
     ```
-
-1. Should [`aptos-core` #2142] be accepted, installing the `move` CLI will no longer be necessary for this step, and the relevant script should be updated to run on the `aptos` CLI alone
 
 ### Using the Python package
 
@@ -117,7 +108,7 @@ To install the `econia` Python package:
 1. Create the `econia` conda environment with the `Econia` Python package inside:
 
     ```zsh
-    conda env create -f env/conda.yml
+    conda env create -f conda.yml
     conda activate econia
     pip install -e src/python
     ```
@@ -157,6 +148,8 @@ With the `econia` conda environment active, you can then build the Python packag
 ```
 
 ```zsh
+# Go back up to the Econia project root
+(econia) % cd ../..
 # Change directory to the Econia Move package
 (econia) % s mp
 # Move package has its own utility shell scripts

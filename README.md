@@ -62,7 +62,7 @@ See `ss.sh` within a given directory for its available options
     ```zsh
     # From inside Econia repository root directory
     cd src/move/econia # Navigate to Move package
-    s ta # Run all tests
+    aptos move test -i 1000000 # Run all tests
     INCLUDING DEPENDENCY AptosFramework
     INCLUDING DEPENDENCY MoveNursery
     INCLUDING DEPENDENCY MoveStdlib
@@ -74,7 +74,7 @@ See `ss.sh` within a given directory for its available options
 
     ```zsh
     # Still within Move package
-    s d
+    aptos move document
     INCLUDING DEPENDENCY AptosFramework
     INCLUDING DEPENDENCY MoveNursery
     INCLUDING DEPENDENCY MoveStdlib
@@ -85,6 +85,7 @@ See `ss.sh` within a given directory for its available options
 
 Econia comes with a Python package for assorted build scripting functionality.
 The Python package is not as actively maintained as the Move code, and is mostly used for managing account addresses in `Move.toml` during package compilation (see [`src/move/econia/ss.sh`]).
+Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
 It is not necessary to use the Python package to develop Econia, but not all of the shell scripts will work without it.
 To install the `econia` Python package:
 
@@ -103,23 +104,24 @@ To install the `econia` Python package:
 1. Create the `econia` conda environment with the `Econia` Python package inside:
 
     ```zsh
+    # From inside Econia project root
     conda env create -f conda.yml
     conda activate econia
     pip install -e src/python
     ```
 
-1. Then [install the Aptos Python SDK from source].
+1. Then [install the Aptos Python SDK from source] with the `econia` conda environment still active.
 
 1. Create the secrets directories as needed:
 
     ```zsh
+    # From inside Econia project root
     if ! test -d .secrets; then mkdir .secrets; fi
     if ! test -d .secrets/devnet; then mkdir .secrets/old; fi
     if ! test -d .secrets/old; then mkdir .secrets/old; fi
     if ! test -d .secrets/vanity; then mkdir .secrets/devnet; fi
     ```
 
-Econia uses `conda` (a command line tool for managing Python environments), the `econia` conda environment, and the Econia Python package within the `econia` conda environment.
 If using VS Code, select `econia` as the default Python interpreter, and the integrated terminal should automatically activate it as needed, otherwise use the command line:
 
 ```zsh
@@ -132,17 +134,20 @@ If using VS Code, select `econia` as the default Python interpreter, and the int
 With the `econia` conda environment active, you can then build the Python package documentation, explore the provided interactive Jupyter notebook archive, and run package management shell scripts:
 
 ```zsh
+# From inside Econia project root
 # Autobuild Sphinx documentation with realtime updates
 (econia) % s ab
 ```
 
 ```zsh
+# From inside Econia project root
 # Open Jupyter notebook gallery
 # Earliest notebooks subject to breaking changes
 (econia) % s nb
 ```
 
 ```zsh
+# From inside Jupyter notebook gallery
 # Go back up to the Econia project root
 (econia) % cd ../..
 # Change directory to the Econia Move package

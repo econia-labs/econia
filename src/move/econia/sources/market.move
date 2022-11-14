@@ -276,7 +276,7 @@
 ///
 /// Function invocations to test:
 ///
-/// * [ ] `place_limit_order_user_entry()`
+/// * [x] `place_limit_order_user_entry()`
 /// * [x] `place_limit_order_custodian()`
 /// * [ ] `place_market_order_user_entry()`
 /// * [x] `place_market_order_custodian()`
@@ -1250,6 +1250,10 @@ module econia::market {
 
     #[cmd]
     /// Public entry function wrapper for `place_limit_order_user()`.
+    ///
+    /// # Invocation testing
+    ///
+    /// * `test_place_limit_order_user_entry()`
     public entry fun place_limit_order_user_entry<
         BaseType,
         QuoteType
@@ -3635,6 +3639,65 @@ module econia::market {
         place_limit_order<BC, QC>( // Attempt invalid invocation.
             @user_0, MARKET_ID_COIN, NO_CUSTODIAN, @integrator, side, size,
             price, restriction, critical_height);
+    }
+
+    #[test]
+    /// Verify state updates for public entry wrapper invocation. Based
+    /// on `test_place_limit_order_no_cross_ask_user()`.
+    fun test_place_limit_order_user_entry()
+    acquires OrderBooks {
+        // Declare order parameters.
+        let side          = ASK;
+        let size          = MIN_SIZE_COIN;
+        let price         = 123;
+        let restriction   = NO_RESTRICTION;
+        // Declare change in base and quote seen by maker.
+        let base_delta    = size * LOT_SIZE_COIN;
+        let quote_delta   = size * price * TICK_SIZE_COIN;
+        // Declare min base and max quote to deposit.
+        let base_deposit  = base_delta;
+        let quote_deposit = HI_64 - quote_delta;
+        // Initialize markets, users, and an integrator.
+        let (user_0, _) = init_markets_users_integrator_test();
+        // Deposit base and quote coins to user's account.
+        user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(base_deposit));
+        user::deposit_coins<QC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
+                                assets::mint_test(quote_deposit));
+        // Get order access key for order about to be placed.
+        let order_access_key = user::get_next_order_access_key_internal(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side);
+        place_limit_order_user_entry<BC, QC>( // Place limit order.
+            &user_0, MARKET_ID_COIN, @integrator, side, size, price,
+            restriction);
+        // Assert user's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                @user_0, MARKET_ID_COIN, NO_CUSTODIAN);
+        assert!(base_total      == base_deposit , 0);
+        assert!(base_available  == 0            , 0);
+        assert!(base_ceiling    == base_deposit , 0);
+        assert!(quote_total     == quote_deposit, 0);
+        assert!(quote_available == quote_deposit, 0);
+        assert!(quote_ceiling   == HI_64        , 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == base_deposit, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN) == quote_deposit, 0);
+        // Check user-side order fields.
+        let (market_order_id, size_r) = user::get_order_fields_simple_test(
+            @user_0, MARKET_ID_COIN, NO_CUSTODIAN, side, order_access_key);
+        assert!(size_r == size, 0);
+        // Get order fields.
+        let (size_r, user_r, custodian_id_r, order_access_key_r) =
+            get_order_fields_test(MARKET_ID_COIN, side, market_order_id);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r == size, 0);
+        assert!(user_r == @user_0, 0);
+        assert!(custodian_id_r == NO_CUSTODIAN, 0);
+        assert!(order_access_key_r == order_access_key, 0);
     }
 
     #[test]

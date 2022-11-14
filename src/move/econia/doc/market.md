@@ -309,7 +309,7 @@ dependency stack must be verified.
 
 Function invocations to test:
 
-* [ ] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order_custodian">place_limit_order_custodian</a>()</code>
 * [ ] <code><a href="market.md#0xc0deb00c_market_place_market_order_user_entry">place_market_order_user_entry</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_market_order_custodian">place_market_order_custodian</a>()</code>
@@ -410,11 +410,12 @@ The below index is automatically generated from source code:
 -  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
 -  [Function `change_order_size_user`](#0xc0deb00c_market_change_order_size_user)
 -  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
+    -  [Invocation testing](#@Invocation_testing_35)
 -  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
 -  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
-    -  [Testing](#@Testing_35)
+    -  [Testing](#@Testing_36)
 -  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
-    -  [Invocation testing](#@Invocation_testing_36)
+    -  [Invocation testing](#@Invocation_testing_37)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1534,6 +1535,14 @@ changing order size under authority of signing user.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>.
 
 
+<a name="@Invocation_testing_35"></a>
+
+### Invocation testing
+
+
+* <code>test_place_limit_order_user_entry()</code>
+
+
 <pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_place_limit_order_user_entry">place_limit_order_user_entry</a>&lt;BaseType, QuoteType&gt;(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, integrator: <b>address</b>, side: bool, size: u64, price: u64, restriction: u8)
 </code></pre>
 
@@ -1559,7 +1568,7 @@ Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_
 coins from an <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_35"></a>
+<a name="@Testing_36"></a>
 
 ### Testing
 
@@ -1579,7 +1588,7 @@ coins from an <code>aptos_framework::coin::CoinStore</code>.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
 
 
-<a name="@Invocation_testing_36"></a>
+<a name="@Invocation_testing_37"></a>
 
 ### Invocation testing
 

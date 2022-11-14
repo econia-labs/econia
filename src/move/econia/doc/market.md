@@ -1357,6 +1357,12 @@ Swap standalone coins against the order book.
 If a buy, attempts to spend all quote coins. If a sell, attempts
 to sell all base coins.
 
+Passes all base coins to matching engine if a buy or a sell, and
+passes all quote coins to matching engine if a buy. If a sell,
+does not pass any quote coins to matching engine, to avoid
+intermediate quote match overflow that could occur prior to fee
+assessment.
+
 
 <a name="@Type_Parameters_27"></a>
 
@@ -1433,7 +1439,7 @@ the case of a buy, base coins in the case of a sell.
 * <code>test_swap_coins_buy_max_base_limiting()</code>
 * <code>test_swap_coins_buy_no_max_quote_limiting()</code>
 * <code>test_swap_coins_buy_no_max_base_limiting()</code>
-* <code>test_swap_coins_sell_max_quote_limiting()</code> TODO
+* <code>test_swap_coins_sell_max_quote_limiting()</code>
 * <code>test_swap_coins_sell_no_max_base_limiting()</code> TODO
 * <code>test_swap_coins_sell_no_max_quote_limiting()</code> TODO
 

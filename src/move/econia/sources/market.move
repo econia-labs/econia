@@ -989,6 +989,12 @@ module econia::market {
     /// If a buy, attempts to spend all quote coins. If a sell, attempts
     /// to sell all base coins.
     ///
+    /// Passes all base coins to matching engine if a buy or a sell, and
+    /// passes all quote coins to matching engine if a buy. If a sell,
+    /// does not pass any quote coins to matching engine, to avoid
+    /// intermediate quote match overflow that could occur prior to fee
+    /// assessment.
+    ///
     /// # Type Parameters
     ///
     /// * `BaseType`: Same as for `match()`.
@@ -1041,7 +1047,7 @@ module econia::market {
     /// * `test_swap_coins_buy_max_base_limiting()`
     /// * `test_swap_coins_buy_no_max_quote_limiting()`
     /// * `test_swap_coins_buy_no_max_base_limiting()`
-    /// * `test_swap_coins_sell_max_quote_limiting()` TODO
+    /// * `test_swap_coins_sell_max_quote_limiting()`
     /// * `test_swap_coins_sell_no_max_base_limiting()` TODO
     /// * `test_swap_coins_sell_no_max_quote_limiting()` TODO
     public fun swap_coins<
@@ -1067,31 +1073,43 @@ module econia::market {
     ) acquires OrderBooks {
         let (base_value, quote_value) = // Get coin value amounts.
             (coin::value(&base_coins), coin::value(&quote_coins));
-        if (direction == BUY) { // If a swap buy:
+        // Get option wrapped base coins.
+        let optional_base_coins = option::some(base_coins);
+        // Get quote coins to route through matching engine and update
+        // max match amounts based on side. If a swap buy:
+        let quote_coins_to_match = if (direction == BUY) {
             // Max quote to trade is amount passed in.
             max_quote = quote_value;
             // If max base amount to trade is max possible flag, update
             // to max amount that can be received.
             if (max_base == MAX_POSSIBLE) max_base = (HI_64 - base_value);
+            // Pass all quote coins to matching engine.
+            coin::extract(&mut quote_coins, max_quote)
         } else { // If a swap sell:
             // Max base to trade is amount passed in.
             max_base = base_value;
             // If max quote amount to trade is max possible flag, update
             // to max amount that can be received.
             if (max_quote == MAX_POSSIBLE) max_quote = (HI_64 - quote_value);
+            // Do not pass any quote coins to matching engine.
+            coin::zero()
         };
         range_check_trade( // Range check trade amounts.
             direction, min_base, max_base, min_quote, max_quote,
             base_value, base_value, quote_value, quote_value);
         // Swap against order book, storing modified coin inputs, base
         // and quote trade amounts, and quote fees paid.
-        let (optional_base_coins, quote_coins, base_traded, quote_traded, fees)
-            = swap(market_id, NO_UNDERWRITER, UNKNOWN_TAKER, integrator,
-                   direction, min_base, max_base, min_quote, max_quote,
-                   limit_price, option::some(base_coins), quote_coins);
-        // Unpack base coins from option, return remaining match values.
-        (option::destroy_some(optional_base_coins), quote_coins, base_traded,
-         quote_traded, fees)
+        let (optional_base_coins, quote_coins_matched, base_traded,
+             quote_traded, fees) = swap(
+                market_id, NO_UNDERWRITER, UNKNOWN_TAKER, integrator,
+                direction, min_base, max_base, min_quote, max_quote,
+                limit_price, optional_base_coins, quote_coins_to_match);
+        // Merge matched quote coins back into holdings.
+        coin::merge(&mut quote_coins, quote_coins_matched);
+        // Get base coins from option.
+        let base_coins = option::destroy_some(optional_base_coins);
+        // Return all coins.
+        (base_coins, quote_coins, base_traded, quote_traded, fees)
     }
 
     /// Swap against the order book for a generic market, under
@@ -4664,7 +4682,6 @@ module econia::market {
             assets::burn(quote_coins);
     }
 
-/*
     #[test]
     /// Verify returns, state updates for swap sell for max possible
     /// quote amount specified, with quote amount as limiting factor.
@@ -4707,7 +4724,7 @@ module econia::market {
         let quote_ceiling_maker   = quote_total_maker;
         // Declare expected asset amounts after the match, for taker.
         let base_total_taker  = base_deposit_taker - base_taker;
-        let quote_total_taker = 0;
+        let quote_total_taker = HI_64;
         // Deposit maker coins.
         user::deposit_coins<BC>(@user_0, MARKET_ID_COIN, NO_CUSTODIAN,
                                 assets::mint_test(base_deposit_maker));
@@ -4765,7 +4782,6 @@ module econia::market {
         if (quote_total_taker == 0) coin::destroy_zero(quote_coins) else
             assets::burn(quote_coins);
     }
-*/
 
     #[test]
     /// Verify returns, state updates for specifying max possible base

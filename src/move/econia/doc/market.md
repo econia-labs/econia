@@ -402,20 +402,21 @@ The below index is automatically generated from source code:
     -  [Returns](#@Returns_29)
     -  [Terminology](#@Terminology_30)
     -  [Logical branches](#@Logical_branches_31)
+    -  [Testing](#@Testing_32)
 -  [Function `swap_generic`](#0xc0deb00c_market_swap_generic)
-    -  [Type Parameters](#@Type_Parameters_32)
-    -  [Parameters](#@Parameters_33)
-    -  [Returns](#@Returns_34)
-    -  [Logical branches](#@Logical_branches_35)
+    -  [Type Parameters](#@Type_Parameters_33)
+    -  [Parameters](#@Parameters_34)
+    -  [Returns](#@Returns_35)
+    -  [Logical branches](#@Logical_branches_36)
 -  [Function `cancel_all_orders_user`](#0xc0deb00c_market_cancel_all_orders_user)
 -  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
 -  [Function `change_order_size_user`](#0xc0deb00c_market_change_order_size_user)
 -  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
 -  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
 -  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
-    -  [Testing](#@Testing_36)
+    -  [Testing](#@Testing_37)
 -  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
-    -  [Invocation testing](#@Invocation_testing_37)
+    -  [Invocation testing](#@Invocation_testing_38)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1424,6 +1425,19 @@ the case of a buy, base coins in the case of a sell.
 4. <code><b>if</b> (max_quote == <a href="market.md#0xc0deb00c_market_MAX_POSSIBLE">MAX_POSSIBLE</a>)</code>
 
 
+<a name="@Testing_32"></a>
+
+### Testing
+
+
+* <code>test_swap_coins_buy_max_base_limiting()</code>
+* <code>test_swap_coins_buy_no_max_quote_limiting()</code>
+* <code>test_swap_coins_buy_no_max_base_limiting()</code>
+* <code>test_swap_coins_sell_max_quote_limiting()</code> TODO
+* <code>test_swap_coins_sell_no_max_base_limiting()</code> TODO
+* <code>test_swap_coins_sell_no_max_quote_limiting()</code> TODO
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>&lt;BaseType, QuoteType&gt;(market_id: u64, integrator: <b>address</b>, direction: bool, min_base: u64, max_base: u64, min_quote: u64, max_quote: u64, limit_price: u64, base_coins: <a href="_Coin">coin::Coin</a>&lt;BaseType&gt;, quote_coins: <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;): (<a href="_Coin">coin::Coin</a>&lt;BaseType&gt;, <a href="_Coin">coin::Coin</a>&lt;QuoteType&gt;, u64, u64, u64)
 </code></pre>
 
@@ -1437,7 +1451,7 @@ Swap against the order book for a generic market, under
 authority of market underwriter.
 
 
-<a name="@Type_Parameters_32"></a>
+<a name="@Type_Parameters_33"></a>
 
 ### Type Parameters
 
@@ -1445,7 +1459,7 @@ authority of market underwriter.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_33"></a>
+<a name="@Parameters_34"></a>
 
 ### Parameters
 
@@ -1466,7 +1480,7 @@ possible amount for passed coin holdings.
 underwriter capability for given market.
 
 
-<a name="@Returns_34"></a>
+<a name="@Returns_35"></a>
 
 ### Returns
 
@@ -1478,7 +1492,7 @@ underwriter capability for given market.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Logical_branches_35"></a>
+<a name="@Logical_branches_36"></a>
 
 ### Logical branches
 
@@ -1569,7 +1583,7 @@ Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_
 coins from an <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_36"></a>
+<a name="@Testing_37"></a>
 
 ### Testing
 
@@ -1589,7 +1603,7 @@ coins from an <code>aptos_framework::coin::CoinStore</code>.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
 
 
-<a name="@Invocation_testing_37"></a>
+<a name="@Invocation_testing_38"></a>
 
 ### Invocation testing
 

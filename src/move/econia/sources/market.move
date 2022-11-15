@@ -1622,6 +1622,32 @@ module econia::market {
     /// paid, and if a sell, the traded quote amount is calculated as
     /// the quote fill amount minus fees paid. Min base and quote trade
     /// conditions are then checked.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_match_empty()`
+    /// * `test_match_price_break_buy()`
+    /// * `test_match_price_break_sell()`
+    ///
+    /// # Expected value testing to do
+    ///
+    /// * `test_match_max_fill_tick_limited_buy()`
+    ///   * Max fill size is limited by ticks, less than order size.
+    ///
+    /// * `test_match_max_fill_lot_limited_sell()`
+    ///   * Max fill size is limited by lots, less than order size.
+    ///
+    /// * `test_match_fill_size_0()`
+    ///   * No size to fill.
+    ///
+    /// * `test_match_complete_fill_no_lots_buy()`
+    ///   * Complete fill for no lots left.
+    ///
+    /// * `test_match_complete_fill_no_ticks_sell()`
+    ///   * Complete fill for no ticks left.
+    ///
+    /// * `test_match_fill_proceed()`
+    ///   * Complete fill on first order, partial fill on second order.
     fun match<
         BaseType,
         QuoteType
@@ -2645,6 +2671,243 @@ module econia::market {
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify returns for no orders to match against.
+    fun test_match_empty()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare swap arguments.
+        let market_id   = MARKET_ID_COIN;
+        let integrator  = @integrator;
+        let direction   = BUY;
+        let min_base    = 0;
+        let max_base    = LOT_SIZE_COIN;
+        let min_quote   = 0;
+        let max_quote   = TICK_SIZE_COIN;
+        let limit_price = 1;
+        let base_coins  = coin::zero<BC>();
+        let quote_coins = assets::mint_test<QC>(max_quote);
+        // Invoke matching engine via coin swap.
+        let (base_coins, quote_coins, base_trade, quote_trade, fee) =
+            swap_coins(market_id, integrator, direction, min_base, max_base,
+                       min_quote, max_quote, limit_price, base_coins,
+                       quote_coins);
+        // Assert returns.
+        assert!(coin::value(&base_coins)  == 0, 0);
+        assert!(coin::value(&quote_coins) == max_quote, 0);
+        assert!(base_trade                == 0, 0);
+        assert!(quote_trade               == 0, 0);
+        assert!(fee                       == 0, 0);
+        // Destroy coins.
+        coin::destroy_zero(base_coins);
+        assets::burn(quote_coins);
+    }
+
+    #[test]
+    /// Verify returns for limit price violation on buy.
+    fun test_match_price_break_buy()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare shared/dependent market parameters.
+        let market_id       = MARKET_ID_COIN;
+        let integrator      = @integrator;
+        let direction_taker = BUY;
+        let side_maker      = if (direction_taker == BUY) ASK else BID;
+        let price_taker     = 1;
+        let price_maker     = price_taker + 1;
+        // Declare maker order parameters.
+        let maker_address = address_of(&maker);
+        let custodian_id  = NO_CUSTODIAN;
+        let size_maker    = MIN_SIZE_COIN;
+        let base_maker    = size_maker * LOT_SIZE_COIN;
+        let quote_maker   = size_maker * price_maker * TICK_SIZE_COIN;
+        let restriction   = NO_RESTRICTION;
+        // Declare maker deposit amounts.
+        let deposit_base  = base_maker;
+        let deposit_quote = HI_64 - quote_maker;
+        // Declare expected maker asset counts after matching.
+        let base_total_end      = deposit_base;
+        let base_available_end  = 0;
+        let base_ceiling_end    = base_total_end;
+        let quote_total_end     = deposit_quote;
+        let quote_available_end = quote_total_end;
+        let quote_ceiling_end   = HI_64;
+        // Declare maker order size after matching.
+        let size_maker_end = size_maker;
+        // Declare taker coin starting and ending amounts.
+        let base_coin_start  = 0;
+        let quote_coin_start = HI_64 / 2;
+        let base_coin_end    = base_coin_start;
+        let quote_coin_end   = quote_coin_start;
+        // Declare swap arguments.
+        let min_base    = 0;
+        let max_base    = MAX_POSSIBLE;
+        let min_quote   = 0;
+        let max_quote   = 0;
+        let limit_price = price_taker;
+        // Create swap coin inputs.
+        let base_coins  = assets::mint_test<BC>(base_coin_start);
+        let quote_coins = assets::mint_test<QC>(quote_coin_start);
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, @integrator, side_maker, size_maker,
+            price_maker, restriction);
+        // Invoke matching engine via coin swap.
+        let (base_coins, quote_coins, base_trade, quote_trade, fee) =
+            swap_coins(market_id, integrator, direction_taker, min_base,
+                       max_base, min_quote, max_quote, limit_price, base_coins,
+                       quote_coins);
+        // Assert returns.
+        assert!(coin::value(&base_coins)  == base_coin_end, 0);
+        assert!(coin::value(&quote_coins) == quote_coin_end, 0);
+        assert!(base_trade                == 0, 0);
+        assert!(quote_trade               == 0, 0);
+        assert!(fee                       == 0, 0);
+        // Burn coins.
+        if (base_coin_end == 0) coin::destroy_zero(base_coins) else
+            assets::burn(base_coins);
+        if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
+            assets::burn(quote_coins);
+        // Get fields for maker order on book.
+        let (size_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(market_id, side_maker, market_order_id);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_maker_end, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == custodian_id, 0);
+        // Assert user-side maker order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, market_id, custodian_id, side_maker,
+            order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r            == size_maker_end, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, market_id, custodian_id);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, market_id, custodian_id) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    /// Verify returns for limit price violation on sell.
+    fun test_match_price_break_sell()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare shared/dependent market parameters.
+        let market_id       = MARKET_ID_COIN;
+        let integrator      = @integrator;
+        let direction_taker = SELL;
+        let side_maker      = if (direction_taker == BUY) ASK else BID;
+        let price_maker     = 1;
+        let price_taker     = price_maker + 1;
+        // Declare maker order parameters.
+        let maker_address = address_of(&maker);
+        let custodian_id  = NO_CUSTODIAN;
+        let size_maker    = MIN_SIZE_COIN;
+        let base_maker    = size_maker * LOT_SIZE_COIN;
+        let quote_maker   = size_maker * price_maker * TICK_SIZE_COIN;
+        let restriction   = NO_RESTRICTION;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 - base_maker;
+        let deposit_quote = quote_maker;
+        // Declare expected maker asset counts after matching.
+        let base_total_end      = deposit_base;
+        let base_available_end  = base_total_end;
+        let base_ceiling_end    = HI_64;
+        let quote_total_end     = deposit_quote;
+        let quote_available_end = 0;
+        let quote_ceiling_end   = quote_total_end;
+        // Declare maker order size after matching.
+        let size_maker_end = size_maker;
+        // Declare taker coin starting and ending amounts.
+        let base_coin_start  = HI_64 / 2;
+        let quote_coin_start = 0;
+        let base_coin_end    = base_coin_start;
+        let quote_coin_end   = quote_coin_start;
+        // Declare swap arguments.
+        let min_base    = 0;
+        let max_base    = 0;
+        let min_quote   = 0;
+        let max_quote   = MAX_POSSIBLE;
+        let limit_price = price_taker;
+        // Create swap coin inputs.
+        let base_coins  = assets::mint_test<BC>(base_coin_start);
+        let quote_coins = assets::mint_test<QC>(quote_coin_start);
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, @integrator, side_maker, size_maker,
+            price_maker, restriction);
+        // Invoke matching engine via coin swap.
+        let (base_coins, quote_coins, base_trade, quote_trade, fee) =
+            swap_coins(market_id, integrator, direction_taker, min_base,
+                       max_base, min_quote, max_quote, limit_price, base_coins,
+                       quote_coins);
+        // Assert returns.
+        assert!(coin::value(&base_coins)  == base_coin_end, 0);
+        assert!(coin::value(&quote_coins) == quote_coin_end, 0);
+        assert!(base_trade                == 0, 0);
+        assert!(quote_trade               == 0, 0);
+        assert!(fee                       == 0, 0);
+        // Burn coins.
+        if (base_coin_end == 0) coin::destroy_zero(base_coins) else
+            assets::burn(base_coins);
+        if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
+            assets::burn(quote_coins);
+        // Get fields for maker order on book.
+        let (size_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(market_id, side_maker, market_order_id);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_maker_end, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == custodian_id, 0);
+        // Assert user-side maker order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, market_id, custodian_id, side_maker,
+            order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r            == size_maker_end, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, market_id, custodian_id);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, market_id, custodian_id) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
 
     #[test]
     #[expected_failure(abort_code = 15)]

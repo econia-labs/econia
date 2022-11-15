@@ -14,4 +14,4 @@ integrator = '0x4567'
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core'
 subdir = 'aptos-move/framework/aptos-framework'
-rev = '870f019e51c7fa44cd2d99017e49d82f4c0a18a2'
+rev = '20f32b858bd3615f1f16f934f623c187e8bb064d'

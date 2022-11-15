@@ -228,7 +228,7 @@
 /// * [ ] `match()`
 /// * [x] `place_limit_order()`
 /// * [x] `range_check_trade()`
-/// * [ ] `swap()`
+/// * [x] `swap()`
 ///
 /// ## Return proxies
 ///
@@ -304,7 +304,7 @@
 /// * [x] `swap_between_coinstores()`
 /// * [x] `swap_coins()`
 /// * [x] `swap_generic()`
-/// * [ ] `swap()`
+/// * [x] `swap()`
 ///
 /// See each function for its logical branches.
 ///
@@ -2397,6 +2397,18 @@ module econia::market {
     /// * `E_INVALID_UNDERWRITER`: Underwriter invalid for given market.
     /// * `E_INVALID_BASE`: Base asset type is invalid.
     /// * `E_INVALID_QUOTE`: Quote asset type is invalid.
+    ///
+    /// # Expected value testing
+    ///
+    /// * Covered by `swap_between_coinstores()`, `swap_coins()`, and
+    ///   `swap_generic()` testing.
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_swap_invalid_base()`
+    /// * `test_swap_invalid_market_id()`
+    /// * `test_swap_invalid_quote()`
+    /// * `test_swap_invalid_underwriter()`
     fun swap<
         BaseType,
         QuoteType
@@ -6144,6 +6156,116 @@ module econia::market {
         // Burn coins.
         if (quote_total_taker == 0) coin::destroy_zero(quote_coins) else
             assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 7)]
+    /// Verify failure for invalid base type.
+    fun test_swap_invalid_base()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Define swap parameters.
+        let market_id = MARKET_ID_COIN;
+        let integrator = @integrator;
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = LOT_SIZE_COIN;
+        let min_quote = 0;
+        let max_quote = TICK_SIZE_COIN;
+        let limit_price = 1;
+        let base_coins = coin::zero();
+        let quote_coins = assets::mint_test(max_quote);
+        // Attempt invalid invocation.
+        let (base_coins, quote_coins, _, _, _) = swap_coins<QC, QC>(
+            market_id, integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, base_coins, quote_coins);
+        // Burn coins.
+        assets::burn(base_coins);
+        assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid market ID.
+    fun test_swap_invalid_market_id()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Define swap parameters.
+        let market_id = HI_64;
+        let integrator = @integrator;
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = LOT_SIZE_COIN;
+        let min_quote = 0;
+        let max_quote = TICK_SIZE_COIN;
+        let limit_price = 1;
+        let base_coins = coin::zero();
+        let quote_coins = assets::mint_test(max_quote);
+        // Attempt invalid invocation.
+        let (base_coins, quote_coins, _, _, _) = swap_coins<BC, QC>(
+            market_id, integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, base_coins, quote_coins);
+        // Burn coins.
+        assets::burn(base_coins);
+        assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 8)]
+    /// Verify failure for invalid quote type.
+    fun test_swap_invalid_quote()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Define swap parameters.
+        let market_id = MARKET_ID_COIN;
+        let integrator = @integrator;
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = LOT_SIZE_COIN;
+        let min_quote = 0;
+        let max_quote = TICK_SIZE_COIN;
+        let limit_price = 1;
+        let base_coins = coin::zero();
+        let quote_coins = assets::mint_test(max_quote);
+        // Attempt invalid invocation.
+        let (base_coins, quote_coins, _, _, _) = swap_coins<BC, BC>(
+            market_id, integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, base_coins, quote_coins);
+        // Burn coins.
+        assets::burn(base_coins);
+        assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 21)]
+    /// Verify failure for invalid underwriter.
+    fun test_swap_invalid_underwriter()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Define swap parameters.
+        let market_id = MARKET_ID_GENERIC;
+        let integrator = @integrator;
+        let direction = BUY;
+        let min_base = 0;
+        let max_base = LOT_SIZE_GENERIC;
+        let min_quote = 0;
+        let max_quote = TICK_SIZE_GENERIC;
+        let limit_price = 1;
+        let quote_coins = assets::mint_test(max_quote);
+        let underwriter_capability = registry::get_underwriter_capability_test(
+                HI_64); // Get invalid market underwriter capability.
+        // Attempt invalid invocation.
+        let (quote_coins, _, _, _) = swap_generic<QC>(
+            market_id, integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, quote_coins, &underwriter_capability);
+        // Burn coins.
+        assets::burn(quote_coins);
+        // Drop underwriter capability.
+        registry::drop_underwriter_capability_test(underwriter_capability);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

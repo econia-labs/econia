@@ -253,7 +253,7 @@ Function aborts to test:
 * [ ] <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_place_limit_order">place_limit_order</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_range_check_trade">range_check_trade</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
 
 <a name="@Return_proxies_5"></a>
@@ -341,7 +341,7 @@ Functions with logical branches to test:
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_coins">swap_coins</a>()</code>
 * [x] <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code>
-* [ ] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
+* [x] <code><a href="market.md#0xc0deb00c_market_swap">swap</a>()</code>
 
 See each function for its logical branches.
 

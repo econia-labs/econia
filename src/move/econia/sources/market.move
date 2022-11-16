@@ -223,7 +223,7 @@
 ///
 /// Function aborts to test:
 ///
-/// * [ ] `cancel_order()`
+/// * [x] `cancel_order()`
 /// * [x] `change_order_size()`
 /// * [x] `match()`
 /// * [x] `place_limit_order()`
@@ -1419,6 +1419,13 @@ module econia::market {
     ///
     /// * `test_cancel_order_ask_custodian()`
     /// * `test_cancel_order_bid_user()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_cancel_order_invalid_custodian()`
+    /// * `test_cancel_order_invalid_market_id()`
+    /// * `test_cancel_order_invalid_market_order_id()`
+    /// * `test_cancel_order_invalid_user()`
     fun cancel_order(
         user: address,
         market_id: u64,
@@ -2844,6 +2851,111 @@ module econia::market {
             maker_address, market_id, custodian_id) == base_total_end, 0);
         assert!(user::get_collateral_value_simple_test<QC>(
             maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 23)]
+    /// Verify failure for invalid custodian.
+    fun test_cancel_order_invalid_custodian()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side          = ASK;
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let price         = 10;
+        let size          = MIN_SIZE_COIN;
+        // Declare base/quote posted for order.
+        let base_maker  = size * LOT_SIZE_COIN;
+        let quote_maker = size * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = base_maker;
+        let deposit_quote = HI_64 - quote_maker;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        let custodian_capability = registry::get_custodian_capability_test(
+            custodian_id + 1); // Get invalid custodian capability.
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size,
+            price, restriction);
+        cancel_order_custodian( // Attempt invalid cancel.
+            maker_address, market_id, side, market_order_id,
+            &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 6)]
+    /// Verify failure for invalid market ID.
+    fun test_cancel_order_invalid_market_id()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order change parameters.
+        let market_id       = HI_64;
+        let side            = ASK;
+        let market_order_id = (NIL as u128) + 1;
+        cancel_order_user( // Attempt invalid cancel.
+            &maker, market_id, side, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 22)]
+    /// Verify failure for invalid market order ID.
+    fun test_cancel_order_invalid_market_order_id()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order change parameters.
+        let market_id       = MARKET_ID_COIN;
+        let side            = ASK;
+        let market_order_id = (NIL as u128);
+        cancel_order_user( // Attempt invalid cancel.
+            &maker, market_id, side, market_order_id);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 24)]
+    /// Verify failure for invalid user.
+    fun test_cancel_order_invalid_user()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, attacker) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side          = ASK;
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let price         = 10;
+        let size          = MIN_SIZE_COIN;
+        // Declare base/quote posted for order.
+        let base_maker  = size * LOT_SIZE_COIN;
+        let quote_maker = size * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = base_maker;
+        let deposit_quote = HI_64 - quote_maker;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size,
+            price, restriction);
+        cancel_order_user( // Attempt invalid cancel.
+            &attacker, market_id, side, market_order_id);
     }
 
     #[test]

@@ -280,8 +280,8 @@
 /// * [ ] `cancel_all_orders_user()`
 /// * [ ] `cancel_order_custodian()`
 /// * [ ] `cancel_order_user()`
-/// * [ ] `change_order_size_custodian()`
-/// * [ ] `change_order_size_user()`
+/// * [x] `change_order_size_custodian()`
+/// * [x] `change_order_size_user()`
 /// * [x] `place_limit_order_user_entry()`
 /// * [x] `place_limit_order_custodian()`
 /// * [x] `place_market_order_user_entry()`
@@ -296,7 +296,7 @@
 ///
 /// * [ ] `cancel_all_orders()`
 /// * [ ] `cancel_order()`
-/// * [ ] `change_order_size()`
+/// * [x] `change_order_size()`
 /// * [x] `match()`
 /// * [x] `place_limit_order()`
 /// * [x] `place_market_order()`
@@ -589,6 +589,10 @@ module econia::market {
 
     /// Public function wrapper for `change_order_size()` for changing
     /// order size under authority of delegated custodian.
+    ///
+    /// # Testing
+    ///
+    /// * `test_change_order_size_ask_custodian()`
     public fun change_order_size_custodian(
         user_address: address,
         market_id: u64,
@@ -1232,6 +1236,10 @@ module econia::market {
     #[cmd]
     /// Public entry function wrapper for `change_order_size()` for
     /// changing order size under authority of signing user.
+    ///
+    /// # Testing
+    ///
+    /// * `test_change_order_size_bid_user()`
     public entry fun change_order_size_user(
         user: &signer,
         market_id: u64,
@@ -1462,6 +1470,11 @@ module econia::market {
     /// # Emits
     ///
     /// * `MakerEvent`: Information about the changed maker order.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_change_order_size_ask_custodian()`
+    /// * `test_change_order_size_bid_user()`
     fun change_order_size(
         user: address,
         market_id: u64,
@@ -1499,6 +1512,8 @@ module econia::market {
         user::change_order_size_internal(
             user, market_id, custodian_id, side, new_size, price,
             order_ref_mut.order_access_key, market_order_id);
+        // Update order on book with new size.
+        order_ref_mut.size = new_size;
         // Declare order size, maker event type.
         let (size, type) = (order_ref_mut.size, CHANGE);
         // Emit a maker change event.
@@ -2664,6 +2679,153 @@ module econia::market {
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify state updates for changing ask under authority of
+    /// custodian.
+    fun test_change_order_size_ask_custodian()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side          = ASK;
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let custodian_id  = CUSTODIAN_ID_USER_0;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let price         = 10;
+        let size_start    = MIN_SIZE_COIN;
+        let size_end      = size_start * 2;
+        // Declare base/quote posted with final order.
+        let base_maker  = size_end * LOT_SIZE_COIN;
+        let quote_maker = size_end * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = base_maker;
+        let deposit_quote = HI_64 - quote_maker;
+        // Declare expected maker asset counts after size change.
+        let base_total_end      = deposit_base;
+        let base_available_end  = 0;
+        let base_ceiling_end    = base_total_end;
+        let quote_total_end     = deposit_quote;
+        let quote_available_end = quote_total_end;
+        let quote_ceiling_end   = HI_64;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        let custodian_capability = registry::get_custodian_capability_test(
+            custodian_id); // Get custodian capability.
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_custodian<BC, QC>(
+            maker_address, market_id, integrator, side, size_start,
+            price, restriction, &custodian_capability);
+        change_order_size_custodian( // Change order size.
+            maker_address, market_id, side, market_order_id, size_end,
+            &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Get fields for maker order on book.
+        let (size_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(market_id, side, market_order_id);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_end, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == custodian_id, 0);
+        // Assert user-side maker order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, market_id, custodian_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r            == size_end, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, market_id, custodian_id);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, market_id, custodian_id) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
+
+    #[test]
+    /// Verify state updates for changing bid under authority of signing
+    /// user.
+    fun test_change_order_size_bid_user()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side          = BID;
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let price         = 10;
+        let size_start    = MIN_SIZE_COIN;
+        let size_end      = size_start * 2;
+        // Declare base/quote posted with final order.
+        let base_maker  = size_end * LOT_SIZE_COIN;
+        let quote_maker = size_end * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 - base_maker;
+        let deposit_quote = quote_maker;
+        // Declare expected maker asset counts after size change.
+        let base_total_end      = deposit_base;
+        let base_available_end  = base_total_end;
+        let base_ceiling_end    = HI_64;
+        let quote_total_end     = deposit_quote;
+        let quote_available_end = 0;
+        let quote_ceiling_end   = deposit_quote;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size_start,
+            price, restriction);
+        change_order_size_user( // Change order size.
+            &maker, market_id, side, market_order_id, size_end);
+        // Get fields for maker order on book.
+        let (size_r, user_r, custodian_id_r, order_access_key) =
+            get_order_fields_test(market_id, side, market_order_id);
+        // Assert field returns except access key, used for user lookup.
+        assert!(size_r         == size_end, 0);
+        assert!(user_r         == maker_address, 0);
+        assert!(custodian_id_r == custodian_id, 0);
+        // Assert user-side maker order fields.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, market_id, custodian_id, side, order_access_key);
+        assert!(market_order_id_r == market_order_id, 0);
+        assert!(size_r            == size_end, 0);
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, market_id, custodian_id);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, market_id, custodian_id) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, market_id, custodian_id) == quote_total_end, 0);
+    }
 
     #[test]
     /// Verify returns, state updates for complete buy fill with no lots

@@ -1626,6 +1626,7 @@ module econia::market {
     /// # Expected value testing
     ///
     /// * `test_match_complete_fill_no_lots_buy()`
+    /// * `test_match_complete_fill_no_ticks_sell()`
     /// * `test_match_empty()`
     /// * `test_match_fill_size_0()`
     /// * `test_match_partial_fill_lot_limited_sell()`
@@ -1634,10 +1635,6 @@ module econia::market {
     /// * `test_match_price_break_sell()`
     ///
     /// # Expected value testing to do
-    ///
-    ///
-    /// * `test_match_complete_fill_no_ticks_sell()`
-    ///   * Complete fill for no ticks left.
     ///
     /// * `test_match_fill_proceed()`
     ///   * Complete fill on first order, partial fill on second order.
@@ -2666,7 +2663,8 @@ module econia::market {
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test]
-    /// Verify returns for complete buy fill with no lets left to fill.
+    /// Verify returns, state updates for complete buy fill with no lots
+    /// left to fill on matched order.
     fun test_match_complete_fill_no_lots_buy()
     acquires OrderBooks {
         // Initialize markets, users, and an integrator.
@@ -2706,11 +2704,11 @@ module econia::market {
         let deposit_base  = base_maker;
         let deposit_quote = HI_64 - quote_maker;
         // Declare expected maker asset counts after matching.
-        let base_total_end      = deposit_base - base_taker;
+        let base_total_end      = 0;
         let base_available_end  = 0;
-        let base_ceiling_end    = base_total_end;
-        let quote_total_end     = deposit_quote + quote_taker;
-        let quote_available_end = quote_total_end;
+        let base_ceiling_end    = 0;
+        let quote_total_end     = HI_64;
+        let quote_available_end = HI_64;
         let quote_ceiling_end   = HI_64;
         // Assign min/max base/quote swap input amounts for taker.
         let min_base  = 0;
@@ -2718,11 +2716,135 @@ module econia::market {
         let min_quote = 0;
         let max_quote = quote_trade * 2;
         // Declare swap coin input starting amounts.
-        let base_coin_start = 0;
+        let base_coin_start = HI_64 - base_trade;
         let quote_coin_start = max_quote;
         // Declare swap coin end amounts.
-        let base_coin_end = base_taker;
+        let base_coin_end = HI_64;
         let quote_coin_end = quote_coin_start - quote_trade;
+        // Create swap coin inputs.
+        let base_coins  = assets::mint_test<BC>(base_coin_start);
+        let quote_coins = assets::mint_test<QC>(quote_coin_start);
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker order, storing market order ID for lookup.
+        let (market_order_id, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, @integrator, side_maker, size_maker, price,
+            restriction);
+        // Get user-side order access key for later.
+        let (_, _, _, order_access_key) =
+            get_order_fields_test(market_id, side_maker, market_order_id);
+        // Invoke matching engine via coin swap.
+        let (base_coins, quote_coins, base_trade_r, quote_trade_r, fee_r) =
+            swap_coins(market_id, integrator, direction_taker, min_base,
+                       max_base, min_quote, max_quote, price, base_coins,
+                       quote_coins);
+        // Assert returns.
+        assert!(coin::value(&base_coins)  == base_coin_end, 0);
+        assert!(coin::value(&quote_coins) == quote_coin_end, 0);
+        assert!(base_trade_r              == base_trade, 0);
+        assert!(quote_trade_r             == quote_trade, 0);
+        assert!(fee_r                     == fee, 0);
+        // Burn coins.
+        if (base_coin_end == 0) coin::destroy_zero(base_coins) else
+            assets::burn(base_coins);
+        if (quote_coin_end == 0) coin::destroy_zero(quote_coins) else
+            assets::burn(quote_coins);
+        // Assert list node order inactive.
+        assert!(!is_list_node_order_active(
+            market_id, side_maker, market_order_id), 0);
+        // Assert user-side order fields for filled maker order.
+        let (market_order_id_r, size_r) = user::get_order_fields_simple_test(
+            maker_address, market_id, custodian_id, side_maker,
+            order_access_key);
+        // No market order ID.
+        assert!(market_order_id_r == (NIL as u128), 0);
+        assert!(size_r == NIL, 0); // Bottom of inactive stack.
+        // Assert maker's asset counts.
+        let (base_total , base_available , base_ceiling,
+             quote_total, quote_available, quote_ceiling) =
+            user::get_asset_counts_internal(
+                maker_address, market_id, custodian_id);
+        assert!(base_total      == base_total_end, 0);
+        assert!(base_available  == base_available_end, 0);
+        assert!(base_ceiling    == base_ceiling_end, 0);
+        assert!(quote_total     == quote_total_end, 0);
+        assert!(quote_available == quote_available_end, 0);
+        assert!(quote_ceiling   == quote_ceiling_end, 0);
+        // Assert collateral amounts.
+        assert!(user::get_collateral_value_simple_test<BC>(
+            maker_address, market_id, custodian_id) == base_total_end, 0);
+        assert!(user::get_collateral_value_simple_test<QC>(
+            maker_address, market_id, custodian_id) == quote_total_end, 0);
+        // Assert integrator fee share.
+        assert!(incentives::get_integrator_fee_store_balance_test<QC>(
+            @integrator, market_id) == integrator_share, 0);
+        // Assert Econia fee share.
+        assert!(incentives::get_econia_fee_store_balance_test<QC>(
+            market_id) == econia_share, 0);
+    }
+
+    #[test]
+    /// Verify returns, state updates for complete sell fill with no
+    /// ticks left to fill on matched order.
+    fun test_match_complete_fill_no_ticks_sell()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Get fee divisors.
+        let (taker_divisor, integrator_divisor) =
+            (incentives::get_taker_fee_divisor(),
+             incentives::get_fee_share_divisor(INTEGRATOR_TIER));
+        // Declare shared/dependent market parameters.
+        let direction_taker = SELL;
+        let side_maker      = if (direction_taker == BUY) ASK else BID;
+        let market_id       = MARKET_ID_COIN;
+        let integrator      = @integrator;
+        // Declare additional maker order parameters.
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        // Declare price set to product of fee divisors, to eliminate
+        // truncation when predicting fee amounts.
+        let price = integrator_divisor * taker_divisor;
+        // Declare order size posted by maker, filled by taker.
+        let size_maker = MIN_SIZE_COIN;
+        let size_taker = size_maker;
+        // Declare base/quote posted/filled by maker/taker.
+        let base_maker  = size_maker * LOT_SIZE_COIN;
+        let quote_maker = size_maker * price * TICK_SIZE_COIN;
+        let base_taker  = size_taker * LOT_SIZE_COIN;
+        let quote_taker = size_taker * price * TICK_SIZE_COIN;
+        // Declare fee and trade amounts, from taker's perspective.
+        let base_trade       = base_taker;
+        let integrator_share = quote_taker / integrator_divisor;
+        let econia_share     = quote_taker / taker_divisor - integrator_share;
+        let fee              = integrator_share + econia_share;
+        let quote_trade      = if (direction_taker == BUY)
+            (quote_taker + fee) else (quote_taker - fee);
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 - base_maker;
+        let deposit_quote = quote_maker;
+        // Declare expected maker asset counts after matching.
+        let base_total_end      = HI_64;
+        let base_available_end  = HI_64;
+        let base_ceiling_end    = HI_64;
+        let quote_total_end     = 0;
+        let quote_available_end = 0;
+        let quote_ceiling_end   = 0;
+        // Assign min/max base/quote swap input amounts for taker.
+        let min_base  = 0;
+        let max_base  = base_trade * 2;
+        let min_quote = 0;
+        let max_quote = quote_trade;
+        // Declare swap coin input starting amounts.
+        let base_coin_start = max_base;
+        let quote_coin_start = HI_64 - max_quote;
+        // Declare swap coin end amounts.
+        let base_coin_end = max_base - base_trade;
+        let quote_coin_end = HI_64;
         // Create swap coin inputs.
         let base_coins  = assets::mint_test<BC>(base_coin_start);
         let quote_coins = assets::mint_test<QC>(quote_coin_start);

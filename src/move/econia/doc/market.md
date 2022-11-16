@@ -2919,7 +2919,9 @@ conditions are then checked.
 ### Expected value testing
 
 
+* <code>test_match_complete_fill_no_lots_buy()</code>
 * <code>test_match_empty()</code>
+* <code>test_match_fill_size_0()</code>
 * <code>test_match_partial_fill_lot_limited_sell()</code>
 * <code>test_match_partial_fill_tick_limited_buy()</code>
 * <code>test_match_price_break_buy()</code>
@@ -2931,11 +2933,6 @@ conditions are then checked.
 ### Expected value testing to do
 
 
-* <code>test_match_fill_size_0()</code>
-* No size to fill.
-
-* <code>test_match_complete_fill_no_lots_buy()</code>
-* Complete fill for no lots left.
 
 * <code>test_match_complete_fill_no_ticks_sell()</code>
 * Complete fill for no ticks left.

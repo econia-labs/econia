@@ -2920,6 +2920,8 @@ conditions are then checked.
 
 
 * <code>test_match_empty()</code>
+* <code>test_match_partial_fill_lot_limited_sell()</code>
+* <code>test_match_partial_fill_tick_limited_buy()</code>
 * <code>test_match_price_break_buy()</code>
 * <code>test_match_price_break_sell()</code>
 
@@ -2928,12 +2930,6 @@ conditions are then checked.
 
 ### Expected value testing to do
 
-
-* <code>test_match_max_fill_tick_limited_buy()</code>
-* Max fill size is limited by ticks, less than order size.
-
-* <code>test_match_max_fill_lot_limited_sell()</code>
-* Max fill size is limited by lots, less than order size.
 
 * <code>test_match_fill_size_0()</code>
 * No size to fill.

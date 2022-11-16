@@ -225,7 +225,7 @@
 ///
 /// * [ ] `cancel_order()`
 /// * [ ] `change_order_size()`
-/// * [ ] `match()`
+/// * [x] `match()`
 /// * [x] `place_limit_order()`
 /// * [x] `range_check_trade()`
 /// * [x] `swap()`
@@ -297,7 +297,7 @@
 /// * [ ] `cancel_all_orders()`
 /// * [ ] `cancel_order()`
 /// * [ ] `change_order_size()`
-/// * [ ] `match()`
+/// * [x] `match()`
 /// * [x] `place_limit_order()`
 /// * [x] `place_market_order()`
 /// * [x] `range_check_trade()`
@@ -1634,6 +1634,13 @@ module econia::market {
     /// * `test_match_partial_fill_tick_limited_buy()`
     /// * `test_match_price_break_buy()`
     /// * `test_match_price_break_sell()`
+    ///
+    /// # Failure testing
+    ///
+    /// * `test_match_min_base_not_traded()`
+    /// * `test_match_min_quote_not_traded()`
+    /// * `test_match_price_too_high()`
+    /// * `test_match_self_match()`
     fun match<
         BaseType,
         QuoteType
@@ -3206,6 +3213,130 @@ module econia::market {
             order_access_key_lo);
         assert!(market_order_id_r == market_order_id_lo, 0);
         assert!(size_r            == size_maker_lo_end, 0);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 9)]
+    /// Verify failure for minimum base amount not traded.
+    fun test_match_min_base_not_traded()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare swap arguments.
+        let market_id   = MARKET_ID_COIN;
+        let integrator  = @integrator;
+        let direction   = BUY;
+        let min_base    = 1;
+        let max_base    = MAX_POSSIBLE;
+        let min_quote   = 0;
+        let max_quote   = MAX_POSSIBLE;
+        let limit_price = 1;
+        let base_coins  = coin::zero<BC>();
+        let quote_coins = assets::mint_test<QC>(HI_64);
+        // Invoke matching engine via coin swap against empty book.
+        let (base_coins, quote_coins, _, _, _) = swap_coins(
+            market_id, integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, base_coins, quote_coins);
+        // Burn coins.
+        if (coin::value(&base_coins) == 0) coin::destroy_zero(base_coins)
+            else assets::burn(base_coins);
+        if (coin::value(&quote_coins) == 0) coin::destroy_zero(quote_coins)
+            else assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 10)]
+    /// Verify failure for minimum quote amount not traded.
+    fun test_match_min_quote_not_traded()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare swap arguments.
+        let market_id   = MARKET_ID_COIN;
+        let integrator  = @integrator;
+        let direction   = SELL;
+        let min_base    = 0;
+        let max_base    = MAX_POSSIBLE;
+        let min_quote   = 1;
+        let max_quote   = MAX_POSSIBLE;
+        let limit_price = 1;
+        let base_coins = assets::mint_test<BC>(HI_64);
+        let quote_coins  = coin::zero<QC>();
+        // Invoke matching engine via coin swap against empty book.
+        let (base_coins, quote_coins, _, _, _) = swap_coins(
+            market_id, integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, base_coins, quote_coins);
+        // Burn coins.
+        if (coin::value(&base_coins) == 0) coin::destroy_zero(base_coins)
+            else assets::burn(base_coins);
+        if (coin::value(&quote_coins) == 0) coin::destroy_zero(quote_coins)
+            else assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 12)]
+    /// Verify failure for price too high.
+    fun test_match_price_too_high()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        init_markets_users_integrator_test();
+        // Declare swap arguments.
+        let market_id   = MARKET_ID_COIN;
+        let integrator  = @integrator;
+        let direction   = SELL;
+        let min_base    = 0;
+        let max_base    = MAX_POSSIBLE;
+        let min_quote   = 0;
+        let max_quote   = MAX_POSSIBLE;
+        let limit_price = MAX_PRICE + 1;
+        let base_coins = assets::mint_test<BC>(HI_64);
+        let quote_coins  = coin::zero<QC>();
+        // Invoke matching engine via coin swap against empty book.
+        let (base_coins, quote_coins, _, _, _) = swap_coins(
+            market_id, integrator, direction, min_base, max_base, min_quote,
+            max_quote, limit_price, base_coins, quote_coins);
+        // Burn coins.
+        if (coin::value(&base_coins) == 0) coin::destroy_zero(base_coins)
+            else assets::burn(base_coins);
+        if (coin::value(&quote_coins) == 0) coin::destroy_zero(quote_coins)
+            else assets::burn(quote_coins);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = 19)]
+    /// Verify failure for self match.
+    fun test_match_self_match()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare shared/dependent market parameters.
+        let direction_taker = SELL;
+        let side_maker      = if (direction_taker == BUY) ASK else BID;
+        let market_id       = MARKET_ID_COIN;
+        let integrator      = @integrator;
+        let price           = 1;
+        // Declare additional maker order parameters.
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let size_maker    = MIN_SIZE_COIN;
+        // Deposit maker coins.
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64));
+        // Deposit taker coins.
+        coin::register<BC>(&maker);
+        coin::deposit<BC>(maker_address, assets::mint_test<BC>(HI_64));
+        // Assign min/max base/quote swap input amounts for taker.
+        let min_base  = 0;
+        let max_base  = MAX_POSSIBLE;
+        let min_quote = 0;
+        let max_quote = MAX_POSSIBLE;
+        place_limit_order_user<BC, QC>( // Place maker order.
+            &maker, market_id, integrator, side_maker, size_maker, price,
+            restriction);
+        swap_between_coinstores_entry<BC, QC>( // Attempt self match.
+            &maker, market_id, integrator, direction_taker, min_base, max_base,
+            min_quote, max_quote, price);
     }
 
     #[test]

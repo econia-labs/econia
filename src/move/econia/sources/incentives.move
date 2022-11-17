@@ -1854,8 +1854,9 @@ module econia::incentives {
             // Assert withdrawal fee is less than that of last tier.
             assert!(*withdrawal_fee_ref < withdrawal_fee_last,
                 E_WITHDRAWAL_FEE_TOO_BIG);
-            // Assert withdrawal fee is above minimum threshold.
-            assert!(*withdrawal_fee_ref > MIN_FEE, E_WITHDRAWAL_FEE_TOO_SMALL);
+            // Assert withdrawal fee meets minimum threshold.
+            assert!(*withdrawal_fee_ref >= MIN_FEE,
+                    E_WITHDRAWAL_FEE_TOO_SMALL);
             // Mark indicated tier in target tiers vector.
             vector::push_back(integrator_fee_store_tiers_target_ref_mut,
                 IntegratorFeeStoreTierParameters{

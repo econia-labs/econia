@@ -3495,8 +3495,9 @@ vector.
         // Assert withdrawal fee is less than that of last tier.
         <b>assert</b>!(*withdrawal_fee_ref &lt; withdrawal_fee_last,
             <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_BIG">E_WITHDRAWAL_FEE_TOO_BIG</a>);
-        // Assert withdrawal fee is above minimum threshold.
-        <b>assert</b>!(*withdrawal_fee_ref &gt; <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>, <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL">E_WITHDRAWAL_FEE_TOO_SMALL</a>);
+        // Assert withdrawal fee meets minimum threshold.
+        <b>assert</b>!(*withdrawal_fee_ref &gt;= <a href="incentives.md#0xc0deb00c_incentives_MIN_FEE">MIN_FEE</a>,
+                <a href="incentives.md#0xc0deb00c_incentives_E_WITHDRAWAL_FEE_TOO_SMALL">E_WITHDRAWAL_FEE_TOO_SMALL</a>);
         // Mark indicated tier in target tiers <a href="">vector</a>.
         <a href="_push_back">vector::push_back</a>(integrator_fee_store_tiers_target_ref_mut,
             <a href="incentives.md#0xc0deb00c_incentives_IntegratorFeeStoreTierParameters">IntegratorFeeStoreTierParameters</a>{

@@ -276,8 +276,8 @@
 ///
 /// Function invocations to test:
 ///
-/// * [ ] `cancel_all_orders_custodian()`
-/// * [ ] `cancel_all_orders_user()`
+/// * [x] `cancel_all_orders_custodian()`
+/// * [x] `cancel_all_orders_user()`
 /// * [x] `cancel_order_custodian()`
 /// * [x] `cancel_order_user()`
 /// * [x] `change_order_size_custodian()`
@@ -294,7 +294,7 @@
 ///
 /// Functions with logical branches to test:
 ///
-/// * [ ] `cancel_all_orders()`
+/// * [x] `cancel_all_orders()`
 /// * [x] `cancel_order()`
 /// * [x] `change_order_size()`
 /// * [x] `match()`

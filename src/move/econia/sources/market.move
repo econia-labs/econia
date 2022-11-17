@@ -1,3 +1,9 @@
+/// # Functions
+///
+/// ## SDK generation
+///
+/// * `index_orders()`
+///
 /// # Dependency charts
 ///
 /// The below dependency charts use `mermaid.js` syntax, which can be
@@ -377,6 +383,7 @@ module econia::market {
         order_access_key: u64
     }
 
+    #[method(index_orders)]
     /// An order book for a given market. Contains
     /// `registry::MarketInfo` field duplicates to reduce global storage
     /// item queries against the registry.
@@ -2531,6 +2538,61 @@ module econia::market {
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+    // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    /// An order with price.
+    struct PricedOrder has store {
+        /// Price of order from order book AVL queue.
+        price: u64,
+        /// Order from order book AVL queue.
+        order: Order
+    }
+
+    /// Index order book into ask and bids vectors.
+    ///
+    /// # Returns
+    ///
+    /// * `vector<PricedOrder>`: Asks, sorted by ascending price.
+    /// * `vector<PricedOrder>`: Bids, sorted by descending price.
+    ///
+    /// # Testing
+    ///
+    /// * `test_index_orders()`
+    fun index_orders(
+        order_book_ref_mut: &mut OrderBook
+    ): (
+        vector<PricedOrder>,
+        vector<PricedOrder>
+    ) {
+        // Initialize asks and bids vectors.
+        let (asks, bids) = (vector[], vector[]);
+        // Mutably borrow asks AVL queue.
+        let orders_ref_mut = &mut order_book_ref_mut.asks;
+        // While asks to process:
+        while(!avl_queue::is_empty(orders_ref_mut)) {
+            let price = // Get price of minimum ask in AVL queue.
+                *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
+            // Remove order from AVL queue.
+            let order = avl_queue::pop_head(orders_ref_mut);
+            // Push back priced order onto asks vector.
+            vector::push_back(&mut asks, PricedOrder{price, order});
+        };
+        // Mutably borrow bids AVL queue.
+        let orders_ref_mut = &mut order_book_ref_mut.bids;
+        // While bids to process:
+        while(!avl_queue::is_empty(orders_ref_mut)) {
+            let price = // Get price of maximum bid in AVL queue.
+                *option::borrow(&avl_queue::get_head_key(orders_ref_mut));
+            // Remove order from AVL queue.
+            let order = avl_queue::pop_head(orders_ref_mut);
+            // Push back priced order onto bids vector.
+            vector::push_back(&mut bids, PricedOrder{price, order});
+        };
+        (asks, bids) // Return indexed asks and bids.
+    }
+
+    // SDK generation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
     // Test-only functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     #[test_only]
@@ -3336,6 +3398,71 @@ module econia::market {
             price, restriction);
         change_order_size_user( // Attempt invalid order change.
             &attacker, market_id, side, market_order_id, size_end);
+    }
+
+    #[test]
+    /// Verify indexing results.
+    fun test_index_orders():
+    (
+        vector<PricedOrder>,
+        vector<PricedOrder>
+    ) acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare common order parameters.
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        // Declare ask and bid parameters.
+        let bid_1_size = MIN_SIZE_COIN + 1;
+        let bid_0_size = bid_1_size + 1;
+        let ask_0_size = bid_0_size + 1;
+        let ask_1_size = ask_0_size + 1;
+        let bid_1_price = 1;
+        let bid_0_price = bid_1_price + 1;
+        let ask_0_price = bid_0_price + 1;
+        let ask_1_price = ask_0_price + 1;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(HI_64 / 2));
+        // Place maker orders, storing market order IDs for lookup.
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_1_size, bid_1_price,
+            restriction);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, BID, bid_0_size, bid_0_price,
+            restriction);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_0_size, ask_0_price,
+            restriction);
+        place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, ASK, ask_1_size, ask_1_price,
+            restriction);
+        let resource_address = resource_account::get_address();
+        let order_books_map_ref_mut = // Mutably borrow order books map.
+            &mut borrow_global_mut<OrderBooks>(resource_address).map;
+        let order_book_ref_mut = // Mutably borrow market order book.
+            tablist::borrow_mut(order_books_map_ref_mut, market_id);
+        // Index orders.
+        let (asks, bids) = index_orders(order_book_ref_mut);
+        // Assert priced order state.
+        let priced_order_ref = vector::borrow(&asks, 0);
+        assert!(priced_order_ref.price      == ask_0_price, 0);
+        assert!(priced_order_ref.order.size == ask_0_size, 0);
+        priced_order_ref = vector::borrow(&asks, 1);
+        assert!(priced_order_ref.price      == ask_1_price, 0);
+        assert!(priced_order_ref.order.size == ask_1_size, 0);
+        priced_order_ref = vector::borrow(&bids, 0);
+        assert!(priced_order_ref.price      == bid_0_price, 0);
+        assert!(priced_order_ref.order.size == bid_0_size, 0);
+        priced_order_ref = vector::borrow(&bids, 1);
+        assert!(priced_order_ref.price      == bid_1_price, 0);
+        assert!(priced_order_ref.order.size == bid_1_size, 0);
+        (asks, bids) // Return, rather than destroy.
     }
 
     #[test]

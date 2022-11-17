@@ -557,6 +557,10 @@ module econia::market {
 
     /// Public function wrapper for `cancel_all_orders()` for cancelling
     /// orders under authority of delegated custodian.
+    ///
+    /// # Invocation testing
+    ///
+    /// * `test_cancel_all_orders_ask_custodian()`
     public fun cancel_all_orders_custodian(
         user_address: address,
         market_id: u64,
@@ -1208,6 +1212,10 @@ module econia::market {
     #[cmd]
     /// Public entry function wrapper for `cancel_all_orders()` for
     /// cancelling orders under authority of signing user.
+    ///
+    /// # Invocation testing
+    ///
+    /// * `test_cancel_all_orders_bid_user()`
     public entry fun cancel_all_orders_user(
         user: &signer,
         market_id: u64,
@@ -1373,6 +1381,11 @@ module econia::market {
     /// * `market_id`: Same as for `cancel_order()`.
     /// * `custodian_id`: Same as for `cancel_order()`.
     /// * `side`: Same as for `cancel_order()`.
+    ///
+    /// # Expected value testing
+    ///
+    /// * `test_cancel_all_orders_ask_custodian()`
+    /// * `test_cancel_all_orders_bid_user()`
     fun cancel_all_orders(
         user: address,
         market_id: u64,
@@ -2706,6 +2719,117 @@ module econia::market {
     // Test-only constants <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     // Tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    #[test]
+    /// Verify state updates for cancelling three asks under authority
+    /// of custodian.
+    fun test_cancel_all_orders_ask_custodian()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side          = ASK;
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let custodian_id  = CUSTODIAN_ID_USER_0;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let price         = 10;
+        let size          = MIN_SIZE_COIN;
+        // Declare base/quote posted for order.
+        let base_maker  = size * LOT_SIZE_COIN;
+        let quote_maker = size * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = 3 * base_maker;
+        let deposit_quote = HI_64 - 3 * quote_maker;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        let custodian_capability = registry::get_custodian_capability_test(
+            custodian_id); // Get custodian capability.
+        // Place maker orders, storing market order IDs for lookup.
+        let (market_order_id_0, _, _, _) = place_limit_order_custodian<BC, QC>(
+            maker_address, market_id, integrator, side, size,
+            price, restriction, &custodian_capability);
+        let (market_order_id_1, _, _, _) = place_limit_order_custodian<BC, QC>(
+            maker_address, market_id, integrator, side, size,
+            price, restriction, &custodian_capability);
+        let (market_order_id_2, _, _, _) = place_limit_order_custodian<BC, QC>(
+            maker_address, market_id, integrator, side, size,
+            price, restriction, &custodian_capability);
+        // Assert list node orders active.
+        assert!(is_list_node_order_active(
+            market_id, side, market_order_id_0), 0);
+        assert!(is_list_node_order_active(
+            market_id, side, market_order_id_1), 0);
+        assert!(is_list_node_order_active(
+            market_id, side, market_order_id_2), 0);
+        cancel_all_orders_custodian( // Cancel orders.
+            maker_address, market_id, side, &custodian_capability);
+        // Drop custodian capability.
+        registry::drop_custodian_capability_test(custodian_capability);
+        // Assert list node orders inactive.
+        assert!(!is_list_node_order_active(
+            market_id, side, market_order_id_0), 0);
+        assert!(!is_list_node_order_active(
+            market_id, side, market_order_id_1), 0);
+        assert!(!is_list_node_order_active(
+            market_id, side, market_order_id_2), 0);
+    }
+
+    #[test]
+    /// Verify state updates for cancelling three bids under authority
+    /// of signing user.
+    fun test_cancel_all_orders_bid_user()
+    acquires OrderBooks {
+        // Initialize markets, users, and an integrator.
+        let (maker, _) = init_markets_users_integrator_test();
+        // Declare order parameters.
+        let side          = BID;
+        let market_id     = MARKET_ID_COIN;
+        let integrator    = @integrator;
+        let custodian_id  = NO_CUSTODIAN;
+        let maker_address = address_of(&maker);
+        let restriction   = NO_RESTRICTION;
+        let price         = 10;
+        let size          = MIN_SIZE_COIN;
+        // Declare base/quote posted for order.
+        let base_maker  = size * LOT_SIZE_COIN;
+        let quote_maker = size * price * TICK_SIZE_COIN;
+        // Declare maker deposit amounts.
+        let deposit_base  = HI_64 - 3 * base_maker;
+        let deposit_quote = 3 * quote_maker;
+        // Deposit maker coins.
+        user::deposit_coins<BC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_base));
+        user::deposit_coins<QC>(maker_address, market_id, custodian_id,
+                                assets::mint_test(deposit_quote));
+        // Place maker orders, storing market order IDs for lookup.
+        let (market_order_id_0, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction);
+        let (market_order_id_1, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction);
+        let (market_order_id_2, _, _, _) = place_limit_order_user<BC, QC>(
+            &maker, market_id, integrator, side, size, price, restriction);
+        // Assert list node orders active.
+        assert!(is_list_node_order_active(
+            market_id, side, market_order_id_0), 0);
+        assert!(is_list_node_order_active(
+            market_id, side, market_order_id_1), 0);
+        assert!(is_list_node_order_active(
+            market_id, side, market_order_id_2), 0);
+        // Cancel orders.
+        cancel_all_orders_user(&maker, market_id, side);
+        // Assert list node orders inactive.
+        assert!(!is_list_node_order_active(
+            market_id, side, market_order_id_0), 0);
+        assert!(!is_list_node_order_active(
+            market_id, side, market_order_id_1), 0);
+        assert!(!is_list_node_order_active(
+            market_id, side, market_order_id_2), 0);
+    }
 
     #[test]
     /// Verify state updates for cancelling ask under authority of

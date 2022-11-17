@@ -370,115 +370,118 @@ The below index is automatically generated from source code:
 -  [Struct `TakerEvent`](#0xc0deb00c_market_TakerEvent)
 -  [Constants](#@Constants_9)
 -  [Function `cancel_all_orders_custodian`](#0xc0deb00c_market_cancel_all_orders_custodian)
--  [Function `cancel_order_custodian`](#0xc0deb00c_market_cancel_order_custodian)
     -  [Invocation testing](#@Invocation_testing_10)
--  [Function `change_order_size_custodian`](#0xc0deb00c_market_change_order_size_custodian)
+-  [Function `cancel_order_custodian`](#0xc0deb00c_market_cancel_order_custodian)
     -  [Invocation testing](#@Invocation_testing_11)
+-  [Function `change_order_size_custodian`](#0xc0deb00c_market_change_order_size_custodian)
+    -  [Invocation testing](#@Invocation_testing_12)
 -  [Function `place_limit_order_custodian`](#0xc0deb00c_market_place_limit_order_custodian)
-    -  [Invocation and return testing](#@Invocation_and_return_testing_12)
--  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
     -  [Invocation and return testing](#@Invocation_and_return_testing_13)
--  [Function `place_market_order_custodian`](#0xc0deb00c_market_place_market_order_custodian)
+-  [Function `place_limit_order_user`](#0xc0deb00c_market_place_limit_order_user)
     -  [Invocation and return testing](#@Invocation_and_return_testing_14)
--  [Function `place_market_order_user`](#0xc0deb00c_market_place_market_order_user)
+-  [Function `place_market_order_custodian`](#0xc0deb00c_market_place_market_order_custodian)
     -  [Invocation and return testing](#@Invocation_and_return_testing_15)
+-  [Function `place_market_order_user`](#0xc0deb00c_market_place_market_order_user)
+    -  [Invocation and return testing](#@Invocation_and_return_testing_16)
 -  [Function `register_market_base_coin`](#0xc0deb00c_market_register_market_base_coin)
-    -  [Type parameters](#@Type_parameters_16)
-    -  [Parameters](#@Parameters_17)
-    -  [Returns](#@Returns_18)
-    -  [Testing](#@Testing_19)
+    -  [Type parameters](#@Type_parameters_17)
+    -  [Parameters](#@Parameters_18)
+    -  [Returns](#@Returns_19)
+    -  [Testing](#@Testing_20)
 -  [Function `register_market_base_generic`](#0xc0deb00c_market_register_market_base_generic)
-    -  [Type parameters](#@Type_parameters_20)
-    -  [Parameters](#@Parameters_21)
-    -  [Returns](#@Returns_22)
-    -  [Testing](#@Testing_23)
+    -  [Type parameters](#@Type_parameters_21)
+    -  [Parameters](#@Parameters_22)
+    -  [Returns](#@Returns_23)
+    -  [Testing](#@Testing_24)
 -  [Function `swap_between_coinstores`](#0xc0deb00c_market_swap_between_coinstores)
-    -  [Type Parameters](#@Type_Parameters_24)
-    -  [Parameters](#@Parameters_25)
-    -  [Returns](#@Returns_26)
-    -  [Testing](#@Testing_27)
+    -  [Type Parameters](#@Type_Parameters_25)
+    -  [Parameters](#@Parameters_26)
+    -  [Returns](#@Returns_27)
+    -  [Testing](#@Testing_28)
 -  [Function `swap_coins`](#0xc0deb00c_market_swap_coins)
-    -  [Type Parameters](#@Type_Parameters_28)
-    -  [Parameters](#@Parameters_29)
-    -  [Returns](#@Returns_30)
-    -  [Terminology](#@Terminology_31)
-    -  [Testing](#@Testing_32)
+    -  [Type Parameters](#@Type_Parameters_29)
+    -  [Parameters](#@Parameters_30)
+    -  [Returns](#@Returns_31)
+    -  [Terminology](#@Terminology_32)
+    -  [Testing](#@Testing_33)
 -  [Function `swap_generic`](#0xc0deb00c_market_swap_generic)
-    -  [Type Parameters](#@Type_Parameters_33)
-    -  [Parameters](#@Parameters_34)
-    -  [Returns](#@Returns_35)
-    -  [Testing](#@Testing_36)
+    -  [Type Parameters](#@Type_Parameters_34)
+    -  [Parameters](#@Parameters_35)
+    -  [Returns](#@Returns_36)
+    -  [Testing](#@Testing_37)
 -  [Function `cancel_all_orders_user`](#0xc0deb00c_market_cancel_all_orders_user)
--  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
-    -  [Invocation testing](#@Invocation_testing_37)
--  [Function `change_order_size_user`](#0xc0deb00c_market_change_order_size_user)
     -  [Invocation testing](#@Invocation_testing_38)
--  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
+-  [Function `cancel_order_user`](#0xc0deb00c_market_cancel_order_user)
     -  [Invocation testing](#@Invocation_testing_39)
--  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
+-  [Function `change_order_size_user`](#0xc0deb00c_market_change_order_size_user)
     -  [Invocation testing](#@Invocation_testing_40)
--  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
-    -  [Testing](#@Testing_41)
--  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
+-  [Function `place_limit_order_user_entry`](#0xc0deb00c_market_place_limit_order_user_entry)
+    -  [Invocation testing](#@Invocation_testing_41)
+-  [Function `place_market_order_user_entry`](#0xc0deb00c_market_place_market_order_user_entry)
     -  [Invocation testing](#@Invocation_testing_42)
+-  [Function `register_market_base_coin_from_coinstore`](#0xc0deb00c_market_register_market_base_coin_from_coinstore)
+    -  [Testing](#@Testing_43)
+-  [Function `swap_between_coinstores_entry`](#0xc0deb00c_market_swap_between_coinstores_entry)
+    -  [Invocation testing](#@Invocation_testing_44)
 -  [Function `cancel_all_orders`](#0xc0deb00c_market_cancel_all_orders)
-    -  [Parameters](#@Parameters_43)
+    -  [Parameters](#@Parameters_45)
+    -  [Expected value testing](#@Expected_value_testing_46)
 -  [Function `cancel_order`](#0xc0deb00c_market_cancel_order)
-    -  [Parameters](#@Parameters_44)
-    -  [Aborts](#@Aborts_45)
-    -  [Emits](#@Emits_46)
-    -  [Expected value testing](#@Expected_value_testing_47)
-    -  [Failure testing](#@Failure_testing_48)
+    -  [Parameters](#@Parameters_47)
+    -  [Aborts](#@Aborts_48)
+    -  [Emits](#@Emits_49)
+    -  [Expected value testing](#@Expected_value_testing_50)
+    -  [Failure testing](#@Failure_testing_51)
 -  [Function `change_order_size`](#0xc0deb00c_market_change_order_size)
-    -  [Parameters](#@Parameters_49)
-    -  [Aborts](#@Aborts_50)
-    -  [Emits](#@Emits_51)
-    -  [Expected value testing](#@Expected_value_testing_52)
-    -  [Failure testing](#@Failure_testing_53)
+    -  [Parameters](#@Parameters_52)
+    -  [Aborts](#@Aborts_53)
+    -  [Emits](#@Emits_54)
+    -  [Expected value testing](#@Expected_value_testing_55)
+    -  [Failure testing](#@Failure_testing_56)
 -  [Function `init_module`](#0xc0deb00c_market_init_module)
 -  [Function `match`](#0xc0deb00c_market_match)
-    -  [Type Parameters](#@Type_Parameters_54)
-    -  [Parameters](#@Parameters_55)
-    -  [Returns](#@Returns_56)
-    -  [Emits](#@Emits_57)
-    -  [Aborts](#@Aborts_58)
-    -  [Algorithm description](#@Algorithm_description_59)
-    -  [Expected value testing](#@Expected_value_testing_60)
-    -  [Failure testing](#@Failure_testing_61)
+    -  [Type Parameters](#@Type_Parameters_57)
+    -  [Parameters](#@Parameters_58)
+    -  [Returns](#@Returns_59)
+    -  [Emits](#@Emits_60)
+    -  [Aborts](#@Aborts_61)
+    -  [Algorithm description](#@Algorithm_description_62)
+    -  [Expected value testing](#@Expected_value_testing_63)
+    -  [Failure testing](#@Failure_testing_64)
 -  [Function `place_limit_order`](#0xc0deb00c_market_place_limit_order)
-    -  [Type Parameters](#@Type_Parameters_62)
-    -  [Parameters](#@Parameters_63)
-    -  [Returns](#@Returns_64)
-    -  [Aborts](#@Aborts_65)
-    -  [Emits](#@Emits_66)
-    -  [Restrictions](#@Restrictions_67)
-    -  [Minimum size](#@Minimum_size_68)
-    -  [Algorithm description](#@Algorithm_description_69)
-    -  [Expected value testing](#@Expected_value_testing_70)
-    -  [Failure testing](#@Failure_testing_71)
+    -  [Type Parameters](#@Type_Parameters_65)
+    -  [Parameters](#@Parameters_66)
+    -  [Returns](#@Returns_67)
+    -  [Aborts](#@Aborts_68)
+    -  [Emits](#@Emits_69)
+    -  [Restrictions](#@Restrictions_70)
+    -  [Minimum size](#@Minimum_size_71)
+    -  [Algorithm description](#@Algorithm_description_72)
+    -  [Expected value testing](#@Expected_value_testing_73)
+    -  [Failure testing](#@Failure_testing_74)
 -  [Function `place_market_order`](#0xc0deb00c_market_place_market_order)
-    -  [Type Parameters](#@Type_Parameters_72)
-    -  [Parameters](#@Parameters_73)
-    -  [Returns](#@Returns_74)
-    -  [Algorithm description](#@Algorithm_description_75)
-    -  [Expected value testing](#@Expected_value_testing_76)
+    -  [Type Parameters](#@Type_Parameters_75)
+    -  [Parameters](#@Parameters_76)
+    -  [Returns](#@Returns_77)
+    -  [Algorithm description](#@Algorithm_description_78)
+    -  [Expected value testing](#@Expected_value_testing_79)
 -  [Function `range_check_trade`](#0xc0deb00c_market_range_check_trade)
-    -  [Terminology](#@Terminology_77)
-    -  [Parameters](#@Parameters_78)
-    -  [Aborts](#@Aborts_79)
-    -  [Failure testing](#@Failure_testing_80)
+    -  [Terminology](#@Terminology_80)
+    -  [Parameters](#@Parameters_81)
+    -  [Aborts](#@Aborts_82)
+    -  [Failure testing](#@Failure_testing_83)
 -  [Function `register_market`](#0xc0deb00c_market_register_market)
-    -  [Type parameters](#@Type_parameters_81)
-    -  [Parameters](#@Parameters_82)
-    -  [Returns](#@Returns_83)
-    -  [Testing](#@Testing_84)
+    -  [Type parameters](#@Type_parameters_84)
+    -  [Parameters](#@Parameters_85)
+    -  [Returns](#@Returns_86)
+    -  [Testing](#@Testing_87)
 -  [Function `swap`](#0xc0deb00c_market_swap)
-    -  [Type Parameters](#@Type_Parameters_85)
-    -  [Parameters](#@Parameters_86)
-    -  [Returns](#@Returns_87)
-    -  [Aborts](#@Aborts_88)
-    -  [Expected value testing](#@Expected_value_testing_89)
-    -  [Failure testing](#@Failure_testing_90)
+    -  [Type Parameters](#@Type_Parameters_88)
+    -  [Parameters](#@Parameters_89)
+    -  [Returns](#@Returns_90)
+    -  [Aborts](#@Aborts_91)
+    -  [Expected value testing](#@Expected_value_testing_92)
+    -  [Failure testing](#@Failure_testing_93)
 
 
 <pre><code><b>use</b> <a href="">0x1::account</a>;
@@ -1313,6 +1316,14 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_al
 orders under authority of delegated custodian.
 
 
+<a name="@Invocation_testing_10"></a>
+
+### Invocation testing
+
+
+* <code>test_cancel_all_orders_ask_custodian()</code>
+
+
 <pre><code><b>public</b> <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_custodian">cancel_all_orders_custodian</a>(user_address: <b>address</b>, market_id: u64, side: bool, custodian_capability_ref: &<a href="registry.md#0xc0deb00c_registry_CustodianCapability">registry::CustodianCapability</a>)
 </code></pre>
 
@@ -1345,7 +1356,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_cancel_or
 order under authority of delegated custodian.
 
 
-<a name="@Invocation_testing_10"></a>
+<a name="@Invocation_testing_11"></a>
 
 ### Invocation testing
 
@@ -1387,7 +1398,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_change_or
 order size under authority of delegated custodian.
 
 
-<a name="@Invocation_testing_11"></a>
+<a name="@Invocation_testing_12"></a>
 
 ### Invocation testing
 
@@ -1431,7 +1442,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_lim
 order under authority of delegated custodian.
 
 
-<a name="@Invocation_and_return_testing_12"></a>
+<a name="@Invocation_and_return_testing_13"></a>
 
 ### Invocation and return testing
 
@@ -1491,7 +1502,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_lim
 order under authority of signing user.
 
 
-<a name="@Invocation_and_return_testing_13"></a>
+<a name="@Invocation_and_return_testing_14"></a>
 
 ### Invocation and return testing
 
@@ -1556,7 +1567,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_mar
 order under authority of delegated custodian.
 
 
-<a name="@Invocation_and_return_testing_14"></a>
+<a name="@Invocation_and_return_testing_15"></a>
 
 ### Invocation and return testing
 
@@ -1616,7 +1627,7 @@ Public function wrapper for <code><a href="market.md#0xc0deb00c_market_place_mar
 order under authority of signing user.
 
 
-<a name="@Invocation_and_return_testing_15"></a>
+<a name="@Invocation_and_return_testing_16"></a>
 
 ### Invocation and return testing
 
@@ -1676,7 +1687,7 @@ Register pure coin market, return resultant market ID.
 See inner function <code><a href="market.md#0xc0deb00c_market_register_market">register_market</a>()</code>.
 
 
-<a name="@Type_parameters_16"></a>
+<a name="@Type_parameters_17"></a>
 
 ### Type parameters
 
@@ -1687,7 +1698,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.utility_coin_type_info</code>.
 
 
-<a name="@Parameters_17"></a>
+<a name="@Parameters_18"></a>
 
 ### Parameters
 
@@ -1699,7 +1710,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.market_registration_fee</code>.
 
 
-<a name="@Returns_18"></a>
+<a name="@Returns_19"></a>
 
 ### Returns
 
@@ -1707,7 +1718,7 @@ See inner function <code><a href="market.md#0xc0deb00c_market_register_market">r
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_19"></a>
+<a name="@Testing_20"></a>
 
 ### Testing
 
@@ -1760,7 +1771,7 @@ Generic base name restrictions described at
 <code><a href="registry.md#0xc0deb00c_registry_register_market_base_generic_internal">registry::register_market_base_generic_internal</a>()</code>.
 
 
-<a name="@Type_parameters_20"></a>
+<a name="@Type_parameters_21"></a>
 
 ### Type parameters
 
@@ -1770,7 +1781,7 @@ Generic base name restrictions described at
 <code><a href="incentives.md#0xc0deb00c_incentives_IncentiveParameters">incentives::IncentiveParameters</a>.utility_coin_type_info</code>.
 
 
-<a name="@Parameters_21"></a>
+<a name="@Parameters_22"></a>
 
 ### Parameters
 
@@ -1786,7 +1797,7 @@ for market.
 underwriter capability.
 
 
-<a name="@Returns_22"></a>
+<a name="@Returns_23"></a>
 
 ### Returns
 
@@ -1794,7 +1805,7 @@ underwriter capability.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_23"></a>
+<a name="@Testing_24"></a>
 
 ### Testing
 
@@ -1846,7 +1857,7 @@ Initializes an <code>aptos_framework::coin::CoinStore</code> for each coin
 type that does not yet have one.
 
 
-<a name="@Type_Parameters_24"></a>
+<a name="@Type_Parameters_25"></a>
 
 ### Type Parameters
 
@@ -1855,7 +1866,7 @@ type that does not yet have one.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_25"></a>
+<a name="@Parameters_26"></a>
 
 ### Parameters
 
@@ -1874,7 +1885,7 @@ for coin store.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_26"></a>
+<a name="@Returns_27"></a>
 
 ### Returns
 
@@ -1884,7 +1895,7 @@ for coin store.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Testing_27"></a>
+<a name="@Testing_28"></a>
 
 ### Testing
 
@@ -1986,7 +1997,7 @@ intermediate quote match overflow that could occur prior to fee
 assessment.
 
 
-<a name="@Type_Parameters_28"></a>
+<a name="@Type_Parameters_29"></a>
 
 ### Type Parameters
 
@@ -1995,7 +2006,7 @@ assessment.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_29"></a>
+<a name="@Parameters_30"></a>
 
 ### Parameters
 
@@ -2017,7 +2028,7 @@ unpacked.
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_30"></a>
+<a name="@Returns_31"></a>
 
 ### Returns
 
@@ -2031,7 +2042,7 @@ unpacked.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_31"></a>
+<a name="@Terminology_32"></a>
 
 ### Terminology
 
@@ -2042,7 +2053,7 @@ coins in the case of a buy, quote coins in the case of a sell.
 the case of a buy, base coins in the case of a sell.
 
 
-<a name="@Testing_32"></a>
+<a name="@Testing_33"></a>
 
 ### Testing
 
@@ -2141,7 +2152,7 @@ intermediate quote match overflow that could occur prior to fee
 assessment.
 
 
-<a name="@Type_Parameters_33"></a>
+<a name="@Type_Parameters_34"></a>
 
 ### Type Parameters
 
@@ -2149,7 +2160,7 @@ assessment.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_34"></a>
+<a name="@Parameters_35"></a>
 
 ### Parameters
 
@@ -2169,7 +2180,7 @@ possible amount for passed coin holdings.
 underwriter capability for given market.
 
 
-<a name="@Returns_35"></a>
+<a name="@Returns_36"></a>
 
 ### Returns
 
@@ -2181,7 +2192,7 @@ underwriter capability for given market.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Testing_36"></a>
+<a name="@Testing_37"></a>
 
 ### Testing
 
@@ -2271,6 +2282,14 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_can
 cancelling orders under authority of signing user.
 
 
+<a name="@Invocation_testing_38"></a>
+
+### Invocation testing
+
+
+* <code>test_cancel_all_orders_bid_user()</code>
+
+
 <pre><code><b>public</b> entry <b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders_user">cancel_all_orders_user</a>(<a href="user.md#0xc0deb00c_user">user</a>: &<a href="">signer</a>, market_id: u64, side: bool)
 </code></pre>
 
@@ -2302,7 +2321,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_can
 cancelling order under authority of signing user.
 
 
-<a name="@Invocation_testing_37"></a>
+<a name="@Invocation_testing_39"></a>
 
 ### Invocation testing
 
@@ -2343,7 +2362,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_cha
 changing order size under authority of signing user.
 
 
-<a name="@Invocation_testing_38"></a>
+<a name="@Invocation_testing_40"></a>
 
 ### Invocation testing
 
@@ -2385,7 +2404,7 @@ changing order size under authority of signing user.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_limit_order_user">place_limit_order_user</a>()</code>.
 
 
-<a name="@Invocation_testing_39"></a>
+<a name="@Invocation_testing_41"></a>
 
 ### Invocation testing
 
@@ -2427,7 +2446,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_pla
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_place_market_order_user">place_market_order_user</a>()</code>.
 
 
-<a name="@Invocation_testing_40"></a>
+<a name="@Invocation_testing_42"></a>
 
 ### Invocation testing
 
@@ -2473,7 +2492,7 @@ Wrapped call to <code><a href="market.md#0xc0deb00c_market_register_market_base_
 coins from an <code>aptos_framework::coin::CoinStore</code>.
 
 
-<a name="@Testing_41"></a>
+<a name="@Testing_43"></a>
 
 ### Testing
 
@@ -2516,7 +2535,7 @@ coins from an <code>aptos_framework::coin::CoinStore</code>.
 Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swap_between_coinstores">swap_between_coinstores</a>()</code>.
 
 
-<a name="@Invocation_testing_42"></a>
+<a name="@Invocation_testing_44"></a>
 
 ### Invocation testing
 
@@ -2562,7 +2581,7 @@ Public entry function wrapper for <code><a href="market.md#0xc0deb00c_market_swa
 Cancel all of a user's open maker orders.
 
 
-<a name="@Parameters_43"></a>
+<a name="@Parameters_45"></a>
 
 ### Parameters
 
@@ -2571,6 +2590,15 @@ Cancel all of a user's open maker orders.
 * <code>market_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
 * <code>custodian_id</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
 * <code>side</code>: Same as for <code><a href="market.md#0xc0deb00c_market_cancel_order">cancel_order</a>()</code>.
+
+
+<a name="@Expected_value_testing_46"></a>
+
+### Expected value testing
+
+
+* <code>test_cancel_all_orders_ask_custodian()</code>
+* <code>test_cancel_all_orders_bid_user()</code>
 
 
 <pre><code><b>fun</b> <a href="market.md#0xc0deb00c_market_cancel_all_orders">cancel_all_orders</a>(<a href="user.md#0xc0deb00c_user">user</a>: <b>address</b>, market_id: u64, custodian_id: u64, side: bool)
@@ -2610,7 +2638,7 @@ Cancel all of a user's open maker orders.
 Cancel maker order on order book and in user's market account.
 
 
-<a name="@Parameters_44"></a>
+<a name="@Parameters_47"></a>
 
 ### Parameters
 
@@ -2622,7 +2650,7 @@ Cancel maker order on order book and in user's market account.
 * <code>market_order_id</code>: Market order ID of order on order book.
 
 
-<a name="@Aborts_45"></a>
+<a name="@Aborts_48"></a>
 
 ### Aborts
 
@@ -2635,7 +2663,7 @@ on book having given market order ID.
 custodian ID of order on order book having market order ID.
 
 
-<a name="@Emits_46"></a>
+<a name="@Emits_49"></a>
 
 ### Emits
 
@@ -2643,7 +2671,7 @@ custodian ID of order on order book having market order ID.
 * <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code>: Information about the maker order cancelled.
 
 
-<a name="@Expected_value_testing_47"></a>
+<a name="@Expected_value_testing_50"></a>
 
 ### Expected value testing
 
@@ -2652,7 +2680,7 @@ custodian ID of order on order book having market order ID.
 * <code>test_cancel_order_bid_user()</code>
 
 
-<a name="@Failure_testing_48"></a>
+<a name="@Failure_testing_51"></a>
 
 ### Failure testing
 
@@ -2722,7 +2750,7 @@ custodian ID of order on order book having market order ID.
 Change maker order size on book and in user's market account.
 
 
-<a name="@Parameters_49"></a>
+<a name="@Parameters_52"></a>
 
 ### Parameters
 
@@ -2735,7 +2763,7 @@ Change maker order size on book and in user's market account.
 * <code>new_size</code>: The new order size to change to.
 
 
-<a name="@Aborts_50"></a>
+<a name="@Aborts_53"></a>
 
 ### Aborts
 
@@ -2748,7 +2776,7 @@ on book having given market order ID.
 custodian ID of order on order book having market order ID.
 
 
-<a name="@Emits_51"></a>
+<a name="@Emits_54"></a>
 
 ### Emits
 
@@ -2756,7 +2784,7 @@ custodian ID of order on order book having market order ID.
 * <code><a href="market.md#0xc0deb00c_market_MakerEvent">MakerEvent</a></code>: Information about the changed maker order.
 
 
-<a name="@Expected_value_testing_52"></a>
+<a name="@Expected_value_testing_55"></a>
 
 ### Expected value testing
 
@@ -2765,7 +2793,7 @@ custodian ID of order on order book having market order ID.
 * <code>test_change_order_size_bid_user()</code>
 
 
-<a name="@Failure_testing_53"></a>
+<a name="@Failure_testing_56"></a>
 
 ### Failure testing
 
@@ -2867,7 +2895,7 @@ Initialize the order books map upon module publication.
 Match a taker order against the order book.
 
 
-<a name="@Type_Parameters_54"></a>
+<a name="@Type_Parameters_57"></a>
 
 ### Type Parameters
 
@@ -2877,7 +2905,7 @@ Match a taker order against the order book.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_55"></a>
+<a name="@Parameters_58"></a>
 
 ### Parameters
 
@@ -2918,7 +2946,7 @@ decremented if <code>direction</code> is <code><a href="market.md#0xc0deb00c_mar
 <code>direction</code> is <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Returns_56"></a>
+<a name="@Returns_59"></a>
 
 ### Returns
 
@@ -2935,7 +2963,7 @@ net change in taker's quote coin holdings.
 * <code>u64</code>: Amount of quote coin fees paid.
 
 
-<a name="@Emits_57"></a>
+<a name="@Emits_60"></a>
 
 ### Emits
 
@@ -2944,7 +2972,7 @@ net change in taker's quote coin holdings.
 emitted for each separate maker order that is filled against.
 
 
-<a name="@Aborts_58"></a>
+<a name="@Aborts_61"></a>
 
 ### Aborts
 
@@ -2958,7 +2986,7 @@ requirement not met.
 requirement not met.
 
 
-<a name="@Algorithm_description_59"></a>
+<a name="@Algorithm_description_62"></a>
 
 ### Algorithm description
 
@@ -2996,7 +3024,7 @@ the quote fill amount minus fees paid. Min base and quote trade
 conditions are then checked.
 
 
-<a name="@Expected_value_testing_60"></a>
+<a name="@Expected_value_testing_63"></a>
 
 ### Expected value testing
 
@@ -3012,7 +3040,7 @@ conditions are then checked.
 * <code>test_match_price_break_sell()</code>
 
 
-<a name="@Failure_testing_61"></a>
+<a name="@Failure_testing_64"></a>
 
 ### Failure testing
 
@@ -3163,7 +3191,7 @@ conditions are then checked.
 Place limit order against order book from user market account.
 
 
-<a name="@Type_Parameters_62"></a>
+<a name="@Type_Parameters_65"></a>
 
 ### Type Parameters
 
@@ -3174,7 +3202,7 @@ across the spread as a taker.
 across the spread as a taker.
 
 
-<a name="@Parameters_63"></a>
+<a name="@Parameters_66"></a>
 
 ### Parameters
 
@@ -3195,7 +3223,7 @@ may take place. Should only be passed as <code><a href="market.md#0xc0deb00c_mar
 Accepted as an argument to simplify testing.
 
 
-<a name="@Returns_64"></a>
+<a name="@Returns_67"></a>
 
 ### Returns
 
@@ -3210,7 +3238,7 @@ was placed. Else <code><a href="market.md#0xc0deb00c_market_NIL">NIL</a></code>.
 if order fills across the spread.
 
 
-<a name="@Aborts_65"></a>
+<a name="@Aborts_68"></a>
 
 ### Aborts
 
@@ -3237,7 +3265,7 @@ price-time priority if inserted to AVL queue, but AVL queue
 does not have room for any more orders.
 
 
-<a name="@Emits_66"></a>
+<a name="@Emits_69"></a>
 
 ### Emits
 
@@ -3249,7 +3277,7 @@ the order book, if required to fit user's maker order on the
 book.
 
 
-<a name="@Restrictions_67"></a>
+<a name="@Restrictions_70"></a>
 
 ### Restrictions
 
@@ -3263,7 +3291,7 @@ amount is not filled.
 then returns.
 
 
-<a name="@Minimum_size_68"></a>
+<a name="@Minimum_size_71"></a>
 
 ### Minimum size
 
@@ -3273,7 +3301,7 @@ left as a maker, minimum order size condition must be met
 again for the maker portion.
 
 
-<a name="@Algorithm_description_69"></a>
+<a name="@Algorithm_description_72"></a>
 
 ### Algorithm description
 
@@ -3312,7 +3340,7 @@ the corresponding user's market account, and its market order
 ID is emitted in a maker evict event.
 
 
-<a name="@Expected_value_testing_70"></a>
+<a name="@Expected_value_testing_73"></a>
 
 ### Expected value testing
 
@@ -3327,7 +3355,7 @@ ID is emitted in a maker evict event.
 * <code>test_place_limit_order_no_cross_bid_custodian()</code>
 
 
-<a name="@Failure_testing_71"></a>
+<a name="@Failure_testing_74"></a>
 
 ### Failure testing
 
@@ -3541,7 +3569,7 @@ ID is emitted in a maker evict event.
 Place market order against order book from user market account.
 
 
-<a name="@Type_Parameters_72"></a>
+<a name="@Type_Parameters_75"></a>
 
 ### Type Parameters
 
@@ -3550,7 +3578,7 @@ Place market order against order book from user market account.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_73"></a>
+<a name="@Parameters_76"></a>
 
 ### Parameters
 
@@ -3571,7 +3599,7 @@ for market account.
 * <code>limit_price</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_74"></a>
+<a name="@Returns_77"></a>
 
 ### Returns
 
@@ -3581,7 +3609,7 @@ for market account.
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Algorithm_description_75"></a>
+<a name="@Algorithm_description_78"></a>
 
 ### Algorithm description
 
@@ -3603,7 +3631,7 @@ calculated, then base and quote assets are deposited back to the
 user's market account.
 
 
-<a name="@Expected_value_testing_76"></a>
+<a name="@Expected_value_testing_79"></a>
 
 ### Expected value testing
 
@@ -3706,7 +3734,7 @@ Range check minimum and maximum asset trade amounts.
 Should be called before <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Terminology_77"></a>
+<a name="@Terminology_80"></a>
 
 ### Terminology
 
@@ -3729,7 +3757,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, is the same as available amount.
 
 
-<a name="@Parameters_78"></a>
+<a name="@Parameters_81"></a>
 
 ### Parameters
 
@@ -3750,7 +3778,7 @@ trade.
 <code><a href="market.md#0xc0deb00c_market_SELL">SELL</a></code>.
 
 
-<a name="@Aborts_79"></a>
+<a name="@Aborts_82"></a>
 
 ### Aborts
 
@@ -3766,7 +3794,7 @@ received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.
 
 
-<a name="@Failure_testing_80"></a>
+<a name="@Failure_testing_83"></a>
 
 ### Failure testing
 
@@ -3840,7 +3868,7 @@ See <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketI
 size, minimum size, and 32-bit prices.
 
 
-<a name="@Type_parameters_81"></a>
+<a name="@Type_parameters_84"></a>
 
 ### Type parameters
 
@@ -3849,7 +3877,7 @@ size, minimum size, and 32-bit prices.
 * <code>QuoteType</code>: Quote coin type for market.
 
 
-<a name="@Parameters_82"></a>
+<a name="@Parameters_85"></a>
 
 ### Parameters
 
@@ -3863,7 +3891,7 @@ for market.
 * <code>underwriter_id</code>: <code><a href="registry.md#0xc0deb00c_registry_MarketInfo">registry::MarketInfo</a>.min_size</code> for market.
 
 
-<a name="@Returns_83"></a>
+<a name="@Returns_86"></a>
 
 ### Returns
 
@@ -3871,7 +3899,7 @@ for market.
 * <code>u64</code>: Market ID for new market.
 
 
-<a name="@Testing_84"></a>
+<a name="@Testing_87"></a>
 
 ### Testing
 
@@ -3936,7 +3964,7 @@ for market.
 Match a taker's swap order against order book for given market.
 
 
-<a name="@Type_Parameters_85"></a>
+<a name="@Type_Parameters_88"></a>
 
 ### Type Parameters
 
@@ -3945,7 +3973,7 @@ Match a taker's swap order against order book for given market.
 * <code>QuoteType</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Parameters_86"></a>
+<a name="@Parameters_89"></a>
 
 ### Parameters
 
@@ -3966,7 +3994,7 @@ is <code><a href="registry.md#0xc0deb00c_registry_GenericAsset">registry::Generi
 * <code>quote_coins</code>: Same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Returns_87"></a>
+<a name="@Returns_90"></a>
 
 ### Returns
 
@@ -3980,7 +4008,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code>u64</code>: Quote coin fees paid, same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>.
 
 
-<a name="@Aborts_88"></a>
+<a name="@Aborts_91"></a>
 
 ### Aborts
 
@@ -3991,7 +4019,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 * <code><a href="market.md#0xc0deb00c_market_E_INVALID_QUOTE">E_INVALID_QUOTE</a></code>: Quote asset type is invalid.
 
 
-<a name="@Expected_value_testing_89"></a>
+<a name="@Expected_value_testing_92"></a>
 
 ### Expected value testing
 
@@ -4000,7 +4028,7 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 <code><a href="market.md#0xc0deb00c_market_swap_generic">swap_generic</a>()</code> testing.
 
 
-<a name="@Failure_testing_90"></a>
+<a name="@Failure_testing_93"></a>
 
 ### Failure testing
 

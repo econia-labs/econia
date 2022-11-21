@@ -4,6 +4,8 @@
 
 * [Move modules](modules.md)
 
+* [`move-to-ts` hooks](hooks.md)
+
 * [Logo attribution](logo.md)
 
 <!---
@@ -19,5 +21,4 @@
     * [Order management](api/orders.md)
     * [Utility functions](api/utility.md)
 
-* [`move-to-ts` hooks](hooks.md)
 -->

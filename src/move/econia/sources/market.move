@@ -1,8 +1,108 @@
-/// # Functions
+/// Market functionality for order book operations.
 ///
-/// ## SDK generation
+/// For each registered market, Econia has an order book stored under a
+/// global resource account. When someone registers a market, a new
+/// order book entry is added under the resource account at a new market
+/// ID.
 ///
-/// * `index_orders()`
+/// Once a market is registered, signing users and delegated custodians
+/// can place limit orders on the book as makers, takers can place
+/// market orders or swaps against the order book, and makers can cancel
+/// or change the size of any outstanding orders they have on the book.
+///
+/// Econia implements an atomic matching engine for processing taker
+/// fills against maker orders on the book, and emits events in response
+/// to changes in order book state. Notably, Econia evicts the ask or
+/// bid with the lowest price-time priority when inserting a limit order
+/// to a binary search tree that exceeds a critical height.
+///
+/// Multiple API variants are supported for market registration and
+/// order management function, to enable diagnostic function returns,
+/// public entry calls, etc.
+///
+/// # General overview sections
+///
+/// [Public function index](#public-function-index)
+///
+/// * [Market registration](#market-registration)
+/// * [Limit orders](#limit-orders)
+/// * [Market orders](#market-orders)
+/// * [Swaps](#swaps)
+/// * [Change order size](#change-order-size)
+/// * [Cancel orders](#cancel-orders)
+///
+/// [Indexing](#indexing)
+///
+/// [Dependency charts](#dependency-charts)
+///
+/// * [Internal dependencies](#internal-dependencies)
+/// * [External module dependencies](#external-module-dependencies)
+///
+/// [Order management testing](#order-management-testing)
+///
+/// * [Functions with aborts](#functions-with-aborts)
+/// * [Return proxies](#return-proxies)
+/// * [Invocation proxies](#invocation-proxies)
+/// * [Branching functions](#branching-functions)
+///
+/// [Complete DocGen index](#complete-docgen-index)
+///
+/// # Public function index
+///
+/// See the [depedency charts](#dependency-charts) for a visual map of
+/// associated function wrappers.
+///
+/// ## Market registration
+///
+/// * `register_market_base_coin()`
+/// * `register_market_base_coin_from_coinstore()`
+/// * `register_market_base_generic()`
+///
+/// ## Limit orders
+///
+/// * `place_limit_order_custodian()`
+/// * `place_limit_order_user()`
+/// * `place_limit_order_user_entry()`
+///
+/// ## Market orders
+///
+/// * `place_market_order_custodian()`
+/// * `place_market_order_user()`
+/// * `place_market_order_user_entry()`
+///
+/// ## Swaps
+///
+/// * `swap_between_coinstores()`
+/// * `swap_between_coinstores_entry()`
+/// * `swap_coins()`
+/// * `swap_generic()`
+///
+/// ## Change order size
+///
+/// * `change_order_size_custodian()`
+/// * `change_order_size_user()`
+///
+/// ## Cancel orders
+///
+/// * `cancel_order_custodian()`
+/// * `cancel_order_user()`
+/// * `cancel_all_orders_custodian()`
+/// * `cancel_all_orders_user()`
+///
+/// # Indexing
+///
+/// An order book can be indexed off-chain via `index_orders()`, an
+/// SDK-generative function for use as a `move-to-ts` method attribute
+/// on an `OrderBook`.
+///
+/// Once an order book has been indexed, the off-chain copy can be kept
+/// current by monitoring `MakerEvent` and `TakerEvent` emissions from
+/// the following functions:
+///
+/// * `cancel_order()`
+/// * `change_order_size()`
+/// * `match()`
+/// * `place_limit_order()`
 ///
 /// # Dependency charts
 ///

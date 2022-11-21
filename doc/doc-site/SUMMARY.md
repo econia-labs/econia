@@ -2,6 +2,11 @@
 
 * [Welcome](welcome.md)
 
+* [Move modules](modules.md)
+
+* [Logo attribution](logo.md)
+
+<!---
 * [Design overview](overview/index.md)
     * [The registry](overview/registry.md)
     * [Accounts](overview/accounts.md)
@@ -15,7 +20,4 @@
     * [Utility functions](api/utility.md)
 
 * [`move-to-ts` hooks](hooks.md)
-
-* [Move modules](modules.md)
-
-* [Logo attribution](logo.md)
+-->

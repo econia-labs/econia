@@ -14,7 +14,7 @@ This directory contains assorted diagrams, most of which are generated via [`mer
 * `SVG` diagrams can be generated via [mermaid.live]
 * Additional clarifying information may be found in the [GitBook documentation] for diagrams that are referenced there.
 * Recommended disclaimer for documentation page on which diagrams are referenced:
-    * (If accessing the below diagram via [GitBook], you may need to switch web browsers to view an enlarged version, which can be pulled up by clicking on the image.)
+    * (If accessing the below diagram via [GitBook], you may need to switch web browsers to view an enlarged version, which can be activated by clicking on the image.)
 
 ## Representative diagrams
 

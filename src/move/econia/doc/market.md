@@ -62,7 +62,7 @@ public entry calls, etc.
 ## Public function index
 
 
-See the [depedency charts](#dependency-charts) for a visual map of
+See the [dependency charts](#dependency-charts) for a visual map of
 associated function wrappers.
 
 
@@ -3196,14 +3196,14 @@ and if a complete fill takes place. If no size can be filled the
 loop breaks, otherwise the number of ticks is calculated, and
 lots and ticks until max counters are updated. The self-match
 condition is checked, then the order is filled user side and a
-taker event is emittted. If there was a complete fill, the maker
+taker event is emitted. If there was a complete fill, the maker
 order is removed from the head of the AVL queue and the loop
 breaks if there are not lots or ticks left to fill. If the
 order was not completely filled, the order size on the order
 book is updated, and the loop breaks.
 
 After loopwise matching, base and quote fill amounts are
-calculated, then taker fees are assesed. If a buy, the traded
+calculated, then taker fees are assessed. If a buy, the traded
 quote amount is calculated as the quote fill amount plus fees
 paid, and if a sell, the traded quote amount is calculated as
 the quote fill amount minus fees paid. Min base and quote trade
@@ -3622,7 +3622,7 @@ ID is emitted in a maker evict event.
     <b>let</b> base = (size <b>as</b> u128) * (order_book_ref_mut.lot_size <b>as</b> u128);
     // Assert corresponding base asset amount fits in a u64.
     <b>assert</b>!(base &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_SIZE_BASE_OVERFLOW">E_SIZE_BASE_OVERFLOW</a>);
-    // Calculate tick amount corresonding <b>to</b> size in lots.
+    // Calculate tick amount corresponding <b>to</b> size in lots.
     <b>let</b> ticks = (size <b>as</b> u128) * (price <b>as</b> u128);
     // Assert corresponding tick amount fits in a u64.
     <b>assert</b>!(ticks &lt;= (<a href="market.md#0xc0deb00c_market_HI_64">HI_64</a> <b>as</b> u128), <a href="market.md#0xc0deb00c_market_E_SIZE_PRICE_TICKS_OVERFLOW">E_SIZE_PRICE_TICKS_OVERFLOW</a>);
@@ -3642,7 +3642,7 @@ ID is emitted in a maker evict event.
     <b>let</b> max_quote = <b>if</b> (crosses_spread) { // If fills <b>as</b> taker:
         <b>if</b> (side == <a href="market.md#0xc0deb00c_market_ASK">ASK</a>) { // If an ask, filling <b>as</b> taker sell:
             // <a href="market.md#0xc0deb00c_market_Order">Order</a> will fill at prices that are at least <b>as</b> high
-            // <b>as</b> specified order price, and <a href="user.md#0xc0deb00c_user">user</a> will recieve more
+            // <b>as</b> specified order price, and <a href="user.md#0xc0deb00c_user">user</a> will receive more
             // quote than calculated from order size and price.
             // Hence max quote <b>to</b> trade is amount that will fit in
             // <a href="market.md#0xc0deb00c_market">market</a> <a href="">account</a>.
@@ -3935,7 +3935,7 @@ user's <code>aptos_framework::coin::CoinStore</code> or from standalone
 coins, corresponds to coin value.
 * "Asset ceiling" is the amount that the available asset amount
 could increase to beyond its present amount, even if the
-indicated trade were not executed. When tradin from a user's
+indicated trade were not executed. When trading from a user's
 market account, corresponds to either
 <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.base_ceiling</code> or
 <code><a href="user.md#0xc0deb00c_user_MarketAccount">user::MarketAccount</a>.quote_ceiling</code>. When trading from a
@@ -3974,7 +3974,7 @@ trade.
 * <code><a href="market.md#0xc0deb00c_market_E_MIN_BASE_EXCEEDS_MAX">E_MIN_BASE_EXCEEDS_MAX</a></code>: Minimum base trade amount is larger
 than maximum base trade amount.
 * <code><a href="market.md#0xc0deb00c_market_E_MIN_QUOTE_EXCEEDS_MAX">E_MIN_QUOTE_EXCEEDS_MAX</a></code>: Minimum quote trade amount is
-larger than maximum quote tade amount.
+larger than maximum quote trade amount.
 * <code><a href="market.md#0xc0deb00c_market_E_OVERFLOW_ASSET_IN">E_OVERFLOW_ASSET_IN</a></code>: Filling order would overflow asset
 received from trade.
 * <code><a href="market.md#0xc0deb00c_market_E_NOT_ENOUGH_ASSET_OUT">E_NOT_ENOUGH_ASSET_OUT</a></code>: Not enough asset to trade away.

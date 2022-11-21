@@ -2640,7 +2640,7 @@ module econia::market {
 
     // SDK generation >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    /// An order with price.
+    /// An order with price. Only for SDK generation.
     struct PricedOrder has store {
         /// Price of order from order book AVL queue.
         price: u64,
@@ -2649,6 +2649,8 @@ module econia::market {
     }
 
     /// Index order book into ask and bids vectors.
+    ///
+    /// Only for SDK generation.
     ///
     /// # Returns
     ///

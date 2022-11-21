@@ -947,7 +947,7 @@ event is emitted for each one.
 
 ## Struct `PricedOrder`
 
-An order with price.
+An order with price. Only for SDK generation.
 
 
 <pre><code><b>struct</b> <a href="market.md#0xc0deb00c_market_PricedOrder">PricedOrder</a> <b>has</b> store
@@ -4287,6 +4287,8 @@ same as for <code><a href="market.md#0xc0deb00c_market_match">match</a>()</code>
 ## Function `index_orders`
 
 Index order book into ask and bids vectors.
+
+Only for SDK generation.
 
 
 <a name="@Returns_103"></a>

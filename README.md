@@ -45,16 +45,16 @@ Now you will be able to run the provided `ss.sh` shell script file in whatever d
 Hello, Econia developer
 ```
 
-See `ss.sh` within a given directory for its available options
+See `ss.sh` within a given directory for its available options.
 
 ### Command line setup
 
-1. First follow the [official Aptos developer setup guide]
+1. First follow the [official Aptos developer setup guide].
 
-1. Then [install the `aptos` CLI]
+1. Then [install the `aptos` CLI].
 
-    * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`
-    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions, noting that building from binary can take up plenty of disk space inside of the `aptos-core` directory)
+    * Note that this will go faster if [adding a precompiled binary] to `~/.cargo/bin` rather than installing via `cargo`.
+    * If the precompiled binary has not been released yet, additionally consider installing from Git, a method that does not always require rebuilding intermediate artifacts (see same resource for instructions, noting that building from binary can take up plenty of disk space inside of the `aptos-core` directory).
 
 
 1. Now you should be able to run all Move tests:
